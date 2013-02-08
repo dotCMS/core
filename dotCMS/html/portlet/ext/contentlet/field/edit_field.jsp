@@ -257,14 +257,12 @@
             || field.getFieldType().equals(
                     Field.FieldType.DATE_TIME.toString())) {
 
-
-
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         SimpleDateFormat df2 = new SimpleDateFormat("yyyy-MM-dd");
         Date dateValue = null;
-        if(value instanceof String && value != null) {
+        if(value != null && value instanceof String) {
             dateValue = df.parse((String) value);
-        } else if(value != null) {
+        } else if(value != null && value instanceof Date) {
             dateValue = (Date)value;
         }
 

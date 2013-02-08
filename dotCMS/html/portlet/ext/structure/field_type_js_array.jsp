@@ -53,7 +53,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Date") %>',
 			label: '<span class="calDayIcon"></span> <%= LanguageUtil.get(pageContext, "Date") %>',
 			imageurl: '/html/images/icons/calendar-day.png',
-			show:['elementSelect','required','labelRow','hintText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
+			show:['elementSelect','required','labelRow','hintText','defaultText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
 			dataType:'date',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.date")) %>'
 		},{
@@ -61,7 +61,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Date-and-Time") %>',
 			label: '<span class="calClockIcon"></span> <%= LanguageUtil.get(pageContext, "Date-and-Time") %>',
 			imageurl: '/html/images/icons/calendar-clock.png',
-			show:['elementSelect','required','labelRow','hintText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
+			show:['elementSelect','required','labelRow','hintText','defaultText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
 			dataType:'date',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.date_time")) %>'
 		},{
@@ -184,7 +184,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Time") %>',
 			label: '<span class="clockIcon"></span> <%= LanguageUtil.get(pageContext, "Time") %>',
 			imageurl: '/html/images/icons/clock.png',
-			show:['elementSelect','required','labelRow','hintText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
+			show:['elementSelect','required','labelRow','hintText','defaultText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
 			dataType:'date',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.time")) %>'
 		},{
