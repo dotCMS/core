@@ -71,150 +71,155 @@ public class SalesForceFilter implements Filter {
 		
     	String requestUri = request.getRequestURI();
     	
-    	try {    		
-	    	saveSalesForceInfoInDotCMSLog = new Boolean (Config.getStringProperty( "save_log_info_dotcms_log"));
-			saveSalesForceInfoInUserActivityLog = new Boolean (Config.getStringProperty( "save_log_info_useractivity_log"));
-			
-			if(requestUri.equals("/admin") || requestUri.equals("/c")){
-				clientId = Config.getStringProperty("salesforce_client_id_backend");
-				clientSecret = Config.getStringProperty("salesforce_client_secret_backend");
-				redirectUri = Config.getStringProperty("salesforce_redirect_uri_backend");
-			}
-			else if(requestUri.contains("/dotCMS/login")){
-				clientId = Config.getStringProperty("salesforce_client_id_frontend");
-				clientSecret = Config.getStringProperty("salesforce_client_secret_frontend");
-				redirectUri = Config.getStringProperty("salesforce_redirect_uri_frontend");
-			}
+    	boolean useSalesForceLoginFilter = new Boolean (Config.getBooleanProperty("SALESFORCE_LOGIN_FILTER_ON",false));
+    	
+    	if(useSalesForceLoginFilter){
+    		try {    		
+    	    	saveSalesForceInfoInDotCMSLog = Config.getBooleanProperty("save_log_info_dotcms_log", false);
+    			saveSalesForceInfoInUserActivityLog = Config.getBooleanProperty("save_log_info_useractivity_log",false);
+    			
+    			if(requestUri.equals("/admin") || requestUri.equals("/c")){
+    				clientId = Config.getStringProperty("salesforce_client_id_backend");
+    				clientSecret = Config.getStringProperty("salesforce_client_secret_backend");
+    				redirectUri = Config.getStringProperty("salesforce_redirect_uri_backend");
+    			}
+    			else if(requestUri.contains("/dotCMS/login")){
+    				clientId = Config.getStringProperty("salesforce_client_id_frontend");
+    				clientSecret = Config.getStringProperty("salesforce_client_secret_frontend");
+    				redirectUri = Config.getStringProperty("salesforce_redirect_uri_frontend");
+    			}
 
-			environment = Config.getStringProperty("salesforce_environment");
-			
-			tokenUrl = Config.getStringProperty("salesforce_token_request_url");
-			
-			authUrl = environment
-					+ "/services/oauth2/authorize?response_type=code&client_id="
-					+ clientId + "&redirect_uri="
-					+ URLEncoder.encode(redirectUri, "UTF-8");
-			
-			searchUsersURL = Config.getStringProperty("salesforce_search_user_url");
-		      
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
+    			environment = Config.getStringProperty("salesforce_environment");
+    			
+    			tokenUrl = Config.getStringProperty("salesforce_token_request_url");
+    			
+    			authUrl = environment
+    					+ "/services/oauth2/authorize?response_type=code&client_id="
+    					+ clientId + "&redirect_uri="
+    					+ URLEncoder.encode(redirectUri, "UTF-8");
+    			
+    			searchUsersURL = Config.getStringProperty("salesforce_search_user_url");
+    		      
+    		} catch (UnsupportedEncodingException e) {
+    			e.printStackTrace();
+    		}
 
-        // make sure we've got an HTTP request
-        if (!(req instanceof HttpServletRequest) || !(res instanceof HttpServletResponse)) {
-        	throw new ServletException("SalesForceFilter protects only HTTP resources");
-        }
-        
-		String accessToken = (String) request.getSession().getAttribute(ACCESS_TOKEN);
-		
-		String instanceUrl = "";
-		
-		String salesforceIdURI = ""; 
-		
-        if (UtilMethods.isSet(accessToken)){
-        	
-	        String encryptedId = UtilMethods.getCookieValue(request.getCookies(), WebKeys.CMS_USER_ID_COOKIE);
-	   	 
-	        if (((session != null && session.getAttribute(WebKeys.CMS_USER) == null) || session == null)&& 
-	        		UtilMethods.isSet(encryptedId)) {
-	            Logger.debug(SalesForceFilter.class, "Doing AutoLogin for " + encryptedId);
-	            LoginFactory.doCookieLogin(encryptedId, request, response);
-	        }
-        }
-        
-        else if(UtilMethods.isSet(request.getParameter("code"))){
-        	
-        	String SalesForceUserEmailAddress = "";
-        	
-        	String code = request.getParameter("code");
-
-			HttpClient httpclient = new HttpClient();
-
-			PostMethod post = new PostMethod(tokenUrl);
-			post.addParameter("code", code);
-			post.addParameter("grant_type", "authorization_code");
-			post.addParameter("client_id", clientId);
-			post.addParameter("client_secret", clientSecret);
-			post.addParameter("redirect_uri", redirectUri);
-
-			try {
-				httpclient.executeMethod(post);
-
-				try {
-					JSONObject authResponse = new JSONObject(
-							new JSONTokener(new InputStreamReader(
-									post.getResponseBodyAsStream())));
-
-					accessToken = authResponse.getString("access_token");
-					instanceUrl = authResponse.getString("instance_url");
-					salesforceIdURI = authResponse.getString("id");
-
-				} catch (JSONException e) {
-					e.printStackTrace();
-					throw new ServletException(e);
-				}
-			} finally {
-				post.releaseConnection();
-			}
-			
-			String[] SalesForceUserInfo=salesforceIdURI.split("/");
-			
-			String SalesForceUserId = SalesForceUserInfo[SalesForceUserInfo.length-1];
-		
-			GetMethod get = new GetMethod(searchUsersURL + SalesForceUserId);
-			
-			get.setRequestHeader("Authorization", "OAuth " + accessToken);
-			
-			try {
-				httpclient.executeMethod(get);
-				if (get.getStatusCode() == HttpStatus.SC_OK) {
-					try {
-						JSONObject userJSONObject = new JSONObject(
-								new JSONTokener(new InputStreamReader(
-										get.getResponseBodyAsStream())));
-
-						SalesForceUserEmailAddress = userJSONObject.getString("Username");
-
-					} catch (JSONException e) {
-						e.printStackTrace();
-						throw new ServletException(e);
-					}
-				}
-			} finally {
-				get.releaseConnection();
-			}
-
-
-			// Set a session attribute so that other servlets can get the access
-			// token
-			request.getSession().setAttribute(ACCESS_TOKEN, accessToken);
-	
-			// We also get the instance URL from the OAuth response, so set it
-			// in the session too
-			request.getSession().setAttribute(INSTANCE_URL, instanceUrl);
-			
-        	Logger.debug(AutoLoginFilter.class, "Doing SalesForceAutoLogin Filter for: " + SalesForceUserEmailAddress);
-            if(UtilMethods.isSet(SalesForceUserEmailAddress)){                
-            	LoginFactory.doCookieLogin(PublicEncryptionFactory.encryptString(SalesForceUserEmailAddress), request, response);      	
+            // make sure we've got an HTTP request
+            if (!(req instanceof HttpServletRequest) || !(res instanceof HttpServletResponse)) {
+            	throw new ServletException("SalesForceFilter protects only HTTP resources");
             }
             
-            if(requestUri.equals("/admin"))
-            	/*Backend redirecting*/
-            {
-            	setBackendSessionVariables(request,response);
+    		String accessToken = (String) request.getSession().getAttribute(ACCESS_TOKEN);
+    		
+    		String instanceUrl = "";
+    		
+    		String salesforceIdURI = ""; 
+    		
+            if (UtilMethods.isSet(accessToken)){
+            	
+    	        String encryptedId = UtilMethods.getCookieValue(request.getCookies(), WebKeys.CMS_USER_ID_COOKIE);
+    	   	 
+    	        if (((session != null && session.getAttribute(WebKeys.CMS_USER) == null) || session == null)&& 
+    	        		UtilMethods.isSet(encryptedId)) {
+    	            Logger.debug(SalesForceFilter.class, "Doing AutoLogin for " + encryptedId);
+    	            LoginFactory.doCookieLogin(encryptedId, request, response);
+    	        }
             }
-            else{
-            	/*Frontend redirecting*/
-    			response.sendRedirect(requestUri);
+            
+            else if(UtilMethods.isSet(request.getParameter("code"))){
+            	
+            	String SalesForceUserEmailAddress = "";
+            	
+            	String code = request.getParameter("code");
+
+    			HttpClient httpclient = new HttpClient();
+
+    			PostMethod post = new PostMethod(tokenUrl);
+    			post.addParameter("code", code);
+    			post.addParameter("grant_type", "authorization_code");
+    			post.addParameter("client_id", clientId);
+    			post.addParameter("client_secret", clientSecret);
+    			post.addParameter("redirect_uri", redirectUri);
+
+    			try {
+    				httpclient.executeMethod(post);
+
+    				try {
+    					JSONObject authResponse = new JSONObject(
+    							new JSONTokener(new InputStreamReader(
+    									post.getResponseBodyAsStream())));
+
+    					accessToken = authResponse.getString("access_token");
+    					instanceUrl = authResponse.getString("instance_url");
+    					salesforceIdURI = authResponse.getString("id");
+
+    				} catch (JSONException e) {
+    					e.printStackTrace();
+    					throw new ServletException(e);
+    				}
+    			} finally {
+    				post.releaseConnection();
+    			}
+    			
+    			String[] SalesForceUserInfo=salesforceIdURI.split("/");
+    			
+    			String SalesForceUserId = SalesForceUserInfo[SalesForceUserInfo.length-1];
+    		
+    			GetMethod get = new GetMethod(searchUsersURL + SalesForceUserId);
+    			
+    			get.setRequestHeader("Authorization", "OAuth " + accessToken);
+    			
+    			try {
+    				httpclient.executeMethod(get);
+    				if (get.getStatusCode() == HttpStatus.SC_OK) {
+    					try {
+    						JSONObject userJSONObject = new JSONObject(
+    								new JSONTokener(new InputStreamReader(
+    										get.getResponseBodyAsStream())));
+
+    						SalesForceUserEmailAddress = userJSONObject.getString("Username");
+
+    					} catch (JSONException e) {
+    						e.printStackTrace();
+    						throw new ServletException(e);
+    					}
+    				}
+    			} finally {
+    				get.releaseConnection();
+    			}
+
+
+    			// Set a session attribute so that other servlets can get the access
+    			// token
+    			request.getSession().setAttribute(ACCESS_TOKEN, accessToken);
+    	
+    			// We also get the instance URL from the OAuth response, so set it
+    			// in the session too
+    			request.getSession().setAttribute(INSTANCE_URL, instanceUrl);
+    			
+            	Logger.debug(AutoLoginFilter.class, "Doing SalesForceAutoLogin Filter for: " + SalesForceUserEmailAddress);
+                if(UtilMethods.isSet(SalesForceUserEmailAddress)){                
+                	LoginFactory.doCookieLogin(PublicEncryptionFactory.encryptString(SalesForceUserEmailAddress), request, response);      	
+                }
+                
+                if(requestUri.equals("/admin"))
+                	/*Backend redirecting*/
+                {
+                	setBackendSessionVariables(request,response);
+                }
+                else{
+                	/*Frontend redirecting*/
+        			response.sendRedirect(requestUri);
+        			return;
+                }
+            }
+            else {
+    			response.sendRedirect(authUrl);
     			return;
             }
-        }
-        else {
-			response.sendRedirect(authUrl);
-			return;
-			
-        }
+    		
+    	}
+    	
 
         // continue processing the request
         fc.doFilter(request, response);

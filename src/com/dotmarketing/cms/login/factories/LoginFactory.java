@@ -32,7 +32,7 @@ public class LoginFactory {
 	public static String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 	
 	/*Custom Code*/
-	public static boolean useSalesForceLoginFilter = Config.getBooleanProperty("SALESFORCE_LOGIN_FILTER_ON");
+	public static boolean useSalesForceLoginFilter = Config.getBooleanProperty("SALESFORCE_LOGIN_FILTER_ON",false);
 	/*End of Custom Code*/
 	
     public static boolean doLogin(LoginForm form, HttpServletRequest request, HttpServletResponse response) throws NoSuchUserException {
