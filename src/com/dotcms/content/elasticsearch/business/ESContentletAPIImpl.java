@@ -1450,7 +1450,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void refreshContentUnderHost(Host host) throws DotReindexStateException {
         try {
             distAPI.refreshContentUnderHost(host);
-            CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
@@ -1461,7 +1460,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void refreshContentUnderFolder(Folder folder) throws DotReindexStateException {
         try {
             distAPI.refreshContentUnderFolder(folder);
-            CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
