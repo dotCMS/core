@@ -638,10 +638,9 @@ public class BrowserAjax {
             }
             
             // issues/1788
-           
+            // issues/1967 
     		
     		Folder srcFolder = APILocator.getFolderAPI().find(cont.getFolder(),user,false);
-    		APILocator.getContentletAPI().refreshContentUnderFolder(srcFolder);
     		refreshIndex(null, parent, user, host, srcFolder );
 
             
