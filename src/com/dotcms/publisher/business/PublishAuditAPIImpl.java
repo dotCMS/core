@@ -301,4 +301,24 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 	}
+	
+	public PublishAuditStatus updateAuditTable(String endpointId, String groupId, String bundleFolder)
+			throws DotPublisherException {
+		//Status
+		PublishAuditStatus status =  new PublishAuditStatus(bundleFolder);
+		//History
+		PublishAuditHistory historyPojo = new PublishAuditHistory();
+		EndpointDetail detail = new EndpointDetail();
+		detail.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
+		detail.setInfo("Received bundle");
+		
+		historyPojo.addOrUpdateEndpoint(groupId, endpointId, detail);
+		status.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE);
+		status.setStatusPojo(historyPojo);
+		
+		//Insert in Audit table
+		PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+		
+		return status;
+	}
 }
