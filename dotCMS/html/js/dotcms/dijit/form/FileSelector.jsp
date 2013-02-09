@@ -7,7 +7,7 @@
 			minimum="350"
 			showButtons="true"
 			intermediateChanges="true"
-			style="width:20px; height: 80px;"'
+			style="width:20px; height: 80px;"
 			discreteValues="6"
 			dojoAttachPoint="thumbnailSizeSlider">
 		 		
@@ -20,10 +20,10 @@
 	<div class="fileSelectorControls">
 		<input name="${name}" type="hidden" value="${value}" dojoAttachPoint="valueTextField"/>
 		<input type="text" dojoType="dijit.form.TextBox" name="${name}-filename" readonly="readonly" style="width: 250px;float: left;" dojoAttachPoint="labelTextField"/>
-		<button dojoType="dijit.form.Button" dojoAttachEvent="onClick: _browseClicked" type="button" iconClass="browseIcon"><%= LanguageUtil.get(pageContext, "browse")%>...</button>
-		<button dojoType="dijit.form.Button" style="display:none;" dojoAttachEvent="onClick: _removeClicked" 
+		<button dojoType="dijit.form.Button" type="button" dojoAttachEvent="onClick: _browseClicked" iconClass="browseIcon"><%= LanguageUtil.get(pageContext, "browse")%>...</button>
+		<button dojoType="dijit.form.Button" type="button" style="display:none;" dojoAttachEvent="onClick: _removeClicked"
 			dojoAttachPoint="removeFileButton" iconClass="deleteIcon"><%= LanguageUtil.get(pageContext, "remove")%></button>
-		<button dojoType="dijit.form.Button" style="display:none;" dojoAttachEvent="onClick: _infoClicked" 
+		<button dojoType="dijit.form.Button" type="button" style="display:none;" dojoAttachEvent="onClick: _infoClicked"
 			dojoAttachPoint="infoFileButton" iconClass="infoIcon"><%= LanguageUtil.get(pageContext, "info")%></button>
 	</div>
 	
