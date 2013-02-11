@@ -237,7 +237,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		String bundleName = items.get(0).getName();
 		String bundlePath = ConfigUtils.getBundlePath()+File.separator;
 		String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
-		String endpointId = "local-upload";
+		String endpointId = getUser().getUserId();
 		response.setContentType("text/html; charset=utf-8");  
 		PrintWriter out = response.getWriter();  
 		
