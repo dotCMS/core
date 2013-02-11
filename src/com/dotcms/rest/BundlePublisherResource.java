@@ -1,10 +1,8 @@
 package com.dotcms.rest;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -20,7 +18,6 @@ import org.apache.commons.io.FileUtils;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
@@ -33,6 +30,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.sun.jersey.core.header.FormDataContentDisposition;
@@ -72,10 +70,10 @@ public class BundlePublisherResource extends WebResource {
 			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
 			String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
 			
-			PublishAuditStatus status =updateAuditTable(endpointId, groupId, bundleFolder);
+			PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, groupId, bundleFolder);
 			
 			//Write file on FS
-			writeToFile(bundle, bundlePath+bundleName);
+			FileUtil.writeToFile(bundle, bundlePath+bundleName);
 			
 			
 			//Start thread
@@ -92,71 +90,6 @@ public class BundlePublisherResource extends WebResource {
 		}
 		
 		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
-	}
-	
-	class PublishThread implements Runnable {
-		private String bundleName;
-		private String endpointId;
-		private String groupId;
-		private PublishAuditStatus status;
-		
-		public PublishThread(String bundleName, String groupId, String endpointId, PublishAuditStatus status) {
-			this.bundleName = bundleName;
-			this.endpointId = endpointId;
-			this.status = status;
-			this.groupId = groupId;
-		}
-		
-	    public void run() {
-	    	//Configure and Invoke the Publisher
-			Logger.info(PublishThread.class, "Started bundle publish process");
-			
-			PublisherConfig pconf = new PublisherConfig();
-			BundlePublisher bundlePublisher = new BundlePublisher();
-			pconf.setId(bundleName);
-			pconf.setEndpoint(endpointId);
-			pconf.setGroupId(groupId);
-			try {
-				bundlePublisher.init(pconf);
-				bundlePublisher.process(null);
-			} catch (DotPublishingException e) {
-				
-				EndpointDetail detail = new EndpointDetail();
-				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
-				detail.setInfo("Failed to publish because an error occurred: "+e.getMessage());
-				status.getStatusPojo().addOrUpdateEndpoint(groupId,endpointId, detail);
-				
-				try {
-					auditAPI.updatePublishAuditStatus(bundleName.substring(0, bundleName.indexOf(".tar.gz")), 
-							PublishAuditStatus.Status.FAILED_TO_PUBLISH, 
-							status.getStatusPojo());
-				} catch (DotPublisherException e1) {
-					Logger.info(PublishThread.class, "Unable to update audit status ");
-				}
-			}
-			
-			Logger.info(PublishThread.class, "Finished bundle publish process");
-	    }
-	}
-
-	private PublishAuditStatus updateAuditTable(String endpointId, String groupId, String bundleFolder)
-			throws DotPublisherException {
-		//Status
-		PublishAuditStatus status =  new PublishAuditStatus(bundleFolder);
-		//History
-		PublishAuditHistory historyPojo = new PublishAuditHistory();
-		EndpointDetail detail = new EndpointDetail();
-		detail.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
-		detail.setInfo("Received bundle");
-		
-		historyPojo.addOrUpdateEndpoint(groupId, endpointId, detail);
-		status.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE);
-		status.setStatusPojo(historyPojo);
-		
-		//Insert in Audit table
-		auditAPI.insertPublishAuditStatus(status);
-		
-		return status;
 	}
 	
 	private boolean isValidToken(String token, String remoteIP, PublishingEndPoint mySelf) throws IOException, DotDataException {
@@ -190,26 +123,5 @@ public class BundlePublisherResource extends WebResource {
 	}
 
 	
-	// save uploaded file to new location
-	private void writeToFile(InputStream uploadedInputStream,
-			String uploadedFileLocation) {
-
-		try {
-			OutputStream out = new FileOutputStream(new File(
-					uploadedFileLocation));
-			int read = 0;
-			byte[] bytes = new byte[1024];
-
-			out = new FileOutputStream(new File(uploadedFileLocation));
-			while ((read = uploadedInputStream.read(bytes)) != -1) {
-				out.write(bytes, 0, read);
-			}
-			out.flush();
-			out.close();
-		} catch (IOException e) {
-
-			e.printStackTrace();
-		}
-
-	}
+	
 }
