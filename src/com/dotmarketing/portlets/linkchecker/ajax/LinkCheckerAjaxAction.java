@@ -74,14 +74,14 @@ public class LinkCheckerAjaxAction extends AjaxAction {
                 Map<String,String> mm=new HashMap<String,String>();
                 mm.put("inode", link.getInode());
                 mm.put("con_title", con.getTitle());
-                if(con.isLive()) {
+                if(con.isArchived()) {
+                	mm.put("status", "archived");
+                }
+                else if(con.isLive()) {
                 	mm.put("status", "live");
                 }
                 else if(con.isWorking()) {
                 	mm.put("status", "working");
-                }
-                else if(con.isArchived()) {
-                	mm.put("status", "archived");
                 }
                 else {
                 	mm.put("status", "");

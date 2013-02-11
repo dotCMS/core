@@ -100,7 +100,8 @@ function loadTable() {
 		handleAs: 'json',
 		load: function(data) {
 			for(var i=0;i<data.list.length;i++) {
-				var action=baseUrl+"&inode="+data.list[i].inode+'&referer=' + encodeURIComponent(referrer+"&r="+Math.floor((Math.random()*10000)+1));
+				var inode = data.list[i].inode;
+				var action=baseUrl+"&inode="+inode+'&referer=' + encodeURIComponent(referrer+"&r="+Math.floor((Math.random()*10000)+1));
 				var conTitle=data.list[i].con_title;
 				var status = data.list[i].status;
 				var field=data.list[i].field;
@@ -109,10 +110,20 @@ function loadTable() {
 				var moddate=data.list[i].date;
 				var link="<div><strong>"+data.list[i].url_title+"</strong></div> "+data.list[i].url;
 				
+				var statusRowHTML = "";
+				if(status == "archived") {
+					statusRowHTML = "<span class='archivedIcon'></span>";
+				}
+				else if(status == "live") {
+					statusRowHTML = "<span class='liveIcon'></span>";					
+				}
+				else if(status == "working") {
+					statusRowHTML = "<span class='workingIcon'></span>";
+				}
 				var row="<tr>"+ 
 				          "<td><a href=\""+action+"\"><span class='editIcon'></span></a></td>"+
 				          "<td>"+conTitle+"</td>"+
-				          "<td>"+status+"</td>"+
+				          "<td style='text-align:center'>"+statusRowHTML+"</td>"+
 				          "<td>"+field+"</td>"+
 				          "<td>"+structure+"</td>"+
 				          "<td>"+moduser+"</td>"+
