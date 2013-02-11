@@ -102,6 +102,7 @@ function loadTable() {
 			for(var i=0;i<data.list.length;i++) {
 				var action=baseUrl+"&inode="+data.list[i].inode+'&referer=' + encodeURIComponent(referrer+"&r="+Math.floor((Math.random()*10000)+1));
 				var conTitle=data.list[i].con_title;
+				var status = data.list[i].status;
 				var field=data.list[i].field;
 				var structure=data.list[i].structure;
 				var moduser=data.list[i].user;
@@ -111,6 +112,7 @@ function loadTable() {
 				var row="<tr>"+ 
 				          "<td><a href=\""+action+"\"><span class='editIcon'></span></a></td>"+
 				          "<td>"+conTitle+"</td>"+
+				          "<td>"+status+"</td>"+
 				          "<td>"+field+"</td>"+
 				          "<td>"+structure+"</td>"+
 				          "<td>"+moduser+"</td>"+
@@ -181,6 +183,7 @@ dojo.ready(function(){
                     <tr>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_ACTION")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_TITLE")%></th>
+                        <th><%=LanguageUtil.get(pageContext, "BROKEN_LINKS_STATUS")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_FIELD_NAME")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_STRUCTURE")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_USER")%></th>
