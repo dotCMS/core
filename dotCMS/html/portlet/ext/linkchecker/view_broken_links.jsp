@@ -88,7 +88,7 @@ function loadTable() {
 	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_EXT_11_cmd=edit";
 	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=EXT_BROKEN_LINKS&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
 	dojo.empty('table_body');
-	var pageSize=10;
+	var pageSize=25;
 	var page=(parseInt(dojo.byId('currentPage').textContent)-1)*pageSize;
 	var id = dojo.byId('currentPage');
     if(typeof id.textContent == "undefined"){
