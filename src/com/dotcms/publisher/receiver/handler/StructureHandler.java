@@ -64,7 +64,7 @@ public class StructureHandler implements IHandler {
 	        	    List<Field> fields = structureWrapper.getFields();
 	                
 	                for (Field field : fields) {
-	                        Field localField = structure.getFieldVar(field.getVelocityVarName());
+	                        Field localField = FieldsCache.getField(field.getInode());
 	                        if(localField == null || !UtilMethods.isSet(localField.getInode()))
 	                            FieldFactory.saveField(field, field.getInode());
 	                        else {
