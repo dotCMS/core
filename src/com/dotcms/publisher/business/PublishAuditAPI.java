@@ -101,4 +101,15 @@ public abstract class PublishAuditAPI {
 	 * @throws DotPublisherException
 	 */
 	public abstract List<PublishAuditStatus> getPendingPublishAuditStatus() throws DotPublisherException;
+	
+	/**
+	 * Updates the audit table with the bundle info and status
+	 * @param endpointId
+	 * @param groupId
+	 * @param bundleFolder
+	 * @return
+	 * @throws DotPublisherException
+	 */
+	public abstract PublishAuditStatus updateAuditTable(String endpointId, String groupId, String bundleFolder)
+			throws DotPublisherException;
 }

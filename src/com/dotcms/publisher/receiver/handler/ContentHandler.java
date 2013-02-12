@@ -14,6 +14,7 @@ import com.dotcms.publisher.pusher.bundler.ContentBundler;
 import com.dotcms.publisher.pusher.bundler.HostBundler;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -21,6 +22,7 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -182,7 +184,8 @@ public class ContentHandler implements IHandler {
         
         //Multitree
         for(Map<String, Object> mRow : wrapper.getMultiTree()) {
-            MultiTree multiTree = new MultiTree();
+        	
+        	MultiTree multiTree = new MultiTree();
             multiTree.setChild((String) mRow.get("child"));
             multiTree.setParent1((String) mRow.get("parent1"));
             multiTree.setParent2((String) mRow.get("parent2"));
@@ -194,6 +197,8 @@ public class ContentHandler implements IHandler {
             	MultiTreeFactory.deleteMultiTree(t);
             	
             }
+            
+            HibernateUtil.getSession().clear();
             
             MultiTreeFactory.saveMultiTree(multiTree);
         }
