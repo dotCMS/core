@@ -144,7 +144,6 @@ dojo.ready(function(){
 </style>
 
 <div id="contentPreviewDialog">
-
 	<div>
 		<table class="previewCon" align="center">
 			<%if (fields.size() > 0)  {%>
@@ -166,7 +165,7 @@ dojo.ready(function(){
 				</tr>
 				<tr class="tRow">
 					<td class="fColumn">
-						<%= LanguageUtil.get(pageContext, "Viewing-Language") %>
+						<%= LanguageUtil.get(pageContext, "Language") %>
 					</td>
 					<td>
 						<%= lang.getCountry()%> - <%= lang.getLanguage()%>
@@ -187,11 +186,16 @@ dojo.ready(function(){
 						<%= LanguageUtil.get(pageContext, "Status") %>
 					</td>
 					<td>
-						<%if(content.isArchived()){%><%= LanguageUtil.get(pageContext, "Archived") %><%}else if(content.isLive()){%><%=LanguageUtil.get(pageContext, "Live")%><%}else{%><%= LanguageUtil.get(pageContext, "Working1") %><% } %>
+						<%= com.dotmarketing.util.UtilHTML.getStatusIcons(content) %>
 					</td>
 				</tr>
-			<% } 
-			for(int i = 0; i < fields.size();i++){
+			<% }%>
+			
+			
+			
+			
+			
+			<% for(int i = 0; i < fields.size();i++){
 				Field field = (Field) fields.get(i);
 				
 				
@@ -212,121 +216,127 @@ dojo.ready(function(){
 				){continue;}
 				
 				
-				%>
+				if(content ==null || !UtilMethods.isSet( content.get(field.getVelocityVarName()))){
+					continue;	
+				}%>
+				
 				<tr class="tRow">
 					<td class="fColumn">
-							<%=field.getFieldName()%>
+						<%=field.getFieldName()%>
 					</td>
 					<td>
-					<%if (field.getFieldType().equals(Field.FieldType.TEXT.toString())){ %>
+					
+					
+					
+					
+						<%--   Text Box --%>
+						<%if (field.getFieldType().equals(Field.FieldType.TEXT.toString())){ %>
+								<%=(UtilMethods.isSet(capi.getFieldValue(content, field))
+										? UtilMethods.xmlEscape(String.valueOf(capi.getFieldValue(content, field)))
+												: LanguageUtil.get(pageContext, "No")+" " + field.getFieldName() +" "+ LanguageUtil.get(pageContext, "configured"))%>
+							
+						<%}%>
+					
+					
+					
+					
+					
+					
 						
-							<%=(UtilMethods.isSet(capi.getFieldValue(content, field))
-									? UtilMethods.xmlEscape(String.valueOf(capi.getFieldValue(content, field)))
-											: LanguageUtil.get(pageContext, "No")+" " + field.getFieldName() +" "+ LanguageUtil.get(pageContext, "configured"))%>
+						<%--   WYSIWYG --%>
+						<%if (field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())){
+					        String textValue = String.valueOf(capi.getFieldValue(content, field)) ;
+					        textValue = textValue.replaceAll("&", "&amp;");
+					        boolean wysiwygPlain = false;
+					        for (String fieldVelocityVarName: content.getDisabledWysiwyg()) {
+					    		if(fieldVelocityVarName.startsWith(field.getVelocityVarName())){
+					    			wysiwygPlain=true;
+					    		}
+					        }
+							if(!wysiwygPlain){%>
+								<textarea style="width:600px;height:400px;"><%=textValue %></textarea>
+							<%}else{ %>
+								<div class="textAreaDiv">
+								<% textValue = textValue.replaceAll("<", "&lt;");%>
+								<% textValue = textValue.replaceAll(">", "&gt;");%>
+								<% textValue = UtilMethods.htmlLineBreak(textValue);%>
+									<%=textValue %>
+								</div>
+							<%} %>
+						<%}%>
 						
-				<% }else if (field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())){
-			        String textValue = String.valueOf(capi.getFieldValue(content, field)) ;
-			        textValue = textValue.replaceAll("&", "&amp;");
-
-			        boolean wysiwygPlain = false;
-			        for (String fieldVelocityVarName: content.getDisabledWysiwyg()) {
-
-			    		if(fieldVelocityVarName.startsWith(field.getVelocityVarName())){
-			    			wysiwygPlain=true;
-			    		}
-			        }%>
-					
-					
-					
-					<%if(!wysiwygPlain){%>
-						<textarea style="width:600px;height:400px;"><%=textValue %></textarea>
-					<%}else{ %>
-						<div class="textAreaDiv">
-						<% textValue = textValue.replaceAll("<", "&lt;");%>
-						<% textValue = textValue.replaceAll(">", "&gt;");%>
-						<% textValue = UtilMethods.htmlLineBreak(textValue);%>
-							<%=textValue %>
-						</div>
-					<%} %>
-					
-					
-					
-					
-					<% }else if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString())){ %>
 						
+						
+						
+						
+					
+					
+						
+						
+						
+						
+						<%--   TextArea --%>
+						<% if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString())){ %>
 							<div style="max-height: 150px; width: 500px;font-size:12px;vertical-align: top;overflow:auto;">
 						    	<%=(UtilMethods.isSet(capi.getFieldValue(content, field))
 						    			? UtilMethods.xmlEscape(String.valueOf(capi.getFieldValue(content, field))) 
 						    					: LanguageUtil.get(pageContext, "No")+" " +  field.getFieldName() + " "+ LanguageUtil.get(pageContext, "configured"))%>
 							</div>
-						
+				        <% }%>
+				         
+				         
+				         
+				         
+				         
 			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         <% }else if (
-			        		 field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) ||
-			        		 field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString()) 
-			        		 
-			         
-			         
-			         
-			         ){ 
-													
-			               String originalValue = String.valueOf(capi.getFieldValue(content, field));
-			               String fieldName = field.getFieldContentlet();
-			               String defaultValue = field.getDefaultValue();
-			               if (defaultValue != null)
-			                 	defaultValue = defaultValue.trim();
-			               else 
-			               	defaultValue = "";
-			               
-			               String values = field.getValues();
-			               if (values != null)
-			               	values = values.trim();
-			               else 
-			               	values = "";
-			               String[] pairs = values.split("\r\n");
-			               %>
-							
-			               <%
-			               for(int j = 0;j < pairs.length;j++) {
-			                String pair = pairs[j];
-			                String[] tokens = pair.split("\\|");
-			                if (0 < tokens.length) {
-				                String name = tokens[0];
-								String value = (tokens.length > 1 ? tokens[1] : name);                                  
+				         
+				        <%--   Checkbox/Multiselect --%>
+				        <% if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) || field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString()) ){ 
+														
+				               String originalValue = String.valueOf(capi.getFieldValue(content, field));
+				               String fieldName = field.getFieldContentlet();
+				               String defaultValue = field.getDefaultValue();
+				               if (defaultValue != null)
+				                 	defaultValue = defaultValue.trim();
+				               else 
+				               	defaultValue = "";
+				               
+				               String values = field.getValues();
+				               if (values != null)
+				               	values = values.trim();
+				               else 
+				               	values = "";
+				               String[] pairs = values.split("\r\n");
+				               %>
+								
+				               <%
+				               for(int j = 0;j < pairs.length;j++) {
+				                String pair = pairs[j];
+				                String[] tokens = pair.split("\\|");
+				                if (0 < tokens.length) {
+					                String name = tokens[0];
+									String value = (tokens.length > 1 ? tokens[1] : name);                                  
+		
+					                if (UtilMethods.isSet(originalValue)){
+					                	if (originalValue.contains(value + ",")){%>
+					                		<%=name%><br>
+										<%}
+					                } else{
+					                  if (UtilMethods.isSet(defaultValue) && (defaultValue.contains("|" + value) || defaultValue.contains(value + "|") || defaultValue.equals(value))){%>
+					                	  <%=name%><br>
+					                  <%}
+					                }
 	
-				                if (UtilMethods.isSet(originalValue)){
-				                	if (originalValue.contains(value + ",")){%>
-				                		<%=name%><br>
-									<%}
-				                } else{
-				                  if (UtilMethods.isSet(defaultValue) && (defaultValue.contains("|" + value) || defaultValue.contains(value + "|") || defaultValue.equals(value))){%>
-				                	  <%=name%><br>
-				                  <%}
-				                }
-
-							}
-						}
-					%> 
+								}
+							}%> 
+						<%}%> 
+					
+					
+					
 						
-						<% }else if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || 
-				 											 field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
-				 											 field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
-												{ %>
+						
+					 	<%--   Date/DateTime/Time --%>
+						<% if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.TIME.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){ %>
 							<!-- DISPLAY DATE-->
 							<%  java.util.Date startDate = new Date();
 								
@@ -363,20 +373,14 @@ dojo.ready(function(){
 								<%} else if (field.getFieldType().equals(Field.FieldType.TIME.toString()) ) {%>
 									<%=UtilMethods.dateToHTMLTime(startDate) %>
 							<%} %>				
-			                
-
-
-
-
-
-
-
-
-
-
-
-
-						<% }else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())){ %>
+						<%}%>
+						
+						
+						
+							
+						
+						<%--   BINARY FILE --%>
+						<% if (field.getFieldType().equals(Field.FieldType.BINARY.toString())){ %>
 							
 							<%
 							String x ="";
@@ -384,143 +388,111 @@ dojo.ready(function(){
 								x = String.valueOf(content.get(field.getVelocityVarName())) ;
 								if(x.indexOf(java.io.File.separator) > -1){
 									x=x.substring(x.lastIndexOf(java.io.File.separator)+1, x.length());	%>
-									
-										<%if(UtilMethods.isImage(x)){%>
-											<%=x %>
-											<br/>
-											<a target="_blank" href="/contentAsset/raw-data/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/?byInode=true">
-												<img src="/contentAsset/image/<%=content.getInode() %>/<%=field.getVelocityVarName() %>?byInode=1&filter=Thumbnail&thumbnail_w=150&thumbnail_h=150&" style="border:2px dotted silver"/>
-											</a>
-										<%}else{ %>
-									
-									
-									
-											<a target="_blank" href="/contentAsset/raw-data/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/?byInode=true"><%=x %></a>
-										<%} %>
-									<%}%>
-								
+									<%if(UtilMethods.isImage(x)){%>
+										<%=x %>
+										<br/>
+										<a target="_blank" href="/contentAsset/raw-data/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/?byInode=true">
+											<img src="/contentAsset/image/<%=content.getInode() %>/<%=field.getVelocityVarName() %>?byInode=1&filter=Thumbnail&thumbnail_w=150&thumbnail_h=150&" style="border:2px dotted silver"/>
+										</a>
+									<%}else{ %>
+										<a target="_blank" href="/contentAsset/raw-data/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/?byInode=true"><%=x %></a>
+									<%} %>
+								<%}%>
 							<%}%>
+						<%} %>
 							
-						
 
 
 
 
 
+	
 
-
-
-						<% }else if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())){ %>
+						<%--   Associated IMAGE --%>
+						<% if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())){ %>
 							<!-- display -->
-							
-							<%
-								String inode = String.valueOf(capi.getFieldValue(content, field));
-								if(InodeUtils.isSet(inode)){
-							%>
-							<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/thumbnail?id=<%=inode %>" width="100" height="100" border="1">
-							<%  }else{ %><%=LanguageUtil.get(pageContext, "No-Image-configured")  %><%} %>
-							
+							<% String inode = String.valueOf(capi.getFieldValue(content, field));
+							if(InodeUtils.isSet(inode)){%>
+								<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/thumbnail?id=<%=inode %>" width="100" height="100" border="1">
+							<% }else{ %>
+								<%=LanguageUtil.get(pageContext, "No-Image-configured")  %>
+							<%} %>
+						<%} %>
 						 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
+							 
 						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 
-						 <% } else if (field.getFieldType().equals(Field.FieldType.RADIO.toString()) ||
-								 field.getFieldType().equals(Field.FieldType.SELECT.toString())
-						 
-						 ) { 
-							%>
-						
-							<%					
-								Object originalValue = String.valueOf(capi.getFieldValue(content, field));
-								String defaultValue = field.getDefaultValue();
-								String radio = field.getFieldContentlet();
-								String values = field.getValues();
-								if (values != null)
-			                       values = values.trim();
-			                    else 
-			                       values = "";
-			                    String[] pairs = values.split("\r\n");      
-								for(int j = 0;j < pairs.length;j++){
-									String pair = pairs[j];
-									String[] tokens = pair.split("\\|");
-									if (0 < tokens.length) {
-										String name = tokens[0];
-										Object value = (tokens.length > 1 ? tokens[1] : name);
-										if(originalValue instanceof Boolean)
-											value = Parameter.getBooleanFromString((String) value);
-										else if (originalValue instanceof Long) 
-											value = Parameter.getLong((String) value);
-										else if (originalValue instanceof Double) 
-											value = Parameter.getDouble((String) value);
-										if ((UtilMethods.isSet(originalValue) && value.equals(originalValue)) ||
-																		(UtilMethods.isSet(defaultValue) && defaultValue.equals(value))){%>
-											<%=name%><br>
-										<%}%> 
+						 <%--   Radio / Select IMAGE --%>
+						 <% if (field.getFieldType().equals(Field.FieldType.RADIO.toString()) ||field.getFieldType().equals(Field.FieldType.SELECT.toString())) { 
+							Object originalValue = String.valueOf(capi.getFieldValue(content, field));
+							String defaultValue = field.getDefaultValue();
+							String radio = field.getFieldContentlet();
+							String values = field.getValues();
+							if (values != null)
+		                       values = values.trim();
+		                    else 
+		                       values = "";
+		                    String[] pairs = values.split("\r\n");      
+							for(int j = 0;j < pairs.length;j++){
+								String pair = pairs[j];
+								String[] tokens = pair.split("\\|");
+								if (0 < tokens.length) {
+									String name = tokens[0];
+									Object value = (tokens.length > 1 ? tokens[1] : name);
+									if(originalValue instanceof Boolean)
+										value = Parameter.getBooleanFromString((String) value);
+									else if (originalValue instanceof Long) 
+										value = Parameter.getLong((String) value);
+									else if (originalValue instanceof Double) 
+										value = Parameter.getDouble((String) value);
+									if ((UtilMethods.isSet(originalValue) && value.equals(originalValue)) || (UtilMethods.isSet(defaultValue) && defaultValue.equals(value))){%>
+										<%=name%><br>
 									<%}%> 
 								<%}%> 
-																							
-						
-	
-							
-							
-							
-							
-							
-							
-							
-							
-							
-							
-			         
-			         
-			              <% } else if (field.getFieldType().equals(Field.FieldType.TAG.toString())){ %>
-
-									<%=(UtilMethods.isSet(capi.getFieldValue(content, field))?String.valueOf(capi.getFieldValue(content, field)):"")%>
-								
-						
-						
-						
-						
-								
-
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			         
-			              <% } else if (field.getFieldType().equals(Field.FieldType.TAG.toString())){ %>
-
-									<%=(UtilMethods.isSet(capi.getFieldValue(content, field))?String.valueOf(capi.getFieldValue(content, field)):"")%>
-								
-						
-						
-						
-						
-						
-						<%}else if (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){ 
-						
-						  java.util.Map<String, Object> keyValueMap =  content.getKeyValueProperty(field.getVelocityVarName());
+							<%}%> 
+						<%}%>																
+					
 		
+								
+								
+								
+								
+								
+								
+							
+							
+							
+							
+			         
+			         	<%--   TAGS  --%>
+			            <% if (field.getFieldType().equals(Field.FieldType.TAG.toString())){ %>
+							<%=(UtilMethods.isSet(capi.getFieldValue(content, field))?String.valueOf(capi.getFieldValue(content, field)):"")%>
+						<%} %>		
+
+
+
+
+
+
 						
+						<%--   KEY / VALUE / METADATA  --%>
+						<% if (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){ 
+							java.util.Map<String, Object> keyValueMap =  content.getKeyValueProperty(field.getVelocityVarName());
 							if(keyValueMap!=null && keyValueMap.size() > 0){ %>
 								<div class="textAreaDiv">
 									<table class="listingTable">
@@ -533,21 +505,22 @@ dojo.ready(function(){
 												<td><%=x %></td>
 												<td><%=("content".equals(x)) 
 													? "<em>" + LanguageUtil.get(pageContext, "indexed-content")  + "</em>"
-													: keyValueMap.get(x)
-													
-													
-													%></td>
+													: keyValueMap.get(x) %></td>
 											</tr>
-										
 										<%} %>
 									</table>
 								</div>
-						
+							<%} %>
 						<%} %>
 						
+					
+					
+					
+					
 						
 						
-						<%}else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())){ %>
+						<%--   CATEGORIES  --%>
+						<%if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())){ %>
 					       	<%
 					       	CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 					        Set<com.dotmarketing.portlets.categories.model.Category> selectedCats = (Set<com.dotmarketing.portlets.categories.model.Category>) capi.getFieldValue(content, field) ;
@@ -560,33 +533,40 @@ dojo.ready(function(){
 									<%} %>
 								<%} %>
 							<%} %>
-	               		<% }else if(field.getFieldType().equals(Field.FieldType.FILE.toString())){%>
-	               		    <!-- display -->
+						<%} %>	
 							
-							<%
-								String inode = String.valueOf(content.get(field.getVelocityVarName())) ;
-								if(InodeUtils.isSet(inode)){
-								    IFileAsset file=null;
-								    Identifier identifier=APILocator.getIdentifierAPI().find(inode);
-								    if(identifier.getAssetType().equals("file_asset"))
-								        file = APILocator.getFileAPI().getWorkingFileById(inode,APILocator.getUserAPI().getSystemUser(), false);
-								    else {
-								        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(
-								                inode, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), 
-								                APILocator.getUserAPI().getSystemUser(), false);
-								        file = APILocator.getFileAssetAPI().fromContentlet(cont);
-								    }
-									if(file!=null){							
-							%>
-							<a target="_blank" href="<%=file.getURI()%>"><%=file.getFileName() %></a>
-							<%  }
-							     }%>
-	               		
-	               		<%} %>
-	                </td>
-               </tr>
-	        <%} %>
+						
+						
+						
+							
+							
+							
+						<%--   ASSOCIATED FILES  --%>	
+	               		<% if(field.getFieldType().equals(Field.FieldType.FILE.toString())){
+	               		    String inode = String.valueOf(content.get(field.getVelocityVarName())) ;
+							if(InodeUtils.isSet(inode)){
+							    IFileAsset file=null;
+							    Identifier identifier=APILocator.getIdentifierAPI().find(inode);
+							    if(identifier.getAssetType().equals("file_asset"))
+							        file = APILocator.getFileAPI().getWorkingFileById(inode,APILocator.getUserAPI().getSystemUser(), false);
+							    else {
+							        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier( inode, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+							        file = APILocator.getFileAssetAPI().fromContentlet(cont);
+							    }
+								if(file!=null){	%>
+									<a target="_blank" href="<%=file.getURI()%>"><%=file.getFileName() %></a>
+								<%}%>
+				  			<%}%>
+						<%} %>
+						
+						
+						
+						
+						
+						
+               		</td>
+            	</tr>
+        	<%} %>
 		</table>
 	</div>
-
 </div>
