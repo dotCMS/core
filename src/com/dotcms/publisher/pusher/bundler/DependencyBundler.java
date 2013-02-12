@@ -56,15 +56,13 @@ public class DependencyBundler implements IBundler {
 			throws DotBundleException {
 		if(LicenseUtil.getLevel()<400)
 	        throw new RuntimeException("need an enterprise prime license to run this bundler");
+	
+		try {
+			DependencyManager dp = new DependencyManager(systemUser);
+			dp.setDependencies(config);
 
-		if(config.getOperation().equals(Operation.PUBLISH)) {
-    		try {
-    			DependencyManager dp = new DependencyManager(systemUser);
-    			dp.setDependencies(config);
-    
-    		} catch (Exception e) {
-    			e.printStackTrace();
-    		}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
