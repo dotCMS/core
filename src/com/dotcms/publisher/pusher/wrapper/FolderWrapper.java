@@ -9,6 +9,8 @@ public class FolderWrapper {
 	private Identifier folderId;
 	private Host host;
 	private Identifier hostId;
+	
+	public FolderWrapper() {}
 
 	public FolderWrapper(Folder folder, Identifier folderId, Host host, Identifier hostId) {
 		this.folder = folder;
