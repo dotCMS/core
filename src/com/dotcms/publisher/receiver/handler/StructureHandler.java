@@ -5,9 +5,11 @@ import java.io.FileInputStream;
 import java.util.Collection;
 import java.util.List;
 
+import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publisher.pusher.bundler.StructureBundler;
 import com.dotcms.publisher.pusher.wrapper.StructureWrapper;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
@@ -45,32 +47,33 @@ public class StructureHandler implements IHandler {
 	        	
 	        	Structure structure = structureWrapper.getStructure();
 	        	
-	        	if(StructureCache.getStructureByInode(structure.getInode()) == null ||
-	        			!UtilMethods.isSet(StructureCache.getStructureByInode(structure.getInode()).getInode())) 
-	        	{
-	        		StructureFactory.saveStructure(structure, structure.getInode());
+	        	Structure localSt=StructureCache.getStructureByInode(structure.getInode());
+	        	boolean localExists = localSt!=null && UtilMethods.isSet(localSt.getInode());
+	        	
+	        	if(structureWrapper.getOperation().equals(Operation.UNPUBLISH)) {
+	        	    // delete operation
+	        	    if(localExists)
+	        	        APILocator.getStructureAPI().delete(localSt, APILocator.getUserAPI().getSystemUser());
 	        	}
-	        	
-	        	List<Field> fields = structureWrapper.getFields();
-	        	
-	        	for (Field field : fields) {
-//	        		if(FieldFactory.getFieldByInode(field.getInode()) == null || 
-//	        				!UtilMethods.isSet(FieldFactory.getFieldByInode(field.getInode()).getInode())) 
-//	        		{
-	        			Field localField = structure.getFieldVar(field.getVelocityVarName());
-	        			if(localField == null || !UtilMethods.isSet(localField.getInode()))
-	        				FieldFactory.saveField(field, field.getInode());
-	        			else {
-	        				FieldFactory.deleteField(localField);
-	        				FieldFactory.saveField(field, field.getInode());
-	        			}
-	        				
-//	        		}
-				}
-	        	FieldsCache.removeFields(structure);
-
-	        	//StructureFactory.saveStructure(structure);
-	        	
+	        	else {
+	        		// create/update the structure
+	        	    
+	        	    if(!localExists)
+	        	        StructureFactory.saveStructure(structure, structure.getInode());
+	        	    
+	        	    List<Field> fields = structureWrapper.getFields();
+	                
+	                for (Field field : fields) {
+	                        Field localField = FieldsCache.getField(field.getInode());
+	                        if(localField == null || !UtilMethods.isSet(localField.getInode()))
+	                            FieldFactory.saveField(field, field.getInode());
+	                        else {
+	                            FieldFactory.deleteField(localField);
+	                            FieldFactory.saveField(field, field.getInode());
+	                        }
+	                }
+	                FieldsCache.removeFields(structure);
+	        	}	        	
 	        }
         	
     	}
