@@ -159,7 +159,7 @@ function togglePublish(){
 			<input type="checkbox" dojoType="dijit.form.CheckBox" name="showDeletedCB" id="showDeletedCB"  onClick="submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true">
 			<label for="showDeletedCB" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
 		
-			<button dojoType="dijit.form.Button"  onClick="javascript:addAsset()" iconClass="plusIcon">
+			<button dojoType="dijit.form.Button"  type="button" onClick="javascript:addAsset()" iconClass="plusIcon">
 	  		 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-link")) %>
 	</button>
 		</div>
