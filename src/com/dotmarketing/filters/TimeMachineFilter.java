@@ -63,10 +63,13 @@ public class TimeMachineFilter implements Filter {
 
 		    if(uri.equals("/"))
 		        uri="/home/index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+		    
+		    
+		    
 		    if(uri.endsWith("/"))
 		        uri+="index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 
-		    java.io.File file=new java.io.File(ConfigUtils.getBundlePath()+java.io.File.separator+
+		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
 		            "live"+java.io.File.separator+
 		            host.getHostname()+java.io.File.separator+langid+
