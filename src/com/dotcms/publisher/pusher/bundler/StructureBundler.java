@@ -11,6 +11,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publisher.pusher.wrapper.StructureWrapper;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
@@ -26,7 +27,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -62,8 +62,7 @@ public class StructureBundler implements IBundler {
 	}
 
 	@Override
-	public void generate(File bundleRoot, BundlerStatus status)
-			throws DotBundleException {
+	public void generate(File bundleRoot, BundlerStatus status) throws DotBundleException {
 		if(LicenseUtil.getLevel()<400)
 	        throw new RuntimeException("need an enterprise prime license to run this bundler");
 
@@ -73,10 +72,7 @@ public class StructureBundler implements IBundler {
 			for (String str : structures) {
 				Structure s = StructureCache.getStructureByInode(str);
 				
-				
-				
-				
-				writeStructure(bundleRoot, s);
+				writeStructure(bundleRoot, s, config.getOperation());
 			}
 		} catch (Exception e) {
 			status.addFailure();
@@ -89,14 +85,14 @@ public class StructureBundler implements IBundler {
 
 	
 	
-	private void writeStructure(File bundleRoot, Structure structure)
+	private void writeStructure(File bundleRoot, Structure structure, Operation op)
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
 		StructureWrapper wrapper = 
 				new StructureWrapper(structure, 
 						FieldsCache.getFieldsByStructureInode(structure.getInode()));
-		
+		wrapper.setOperation(op);
 		
 		String liveworking = structure.isLive() ? "live" :  "working";
 
