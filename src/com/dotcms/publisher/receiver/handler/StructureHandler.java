@@ -48,11 +48,13 @@ public class StructureHandler implements IHandler {
 	        	Structure structure = structureWrapper.getStructure();
 	        	
 	        	Structure localSt=StructureCache.getStructureByInode(structure.getInode());
-	        	boolean localExists = localSt==null || !UtilMethods.isSet(localSt.getInode());
+	        	boolean localExists = localSt!=null && UtilMethods.isSet(localSt.getInode());
 	        	
-	        	if(structureWrapper.getOperation().equals(Operation.UNPUBLISH) && localExists)
+	        	if(structureWrapper.getOperation().equals(Operation.UNPUBLISH)) {
 	        	    // delete operation
-	        	    APILocator.getStructureAPI().delete(localSt, APILocator.getUserAPI().getSystemUser());
+	        	    if(localExists)
+	        	        APILocator.getStructureAPI().delete(localSt, APILocator.getUserAPI().getSystemUser());
+	        	}
 	        	else {
 	        		// create/update the structure
 	        	    
