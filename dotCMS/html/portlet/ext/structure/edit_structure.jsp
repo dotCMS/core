@@ -470,6 +470,9 @@ function remotePublishStructure () {
 	pushHandler.showDialog(structureInode);
 }
 
+function remoteUnPublishStructure () {
+	remoteUnPublish(structureInode);
+}
 
 </script>
 
@@ -848,6 +851,10 @@ function remotePublishStructure () {
 				<button dojoType="dijit.form.Button" id="remotePublishButton" onClick="remotePublishStructure();" iconClass="pushIcon" type="button">
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
 				</button>
+				
+				<button dojoType="dijit.form.Button" id="remoteUnPublishButton" onClick="remoteUnPublishStructure();" iconClass="pushIcon" type="button">
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-UnPublish")) %>
+                </button>
 		<% } %>
 		<button dojoType="dijit.form.Button" id="saveButton" onClick="addNewStructure();" iconClass="saveIcon" type="button">
 	
