@@ -471,7 +471,8 @@ function remotePublishStructure () {
 }
 
 function remoteUnPublishStructure () {
-	remoteUnPublish(structureInode);
+	pushHandler.remoteUnPublish(structureInode);
+	showDotCMSSystemMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish-in-progress")) %>");
 }
 
 </script>

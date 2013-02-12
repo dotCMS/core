@@ -25,7 +25,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 	remoteUnPublish : function(assetId) {
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/unPublish",
-			contents: {
+			content: {
 				'assetIdentifier' : assetId
 			},
 			handleAs: "text",
@@ -34,11 +34,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 					
 					alert(data);
 				}
-				dialog.hide();
 			},
 			error: function(error){
 				alert(error);
-				dialog.hide();
+				
 			}
 		}
 
