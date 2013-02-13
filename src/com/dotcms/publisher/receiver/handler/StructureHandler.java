@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.beanutils.BeanUtils;
+
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publisher.pusher.bundler.StructureBundler;
 import com.dotcms.publisher.pusher.wrapper.StructureWrapper;
@@ -12,6 +14,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -62,16 +65,28 @@ public class StructureHandler implements IHandler {
 	        	        StructureFactory.saveStructure(structure, structure.getInode());
 	        	    
 	        	    List<Field> fields = structureWrapper.getFields();
-	                
+	                List<Field> localFields = FieldsCache.getFieldsByStructureInode(localSt.getInode());
+	        	    
+	                // for each field in the pushed structure lets create it if doesn't exists
+	                // and update its properties if it do
 	                for (Field field : fields) {
-	                        Field localField = FieldsCache.getField(field.getInode());
-	                        if(localField == null || !UtilMethods.isSet(localField.getInode()))
-	                            FieldFactory.saveField(field, field.getInode());
-	                        else {
-	                            FieldFactory.deleteField(localField);
-	                            FieldFactory.saveField(field, field.getInode());
-	                        }
+	                    Field localField = FieldsCache.getField(field.getInode());
+	                    if(localField == null || !UtilMethods.isSet(localField.getInode()))
+	                        FieldFactory.saveField(field, field.getInode());
+	                    else {
+	                        BeanUtils.copyProperties(localField, field);
+	                        HibernateUtil.saveOrUpdate(localField);
+	                    }
+	                    localFields.remove(localField);
 	                }
+	                
+	                if(localFields.size()>0) {
+	                    // we have local fields that didn't came 
+	                    // in the pushed structure. lets remove them
+	                    for(Field ff : localFields) 
+	                        FieldFactory.deleteField(ff);
+	                }
+	                
 	                FieldsCache.removeFields(structure);
 	        	}	        	
 	        }
