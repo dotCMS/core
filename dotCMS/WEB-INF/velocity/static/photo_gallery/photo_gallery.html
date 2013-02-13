@@ -39,15 +39,24 @@
 		#if($folderImages.size() > 0)
 		<div class="photoGallery">
 			#foreach ($img in $folderImages)
-				#set($cssClass = "photoGalleryImage")
-				#if($velocityCount == $images.size())
-					#set($cssClass = "photoGalleryImage last")
+				
+				#if($showPhotoGalleryCSS)
+					#set($cssClass = "photoGalleryGridView")
+						#if($velocityCount == $images.size())
+							#set($cssClass = "photoGalleryGridView last")
+						#end
+				#else
+						#set($cssClass = "photoList")
+						#if($velocityCount == $images.size())
+							#set($cssClass = "photoList last")
+						#end
+				 
 				#end
 				<div class="${cssClass}">
 					<a href="/thumbnail?id=${img.identifier}&amp;w=${photoWidth}&amp;h=${photoHeight}&amp;r=246&amp;g=243&amp;b=238" rel="lightbox[gallery]" title="${img.friendlyName}">
 					<img src="/thumbnail?id=${img.identifier}&amp;w=${thumbnailWidth}&amp;h=${thumbnailHeight}&amp;r=246&amp;g=243&amp;b=238" alt="${img.title}" border="0" style="border: solid 1px #D7CCB3;"/></a>
-					 #if($showPhotoTitle)<h2>${img.friendlyName}</h2>#end
-				</div>
+					 #if($showPhotoTitle)<h6>${img.friendlyName}</h6>#end
+					</div>
 			#end
 		</div>
 		#end
@@ -56,17 +65,25 @@
 	#if($images.size() > 0)
 	<div class="photoGalleriesIndex">
 		#foreach ($img in $images)
-			#set($cssClass = "photoGalleryIndex")
-			#if($velocityCount == $images.size())
-				#set($cssClass = "photoGalleryIndex last")
-			#end
-		<div class="${cssClass}">
-			<a href="?indexFolder=$img.get('galleryPath')&amp;crumbTitle=$img.get('galleryName')">
-				<img src="/thumbnail?inode=$img.get('indexImageInode')&amp;w=${thumbnailWidth}&amp;h=${thumbnailHeight}&amp;r=246&amp;g=243&amp;b=238" border="0" style="border: solid 1px #666666;"/>
+			#if($showPhotoGalleryCSS)
+					#set($cssClass = "photoGalleryGridIndex")
+						#if($velocityCount == $images.size())
+							#set($cssClass = "photoGalleryGridIndex last")
+						#end
+				#else
+						#set($cssClass = "photoList")
+						#if($velocityCount == $images.size())
+							#set($cssClass = "photoList last")
+						#end
+				 
+				#end
+				<div class="${cssClass}">
+					<a href="?indexFolder=$img.get('galleryPath')&amp;crumbTitle=$img.get('galleryName')">
+					<img src="/thumbnail?inode=$img.get('indexImageInode')&amp;w=${thumbnailWidth}&amp;h=${thumbnailHeight}&amp;r=246&amp;g=243&amp;b=238" border="0" style="border: solid 1px #666666;"/>
 			
-				#if($showSubgalleryTitle)<h2>$img.get('galleryName')($img.get('totalImages'))</h2>#end
-			</a>
-		</div>
+					#if($showSubgalleryTitle)<h6>$img.get('galleryName')($img.get('totalImages'))</h6>#end
+					</a>
+				</div>
 		#end
 	</div>
 	#end

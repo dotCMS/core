@@ -58,8 +58,8 @@ public class ImageResizeUtils {
 	 * 
 	 */
 	public static void generateThumbnail(String imagePath, String imageName, String fileExtension, String filePrefix, int width, int height, Color bgColor) throws FileNotFoundException, IOException, InterruptedException {
-		String fullImagePath = imagePath + imageName + "." + fileExtension;
-		String resultImagePath = imagePath +filePrefix +"-"+ imageName +  "." + fileExtension;
+		String fullImagePath = imagePath + imageName;// + "." + fileExtension;
+		String resultImagePath = imagePath +filePrefix +"-"+ imageName;// +  "." + fileExtension;
 
 		// delete the old thumbnail
 		new File(resultImagePath).delete();
