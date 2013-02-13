@@ -60,12 +60,13 @@ public class LinkCheckerAjaxAction extends AjaxAction {
         Map<String,String> pmap=getURIParams();
         int offset=Integer.parseInt(pmap.get("offset"));
         int pageSize=Integer.parseInt(pmap.get("pageSize"));
+        String structureInode = "2a3e91e4-fbbf-4876-8c5b-2233c1739b05";
         
         Map<String,Object> result=new HashMap<String,Object>();
         List<Map> list=new ArrayList<Map>();
         SimpleDateFormat df=new SimpleDateFormat("MM/dd/yyyy hh:mm a");
         try {
-            for(InvalidLink link : APILocator.getLinkCheckerAPI().findAll(offset, pageSize)) {
+            for(InvalidLink link : APILocator.getLinkCheckerAPI().findAllByStructure(structureInode, offset, pageSize)) {
                 Contentlet con = APILocator.getContentletAPI().find(link.getInode(), getUser(), false);
                 User modUser=APILocator.getUserAPI().loadUserById(con.getModUser());
                 Field field=FieldsCache.getField(link.getField()); 
@@ -97,7 +98,7 @@ public class LinkCheckerAjaxAction extends AjaxAction {
                 
             
             result.put("list", list);
-            result.put("total", APILocator.getLinkCheckerAPI().findAllCount());
+            result.put("total", APILocator.getLinkCheckerAPI().findAllByStructureCount(structureInode));
             
             response.setContentType("application/json");
             new ObjectMapper().writerWithDefaultPrettyPrinter()
