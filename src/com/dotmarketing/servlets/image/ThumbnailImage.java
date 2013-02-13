@@ -87,6 +87,9 @@ public class ThumbnailImage extends HttpServlet {
         } else if( InodeUtils.isSet(inode) ) {
         	try {
         		ident = APILocator.getIdentifierAPI().findFromInode(inode);
+        		identifier = ident.getId();
+                String path = ident.getPath();
+                inode = UtilMethods.getFileName(path);
         	}
         	catch(Exception ex) {
         		Logger.error(this, ex.getMessage() ,ex);
@@ -306,8 +309,8 @@ public class ThumbnailImage extends HttpServlet {
                 	}
                     java.io.File thumbFile = new java.io.File(thumbnailFilePath);
 
-                    if(!thumbFile.exists()) {
-                    	thumbnailFilePath = realPathAux + inode+ "." + suffix;
+                    if(thumbFile.exists()) {
+                    	thumbnailFilePath = realPathAux + generatedKey +"-"+ fileName;
                     	thumbFile = new java.io.File(thumbnailFilePath);
                     }
                     Color bgColor = new Color(rInt, gInt, bInt);
@@ -316,7 +319,7 @@ public class ThumbnailImage extends HttpServlet {
 
 	                    if (!thumbFile.exists() || (request.getParameter("nocache") != null)) {
 	                        com.dotmarketing.util.ImageResizeUtils.generateThumbnail(realPathAux, fileName, suffix, generatedKey, width, height, bgColor);
-	                        thumbFile = new java.io.File(thumbnailFilePath);
+	                        thumbFile = new java.io.File(realPathAux + generatedKey +"-"+ fileName);
 	                    }
 
                     }
