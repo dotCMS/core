@@ -350,16 +350,20 @@ if(request.getParameter("in_frame")!=null){
 					</script>
              	</button>
 			  <% } %>
-                <button dojoType="dijit.form.Button" iconClass="cancelIcon">
+                <button dojoType="dijit.form.Button" iconClass="cancelIcon" type="button">
                 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
                 	<script type="dojo/method" event="onClick" args="evt">						
-                		if(dijit.byId('addFileDialog')){
-                			dijit.byId('addFileDialog').hide();
-                		}else {
-        					if(parent.closeAddFileDialog) {
-            					parent.closeAddFileDialog();
-        					}
-                		}
+                        try{
+                            if(dijit.byId('addFileDialog')){
+                                dijit.byId('addFileDialog').hide();
+                            } else {
+                                if(parent.closeAddFileDialog) {
+                                    parent.closeAddFileDialog();
+                                }
+                            }
+                        }catch(e){
+                            console.error(e);
+                        }
                 	</script>
                 </button>
 			</div>
