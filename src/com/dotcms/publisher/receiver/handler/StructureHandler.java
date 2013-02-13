@@ -20,6 +20,8 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
@@ -61,14 +63,35 @@ public class StructureHandler implements IHandler {
 	        	else {
 	        		// create/update the structure
 	        	    
-	        	    if(!localExists)
+	        	    if(!localExists) {
 	        	        StructureFactory.saveStructure(structure, structure.getInode());
+	        	    }
+	        	    else {
+	        	        // lets update the attributes
+	        	        BeanUtils.copyProperties(localSt, structure);
+	        	        StructureFactory.saveStructure(localSt);
+	        	    }
+	        	    
+	        	    // set the workflow scheme
+	        	    try {
+	        	        WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(
+	                            structureWrapper.getWorkflowSchemaId());
+	        	        APILocator.getWorkflowAPI().saveSchemeForStruct(
+	        	                localExists ? localSt : structure, scheme);
+	        	    }
+	        	    catch(Exception ex) {
+	        	        // well we don't have that schema here. What a shame
+	        	        Logger.warn(StructureHandler.class, 
+	        	                "target schema id "+structureWrapper.getWorkflowSchemaId()+
+	        	                " for structure "+structure.getName()+" doesn't exists");
+	        	    }
 	        	    
 	        	    List<Field> fields = structureWrapper.getFields();
 	                List<Field> localFields = FieldsCache.getFieldsByStructureInode(localSt.getInode());
 	        	    
 	                // for each field in the pushed structure lets create it if doesn't exists
 	                // and update its properties if it do
+	                HibernateUtil.getSession().clear();
 	                for (Field field : fields) {
 	                    Field localField = FieldsCache.getField(field.getInode());
 	                    if(localField == null || !UtilMethods.isSet(localField.getInode()))
