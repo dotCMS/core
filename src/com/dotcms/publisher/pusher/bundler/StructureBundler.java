@@ -93,6 +93,7 @@ public class StructureBundler implements IBundler {
 				new StructureWrapper(structure, 
 						FieldsCache.getFieldsByStructureInode(structure.getInode()));
 		wrapper.setOperation(op);
+		wrapper.setWorkflowSchemaId(APILocator.getWorkflowAPI().findSchemeForStruct(structure).getId());
 		
 		String liveworking = structure.isLive() ? "live" :  "working";
 
