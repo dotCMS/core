@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 public class StructureWrapper {
 	private Structure structure;
 	private List<Field> fields;
+	private String workflowSchemaId;
 	private Operation operation;
 	
 	public StructureWrapper() {}
@@ -41,4 +42,13 @@ public class StructureWrapper {
     public void setOperation(Operation operation) {
         this.operation = operation;
     }
+
+    public String getWorkflowSchemaId() {
+        return workflowSchemaId;
+    }
+
+    public void setWorkflowSchemaId(String workflowSchemaId) {
+        this.workflowSchemaId = workflowSchemaId;
+    }
+    
 }
