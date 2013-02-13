@@ -1,5 +1,9 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory" %>
+<%@page import="com.dotmarketing.util.InodeUtils" %>
 <%@ include file="/html/common/init.jsp" %>
 
 <style type="text/css">
@@ -28,7 +32,45 @@ int pageNumber=1;
 if(request.getParameter("pageNumber")!=null) 
     pageNumber=Integer.parseInt(request.getParameter("pageNumber"));
 
+Structure structure = StructureFactory.getDefaultStructure();
+List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
+if(structures == null) {
+	structures = StructureFactory.getStructures("structuretype,upper(name)", -1);
+	request.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES, structures);	
+}
+
+String structureSelected = null;
+if(InodeUtils.isSet(request.getParameter("structInode"))){
+    structureSelected=request.getParameter("structInode");
+    structure = StructureCache.getStructureByInode(structureSelected);
+}
+
+if(!structures.contains(structure)){
+    structureSelected = null;
+}
+
+if(structureSelected == null){
+    structure = (Structure)StructureFactory.getDefaultStructure();
+    structureSelected = structure.getInode();
+}
+
+String structureInodesList="";
+String structureVelocityVarNames="";
+
+for (Structure st : structures) {
+        if(structureInodesList!=""){
+                structureInodesList+=";"+st.getInode();
+        }
+        else
+                structureInodesList+=st.getInode();
+        if(structureVelocityVarNames!=""){
+                structureVelocityVarNames+=";"+st.getVelocityVarName();
+        }
+        else
+                structureVelocityVarNames+=st.getVelocityVarName();
+}
 %>
+
 function movePage(x) {
     var cp=parseInt(dojo.byId('currentPage').textContent);
     var id = dojo.byId('currentPage');
@@ -96,7 +138,7 @@ function loadTable() {
             page=(parseInt(dojo.byId('currentPage').innerText)-1)*pageSize;
     }
 	dojo.xhr('GET',{
-		url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/getBrokenLinks/offset/'+page+'/pageSize/'+pageSize,
+		url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/getBrokenLinks/offset/'+page+'/pageSize/'+pageSize+'/structInode/'+'<%=structureSelected%>',
 		handleAs: 'json',
 		load: function(data) {
 			for(var i=0;i<data.list.length;i++) {
