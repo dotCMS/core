@@ -18,6 +18,7 @@ import com.dotcms.publishing.PublishStatus;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -124,6 +125,21 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
             return null;
         }
     }
+    
+    @Override
+    public void removeQuartzJob() throws DotRuntimeException {
+        try {
+            if(getQuartzJob()!=null) {
+                QuartzUtils.pauseJob("timemachine","timemachine");
+                QuartzUtils.removeTaskRuntimeValues("timemachine","timemachine");
+                QuartzUtils.removeJob("timemachine","timemachine");
+            }
+        }
+        catch(Exception ex) {
+            throw new DotRuntimeException(
+                    "error while removing timemachine quartz job",ex);
+        }
+    }
 
     @Override
     public void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs) {
@@ -136,13 +152,7 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
         ScheduledTask task=getQuartzJob();
         if(task!=null) {
             // delete the old one
-            try {
-                QuartzUtils.pauseJob("timemachine","timemachine");
-                QuartzUtils.removeTaskRuntimeValues("timemachine","timemachine");
-                QuartzUtils.removeJob("timemachine","timemachine");
-            } catch (SchedulerException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
+            removeQuartzJob();
         }
         // create it
         task = new CronScheduledTask("timemachine", "timemachine", "Time Machine", 
