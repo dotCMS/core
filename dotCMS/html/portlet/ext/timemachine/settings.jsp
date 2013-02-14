@@ -173,6 +173,26 @@ function runNow() {
 	saveAndRun(true);
 }
 
+function disableJob() {
+	dojo.xhrGet({
+        url: "/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/disableJob",
+        preventCache:true,
+        timeout : 30000,
+        error: function(data) {
+            showDotCMSSystemMessage(data, true);
+            dijit.byId('settingsDialog').hide();
+        },
+        load : function(dataOrError, ioArgs) {
+            if(dataOrError.indexOf("FAILURE") == 0)
+                showDotCMSSystemMessage(dataOrError, true);
+            else {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLED")%>", false);
+                dijit.byId('settingsDialog').hide();
+            }
+        }
+    });
+}
+
 dojo.ready(function() {
 	<% if(!allhosts && hosts!=null) { %>
 	     <% for(Host hh : hosts) { %>
@@ -262,6 +282,13 @@ dojo.ready(function() {
                  <button dojoType="dijit.form.Button"
                      id="runButton" onClick="runNow();"
                      iconClass="republishIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-RUN")) %>
+                 </button>
+             </span>
+             
+             <span class="showScheduler">
+                 <button dojoType="dijit.form.Button"
+                     id="disableButton" onClick="disableJob();"
+                     iconClass="deleteIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
                  </button>
              </span>
 
