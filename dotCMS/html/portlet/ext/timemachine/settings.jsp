@@ -288,7 +288,7 @@ dojo.ready(function() {
              <span class="showScheduler">
                  <button dojoType="dijit.form.Button"
                      id="disableButton" onClick="disableJob();"
-                     iconClass="republishIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
+                     iconClass="deleteIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
                  </button>
              </span>
 
