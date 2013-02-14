@@ -76,6 +76,7 @@ var userId = '<%= user.getUserId() %>';
 
 <script>
 	//Layout Initialization
+	dojo.require("dijit.dijit");
 	function  resizeRoleBrowser(){
 		var viewport = dijit.getViewport();
 		var viewport_height = viewport.h;
