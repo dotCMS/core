@@ -218,7 +218,7 @@ dojo.ready(function(){
     <div id="brokenLinkMain">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;">
             <div dojoType="dijit.layout.ContentPane" region="top">
-					<b><%=LanguageUtil.get(pageContext, "Structures")%></b> 
+					<b><%=LanguageUtil.get(pageContext, "Structures")%>:</b> 
             		<select id="structuresList" name="structuresList" dojoType="dijit.form.FilteringSelect"
             			invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
 <%
