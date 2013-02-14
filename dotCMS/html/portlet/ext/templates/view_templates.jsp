@@ -181,7 +181,7 @@ function processDelete(inode, referer) {
 		<label for="showDeleted" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
 
 		<% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_ADD)) { %>
-		<button dojoType="dijit.form.Button" onClick="addAsset" iconClass="plusIcon">
+		<button dojoType="dijit.form.Button" onClick="addAsset" iconClass="plusIcon" type="button">
 	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-template")) %>
 	    </button>
 		<% } %>
