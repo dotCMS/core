@@ -3,7 +3,9 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.cache.StructureCache"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory" %>
+<%@page import="com.dotmarketing.portlets.structure.model.Field" %>
 <%@page import="com.dotmarketing.util.InodeUtils" %>
+<%@page import="com.dotmarketing.cache.FieldsCache" %>
 <%@ include file="/html/common/init.jsp" %>
 
 <style type="text/css">
@@ -35,7 +37,18 @@ if(request.getParameter("pageNumber")!=null)
 Structure structure = StructureFactory.getDefaultStructure();
 List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
 if(structures == null) {
-	structures = StructureFactory.getStructures("structuretype,upper(name)", -1);
+    structures=new ArrayList<Structure>();
+	List<Structure> allStructures = StructureFactory.getStructures("structuretype,upper(name)", -1);
+	for(Structure st : allStructures) {
+		if(st.isArchived() == false) {
+			for(Field field : FieldsCache.getFieldsByStructureInode(st.getInode())) {
+				if(field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
+					structures.add(st);
+					break;
+				}
+			}
+		}
+	}
 	request.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES, structures);	
 }
 
@@ -54,21 +67,6 @@ if(structureSelected == null){
     structureSelected = structure.getInode();
 }
 
-String structureInodesList="";
-String structureVelocityVarNames="";
-
-for (Structure st : structures) {
-        if(structureInodesList!=""){
-                structureInodesList+=";"+st.getInode();
-        }
-        else
-                structureInodesList+=st.getInode();
-        if(structureVelocityVarNames!=""){
-                structureVelocityVarNames+=";"+st.getVelocityVarName();
-        }
-        else
-                structureVelocityVarNames+=st.getVelocityVarName();
-}
 %>
 
 function movePage(x) {
@@ -223,9 +221,11 @@ dojo.ready(function(){
 					<b><%=LanguageUtil.get(pageContext, "Structures")%></b> 
             		<select id="structuresList" name="structuresList" dojoType="dijit.form.FilteringSelect"
             			invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
-              			<option value="1">Test1</option>
-              			<option value="2">Test2</option>
-              			<option value="3">Test3</option>
+<%
+						for (Structure st : structures) {
+			                out.println("<option value=\""+st.getInode()+"\">"+st.getName()+"</option>");
+						}
+%>
               		</select>
                 <button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
                    <span class="reindexIcon"></span>
