@@ -231,33 +231,28 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
 
     public void saveJobConfig(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         String cronExp=req.getParameter("cronExp");
-//        String[] hostids=req.getParameterValues("snaphost");
-//        boolean allhost=req.getParameter("allhosts")!=null;
+        String[] hostids=req.getParameterValues("snaphost");
+        boolean allhost=req.getParameter("allhosts")!=null;
         String[] langids=req.getParameterValues("lang");
         Map<String, String> map = getURIParams();
         boolean runnow=map.get("run")!=null;
-
-        String hostId= (String)req.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+        
         List<Host> hosts=new ArrayList<Host>();
-
-        if(UtilMethods.isSet(hostId)) {
-        	hosts.add(APILocator.getHostAPI().find(hostId, getUser(), false));
-        }
 
         List<Language> langs=new ArrayList<Language>(langids.length);
 
-//        if(allhost)
-//            hosts=APILocator.getHostAPI().findAll(getUser(), false);
-//        else
-//            for(String h : hostids)
-//                hosts.add(APILocator.getHostAPI().find(h, getUser(), false));
+        if(allhost)
+            hosts=APILocator.getHostAPI().findAll(getUser(), false);
+        else
+            for(String h : hostids)
+                hosts.add(APILocator.getHostAPI().find(h, getUser(), false));
 
         for(String id : langids)
             langs.add(APILocator.getLanguageAPI().getLanguage(id));
 
 
         try {        	
-               APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,false,langs);
+               APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,allhost,langs);
         	
         	}catch (Exception ex) {
                Logger.error(this, ex.getMessage(),ex);
