@@ -202,6 +202,7 @@ dojo.ready(function(){
     resized();
     loadTable();
 });
+
 </script>
 
 <div class="portlet-wrapper">
@@ -219,7 +220,13 @@ dojo.ready(function(){
     <div id="brokenLinkMain">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;">
             <div dojoType="dijit.layout.ContentPane" region="top">
-              <span id="tools">
+					<b><%=LanguageUtil.get(pageContext, "Structures")%></b> 
+            		<select id="structuresList" name="structuresList" dojoType="dijit.form.FilteringSelect"
+            			invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
+              			<option value="1">Test1</option>
+              			<option value="2">Test2</option>
+              			<option value="3">Test3</option>
+              		</select>
                 <button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
                    <span class="reindexIcon"></span>
                    <%=LanguageUtil.get(pageContext,"Refresh")%>
@@ -228,7 +235,6 @@ dojo.ready(function(){
                    <span class="linkCheckIcon"></span>
                    <%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNOW")%>
                 </button>
-              </span>
             </div>
             <div dojoType="dijit.layout.ContentPane" region="center">
                 <table id="links_table" class="listingTable" border=1>
