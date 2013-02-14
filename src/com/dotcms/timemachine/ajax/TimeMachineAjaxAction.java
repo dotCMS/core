@@ -229,6 +229,10 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         return true;
     }
 
+    public void disableJob(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        APILocator.getTimeMachineAPI().removeQuartzJob();
+    }
+    
     public void saveJobConfig(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         String cronExp=req.getParameter("cronExp");
         String[] hostids=req.getParameterValues("snaphost");
