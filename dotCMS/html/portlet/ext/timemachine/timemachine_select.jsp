@@ -155,7 +155,8 @@ function stopBrowing() {
 
             dijit.byId('timesel').required=false;
             dijit.byId('langsel').required=false;
-
+            dijit.byId('timesel').setValue("");
+            dijit.byId('langsel').setValue("");
             dojo.create("div", {
                 "innerHTML": '<div ><span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %>',
                 "style": "padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"

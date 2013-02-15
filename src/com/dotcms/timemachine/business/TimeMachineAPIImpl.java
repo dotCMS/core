@@ -1,6 +1,7 @@
 package com.dotcms.timemachine.business;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -9,8 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotcms.publishing.PublishStatus;
@@ -123,7 +122,7 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
                                  "tm_"+date.getTime()+File.separator+
                                  "live"+File.separator+host.getHostname());
         if(hostPath.exists()) {
-            return Arrays.asList(hostPath.list());
+            return Arrays.asList(hostPath.list(new TimeMachineFileNameFilter()));
         }
         else {
             return null;
@@ -168,4 +167,29 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
         }
     }
 
+    
+    
+    private class TimeMachineFileNameFilter implements FilenameFilter{
+    	
+    	
+    
+	
+		@Override
+		public boolean accept(File dir, String name) {
+			int lang = 0;
+			try{
+				lang = Integer.parseInt(name);
+				
+			}
+			catch(Exception e){
+				Logger.debug(this.getClass(), "not a language directory");
+			}
+
+			return lang > 0;
+		}
+    
+    }
+    
+    
+    
 }
