@@ -59,6 +59,8 @@ import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPIImpl;
+import com.dotmarketing.portlets.structure.business.StructureAPI;
+import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
 import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
@@ -282,6 +284,9 @@ public class APILocator extends Locator<APIIndex>{
 	public static PublishingEndPointAPI getPublisherEndPointAPI() {
 		return (PublishingEndPointAPI) getInstance(APIIndex.PUBLISHER_ENDPOINT_API);
 	}
+	public static StructureAPI getStructureAPI() {
+	    return (StructureAPI)getInstance(APIIndex.STRUCTURE_API);
+	}
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){
@@ -359,7 +364,8 @@ enum APIIndex
 	ES_INDEX_API,
 	LINKCHECKER_API,
 	TIME_MACHINE_API,
-	PUBLISHER_ENDPOINT_API;
+	PUBLISHER_ENDPOINT_API,
+	STRUCTURE_API;
 	
 	Object create() {
 		switch(this) {
@@ -406,6 +412,7 @@ enum APIIndex
 		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
 		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
 		case PUBLISHER_ENDPOINT_API: return new PublishingEndPointAPIImpl(FactoryLocator.getPublisherEndPointFactory());
+		case STRUCTURE_API: return new StructureAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

@@ -89,14 +89,19 @@ public class PublisherAPIImpl extends PublisherAPI{
 					String type = ""; 
 					
 					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
-						// check if it is a structure
-						Structure st = StructureCache.getStructureByInode(identifier);
-						if(UtilMethods.isSet(st)) 
-							type = "structure";
-						// check if it is a folder
-						else if(UtilMethods.isSet(APILocator.getFolderAPI().find(identifier, user, false))) {
-							type = "folder";
-						}
+					    try {
+    						// check if it is a structure
+    						Structure st = StructureCache.getStructureByInode(identifier);
+    						if(UtilMethods.isSet(st)) 
+    							type = "structure";
+    						// check if it is a folder
+    						else if(UtilMethods.isSet(APILocator.getFolderAPI().find(identifier, user, false))) {
+    							type = "folder";
+    						}
+					    }
+					    catch(Exception ex) {
+					        // well, none of those
+					    }
 						
 					} else {
 						type = UtilMethods.isSet(APILocator.getHostAPI().find(identifier, user, false))?"host":iden.getAssetType();

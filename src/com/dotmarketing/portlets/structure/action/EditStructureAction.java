@@ -27,12 +27,14 @@ import org.apache.struts.action.ActionMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -508,103 +510,30 @@ public class EditStructureAction extends DotPortletAction {
 	}
 
 	private void _deleteStructure(ActionForm form, ActionRequest req, ActionResponse res) throws Exception {
-
+	
+		Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
+		User user = _getUser(req);
+		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
+		
 		try {
-			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
-
-			User user = _getUser(req);
-			HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
-
-			// Checking permissions
-			_checkDeletePermissions(structure, user, httpReq);
-
-			// checking if there is containers using this structure
-			List<Container> containers = APILocator.getContainerAPI().findContainersForStructure(structure.getInode());
-			if (containers.size() > 0) {
-				StringBuilder names = new StringBuilder();
-				for (int i = 0; i < containers.size(); i++)
-					names.append(containers.get(i).getFriendlyName()).append(", ");
-				Logger.warn(EditStructureAction.class, "Structure " + structure.getName() + " can't be deleted because the following containers are using it: " + names);
-				SessionMessages.add(req, "message", "message.structure.notdeletestructure.container");
-				return;
-			}
-
-			if (!structure.isDefaultStructure()) {
-
-				@SuppressWarnings("rawtypes")
-				List fields = FieldFactory.getFieldsByStructure(structure.getInode());
-
-				@SuppressWarnings("rawtypes")
-				Iterator fieldsIter = fields.iterator();
-
-				while (fieldsIter.hasNext()) {
-					Field field = (Field) fieldsIter.next();
-					FieldFactory.deleteField(field);
-				}
-
-				int limit = 200;
-				int offset = 0;
-				List<Contentlet> contentlets = conAPI.findByStructure(structure, user, false, limit, offset);
-				int size = contentlets.size();
-				while (size > 0) {
-					conAPI.delete(contentlets, user, false);
-					contentlets = conAPI.findByStructure(structure, user, false, limit, offset);
-					size = contentlets.size();
-				}
-
-				if (structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
-
-					@SuppressWarnings({ "deprecation", "static-access" })
-					Structure st = StructureCache.getStructureByName(fAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME);
-
-					if (UtilMethods.isSet(st) && UtilMethods.isSet(st.getInode())) {
-
-						@SuppressWarnings({ "deprecation", "static-access" })
-						Field field = st.getField(fAPI.FORM_WIDGET_FORM_ID_FIELD_NAME);
-
-						List<Contentlet> widgetresults = conAPI.search("+structureInode:" + st.getInode() + " +" + field.getFieldContentlet() + ":" + structure.getInode(), 0, 0,
-								"", user, false);
-						if (widgetresults.size() > 0) {
-							conAPI.delete(widgetresults, user, false);
-						}
-					}
-				}
-
-				// http://jira.dotmarketing.net/browse/DOTCMS-6435
-				if (structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
-					StructureFactory.updateFolderFileAssetReferences(structure);
-				}
-
-				List<Relationship> relationships = RelationshipFactory.getRelationshipsByParent(structure);
-				for (Relationship rel : relationships) {
-					RelationshipFactory.deleteRelationship(rel);
-				}
-				relationships = RelationshipFactory.getRelationshipsByChild(structure);
-				for (Relationship rel : relationships) {
-					RelationshipFactory.deleteRelationship(rel);
-				}
-
-				PermissionAPI perAPI = APILocator.getPermissionAPI();
-				perAPI.removePermissions(structure);
-
-				StructureFactory.deleteStructure(structure);
-
-				ActivityLogger.logInfo(ActivityLogger.class, "Delete Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted structure "
-						+ structure.getName() + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
-
-				// Removing the structure from cache
-				FieldsCache.removeFields(structure);
-				StructureCache.removeStructure(structure);
-				StructureServices.removeStructureFile(structure);
-
-				SessionMessages.add(req, "message", "message.structure.deletestructure");
-			} else {
-				SessionMessages.add(req, "message", "message.structure.notdeletestructure");
-			}
-		} catch (Exception ex) {
-			Logger.debug(EditStructureAction.class, ex.toString());
-			throw ex;
+		    APILocator.getStructureAPI().delete(structure, user);
+		    
+		    ActivityLogger.logInfo(ActivityLogger.class, "Delete Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted structure "
+                    + structure.getName() + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+		    
+		    SessionMessages.add(req, "message", "message.structure.deletestructure");
 		}
+		catch(DotStateException ex) {
+		    if(ex.getMessage().contains("containers"))
+		        SessionMessages.add(req, "message", "message.structure.notdeletestructure.container");
+		    else if(ex.getMessage().contains("default"))
+		        SessionMessages.add(req, "message", "message.structure.notdeletestructure");
+		    
+		}
+		catch(DotSecurityException ex) {
+		    SessionMessages.add(httpReq, "message", "message.insufficient.permissions.to.delete");
+		}
+	
 	}
 
 	private void _defaultStructure(ActionForm form, ActionRequest req, ActionResponse res) {

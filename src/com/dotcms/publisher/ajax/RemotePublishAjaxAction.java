@@ -24,6 +24,7 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.hadoop.mapred.lib.Arrays;
 
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -47,6 +48,7 @@ import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -129,8 +131,19 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
 	}
 	
-	public void publish(HttpServletRequest request, HttpServletResponse response) 		
-		throws WorkflowActionFailureException {
+	public void unPublish(HttpServletRequest request, HttpServletResponse response) throws DotPublisherException {
+	    PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        String assetId = request.getParameter("assetIdentifier");
+        List<String> identifiers=new ArrayList<String>();
+        if(assetId.contains(","))
+            identifiers.addAll(Arrays.asList(assetId.split(",")));
+        else
+            identifiers.add(assetId);
+        
+        publisherAPI.addContentsToUnpublish(identifiers, UUIDGenerator.generateUuid(), new Date(), getUser());
+	}
+	
+	public void publish(HttpServletRequest request, HttpServletResponse response) throws WorkflowActionFailureException {
 			try {
 				PublisherAPI publisherAPI = PublisherAPI.getInstance();
 				String _assetId = request.getParameter("assetIdentifier");
@@ -154,7 +167,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 					} catch(DotDataException e) {
 					}
 					
-					if(UtilMethods.isSet(folder)) {
+					if(folder!=null && UtilMethods.isSet(folder.getInode())) {
 						ids.add(_assetId);
 					} else {
 						// if the asset is not a folder and has identifier, put it, if not, put the inode

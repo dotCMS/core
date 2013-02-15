@@ -294,8 +294,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
 
             if ( urlOsgiClassLoader == null ) {
+                //Getting the reference of a known class in order to get the base/main class loader
+                Class baseJobClass = getContextClassLoader().loadClass( "org.quartz.Job" );
                 //Creates our custom class loader in order to use it to inject the job code inside dotcms context
-                urlOsgiClassLoader = new UrlOsgiClassLoader( jobClassURL );
+                urlOsgiClassLoader = new UrlOsgiClassLoader( jobClassURL, baseJobClass.getClassLoader() );
             } else {
                 //The classloader and the job content in already in the system classloader, so we need to reload the jar contents
                 urlOsgiClassLoader.reload( jobClassURL );

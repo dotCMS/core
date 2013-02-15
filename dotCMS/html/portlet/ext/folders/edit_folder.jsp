@@ -49,6 +49,8 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 			return false;
 		}
 		if (document.getElementById("titleField")) {
+			var name = document.getElementById("titleField").value;
+			document.getElementById("titleField").value = name.trim();
 			if (document.getElementById("titleField").value == ""){
 				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
 				return false;
