@@ -8,6 +8,7 @@ import java.util.Set;
 
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publishing.DotBundleException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -81,13 +82,15 @@ public class DependencyManager {
 			}
 		}
 		
-		setHostDependencies();
-		setFolderDependencies();
-		setHTMLPagesDependencies();
-		setTemplateDependencies();
-		setContainerDependencies();
-		setStructureDependencies();
-		setContentDependencies(config.getLuceneQueries());
+		if(config.getOperation().equals(Operation.PUBLISH)) {
+    		setHostDependencies();
+    		setFolderDependencies();
+    		setHTMLPagesDependencies();
+    		setTemplateDependencies();
+    		setContainerDependencies();
+    		setStructureDependencies();
+    		setContentDependencies(config.getLuceneQueries());
+		}
 		
 		config.setHostSet(hosts);
 		config.setFolders(folders);
