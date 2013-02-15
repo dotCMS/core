@@ -32,7 +32,7 @@ public class LoginFactory {
 	public static String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 	
 	/*Custom Code*/
-	public static boolean useSalesForceLoginFilter = Config.getBooleanProperty("SALESFORCE_LOGIN_FILTER_ON",false);
+	public static boolean useSalesForceLoginFilter = new Boolean (Config.getBooleanProperty("SALESFORCE_LOGIN_FILTER_ON",false));
 	/*End of Custom Code*/
 	
     public static boolean doLogin(LoginForm form, HttpServletRequest request, HttpServletResponse response) throws NoSuchUserException {
@@ -181,16 +181,16 @@ public class LoginFactory {
 	            match = user.getPassword().equals(password) || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
 	            
 	            if (match) {
-	            	/*Custom Code */
-	            	user = SalesForceUtils.migrateUserFromSalesforce(userName, request,  response, false);
+	            	if(useSalesForceLoginFilter){/*Custom Code */
+	            		user = SalesForceUtils.migrateUserFromSalesforce(userName, request,  response, false);
 	            	
           	  		String instanceURL = request.getSession().getAttribute(SalesForceUtils.INSTANCE_URL).toString();
           	  		String accessToken = request.getSession().getAttribute(SalesForceUtils.ACCESS_TOKEN).toString();
           	  		
-              	  	if(UtilMethods.isSet(accessToken) && UtilMethods.isSet(instanceURL)){
-              	  		SalesForceUtils.syncRoles(user.getEmailAddress(), request, response, accessToken, instanceURL);
-              	  	}
-              	  	/*End of Custom Code*/
+              	  		if(UtilMethods.isSet(accessToken) && UtilMethods.isSet(instanceURL)){
+              	  			SalesForceUtils.syncRoles(user.getEmailAddress(), request, response, accessToken, instanceURL);
+              	  		}
+              		}/*End of Custom Code*/
 	            	user.setLastLoginDate(new java.util.Date());
 	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 	            	
