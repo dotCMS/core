@@ -230,21 +230,35 @@ public class DependencyManager {
 				HTMLPage livePage = APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false);
 				
 				// working template working page
-				Template workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(workingPage.getTemplateId(), user, false);
+				Template workingTemplateWP = null;
 				// live template working page
-				Template liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(workingPage.getTemplateId(), user, false);
-				// live template live page
-				Template liveTemplateLP = APILocator.getTemplateAPI().findLiveTemplate(livePage.getTemplateId(), user, false);
+				Template liveTemplateWP = null;
+
+				if(workingPage!=null) { 
+					workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(workingPage.getTemplateId(), user, false);
+					liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(workingPage.getTemplateId(), user, false);
+					// Templates dependencies
+					templates.add(workingPage.getTemplateId());
+				}
 				
-				// Templates dependencies
-				templates.add(workingPage.getTemplateId());
-				templates.add(livePage.getTemplateId());
+				Template liveTemplateLP = null;
+				
+				// live template live page
+				if(livePage!=null) {
+					liveTemplateLP = APILocator.getTemplateAPI().findLiveTemplate(livePage.getTemplateId(), user, false);
+					// Templates dependencies
+					templates.add(livePage.getTemplateId());
+				}
 
 				// Containers dependencies 
 				containerList.clear();
-				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
-				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
-				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateLP, user, false));
+				
+				if(workingTemplateWP!=null)
+					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
+				if(liveTemplateWP!=null)
+					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
+				if(liveTemplateLP!=null)
+					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateLP, user, false));
 				
 				for (Container container : containerList) {
 					containers.add(container.getIdentifier());
