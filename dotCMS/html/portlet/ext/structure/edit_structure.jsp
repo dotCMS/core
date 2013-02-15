@@ -86,6 +86,20 @@
 		form.setStructureType(structureType);
 	}
 	boolean canEditAsset = strPerAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
+
+
+
+    ArrayList<Field> dateFields=new ArrayList<Field>();
+    if(UtilMethods.isSet(structure.getInode())){
+      for(Field f : structure.getFields()){
+        if(f.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) && f.isIndexed()){
+            dateFields.add(f);
+        }
+      }
+    }
+
+
+
 %>
 
 
@@ -765,6 +779,9 @@ function remoteUnPublishStructure () {
 					        </select>
 						</dd>
 					</div>
+					
+					
+					
 					<div id="detailPageDiv" style="display:none">
 						<dt><%= LanguageUtil.get(pageContext, "Detail-Page") %>:</dt>
 						<dd>
@@ -783,41 +800,49 @@ function remoteUnPublishStructure () {
 					<dt>Date fields</dt>
 	                <dd><input type="checkbox" dojoType="dijit.form.CheckBox" name="publishDates" id="publishDates" value="true" <%//if(form.isReviewContent()){ %>checked="checked"<%//}%> onclick="publishDateChange(true);"/></dd>
 	                --%>
-	                <div id="datesFieldsDiv">
-	                    <dt><%= LanguageUtil.get(pageContext, "Publish-Date-Field") %>:</dt>
-	                    <% // building date fields
-	                    ArrayList<Field> dateFields=new ArrayList<Field>();
-	                    if(UtilMethods.isSet(structure.getInode()))
-	                      for(Field f : structure.getFields())
-	                        if(f.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) && f.isIndexed())
-	                            dateFields.add(f);
-	                    %>
-	                    <dd>
-	                       <select id="publishDateVar" name="publishDateVar" dojoType="dijit.form.FilteringSelect">
-	                         <option value=""></option>
-	                         <% String current=(UtilMethods.isSet(structure.getPublishDateVar())) ? structure.getPublishDateVar() : "--";
-	                            for(Field f : dateFields) {%>
-	                            <option value="<%= f.getVelocityVarName() %>" 
-	                                     <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
-	                              <%=f.getFieldName() %>
-	                            </option>
-	                         <% } %>
-	                       </select>
-	                    </dd>
-	                    <dt><%= LanguageUtil.get(pageContext, "Expire-Date-Field") %>:</dt>
-	                    <dd>
-	                       <select id="expireDateVar" name="expireDateVar" dojoType="dijit.form.FilteringSelect">
-	                         <option value=""></option>
-	                       <%  current=(UtilMethods.isSet(structure.getExpireDateVar())) ? structure.getExpireDateVar() : "--";
-	                           for(Field f : dateFields) {%>
-	                            <option value="<%= f.getVelocityVarName() %>"
-	                              <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
-	                              <%=f.getFieldName() %>
-	                            </option>
-	                         <% } %>
-	                       </select>
-	                    </dd>
-	                </div>
+	                <%if(UtilMethods.isSet(structure.getInode()) ){ %>
+		                <div id="datesFieldsDiv">
+		                    <dt><%= LanguageUtil.get(pageContext, "Publish-Date-Field") %>:</dt>
+	
+		                   
+			                    <dd>
+			                    <%if(dateFields.size() > 0){ %>
+				                       <select id="publishDateVar" name="publishDateVar" dojoType="dijit.form.FilteringSelect">
+				                         <option value=""></option>
+				                         <% String current=(UtilMethods.isSet(structure.getPublishDateVar())) ? structure.getPublishDateVar() : "--";
+				                            for(Field f : dateFields) {%>
+				                            <option value="<%= f.getVelocityVarName() %>" 
+				                                     <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
+				                              <%=f.getFieldName() %>
+				                            </option>
+				                         <% } %>
+				                       </select>
+			                       <%}else{ %>
+			                       		<i><%= LanguageUtil.get(pageContext, "No-Date-Fields-Defined") %></i>
+			                     <%} %>
+			                    </dd>
+		                    
+		                    
+		                    <dt><%= LanguageUtil.get(pageContext, "Expire-Date-Field") %>:</dt>
+		                    <dd>
+			                    <%if(dateFields.size() > 0){ %>
+			                       <select id="expireDateVar" name="expireDateVar" dojoType="dijit.form.FilteringSelect">
+			                         <option value=""></option>
+			                       <%  String  current=(UtilMethods.isSet(structure.getExpireDateVar())) ? structure.getExpireDateVar() : "--";
+			                           for(Field f : dateFields) {%>
+			                            <option value="<%= f.getVelocityVarName() %>"
+			                              <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
+			                              <%=f.getFieldName() %>
+			                            </option>
+			                         <% } %>
+			                       </select>
+			                       <%}else{ %>
+			                       		<i><%= LanguageUtil.get(pageContext, "No-Date-Fields-Defined") %></i>
+			                     <%} %>
+		                    </dd>
+		                     
+		                </div>
+	            	<%} %>
 				</dl>
 			</div>
 		<!-- END Second Column -->
