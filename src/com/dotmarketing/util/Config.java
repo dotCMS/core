@@ -192,4 +192,11 @@ public class Config {
 		return "";
 	}
 	
+	
+	public static void forceRefresh(){
+		lastRefreshTime = new Date(0);
+		
+	}
+	
+	
 }

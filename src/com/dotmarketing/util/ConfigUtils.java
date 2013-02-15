@@ -58,6 +58,24 @@ public class ConfigUtils {
 		return path;
 	}
 	
+	
+	public static String getTimeMachinePath(){
+		
+		String path = Config.getStringProperty("TIMEMACHINE_PATH", null);
+		
+		if(path ==null){
+			path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "timemachine";
+			File pathDir=new File(path);
+			if(!pathDir.exists())
+			    pathDir.mkdirs();
+		}
+		
+		return path;
+	}
+	
+	
+	
+	
 	public static String getServerId(){
 		String serverId;
 		if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID")==null || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
