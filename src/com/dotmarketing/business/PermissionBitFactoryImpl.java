@@ -3378,7 +3378,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		int offset=0;
 		List<Contentlet> contentlets;
 		do {
-			String query="structurename:"+structure.getName();
+			String query="structurename:"+structure.getVelocityVarName();
 			try {
 			    contentlets=contAPI.search(query, limit, offset, "identifier", APILocator.getUserAPI().getSystemUser(), false);
             } catch (DotSecurityException e) {
