@@ -25,9 +25,11 @@ public class UrlOsgiClassLoader extends URLClassLoader {
     Instrumentation instrumentation;
     OSGIClassTransformer transformer;
 
+    private ClassLoader mainClassLoader;
+
     private Collection<URL> urls;
 
-    public UrlOsgiClassLoader ( URL url ) throws Exception {
+    public UrlOsgiClassLoader ( URL url, ClassLoader mainClassLoader ) throws Exception {
 
         super( new URL[]{url}, null );
 
@@ -42,6 +44,9 @@ public class UrlOsgiClassLoader extends URLClassLoader {
         //Adding the transformer
         instrumentation.removeTransformer( transformer );//Just to be sure we don't have two instances of the same transformer
         instrumentation.addTransformer( transformer, true );
+
+        //Set our main class loader in order to use it in case we don't find a reference to a class we need to load
+        this.mainClassLoader = mainClassLoader;
     }
 
     @Override
@@ -49,7 +54,7 @@ public class UrlOsgiClassLoader extends URLClassLoader {
         try {
             return super.loadClass( name );
         } catch ( ClassNotFoundException e ) {
-            return ClassLoader.getSystemClassLoader().loadClass( name );
+            return mainClassLoader.loadClass( name );
         }
     }
 

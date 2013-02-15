@@ -147,7 +147,7 @@ if(errorMessage != null){
 
  -->
 
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+<script type="text/javascript" src="/html/js/chrome_frame/CFInstall.min.js"></script>
 
 <style>
 	body{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:bottom top;background-size:100% 100%;}
