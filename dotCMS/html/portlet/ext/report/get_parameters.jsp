@@ -129,7 +129,7 @@
 				%>
 					<td>
 						<input name="<%= par.getName() + "date" %>" id="<%= par.getName() + "date" %>" value="<%= date %>">
-						<img id="<portlet:namespace />calendar_input_<%= calIndex %>_button" name="<portlet:namespace />calendar_input_<%= calIndex %>_button" src="/html/skin/image/common/calendar/calendar.gif" onclick="<portlet:namespace />calendarOnClick_<%= String.valueOf(calIndex) %>()">  
+						<img id="<portlet:namespace />calendar_input_<%= calIndex %>_button" name="<portlet:namespace />calendar_input_<%= calIndex %>_button" src="/html/images/icons/calendar-select.png" onclick="<portlet:namespace />calendarOnClick_<%= String.valueOf(calIndex) %>()">  
 						<%= LanguageUtil.get(pageContext, "Hours") %>: <input size="2" name="<%= par.getName() + "hour" %>" id ="<%= par.getName() + "hour" %>" value="<%= hour %>"> 
 						<%= LanguageUtil.get(pageContext, "Mins") %>: <input size="2" name="<%= par.getName() + "min" %>" id="<%= par.getName() + "min" %>" value="<%= min %>" > 
 						<%= LanguageUtil.get(pageContext, "Sec") %>: <input size="2" name="<%= par.getName() + "sec" %>" id="<%= par.getName() + "sec" %>" value="<%= sec %>" > 
