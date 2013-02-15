@@ -171,6 +171,9 @@ function stopBrowing() {
             dijit.byId('fdate').setValue(null);
             dijit.byId('fdate').required=false;
             
+            dijit.byId('flang').setValue("");
+            dijit.byId('flang').required=false;
+            
             dojo.create("div", {
                 "innerHTML": '<div ><span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %>',
                 "style": "padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"
@@ -206,15 +209,14 @@ function showSettings() {
 }
 
 function toggleDatePick() {
+	stopBrowing();
 	if(dojo.byId("future").checked) {
 		dojo.style('pastPicker','display','none');
 	    dojo.style('futurePicker','display','');
-	    var time=dijit.byId('fdate').get('value');
-	    var langid=dijit.byId('flang').get('value');
-	    if(time != null && langid!=null){
+	    var fdate=dijit.byId('fdate').getValue();
+	    var flang=dijit.byId('flang').getValue();
+	    if(fdate != null && flang!=null && flang.length > 0){
 	    	futureChange();
-	    }else{
-	    	stopBrowing();
 	    }
 	}
 	else {
@@ -224,38 +226,39 @@ function toggleDatePick() {
 	    var langid=dijit.byId('langsel').get('value');
 	    if(time != null && langid!=null){
 	    	timeChange();
-	    }else{
-	    	stopBrowing();
 	    }
 	}
 
 }
 
 function futureChange() {
-	var fdate=dijit.byId('fdate').get('value');
+	var fdate=dijit.byId('fdate').getValue();
+	console.log("fdate:" + fdate);
 	if(fdate){
 		var day=fdate.getDate();
 		var month=fdate.getMonth()+1;
 		var year=fdate.getFullYear();
 		var formated=year+"-"+month+"-"+day;
 		
-		var flang=dijit.byId('flang').get('value');
+		var flang=dijit.byId('flang').getValue();
+		console.log("flang:" + flang);
+		if(flang && flang.length>0){
+			dojo.xhr('GET',{
+		        url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/startBrowsingFutureDate/date/'
+		               +formated+'/hostIdentifier/<%=hostIdentifier%>/langid/'+flang+'/rand/' + Math.random(),
+		        handle: function() {
+		            dojo.empty('iframeWrapper');
+		            dojo.create("iframe", {
+		                "src": '/',
+		                "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
+		            }, dojo.byId('iframeWrapper'));
+		            dijit.byId('closeBtn').setDisabled(false);
 		
-		dojo.xhr('GET',{
-	        url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/startBrowsingFutureDate/date/'
-	               +formated+'/hostIdentifier/<%=hostIdentifier%>/langid/'+flang+'/rand/' + Math.random(),
-	        handle: function() {
-	            dojo.empty('iframeWrapper');
-	            dojo.create("iframe", {
-	                "src": '/',
-	                "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
-	            }, dojo.byId('iframeWrapper'));
-	            dijit.byId('closeBtn').setDisabled(false);
-	
-	            showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
-	            browsingTimeMachine=true;
-	        }
-	    });
+		            showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>");
+		            browsingTimeMachine=true;
+		        }
+		    });
+		}
 	}
 	
 }
