@@ -218,15 +218,13 @@ dojo.ready(function(){
     <div id="brokenLinkMain">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;">
             <div dojoType="dijit.layout.ContentPane" region="top">
-					<b><%=LanguageUtil.get(pageContext, "Structures")%>:</b> 
-            		<select id="structuresList" name="structuresList" dojoType="dijit.form.FilteringSelect"
-            			invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
-<%
-						for (Structure st : structures) {
-			                out.println("<option value=\""+st.getInode()+"\">"+st.getName()+"</option>");
-						}
-%>
+					<b><%=LanguageUtil.get(pageContext, "Structures")%>:</b>
+					<div id="structureSelect"></div>
+					
+					<!-- 
+            		<select id="structuresList" name="structuresList" dojoType="dijit.form.FilteringSelect">
               		</select>
+              		-->
                 <button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
                    <span class="reindexIcon"></span>
                    <%=LanguageUtil.get(pageContext,"Refresh")%>
@@ -270,3 +268,25 @@ dojo.ready(function(){
         </div>
     </div>
 </div>
+
+   <script>
+   		require(["dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dojo/parser", "dojo/domReady!"],
+        function(FilteringSelect, ItemFileReadStore) {   
+            var structureStore = new ItemFileReadStore({
+                url: "/api/structure/a"
+            });
+             
+            // create FilteringSelect widget, populating its options from the store
+            var select = new FilteringSelect({
+                name: "structureSelect",
+                store: structureStore,
+                pageSize: 3,
+                onChange: function(val){
+                    document.getElementById("value").innerHTML = val;
+                    document.getElementById("displayedValue").innerHTML = this.get("displayedValue");
+                }
+            }, "structureSelect");
+            select.startup();             
+        });
+    </script>
+
