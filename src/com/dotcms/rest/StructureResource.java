@@ -7,6 +7,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
@@ -26,24 +28,46 @@ public class StructureResource extends WebResource {
 	@GET
 	@Path("/{path:.*}")
 	@Produces("application/json")
-	public String getStructuresWithWYSIWYGFields(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws DotStateException, DotDataException, DotSecurityException {
+	public String getStructuresWithWYSIWYGFields(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path, @QueryParam("name") String name) throws DotStateException, DotDataException, DotSecurityException {
 		List<Structure> structures=new ArrayList<Structure>();
-		List<Structure> allStructures = StructureFactory.getStructures("structuretype,upper(name)", -1);
-		for(Structure st : allStructures) {
-			if(st.isArchived() == false) {
-				for(Field field : FieldsCache.getFieldsByStructureInode(st.getInode())) {
-					if(field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
-						structures.add(st);
-						break;
+		
+		String inodeFilter = "";
+		if(path!= null && path.length() > 1) {
+			inodeFilter = path.substring(1);
+		}
+		
+		String nameFilter = "";
+		if(name != null && name.length() > 1) {
+			nameFilter = name.toLowerCase();
+			if(nameFilter.contains("*"))
+				nameFilter = nameFilter.substring(0, nameFilter.indexOf("*"));
+		}
+		if(inodeFilter.isEmpty()) {
+			List<Structure> allStructures = StructureFactory.getStructures("structuretype,upper(name)", -1);
+			for(Structure st : allStructures) {
+				if(st.isArchived() == false && (nameFilter.isEmpty() || (st.getName().toLowerCase().startsWith(nameFilter)))) {
+					for(Field field : FieldsCache.getFieldsByStructureInode(st.getInode())) {
+						if(field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
+							structures.add(st);
+							break;
+						}
 					}
 				}
 			}
 		}
+		else {
+			Structure specificStructure = StructureCache.getStructureByInode(inodeFilter);
+			if(specificStructure != null)
+				structures.add(specificStructure);
+		}
 
 		boolean bInitialStruct = true;
+		StringBuilder structureDataStore = new StringBuilder("");
 		String EOL = System.getProperty("line.separator");
-		StringBuilder structureDataStore = new StringBuilder("[");
-		structureDataStore.append(EOL);
+		if(inodeFilter.isEmpty()) {
+			structureDataStore.append("[");
+			structureDataStore.append(EOL);
+		}
 		int structCount = 0;
 		for(Structure st: structures)
 		{
@@ -54,16 +78,18 @@ public class StructureResource extends WebResource {
 				structureDataStore.append(",");
 				structureDataStore.append(EOL);
 			}
-			structureDataStore.append("{iNode: \"");
+			structureDataStore.append("{id: \"");
 			structureDataStore.append(st.getInode());
 			structureDataStore.append("\", name: \"");
 			structureDataStore.append(st.getName());
 			structureDataStore.append("\"}");
 			structCount++;
 		}
-		structureDataStore.append(EOL);
-		structureDataStore.append("]");
-		response.addHeader("Content-Range", "items 0-"+(structCount - 1) + "/" +structCount);
+		if(inodeFilter.isEmpty()) {
+			structureDataStore.append(EOL);
+			structureDataStore.append("]");
+			response.addHeader("Content-Range", "items 0-"+(structCount - 1) + "/" +structCount);
+		}
 
 		return structureDataStore.toString();
 	}
