@@ -1146,3 +1146,7 @@ function removeFile(fileInode){
 function clearFileField(fieldId) { 
 	document.getElementById(fieldId+'FieldInput').innerHTML = document.getElementById(fieldId+'FieldInput').innerHTML; 
 }
+
+function setFileNameFromPath(path,fieldId) {
+    document.getElementById(fieldId+'fileName').value = path.substr(path.lastIndexOf('\\') + 1); 
+}
