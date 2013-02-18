@@ -163,7 +163,7 @@
 	float:right;
 }
 
-button.removeFile {
+button.removeFile, button.browse {
 	padding: 6px !important;
 	width: 100px !important;
 	margin-left: 3px;	
@@ -192,6 +192,21 @@ button.removeFile {
 .dmundra .dijitInputField INPUT, .dmundra .dijitTextBox, .dmundra .dijitSpinner{
 	padding:0 0 3px;
 }
-input.fileField {
-	width:auto;
+input.imageField , input.fileField {
+       width: 300px;
+       position: relative;
+   	   text-align: right;
+       -moz-opacity:0 ;
+       filter:alpha(opacity: 0);
+       opacity: 0;
+       z-index: 2;
+}
+div.imageInputs , div.fileInputs {
+       position: relative;
+}
+div.browseFile { 
+       position: absolute; 
+       top: 0px; 
+       left:0px;
+       z-index: 1;
 }
