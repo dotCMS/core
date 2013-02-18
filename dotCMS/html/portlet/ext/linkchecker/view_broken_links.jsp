@@ -270,17 +270,16 @@ dojo.ready(function(){
 </div>
 
    <script>
-   		require(["dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dojo/parser", "dojo/domReady!"],
-        function(FilteringSelect, ItemFileReadStore) {   
-            var structureStore = new ItemFileReadStore({
-                url: "/api/structure/a"
+   		require(["dijit/form/FilteringSelect", "dojo/store/JsonRest", "dojo/data/ObjectStore", "dojo/domReady!"],
+        function(FilteringSelect, JsonRest, ObjectStore) {   
+            var jsonStore = new JsonRest({
+                target: "/api/structure/a"
             });
-             
+            var structureStore = new ObjectStore({objectStore: jsonStore}); 
             // create FilteringSelect widget, populating its options from the store
             var select = new FilteringSelect({
                 name: "structureSelect",
                 store: structureStore,
-                pageSize: 3,
                 onChange: function(val){
                     document.getElementById("value").innerHTML = val;
                     document.getElementById("displayedValue").innerHTML = this.get("displayedValue");

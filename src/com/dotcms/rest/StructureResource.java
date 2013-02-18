@@ -25,7 +25,7 @@ public class StructureResource extends WebResource {
 
 	@GET
 	@Path("/{path:.*}")
-	@Produces(MediaType.TEXT_PLAIN)
+	@Produces("application/json")
 	public String getStructuresWithWYSIWYGFields(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws DotStateException, DotDataException, DotSecurityException {
 		List<Structure> structures=new ArrayList<Structure>();
 		List<Structure> allStructures = StructureFactory.getStructures("structuretype,upper(name)", -1);
@@ -42,8 +42,9 @@ public class StructureResource extends WebResource {
 
 		boolean bInitialStruct = true;
 		String EOL = System.getProperty("line.separator");
-		StringBuilder structureDataStore = new StringBuilder("{ \"identifier\": \"iNode\", \"label\": \"name\", \"items\": [");
+		StringBuilder structureDataStore = new StringBuilder("[");
 		structureDataStore.append(EOL);
+		int structCount = 0;
 		for(Structure st: structures)
 		{
 			if(bInitialStruct)
@@ -53,19 +54,17 @@ public class StructureResource extends WebResource {
 				structureDataStore.append(",");
 				structureDataStore.append(EOL);
 			}
-			structureDataStore.append("{\"iNode\": \"");
+			structureDataStore.append("{iNode: \"");
 			structureDataStore.append(st.getInode());
-			structureDataStore.append("\", \"name\": \"");
+			structureDataStore.append("\", name: \"");
 			structureDataStore.append(st.getName());
 			structureDataStore.append("\"}");
+			structCount++;
 		}
-		structureDataStore.append("]}");
-		
-/*		
-		for(Structure st : structures) {
-			retValue+=st.getInode()+ "|" + st.getName() +"||";	
-		}
-*/
+		structureDataStore.append(EOL);
+		structureDataStore.append("]");
+		response.addHeader("Content-Range", "items 0-"+(structCount - 1) + "/" +structCount);
+
 		return structureDataStore.toString();
 	}
 }
