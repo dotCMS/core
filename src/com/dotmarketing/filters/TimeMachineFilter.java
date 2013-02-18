@@ -90,8 +90,8 @@ public class TimeMachineFilter implements Filter {
 		    Host host=(Host) req.getSession().getAttribute("tm_host");
 		    String langid=(String) req.getSession().getAttribute("tm_lang");
 
-		    if(uri.equals("/"))
-		        uri="/home/index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+//		    if(uri.equals("/"))
+//		        uri="/home/index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 		    
 		    
 		    
