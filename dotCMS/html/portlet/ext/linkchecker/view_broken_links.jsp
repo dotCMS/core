@@ -35,6 +35,7 @@ if(request.getParameter("pageNumber")!=null)
     pageNumber=Integer.parseInt(request.getParameter("pageNumber"));
 
 Structure structure = StructureFactory.getDefaultStructure();
+String defaultStructureInode = structure.getInode();
 List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
 if(structures == null) {
     structures=new ArrayList<Structure>();
@@ -273,13 +274,15 @@ dojo.ready(function(){
    		require(["dijit/form/FilteringSelect", "dojo/store/JsonRest", "dojo/data/ObjectStore", "dojo/domReady!"],
         function(FilteringSelect, JsonRest, ObjectStore) {   
             var jsonStore = new JsonRest({
-                target: "/api/structure/a"
+                target: "/api/structure/@"
             });
             var structureStore = new ObjectStore({objectStore: jsonStore}); 
             // create FilteringSelect widget, populating its options from the store
             var select = new FilteringSelect({
                 name: "structureSelect",
                 store: structureStore,
+                searchAttr: "name",
+                value: "<%=defaultStructureInode%>",
                 onChange: function(val){
                     document.getElementById("value").innerHTML = val;
                     document.getElementById("displayedValue").innerHTML = this.get("displayedValue");
