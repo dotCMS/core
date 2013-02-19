@@ -376,7 +376,7 @@ dojo.require("dojo.cookie");
         var callbackOptions = {
             callback: saveUserCallbackMyAccount,
             exceptionHandler: saveUserExceptionMyAccount
-        }
+        };
         UserAjax.updateUser(currentUserMyAccount.id, currentUserMyAccount.id, dijit.byId('firstNameMyAccount').attr('value'),
                 dijit.byId('lastNameMyAccount').attr('value'),
                 dijit.byId('emailAddressMyAccount').attr('value'), myAccountpassswordValue, callbackOptions);
