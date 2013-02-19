@@ -129,7 +129,7 @@ if(request.getParameter("in_frame")!=null){
 	    
 	<% }else{ %>
 	    
-		 <div id="tableDiv" style="display: ; position:relative; z-index: 100">
+		 <div id="tableDiv" style="position:relative; z-index: 100">
 			 <html:form action="/ext/files/upload_multiple" method="POST"  styleId="fm" enctype="multipart/form-data" onsubmit="return false;">
 	             
 					<input type="hidden" name="selectedStructure" value="<%=selectedStructure%>">
