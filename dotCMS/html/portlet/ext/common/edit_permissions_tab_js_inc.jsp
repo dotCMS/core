@@ -163,9 +163,9 @@
 
 	function renderPermissionsCallback(permissions) {
 
-		dojo.forEach(permissions, function(value){
+		/*dojo.forEach(permissions, function(value){
 			console.log(value);
-		});
+		});*/
 
 
 		if(!doesUserHavePermissionsToEdit) {
