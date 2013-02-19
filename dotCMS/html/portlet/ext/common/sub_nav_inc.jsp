@@ -96,7 +96,7 @@
 <span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
 <div style="text-align: center; padding: 15px;">
 <div class="selectHostIcon"></div>
-<select id="subNavHost" name=subNavHost" dojoType="dijit.form.FilteringSelect" 
+<select id="subNavHost" name="subNavHost" dojoType="dijit.form.FilteringSelect"
 	store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
 	searchDelay="400" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>"
 	onchange="updateCMSSelectedHosts()"

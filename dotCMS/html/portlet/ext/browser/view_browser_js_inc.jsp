@@ -111,7 +111,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		 element.style.cursor='default';
 		 setTimeout('disablingDragging()', 500);
        }
-     }
+     };
 
 	 function disablingDragging () {
      	 dragging = false;
