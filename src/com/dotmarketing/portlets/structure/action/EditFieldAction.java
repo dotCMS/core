@@ -491,7 +491,7 @@ public class EditFieldAction extends DotPortletAction {
 			fieldForm.setFreeContentletFieldsValue(values);
 			fieldForm.setFreeContentletFieldsName(names);
 		} catch (Exception ex) {
-			Logger.debug(EditFieldAction.class, ex.toString());
+			Logger.warn(EditFieldAction.class, ex.toString(),ex);
 		}
 	}
 

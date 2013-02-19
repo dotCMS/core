@@ -7,7 +7,6 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.struts.Globals;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
@@ -174,7 +173,7 @@ public class FieldForm extends ValidatorForm {
 	 * @param defaultValue The defaultValue to set.
 	 */
 	public void setDefaultValue(String defaultValue) {
-		this.defaultValue = defaultValue.trim();
+		this.defaultValue = UtilMethods.isSet(defaultValue) ? defaultValue.trim() : defaultValue;
 	}
 
 	/**
