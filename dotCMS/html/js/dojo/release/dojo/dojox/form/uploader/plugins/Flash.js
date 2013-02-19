@@ -265,8 +265,8 @@ var pluginsFlash = declare("dojox.form.uploader.plugins.Flash", [], {
 		var args = {
 			expressInstall:true,
 			path: (this.swfPath.uri || this.swfPath) + "?cb_" + (new Date().getTime()),
-			width: w,
-			height: h,
+			//width: w,
+			//height: h,
 			allowScriptAccess:"always",
 			allowNetworking:"all",
 			vars: {
