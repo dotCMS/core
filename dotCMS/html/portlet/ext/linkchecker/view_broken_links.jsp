@@ -36,31 +36,11 @@ if(request.getParameter("pageNumber")!=null)
 
 Structure structure = StructureFactory.getDefaultStructure();
 String defaultStructureInode = structure.getInode();
-List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
-if(structures == null) {
-    structures=new ArrayList<Structure>();
-	List<Structure> allStructures = StructureFactory.getStructures("structuretype,upper(name)", -1);
-	for(Structure st : allStructures) {
-		if(st.isArchived() == false) {
-			for(Field field : FieldsCache.getFieldsByStructureInode(st.getInode())) {
-				if(field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
-					structures.add(st);
-					break;
-				}
-			}
-		}
-	}
-	request.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES, structures);	
-}
 
 String structureSelected = null;
 if(InodeUtils.isSet(request.getParameter("structInode"))){
     structureSelected=request.getParameter("structInode");
     structure = StructureCache.getStructureByInode(structureSelected);
-}
-
-if(!structures.contains(structure)){
-    structureSelected = null;
 }
 
 if(structureSelected == null){
@@ -137,7 +117,7 @@ function loadTable() {
             page=(parseInt(dojo.byId('currentPage').innerText)-1)*pageSize;
     }
 	dojo.xhr('GET',{
-		url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/getBrokenLinks/offset/'+page+'/pageSize/'+pageSize+'/structInode/'+'<%=structureSelected%>',
+		url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/getBrokenLinks/offset/'+page+'/pageSize/'+pageSize+'/structInode/'+dijit.byId('structureSelect').get('value'),
 		handleAs: 'json',
 		load: function(data) {
 			for(var i=0;i<data.list.length;i++) {
@@ -219,13 +199,10 @@ dojo.ready(function(){
     <div id="brokenLinkMain">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;">
             <div dojoType="dijit.layout.ContentPane" region="top">
+					
 					<b><%=LanguageUtil.get(pageContext, "Structures")%>:</b>
 					<div id="structureSelect"></div>
 					
-					<!-- 
-            		<select id="structuresList" name="structuresList" dojoType="dijit.form.FilteringSelect">
-              		</select>
-              		-->
                 <button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
                    <span class="reindexIcon"></span>
                    <%=LanguageUtil.get(pageContext,"Refresh")%>
@@ -271,24 +248,23 @@ dojo.ready(function(){
 </div>
 
    <script>
-   		require(["dijit/form/FilteringSelect", "dojo/store/JsonRest", "dojo/data/ObjectStore", "dojo/domReady!"],
-        function(FilteringSelect, JsonRest, ObjectStore) {   
-            var jsonStore = new JsonRest({
-                target: "/api/structure/@"
-            });
-            var structureStore = new ObjectStore({objectStore: jsonStore}); 
-            // create FilteringSelect widget, populating its options from the store
-            var select = new FilteringSelect({
-                name: "structureSelect",
-                store: structureStore,
-                searchAttr: "name",
-                value: "<%=defaultStructureInode%>",
-                onChange: function(val){
-                    document.getElementById("value").innerHTML = val;
-                    document.getElementById("displayedValue").innerHTML = this.get("displayedValue");
-                }
-            }, "structureSelect");
-            select.startup();             
-        });
+	require(["dijit/form/FilteringSelect", "dojo/store/JsonRest", "dojo/data/ObjectStore", "dojo/domReady!"],
+	        function(FilteringSelect, JsonRest, ObjectStore) {   
+	            var jsonStore = new JsonRest({
+	                target: "/api/structure/@"
+	            });
+	            var structureStore = new ObjectStore({objectStore: jsonStore}); 
+	            // create FilteringSelect widget, populating its options from the store
+	            var select = new FilteringSelect({
+	                name: "structureSelect",
+	                store: structureStore,
+	                searchAttr: "name",
+	                value: "<%=defaultStructureInode%>",
+	                onChange: function(val){
+	                    loadTable();
+	                }
+	            }, "structureSelect");
+	            select.startup();
+	        });
     </script>
 
