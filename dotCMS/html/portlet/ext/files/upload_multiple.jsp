@@ -129,7 +129,7 @@ if(request.getParameter("in_frame")!=null){
 	    
 	<% }else{ %>
 	    
-		 <div id="tableDiv" style="display: ; position:relative; z-index: 100">
+		 <div id="tableDiv" style="position:relative; z-index: 100">
 			 <html:form action="/ext/files/upload_multiple" method="POST"  styleId="fm" enctype="multipart/form-data" onsubmit="return false;">
 	             
 					<input type="hidden" name="selectedStructure" value="<%=selectedStructure%>">
@@ -350,16 +350,20 @@ if(request.getParameter("in_frame")!=null){
 					</script>
              	</button>
 			  <% } %>
-                <button dojoType="dijit.form.Button" iconClass="cancelIcon">
+                <button dojoType="dijit.form.Button" iconClass="cancelIcon" type="button">
                 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
                 	<script type="dojo/method" event="onClick" args="evt">						
-                		if(dijit.byId('addFileDialog')){
-                			dijit.byId('addFileDialog').hide();
-                		}else {
-        					if(parent.closeAddFileDialog) {
-            					parent.closeAddFileDialog();
-        					}
-                		}
+                        try{
+                            if(dijit.byId('addFileDialog')){
+                                dijit.byId('addFileDialog').hide();
+                            } else {
+                                if(parent.closeAddFileDialog) {
+                                    parent.closeAddFileDialog();
+                                }
+                            }
+                        }catch(e){
+                            console.error(e);
+                        }
                 	</script>
                 </button>
 			</div>
