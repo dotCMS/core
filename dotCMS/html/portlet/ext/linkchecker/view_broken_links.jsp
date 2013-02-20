@@ -259,6 +259,7 @@ dojo.ready(function(){
 	                name: "structureSelect",
 	                store: structureStore,
 	                searchAttr: "name",
+	                pageSize: 20,
 	                value: "<%=defaultStructureInode%>",
 	                onChange: function(val){
 	                    loadTable();
