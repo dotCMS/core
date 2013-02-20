@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.beans.PermissionableProxy"%>
 <%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="java.text.SimpleDateFormat"%>
@@ -255,6 +256,15 @@
 						String structureName = "";
 						String title = "";
 						String inode = "";
+						
+						PermissionableProxy pp = new PermissionableProxy();
+						pp.setIdentifier(identifier);
+						pp.setType(assetType);
+						pp.setInode(identifier);
+						pp.permissionByIdentifier(false);
+						
+						
+						
 						
 						if(assetType.equals("contentlet") || assetType.equals("host")) {
 							Contentlet con = conAPI.findContentletByIdentifier(c.getAsset(),false, c.getLanguageId(),user, false);
