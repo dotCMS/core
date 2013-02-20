@@ -42,6 +42,17 @@ public class StructureResource extends WebResource {
 			if(nameFilter.contains("*"))
 				nameFilter = nameFilter.substring(0, nameFilter.indexOf("*"));
 		}
+		
+		String range = "";
+		int beginItem = -1;
+		int endItem = -1;
+		String rangeHeader = request.getHeader("Range");
+		if(rangeHeader != null && rangeHeader.length() >= 6 && rangeHeader.indexOf("=") > 0) {
+			range = rangeHeader.substring(rangeHeader.indexOf("=") + 1);
+			beginItem = Integer.valueOf(range.substring(0, range.indexOf("-")));
+			endItem = Integer.valueOf(range.substring(range.indexOf("-") + 1));
+		}
+		
 		if(inodeFilter.isEmpty()) {
 			List<Structure> allStructures = StructureFactory.getStructures("structuretype,upper(name)", -1);
 			for(Structure st : allStructures) {
@@ -71,24 +82,28 @@ public class StructureResource extends WebResource {
 		int structCount = 0;
 		for(Structure st: structures)
 		{
-			if(bInitialStruct)
-				bInitialStruct = false;
-			else
-			{
-				structureDataStore.append(",");
-				structureDataStore.append(EOL);
+			if(!inodeFilter.isEmpty() || (!range.isEmpty() && structCount >= beginItem && structCount <= endItem)){
+				if(bInitialStruct)
+					bInitialStruct = false;
+				else
+				{
+					structureDataStore.append(",");
+					structureDataStore.append(EOL);
+				}
+				structureDataStore.append("{id: \"");
+				structureDataStore.append(st.getInode());
+				structureDataStore.append("\", name: \"");
+				structureDataStore.append(st.getName());
+				structureDataStore.append("\"}");
 			}
-			structureDataStore.append("{id: \"");
-			structureDataStore.append(st.getInode());
-			structureDataStore.append("\", name: \"");
-			structureDataStore.append(st.getName());
-			structureDataStore.append("\"}");
 			structCount++;
 		}
 		if(inodeFilter.isEmpty()) {
 			structureDataStore.append(EOL);
 			structureDataStore.append("]");
-			response.addHeader("Content-Range", "items 0-"+(structCount - 1) + "/" +structCount);
+			if(!range.isEmpty()){
+				response.addHeader("Content-Range", "items " + beginItem + "-" + Math.min(endItem, structCount -1) + "/" + structCount);
+			}
 		}
 
 		return structureDataStore.toString();
