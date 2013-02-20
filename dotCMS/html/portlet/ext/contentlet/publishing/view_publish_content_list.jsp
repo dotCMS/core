@@ -168,7 +168,7 @@
     		}
     		
     		
-    		iresults = conAPI.search(query,new Integer(limit),new Integer(offset),sortBy,user,false);
+    		iresults = conAPI.search(query,new Integer(limit),new Integer(offset),sortBy,user,false, PermissionAPI.PERMISSION_PUBLISH);
     		results = (PaginatedArrayList) conAPI.search(query, new Integer(limit),new Integer(offset),sortBy,user,false, PermissionAPI.PERMISSION_PUBLISH);
     		counter = ""+results.getTotalResults();
     	}
