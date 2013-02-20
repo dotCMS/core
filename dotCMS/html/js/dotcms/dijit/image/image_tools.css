@@ -14,7 +14,7 @@
 
 #imageToolIframe{
 	
-		//border:1px solid blue;
+		/*border:1px solid blue;*/
 
 		display:block;
 		position:absolute;
@@ -43,7 +43,7 @@
 
 #imageViewPort{
 	overflow:auto;
-	//border:1px solid red;
+	/*border:1px solid red;*/
 	padding:0px;
 	margin:0px;
 	position:absolute;
@@ -63,7 +63,7 @@
 	bottom:0px;
 	left:0px;
 	right:0px;
-	//border:1px solid blue;
+	/*border:1px solid blue;*/
 }
 
 #exif { clear:both; height:2em; }
@@ -125,7 +125,7 @@
 
 .textInputClass{
 	border:1px solid silver;
-	width:35px;
+	width:46px;
 	margin:2px;
 
 	height:23px;
