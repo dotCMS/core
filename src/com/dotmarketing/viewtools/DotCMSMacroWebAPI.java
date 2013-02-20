@@ -111,10 +111,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		{
 			Logger.debug(DotCMSMacroWebAPI.class,ex.toString());
 		}
-		finally
-		{
-			return links;
-		}
+		return links;
 	}
 
 	public String getFolderPath(String rootFolder, HttpServletRequest request) {

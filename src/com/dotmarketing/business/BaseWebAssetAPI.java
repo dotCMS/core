@@ -258,7 +258,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	 * @return true if the asset was sucessfully removed
 	 * @exception Exception
 	 */
-	public static boolean deleteAsset(WebAsset currWebAsset) {
+	public static boolean deleteAsset(WebAsset currWebAsset) throws DotSecurityException, DotHibernateException, DotDataException{
 		boolean returnValue = false;
 		try
 		{
@@ -363,15 +363,19 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			//### Delete the Identifier ###
 			returnValue = true;
 		}
-		catch(Exception ex)
-		{
+		catch(DotHibernateException ex){
 			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
 			throw ex;
 		}
-		finally
-		{
-			return returnValue;
+		catch(DotDataException ex){
+			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
+			throw ex;
 		}
+		catch(DotSecurityException ex){
+			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
+			throw ex;
+		}
+		return returnValue;
 	}
 	
 	@SuppressWarnings("unchecked")
