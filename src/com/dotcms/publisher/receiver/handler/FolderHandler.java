@@ -77,8 +77,9 @@ public class FolderHandler implements IHandler {
 	        	Host localHost = APILocator.getHostAPI().find(host.getIdentifier(), systemUser, false);
         		
 	        	
+	        	Folder temp = fAPI.findFolderByPath(folderId.getPath(), localHost, systemUser, false);
 	        	//Loop over the folder
-        		if(!UtilMethods.isSet(fAPI.findFolderByPath(folderId.getPath(), localHost, systemUser, false).getInode())) {
+        		if(temp == null || !UtilMethods.isSet(temp.getInode())) {
         			Identifier id = iAPI.find(folder.getIdentifier());
         			if(id ==null || !UtilMethods.isSet(id.getId())){
         				Identifier folderIdNew = null;
