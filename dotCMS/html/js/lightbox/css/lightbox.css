@@ -102,3 +102,14 @@
 	/* End hide from IE-mac */
 	}	
 	
+	.photoGalleryGridView, .photoGalleryGridIndex{
+	float:left;
+	margin:10px auto;
+	word-wrap: break-word;
+	padding: 38px 10px;
+	text-align: left;
+	vertical-align: top;
+	overflow: hidden;
+	width: 90px;
+	height: 90px;
+	}

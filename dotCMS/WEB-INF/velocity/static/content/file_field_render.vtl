@@ -2,7 +2,14 @@
 <input dojoType="dijit.form.TextBox" type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 *#
 #if(!$UtilMethods.isSet($fieldDefaultValue.getFileName()))
-	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" />     <button class="dmundra dijitButtonNode removeFile" onclick="clearFileField('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+	<div class="fileInputs">        
+    	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" onchange="setFileNameFromPath(this.value,'${fieldAux.velocityVarName}');" value="Browse" class="fileField" /> 
+       	<div class="browseFile"> 
+            <input type="text" name="fileName" id="${fieldAux.velocityVarName}fileName" style="width:150px;" /> 
+            <button class="dmundra dijitButtonNode browse" name="Browse">Browse</button>  
+        </div>      
+		<button class="dmundra dijitButtonNode removeFile" onclick="clearFileField('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+	</div>
 #else
 	## Edit content
 	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" style="visibility:hidden;" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>

@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.structure.struts;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -11,6 +14,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.validator.ValidatorForm;
 
 import com.dotmarketing.portlets.structure.business.FieldAPI;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 
@@ -169,7 +173,7 @@ public class FieldForm extends ValidatorForm {
 	 * @param defaultValue The defaultValue to set.
 	 */
 	public void setDefaultValue(String defaultValue) {
-		this.defaultValue = defaultValue;
+		this.defaultValue = UtilMethods.isSet(defaultValue) ? defaultValue.trim() : defaultValue;
 	}
 
 	/**
@@ -262,20 +266,33 @@ public class FieldForm extends ValidatorForm {
 		ActionErrors ae = new ActionErrors();	
 		ae = super.validate(arg0,arg1);
 		if(!isFixed() && !isReadOnly() && !(fieldType == null) && !(fieldType.equals("line_divider") || fieldType.equals("tab_divider"))){
-		if(fieldType.equals("select") || fieldType.equals("radio") || fieldType.equals("checkbox") || fieldType.equals("javascript"))
-		{
-			if (!UtilMethods.isSet(values))
-			{
-				ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.values"));
-			}
+		    if(fieldType.equals("select") || fieldType.equals("radio") || fieldType.equals("checkbox") || fieldType.equals("javascript")) {
+		        if (!UtilMethods.isSet(values)) {
+		            ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.values"));
+		        }
+		    }
+		    if( !fieldType.equals("host or folder" )&& !fieldType.equals("relationships_tab") && !fieldType.equals("permissions_tab") && !fieldType.equals("categories_tab") && !fieldType.equals("image") && !fieldType.equals("link") && !fieldType.equals("file") && !element.equals(FieldAPI.ELEMENT_CONSTANT) && !fieldType.equals("hidden")) {
+		        if (!UtilMethods.isSet(dataType)) {
+		            ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.dataType"));
+		        }
+		    }
 		}
-		if( !fieldType.equals("host or folder" )&& !fieldType.equals("relationships_tab") && !fieldType.equals("permissions_tab") && !fieldType.equals("categories_tab") && !fieldType.equals("image") && !fieldType.equals("link") && !fieldType.equals("file") && !element.equals(FieldAPI.ELEMENT_CONSTANT) && !fieldType.equals("hidden"))
-		{
-			if (!UtilMethods.isSet(dataType))
-			{
-				ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.dataType"));
-			}
-		}
+		
+		if(dataType!=null && dataType.equals(Field.DataType.DATE.toString()) && !defaultValue.isEmpty() && !defaultValue.equals("now")) {
+		    DateFormat df=null;
+		    if(fieldType.equals(Field.FieldType.DATE.toString()))
+		        df=new SimpleDateFormat("yyyy-MM-dd");
+		    else if(fieldType.equals(Field.FieldType.DATE_TIME.toString()))
+		        df=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		    else if(fieldType.equals(Field.FieldType.TIME.toString()))
+		        df=new SimpleDateFormat("HH:mm:ss");
+		    if(df!=null) {
+		        try {
+                    df.parse(defaultValue);
+                } catch (ParseException e) {
+                    ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.defaultValue"));
+                }
+		    }
 		}
 		return ae;
 	}

@@ -22,11 +22,10 @@ import org.codehaus.jackson.map.ObjectWriter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 
 public class TimeMachineAjaxAction extends IndexAjaxAction {
 
@@ -89,14 +88,14 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
     public void getAvailableTimeMachineForSite(HttpServletRequest request, HttpServletResponse response) throws Exception {
         Map<String, String> map = getURIParams();
 
-        String hostid=map.get("hostid");
+        String hostIdentifier=map.get("hostIdentifier");
 
-        if(!validateParams(null, hostid, null)) {
+        if(!validateParams(null, hostIdentifier, null)) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        Host host=APILocator.getHostAPI().find(hostid, getUser(), false);
+        Host host=APILocator.getHostAPI().find(hostIdentifier, getUser(), false);
 
         List<Date> snaps=APILocator.getTimeMachineAPI().getAvailableTimeMachineForSite(host);
 
@@ -128,15 +127,15 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
 
     public void getAvailableLangForTimeMachine(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         Map<String, String> map = getURIParams();
-        String hostid=map.get("hostid");
+        String hostIdentifier=map.get("hostIdentifier");
         String datestr=map.get("date");
 
-        if(!validateParams(datestr, hostid, null)) {
+        if(!validateParams(datestr, hostIdentifier, null)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        Host host=APILocator.getHostAPI().find(hostid, getUser(), false);
+        Host host=APILocator.getHostAPI().find(hostIdentifier, getUser(), false);
 
         List<String> langs=APILocator.getTimeMachineAPI().getAvailableLangForTimeMachine(
                                  host, new Date(Long.parseLong(datestr)));
@@ -169,14 +168,14 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
     public void startBrowsing(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         Map<String, String> map = getURIParams();
         String datestr=map.get("date");
-        String hostid=map.get("hostid");
+        String hostIdentifier=map.get("hostIdentifier");
         String langid=map.get("langid");
 
-        if(!validateParams(datestr, hostid, langid))
+        if(!validateParams(datestr, hostIdentifier, langid))
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         else {
             req.getSession().setAttribute("tm_host",
-                    APILocator.getHostAPI().find(hostid, getUser(), false));
+                    APILocator.getHostAPI().find(hostIdentifier, getUser(), false));
             req.getSession().setAttribute("tm_date", datestr);
             req.getSession().setAttribute("tm_lang", langid);
         }
@@ -185,7 +184,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
     public void startBrowsingFutureDate(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         Map<String, String> map = getURIParams();
         String datestr=map.get("date");
-        String hostid=map.get("hostid");
+        String hostIdentifier=map.get("hostIdentifier");
         String langid=map.get("langid");
         
         SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
@@ -195,7 +194,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         else {
             req.getSession().setAttribute("tm_host",
-                    APILocator.getHostAPI().find(hostid, getUser(), false));
+                    APILocator.getHostAPI().find(hostIdentifier, getUser(), false));
             req.getSession().setAttribute("tm_date", datestr);
             req.getSession().setAttribute("tm_lang", langid);
         }   
@@ -207,13 +206,13 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         req.getSession().removeAttribute("tm_host");
     }
 
-    private boolean validateParams(String datestr, String hostid, String langid) {
+    private boolean validateParams(String datestr, String hostIdentifier, String langid) {
         try {
             // validating
             if(datestr!=null)
                 Long.parseLong(datestr);
-            if(hostid!=null) {
-                Host hh=APILocator.getHostAPI().find(hostid, getUser(), false);
+            if(hostIdentifier!=null) {
+                Host hh=APILocator.getHostAPI().find(hostIdentifier, getUser(), false);
                 if(hh==null || !UtilMethods.isSet(hh.getIdentifier()))
                     throw new Exception();
             }
@@ -229,35 +228,34 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         return true;
     }
 
+    public void disableJob(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        APILocator.getTimeMachineAPI().removeQuartzJob();
+    }
+    
     public void saveJobConfig(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         String cronExp=req.getParameter("cronExp");
-//        String[] hostids=req.getParameterValues("snaphost");
-//        boolean allhost=req.getParameter("allhosts")!=null;
+        String[] hostIdentifiers=req.getParameterValues("snaphost");
+        boolean allhost=req.getParameter("allhosts")!=null;
         String[] langids=req.getParameterValues("lang");
         Map<String, String> map = getURIParams();
         boolean runnow=map.get("run")!=null;
-
-        String hostId= (String)req.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+        
         List<Host> hosts=new ArrayList<Host>();
-
-        if(UtilMethods.isSet(hostId)) {
-        	hosts.add(APILocator.getHostAPI().find(hostId, getUser(), false));
-        }
 
         List<Language> langs=new ArrayList<Language>(langids.length);
 
-//        if(allhost)
-//            hosts=APILocator.getHostAPI().findAll(getUser(), false);
-//        else
-//            for(String h : hostids)
-//                hosts.add(APILocator.getHostAPI().find(h, getUser(), false));
+        if(allhost)
+            hosts=APILocator.getHostAPI().findAll(getUser(), false);
+        else
+            for(String h : hostIdentifiers)
+                hosts.add(APILocator.getHostAPI().find(h, getUser(), false));
 
         for(String id : langids)
             langs.add(APILocator.getLanguageAPI().getLanguage(id));
 
 
         try {        	
-               APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,false,langs);
+               APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,allhost,langs);
         	
         	}catch (Exception ex) {
                Logger.error(this, ex.getMessage(),ex);

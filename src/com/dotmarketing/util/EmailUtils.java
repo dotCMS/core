@@ -80,7 +80,7 @@ public class EmailUtils {
 					}
 					parameters.remove(field.getVelocityVarName());
 				}
-				val = map.get(param.toString()).toString();
+				
 				if ((field.getVelocityVarName().equals(param.toString()) 
 						|| field.getFieldName().equals(param.toString())) 
 						&&(field.getFieldType().equals(Field.FieldType.BINARY.toString())								
@@ -89,12 +89,15 @@ public class EmailUtils {
 					paramVal = map.get(param.toString()).toString();
 					fParam = param.toString();
 					parameters.remove(field.getVelocityVarName());
-				}
-				if(fParam!=""){
-					if(val.equalsIgnoreCase(paramVal) && !(fParam.equalsIgnoreCase(param.toString()))){
-						parameters.remove(param.toString());
-						fParam = "";
-						paramVal = "";
+					for (Object dupParam : paramlist){	
+						val = map.get(dupParam.toString()).toString();	
+						if(fParam!=""){
+							if(val.equalsIgnoreCase(paramVal) && !(fParam.equalsIgnoreCase(dupParam.toString()))){
+					 			parameters.remove(dupParam.toString()); 	 
+								fParam = "";
+					 			paramVal = "";
+					 		}
+					 	 }
 					}
 				}
 				parameters.values();

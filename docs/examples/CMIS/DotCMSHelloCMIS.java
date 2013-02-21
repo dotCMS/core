@@ -48,6 +48,7 @@ import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.data.RepositoryCapabilities;
 import org.apache.chemistry.opencmis.commons.data.RepositoryInfo;
 import org.apache.chemistry.opencmis.commons.enums.Action;
+import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.CapabilityQuery;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
@@ -134,7 +135,7 @@ public class DotCMSHelloCMIS {
         System.out.println("Creating 'CMISTest" + new java.util.Date().getTime() +"' to the default host : " + defaultHost.getName() + EOL);
 
         Map<String, String> newFolderProps = new HashMap<String, String>();
-        newFolderProps.put(PropertyIds.OBJECT_TYPE_ID, "folder");
+        newFolderProps.put(PropertyIds.OBJECT_TYPE_ID, BaseTypeId.CMIS_FOLDER.value());
         newFolderProps.put(PropertyIds.NAME, "CMISTest" + new java.util.Date().getTime());
         Folder newFolder = defaultHost.createFolder(newFolderProps);
 
@@ -171,7 +172,7 @@ public class DotCMSHelloCMIS {
 
         // Create the Document Object
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put(PropertyIds.OBJECT_TYPE_ID, "fileasset");
+        properties.put(PropertyIds.OBJECT_TYPE_ID, BaseTypeId.CMIS_DOCUMENT.value());
         properties.put(PropertyIds.NAME, filename);
         ObjectId id = newFolder.createDocument(properties, contentStream, VersioningState.NONE);
 
@@ -187,7 +188,10 @@ public class DotCMSHelloCMIS {
         System.out.println("Contents of " + doc.getName() + " are : " + content + EOL);
 
         // Get the contents of the document by path
-        String path = newFolder.getPath() + textFileName;
+        String path = newFolder.getPath();
+        if(!path.endsWith("/"))
+        	path = path + "/";
+        path = path + textFileName;
         System.out.println("Getting object by path : " + path);
         doc = (Document) session.getObjectByPath(path);
         try {
@@ -250,7 +254,7 @@ public class DotCMSHelloCMIS {
                 .equals(CapabilityQuery.METADATAONLY)) {
             System.out.println("Full search not supported");
         } else {
-            String query = "SELECT * FROM fileasset WHERE title = 'test.txt'";
+            String query = "SELECT * FROM cmis:document WHERE cmis:name = 'test.txt'";
             ItemIterable<QueryResult> queryResult = session.query(query, false);
             for (QueryResult item : queryResult) {
                 System.out.println("property cmis:name on test.txt is "
@@ -272,7 +276,7 @@ public class DotCMSHelloCMIS {
                 .equals(CapabilityQuery.METADATAONLY)) {
             System.out.println("Full search not supported");
         } else {
-            String query = "SELECT * FROM News";// News content type
+            String query = "SELECT * FROM cmis:document WHERE cmis:name = '%a%'";// News content type
             ItemIterable<QueryResult> q = session.query(query, false);
 
             // Did it work?
@@ -287,25 +291,6 @@ public class DotCMSHelloCMIS {
                 i++;
             }
 
-            // Query 2
-            query = "SELECT * FROM fileasset WHERE title LIKE 'test%'";
-            q = session.query(query, false);
-
-            System.out.println(EOL + "***results from query " + query);
-
-            i = 1;
-            for (QueryResult qr : q) {
-                System.out.println("--------------------------------------------\n" + i + " , "
-                        + qr.getPropertyByQueryName("cmis:objectTypeId").getFirstValue() + " , "
-                        + qr.getPropertyByQueryName("cmis:name").getFirstValue() + " , "
-                        + qr.getPropertyByQueryName("cmis:objectId").getFirstValue() + " , "
-                        + qr.getPropertyByQueryName("cmis:contentStreamFileName").getFirstValue()
-                        + " , "
-                        + qr.getPropertyByQueryName("cmis:contentStreamMimeType").getFirstValue()
-                        + " , "
-                        + qr.getPropertyByQueryName("cmis:contentStreamLength").getFirstValue());
-                i++;
-            }
         }
 
         // Capabilities

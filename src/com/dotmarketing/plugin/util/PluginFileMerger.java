@@ -1049,17 +1049,36 @@ public class PluginFileMerger {
 		String s = merge(input, targetCommentBegin, targetCommentEnd,
 				startComment, endComment, mergeText);
 		List<String> props = new ArrayList<String>();
+
+        boolean isContinued;
+        isContinued = false;
+
 		String[] result = mergeText.split("\n");
 		for (String line : result) {
 			String trim = line.trim();
 			if ((!trim.startsWith("#")) && trim.length() > 0) {
-				int index = trim.indexOf("=");
-				if (index > 0) {
-					String propName = trim.substring(0, index);
-					props.add(propName);
-				}
+                if (!isContinued) {
+                    int index = trim.indexOf("=");
+                    if (index > 0) {
+                        String propName = trim.substring(0, index);
+                        props.add(propName);
+
+                        // Is the property value continued on the next line?
+                        if (trim.endsWith("\\") && !trim.endsWith("\\\\")) {
+                            isContinued = true;
+                        }
+                    }
+                }
+                else {
+                    // See if the continued property value is complete
+                    if (!trim.endsWith("\\") || trim.endsWith("\\\\")) {
+                        isContinued = false;
+                    }
+                }
 			}
 		}
+
+        isContinued = false;
 
 		StringBuilder buf = new StringBuilder();
 		result = s.split("\n");
@@ -1079,9 +1098,23 @@ public class PluginFileMerger {
 				buf.append("\n");
 				buf.append(comment);
 				buf.append(line);
-			} else {
+
+                // Is the property value continued on the next line?
+                if (line.endsWith("\\") && !line.endsWith("\\\\")) {
+                    isContinued = true;
+                }
+			} else if (isContinued) {
+                buf.append(comment);
+                buf.append(line);
+
+                // See if the continued property value is complete
+                if (!line.endsWith("\\") || line.endsWith("\\\\")) {
+                    isContinued = false;
+                }
+            } else {
 				buf.append(line);
 			}
+
 			buf.append("\n");
 
 		}

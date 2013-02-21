@@ -1561,11 +1561,9 @@ public class DotWebdavHelper {
 				}
 			}
 		} catch (Exception ex) {
-			String exception = ex.getMessage();
 			Logger.debug(this, ex.toString());
-		} finally {
-			return returnValue.toArray(new Summary[returnValue.size()]);
 		}
+		return returnValue.toArray(new Summary[returnValue.size()]);
 	}
 	private InputStream getResourceContent(String resourceUri, User user) throws Exception {
 		resourceUri=stripMapping(resourceUri);

@@ -4,6 +4,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,11 +24,16 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.hadoop.mapred.lib.Arrays;
 
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -39,7 +46,9 @@ import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -122,8 +131,19 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
 	}
 	
-	public void publish(HttpServletRequest request, HttpServletResponse response) 		
-		throws WorkflowActionFailureException {
+	public void unPublish(HttpServletRequest request, HttpServletResponse response) throws DotPublisherException {
+	    PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        String assetId = request.getParameter("assetIdentifier");
+        List<String> identifiers=new ArrayList<String>();
+        if(assetId.contains(","))
+            identifiers.addAll(Arrays.asList(assetId.split(",")));
+        else
+            identifiers.add(assetId);
+        
+        publisherAPI.addContentsToUnpublish(identifiers, UUIDGenerator.generateUuid(), new Date(), getUser());
+	}
+	
+	public void publish(HttpServletRequest request, HttpServletResponse response) throws WorkflowActionFailureException {
 			try {
 				PublisherAPI publisherAPI = PublisherAPI.getInstance();
 				String _assetId = request.getParameter("assetIdentifier");
@@ -147,7 +167,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 					} catch(DotDataException e) {
 					}
 					
-					if(UtilMethods.isSet(folder)) {
+					if(folder!=null && UtilMethods.isSet(folder.getInode())) {
 						ids.add(_assetId);
 					} else {
 						// if the asset is not a folder and has identifier, put it, if not, put the inode
@@ -221,30 +241,36 @@ public class RemotePublishAjaxAction extends AjaxAction {
 	}
 	
 	public void uploadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException, FileUploadException {
-		Map<String, String> map = getURIParams();
-
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload(factory);
-        List<FileItem> items = (List<FileItem>) upload.parseRequest(request);
-		String remoteIP = "";
+        @SuppressWarnings("unchecked")
+		List<FileItem> items = (List<FileItem>) upload.parseRequest(request);
 
+		InputStream bundle = items.get(0).getInputStream();
 		String bundleName = items.get(0).getName();
 		String bundlePath = ConfigUtils.getBundlePath()+File.separator;
 		String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+		String endpointId = getUser().getUserId();
+		response.setContentType("text/html; charset=utf-8");  
+		PrintWriter out = response.getWriter();  
 		
+		PublishAuditStatus status;
+		try {
+			status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, null, bundleFolder);
 		
+	//		Write file on FS
+			FileUtil.writeToFile(bundle, bundlePath+bundleName);
+
+			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
+				new Thread(new PublishThread(bundleName, null, endpointId, status)).start();
+			}
+
+			out.print("<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>");
 		
-		//PublishAuditStatus status =updateAuditTable("local-upload", null, bundleFolder);
-		
-		//Write file on FS
-		//writeToFile(bundle, bundlePath+bundleName);
-		
-		
-		/*
-		if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
-			//new Thread(new PublishThread(bundleName, groupId, endpointId, status)).start();
+		} catch (DotPublisherException e) {
+			// TODO Auto-generated catch block
+			out.print("<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'error'}</textarea></body></html>");
 		}
-		*/
-		return;
+		
 	}
 }

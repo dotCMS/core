@@ -257,35 +257,38 @@
             || field.getFieldType().equals(
                     Field.FieldType.DATE_TIME.toString())) {
 
-
-
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         SimpleDateFormat df2 = new SimpleDateFormat("yyyy-MM-dd");
-        Date dateValue = new Date();
-        if(value instanceof String && value != null) {
+        Date dateValue = null;
+        if(value != null && value instanceof String) {
             dateValue = df.parse((String) value);
-        } else if(value != null) {
+        } else if(value != null && value instanceof Date) {
             dateValue = (Date)value;
         }
 
-
-
-        GregorianCalendar cal = new GregorianCalendar();
-        cal.setTime((Date) dateValue);
-        int dayOfMonth = cal.get(GregorianCalendar.DAY_OF_MONTH);
-        int month = cal.get(GregorianCalendar.MONTH) + 1;
-        int year = cal.get(GregorianCalendar.YEAR) ;%>
+        int dayOfMonth=0;
+        int month=0;
+        int year=0;
+        GregorianCalendar cal=null;
+        
+        if(dateValue!=null) {
+	        cal = new GregorianCalendar();
+	        cal.setTime((Date) dateValue);
+	        dayOfMonth = cal.get(GregorianCalendar.DAY_OF_MONTH);
+	        month = cal.get(GregorianCalendar.MONTH) + 1;
+	        year = cal.get(GregorianCalendar.YEAR) ;
+        }%>
 
 
         <input type="hidden" id="<%=field.getVelocityVarName()%>"
             name="<%=field.getFieldContentlet()%>"
-            value="<%= df.format(dateValue) %>" />
+            value="<%= dateValue!=null ? df.format(dateValue) : "" %>" />
 
         <%if (field.getFieldType().equals(Field.FieldType.DATE.toString())
                     || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
 
              <input type="text"
-                value="<%= df2.format(dateValue) %>"
+                value="<%= dateValue!=null ? df2.format(dateValue) : "" %>"
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
                 dojoType="dijit.form.DateTextBox"
                 name="<%=field.getFieldContentlet()%>Date"
@@ -297,12 +300,17 @@
         if (field.getFieldType().equals(Field.FieldType.TIME.toString())
             || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
 
-            String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
-            String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
+            String hour=null;
+            String min=null;
+            
+            if(cal!=null) {
+                hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
+                min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
+            }
             %>
             <input type="text" id="<%=field.getVelocityVarName()%>Time"
                 name="<%=field.getFieldContentlet()%>Time"
-                value='T<%=hour+":"+min%>:00'
+                value='<%=cal!=null ? "T"+hour+":"+min+":00" : ""%>'
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
                 dojoType="dijit.form.TimeTextBox" style="width: 100px;"
                 <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>

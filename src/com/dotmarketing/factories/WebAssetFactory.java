@@ -1658,7 +1658,7 @@ public class WebAssetFactory {
 	 * @param currWebAsset
 	 * @return
 	 */
-	public static boolean deleteAsset(WebAsset currWebAsset)
+	public static boolean deleteAsset(WebAsset currWebAsset) throws Exception
 	{
 		return deleteAsset(currWebAsset, null);	
 	}
@@ -1667,116 +1667,105 @@ public class WebAssetFactory {
 	 * This method totally removes an asset from the cms
 	 * @param currWebAsset
 	 * @param user If the user is passed (not null) the system will check for write permission of the user in the asset
-	 * @return true if the asset was sucessfully removed
+	 * @return true if the asset was successfully removed
 	 */
-	public static boolean deleteAsset(WebAsset currWebAsset, User user)
+	public static boolean deleteAsset(WebAsset currWebAsset, User user) throws Exception
 	{
 		boolean returnValue = false;
-		try
-		{
-			if (!UtilMethods.isSet(currWebAsset) || !InodeUtils.isSet(currWebAsset.getInode()))
-			{
-				return returnValue;
-			}
-			//Checking permissions
-			int permission = PERMISSION_WRITE;
-			
-			if(permissionAPI.doesUserHavePermission(currWebAsset, permission, user))
-			{
-				//### Delete the IDENTIFIER entry from cache ###
-				LiveCache.removeAssetFromCache(currWebAsset);
-				WorkingCache.removeAssetFromCache(currWebAsset);
-				CacheLocator.getIdentifierCache().removeFromCacheByVersionable(currWebAsset);
-				//### END Delete the entry from cache ###
-
-
-				//Get the identifier of the webAsset
-				Identifier identifier = APILocator.getIdentifierAPI().find(currWebAsset);
-				APILocator.getVersionableAPI().deleteVersionInfo(identifier.getId());
-
-				//### Get and delete the webAsset ###
-				List<Versionable> webAssetList = new ArrayList<Versionable>();
-				if(currWebAsset instanceof Container)
-				{
-					ContainerServices.unpublishContainerFile((Container)currWebAsset);
-					webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-				}
-				else if(currWebAsset instanceof HTMLPage)
-				{
-					PageServices.unpublishPageFile((HTMLPage)currWebAsset);
-					RefreshMenus.deleteMenu(currWebAsset);
-					CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
-					webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-				}
-				else if(currWebAsset instanceof Template)
-				{
-					TemplateServices.unpublishTemplateFile((Template)currWebAsset);
-					//webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-				}
-				else if(currWebAsset instanceof Link)
-				{
-					webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-				}
-				else if(currWebAsset instanceof File)
-				{
-					webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-					RefreshMenus.deleteMenu(currWebAsset);
-					CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
-				}
-				for(Versionable webAsset : webAssetList)
-				{
-					//Delete the permission of each version of the asset
-					permissionAPI.removePermissions((WebAsset)webAsset);
-					InodeFactory.deleteInode(webAsset);
-				}
-				//### END Get and delete the webAsset and the identifier ###
-
-				//### Get and delete the tree entries ###
-				List<Tree> treeList = new ArrayList<Tree>();
-				treeList.addAll(TreeFactory.getTreesByChild(identifier.getInode()));
-				treeList.addAll(TreeFactory.getTreesByParent(identifier.getInode()));
-				for(Tree tree : treeList)
-				{
-					TreeFactory.deleteTree(tree);
-				}
-				//### END Get and delete the tree entries ###
-
-				//### Get and delete the multitree entries ###
-				List<MultiTree> multiTrees = new ArrayList<MultiTree>();
-				if (currWebAsset instanceof Container || currWebAsset instanceof HTMLPage)
-				{
-					multiTrees = MultiTreeFactory.getMultiTree(identifier);
-				}
-				if(UtilMethods.isSet(multiTrees))
-				{
-					for(MultiTree multiTree : multiTrees)
-					{
-						MultiTreeFactory.deleteMultiTree(multiTree);
-					}
-				}
-				//### END Get and delete the multitree entries ###
-
-
-
-				//### Delete the Identifier ###
-				APILocator.getIdentifierAPI().delete(identifier);
-				//### Delete the Identifier ###
-				returnValue = true;
-			}
-			else
-			{
-				throw new Exception(WebKeys.USER_PERMISSIONS_EXCEPTION);
-			}
-		}
-		catch(Exception ex)
-		{
-			String message = ex.getMessage();
-			throw ex;
-		}
-		finally
+		if (!UtilMethods.isSet(currWebAsset) || !InodeUtils.isSet(currWebAsset.getInode()))
 		{
 			return returnValue;
 		}
+		//Checking permissions
+		int permission = PERMISSION_WRITE;
+		
+		if(permissionAPI.doesUserHavePermission(currWebAsset, permission, user))
+		{
+			//### Delete the IDENTIFIER entry from cache ###
+			LiveCache.removeAssetFromCache(currWebAsset);
+			WorkingCache.removeAssetFromCache(currWebAsset);
+			CacheLocator.getIdentifierCache().removeFromCacheByVersionable(currWebAsset);
+			//### END Delete the entry from cache ###
+
+
+			//Get the identifier of the webAsset
+			Identifier identifier = APILocator.getIdentifierAPI().find(currWebAsset);
+			APILocator.getVersionableAPI().deleteVersionInfo(identifier.getId());
+
+			//### Get and delete the webAsset ###
+			List<Versionable> webAssetList = new ArrayList<Versionable>();
+			if(currWebAsset instanceof Container)
+			{
+				ContainerServices.unpublishContainerFile((Container)currWebAsset);
+				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
+			}
+			else if(currWebAsset instanceof HTMLPage)
+			{
+				PageServices.unpublishPageFile((HTMLPage)currWebAsset);
+				RefreshMenus.deleteMenu(currWebAsset);
+				CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
+				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
+			}
+			else if(currWebAsset instanceof Template)
+			{
+				TemplateServices.unpublishTemplateFile((Template)currWebAsset);
+				//webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
+			}
+			else if(currWebAsset instanceof Link)
+			{
+				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
+			}
+			else if(currWebAsset instanceof File)
+			{
+				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
+				RefreshMenus.deleteMenu(currWebAsset);
+				CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
+			}
+			for(Versionable webAsset : webAssetList)
+			{
+				//Delete the permission of each version of the asset
+				permissionAPI.removePermissions((WebAsset)webAsset);
+				InodeFactory.deleteInode(webAsset);
+			}
+			//### END Get and delete the webAsset and the identifier ###
+
+			//### Get and delete the tree entries ###
+			List<Tree> treeList = new ArrayList<Tree>();
+			treeList.addAll(TreeFactory.getTreesByChild(identifier.getInode()));
+			treeList.addAll(TreeFactory.getTreesByParent(identifier.getInode()));
+			for(Tree tree : treeList)
+			{
+				TreeFactory.deleteTree(tree);
+			}
+			//### END Get and delete the tree entries ###
+
+			//### Get and delete the multitree entries ###
+			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
+			if (currWebAsset instanceof Container || currWebAsset instanceof HTMLPage)
+			{
+				multiTrees = MultiTreeFactory.getMultiTree(identifier);
+			}
+			if(UtilMethods.isSet(multiTrees))
+			{
+				for(MultiTree multiTree : multiTrees)
+				{
+					MultiTreeFactory.deleteMultiTree(multiTree);
+				}
+			}
+			//### END Get and delete the multitree entries ###
+
+
+
+			//### Delete the Identifier ###
+			APILocator.getIdentifierAPI().delete(identifier);
+			//### Delete the Identifier ###
+			returnValue = true;
+		}
+		else
+		{
+			throw new Exception(WebKeys.USER_PERMISSIONS_EXCEPTION);
+		}
+		return returnValue;
 	}
 	
 	@SuppressWarnings("unchecked")

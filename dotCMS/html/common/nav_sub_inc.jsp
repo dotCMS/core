@@ -247,7 +247,12 @@ dojo.require("dojo.cookie");
 
     });
 
-
+    function clearErrorMsg()
+    {
+    	 <%request.getSession().removeAttribute("portal_login_as_error");%>
+         dojo.byId('portal_loginas_errors').innerHTML = '';
+    }
+    
     function portal_loginAs_checkAdminRole(isAdmin) {
         var wrapper = dojo.byId('portal_login_as_password_wrapper');
         if(isAdmin) {
@@ -371,7 +376,7 @@ dojo.require("dojo.cookie");
         var callbackOptions = {
             callback: saveUserCallbackMyAccount,
             exceptionHandler: saveUserExceptionMyAccount
-        }
+        };
         UserAjax.updateUser(currentUserMyAccount.id, currentUserMyAccount.id, dijit.byId('firstNameMyAccount').attr('value'),
                 dijit.byId('lastNameMyAccount').attr('value'),
                 dijit.byId('emailAddressMyAccount').attr('value'), myAccountpassswordValue, callbackOptions);
@@ -575,7 +580,7 @@ dojo.require("dojo.cookie");
                 <div id="portal_login_as_users_select" class="formRow" style="text-align:center;">
                     <div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></div>
                     <bean:message key="Select-User" /> : &nbsp;
-                        <select id="portal_login_as_user" name="portal_login_as_user" dojoType="dijit.form.FilteringSelect"
+                        <select id="portal_login_as_user" name="portal_login_as_user" dojoType="dijit.form.FilteringSelect" onchange="clearErrorMsg()"
                         store="usersStore" searchDelay="300" pageSize="30" labelAttr="name"
                         invalidMessage="<%=LanguageUtil.get(pageContext,
                             "Invalid-option-selected")%>"
