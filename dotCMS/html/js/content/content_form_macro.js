@@ -965,7 +965,7 @@ function validateRegularExpresion(element, regexpression, text){
 	        	if(customErrorMessages[element.name] != ''){
 	    			document.getElementById('alert'+element.name).innerHTML = customErrorMessages[element.name];
 	    		}else{
-	        	 document.getElementById('alert'+element.name).innerHTML = text + " doesn\'t comply the specified format";
+	        	 document.getElementById('alert'+element.name).innerHTML = text + " " + userLang();
 	    		}
 	        	errorFieldName=element.id;
 	            return false;
@@ -990,7 +990,7 @@ function validateRegularExpresionNotHTML(element, regexpression, text){
 	        	if(customErrorMessages[element.name] != ''){
 	    			document.getElementById('alert'+element.name).innerHTML = customErrorMessages[element.name];
 	    		}else{
-	    			document.getElementById('alert'+element.name).innerHTML = text + " doesn\'t comply the specified format";
+	    			document.getElementById('alert'+element.name).innerHTML = text + " " + userLang();
 	    		}
 	        	errorFieldName=element.id;
 	            return false;
