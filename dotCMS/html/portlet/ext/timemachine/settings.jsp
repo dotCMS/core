@@ -12,13 +12,14 @@ String cronExp="";
 List<Host> hosts=new ArrayList<Host>();
 Boolean allhosts=false;
 List<Language> langs=new ArrayList<Language>();
-
+Boolean incremental = false;
 ScheduledTask task=APILocator.getTimeMachineAPI().getQuartzJob();
 if(task!=null) {
     allhosts=(Boolean) task.getProperties().get("allhosts");
     hosts=(List<Host>) task.getProperties().get("hosts");
     langs=(List<Language>) task.getProperties().get("langs");
     cronExp=(String) task.getProperties().get("CRON_EXPRESSION");
+    incremental = task.getProperties().get("incremental")!=null && (Boolean) task.getProperties().get("incremental");
 }
 %>
 <style type="text/css">
@@ -246,6 +247,27 @@ dojo.ready(function() {
           </div>
      <% } %>
    </td>
+   
+
+
+
+		<tr>
+			<td align="right" valign="top" nowrap="true">
+				&nbsp;
+			</td>
+			<td>
+				<div style="padding:5px;">
+					<input  type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>>
+					<label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label>
+
+				</div>
+
+			</td>
+		</tr>
+   
+
+   
+   
    </tr>
 
    <tr class="showScheduler">

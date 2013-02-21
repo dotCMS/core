@@ -21,12 +21,12 @@ public class TimeMachineJob implements Job, StatefulJob {
         Boolean allhosts=(Boolean) dataMap.get("allhosts");
         List<Host> hosts=(List<Host>) dataMap.get("hosts");
         List<Language> langs=(List<Language>) dataMap.get("langs");
-        
+        Boolean incremental= (dataMap.get("incremental") != null) ? (Boolean) dataMap.get("incremental") : false;
         try {
             if(allhosts) 
                 hosts=APILocator.getHostAPI().findAll(APILocator.getUserAPI().getSystemUser(), false);
             
-            APILocator.getTimeMachineAPI().startTimeMachine(hosts, langs);
+            APILocator.getTimeMachineAPI().startTimeMachine(hosts, langs,incremental);
         }
         catch(Exception ex) {
             throw new JobExecutionException(ex);
