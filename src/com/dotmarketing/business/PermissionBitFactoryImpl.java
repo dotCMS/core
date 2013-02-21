@@ -3314,7 +3314,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			//Search contentlets by identifier (all languages) and set permissions
 			String luceneQuery = "+identifier:"+id+" +working:true";
 			try {
-				for(Permissionable childPermissionable: contentAPI.search(luceneQuery,0,-1,null,systemUser, false)) {
+				for(Permissionable childPermissionable: contentAPI.search(luceneQuery,1,0,null,systemUser, false)) {
 					savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
 					break;
 				}
