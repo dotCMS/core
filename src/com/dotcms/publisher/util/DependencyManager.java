@@ -387,7 +387,7 @@ public class DependencyManager {
 				folders.add(con.getFolder()); // adding content folder
 				
 				try {
-					if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES")) {
+					if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES",false)) {
 						List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
 								APILocator.getFolderAPI().find(con.getFolder(), user, false));
 						folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
