@@ -45,10 +45,12 @@
 
 
 <style type="text/css">
+	
+	body,html{ height: 100%; }
+	
 	#tailingFrame{
 		border:1px solid silver;
 		overflow: auto;
-		height:100%;
 		height:100%;
 		width:100%;
 
@@ -56,7 +58,7 @@
 	#tailContainer {
 		margin-top:10px;
 		margin-bottom:30px;
-		height:80%;
+		height:100%;
 		width:94%;
 		position: relative;
 		top: 40px;;
