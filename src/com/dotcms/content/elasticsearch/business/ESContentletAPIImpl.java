@@ -385,7 +385,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     	try {
                     		fileAssetCont = findContentletByIdentifier(id.getId(), true, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
                         } catch(DotContentletStateException se) {
-                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
                         }
                         publish(fileAssetCont, APILocator.getUserAPI().getSystemUser(), false);
                     }else if(InodeUtils.isSet(id.getInode())){
