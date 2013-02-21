@@ -28,7 +28,7 @@ public class DotCMSCMISTest extends CMISBaseTest {
 
         assertNotNull(createFile("test.txt", folderId));
         
-        assertTrue( ! doQuery("select * from webPageContent WHERE title LIKE '%a%'").getNumItems().equals(BigInteger.valueOf(0)));
+        assertTrue( ! doQuery("SELECT * FROM cmis:document WHERE cmis:name LIKE '%a%'").getNumItems().equals(BigInteger.valueOf(0)));
         
     }
 }

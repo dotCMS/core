@@ -87,4 +87,10 @@ public class DotCallContextObjectHandler implements CallContext, ObjectInfoHandl
 	public ObjectInfo getObjectInfo(String arg0, String arg1) {
 		return null;
 	}
+
+	@Override
+	public long getMaxContentSize() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }
