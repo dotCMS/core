@@ -236,6 +236,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         String cronExp=req.getParameter("cronExp");
         String[] hostIdentifiers=req.getParameterValues("snaphost");
         boolean allhost=req.getParameter("allhosts")!=null;
+        boolean incremental=req.getParameter("incremental")!=null;
         String[] langids=req.getParameterValues("lang");
         Map<String, String> map = getURIParams();
         boolean runnow=map.get("run")!=null;
@@ -255,7 +256,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
 
 
         try {        	
-               APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,allhost,langs);
+               APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,allhost,langs, incremental);
         	
         	}catch (Exception ex) {
                Logger.error(this, ex.getMessage(),ex);
@@ -266,9 +267,10 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         if(runnow) {
             final List<Host> dhosts=hosts;
             final List<Language> dlangs=langs;
+            final boolean inc = incremental;
             new Thread() {
                 public void run() {
-                    APILocator.getTimeMachineAPI().startTimeMachine(dhosts, dlangs);
+                    APILocator.getTimeMachineAPI().startTimeMachine(dhosts, dlangs,inc);
                 }
             }.start();
         }
