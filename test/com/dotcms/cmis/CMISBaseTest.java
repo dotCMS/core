@@ -8,6 +8,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import com.dotcms.TestBase;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
@@ -24,18 +25,16 @@ public class CMISBaseTest extends TestBase {
     @BeforeClass
     public static void prepare () throws DotSecurityException, DotDataException {
 
-    	if(false){
-    		throw new DotSecurityException("asd");
-    		
-    	}
-    	if(false){
-    		throw new DotDataException("asd");
-    		
-    	}
     }
     
     protected static String getdefaultHostId(){
-    	return getRootFolderChildren().getObjects().get(0).getObject().getId();
+        try { // FIXME: this is a stub
+            return APILocator.getHostAPI().findDefaultHost(
+    	        APILocator.getUserAPI().getSystemUser(), false).getIdentifier();
+        }
+        catch(Exception ex) {
+            return null;
+        }
     }
     
     protected static ObjectInFolderList getRootFolderChildren(){
