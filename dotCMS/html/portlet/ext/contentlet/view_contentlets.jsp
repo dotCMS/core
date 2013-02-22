@@ -602,7 +602,7 @@
 
 
 <!-- START Show Query -->
-        <div id="queryDiv" dojoType="dijit.Dialog" style="display: none;">
+        <div id="queryDiv" dojoType="dijit.Dialog" style="display: none;padding-top:15px\9;">
                 <div id="queryResults"></div>
         </div>
 <!-- END Show Query -->
