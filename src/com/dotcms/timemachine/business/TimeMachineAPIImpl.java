@@ -29,7 +29,7 @@ import com.dotmarketing.util.UtilMethods;
 public class TimeMachineAPIImpl implements TimeMachineAPI {
 
     @Override
-    public List<PublishStatus> startTimeMachine(List<Host> hosts, List<Language> langs)  {
+    public List<PublishStatus> startTimeMachine(List<Host> hosts, List<Language> langs, boolean incremental)  {
         List<PublishStatus> list=new ArrayList<PublishStatus>(langs.size());
         
         
@@ -44,8 +44,13 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
                 tmconfig.setHosts(hosts);
                 tmconfig.setLanguage(lang.getId());
                 tmconfig.setDestinationBundle("tm_" + d.getTime());
-                tmconfig.setId("timeMachineBundle_" +d.getTime() +"_"+lang.getId());
-                tmconfig.setIncremental(true);
+                tmconfig.setIncremental(incremental);
+                if(incremental){
+                	tmconfig.setId("timeMachineBundle_incremental_" + lang.getId());
+                }else{
+                	tmconfig.setId("timeMachineBundle_" +d.getTime() + "_" + lang.getId());
+                }
+                
                 list.add(APILocator.getPublisherAPI().publish(tmconfig));
             }
             catch(Exception ex) {
@@ -145,13 +150,13 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
     }
 
     @Override
-    public void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs) {
+    public void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs, boolean incremental) {
         Map<String,Object> config=new HashMap<String,Object>();
         config.put("CRON_EXPRESSION",cronExp);
         config.put("hosts", hosts);
         config.put("langs", langs);
         config.put("allhosts", allhost);
-        
+        config.put("incremental", incremental);
         ScheduledTask task=getQuartzJob();
         if(task!=null) {
             // delete the old one

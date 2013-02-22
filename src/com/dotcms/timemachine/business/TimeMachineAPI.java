@@ -20,9 +20,9 @@ public interface TimeMachineAPI {
 
     public List<Host> getHostsWithTimeMachine();
 
-    List<PublishStatus> startTimeMachine(List<Host> hosts, List<Language> langs);
+    List<PublishStatus> startTimeMachine(List<Host> hosts, List<Language> langs, boolean incremental);
 
-    void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs);
+    void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs, boolean incremental);
 
     void removeQuartzJob() throws DotRuntimeException;
 	
