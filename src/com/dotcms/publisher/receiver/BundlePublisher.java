@@ -50,7 +50,7 @@ public class BundlePublisher extends Publisher {
     private PublishAuditAPI auditAPI = null;
     Map<String,Long> infoToRemove = new HashMap<String, Long>();
     //List<String> pagesToClear = new ArrayList<String>();
-    List<String> assetIds = new ArrayList<String>();
+    Map<String, String> assetIds = new HashMap<String, String>();
     boolean bundleSuccess = true;
     
     private List<IHandler> handlers = new ArrayList<IHandler>();

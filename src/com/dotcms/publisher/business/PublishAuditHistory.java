@@ -1,10 +1,8 @@
 package com.dotcms.publisher.business;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.util.Logger;
@@ -23,10 +21,10 @@ public class PublishAuditHistory implements Serializable {
 	private Date publishStart;
 	private Date publishEnd;
 	private int numTries = 0;
-	private List<String> assets;
+	private Map<String, String> assets;
 	
 	public PublishAuditHistory() {
-		assets = new ArrayList<String>();
+		assets = new HashMap<String, String>();
 		endpointsMap = new HashMap<String, Map<String,EndpointDetail>>();
 	}
 	
@@ -79,10 +77,10 @@ public class PublishAuditHistory implements Serializable {
 	}
 
 
-	public List<String> getAssets() {
+	public Map<String, String> getAssets() {
 		return assets;
 	}
-	public void setAssets(List<String> assets) {
+	public void setAssets(Map<String, String> assets) {
 		this.assets = assets;
 	}
 	
