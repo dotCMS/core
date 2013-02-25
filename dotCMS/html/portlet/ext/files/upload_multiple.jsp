@@ -205,91 +205,23 @@ if(request.getParameter("in_frame")!=null){
 				    <button dojoType="dijit.form.Button" onclick="doUpload('')" iconClass="saveIcon" id="saveButton">
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 					<script type="dojo/method" event="onClick" args="evt">
-						var form = document.getElementById("fm");
-						var nameValueSeparator = "<%=com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR%>";
-						var uploadFiles = dijit.byId('uploader').getFileList();
-						if(dojo.isIE){
-							if (uploadFiles.length == 1) {
-					    		alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.alert.please.upload")) %>');
-					    		return false;
-					    	}
-							for (var tempIE=0;tempIE<(uploadFiles.length-1);tempIE++) {
-								var fileName = uploadFiles[tempIE].name;
-								if(tempIE == 0)
-									document.getElementById("fileNames").value = fileName;
-								else
-									document.getElementById("fileNames").value = document.getElementById("fileNames").value + nameValueSeparator + fileName;
-							}
-						}else{
-							if (uploadFiles.length == 0) {
-					    		alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.alert.please.upload")) %>');
-					    		return false;
-						    }
-							for (var temp=0;temp<uploadFiles.length;temp++) {
-								var fileName = uploadFiles[temp].name;
-								if(temp == 0)
-									document.getElementById("fileNames").value = fileName;
-								else
-									document.getElementById("fileNames").value = document.getElementById("fileNames").value + nameValueSeparator + fileName;
-							}
-						}
+                        //Submit the form
+                        uploadFiles(dijit.byId("uploader"), "<%=referer%>", "");
 
-				        document.getElementById("tableDiv").style.display = "none";
-				        document.getElementById("messageDiv").style.display = "";
-
-						form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>';
-				        form.<portlet:namespace />subcmd.value = "";
-				        form.<portlet:namespace />cmd.value="<%= Constants.ADD %>";
-				      	dijit.byId('saveButton').setAttribute('disabled',true);
-				    	if(dijit.byId('savePublishButton')!=null){
-				        	dijit.byId('savePublishButton').setAttribute('disabled',true);
-				    	}
-				        submitForm(form);
-
-    	<% if(inFrame) { %>
-        if(parent.fileSubmitted) {
-            parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
-        }
-        <% } %>
+                        <% if(inFrame) { %>
+                            if(parent.fileSubmitted) {
+                                parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
+                            }
+                        <% } %>
 					</script>
                 </button>
                 <%if(!scheme.isMandatory()) {%>
            		<button dojoType="dijit.form.Button" onClick="doUpload('publish')" iconClass="publishIcon" id="savePublishButton" type="button">
                 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 					<script type="dojo/method" event="onClick" args="evt">
-						var form = document.getElementById("fm");
-						var nameValueSeparator = "<%=com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR%>";
-						var uploadFiles = dijit.byId('uploader').getFileList();
 
-                        if (uploadFiles.length == 0) {
-                            alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.alert.please.upload")) %>');
-                            return false;
-                        }
-                        for (var temp=0;temp<uploadFiles.length;temp++) {
-                            var fileName = uploadFiles[temp].name;
-                            if(temp == 0)
-                                document.getElementById("fileNames").value = fileName;
-                            else
-                                document.getElementById("fileNames").value = document.getElementById("fileNames").value + nameValueSeparator + fileName;
-                        }
-
-				        document.getElementById("tableDiv").style.display = "none";
-				        document.getElementById("messageDiv").style.display = "";
-
-						form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>';
-				        form.<portlet:namespace />subcmd.value = "publish";
-				        form.<portlet:namespace />cmd.value="<%= Constants.ADD %>";
-				      	dijit.byId('saveButton').setAttribute('disabled',true);
-				    	if(dijit.byId('savePublishButton')!=null){
-				        	dijit.byId('savePublishButton').setAttribute('disabled',true);
-				    	}
-
-                        if(dojo.isIE){
-                            uploaderHandler(dijit.byId("uploader"), "<%=referer%>");
-                            dijit.byId("uploader").submit(form);
-                        } else {
-                            submitForm(form);
-                        }
+                        //Submit the form
+                        uploadFiles(dijit.byId("uploader"), "<%=referer%>", "publish");
 
                         <% if(inFrame) { %>
                             if(parent.fileSubmitted) {
@@ -303,52 +235,15 @@ if(request.getParameter("in_frame")!=null){
                 <button dojoType="dijit.form.Button" onClick="doUpload('')" iconClass="saveIcon" id="saveButton">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 					<script type="dojo/method" event="onClick" args="evt">
-						var form = document.getElementById("fm");
-						var nameValueSeparator = "<%=com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR%>";
-						var uploadFiles = dijit.byId('uploader').getFileList();
-						if(dojo.isIE){
-							if (uploadFiles.length == 1) {
-					    		alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.alert.please.upload")) %>');
-					    		return false;
-					    	}
-							for (var tempIE=0;tempIE<(uploadFiles.length-1);tempIE++) {
-								var fileName = uploadFiles[tempIE].name;
-								if(tempIE == 0)
-									document.getElementById("fileNames").value = fileName;
-								else
-									document.getElementById("fileNames").value = document.getElementById("fileNames").value + nameValueSeparator + fileName;
-							}
-						}else{
-							if (uploadFiles.length == 0) {
-					    		alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.alert.please.upload")) %>');
-					    		return false;
-						    }
-							for (var temp=0;temp<uploadFiles.length;temp++) {
-								var fileName = uploadFiles[temp].name;
-								if(temp == 0)
-									document.getElementById("fileNames").value = fileName;
-								else
-									document.getElementById("fileNames").value = document.getElementById("fileNames").value + nameValueSeparator + fileName;
-							}
-						}
 
-				        document.getElementById("tableDiv").style.display = "none";
-				        document.getElementById("messageDiv").style.display = "";
+                        //Submit the form
+                        uploadFiles(dijit.byId("uploader"), "<%=referer%>", "");
 
-						form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>';
-				        form.<portlet:namespace />subcmd.value = "";
-				        form.<portlet:namespace />cmd.value="<%= Constants.ADD %>";
-				      	dijit.byId('saveButton').setAttribute('disabled',true);
-				    	if(dijit.byId('savePublishButton')!=null){
-				        	dijit.byId('savePublishButton').setAttribute('disabled',true);
-				    	}
-				        submitForm(form);
-
-    	<% if(inFrame) { %>
-        if(parent.fileSubmitted) {
-            parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
-        }
-        <% } %>
+                        <% if(inFrame) { %>
+                            if(parent.fileSubmitted) {
+                                parent.fileSubmitted(uploadFiles.length,'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlets.batch.reindexing.background")) %>');
+                            }
+                        <% } %>
 					</script>
              	</button>
 			  <% } %>
