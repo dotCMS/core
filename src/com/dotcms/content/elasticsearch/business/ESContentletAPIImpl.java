@@ -2290,7 +2290,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	}
 			                	else if (oldFile.exists()) {
 			                		// otherwise, we copy the files as hardlinks
-			                		FileUtil.copyFile(oldFile, newFile, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
+			                		FileUtil.copyFile(oldFile, newFile);
 			                	}
 			                	contentlet.setBinary(velocityVarNm, newFile);
 			                }
