@@ -1,5 +1,6 @@
 package com.dotcms.autoupdater;
 
+import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;
 import org.apache.log4j.Logger;
 
@@ -143,7 +144,7 @@ public class FileUpdater {
                 File assetsFolder = new File( backUpPath + File.separator + assets );
                 File destFolder = new File( dotserverFolder + File.separator + assets );
                 //Copying using hardlinks
-                FileUtil.copyDirectory(assetsFolder, destFolder, true);
+                FileUtil.copyDirectory(assetsFolder, destFolder);
                 //copyFolder( assetsFolder, destFolder );
 
                 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -155,7 +156,7 @@ public class FileUpdater {
                 File esdataFolder = new File( backUpPath + File.separator + esdata );
                 destFolder = new File( dotserverFolder + File.separator + esdata );
                 //Copying using hardlinks
-                FileUtil.copyDirectory(esdataFolder, destFolder, true);
+                FileUtil.copyDirectory(esdataFolder, destFolder);
                 //copyFolder( esdataFolder, destFolder );
 
                 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
