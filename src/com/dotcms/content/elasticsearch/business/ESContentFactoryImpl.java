@@ -753,7 +753,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         for ( SearchHit hit : hits ) {
             try {
-                cons.add( find( hit.getSource().get( "inode" ).toString() ) );
+                cons.add( find( hit.field("inode").getValue().toString() ) );
             } catch ( Exception e ) {
                 throw new ElasticSearchException( e.getMessage(), e );
             }
@@ -841,7 +841,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			SearchResponse response = client.prepareSearch((live ? info.live : info.working)).setQuery(builder)
 			        .execute().actionGet();
 			SearchHits hits = response.hits();
-			Contentlet contentlet = find(hits.getAt(0).getSource().get("inode").toString());
+			Contentlet contentlet = find(hits.getAt(0).field("inode").getValue().toString());
 			return contentlet;
 		}
 		// if we don't have the con in this language
@@ -980,7 +980,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			List<Contentlet> cons = new ArrayList<Contentlet>();
 			for (int i = 0; i < hits.getHits().length; i++) {
 				try {
-					cons.add(find(hits.getAt(i).getSource().get("inode").toString()));
+					cons.add(find(hits.getAt(i).field("inode").getValue().toString()));
 				} catch (Exception e) {
 					throw new ElasticSearchException(e.getMessage(),e);
 				}
@@ -1282,6 +1282,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         	}
 
         	srb.setIndices(indexToHit);
+        	srb.addFields("inode","identifier");
 
             if(limit>0)
                 srb.setSize(limit);
@@ -1389,7 +1390,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    SearchHits hits = indexSearch(query, limit, offset, sortBy);
 	    List<String> inodes=new ArrayList<String>();
 	    for(SearchHit h : hits)
-	        inodes.add(h.getSource().get("inode").toString());
+	        inodes.add(h.field("inode").getValue().toString());
 	    return findContentlets(inodes);
 	}
 
