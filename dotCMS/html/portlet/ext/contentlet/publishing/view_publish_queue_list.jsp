@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
+<%@page import="com.dotmarketing.beans.PermissionableProxy"%>
 <%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="java.text.SimpleDateFormat"%>
@@ -187,8 +189,50 @@
 	</table>
 		
 <%} else {
+	//Check bundle permissions
+	Map<String, Boolean> permissionMap = new HashMap<String, Boolean>();
+	PermissionAPI permAPI = APILocator.getPermissionAPI();
 	List<PublishQueueElement> bundleAssets = null;
 	for(Map<String,Object> bundle : iresults) {
+		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));
+		
+		for(PublishQueueElement c : bundleAssets) {
+			
+			String identifier = c.getAsset();
+			String assetType = c.getType();
+			
+			PermissionableProxy pp = new PermissionableProxy();
+			pp.setIdentifier(identifier);
+			pp.setType(assetType);
+			pp.setInode(identifier);
+			
+			
+			if(assetType.equals("contentlet") || assetType.equals("host")) {
+				pp.setPermissionByIdentifier(true);
+			} else if (assetType.equals("htmlpage")) {
+				pp.setPermissionByIdentifier(true);
+			} else if (assetType.equals("folder")) {
+				pp.setPermissionByIdentifier(false);
+			} else if (assetType.equals("template")) {
+				pp.setPermissionByIdentifier(true);
+			} else if (assetType.equals("containers")) {
+				pp.setPermissionByIdentifier(true);
+			} else if (assetType.equals("structure")) {
+				pp.setPermissionByIdentifier(false);
+			} 
+			
+			permissionMap.put(
+					(String) bundle.get("bundle_id"), 
+					new Boolean(permAPI.doesUserHavePermission(pp, PermissionAPI.PERMISSION_PUBLISH, user)));
+			break;
+		}
+	}
+	
+	
+	bundleAssets = null;
+	for(Map<String,Object> bundle : iresults) {
+		
+		if(permissionMap.get(bundle.get("bundle_id")).equals(Boolean.TRUE)) {
 		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));%>
 				
 	<table class="listingTable" style="margin:10px;margin-bottom:20px;">
@@ -315,7 +359,9 @@
 			</tr>
 		<%}%>
 	</table>
-<%}%>
+<%
+	}
+}%>
 	
 <table width="97%" style="margin:10px;" >
 	<tr>
