@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="java.io.StringWriter"%>
 <%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
@@ -167,8 +168,8 @@
     		}
     		
     		
-    		iresults = conAPI.search(query,new Integer(limit),new Integer(offset),sortBy,user,false);
-    		results = (PaginatedArrayList) conAPI.searchIndex(query,new Integer(limit),new Integer(offset),sortBy,user,false);
+    		iresults = conAPI.search(query,new Integer(limit),new Integer(offset),sortBy,user,false, PermissionAPI.PERMISSION_PUBLISH);
+    		results = (PaginatedArrayList) conAPI.search(query, new Integer(limit),new Integer(offset),sortBy,user,false, PermissionAPI.PERMISSION_PUBLISH);
     		counter = ""+results.getTotalResults();
     	}
     }catch(Exception pe){
