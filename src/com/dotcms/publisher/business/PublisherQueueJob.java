@@ -85,11 +85,11 @@ public class PublisherQueueJob implements StatefulJob {
 						//History
 						historyPojo = new PublishAuditHistory();
 						//Retriving assets
-						List<String> assets = new ArrayList<String>();
+						Map<String, String> assets = new HashMap<String, String>();
 						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
 						
 						for(PublishQueueElement c : tempBundleContents) {
-							assets.add((String) c.getAsset());
+							assets.put((String) c.getAsset(), c.getType());
 							if(!c.getType().equals("contentlet"))
 								assetsToPublish.add(c);
 						}
@@ -272,7 +272,7 @@ public class PublisherQueueJob implements StatefulJob {
 	        			PublishAuditStatus.Status.SUCCESS, 
 	        			localHistory);
 	        	pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
-        	} else if(localHistory.getNumTries() >= maxNumTries) {
+        	} else if(localHistory.getNumTries() > maxNumTries) {
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(), 
 	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH, 
 	        			localHistory);
