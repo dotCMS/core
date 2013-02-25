@@ -696,6 +696,7 @@ dojo.require("dojo.cookie");
 					<button dojoType="dijit.form.Button" iconClass="bugIcon" onclick="window.open('https://github.com/dotCMS');">
 						<%=LanguageUtil.get(pageContext, "Report-a-Bug") %>
 					</button>
+                </div>
 			</td>
 			<td valign="top" width="50%" style="padding:10px 10px 10px 20px;">
 				<h2><%=LanguageUtil.get(pageContext, "Professional-Support") %></h2>

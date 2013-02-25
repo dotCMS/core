@@ -1680,6 +1680,16 @@ dojo.require("dotcms.dojo.push.PushHandler");
         }
 	}
 
+    function uploaderHandler (uploader, referer) {
+
+        /*dojo.connect(uploader, "onProgress", function(dataArray){
+           //...
+        });*/
+        dojo.connect(uploader, "onComplete", function(dataArray){
+            window.location = referer;
+        });
+    }
+
 	function removeAddlStyleRef(){//DOTCMS-6856
 		dijit.byId('addFileDialog').containerNode.getElementsByTagName("style")[0].remove(dijit.byId('addFileDialog').containerNode.getElementsByTagName("style")[0].childNodes[0]);
 	}

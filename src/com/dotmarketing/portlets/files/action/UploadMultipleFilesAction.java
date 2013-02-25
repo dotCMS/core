@@ -263,15 +263,18 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 						contentlet.setStringProperty("fileName", fileName);
 						java.io.File uploadedFile = uploadReq.getFile(fileName);
 						contentlet.setBinary("fileAsset", uploadedFile);
-						contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
-						if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
-						    if(isRootHost && !APILocator.getPermissionAPI().doesUserHaveInheriablePermissions(
-						             host,  com.dotmarketing.portlets.files.model.File.class.getCanonicalName(), 
-						             PermissionAPI.PERMISSION_PUBLISH, user) && !isAdmin)
-						        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-							APILocator.getVersionableAPI().setLive(contentlet);
-						}
-					}
+
+                        if ( uploadedFile != null ) {
+                            contentlet = APILocator.getContentletAPI().checkin( contentlet, user, false );
+                            if ( (subcmd != null) && subcmd.equals( com.dotmarketing.util.Constants.PUBLISH ) ) {
+                                if ( isRootHost && !APILocator.getPermissionAPI().doesUserHaveInheriablePermissions(
+                                        host, File.class.getCanonicalName(),
+                                        PermissionAPI.PERMISSION_PUBLISH, user ) && !isAdmin )
+                                    throw new ActionException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+                                APILocator.getVersionableAPI().setLive( contentlet );
+                            }
+                        }
+                    }
 				}
 				HibernateUtil.commitTransaction();
 			}
