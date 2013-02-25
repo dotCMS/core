@@ -9,13 +9,25 @@ import com.dotmarketing.exception.DotDataException;
 
 public  class PermissionableProxy implements Permissionable {
 	
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
 	private static final long serialVersionUID = 1L;
 	
-	public String Inode;
+	public String Inode =null;
 	
-	public String Identifier;
+	public String Identifier =null;
 	
-	public Boolean permissionByIdentifier;
+	public Boolean permissionByIdentifier =true;
+	
+	public String type =null;
+	
+	public String owner =null;
 	
 	public Boolean getPermissionByIdentifier() {
 		return permissionByIdentifier;
@@ -57,7 +69,7 @@ public  class PermissionableProxy implements Permissionable {
 	}
 
 	public String getOwner() {
-		return null;
+		return owner;
 	}
 
 	public Permissionable getParentPermissionable() throws DotDataException {
@@ -65,7 +77,7 @@ public  class PermissionableProxy implements Permissionable {
 	}
 
 	public String getPermissionType() {
-		return null;
+		return type;
 	}
 
 	public List<RelatedPermissionableGroup> permissionDependencies(
@@ -74,6 +86,7 @@ public  class PermissionableProxy implements Permissionable {
 	}
 
 	public void setOwner(String owner) {
+		this.owner=owner;
 	}
 
 	public List<? extends Permissionable> getChildrenPermissionable() throws DotDataException {
