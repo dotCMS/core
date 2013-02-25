@@ -747,7 +747,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         QueryBuilder builder = QueryBuilders.matchAllQuery();
 
-        SearchResponse response = client.getClient().prepareSearch().setQuery( builder ).setSize( limit ).setFrom( offset ).execute().actionGet();
+        SearchResponse response = client.getClient().prepareSearch()
+                .setQuery( builder ).addFields("inode","identifier")
+                .setSize( limit ).setFrom( offset ).execute().actionGet();
         SearchHits hits = response.hits();
         List<Contentlet> cons = new ArrayList<Contentlet>();
 
@@ -839,7 +841,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 			SearchResponse response = client.prepareSearch((live ? info.live : info.working)).setQuery(builder)
-			        .execute().actionGet();
+			        .addFields("inode","identifier").execute().actionGet();
 			SearchHits hits = response.hits();
 			Contentlet contentlet = find(hits.getAt(0).field("inode").getValue().toString());
 			return contentlet;
@@ -972,7 +974,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			BoolQueryBuilder builder = QueryBuilders.boolQuery().must(QueryBuilders.fieldQuery("conhost", hostId));
 
 			SearchResponse response = client.getClient().prepareSearch().setQuery(builder).
-			        setSize(limit).setFrom(offset).execute()
+			        setSize(limit).setFrom(offset).addFields("inode","identifier").execute()
 					.actionGet();
 
 			SearchHits hits = response.hits();
