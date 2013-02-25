@@ -120,7 +120,7 @@ public class FileUtil {
 	}
 
 	public static void copyDirectory(File source, File destination) {
-		copyDirectory(source, destination, false);
+		copyDirectory(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 
 	public static void copyFile(
@@ -130,7 +130,7 @@ public class FileUtil {
 	}
 
 	public static void copyFile(File source, File destination) {
-		copyFile(source, destination, false);
+		copyFile(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 
 	public static void copyFile(File source, File destination, boolean hardLinks) {
