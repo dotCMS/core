@@ -63,6 +63,8 @@ public class CMISBaseTest extends TestBase {
         dotRepo = new Service(map, storeManager);
         callContext = new DotCallContextObjectHandler();
         objectInfos = new DotCallContextObjectHandler();
+        dotRepo.setCallContext(callContext);
+        
     }
     
     protected static String getdefaultHostId(){
