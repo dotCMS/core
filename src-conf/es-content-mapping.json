@@ -12,6 +12,14 @@
                     "mapping": {
                          "type": "string",
                          "index" : "not_analyzed"
+                    },
+                    "match": "inode",
+                    "mapping": {
+                        "store": "yes"
+                    },
+                    "match": "identifier",
+                    "mapping": {
+                        "store": "yes"
                     }
 	              }
 	         }
