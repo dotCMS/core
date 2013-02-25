@@ -186,7 +186,7 @@ public class PermissionAjax {
 		rolePermissions.add(permissionMap);
 	}
 
-	public void saveAssetPermissions (String assetId, List<Map<String, String>> permissions, boolean reset) throws DotDataException, DotSecurityException, SystemException, PortalException  {
+	public void saveAssetPermissions (String assetId, List<Map<String, String>> permissions, boolean reset) throws Exception {
 
 		HibernateUtil.startTransaction();
 
@@ -280,23 +280,15 @@ public class PermissionAjax {
 			} else {
 				permissionAPI.removePermissions(asset);
 			}
-
-		} catch (DotDataException e) {
-			HibernateUtil.rollbackTransaction();
-			throw e;
-		} catch (DotSecurityException e) {
-			HibernateUtil.rollbackTransaction();
-			throw e;
-		} catch (PortalException e) {
-			HibernateUtil.rollbackTransaction();
-			throw e;
-		} catch (SystemException e) {
+			HibernateUtil.commitTransaction();
+		} catch (Exception e) {
+		    Logger.warn(this, e.getMessage(), e);
 			HibernateUtil.rollbackTransaction();
 			throw e;
 		}
-
-		HibernateUtil.commitTransaction();
-
+		finally {
+		    HibernateUtil.closeSession();
+		}
 	}
 
 	public void resetAssetPermissions (String assetId) throws DotDataException, PortalException, SystemException, DotSecurityException {
