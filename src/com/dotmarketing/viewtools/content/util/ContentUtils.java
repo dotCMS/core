@@ -153,7 +153,7 @@ public class ContentUtils {
 		    return pull(query,-1,limit,sort, user, tmDate);
 		}
 		
-		public static PaginatedArrayList<Contentlet> pull(String query, int limit,int offset, String sort, User user, String tmDate){
+		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate){
 		    PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<Contentlet>();
 			try {
 				//need to send the query with the defaults --- 
