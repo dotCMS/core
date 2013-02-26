@@ -1,13 +1,2 @@
-define("dojox/form/RadioStack", [
-	"./CheckedMultiSelect",
-	"./_SelectStackMixin",
-	"dojo/_base/declare"
-], function(CheckedMultiSelect, _SelectStackMixin, declare){
-/*=====
-return {
-	// summary:
-	//		A radio-based select stack.
-};
-=====*/
-	return declare("dojox.form.RadioStack", [ CheckedMultiSelect, _SelectStackMixin ]);
-});
+//>>built
+define("dojox/form/RadioStack",["./CheckedMultiSelect","./_SelectStackMixin","dojo/_base/declare"],function(_1,_2,_3){return _3("dojox.form.RadioStack",[_1,_2]);});
