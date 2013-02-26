@@ -1,5 +1,2 @@
-define(
-"dojox/editor/plugins/nls/nb/PageBreak", ({
-	"pageBreak": "Sideskift"
-})
-);
+//>>built
+define("dojox/editor/plugins/nls/nb/PageBreak",({"pageBreak":"Sideskift"}));

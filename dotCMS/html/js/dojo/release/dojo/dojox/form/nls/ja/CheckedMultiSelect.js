@@ -1,6 +1,2 @@
-define(
-"dojox/form/nls/ja/CheckedMultiSelect", ({
-	invalidMessage: "少なくとも 1 つの項目を選択しなければなりません。",
-	multiSelectLabelText: "{num} 個の項目が選択されています"
-})
-);
+//>>built
+define("dojox/form/nls/ja/CheckedMultiSelect",({invalidMessage:"少なくとも 1 つの項目を選択しなければなりません。",multiSelectLabelText:"{num} 個の項目が選択されています"}));

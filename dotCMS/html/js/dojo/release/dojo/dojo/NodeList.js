@@ -1,6 +1,8 @@
-define("dojo/NodeList", ["./query"], function(query){
-	// This class is just for documentation purposes, so NodeList shows up well in the API viewer,
-	// and to simplify writing API doc for all the methods that take NodeList as a parameter, or return a NodeList.
-	return query.NodeList;
-});
+/*
+	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Available via Academic Free License >= 2.1 OR the modified BSD license.
+	see: http://dojotoolkit.org/license for details
+*/
 
+//>>built
+define("dojo/NodeList",["./query"],function(_1){return _1.NodeList;});

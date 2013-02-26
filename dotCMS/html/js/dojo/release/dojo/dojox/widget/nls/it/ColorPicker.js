@@ -1,14 +1,2 @@
-define(
-"dojox/widget/nls/it/ColorPicker", ({
-redLabel: "r",
-greenLabel: "v",
-blueLabel: "b",
-hueLabel: "t",
-saturationLabel: "s",
-valueLabel: "v", /* aka intensity or brightness */
-degLabel: "\u00B0",
-hexLabel: "hex",
-huePickerTitle: "Selettore tonalità",
-saturationPickerTitle: "Selettore saturazione"
-})
-);
+//>>built
+define("dojox/widget/nls/it/ColorPicker",({redLabel:"r",greenLabel:"v",blueLabel:"b",hueLabel:"t",saturationLabel:"s",valueLabel:"v",degLabel:"°",hexLabel:"hex",huePickerTitle:"Selettore tonalità",saturationPickerTitle:"Selettore saturazione"}));

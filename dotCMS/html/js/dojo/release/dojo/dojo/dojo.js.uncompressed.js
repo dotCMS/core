@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
+	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
 	Available via Academic Free License >= 2.1 OR the modified BSD license.
 	see: http://dojotoolkit.org/license for details
 */
@@ -130,9 +130,9 @@
 
 		// this will be the global require function; define it immediately so we can start hanging things off of it
 		req = function(
-			config,       //(object, optional) hash of configuration properties
+			config,		  //(object, optional) hash of configuration properties
 			dependencies, //(array of commonjs.moduleId, optional) list of modules to be loaded before applying callback
-			callback      //(function, optional) lamda expression to apply to module values implied by dependencies
+			callback	  //(function, optional) lamda expression to apply to module values implied by dependencies
 		){
 			return contextRequire(config, dependencies, callback, 0, req);
 		},
@@ -407,14 +407,14 @@
 			// Modules go through several phases in creation:
 			//
 			// 1. Requested: some other module's definition or a require application contained the requested module in
-			//    its dependency vector or executing code explicitly demands a module via req.require.
+			//	  its dependency vector or executing code explicitly demands a module via req.require.
 			//
 			// 2. Injected: a script element has been appended to the insert-point element demanding the resource implied by the URL
 			//
 			// 3. Loaded: the resource injected in [2] has been evalated.
 			//
 			// 4. Defined: the resource contained a define statement that advised the loader about the module. Notice that some
-			//    resources may just contain a bundle of code and never formally define a module via define
+			//	  resources may just contain a bundle of code and never formally define a module via define
 			//
 			// 5. Evaluated: the module was defined via define and the loader has evaluated the factory and computed a result.
 			= {},
@@ -523,6 +523,14 @@
 				packs[name] = packageInfo;
 			},
 
+			delayedModuleConfig
+				// module config cannot be consummed until the loader is completely initialized; therefore, all
+				// module config detected during booting is memorized and applied at the end of loader initialization
+				// TODO: this is a bit of a kludge; all config should be moved to end of loader initialization, but
+				// we'll delay this chore and do it with a final loader 1.x cleanup after the 2.x loader prototyping is complete
+				= [],
+
+
 			config = function(config, booting, referenceModule){
 				for(var p in config){
 					if(p=="waitSeconds"){
@@ -591,7 +599,7 @@
 				forEach(mapProgs, function(item){
 					item[1] = computeMapProg(item[1], []);
 					if(item[0]=="*"){
-						mapProgs.star = item[1];
+						mapProgs.star = item;
 					}
 				});
 
@@ -606,9 +614,13 @@
 					aliases.push(pair);
 				});
 
-				for(p in config.config){
-					var module = getModule(p, referenceModule);
-					module.config = mix(module.config || {}, config.config[p]);
+				if(booting){
+					delayedModuleConfig.push({config:config.config});
+				}else{
+					for(p in config.config){
+						var module = getModule(p, referenceModule);
+						module.config = mix(module.config || {}, config.config[p]);
+					}
 				}
 
 				// push in any new cache values
@@ -942,6 +954,7 @@
 				}
 				mapItem = mapItem || mapProgs.star;
 				mapItem = mapItem && runMapProg(mid, mapItem[1]);
+
 				if(mapItem){
 					mid = mapItem[1] + mid.substring(mapItem[3]);
 					}
@@ -1168,9 +1181,9 @@
 				}
 			}
 			// delete references to synthetic modules
-	        if (/^require\*/.test(module.mid)) {
-	            delete modules[module.mid];
-	        }
+			if (/^require\*/.test(module.mid)) {
+				delete modules[module.mid];
+			}
 		},
 
 		circleTrace = [],
@@ -1886,7 +1899,8 @@
 	}
 
 	if( 1 ){
-		var bootDeps = dojoSniffConfig.deps ||  userConfig.deps || defaultConfig.deps,
+		forEach(delayedModuleConfig, function(c){ config(c); });
+		var bootDeps = dojoSniffConfig.deps ||	userConfig.deps || defaultConfig.deps,
 			bootCallback = dojoSniffConfig.callback || userConfig.callback || defaultConfig.callback;
 		req.boot = (bootDeps || bootCallback) ? [bootDeps || [], bootCallback] : 0;
 	}
@@ -3328,7 +3342,7 @@ define(["../has", "./config", "require", "module"], function(has, config, requir
 	dojo.isAsync = ! 1  || require.async;
 	dojo.locale = config.locale;
 
-	var rev = "$Rev: 29458 $".match(/\d+/);
+	var rev = "$Rev: 30226 $".match(/\d+/);
 	dojo.version = {
 		// summary:
 		//		Version number of the Dojo Toolkit
@@ -3341,7 +3355,7 @@ define(["../has", "./config", "require", "module"], function(has, config, requir
 		//		- flag: String: Descriptor flag. If total version is "1.2.0beta1", will be "beta1"
 		//		- revision: Number: The SVN rev from which dojo was pulled
 
-		major: 1, minor: 8, patch: 0, flag: "",
+		major: 1, minor: 8, patch: 3, flag: "",
 		revision: rev ? +rev[0] : NaN,
 		toString: function(){
 			var v = dojo.version;
@@ -6180,7 +6194,54 @@ define(["./has"], function(has){
 	var hasJSON = typeof JSON != "undefined";
 	has.add("json-parse", hasJSON); // all the parsers work fine
 		// Firefox 3.5/Gecko 1.9 fails to use replacer in stringify properly https://bugzilla.mozilla.org/show_bug.cgi?id=509184
-	has.add("json-stringify", hasJSON && JSON.stringify({a:0}, function(k,v){return v||1;}) == '{"a":1}'); 
+	has.add("json-stringify", hasJSON && JSON.stringify({a:0}, function(k,v){return v||1;}) == '{"a":1}');
+
+	/*=====
+	return {
+		// summary:
+		//		Functions to parse and serialize JSON
+
+		parse: function(str, strict){
+			// summary:
+			//		Parses a [JSON](http://json.org) string to return a JavaScript object.
+			// description:
+			//		This function follows [native JSON API](https://developer.mozilla.org/en/JSON)
+			//		Throws for invalid JSON strings. This delegates to eval() if native JSON
+			//		support is not available. By default this will evaluate any valid JS expression.
+			//		With the strict parameter set to true, the parser will ensure that only
+			//		valid JSON strings are parsed (otherwise throwing an error). Without the strict
+			//		parameter, the content passed to this method must come
+			//		from a trusted source.
+			// str:
+			//		a string literal of a JSON item, for instance:
+			//		`'{ "foo": [ "bar", 1, { "baz": "thud" } ] }'`
+			// strict:
+			//		When set to true, this will ensure that only valid, secure JSON is ever parsed.
+			//		Make sure this is set to true for untrusted content. Note that on browsers/engines
+			//		without native JSON support, setting this to true will run slower.
+		},
+		stringify: function(value, replacer, spacer){
+			// summary:
+			//		Returns a [JSON](http://json.org) serialization of an object.
+			// description:
+			//		Returns a [JSON](http://json.org) serialization of an object.
+			//		This function follows [native JSON API](https://developer.mozilla.org/en/JSON)
+			//		Note that this doesn't check for infinite recursion, so don't do that!
+			// value:
+			//		A value to be serialized.
+			// replacer:
+			//		A replacer function that is called for each value and can return a replacement
+			// spacer:
+			//		A spacer string to be used for pretty printing of JSON
+			// example:
+			//		simple serialization of a trivial object
+			//	|	define(["dojo/json"], function(JSON){
+			// 	|		var jsonStr = JSON.stringify({ howdy: "stranger!", isStrange: true });
+			//	|		doh.is('{"howdy":"stranger!","isStrange":true}', jsonStr);
+		}
+	};
+	=====*/
+
 	if(has("json-stringify")){
 		return JSON;
 	}else{
@@ -6194,50 +6255,13 @@ define(["./has"], function(has){
 				replace(/[\t]/g, "\\t").replace(/[\r]/g, "\\r"); // string
 		};
 		return {
-			// summary:
-			//		Functions to parse and serialize JSON
-
 			parse: has("json-parse") ? JSON.parse : function(str, strict){
-				// summary:
-				//		Parses a [JSON](http://json.org) string to return a JavaScript object.
-				// description:
-				//		This function follows [native JSON API](https://developer.mozilla.org/en/JSON)
-				//		Throws for invalid JSON strings. This delegates to eval() if native JSON
-				//		support is not available. By default this will evaluate any valid JS expression.
-				//		With the strict parameter set to true, the parser will ensure that only
-				//		valid JSON strings are parsed (otherwise throwing an error). Without the strict
-				//		parameter, the content passed to this method must come
-				//		from a trusted source.
-				// str:
-				//		a string literal of a JSON item, for instance:
-				//		`'{ "foo": [ "bar", 1, { "baz": "thud" } ] }'`
-				// strict:
-				//		When set to true, this will ensure that only valid, secure JSON is ever parsed.
-				//		Make sure this is set to true for untrusted content. Note that on browsers/engines
-				//		without native JSON support, setting this to true will run slower.
 				if(strict && !/^([\s\[\{]*(?:"(?:\\.|[^"])+"|-?\d[\d\.]*(?:[Ee][+-]?\d+)?|null|true|false|)[\s\]\}]*(?:,|:|$))+$/.test(str)){
 					throw new SyntaxError("Invalid characters in JSON");
 				}
 				return eval('(' + str + ')');
 			},
 			stringify: function(value, replacer, spacer){
-				// summary:
-				//		Returns a [JSON](http://json.org) serialization of an object.
-				// description:
-				//		Returns a [JSON](http://json.org) serialization of an object.
-				//		This function follows [native JSON API](https://developer.mozilla.org/en/JSON)
-				//		Note that this doesn't check for infinite recursion, so don't do that!
-				// value:
-				//		A value to be serialized. 
-				// replacer:
-				//		A replacer function that is called for each value and can return a replacement
-				// spacer:
-				//		A spacer string to be used for pretty printing of JSON
-				// example:
-				//		simple serialization of a trivial object
-				//	|	define(["dojo/json"], function(JSON){
-				// 	|		var jsonStr = JSON.stringify({ howdy: "stranger!", isStrange: true });
-				//	|		doh.is('{"howdy":"stranger!","isStrange":true}', jsonStr);
 				var undef;
 				if(typeof replacer == "string"){
 					spacer = replacer;
@@ -7378,8 +7402,8 @@ define(["./kernel", "../has", "./lang"], function(dojo, has, lang){
 
 },
 'dojo/dom':function(){
-define(["./sniff", "./_base/lang", "./_base/window"],
-		function(has, lang, win){
+define(["./sniff", "./_base/window"],
+		function(has, win){
 	// module:
 	//		dojo/dom
 
@@ -7492,9 +7516,34 @@ define(["./sniff", "./_base/lang", "./_base/window"],
 	};
 
 
-			// TODO: do we need this function in the base?
+	// TODO: do we need setSelectable in the base?
 
-	dom.setSelectable = function(/*DOMNode|String*/ node, /*Boolean*/ selectable){
+	// Add feature test for user-select CSS property
+	// (currently known to work in all but IE < 10 and Opera)
+	has.add("css-user-select", function(global, doc, element){
+		// Avoid exception when dom.js is loaded in non-browser environments
+		if(!element){ return false; }
+		
+		var style = element.style;
+		var prefixes = ["Khtml", "O", "ms", "Moz", "Webkit"],
+			i = prefixes.length,
+			name = "userSelect",
+			prefix;
+
+		// Iterate prefixes from most to least likely
+		do{
+			if(typeof style[name] !== "undefined"){
+				// Supported; return property name
+				return name;
+			}
+		}while(i-- && (name = prefixes[i] + "UserSelect"));
+
+		// Not supported if we didn't return before now
+		return false;
+	});
+
+	/*=====
+	dom.setSelectable = function(node, selectable){
 		// summary:
 		//		Enable or disable selection on a node
 		// node: DOMNode|String
@@ -7508,20 +7557,32 @@ define(["./sniff", "./_base/lang", "./_base/window"],
 		// example:
 		//		Make the node id="bar" selectable
 		//	|	dojo.setSelectable("bar", true);
+	};
+	=====*/
 
+	var cssUserSelect = has("css-user-select");
+	dom.setSelectable = cssUserSelect ? function(node, selectable){
+		// css-user-select returns a (possibly vendor-prefixed) CSS property name
+		dom.byId(node).style[cssUserSelect] = selectable ? "" : "none";
+	} : function(node, selectable){
 		node = dom.byId(node);
-		if(has("mozilla")){
-			node.style.MozUserSelect = selectable ? "" : "none";
-		}else if(has("khtml") || has("webkit")){
-			node.style.KhtmlUserSelect = selectable ? "auto" : "none";
-		}else if(has("ie")){
-			var v = (node.unselectable = selectable ? "" : "on"),
-				cs = node.getElementsByTagName("*"), i = 0, l = cs.length;
-			for(; i < l; ++i){
-				cs.item(i).unselectable = v;
+
+		// (IE < 10 / Opera) Fall back to setting/removing the
+		// unselectable attribute on the element and all its children
+		var nodes = node.getElementsByTagName("*"),
+			i = nodes.length;
+
+		if(selectable){
+			node.removeAttribute("unselectable");
+			while(i--){
+				nodes[i].removeAttribute("unselectable");
+			}
+		}else{
+			node.setAttribute("unselectable", "on");
+			while(i--){
+				nodes[i].setAttribute("unselectable", "on");
 			}
 		}
-		//FIXME: else?  Opera?
 	};
 
 	return dom;
@@ -7719,7 +7780,7 @@ define("dojo/dom-style", ["./sniff", "./dom"], function(has, dom){
 	};
 
 	var _getOpacity =
-		has("ie") < 9 || (has("ie") && has("quirks")) ? function(node){
+		has("ie") < 9 || (has("ie") < 10 && has("quirks")) ? function(node){
 			try{
 				return af(node).Opacity / 100; // Number
 			}catch(e){
@@ -7731,7 +7792,7 @@ define("dojo/dom-style", ["./sniff", "./dom"], function(has, dom){
 		};
 
 	var _setOpacity =
-		has("ie") < 9 || (has("ie") && has("quirks")) ? function(/*DomNode*/ node, /*Number*/ opacity){
+		has("ie") < 9 || (has("ie") < 10 && has("quirks")) ? function(/*DomNode*/ node, /*Number*/ opacity){
 			var ov = opacity * 100, opaque = opacity == 1;
 			node.style.zoom = opaque ? "" : 1;
 
@@ -8418,8 +8479,8 @@ define(["./sniff", "./_base/window","./dom", "./dom-style"],
 			ret = node.getBoundingClientRect();
 		ret = {x: ret.left, y: ret.top, w: ret.right - ret.left, h: ret.bottom - ret.top};
 
-		if(has("ie")){
-			// On IE there's a 2px offset that we need to adjust for, see dojo.getIeDocumentElementOffset()
+		if(has("ie") < 9){
+			// On IE<9 there's a 2px offset that we need to adjust for, see dojo.getIeDocumentElementOffset()
 			var offset = geom.getIeDocumentElementOffset(node.ownerDocument);
 
 			// fixes the position in IE, quirks mode
@@ -9020,12 +9081,6 @@ define(["exports", "./_base/kernel", "./sniff", "./_base/window", "./dom", "./do
 		}
 	}
 
-	var _destroyContainer = null,
-		_destroyDoc;
-	on(window, "unload", function(){
-		_destroyContainer = null; //prevent IE leak
-	});
-
 	exports.toDom = function toDom(frag, doc){
 		// summary:
 		//		instantiates an HTML fragment returning the corresponding DOM.
@@ -9072,7 +9127,7 @@ define(["exports", "./_base/kernel", "./sniff", "./_base/window", "./dom", "./do
 
 		// return multiple nodes as a document fragment
 		df = doc.createDocumentFragment();
-		while(fc = master.firstChild){ // intentional assignment
+		while((fc = master.firstChild)){ // intentional assignment
 			df.appendChild(fc);
 		}
 		return df; // DocumentFragment
@@ -9231,18 +9286,21 @@ define(["exports", "./_base/kernel", "./sniff", "./_base/window", "./dom", "./do
 		return tag; // DomNode
 	};
 
-	exports.empty =
-		has("ie") ? function(node){
-			node = dom.byId(node);
-			for(var c; c = node.lastChild;){ // intentional assignment
-				exports.destroy(c);
+	var _empty = has("ie") ?
+		function(/*DomNode*/ node){
+			try{
+				node.innerHTML = ""; // really fast when it works
+			}catch(e){ // IE can generate Unknown Error
+				for(var c; c = node.lastChild;){ // intentional assignment
+					_destroy(c, node); // destroy is better than removeChild so TABLE elements are removed in proper order
+				}
 			}
 		} :
-		function(node){
-			dom.byId(node).innerHTML = "";
+		function(/*DomNode*/ node){
+			node.innerHTML = "";
 		};
-	/*=====
-	 exports.empty = function(node){
+
+	exports.empty = function empty(/*DOMNode|String*/ node){
 		 // summary:
 		 //		safely removes all children of the node.
 		 // node: DOMNode|String
@@ -9254,9 +9312,19 @@ define(["exports", "./_base/kernel", "./sniff", "./_base/window", "./dom", "./do
 		 // example:
 		 //		Destroy all nodes' children in a list by reference:
 		 //	|	dojo.query(".someNode").forEach(dojo.empty);
-	 };
-	 =====*/
 
+		_empty(dom.byId(node));
+	};
+
+
+	function _destroy(/*DomNode*/ node, /*DomNode*/ parent){
+		if(node.firstChild){
+			_empty(node);
+		}
+		if(parent){
+			parent.removeChild(node);
+		}
+	}
 	exports.destroy = function destroy(/*DOMNode|String*/ node){
 		// summary:
 		//		Removes a node from its parent, clobbering it and all of its
@@ -9278,19 +9346,8 @@ define(["exports", "./_base/kernel", "./sniff", "./_base/window", "./dom", "./do
 		//	|	dojo.query(".someNode").forEach(dojo.destroy);
 
 		node = dom.byId(node);
-		try{
-			var doc = node.ownerDocument;
-			// cannot use _destroyContainer.ownerDocument since this can throw an exception on IE
-			if(!_destroyContainer || _destroyDoc != doc){
-				_destroyContainer = doc.createElement("div");
-				_destroyDoc = doc;
-			}
-			_destroyContainer.appendChild(node.parentNode ? node.parentNode.removeChild(node) : node);
-			// NOTE: see http://trac.dojotoolkit.org/ticket/2931. This may be a bug and not a feature
-			_destroyContainer.innerHTML = "";
-		}catch(e){
-			/* squelch */
-		}
+		if(!node){ return; }
+		_destroy(node, node.parentNode);
 	};
 });
 
@@ -9426,16 +9483,6 @@ define("dojo/request/xhr", [
 			}
 		};
 	function xhr(url, options, returnDeferred){
-		// summary:
-		//		Sends a request using XMLHttpRequest with the given URL and options.
-		// url: String
-		//		URL to request
-		// options: dojo/request/xhr.__Options?
-		//		Options for the request.
-		// returnDeferred: Boolean
-		//		Return a dojo/Deferred rather than a dojo/promise/Promise
-		// returns: dojo/promise/Promise|dojo/Deferred
-
 		var response = util.parseArgs(
 			url,
 			util.deepCreate(defaultOptions, options),
@@ -9523,6 +9570,15 @@ define("dojo/request/xhr", [
 	}
 
 	/*=====
+	xhr = function(url, options){
+		// summary:
+		//		Sends a request using XMLHttpRequest with the given URL and options.
+		// url: String
+		//		URL to request
+		// options: dojo/request/xhr.__Options?
+		//		Options for the request.
+		// returns: dojo/request.__Promise
+	};
 	xhr.__BaseOptions = declare(request.__BaseOptions, {
 		// sync: Boolean?
 		//		Whether to make a synchronous request or not. Default
@@ -9554,7 +9610,7 @@ define("dojo/request/xhr", [
 		//		URL to request
 		// options: dojo/request/xhr.__BaseOptions?
 		//		Options for the request.
-		// returns: dojo/promise/Promise
+		// returns: dojo/request.__Promise
 	};
 	xhr.post = function(url, options){
 		// summary:
@@ -9563,7 +9619,7 @@ define("dojo/request/xhr", [
 		//		URL to request
 		// options: dojo/request/xhr.__BaseOptions?
 		//		Options for the request.
-		// returns: dojo/promise/Promise
+		// returns: dojo/request.__Promise
 	};
 	xhr.put = function(url, options){
 		// summary:
@@ -9572,7 +9628,7 @@ define("dojo/request/xhr", [
 		//		URL to request
 		// options: dojo/request/xhr.__BaseOptions?
 		//		Options for the request.
-		// returns: dojo/promise/Promise
+		// returns: dojo/request.__Promise
 	};
 	xhr.del = function(url, options){
 		// summary:
@@ -9581,7 +9637,7 @@ define("dojo/request/xhr", [
 		//		URL to request
 		// options: dojo/request/xhr.__BaseOptions?
 		//		Options for the request.
-		// returns: dojo/promise/Promise
+		// returns: dojo/request.__Promise
 	};
 	=====*/
 	xhr._create = function(){
@@ -10403,44 +10459,6 @@ define("dojo/_base/lang", ["./kernel", "../has", "../sniff"], function(dojo, has
 
 
 },
-'dojo/Evented':function(){
-define("dojo/Evented", ["./aspect", "./on"], function(aspect, on){
-	// module:
-	//		dojo/Evented
-
- 	"use strict";
- 	var after = aspect.after;
-	function Evented(){
-		// summary:
-		//		A class that can be used as a mixin or base class,
-		//		to add on() and emit() methods to a class
-		//		for listening for events and emitting events:
-		//
-		//		|	define(["dojo/Evented"], function(Evented){
-		//		|		var EventedWidget = dojo.declare([Evented, dijit._Widget], {...});
-		//		|		widget = new EventedWidget();
-		//		|		widget.on("open", function(event){
-		//		|		... do something with event
-		//		|	 });
-		//		|
-		//		|	widget.emit("open", {name:"some event", ...});
-	}
-	Evented.prototype = {
-		on: function(type, listener){
-			return on.parse(this, type, listener, function(target, type){
-				return after(target, 'on' + type, listener, true);
-			});
-		},
-		emit: function(type, event){
-			var args = [this];
-			args.push.apply(args, arguments);
-			return on.emit.apply(on, args);
-		}
-	};
-	return Evented;
-});
-
-},
 'dojo/request/util':function(){
 define("dojo/request/util", [
 	'exports',
@@ -10589,6 +10607,44 @@ define("dojo/request/util", [
 });
 
 },
+'dojo/Evented':function(){
+define("dojo/Evented", ["./aspect", "./on"], function(aspect, on){
+	// module:
+	//		dojo/Evented
+
+ 	"use strict";
+ 	var after = aspect.after;
+	function Evented(){
+		// summary:
+		//		A class that can be used as a mixin or base class,
+		//		to add on() and emit() methods to a class
+		//		for listening for events and emitting events:
+		//
+		//		|	define(["dojo/Evented"], function(Evented){
+		//		|		var EventedWidget = dojo.declare([Evented, dijit._Widget], {...});
+		//		|		widget = new EventedWidget();
+		//		|		widget.on("open", function(event){
+		//		|		... do something with event
+		//		|	 });
+		//		|
+		//		|	widget.emit("open", {name:"some event", ...});
+	}
+	Evented.prototype = {
+		on: function(type, listener){
+			return on.parse(this, type, listener, function(target, type){
+				return after(target, 'on' + type, listener, true);
+			});
+		},
+		emit: function(type, event){
+			var args = [this];
+			args.push.apply(args, arguments);
+			return on.emit.apply(on, args);
+		}
+	};
+	return Evented;
+});
+
+},
 'dojo/mouse':function(){
 define("dojo/mouse", ["./_base/kernel", "./on", "./has", "./dom", "./_base/window"], function(dojo, on, has, dom, win){
 
@@ -10600,7 +10656,7 @@ define("dojo/mouse", ["./_base/kernel", "./on", "./has", "./dom", "./_base/windo
 	has.add("events-mousewheel", win.doc && 'onmousewheel' in win.doc);
 
 	var mouseButtons;
-	if(has("dom-quirks") || !has("dom-addeventlistener")){
+	if((has("dom-quirks") && has("ie")) || !has("dom-addeventlistener")){
 		mouseButtons = {
 			LEFT:   1,
 			MIDDLE: 4,
@@ -11426,6 +11482,11 @@ define("dojo/_base/xhr", [
 			dfd.resolve(dfd);
 		}).otherwise(function(error){
 			ioArgs.error = error;
+			if(error.response){
+				error.status = error.response.status;
+				error.responseText = error.response.text;
+				error.xhr = error.response.xhr;
+			}
 			dfd.reject(error);
 		});
 		return dfd; // dojo/_base/Deferred
@@ -11635,16 +11696,22 @@ define([
 		if(func){
 			try{
 				var newResult = func(result);
-				if(newResult && typeof newResult.then === "function"){
-					listener.cancel = newResult.cancel;
-					newResult.then(
-							// Only make resolvers if they're actually going to be used
-							makeDeferredSignaler(deferred, RESOLVED),
-							makeDeferredSignaler(deferred, REJECTED),
-							makeDeferredSignaler(deferred, PROGRESS));
-					return;
+				if(type === PROGRESS){
+					if(typeof newResult !== "undefined"){
+						signalDeferred(deferred, type, newResult);
+					}
+				}else{
+					if(newResult && typeof newResult.then === "function"){
+						listener.cancel = newResult.cancel;
+						newResult.then(
+								// Only make resolvers if they're actually going to be used
+								makeDeferredSignaler(deferred, RESOLVED),
+								makeDeferredSignaler(deferred, REJECTED),
+								makeDeferredSignaler(deferred, PROGRESS));
+						return;
+					}
+					signalDeferred(deferred, RESOLVED, newResult);
 				}
-				signalDeferred(deferred, RESOLVED, newResult);
 			}catch(error){
 				signalDeferred(deferred, REJECTED, error);
 			}
@@ -12309,6 +12376,8 @@ define([
 
 		if(errors.length){
 			activeTimeout = setTimeout(logRejected, errors[0].timestamp + unhandledWait - now);
+		}else{
+			activeTimeout = false;
 		}
 	}
 
@@ -12573,7 +12642,7 @@ define([
 				if(dfd.startTime + (options.timeout || 0) < now){
 					_inFlight.splice(i--, 1);
 					// Cancel the request so the io module can do appropriate cleanup.
-					dfd.cancel(new RequestTimeoutError(response));
+					dfd.cancel(new RequestTimeoutError('Timeout exceeded', response));
 					watch._onAction && watch._onAction();
 				}
 			}
@@ -12690,7 +12759,7 @@ define(["./has!dom-addeventlistener?:./aspect", "./_base/kernel", "./has"], func
 		//		|	obj.onfoo({key:"value"});
 		//		If you use on.emit on a DOM node, it will use native event dispatching when possible.
 
-		if(target.on && typeof type != "function"){ 
+		if(typeof target.on == "function" && typeof type != "function"){
 			// delegate to the target's on() method, so it can handle it's own listening if it wants
 			return target.on(type, listener);
 		}
@@ -12948,9 +13017,6 @@ define(["./has!dom-addeventlistener?:./aspect", "./_base/kernel", "./has"], func
 			focusin: "focus",
 			focusout: "blur"
 		};
-		if(has("opera")){
-			captures.keydown = "keypress"; // this one needs to be transformed because Opera doesn't support repeating keys on keydown (and keypress works because it incorrectly fires on all keydown events)
-		}
 
 		// emiter that works with native event handling
 		on.emit = function(target, type, event){
@@ -14854,11 +14920,8 @@ define("dojo/aspect", [], function(){
 		if(previous && !around){
 			if(type == "after"){
 				// add the listener to the end of the list
-				var next = previous;
-				while(next){
-					previous = next;
-					next = next.next;
-				}
+				// note that we had to change this loop a little bit to workaround a bizarre IE10 JIT bug 
+				while(previous.next && (previous = previous.next)){}
 				previous.next = signal;
 				signal.previous = previous;
 			}else if(type == "before"){
