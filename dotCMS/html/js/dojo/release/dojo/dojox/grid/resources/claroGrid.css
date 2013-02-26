@@ -167,7 +167,6 @@
 .claro .dojoxGrid .dojoxGridCell {
 	outline: none;
 	padding: 3px 5px;
-	word-wrap: break-word;
 	border:1px solid transparent;
 	border-color: transparent #E5DAC8 #E5DAC8 transparent;
 }
