@@ -27,9 +27,9 @@ public class DotCMSCMISTest extends CMISBaseTest {
 
         assertNotNull(createFile("test.txt", folderId));
         
-        //assertTrue( ! doQuery("SELECT * FROM cmis:document WHERE cmis:name LIKE '%a%'").getNumItems().equals(BigInteger.valueOf(0)));
+        assertTrue( ! doQuery("SELECT * FROM cmis:document WHERE cmis:name LIKE '%a%'").getNumItems().equals(BigInteger.valueOf(0)));
         
-        //assertTrue( ! doQuery("SELECT * FROM cmis:folder WHERE IN_FOLDER('" + DotCMSUtils.ROOT_ID + "')").getNumItems().equals(BigInteger.valueOf(0)));
+        assertTrue( ! doQuery("SELECT * FROM cmis:folder WHERE IN_FOLDER('" + DotCMSUtils.ROOT_ID + "')").getNumItems().equals(BigInteger.valueOf(0)));
         
     }
 }
