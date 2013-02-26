@@ -207,9 +207,9 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		myCp = new dijit.layout.ContentPane({
 			id : "wfEditSchemeCp",
 			parseOnLoad : true,
-
+            href : href,
+            style : "height : 280px"
 		})
-
 
 		var dia = dijit.byId(this.addEditDiv);
 		if(dia){
@@ -218,16 +218,12 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 
 		dia = new dijit.Dialog({
 			id			:	this.addEditDiv,
-			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Scheme")%>",
-			});
-
-
+			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Scheme")%>"
+        });
 
 		myCp.placeAt("wfEditSchemeDia");
 
 		dia.show();
-		myCp.attr("href", href);
-
 	},
 
 	hideAddEdit : function() {
