@@ -64,7 +64,6 @@ public class CMISBaseTest extends TestBase {
         callContext = new DotCallContextObjectHandler();
         objectInfos = new DotCallContextObjectHandler();
         dotRepo.setCallContext(callContext);
-        
     }
     
     protected static String getdefaultHostId(){
