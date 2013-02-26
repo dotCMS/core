@@ -1,5 +1,2 @@
-define(
-"dojox/atom/widget/nls/tr/FeedViewerEntry", ({
-	deleteButton: "[Sil]"
-})
-);
+//>>built
+define("dojox/atom/widget/nls/tr/FeedViewerEntry",({deleteButton:"[Sil]"}));

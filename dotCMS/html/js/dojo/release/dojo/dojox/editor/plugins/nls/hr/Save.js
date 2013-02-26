@@ -1,5 +1,2 @@
-define(
-"dojox/editor/plugins/nls/hr/Save", ({
-	"save": "Spremi"
-})
-);
+//>>built
+define("dojox/editor/plugins/nls/hr/Save",({"save":"Spremi"}));

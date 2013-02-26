@@ -1,5 +1,2 @@
-define(
-"dojox/editor/plugins/nls/th/Blockquote", ({
-	"blockquote": "บล็อกคำพูด"
-})
-);
+//>>built
+define("dojox/editor/plugins/nls/th/Blockquote",({"blockquote":"บล็อกคำพูด"}));

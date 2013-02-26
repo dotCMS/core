@@ -1,41 +1,8 @@
-define("dojo/dnd/common", ["../_base/connect", "../_base/kernel", "../_base/lang", "../dom"],
-	function(connect, kernel, lang, dom){
+/*
+	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Available via Academic Free License >= 2.1 OR the modified BSD license.
+	see: http://dojotoolkit.org/license for details
+*/
 
-// module:
-//		dojo/dnd/common
-
-var exports = {
-	// summary:
-	//		TODOC
-};
-
-exports.getCopyKeyState = connect.isCopyKey;
-
-exports._uniqueId = 0;
-exports.getUniqueId = function(){
-	// summary:
-	//		returns a unique string for use with any DOM element
-	var id;
-	do{
-		id = kernel._scopeName + "Unique" + (++exports._uniqueId);
-	}while(dom.byId(id));
-	return id;
-};
-
-exports._empty = {};
-
-exports.isFormElement = function(/*Event*/ e){
-	// summary:
-	//		returns true if user clicked on a form element
-	var t = e.target;
-	if(t.nodeType == 3 /*TEXT_NODE*/){
-		t = t.parentNode;
-	}
-	return " button textarea input select option ".indexOf(" " + t.tagName.toLowerCase() + " ") >= 0;	// Boolean
-};
-
-// For back-compat, remove for 2.0.
-lang.mixin(lang.getObject("dojo.dnd", true), exports);
-
-return exports;
-});
+//>>built
+define("dojo/dnd/common",["../_base/connect","../_base/kernel","../_base/lang","../dom"],function(_1,_2,_3,_4){var _5=_3.getObject("dojo.dnd",true);_5.getCopyKeyState=_1.isCopyKey;_5._uniqueId=0;_5.getUniqueId=function(){var id;do{id=_2._scopeName+"Unique"+(++_5._uniqueId);}while(_4.byId(id));return id;};_5._empty={};_5.isFormElement=function(e){var t=e.target;if(t.nodeType==3){t=t.parentNode;}return " button textarea input select option ".indexOf(" "+t.tagName.toLowerCase()+" ")>=0;};return _5;});

@@ -1,5 +1,2 @@
-define(
-"dojox/editor/plugins/nls/kk/InsertEntity", ({
-	insertEntity: "Нышанды кірістіру"
-})
-);
+//>>built
+define("dojox/editor/plugins/nls/kk/InsertEntity",({insertEntity:"Нышанды кірістіру"}));
