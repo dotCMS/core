@@ -1,11 +1,14 @@
 package com.dotmarketing.viewtools.content;
 
 import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -197,6 +200,19 @@ public class ContentTool implements ViewTool {
 	    for(Contentlet cc : cons) {
 	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
 	    }
+	    if(cons != null && cons.size() > 0){
+			long minIndex = (currentPage - 1) * contentsPerPage;
+	        long totalCount = cons.getTotalResults();
+	        long maxIndex = contentsPerPage * currentPage;
+	        if((minIndex + contentsPerPage) >= totalCount){
+	        	maxIndex = totalCount;
+	        }
+			ret.setTotalResults(cons.getTotalResults());
+			ret.setTotalPages((long)Math.ceil(((double)cons.getTotalResults())/((double)contentsPerPage)));
+			ret.setNextPage(maxIndex < totalCount);
+			ret.setPreviousPage(minIndex > 0);
+	    }
+	    
 		return ret;
 	}
 	
