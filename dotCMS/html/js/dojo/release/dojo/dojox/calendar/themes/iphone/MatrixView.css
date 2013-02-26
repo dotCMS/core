@@ -285,7 +285,7 @@
 }
 .dojoxCalendarMatrixView .dojoxCalendarEvent.dojoxCalendarHorizontal.Edited .bg {
   border: dashed 1px #FFF;
-  filter: formatstring("alpha(opacity={0})", 50);
+  filter: alpha(opacity=50);
   opacity: 0.5;
   filter: formatstring("alpha(opacity={0})", 50);
   opacity: 0.5;
@@ -318,7 +318,7 @@
   color: #FFF;
   border: dashed 1px #FFF;
   background: #600;
-  filter: formatstring("alpha(opacity={0})", 30);
+  filter: alpha(opacity=30);
   opacity: 0.3;
   filter: formatstring("alpha(opacity={0})", 30);
   opacity: 0.3;
@@ -331,7 +331,7 @@
   width: 30px;
   height: 100%;
   background-color: #fff;
-  filter: formatstring("alpha(opacity={0})", 0);
+  filter: alpha(opacity=0);
   opacity: 0;
   filter: formatstring("alpha(opacity={0})", 0);
   opacity: 0;
@@ -359,7 +359,7 @@
   left: auto;
 }
 .dojoxCalendarMatrixView .dojoxCalendarEvent.Edited .resizeHandle {
-  filter: formatstring("alpha(opacity={0})", 30);
+  filter: alpha(opacity=30);
   opacity: 0.3;
   filter: formatstring("alpha(opacity={0})", 30);
   opacity: 0.3;

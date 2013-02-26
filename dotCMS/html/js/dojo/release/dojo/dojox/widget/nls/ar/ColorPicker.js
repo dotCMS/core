@@ -1,6 +1,2 @@
-define(
-"dojox/widget/nls/ar/ColorPicker", ({
-huePickerTitle: "محدد تدرج اللون",
-saturationPickerTitle: "محدد درجة التشبع"
-})
-);
+//>>built
+define("dojox/widget/nls/ar/ColorPicker",({huePickerTitle:"محدد تدرج اللون",saturationPickerTitle:"محدد درجة التشبع"}));
