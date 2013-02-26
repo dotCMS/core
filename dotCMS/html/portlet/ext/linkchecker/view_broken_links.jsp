@@ -179,7 +179,11 @@ function resized() {
 dojo.ready(function(){
     dojo.connect(window,"onresize",resized);
     resized();
+    //dijit.byId('structureSelect').loadDropDown();
+//    dijit.byId('structureSelect').set('value', '<%=defaultStructureInode%>');
+    //dijit.byId('structureSelect').focus();
     loadTable();
+    //setTimeout("loadTable();", 125);
 });
 
 </script>
@@ -260,12 +264,13 @@ dojo.ready(function(){
 	                store: structureStore,
 	                searchAttr: "name",
 	                pageSize: 20,
-	                value: "<%=defaultStructureInode%>",
+	                value: '<%=defaultStructureInode%>',
 	                onChange: function(val){
 	                    loadTable();
 	                }
 	            }, "structureSelect");
 	            select.startup();
-	        });
+//	            dijit.byId('structureSelect').set('value', '<%=defaultStructureInode%>');
+        });
     </script>
 
