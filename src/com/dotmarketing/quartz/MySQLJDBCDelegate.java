@@ -91,7 +91,7 @@ public class MySQLJDBCDelegate extends StdJDBCDelegate{
      * @param tablePrefix
      *          the prefix of all table names
      */
-    public MySQLJDBCDelegate(Log logger, String tablePrefix, String instanceId) {
+    public MySQLJDBCDelegate(org.slf4j.Logger logger, String tablePrefix, String instanceId) {
         super(logger,tablePrefix,instanceId);
     }
 
@@ -105,7 +105,7 @@ public class MySQLJDBCDelegate extends StdJDBCDelegate{
      * @param tablePrefix
      *          the prefix of all table names
      */
-    public MySQLJDBCDelegate(Log logger, String tablePrefix, String instanceId,
+    public MySQLJDBCDelegate(org.slf4j.Logger logger, String tablePrefix, String instanceId,
             Boolean useProperties) {
         super(logger,tablePrefix,instanceId,useProperties);
     }
@@ -2864,51 +2864,6 @@ public class MySQLJDBCDelegate extends StdJDBCDelegate{
             closeResultSet(rs);
             closeStatement(ps);
         }
-    }
-
-    /**
-     * <p>
-     * Select the next trigger which will fire to fire between the two given timestamps 
-     * in ascending order of fire time, and then descending by priority.
-     * </p>
-     * 
-     * @param conn
-     *          the DB Connection
-     * @param noLaterThan
-     *          highest value of <code>getNextFireTime()</code> of the triggers (exclusive)
-     * @param noEarlierThan 
-     *          highest value of <code>getNextFireTime()</code> of the triggers (inclusive)
-     *          
-     * @return The next identifier of the next trigger to be fired.
-     */
-    public Key selectTriggerToAcquire(Connection conn, long noLaterThan, long noEarlierThan)
-        throws SQLException {
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            ps = conn.prepareStatement(rtp(SELECT_NEXT_TRIGGER_TO_ACQUIRE.toLowerCase()));
-            
-            // Try to give jdbc driver a hint to hopefully not pull over 
-            // more than the one row we actually need.
-            ps.setFetchSize(1);
-            ps.setMaxRows(1);
-            
-            ps.setString(1, STATE_WAITING);
-            ps.setBigDecimal(2, new BigDecimal(String.valueOf(noLaterThan)));
-            ps.setBigDecimal(3, new BigDecimal(String.valueOf(noEarlierThan)));
-            rs = ps.executeQuery();
-            
-            if (rs.next()) {
-                return new Key(
-                        rs.getString(COL_TRIGGER_NAME.toLowerCase()),
-                        rs.getString(COL_TRIGGER_GROUP.toLowerCase()));
-            }
-            
-            return null;
-        } finally {
-            closeResultSet(rs);
-            closeStatement(ps);
-        }      
     }
 
     /**
