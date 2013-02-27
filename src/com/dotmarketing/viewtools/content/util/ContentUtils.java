@@ -253,7 +253,7 @@ public class ContentUtils {
 		 * @return Returns empty List if no results are found
 		 */
 		public static PaginatedArrayList<Contentlet> pullPagenated(String query, int limit, int offset, String sort,User user, String tmDate){
-			return pull(query, limit, offset, sort, user, tmDate);
+			return pull(query, offset, limit, sort, user, tmDate);
 		}
 		
 		/**
