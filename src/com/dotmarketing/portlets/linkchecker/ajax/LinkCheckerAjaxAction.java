@@ -60,12 +60,13 @@ public class LinkCheckerAjaxAction extends AjaxAction {
         Map<String,String> pmap=getURIParams();
         int offset=Integer.parseInt(pmap.get("offset"));
         int pageSize=Integer.parseInt(pmap.get("pageSize"));
+        String structureInode = pmap.get("structInode");
         
         Map<String,Object> result=new HashMap<String,Object>();
         List<Map> list=new ArrayList<Map>();
-        SimpleDateFormat df=new SimpleDateFormat("yyyyMMdd hh:mm");
+        SimpleDateFormat df=new SimpleDateFormat("MM/dd/yyyy hh:mm a");
         try {
-            for(InvalidLink link : APILocator.getLinkCheckerAPI().findAll(offset, pageSize)) {
+            for(InvalidLink link : APILocator.getLinkCheckerAPI().findAllByStructure(structureInode, offset, pageSize)) {
                 Contentlet con = APILocator.getContentletAPI().find(link.getInode(), getUser(), false);
                 User modUser=APILocator.getUserAPI().loadUserById(con.getModUser());
                 Field field=FieldsCache.getField(link.getField()); 
@@ -74,6 +75,18 @@ public class LinkCheckerAjaxAction extends AjaxAction {
                 Map<String,String> mm=new HashMap<String,String>();
                 mm.put("inode", link.getInode());
                 mm.put("con_title", con.getTitle());
+                if(con.isArchived()) {
+                	mm.put("status", "archived");
+                }
+                else if(con.isLive()) {
+                	mm.put("status", "live");
+                }
+                else if(con.isWorking()) {
+                	mm.put("status", "working");
+                }
+                else {
+                	mm.put("status", "");
+                }
                 mm.put("field", field.getFieldName());
                 mm.put("structure", st.getName());
                 mm.put("date", df.format(con.getModDate()));
@@ -85,7 +98,7 @@ public class LinkCheckerAjaxAction extends AjaxAction {
                 
             
             result.put("list", list);
-            result.put("total", APILocator.getLinkCheckerAPI().findAllCount());
+            result.put("total", APILocator.getLinkCheckerAPI().findAllByStructureCount(structureInode));
             
             response.setContentType("application/json");
             new ObjectMapper().writerWithDefaultPrettyPrinter()

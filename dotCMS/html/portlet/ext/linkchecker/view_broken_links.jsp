@@ -1,5 +1,11 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory" %>
+<%@page import="com.dotmarketing.portlets.structure.model.Field" %>
+<%@page import="com.dotmarketing.util.InodeUtils" %>
+<%@page import="com.dotmarketing.cache.FieldsCache" %>
 <%@ include file="/html/common/init.jsp" %>
 
 <style type="text/css">
@@ -28,7 +34,22 @@ int pageNumber=1;
 if(request.getParameter("pageNumber")!=null) 
     pageNumber=Integer.parseInt(request.getParameter("pageNumber"));
 
+Structure structure = StructureFactory.getDefaultStructure();
+String defaultStructureInode = structure.getInode();
+
+String structureSelected = null;
+if(InodeUtils.isSet(request.getParameter("structInode"))){
+    structureSelected=request.getParameter("structInode");
+    structure = StructureCache.getStructureByInode(structureSelected);
+}
+
+if(structureSelected == null){
+    structure = (Structure)StructureFactory.getDefaultStructure();
+    structureSelected = structure.getInode();
+}
+
 %>
+
 function movePage(x) {
     var cp=parseInt(dojo.byId('currentPage').textContent);
     var id = dojo.byId('currentPage');
@@ -88,7 +109,7 @@ function loadTable() {
 	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_EXT_11_cmd=edit";
 	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=EXT_BROKEN_LINKS&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
 	dojo.empty('table_body');
-	var pageSize=10;
+	var pageSize=25;
 	var page=(parseInt(dojo.byId('currentPage').textContent)-1)*pageSize;
 	var id = dojo.byId('currentPage');
     if(typeof id.textContent == "undefined"){
@@ -96,21 +117,34 @@ function loadTable() {
             page=(parseInt(dojo.byId('currentPage').innerText)-1)*pageSize;
     }
 	dojo.xhr('GET',{
-		url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/getBrokenLinks/offset/'+page+'/pageSize/'+pageSize,
+		url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/getBrokenLinks/offset/'+page+'/pageSize/'+pageSize+'/structInode/'+dijit.byId('structureSelect').get('value'),
 		handleAs: 'json',
 		load: function(data) {
 			for(var i=0;i<data.list.length;i++) {
-				var action=baseUrl+"&inode="+data.list[i].inode+'&referer=' + encodeURIComponent(referrer+"&r="+Math.floor((Math.random()*10000)+1));
+				var inode = data.list[i].inode;
+				var action=baseUrl+"&inode="+inode+'&referer=' + encodeURIComponent(referrer+"&r="+Math.floor((Math.random()*10000)+1));
 				var conTitle=data.list[i].con_title;
+				var status = data.list[i].status;
 				var field=data.list[i].field;
 				var structure=data.list[i].structure;
 				var moduser=data.list[i].user;
 				var moddate=data.list[i].date;
 				var link="<div><strong>"+data.list[i].url_title+"</strong></div> "+data.list[i].url;
 				
+				var statusRowHTML = "";
+				if(status == "archived") {
+					statusRowHTML = "<span class='archivedIcon'></span>";
+				}
+				else if(status == "live") {
+					statusRowHTML = "<span class='liveIcon'></span>";					
+				}
+				else if(status == "working") {
+					statusRowHTML = "<span class='workingIcon'></span>";
+				}
 				var row="<tr>"+ 
 				          "<td><a href=\""+action+"\"><span class='editIcon'></span></a></td>"+
 				          "<td>"+conTitle+"</td>"+
+				          "<td style='text-align:center'>"+statusRowHTML+"</td>"+
 				          "<td>"+field+"</td>"+
 				          "<td>"+structure+"</td>"+
 				          "<td>"+moduser+"</td>"+
@@ -145,8 +179,11 @@ function resized() {
 dojo.ready(function(){
     dojo.connect(window,"onresize",resized);
     resized();
+    dijit.byId('structureSelect').set('value', '<%=defaultStructureInode%>');
+    //dijit.byId('structureSelect').textbox.value = '<%=defaultStructureInode%>'
     loadTable();
 });
+
 </script>
 
 <div class="portlet-wrapper">
@@ -164,7 +201,10 @@ dojo.ready(function(){
     <div id="brokenLinkMain">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;">
             <div dojoType="dijit.layout.ContentPane" region="top">
-              <span id="tools">
+					
+					<b><%=LanguageUtil.get(pageContext, "Structures")%>:</b>
+					<div id="structureSelect"></div>
+					
                 <button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
                    <span class="reindexIcon"></span>
                    <%=LanguageUtil.get(pageContext,"Refresh")%>
@@ -173,7 +213,6 @@ dojo.ready(function(){
                    <span class="linkCheckIcon"></span>
                    <%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNOW")%>
                 </button>
-              </span>
             </div>
             <div dojoType="dijit.layout.ContentPane" region="center">
                 <table id="links_table" class="listingTable" border=1>
@@ -181,6 +220,7 @@ dojo.ready(function(){
                     <tr>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_ACTION")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_TITLE")%></th>
+                        <th><%=LanguageUtil.get(pageContext, "BROKEN_LINKS_STATUS")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_FIELD_NAME")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_STRUCTURE")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_USER")%></th>
@@ -208,3 +248,25 @@ dojo.ready(function(){
         </div>
     </div>
 </div>
+
+   <script>
+	require(["dijit/form/FilteringSelect", "dojo/store/JsonRest", "dojo/data/ObjectStore", "dojo/domReady!"],
+	        function(FilteringSelect, JsonRest, ObjectStore) {   
+	            var jsonStore = new JsonRest({
+	                target: "/api/structure/@"
+	            });
+	            var structureStore = new ObjectStore({objectStore: jsonStore}); 
+	            // create FilteringSelect widget, populating its options from the store
+	            var select = new FilteringSelect({
+	                name: "structureSelect",
+	                store: structureStore,
+	                searchAttr: "name",
+	                pageSize: 20,
+	                onChange: function(val){
+	                    loadTable();
+	                }
+	            }, "structureSelect");
+	            select.startup();
+        });
+    </script>
+
