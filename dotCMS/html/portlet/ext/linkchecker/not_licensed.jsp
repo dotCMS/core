@@ -1,7 +1,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <style>
-	.wrapper{background:url(/html/images/skin/timemachine-promo.gif) no-repeat 0 0;width:1053px;height:900px;margin:0 auto;}
+	.wrapper{background:url(/html/images/skin/linkchecker-promo.png) no-repeat 0 0;width:1242px;height:599px;margin:0 auto;}
 	.content{position:fixed;left:50%;margin:200px 0 0 -300px;width:600px;background:#333;opacity:.85;color:#fff;padding:20px 20px 35px 20px;-moz-border-radius: 15px;-webkit-border-radius: 15px;-moz-box-shadow:0px 0px 15px #666;-webkit-box-shadow:0px 0px 15px #666;}
 	.content h2{font-size:200%;}
 	.content p{margin:0;}
@@ -12,8 +12,8 @@
 <div class="greyBg"></div>
 <div class="wrapper">
 	<div class="content">
-		<h2><%=LanguageUtil.get(pageContext, "javax.portlet.title.TIMEMACHINE")%></h2>
-		<p><%= LanguageUtil.get(pageContext, "TIMEMACHINE-NOT-LICENSED") %></p>
+		<h2><%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_BROKEN_LINKS")%></h2>
+		<p><%= LanguageUtil.get(pageContext, "LINKCHECKER-NOT-LICENSED") %></p>
 
 	</div>
 </div>
@@ -25,3 +25,4 @@ dojo.addOnUnload (function(){
 });
 </script>
 
+</div>
