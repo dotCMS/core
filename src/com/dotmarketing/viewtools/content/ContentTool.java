@@ -200,7 +200,7 @@ public class ContentTool implements ViewTool {
 	    for(Contentlet cc : cons) {
 	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
 	    }
-	    /*
+
 	    if(cons != null && cons.size() > 0){
 			long minIndex = (currentPage - 1) * contentsPerPage;
 	        long totalCount = cons.getTotalResults();
@@ -213,7 +213,7 @@ public class ContentTool implements ViewTool {
 			ret.setNextPage(maxIndex < totalCount);
 			ret.setPreviousPage(minIndex > 0);
 	    }
-	    */
+	    
 		return ret;
 	}
 	
