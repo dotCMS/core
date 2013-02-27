@@ -51,9 +51,13 @@
 			request, WindowState.MAXIMIZED.toString(), params);
 
 	boolean hasWritePermissions = false;
+	boolean hasPublishPermissions = false;
 	PermissionAPI strPerAPI = APILocator.getPermissionAPI();
-	if (strPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_PUBLISH, user)) {
+	if (strPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_EDIT, user)) {
 		hasWritePermissions = true;
+    }
+	if (strPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_PUBLISH, user)) {
+		hasPublishPermissions = true;
     }
 
 	List<WorkflowScheme> wfSchemes=new ArrayList<WorkflowScheme>();
@@ -190,7 +194,7 @@
 		}
 		StructureAjax.reorderfields(structureInode, list, showReOrderAlert);
 	}
-	
+
 	function showReOrderAlert(data){
 		showDotCMSSystemMessage(data);
 	}
@@ -511,7 +515,7 @@ function remoteUnPublishStructure () {
 <div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Fields") %>" style="overflow:hidden;" onShow="showEditButtonsRow()">
 
 
-	
+
 
 		<div class="buttonRow" style="width:97%;">
 			<div class="yui-g">
@@ -527,7 +531,7 @@ function remoteUnPublishStructure () {
 								<%= LanguageUtil.get(pageContext, "Form") %>
 							<%}else if(form.getStructureType() ==4){%>
 								<%= LanguageUtil.get(pageContext, "File") %>
-							<%} %> &gt; 
+							<%} %> &gt;
 						</span>
 						<%=structure.getName() %>
 					</h2>
@@ -627,7 +631,7 @@ function remoteUnPublishStructure () {
 	  		<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-fields-to-display") %></div>
 		<%}//end if (fields.size() > 0)%>
 		</div>
-		
+
 
 		<!-- END Table Results -->
 
@@ -645,16 +649,16 @@ function remoteUnPublishStructure () {
 <%} %>
 
 	<div id="TabOneAndAHalf" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="hideEditButtonsRow()">
-		
+
 	<div class="yui-g">
-	
+
 		<!-- START First Colum -->
 			<div class="yui-u first">
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Type") %>:</dt>
 					<dd>
 						<% boolean typeDisabled = (UtilMethods.isSet(structure.getInode()) && InodeUtils.isSet(structure.getInode())) || (structureType== Structure.STRUCTURE_TYPE_FORM)? true : false;%>
-	
+
 							<%if(typeDisabled){%>
 								<input type="hidden"  name="structureType" id="structureType" value="<%= form.getStructureType()  %>">
 								<%if(form.getStructureType() ==1){%>
@@ -675,12 +679,12 @@ function remoteUnPublishStructure () {
 							<%} %>
 						<html:hidden property="system" styleId="system" />
 					</dd>
-	
+
 					<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox" name="name" style="width:250px" <%if(structure.isFixed()){%> readonly="readonly"  <%} %>value="<%= UtilMethods.isSet(form.getName()) ? form.getName() : "" %>" /></dd>
 					<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox" name="description" style="width:250px" value="<%= UtilMethods.isSet(form.getDescription()) ? form.getDescription() : "" %>" /></dd>
-	
+
 					<% if(UtilMethods.isSet(structure.getInode())) { %>
 						<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
 						<dd><%= structure.getInode() %></dd>
@@ -692,22 +696,22 @@ function remoteUnPublishStructure () {
 						<dd style="clear: none;">
 					    <input type="text" value="<%= structure.getVelocityVarName() %>" readonly="readonly" style="width:250px;border:1px;" />
 					    </dd>
-	
+
 					<% } %>
 					<%
 					String host = structure.getHost() != null?structure.getHost():"";
 			    	String folder = structure.getFolder()!= null?structure.getFolder():"";
-	
+
 			    	if(!UtilMethods.isSet(structure.getInode())){
 			    		String defaultHostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 			    		if(structureType == Structure.STRUCTURE_TYPE_FORM){
 			    			host = HostUtils.filterDefaultHostForSelect(defaultHostId, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", STRUCTURES:"+ PermissionAPI.PERMISSION_PUBLISH, user);
 			    		}else{
 			    			host = HostUtils.filterDefaultHostForSelect(defaultHostId, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user);
-	
+
 			    		}
 			    	}
-	
+
 			    	String selectorValue = UtilMethods.isSet(folder) && !folder.equals(com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER)?folder:host;
 					%>
 					<dt><%= LanguageUtil.get(pageContext, "Host-Folder") %>:</dt>
@@ -736,13 +740,13 @@ function remoteUnPublishStructure () {
 						<input type="hidden" name="workflowScheme" value="<%=APILocator.getWorkflowAPI().findDefaultScheme().getId()%>"><%=LanguageUtil.get(pageContext, "Only-Default-Scheme-is-available-in-Community") %>
 					<%} %>
 					</dd>
-	
-	
+
+
 				</dl>
 			</div>
-	
+
 		<!-- End First Column -->
-	
+
 		<!-- Start Second Column -->
 			<div class="yui-u" id="secondColumnDiv">
 				<dl class="secondColumn">
@@ -779,9 +783,9 @@ function remoteUnPublishStructure () {
 					        </select>
 						</dd>
 					</div>
-					
-					
-					
+
+
+
 					<div id="detailPageDiv" style="display:none">
 						<dt><%= LanguageUtil.get(pageContext, "Detail-Page") %>:</dt>
 						<dd>
@@ -796,23 +800,23 @@ function remoteUnPublishStructure () {
 		                   	</span>
 						</dd>
 					</div>
-					<%-- 
+					<%--
 					<dt>Date fields</dt>
 	                <dd><input type="checkbox" dojoType="dijit.form.CheckBox" name="publishDates" id="publishDates" value="true" <%//if(form.isReviewContent()){ %>checked="checked"<%//}%> onclick="publishDateChange(true);"/></dd>
 	                --%>
 	                <%if(UtilMethods.isSet(structure.getInode()) ){ %>
 		                <div id="datesFieldsDiv">
 		                    <dt><%= LanguageUtil.get(pageContext, "Publish-Date-Field") %>:</dt>
-	
-		                   
+
+
 			                    <dd>
 			                    <%if(dateFields.size() > 0){ %>
 				                       <select id="publishDateVar" name="publishDateVar" dojoType="dijit.form.FilteringSelect">
 				                         <option value=""></option>
 				                         <% String current=(UtilMethods.isSet(structure.getPublishDateVar())) ? structure.getPublishDateVar() : "--";
 				                            for(Field f : dateFields) {%>
-				                            <option value="<%= f.getVelocityVarName() %>" 
-				                                     <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
+				                            <option value="<%= f.getVelocityVarName() %>"
+				                                     <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>>
 				                              <%=f.getFieldName() %>
 				                            </option>
 				                         <% } %>
@@ -821,8 +825,8 @@ function remoteUnPublishStructure () {
 			                       		<i><%= LanguageUtil.get(pageContext, "No-Date-Fields-Defined") %></i>
 			                     <%} %>
 			                    </dd>
-		                    
-		                    
+
+
 		                    <dt><%= LanguageUtil.get(pageContext, "Expire-Date-Field") %>:</dt>
 		                    <dd>
 			                    <%if(dateFields.size() > 0){ %>
@@ -831,7 +835,7 @@ function remoteUnPublishStructure () {
 			                       <%  String  current=(UtilMethods.isSet(structure.getExpireDateVar())) ? structure.getExpireDateVar() : "--";
 			                           for(Field f : dateFields) {%>
 			                            <option value="<%= f.getVelocityVarName() %>"
-			                              <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>> 
+			                              <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>>
 			                              <%=f.getFieldName() %>
 			                            </option>
 			                         <% } %>
@@ -840,21 +844,21 @@ function remoteUnPublishStructure () {
 			                       		<i><%= LanguageUtil.get(pageContext, "No-Date-Fields-Defined") %></i>
 			                     <%} %>
 		                    </dd>
-		                     
+
 		                </div>
 	            	<%} %>
 				</dl>
 			</div>
 		<!-- END Second Column -->
 		</div>
-	
-	
+
+
 	<div class="clear"></div>
-	
-	
+
+
 	<!-- START Button Row -->
 	<div class="buttonRow" id="editStructureButtonRow">
-		
+
 		<%if(InodeUtils.isSet(structure.getInode())){ // >0%>
 			<% if (hasWritePermissions && !structure.isFixed()) { %>
 				<button dojoType="dijit.form.Button" id="delete" onClick="deleteStructure('<%=structure.getInode()%>');" iconClass="deleteIcon" type="button">
@@ -870,20 +874,20 @@ function remoteUnPublishStructure () {
 			boolean enterprise = LicenseUtil.getLevel() > 199;
 			List<PublishingEndPoint> sendingEndpoints = APILocator.getPublisherEndPointAPI().getReceivingEndPoints();
 			boolean areSendingEndPoints = UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty();
-			
-			if(UtilMethods.isSet(structure.getInode()) && enterprise && areSendingEndPoints) {
+
+			if(UtilMethods.isSet(structure.getInode()) && enterprise && areSendingEndPoints && hasPublishPermissions) {
 		%>
-		
+
 				<button dojoType="dijit.form.Button" id="remotePublishButton" onClick="remotePublishStructure();" iconClass="pushIcon" type="button">
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
 				</button>
-				
+
 				<button dojoType="dijit.form.Button" id="remoteUnPublishButton" onClick="remoteUnPublishStructure();" iconClass="pushIcon" type="button">
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-UnPublish")) %>
                 </button>
 		<% } %>
 		<button dojoType="dijit.form.Button" id="saveButton" onClick="addNewStructure();" iconClass="saveIcon" type="button">
-	
+
 					<%if(structure.getStructureType() == 3 ){%>
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Form")) %>
 					<%}else{ %>
@@ -895,9 +899,9 @@ function remoteUnPublishStructure () {
 		</button>
 	</div>
 	<!-- END Button Row -->
-	
-	
-	
+
+
+
 
 	</div>
 
