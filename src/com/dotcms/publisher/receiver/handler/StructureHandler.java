@@ -65,6 +65,16 @@ public class StructureHandler implements IHandler {
 	        	    
 	        	    if(!localExists) {
 	        	        StructureFactory.saveStructure(structure, structure.getInode());
+	        	        
+	        	        /*************************************************************/
+	        	        /* GITHUB ISSUE: https://github.com/dotCMS/dotCMS/issues/2210
+	        	         * 
+	        	         * We need to fill this property because, even if it was created, later into the code we use 
+	        	         * this one for retrieve a Field List.
+	        	         * 
+	        	         */
+	        	        /*************************************************************/
+	        	        localSt = StructureCache.getStructureByInode(structure.getInode());
 	        	    }
 	        	    else {
 	        	        // lets update the attributes
