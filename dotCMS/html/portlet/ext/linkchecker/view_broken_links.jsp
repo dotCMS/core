@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
@@ -7,6 +8,12 @@
 <%@page import="com.dotmarketing.util.InodeUtils" %>
 <%@page import="com.dotmarketing.cache.FieldsCache" %>
 <%@ include file="/html/common/init.jsp" %>
+
+
+<% if(LicenseUtil.getLevel()< 199){ %>
+<%@ include file="/html/portlet/ext/linkchecker/not_licensed.jsp" %>
+
+<%return;} %>
 
 <style type="text/css">
 #tools {
@@ -129,7 +136,7 @@ function loadTable() {
 				var structure=data.list[i].structure;
 				var moduser=data.list[i].user;
 				var moddate=data.list[i].date;
-				var link="<div><strong>"+data.list[i].url_title+"</strong></div> "+data.list[i].url;
+				var link=(data.list[i].url_title!="Untitled") ? "<div><strong>"+data.list[i].url_title+"</strong></div> "+data.list[i].url : data.list[i].url;
 				
 				var statusRowHTML = "";
 				if(status == "archived") {
@@ -141,16 +148,18 @@ function loadTable() {
 				else if(status == "working") {
 					statusRowHTML = "<span class='workingIcon'></span>";
 				}
-				var row="<tr>"+ 
-				          "<td><a href=\""+action+"\"><span class='editIcon'></span></a></td>"+
-				          "<td>"+conTitle+"</td>"+
-				          "<td style='text-align:center'>"+statusRowHTML+"</td>"+
-				          "<td>"+field+"</td>"+
-				          "<td>"+structure+"</td>"+
-				          "<td>"+moduser+"</td>"+
-				          "<td>"+moddate+"</td>"+
-				          "<td>"+link+"</td>"+
-				         "</tr>";
+				var row="<tr onclick='window.location=\""+action+"\"' class='alternate_1'>"+ 
+						"<td style='text-align:center'>"+statusRowHTML+"</td>"+
+						
+						"<td><a href=\""+action+"\">"+conTitle+"</a></td>"+
+						       
+						"<td>"+field+"</td>"+
+						
+
+						"<td>"+link+"</td>"+
+						"<td>"+moduser+"</td>"+
+						"<td nowrap='true'>"+moddate+"</td>"+
+						"</tr>";
 				dojo.place(dojo.toDom(row),'table_body');				
 			}
 			if(typeof id.textContent == "undefined"){
@@ -199,33 +208,32 @@ dojo.ready(function(){
     </div>
     
     <div id="brokenLinkMain">
-        <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;">
-            <div dojoType="dijit.layout.ContentPane" region="top">
-					
-					<b><%=LanguageUtil.get(pageContext, "Structures")%>:</b>
+        <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;background-image:none;">
+            <div dojoType="dijit.layout.ContentPane" region="top" style="padding:8px;">
+					<%=LanguageUtil.get(pageContext, "Structure")%>:
 					<div id="structureSelect"></div>
 					
                 <button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
                    <span class="reindexIcon"></span>
                    <%=LanguageUtil.get(pageContext,"Refresh")%>
                 </button>
+                <div style="float:right;">
                 <button id="runBtn" type="button" dojoType="dijit.form.Button" onClick="runNow()">
                    <span class="linkCheckIcon"></span>
                    <%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNOW")%>
                 </button>
+                </div>
             </div>
             <div dojoType="dijit.layout.ContentPane" region="center">
-                <table id="links_table" class="listingTable" border=1>
+                <table id="links_table" class="listingTable">
                 <thead>
                     <tr>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_ACTION")%></th>
+                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_STATUS")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_TITLE")%></th>
-                        <th><%=LanguageUtil.get(pageContext, "BROKEN_LINKS_STATUS")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_FIELD_NAME")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_STRUCTURE")%></th>
+                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_LINK")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_USER")%></th>
                         <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_DATE")%></th>
-                        <th><%=LanguageUtil.get(pageContext,"BROKEN_LINKS_LINK")%></th>
                     </tr>
                 </thead>
                 <tbody id="table_body">
