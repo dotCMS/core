@@ -2868,6 +2868,52 @@ public class MySQLJDBCDelegate extends StdJDBCDelegate{
 
     /**
      * <p>
+     * Select the next trigger which will fire to fire between the two given timestamps 
+     * in ascending order of fire time, and then descending by priority.
+     * </p>
+     * 
+     * @param conn
+     *          the DB Connection
+     * @param noLaterThan
+     *          highest value of <code>getNextFireTime()</code> of the triggers (exclusive)
+     * @param noEarlierThan 
+     *          highest value of <code>getNextFireTime()</code> of the triggers (inclusive)
+     *          
+     * @return A (never null, possibly empty) list of the identifiers (Key objects) of the next triggers to be fired.
+     */
+    public List selectTriggerToAcquire(Connection conn, long noLaterThan, long noEarlierThan)
+        throws SQLException {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        List nextTriggers = new LinkedList();
+        try {
+            ps = conn.prepareStatement(rtp(SELECT_NEXT_TRIGGER_TO_ACQUIRE.toLowerCase()));
+            
+            // Try to give jdbc driver a hint to hopefully not pull over 
+            // more than the few rows we actually need.
+            ps.setFetchSize(5);
+            ps.setMaxRows(5);
+            
+            ps.setString(1, STATE_WAITING);
+            ps.setBigDecimal(2, new BigDecimal(String.valueOf(noLaterThan)));
+            ps.setBigDecimal(3, new BigDecimal(String.valueOf(noEarlierThan)));
+            rs = ps.executeQuery();
+            
+            while (rs.next() && nextTriggers.size() < 5) {
+                nextTriggers.add(new Key(
+                        rs.getString(COL_TRIGGER_NAME),
+                        rs.getString(COL_TRIGGER_GROUP)));
+            }
+            
+            return nextTriggers;
+        } finally {
+            closeResultSet(rs);
+            closeStatement(ps);
+        }      
+    }
+    
+    /**
+     * <p>
      * Insert a fired trigger.
      * </p>
      * 
