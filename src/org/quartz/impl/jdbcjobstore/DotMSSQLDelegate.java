@@ -5,13 +5,12 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.dotmarketing.util.Logger;
 
-import org.apache.commons.logging.Log;
+import com.dotmarketing.util.Logger;
 
 public class DotMSSQLDelegate extends MSSQLDelegate{
 
-	public DotMSSQLDelegate(Log log, String tablePrefix, String instanceId) {
+	public DotMSSQLDelegate(org.slf4j.Logger log, String tablePrefix, String instanceId) {
 		super(log, tablePrefix, instanceId);
 	}
 	protected Object getObjectFromBlob(ResultSet rs, String colName)
