@@ -1,49 +1,8 @@
-define("dojo/promise/first", [
-	"../_base/array",
-	"../Deferred",
-	"../when"
-], function(array, Deferred, when){
-	"use strict";
+/*
+	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Available via Academic Free License >= 2.1 OR the modified BSD license.
+	see: http://dojotoolkit.org/license for details
+*/
 
-	// module:
-	//		dojo/promise/first
-
-	var forEach = array.forEach;
-
-	return function first(objectOrArray){
-		// summary:
-		//		Takes multiple promises and returns a new promise that is fulfilled
-		//		when the first of these promises is fulfilled.
-		// description:
-		//		Takes multiple promises and returns a new promise that is fulfilled
-		//		when the first of these promises is fulfilled. Canceling the returned
-		//		promise will *not* cancel any passed promises. The promise will be
-		//		fulfilled with the value of the first fulfilled promise.
-		// objectOrArray: Object|Array?
-		//		The promises are taken from the array or object values. If no value
-		//		is passed, the returned promise is resolved with an undefined value.
-		// returns: dojo/promise/Promise
-
-		var array;
-		if(objectOrArray instanceof Array){
-			array = objectOrArray;
-		}else if(objectOrArray && typeof objectOrArray === "object"){
-			array = [];
-			for(var key in objectOrArray){
-				if(Object.hasOwnProperty.call(objectOrArray, key)){
-					array.push(objectOrArray[key]);
-				}
-			}
-		}
-
-		if(!array || !array.length){
-			return new Deferred().resolve();
-		}
-
-		var deferred = new Deferred();
-		forEach(array, function(valueOrPromise){
-			when(valueOrPromise, deferred.resolve, deferred.reject);
-		});
-		return deferred.promise;	// dojo/promise/Promise
-	};
-});
+//>>built
+define("dojo/promise/first",["../_base/array","../Deferred","../when"],function(_1,_2,_3){"use strict";var _4=_1.forEach;return function first(_5){var _6;if(_5 instanceof Array){_6=_5;}else{if(_5&&typeof _5==="object"){_6=[];for(var _7 in _5){if(Object.hasOwnProperty.call(_5,_7)){_6.push(_5[_7]);}}}}if(!_6||!_6.length){return new _2().resolve();}var _8=new _2();_4(_6,function(_9){_3(_9,_8.resolve,_8.reject);});return _8.promise;};});

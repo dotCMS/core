@@ -22,6 +22,27 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		dialog.title = this.title;
 		dialog.show();
 	}, 
+	remoteUnPublish : function(assetId) {
+		var xhrArgs = {
+			url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/unPublish",
+			content: {
+				'assetIdentifier' : assetId
+			},
+			handleAs: "text",
+			load: function(data){
+				if(data.indexOf("FAILURE") > -1){
+					
+					alert(data);
+				}
+			},
+			error: function(error){
+				alert(error);
+				
+			}
+		}
+
+		var deferred = dojo.xhrPost(xhrArgs);	
+	},
 	remotePublish : function(){
 		
 		// BEGIN: PUSH PUBLISHING ACTIONLET		

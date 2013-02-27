@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -65,6 +66,7 @@ public class HTMLPageAPITest extends TestBase {
         assertEquals(existingIdentifier,page.getIdentifier());
         
         // now with existing inode but this time with an update
+        HibernateUtil.getSession().clear();
         String newInode=UUIDGenerator.generateUuid();
         page.setInode(newInode);
         page.setTitle("other title");

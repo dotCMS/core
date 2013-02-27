@@ -13,6 +13,9 @@ import org.springframework.web.servlet.DispatcherServlet;
  */
 public class Activator extends GenericBundleActivator {
 
+    private DispatcherServlet dispatcherServlet;
+    private ExtHttpService httpService;
+
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
 
@@ -26,11 +29,11 @@ public class Activator extends GenericBundleActivator {
             //Publish bundle services
             publishBundleServices( context );
 
-            ExtHttpService service = (ExtHttpService) context.getService( sRef );
+            httpService = (ExtHttpService) context.getService( sRef );
             try {
-                DispatcherServlet ds = new DispatcherServlet();
-                ds.setContextConfigLocation( "spring/example-servlet.xml" );
-                service.registerServlet( "/spring", ds, null, null );
+                dispatcherServlet = new DispatcherServlet();
+                dispatcherServlet.setContextConfigLocation( "spring/example-servlet.xml" );
+                httpService.registerServlet( "/spring", dispatcherServlet, null, null );
             } catch ( Exception e ) {
                 e.printStackTrace();
             }
@@ -39,6 +42,11 @@ public class Activator extends GenericBundleActivator {
     }
 
     public void stop ( BundleContext context ) throws Exception {
+
+        //Unregister the servlet
+        if ( httpService != null && dispatcherServlet != null ) {
+            httpService.unregisterServlet( dispatcherServlet );
+        }
 
         CMSFilter.removeExclude( "/app/spring" );
 

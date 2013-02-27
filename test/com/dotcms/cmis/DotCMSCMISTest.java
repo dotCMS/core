@@ -7,16 +7,15 @@ import java.math.BigInteger;
 
 import org.junit.Test;
 
+import com.dotcms.enterprise.cmis.DotCMSUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 
 public class DotCMSCMISTest extends CMISBaseTest {
 
     @Test
-    public void testCMISReadWrite () throws Exception {    	
-
+    public void testCMISReadWrite () throws Exception {   
+    	
         //Validations
         assertTrue( UtilMethods.isSet(getdefaultHostId()) && 
         		APILocator.getHostAPI().findDefaultHost(
@@ -28,7 +27,9 @@ public class DotCMSCMISTest extends CMISBaseTest {
 
         assertNotNull(createFile("test.txt", folderId));
         
-        assertTrue( ! doQuery("select * from webPageContent WHERE title LIKE '%a%'").getNumItems().equals(BigInteger.valueOf(0)));
+        assertTrue( ! doQuery("SELECT * FROM cmis:document WHERE cmis:name LIKE '%a%'").getNumItems().equals(BigInteger.valueOf(0)));
+        
+        assertTrue( ! doQuery("SELECT * FROM cmis:folder WHERE IN_FOLDER('" + DotCMSUtils.ROOT_ID + "')").getNumItems().equals(BigInteger.valueOf(0)));
         
     }
 }

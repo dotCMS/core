@@ -1,28 +1,8 @@
-if(require.has){
-	require.has.add("config-selectorEngine", "acme");
-}
-define("dojo/_base/browser", [
-	"../ready",
-	"./kernel",
-	"./connect", // until we decide if connect is going back into non-browser environments
-	"./unload",
-	"./window",
-	"./event",
-	"./html",
-	"./NodeList",
-	"../query",
-	"./xhr",
-	"./fx"], function(dojo){
+/*
+	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Available via Academic Free License >= 2.1 OR the modified BSD license.
+	see: http://dojotoolkit.org/license for details
+*/
 
-	// module:
-	//		dojo/_base/browser
-
-	/*=====
-	return {
-		// summary:
-		//		This module causes the browser-only base modules to be loaded.
-	};
-	=====*/
-
-	return dojo;
-});
+//>>built
+if(require.has){require.has.add("config-selectorEngine","acme");}define("dojo/_base/browser",["../ready","./kernel","./connect","./unload","./window","./event","./html","./NodeList","../query","./xhr","./fx"],function(_1){return _1;});

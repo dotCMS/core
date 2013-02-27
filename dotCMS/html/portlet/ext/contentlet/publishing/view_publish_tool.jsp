@@ -132,6 +132,7 @@
 		myCp.attr("href", url);
 		myCp.refresh();
 	}
+
 	
 	function goToAddEndpoint(){
 		var dialog = new dijit.Dialog({
@@ -263,6 +264,7 @@
 
 	}
 	
+	dojo.require("dojo.io.iframe");
 	function doBundleUpload(){
 		var suffix = ".tar.gz";
 		var filename = dojo.byId("uploadBundleFile").value;
@@ -273,8 +275,30 @@
 			return false;
 		}
 		
-    	dojo.byId("uploadBundleForm").submit();
+		var td = dojo.io.iframe.send({
+			url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle",
+			form: "uploadBundleForm",
+			method: "post",
+			content: {fnx:1},
+			timeoutSeconds: 5,
+			preventCache: true,
+			handleAs: "text",
+			load: dojo.hitch(this, function(response) {
+                if (response.status=='error') {
+                    alert("Error Uploading the Bundle");
+                } else {
+                	backToBundleList();
+                }
+            }) 
+		});
 		
+	}
+
+	
+	function backToBundleList(){
+
+		dijit.byId("uploadBundleDiv").hide();
+		refreshAuditList("");
 	}
 	
 	
@@ -377,6 +401,8 @@
 </div>
 
 
+
+
 <div dojoType="dijit.Dialog" id="uploadBundleDiv" >
 	<form action="/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle" enctype="multipart/form-data" id="uploadBundleForm" name="uploadBundleForm" method="post">
 		<div>
@@ -388,6 +414,7 @@
 				<%= LanguageUtil.get(pageContext, "publisher_upload") %> 
 			</button> 
 		</div>
+		
 	</form>
 </div>
 

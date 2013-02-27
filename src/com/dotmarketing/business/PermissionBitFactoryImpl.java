@@ -3310,14 +3310,18 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 		for (Map<String, String> idMap : idsToUpdate) {
 			String id = idMap.get("id");
-			Permissionable childPermissionable;
+			
+			//Search contentlets by identifier (all languages) and set permissions
+			String luceneQuery = "+identifier:"+id+" +working:true";
 			try {
-				childPermissionable = contentAPI.findContentletByIdentifier(id, false, 0, systemUser, false);
+				for(Permissionable childPermissionable: contentAPI.search(luceneQuery,1,0,null,systemUser, false)) {
+					savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+					break;
+				}
 			} catch (DotSecurityException e) {
 				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
 			}
-			savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
 		}
 
 		// Structures
@@ -3378,7 +3382,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		int offset=0;
 		List<Contentlet> contentlets;
 		do {
-			String query="structurename:"+structure.getName();
+			String query="structurename:"+structure.getVelocityVarName();
 			try {
 			    contentlets=contAPI.search(query, limit, offset, "identifier", APILocator.getUserAPI().getSystemUser(), false);
             } catch (DotSecurityException e) {

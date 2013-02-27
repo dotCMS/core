@@ -1,5 +1,2 @@
-define(
-"dojox/editor/plugins/nls/it/Preview", ({
-	"preview": "Anteprima"
-})
-);
+//>>built
+define("dojox/editor/plugins/nls/it/Preview",({"preview":"Anteprima"}));

@@ -17,8 +17,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 
 public class TimeMachineFilter implements Filter {
 
@@ -41,6 +44,32 @@ public class TimeMachineFilter implements Filter {
 			req.getSession().removeAttribute(TM_HOST_VAR);
 		}
 		if(req.getSession().getAttribute("tm_date")!=null && !CMSFilter.excludeURI(uri)) {
+			
+			com.liferay.portal.model.User user = null;
+			
+			try {
+				user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) request);
+				
+				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("TIMEMACHINE", user)){
+					
+					throw new DotSecurityException("user does not have access to the timemachine portlet");
+					
+				}
+				
+				
+				
+				
+			} catch (Exception e) {
+				Logger.error(TimeMachineFilter.class,e.getMessage(),e);
+				
+				return;
+				
+				
+			}
+			
+			
+			
+			
 		    String datestr=(String)req.getSession().getAttribute("tm_date");
 
 		    Date date;
@@ -61,12 +90,15 @@ public class TimeMachineFilter implements Filter {
 		    Host host=(Host) req.getSession().getAttribute("tm_host");
 		    String langid=(String) req.getSession().getAttribute("tm_lang");
 
-		    if(uri.equals("/"))
-		        uri="/home/index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+//		    if(uri.equals("/"))
+//		        uri="/home/index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+		    
+		    
+		    
 		    if(uri.endsWith("/"))
 		        uri+="index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 
-		    java.io.File file=new java.io.File(ConfigUtils.getBundlePath()+java.io.File.separator+
+		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
 		            "live"+java.io.File.separator+
 		            host.getHostname()+java.io.File.separator+langid+
@@ -80,9 +112,17 @@ public class TimeMachineFilter implements Filter {
 		        FileInputStream fis=new FileInputStream(file);
 		        IOUtils.copy(fis, resp.getOutputStream());
 		        fis.close();
+		        return;
 		    }
 		    else {
-		        resp.sendError(400);
+		        
+		        try {
+					request.getRequestDispatcher("/html/portlet/ext/timemachine/timemachine_404.jsp").forward(request, response);
+				} catch (Exception e) {
+					Logger.error(TimeMachineFilter.class,e.getMessage(),e);
+					resp.sendError(400);
+				}
+		        return;
 		    }
 		}
 		else {

@@ -1282,10 +1282,9 @@ public class FolderFactoryImpl extends FolderFactory {
 				title = tempTitle;
 			}
 		} catch (Exception ex) {
-			String message = ex.getMessage();
-		} finally {
-			return title;
+			Logger.warn(FolderFactoryImpl.class, "retrieveTitle failed:" + ex);
 		}
+		return title;
 	}
 
 	private boolean isOpenNode(String[] openNodes, String node) {

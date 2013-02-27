@@ -14,6 +14,7 @@ import com.dotcms.publisher.pusher.bundler.ContentBundler;
 import com.dotcms.publisher.pusher.bundler.HostBundler;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -21,6 +22,7 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -180,20 +182,25 @@ public class ContentHandler implements IHandler {
             	TreeFactory.saveTree(tree);
         }
         
-        //Multitree
+        // deletes multiTree entries to avoid duplicates
         for(Map<String, Object> mRow : wrapper.getMultiTree()) {
-            MultiTree multiTree = new MultiTree();
+            Identifier parent1 = APILocator.getIdentifierAPI().find((String)mRow.get("parent1"));
+            Identifier parent2 = APILocator.getIdentifierAPI().find((String)mRow.get("parent2"));
+            Identifier child = APILocator.getIdentifierAPI().find((String)mRow.get("child"));
+
+            MultiTree t = MultiTreeFactory.getMultiTree(parent1, parent2, child);
+            if(t!=null && UtilMethods.isSet(t.getChild()))
+            	MultiTreeFactory.deleteMultiTree(t);
+        }
+        
+        // saves the muliTree entries 
+        for(Map<String, Object> mRow : wrapper.getMultiTree()) {
+        	MultiTree multiTree = new MultiTree();
             multiTree.setChild((String) mRow.get("child"));
             multiTree.setParent1((String) mRow.get("parent1"));
             multiTree.setParent2((String) mRow.get("parent2"));
             multiTree.setRelationType((String) mRow.get("relation_type"));
             multiTree.setTreeOrder(Integer.parseInt( mRow.get("tree_order").toString()));
-
-            List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(multiTree.getChild());
-            for(MultiTree t : trees){
-            	MultiTreeFactory.deleteMultiTree(t);
-            	
-            }
             
             MultiTreeFactory.saveMultiTree(multiTree);
         }

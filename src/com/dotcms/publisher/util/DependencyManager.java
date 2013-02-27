@@ -8,6 +8,7 @@ import java.util.Set;
 
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publishing.DotBundleException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -81,13 +82,15 @@ public class DependencyManager {
 			}
 		}
 		
-		setHostDependencies();
-		setFolderDependencies();
-		setHTMLPagesDependencies();
-		setTemplateDependencies();
-		setContainerDependencies();
-		setStructureDependencies();
-		setContentDependencies(config.getLuceneQueries());
+		if(config.getOperation().equals(Operation.PUBLISH)) {
+    		setHostDependencies();
+    		setFolderDependencies();
+    		setHTMLPagesDependencies();
+    		setTemplateDependencies();
+    		setContainerDependencies();
+    		setStructureDependencies();
+    		setContentDependencies(config.getLuceneQueries());
+		}
 		
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -227,21 +230,35 @@ public class DependencyManager {
 				HTMLPage livePage = APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false);
 				
 				// working template working page
-				Template workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(workingPage.getTemplateId(), user, false);
+				Template workingTemplateWP = null;
 				// live template working page
-				Template liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(workingPage.getTemplateId(), user, false);
-				// live template live page
-				Template liveTemplateLP = APILocator.getTemplateAPI().findLiveTemplate(livePage.getTemplateId(), user, false);
+				Template liveTemplateWP = null;
+
+				if(workingPage!=null) { 
+					workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(workingPage.getTemplateId(), user, false);
+					liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(workingPage.getTemplateId(), user, false);
+					// Templates dependencies
+					templates.add(workingPage.getTemplateId());
+				}
 				
-				// Templates dependencies
-				templates.add(workingPage.getTemplateId());
-				templates.add(livePage.getTemplateId());
+				Template liveTemplateLP = null;
+				
+				// live template live page
+				if(livePage!=null) {
+					liveTemplateLP = APILocator.getTemplateAPI().findLiveTemplate(livePage.getTemplateId(), user, false);
+					// Templates dependencies
+					templates.add(livePage.getTemplateId());
+				}
 
 				// Containers dependencies 
 				containerList.clear();
-				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
-				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
-				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateLP, user, false));
+				
+				if(workingTemplateWP!=null)
+					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
+				if(liveTemplateWP!=null)
+					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
+				if(liveTemplateLP!=null)
+					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateLP, user, false));
 				
 				for (Container container : containerList) {
 					containers.add(container.getIdentifier());
@@ -370,13 +387,32 @@ public class DependencyManager {
 				folders.add(con.getFolder()); // adding content folder
 				
 				try {
-					if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES")) {
+					if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES",false)) {
 						List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
 								APILocator.getFolderAPI().find(con.getFolder(), user, false));
 						folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
 								APILocator.getFolderAPI().find(con.getFolder(), user, false)));
 						for(HTMLPage htmlPage: folderHtmlPages) {
 							htmlPages.add(htmlPage.getIdentifier());
+							
+							// working template working page
+							Template workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(htmlPage.getTemplateId(), user, false);
+							// live template working page
+							Template liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(), user, false);
+							
+							// Templates dependencies
+							templates.add(htmlPage.getTemplateId());
+
+							// Containers dependencies 
+							List<Container> containerList = new ArrayList<Container>();
+							containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
+							containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
+							
+							for (Container container : containerList) {
+								containers.add(container.getIdentifier());
+								// Structure dependencies
+								structures.add(container.getStructureInode());
+							}
 						}
 					}
 				} catch (Exception e) {

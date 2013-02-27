@@ -1,6 +1,2 @@
-define(
-"dojox/editor/plugins/nls/ko/TextColor", ({
-	"setButtonText": "설정",
-	"cancelButtonText": "취소"
-})
-);
+//>>built
+define("dojox/editor/plugins/nls/ko/TextColor",({"setButtonText":"설정","cancelButtonText":"취소"}));

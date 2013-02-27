@@ -87,9 +87,8 @@ public class RSSWebAPI {
 		} catch (Exception ex) {
 			Logger.error(RSSWebAPI.class, ex.toString());
 			returnValue = "";
-		} finally {
-			return returnValue;
 		}
+		return returnValue;
 	}
 
 	/*
@@ -143,9 +142,8 @@ public class RSSWebAPI {
 			}
 		} catch (Exception ex) {
 			Logger.error(RSSWebAPI.class, ex.toString());
-		} finally {
-			return returnValue;
 		}
+		return returnValue;
 	}
 	
 	/**
@@ -214,9 +212,8 @@ public class RSSWebAPI {
 			}
 		} catch (Exception ex) {
 			Logger.error(RSSWebAPI.class, ex.toString());
-		} finally {
-			return fullPath;
 		}
+		return fullPath;
 	}
 	
 	/**
@@ -401,9 +398,8 @@ public class RSSWebAPI {
 				}
 			} catch (Exception ex) {
 				Logger.error(RSSWebAPI.class, ex.toString());
-			} finally {
-				return returnValue;
 			}
+			return returnValue;
 		}
 	}
 }

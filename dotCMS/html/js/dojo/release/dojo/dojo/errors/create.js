@@ -1,41 +1,8 @@
-define("dojo/errors/create", ["../_base/lang"], function(lang){
-	return function(name, ctor, base, props){
-		base = base || Error;
+/*
+	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Available via Academic Free License >= 2.1 OR the modified BSD license.
+	see: http://dojotoolkit.org/license for details
+*/
 
-		var ErrorCtor = function(message){
-			if(base === Error){
-				if(Error.captureStackTrace){
-					Error.captureStackTrace(this, ErrorCtor);
-				}
-
-				// Error.call() operates on the returned error
-				// object rather than operating on |this|
-				var err = Error.call(this, message),
-					prop;
-
-				// Copy own properties from err to |this|
-				for(prop in err){
-					if(err.hasOwnProperty(prop)){
-						this[prop] = err[prop];
-					}
-				}
-
-				// messsage is non-enumerable in ES5
-				this.message = message;
-				// stack is non-enumerable in at least Firefox
-				this.stack = err.stack;
-			}else{
-				base.apply(this, arguments);
-			}
-			if(ctor){
-				ctor.apply(this, arguments);
-			}
-		};
-
-		ErrorCtor.prototype = lang.delegate(base.prototype, props);
-		ErrorCtor.prototype.name = name;
-		ErrorCtor.prototype.constructor = ErrorCtor;
-
-		return ErrorCtor;
-	};
-});
+//>>built
+define("dojo/errors/create",["../_base/lang"],function(_1){return function(_2,_3,_4,_5){_4=_4||Error;var _6=function(_7){if(_4===Error){if(Error.captureStackTrace){Error.captureStackTrace(this,_6);}var _8=Error.call(this,_7),_9;for(_9 in _8){if(_8.hasOwnProperty(_9)){this[_9]=_8[_9];}}this.message=_7;this.stack=_8.stack;}else{_4.apply(this,arguments);}if(_3){_3.apply(this,arguments);}};_6.prototype=_1.delegate(_4.prototype,_5);_6.prototype.name=_2;_6.prototype.constructor=_6;return _6;};});

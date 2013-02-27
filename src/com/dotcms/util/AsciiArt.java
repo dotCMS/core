@@ -29,7 +29,7 @@ public class AsciiArt {
 		Logger.info(com.dotcms.util.AsciiArt.class, "    OOOO   OOOO  OOOO   OOO    OOOO     77777       777   7777   7777        7777  ");
 		Logger.info(com.dotcms.util.AsciiArt.class, "     OOOOOOOOOO   OOOOOOOO      OOOOO    777777777  777   7777   7777  777777777   ");
 		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "                                                     Web Content Management System ");
+		Logger.info(com.dotcms.util.AsciiArt.class, "                                                         Content Management System ");
 		// Logger.info(com.dotcms.util.AsciiArt.class, "                                                        copyright " + Calendar.getInstance().get(Calendar.YEAR) + ", dotCMS LLC");
 		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
 		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");

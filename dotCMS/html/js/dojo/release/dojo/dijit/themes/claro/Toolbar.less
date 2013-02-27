@@ -45,8 +45,8 @@
 	.transition-property(background-color);
 	.transition-duration(.3s);
 
-	.standard-gradient;
 	background-color:rgba(171,214,255,0);
+	background-image: none;	/* cancel gradient for normal buttons, we don't want any gradient besides toolbar's on non-hovered buttons */
 }
 .dj_ie .claro .dijitToolbar .dijitButton .dijitButtonNode,
 .dj_ie .claro .dijitToolbar .dijitDropDownButton .dijitButtonNode,
@@ -95,6 +95,7 @@
 .claro .dijitToolbar .dijitComboButtonHover .dijitButtonNode {
 	border-width:1px;
 	background-color: @hovered-background-color;
+	.standard-gradient;
 	padding: 1px;
 }
 .claro .dijitToolbar .dijitComboButtonHover .dijitButtonNode,

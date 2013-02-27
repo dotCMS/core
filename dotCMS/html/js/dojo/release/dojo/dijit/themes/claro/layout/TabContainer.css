@@ -1,47 +1,47 @@
-/* TabContainer
- *
+/* TabContainer 
+ * 
  * Styling TabContainer means styling the TabList and Its content container  (dijitTitlePane)
- *
+ * 
  * Tab List: (including 4 kinds of tab location)
  * 		.dijitTabContainerTop-tabs     - tablist container at top
  * 		.dijitTabContainerBottom-tabs  - tablist container at bottom
  * 		.dijitTabContainerLeft-tabs    - tablist container at left
  * 		.dijitTabContainerRight-tabs   - tablist container at right
- *
+ * 
  * Tab Strip Button:
  * 		.dijitTabStripIcon - tab strip button icon
  * 		.dijitTabStripMenuIcon - down arrow icon position
  * 		.dijitTabStripSlideLeftIcon - left arrow icon position
  * 		.dijitTabStripSlideRightIcon - right arrow icon position
- *
+ * 
  * 		.tabStripButtonDisabled - styles for disabled tab strip buttons
- *
+ * 
  * Tab Button:
  * 		.dijitTabContainerTop-tabs .dijitTab     - styles for top tab button container
  * 		.dijitTabContainerBottom-tabs .dijitTab  - styles for bottom tab button container
  * 		.dijitTabContainerLeft-tabs .dijitTab    - styles for left tab button container
  * 		.dijitTabContainerRight-tabs .dijitTab   - styles for right tab button container
- *
+ * 
  * 		.dijitTabContainerTop-tabs .dijitTabChecked .dijitTab
  * 				- styles for selected status of top tab button
  * 		same to Bottom, Left, Right Tabs
- *
+ * 
  * 		.dijitTabHover .dijitTab   - styles when mouse hover on tab buttons
  * 		.dijitTabActive .dijitTab  - styles when mouse down on tab buttons
  * 		.dijitTabChecked .dijitTab  - styles when on buttons of selected tab
- *
+ * 
  * 		.dijitTabCloseButton - the close action buttons lie at the right top of each tab button on closable tabs
  * 		.dijitTabCloseButtonHover - styles when mouse hover on close action button
  * 		.dijitTabCloseButtonActive - styles when mouse down on close action button
- *
+ * 
  * Tab Button: (checked status)
- *
+ * 
  * Tab Content Container:
  * 		.dijitTabContainerTop-dijitContentPane
  * 		.dijitTabContainerBottom-dijitContentPane
  * 		.dijitTabContainerLeft-dijitContentPane
  * 		.dijitTabContainerRight-dijitContentPane - for background and padding
- *
+ * 
  * Nested Tabs:
  * 		.dijitTabContainerNested - Container for nested tabs
  * 		.dijitTabContainerTabListNested - tab list container for nested tabs
@@ -134,7 +134,7 @@
   background-image: -moz-linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   background-image: -webkit-linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   background-image: -o-linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
-  background-image: -ms-linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   -webkit-box-shadow: 0 -1px 1px rgba(0, 0, 0, 0.04);
   -moz-box-shadow: 0 -1px 1px rgba(0, 0, 0, 0.04);
   box-shadow: 0 -1px 1px rgba(0, 0, 0, 0.04);
@@ -148,7 +148,7 @@
   background-image: -moz-linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
   background-image: -webkit-linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
   background-image: -o-linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
-  background-image: -ms-linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
+  background-image: linear-gradient(top, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
   -webkit-box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.05);
   -moz-box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.05);
   box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.05);
@@ -172,7 +172,7 @@
   background-image: -moz-linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   background-image: -webkit-linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   background-image: -o-linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
-  background-image: -ms-linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
   -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
@@ -185,7 +185,7 @@
   background-image: -moz-linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
   background-image: -webkit-linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
   background-image: -o-linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
-  background-image: -ms-linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
+  background-image: linear-gradient(bottom, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0) 2px, #ffffff 7px);
   -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -205,7 +205,7 @@
   background-image: -moz-linear-gradient(left, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   background-image: -webkit-linear-gradient(left, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   background-image: -o-linear-gradient(left, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
-  background-image: -ms-linear-gradient(left, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(left, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
 }
 /* selected tab */
 .claro .dijitTabContainerLeft-tabs .dijitTabChecked {
@@ -215,7 +215,7 @@
   background-image: -moz-linear-gradient(left, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
   background-image: -webkit-linear-gradient(left, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
   background-image: -o-linear-gradient(left, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
-  background-image: -ms-linear-gradient(left, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
+  background-image: linear-gradient(left, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
   -webkit-box-shadow: -1px 0 2px rgba(0, 0, 0, 0.05);
   -moz-box-shadow: -1px 0 2px rgba(0, 0, 0, 0.05);
   box-shadow: -1px 0 2px rgba(0, 0, 0, 0.05);
@@ -236,7 +236,7 @@
   background-image: -moz-linear-gradient(right, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   background-image: -webkit-linear-gradient(right, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
   background-image: -o-linear-gradient(right, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
-  background-image: -ms-linear-gradient(right, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(right, #ffffff 0px, #ffffff 1px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.6) 7px, rgba(255, 255, 255, 0) 100%);
 }
 .claro .dijitTabContainerRight-tabs .dijitTabChecked {
   /* selected tab */
@@ -247,7 +247,7 @@
   background-image: -moz-linear-gradient(right, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
   background-image: -webkit-linear-gradient(right, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
   background-image: -o-linear-gradient(right, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
-  background-image: -ms-linear-gradient(right, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
+  background-image: linear-gradient(right, rgba(255, 255, 255, 0.5) 0px, #ffffff 30px);
   -webkit-box-shadow: 1px 0 2px rgba(0, 0, 0, 0.07);
   -moz-box-shadow: 1px 0 2px rgba(0, 0, 0, 0.07);
   box-shadow: 1px 0 2px rgba(0, 0, 0, 0.07);
@@ -281,7 +281,7 @@
   background-image: -moz-linear-gradient(top, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
   background-image: -webkit-linear-gradient(top, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
   background-image: -o-linear-gradient(top, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
-  background-image: -ms-linear-gradient(top, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(top, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
 }
 .claro .dijitTabListContainer-bottom .tabStripButton {
   padding: 4px 3px;
@@ -289,7 +289,7 @@
   background-image: -moz-linear-gradient(bottom, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
   background-image: -webkit-linear-gradient(bottom, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
   background-image: -o-linear-gradient(bottom, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
-  background-image: -ms-linear-gradient(bottom, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(bottom, #ffffff 0px, rgba(255, 255, 255, 0.1) 1px, rgba(255, 255, 255, 0.6) 6px, rgba(255, 255, 255, 0) 100%);
 }
 .claro .tabStripButtonHover {
   background-color: #abd6ff;
@@ -376,7 +376,7 @@
   background-image: -moz-linear-gradient(rgba(255, 255, 255, 0.61) 0%, rgba(255, 255, 255, 0) 17%, rgba(255, 255, 255, 0) 83%, rgba(255, 255, 255, 0.61) 100%);
   background-image: -webkit-linear-gradient(rgba(255, 255, 255, 0.61) 0%, rgba(255, 255, 255, 0) 17%, rgba(255, 255, 255, 0) 83%, rgba(255, 255, 255, 0.61) 100%);
   background-image: -o-linear-gradient(rgba(255, 255, 255, 0.61) 0%, rgba(255, 255, 255, 0) 17%, rgba(255, 255, 255, 0) 83%, rgba(255, 255, 255, 0.61) 100%);
-  background-image: -ms-linear-gradient(rgba(255, 255, 255, 0.61) 0%, rgba(255, 255, 255, 0) 17%, rgba(255, 255, 255, 0) 83%, rgba(255, 255, 255, 0.61) 100%);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.61) 0%, rgba(255, 255, 255, 0) 17%, rgba(255, 255, 255, 0) 83%, rgba(255, 255, 255, 0.61) 100%);
   -webkit-transition-duration: 0.1s;
   -moz-transition-duration: 0.1s;
   transition-duration: 0.1s;

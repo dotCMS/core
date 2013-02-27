@@ -1,12 +1,8 @@
-define("dojo/dnd/AutoSource", ["../_base/declare", "./Source"], function(declare, Source){
-	return declare("dojo.dnd.AutoSource", Source, {
-		// summary:
-		//		a source that syncs its DnD nodes by default
+/*
+	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Available via Academic Free License >= 2.1 OR the modified BSD license.
+	see: http://dojotoolkit.org/license for details
+*/
 
-		constructor: function(/*===== node, params =====*/){
-			// summary:
-			//		constructor of the AutoSource --- see the Source constructor for details
-			this.autoSync = true;
-		}
-	});
-});
+//>>built
+define("dojo/dnd/AutoSource",["../_base/declare","./Source"],function(_1,_2){return _1("dojo.dnd.AutoSource",_2,{constructor:function(){this.autoSync=true;}});});

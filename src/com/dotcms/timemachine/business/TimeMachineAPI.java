@@ -6,6 +6,7 @@ import java.util.List;
 import com.dotcms.publishing.PublishStatus;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.ScheduledTask;
 
@@ -19,8 +20,10 @@ public interface TimeMachineAPI {
 
     public List<Host> getHostsWithTimeMachine();
 
-    List<PublishStatus> startTimeMachine(List<Host> hosts, List<Language> langs);
+    List<PublishStatus> startTimeMachine(List<Host> hosts, List<Language> langs, boolean incremental);
 
-    void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs);
+    void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs, boolean incremental);
+
+    void removeQuartzJob() throws DotRuntimeException;
 	
 }
