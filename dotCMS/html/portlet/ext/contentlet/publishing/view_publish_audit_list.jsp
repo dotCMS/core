@@ -1,3 +1,6 @@
+<%@page import="com.dotmarketing.beans.PermissionableProxy"%>
+<%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
@@ -194,6 +197,40 @@
 		</tr>
 		<% for(PublishAuditStatus c : iresults) {
 			String errorclass="";
+			
+			//Check bundle permissions
+			PermissionAPI permAPI = APILocator.getPermissionAPI();
+			Map<String, String> bundleAssets = c.getStatusPojo().getAssets();
+			
+			PermissionableProxy pp = new PermissionableProxy();
+			for(String key : bundleAssets.keySet()) {
+				
+				String identifier = key;
+				String assetType = bundleAssets.get(key);
+				
+				pp.setIdentifier(identifier);
+				pp.setType(assetType);
+				pp.setInode(identifier);
+				
+				
+				if(assetType.equals("contentlet") || assetType.equals("host")) {
+					pp.setPermissionByIdentifier(true);
+				} else if (assetType.equals("htmlpage")) {
+					pp.setPermissionByIdentifier(true);
+				} else if (assetType.equals("folder")) {
+					pp.setPermissionByIdentifier(false);
+				} else if (assetType.equals("template")) {
+					pp.setPermissionByIdentifier(true);
+				} else if (assetType.equals("containers")) {
+					pp.setPermissionByIdentifier(true);
+				} else if (assetType.equals("structure")) {
+					pp.setPermissionByIdentifier(false);
+				} 
+				
+				break;
+			}
+			
+			if(permAPI.doesUserHavePermission(pp, PermissionAPI.PERMISSION_PUBLISH, user)) {
 		%>
 			<tr <%=errorclass%>>
 				<td style="width:30px;text-align:center;" valign="top">
@@ -227,7 +264,9 @@
 			    <td valign="top" nowrap="nowrap"><%=UtilMethods.dateToHTMLDate(c.getCreateDate(),"MM/dd/yyyy hh:mma") %></td>
 			    <td valign="top" nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(c.getStatusUpdated()) %></td>
 			</tr>
-		<%}%>
+		<%
+			}
+		}%>
 <table width="97%" style="margin:10px;" >
 	<tr>
 		<%

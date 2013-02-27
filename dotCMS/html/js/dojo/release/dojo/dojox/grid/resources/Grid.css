@@ -225,6 +225,14 @@
 	padding: 3px 3px 3px 3px;
 	text-align: left;
 	overflow: hidden;
+	word-wrap: break-word;
+}
+
+.dojoxGrid .dojoxGridFixedRowHeight .dojoxGridCell {
+	white-space: nowrap;
+	word-break: keep-all;
+	word-wrap: normal;
+	text-overflow: ellipsis;
 }
 
 .dojoxGridCellFocus {

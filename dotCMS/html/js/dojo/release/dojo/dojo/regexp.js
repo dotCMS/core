@@ -1,70 +1,8 @@
-define("dojo/regexp", ["./_base/kernel", "./_base/lang"], function(dojo, lang){
+/*
+	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Available via Academic Free License >= 2.1 OR the modified BSD license.
+	see: http://dojotoolkit.org/license for details
+*/
 
-// module:
-//		dojo/regexp
-
-var regexp = {
-	// summary:
-	//		Regular expressions and Builder resources
-};
-lang.setObject("dojo.regexp", regexp);
-
-regexp.escapeString = function(/*String*/str, /*String?*/except){
-	// summary:
-	//		Adds escape sequences for special characters in regular expressions
-	// except:
-	//		a String with special characters to be left unescaped
-
-	return str.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, function(ch){
-		if(except && except.indexOf(ch) != -1){
-			return ch;
-		}
-		return "\\" + ch;
-	}); // String
-};
-
-regexp.buildGroupRE = function(/*Object|Array*/arr, /*Function*/re, /*Boolean?*/nonCapture){
-	// summary:
-	//		Builds a regular expression that groups subexpressions
-	// description:
-	//		A utility function used by some of the RE generators. The
-	//		subexpressions are constructed by the function, re, in the second
-	//		parameter.  re builds one subexpression for each elem in the array
-	//		a, in the first parameter. Returns a string for a regular
-	//		expression that groups all the subexpressions.
-	// arr:
-	//		A single value or an array of values.
-	// re:
-	//		A function. Takes one parameter and converts it to a regular
-	//		expression.
-	// nonCapture:
-	//		If true, uses non-capturing match, otherwise matches are retained
-	//		by regular expression. Defaults to false
-
-	// case 1: a is a single value.
-	if(!(arr instanceof Array)){
-		return re(arr); // String
-	}
-
-	// case 2: a is an array
-	var b = [];
-	for(var i = 0; i < arr.length; i++){
-		// convert each elem to a RE
-		b.push(re(arr[i]));
-	}
-
-	 // join the REs as alternatives in a RE group.
-	return regexp.group(b.join("|"), nonCapture); // String
-};
-
-regexp.group = function(/*String*/expression, /*Boolean?*/nonCapture){
-	// summary:
-	//		adds group match to expression
-	// nonCapture:
-	//		If true, uses non-capturing match, otherwise matches are retained
-	//		by regular expression.
-	return "(" + (nonCapture ? "?:":"") + expression + ")"; // String
-};
-
-return regexp;
-});
+//>>built
+define("dojo/regexp",["./_base/kernel","./_base/lang"],function(_1,_2){var _3={};_2.setObject("dojo.regexp",_3);_3.escapeString=function(_4,_5){return _4.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g,function(ch){if(_5&&_5.indexOf(ch)!=-1){return ch;}return "\\"+ch;});};_3.buildGroupRE=function(_6,re,_7){if(!(_6 instanceof Array)){return re(_6);}var b=[];for(var i=0;i<_6.length;i++){b.push(re(_6[i]));}return _3.group(b.join("|"),_7);};_3.group=function(_8,_9){return "("+(_9?"?:":"")+_8+")";};return _3;});

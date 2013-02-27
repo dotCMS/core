@@ -1,11 +1,14 @@
 package com.dotmarketing.viewtools.content;
 
 import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -197,6 +200,20 @@ public class ContentTool implements ViewTool {
 	    for(Contentlet cc : cons) {
 	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
 	    }
+
+	    if(cons != null && cons.size() > 0){
+			long minIndex = (currentPage - 1) * contentsPerPage;
+	        long totalCount = cons.getTotalResults();
+	        long maxIndex = contentsPerPage * currentPage;
+	        if((minIndex + contentsPerPage) >= totalCount){
+	        	maxIndex = totalCount;
+	        }
+			ret.setTotalResults(cons.getTotalResults());
+			ret.setTotalPages((long)Math.ceil(((double)cons.getTotalResults())/((double)contentsPerPage)));
+			ret.setNextPage(maxIndex < totalCount);
+			ret.setPreviousPage(minIndex > 0);
+	    }
+	    
 		return ret;
 	}
 	
@@ -312,9 +329,9 @@ public class ContentTool implements ViewTool {
 	 * @return Returns empty List if no results are found
 	 */
 	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort) {	
-
+		
 		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, pullParents, limit, sort, user, tmDate);
+		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, addDefaultsToQuery(condition), pullParents, limit, sort, user, tmDate);
 
 		for(Contentlet cc : cons) {
 			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
@@ -323,7 +340,13 @@ public class ContentTool implements ViewTool {
 	}
 	
 	private String addDefaultsToQuery(String query){
-		String q = query;
+		String q = "";
+		
+		if(query != null)
+			q = query;
+		else
+			query = q;
+		
 		if(!query.contains("languageId")){
 			if(UtilMethods.isSet(req.getSession().getAttribute("com.dotmarketing.htmlpage.language"))){
 				q += " +languageId:" + req.getSession().getAttribute("com.dotmarketing.htmlpage.language");

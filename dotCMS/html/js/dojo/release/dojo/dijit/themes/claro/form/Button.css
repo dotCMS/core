@@ -55,7 +55,7 @@
   background-image: -moz-linear-gradient(#ffffff 0px, rgba(255, 255, 255, 0) 3px, rgba(255, 255, 255, 0.75) 100%);
   background-image: -webkit-linear-gradient(#ffffff 0px, rgba(255, 255, 255, 0) 3px, rgba(255, 255, 255, 0.75) 100%);
   background-image: -o-linear-gradient(#ffffff 0px, rgba(255, 255, 255, 0) 3px, rgba(255, 255, 255, 0.75) 100%);
-  background-image: -ms-linear-gradient(#ffffff 0px, rgba(255, 255, 255, 0) 3px, rgba(255, 255, 255, 0.75) 100%);
+  background-image: linear-gradient(#ffffff 0px, rgba(255, 255, 255, 0) 3px, rgba(255, 255, 255, 0.75) 100%);
   _background-image: none;
 }
 .claro .dijitComboButton .dijitArrowButton {
@@ -146,7 +146,7 @@
   background-image: -moz-linear-gradient(#ffffff 0%, rgba(255, 255, 255, 0) 40%);
   background-image: -webkit-linear-gradient(#ffffff 0%, rgba(255, 255, 255, 0) 40%);
   background-image: -o-linear-gradient(#ffffff 0%, rgba(255, 255, 255, 0) 40%);
-  background-image: -ms-linear-gradient(#ffffff 0%, rgba(255, 255, 255, 0) 40%);
+  background-image: linear-gradient(#ffffff 0%, rgba(255, 255, 255, 0) 40%);
   _background-image: none;
 }
 .claro .dijitComboButtonDisabled .dijitArrowButton {

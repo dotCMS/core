@@ -1,5 +1,2 @@
-define(
-"dojox/editor/plugins/nls/ar/Blockquote", ({
-	"blockquote": "علامة تنصيص الفقرة"
-})
-);
+//>>built
+define("dojox/editor/plugins/nls/ar/Blockquote",({"blockquote":"علامة تنصيص الفقرة"}));

@@ -17,8 +17,8 @@
 	margin:0;
 	border:0;
 	padding:0;
-	line-height:normal;
 	font: inherit;
+	line-height:normal;
 	color: inherit;
 }
 .dj_a11y .dijitReset {
@@ -378,11 +378,11 @@ div.dijitArrowButton {
 .dijitTextBoxDisabled {
 	color: gray;
 }
-.dj_webkit .dijitTextBoxDisabled input {
-	color: #eee; /* because WebKit lightens disabled input/textarea no matter what color you specify */
+.dj_safari .dijitTextBoxDisabled input {
+	color: #B0B0B0; /* because Safari lightens disabled input/textarea no matter what color you specify */
 }
-.dj_webkit textarea.dijitTextAreaDisabled {
-	color: #333; /* because WebKit lightens disabled input/textarea no matter what color you specify */
+.dj_safari textarea.dijitTextAreaDisabled {
+	color: #333; /* because Safari lightens disabled input/textarea no matter what color you specify */
 }
 .dj_gecko .dijitTextBoxReadOnly input.dijitInputField, /* disable arrow and validation presentation inputs but allow real input for text selection */
 .dj_gecko .dijitTextBoxDisabled input {
@@ -1262,10 +1262,9 @@ Hiding the focus border also works around webkit bug https://code.google.com/p/c
 	cursor:default;
 }
 .dj_ie .dj_a11y .dijitMenuItemDisabled,
-.dj_ie .dj_a11y .dijitMenuItemDisabled td,
-.dj_ie .dijitMenuItemDisabled *,
-.dj_ie .dijitMenuItemDisabled td {
-	color:gray !important;
+.dj_ie .dj_a11y .dijitMenuItemDisabled *,
+.dj_ie .dijitMenuItemDisabled * {
+	color: gray;
 	filter: alpha(opacity=35);
 }
 
@@ -1801,6 +1800,7 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 
 .dijitSliderDecorationV {
 	height: 100%;
+	white-space: nowrap;
 }
 
 .dijitSliderButton {
@@ -2074,6 +2074,16 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 .dijitSelect .dijitSelectLabel {
 	vertical-align: baseline;
 }
+
+.dijitNumberTextBox {
+	text-align: left;
+	direction: ltr;
+}
+
+.dijitNumberTextBox .dijitInputInner {
+	text-align: inherit; /* input */
+}
+
 .dijitToolbar .dijitSelect {
 	margin: 0;
 }

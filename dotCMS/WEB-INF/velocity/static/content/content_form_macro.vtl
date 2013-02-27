@@ -1047,7 +1047,9 @@ var theme = 'dmundra';
 		document.getElementById('captcha-image').innerHTML = "<img width='200' height='50'  src='/Captcha.jpg?r=" + rand + "'>";
 	}
 
-
+	function userLang(){
+		return "$languagewebapi.getFromUserLanguage('org.dotcms.frontend.content.submission.does.not.comply.format')";
+	}
 
 updateTabList();
 

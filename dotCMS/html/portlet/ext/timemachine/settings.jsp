@@ -12,13 +12,14 @@ String cronExp="";
 List<Host> hosts=new ArrayList<Host>();
 Boolean allhosts=false;
 List<Language> langs=new ArrayList<Language>();
-
+Boolean incremental = false;
 ScheduledTask task=APILocator.getTimeMachineAPI().getQuartzJob();
 if(task!=null) {
     allhosts=(Boolean) task.getProperties().get("allhosts");
     hosts=(List<Host>) task.getProperties().get("hosts");
     langs=(List<Language>) task.getProperties().get("langs");
     cronExp=(String) task.getProperties().get("CRON_EXPRESSION");
+    incremental = task.getProperties().get("incremental")!=null && (Boolean) task.getProperties().get("incremental");
 }
 %>
 <style type="text/css">
@@ -173,6 +174,26 @@ function runNow() {
 	saveAndRun(true);
 }
 
+function disableJob() {
+	dojo.xhrGet({
+        url: "/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/disableJob",
+        preventCache:true,
+        timeout : 30000,
+        error: function(data) {
+            showDotCMSSystemMessage(data, true);
+            dijit.byId('settingsDialog').hide();
+        },
+        load : function(dataOrError, ioArgs) {
+            if(dataOrError.indexOf("FAILURE") == 0)
+                showDotCMSSystemMessage(dataOrError, true);
+            else {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLED")%>", false);
+                dijit.byId('settingsDialog').hide();
+            }
+        }
+    });
+}
+
 dojo.ready(function() {
 	<% if(!allhosts && hosts!=null) { %>
 	     <% for(Host hh : hosts) { %>
@@ -226,6 +247,27 @@ dojo.ready(function() {
           </div>
      <% } %>
    </td>
+   
+
+
+
+		<tr>
+			<td align="right" valign="top" nowrap="true">
+				&nbsp;
+			</td>
+			<td>
+				<div style="padding:5px;">
+					<input  type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>>
+					<label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label>
+
+				</div>
+
+			</td>
+		</tr>
+   
+
+   
+   
    </tr>
 
    <tr class="showScheduler">
@@ -262,6 +304,13 @@ dojo.ready(function() {
                  <button dojoType="dijit.form.Button"
                      id="runButton" onClick="runNow();"
                      iconClass="republishIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-RUN")) %>
+                 </button>
+             </span>
+             
+             <span class="showScheduler">
+                 <button dojoType="dijit.form.Button"
+                     id="disableButton" onClick="disableJob();"
+                     iconClass="deleteIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
                  </button>
              </span>
 

@@ -10,6 +10,8 @@ import org.osgi.util.tracker.ServiceTracker;
 
 public class Activator extends GenericBundleActivator {
 
+    private HelloWorldServlet simpleServlet;
+    private ExtHttpService httpService;
     private ServiceTracker helloWorldServiceTracker;
 
     @SuppressWarnings ("unchecked")
@@ -26,13 +28,14 @@ public class Activator extends GenericBundleActivator {
         if ( sRef != null ) {
 
             helloWorldServiceTracker.addingService( sRef );
-            ExtHttpService service = (ExtHttpService) context.getService( sRef );
+            httpService = (ExtHttpService) context.getService( sRef );
             try {
                 //Registering a simple test servlet
-                service.registerServlet( "/helloworld", new HelloWorldServlet( helloWorldServiceTracker ), null, null );
+                simpleServlet = new HelloWorldServlet( helloWorldServiceTracker );
+                httpService.registerServlet( "/helloworld", simpleServlet, null, null );
 
                 //Registering a simple test filter
-                service.registerFilter( new TestFilter( "testFilter" ), "/helloworld/.*", null, 100, null );
+                httpService.registerFilter( new TestFilter( "testFilter" ), "/helloworld/.*", null, 100, null );
             } catch ( Exception e ) {
                 e.printStackTrace();
             }
@@ -45,6 +48,11 @@ public class Activator extends GenericBundleActivator {
     }
 
     public void stop ( BundleContext context ) throws Exception {
+
+        //Unregister the servlet
+        if ( httpService != null && simpleServlet != null ) {
+            httpService.unregisterServlet( simpleServlet );
+        }
 
         CMSFilter.removeExclude( "/app/helloworld" );
 

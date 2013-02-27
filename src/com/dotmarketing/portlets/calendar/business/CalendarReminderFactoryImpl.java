@@ -36,10 +36,7 @@ public class CalendarReminderFactoryImpl implements CalendarReminderFactory
 		} catch (Exception e) {
 			Logger.warn(CalendarReminderFactoryImpl.class, "getCalendarReminder failed:" + e.getMessage(), e);
 		}
-		finally
-		{
-			return returnValue;
-		}
+		return returnValue;
 	}
 	
 	/**
@@ -62,10 +59,7 @@ public class CalendarReminderFactoryImpl implements CalendarReminderFactory
 		{
 			Logger.warn(CalendarReminderFactoryImpl.class, "getCalendareReminder failed:" + ex.getMessage(), ex);
 		}
-		finally
-		{
-			return returnValue;
-		}		
+		return returnValue;
 	}
 	
 	/**
@@ -85,12 +79,9 @@ public class CalendarReminderFactoryImpl implements CalendarReminderFactory
 		}
 		catch(Exception ex)
 		{
-			
+			Logger.warn(CalendarReminderFactoryImpl.class, "getAll failed:" + ex.getMessage(), ex);			
 		}
-		finally
-		{
-			return returnValue;
-		}
+		return returnValue;
 	}
 	
 	

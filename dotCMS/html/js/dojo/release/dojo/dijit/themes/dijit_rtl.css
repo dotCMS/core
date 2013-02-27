@@ -44,6 +44,10 @@
 	float: left;
 }
 
+div.dijitNumberTextBoxRtl {
+	text-align: right;
+}
+
 /* Calendar */
 
 .dijitCalendarRtl .dijitCalendarNextYear {

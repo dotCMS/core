@@ -6,7 +6,9 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
+
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -251,7 +253,7 @@ public class ContentUtils {
 		 * @return Returns empty List if no results are found
 		 */
 		public static PaginatedArrayList<Contentlet> pullPagenated(String query, int limit, int offset, String sort,User user, String tmDate){
-			return pull(query, limit, offset, sort, user, tmDate);
+			return pull(query, offset, limit, sort, user, tmDate);
 		}
 		
 		/**
@@ -287,6 +289,7 @@ public class ContentUtils {
 		public static PaginatedContentList<Contentlet> pullPerPage(String query, int currentPage, int contentsPerPage, String sort, User user, String tmDate){
 			PaginatedArrayList<Contentlet> cmaps = pullPagenated(query, contentsPerPage, contentsPerPage * (currentPage - 1), sort, user, tmDate);
 			PaginatedContentList<Contentlet> ret = new PaginatedContentList<Contentlet>();
+			
 			if(cmaps.size()>0){
 				long minIndex = (currentPage - 1) * contentsPerPage;
 		        long totalCount = cmaps.getTotalResults();

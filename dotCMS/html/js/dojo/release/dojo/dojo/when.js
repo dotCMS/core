@@ -1,55 +1,8 @@
-define("dojo/when", [
-	"./Deferred",
-	"./promise/Promise"
-], function(Deferred, Promise){
-	"use strict";
+/*
+	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Available via Academic Free License >= 2.1 OR the modified BSD license.
+	see: http://dojotoolkit.org/license for details
+*/
 
-	// module:
-	//		dojo/when
-
-	return function when(valueOrPromise, callback, errback, progback){
-		// summary:
-		//		Transparently applies callbacks to values and/or promises.
-		// description:
-		//		Accepts promises but also transparently handles non-promises. If no
-		//		callbacks are provided returns a promise, regardless of the initial
-		//		value. Foreign promises are converted.
-		//
-		//		If callbacks are provided and the initial value is not a promise,
-		//		the callback is executed immediately with no error handling. Returns
-		//		a promise if the initial value is a promise, or the result of the
-		//		callback otherwise.
-		// valueOrPromise:
-		//		Either a regular value or an object with a `then()` method that
-		//		follows the Promises/A specification.
-		// callback: Function?
-		//		Callback to be invoked when the promise is resolved, or a non-promise
-		//		is received.
-		// errback: Function?
-		//		Callback to be invoked when the promise is rejected.
-		// progback: Function?
-		//		Callback to be invoked when the promise emits a progress update.
-		// returns: dojo/promise/Promise
-		//		Promise, or if a callback is provided, the result of the callback.
-
-		var receivedPromise = valueOrPromise && typeof valueOrPromise.then === "function";
-		var nativePromise = receivedPromise && valueOrPromise instanceof Promise;
-
-		if(!receivedPromise){
-			if(callback){
-				return callback(valueOrPromise);
-			}else{
-				return new Deferred().resolve(valueOrPromise);
-			}
-		}else if(!nativePromise){
-			var deferred = new Deferred(valueOrPromise.cancel);
-			valueOrPromise.then(deferred.resolve, deferred.reject, deferred.progress);
-			valueOrPromise = deferred.promise;
-		}
-
-		if(callback || errback || progback){
-			return valueOrPromise.then(callback, errback, progback);
-		}
-		return valueOrPromise;
-	};
-});
+//>>built
+define("dojo/when",["./Deferred","./promise/Promise"],function(_1,_2){"use strict";return function when(_3,_4,_5,_6){var _7=_3&&typeof _3.then==="function";var _8=_7&&_3 instanceof _2;if(!_7){if(_4){return _4(_3);}else{return new _1().resolve(_3);}}else{if(!_8){var _9=new _1(_3.cancel);_3.then(_9.resolve,_9.reject,_9.progress);_3=_9.promise;}}if(_4||_5||_6){return _3.then(_4,_5,_6);}return _3;};});

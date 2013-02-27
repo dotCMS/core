@@ -252,26 +252,33 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 	            }
 	
 				if (fileName.length()>0) {
-	
-					//checks if another identifier with the same name exists in the same folder
-					if (APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "")) {
-						throw new DuplicateFileException(fileName);
-					}
-					else {
-						//sets filename for this new file
-						contentlet.setStringProperty("title", title);
-						contentlet.setStringProperty("fileName", fileName);
-						java.io.File uploadedFile = uploadReq.getFile(fileName);
-						contentlet.setBinary("fileAsset", uploadedFile);
-						contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
-						if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
-						    if(isRootHost && !APILocator.getPermissionAPI().doesUserHaveInheriablePermissions(
-						             host,  com.dotmarketing.portlets.files.model.File.class.getCanonicalName(), 
-						             PermissionAPI.PERMISSION_PUBLISH, user) && !isAdmin)
-						        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-							APILocator.getVersionableAPI().setLive(contentlet);
-						}
-					}
+
+                    //sets filename for this new file
+                    contentlet.setStringProperty("title", title);
+                    contentlet.setStringProperty("fileName", fileName);
+
+                    java.io.File uploadedFile = uploadReq.getFile(fileName);
+                    contentlet.setBinary("fileAsset", uploadedFile);
+
+                    if ( uploadedFile != null ) {
+
+                        //checks if another identifier with the same name exists in the same folder
+                        if (APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "")) {
+                            throw new DuplicateFileException(fileName);
+                        }
+
+                        contentlet = APILocator.getContentletAPI().checkin( contentlet, user, false );
+                        if ( (subcmd != null) && subcmd.equals( com.dotmarketing.util.Constants.PUBLISH ) ) {
+                            if ( isRootHost
+                                    && !APILocator.getPermissionAPI().doesUserHaveInheriablePermissions( host, File.class.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH, user )
+                                    && !isAdmin ) {
+                                throw new ActionException( WebKeys.USER_PERMISSIONS_EXCEPTION );
+                            }
+
+                            APILocator.getVersionableAPI().setLive( contentlet );
+                        }
+                    }
+
 				}
 				HibernateUtil.commitTransaction();
 			}
