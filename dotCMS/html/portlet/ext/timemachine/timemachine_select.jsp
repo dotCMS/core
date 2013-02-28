@@ -288,12 +288,12 @@ function futureChange() {
 		                       
 			                   <select id="timesel" dojoType="dijit.form.FilteringSelect"
 			                      labelAttr="pretty" searchDelay="400" searchAttr="pretty"
-			                      onChange="timeChange()">
+			                      onChange="timeChange()" pageSize="20">
 			                   </select>
 		
 			                   <select id="langsel" dojoType="dijit.form.FilteringSelect"
 		                          labelAttr="pretty" searchDelay="400" searchAttr="pretty"
-		                          onChange="timeChange()">
+		                          onChange="timeChange()" pageSize="20">
 		                       </select>
 	                       </span>
 							<span id="futurePicker">
