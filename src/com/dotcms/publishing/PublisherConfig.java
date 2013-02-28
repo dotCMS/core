@@ -213,7 +213,10 @@ public class PublisherConfig implements Map<String, Object> {
 		
 		// lazy load
 		if(params.get(Config.UPDATED_HTML_PAGE_IDS.name()) ==null){
-			List<String> ids = BundlerUtil.getUpdatedHTMLPageIds(getStartDate(), getEndDate());
+			List<String> ids = new ArrayList<String>();
+			for(Host h : getHosts())
+			    ids.addAll(
+			        APILocator.getHTMLPageAPI().findUpdatedHTMLPageIds(h, getStartDate(), getEndDate()));
 			params.put(Config.UPDATED_HTML_PAGE_IDS.name(), ids);
 		}
 
