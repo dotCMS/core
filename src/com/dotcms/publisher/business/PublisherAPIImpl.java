@@ -66,10 +66,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSINSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	private static final String OCLINSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 
-	public void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate) throws DotPublisherException {
-		addContentsToPublish(identifiers, bundleId, publishDate, null);
-	}
-
 	public void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user) throws DotPublisherException {
 		if(identifiers != null) {
 
@@ -158,10 +154,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 				throw new DotPublisherException("Unable to add element to publish queue table:" + e.getMessage(), e);
 			}
 		}
-	}
-
-	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date publishDate) throws DotPublisherException {
-		addContentsToUnpublish(identifiers, bundleId, publishDate, null);
 	}
 
 	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user) throws DotPublisherException {
