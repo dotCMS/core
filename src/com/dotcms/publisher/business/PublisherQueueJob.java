@@ -140,6 +140,7 @@ public class PublisherQueueJob implements StatefulJob {
 
 	}
 	
+	//need to move this method to Enterprise when we enteprise the Publisher. 
 	private void updatePublishExpireDates(Date fireTime) throws DotDataException, DotSecurityException {
 		User systemU = APILocator.getUserAPI().getSystemUser();
 	    String toPublish="select working_inode from identifier join contentlet_version_info " +
