@@ -1008,15 +1008,39 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void getAllLanguages () throws DotSecurityException, DotDataException {
 
-        //Getting a known contentlet
-        //Contentlet contentlet = contentlets.iterator().next();
-
+        Structure st=new Structure();
+        st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
+        st.setName("JUNIT-test-getAllLanguages"+System.currentTimeMillis());
+        st.setVelocityVarName("testAllLanguages"+System.currentTimeMillis());
+        st.setHost(defaultHost.getIdentifier());
+        StructureFactory.saveStructure(st);
+        
+        Field ff=new Field("title",Field.FieldType.TEXT,Field.DataType.TEXT,st,true,true,true,1,false,false,true);
+        FieldFactory.saveField(ff);
+        
+        String identifier=null;
+        List<Language> list=APILocator.getLanguageAPI().getLanguages();
+        Contentlet last=null;
+        for(Language ll : list) {
+            Contentlet con=new Contentlet();
+            con.setStructureInode(st.getInode());
+            if(identifier!=null) con.setIdentifier(identifier);
+            con.setStringProperty(ff.getVelocityVarName(), "test text "+System.currentTimeMillis());
+            con.setLanguageId(ll.getId());
+            con=contentletAPI.checkin(con, user, false);
+            if(identifier==null) identifier=con.getIdentifier();
+            contentletAPI.isInodeIndexed(con.getInode());
+            APILocator.getVersionableAPI().setLive(con);
+            last=con;
+        }
+        
         //Get all the contentles siblings for this contentlet (contentlet for all the languages)
-        //List<Contentlet> forAllLanguages = contentletAPI.getAllLanguages( contentlet, true, user, false );
-
+        List<Contentlet> forAllLanguages = contentletAPI.getAllLanguages( last, true, user, false );
+        
         //Validations
-        //assertNotNull( forAllLanguages );
-        //assertTrue( !forAllLanguages.isEmpty() );
+        assertNotNull( forAllLanguages );
+        assertTrue( !forAllLanguages.isEmpty() );
+        assertEquals(list.size(), forAllLanguages.size());
     }
 
     /**
