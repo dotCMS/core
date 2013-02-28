@@ -1,8 +1,11 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -32,6 +35,7 @@ import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -340,4 +344,127 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 		return true;
 
     }
+    
+    /**
+     * Returns the PageIds for Pages whose Templates, Containers, or Content 
+     * have been modified between 2 dates even if the page hasn't been modified
+     * @param host Must be set
+     * @param pattern url pattern e.g., /some/path/*
+     * @param include the pattern is to include or exclude
+     * @param startDate Must be set
+     * @param endDate Must be Set
+     * @return
+     */
+    public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,boolean include,Date startDate, Date endDate) {
+
+        Set<String> ret = new HashSet<String>();
+        
+        String likepattern=RegEX.replaceAll(pattern, "%", "\\*");
+        
+        String concat;
+        if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+            concat=" concat(ii.parent_path, ii.asset_name) ";
+        }else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+            concat=" (ii.parent_path + ii.asset_name) ";
+        }else {
+            concat=" (ii.parent_path || ii.asset_name) ";
+        }
+        
+        // htmlpage with modified template
+        StringBuilder bob = new StringBuilder();
+        DotConnect dc = new DotConnect();
+        bob.append("SELECT p.identifier as pident ")
+        .append("from htmlpage p join identifier ii on (p.identifier=ii.id) ")
+        .append("join htmlpage_version_info vi on (p.identifier = vi.identifier) ")
+        .append("join template_version_info tvi on (p.template_id = tvi.identifier) ")
+        .append("where tvi.version_ts >= ? ")
+        .append(" and tvi.version_ts <= ? ")
+        .append(" and vi.live_inode is not null and vi.deleted=").append(DbConnectionFactory.getDBFalse())
+        .append(" and ii.host_inode=? ")
+        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+        dc.setSQL(bob.toString());
+        dc.addParam(startDate);
+        dc.addParam(endDate);
+        dc.addParam(host.getIdentifier());
+        dc.addParam(likepattern);
+        try {
+            for (Map<String,Object> row : dc.loadObjectResults())
+                ret.add((String)row.get("pident"));
+        } catch (DotDataException e) {
+            Logger.error(HTMLPageFactoryImpl.class,e.getMessage(),e);
+        }
+        
+        // htmlpage with modified containers
+        bob = new StringBuilder();
+        bob.append("SELECT p.identifier as pident ")
+        .append("from htmlpage p join identifier ii on (p.identifier=ii.id) " )
+        .append("join htmlpage_version_info hvi on (p.identifier=hvi.identifier) ")
+        .append("join template_containers tc on (p.template_id = tc.template_id) ")
+        .append("join container_version_info cvi on (tc.container_id = cvi.identifier) ")
+        .append("where cvi.version_ts >= ? ")
+        .append(" and cvi.version_ts <= ? ")
+        .append(" and hvi.live_inode is not null and hvi.deleted=").append(DbConnectionFactory.getDBFalse())
+        .append(" and ii.host_inode=? ")
+        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+        dc.setSQL(bob.toString());
+        dc.addParam(startDate);
+        dc.addParam(endDate);
+        dc.addParam(host.getIdentifier());
+        dc.addParam(likepattern);
+        try {
+            for (Map<String,Object> row : dc.loadObjectResults())
+                ret.add((String)row.get("pident"));
+        } catch (DotDataException e) {
+            Logger.error(HTMLPageFactoryImpl.class,e.getMessage(),e);
+        }
+        
+        // htmlpages with modified content
+        bob = new StringBuilder();
+        bob.append("SELECT hvi.identifier as pident ")
+        .append("from htmlpage_version_info hvi join identifier ii on (hvi.identifier=ii.id) " )
+        .append("join multi_tree mt on (hvi.identifier = mt.parent1) ")
+        .append("join contentlet_version_info cvi on (mt.child = cvi.identifier) ")
+        .append("where cvi.version_ts >= ? ")
+        .append(" and cvi.version_ts <= ? ")
+        .append(" and hvi.live_inode is not null and hvi.deleted=").append(DbConnectionFactory.getDBFalse())
+        .append(" and ii.host_inode=? ")
+        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+        dc.setSQL(bob.toString());
+        dc.addParam(startDate);
+        dc.addParam(endDate);
+        dc.addParam(host.getIdentifier());
+        dc.addParam(likepattern);
+        
+        try {
+            for (Map<String,Object> row : dc.loadObjectResults())
+                ret.add((String)row.get("pident"));
+        } catch (DotDataException e) {
+            Logger.error(HTMLPageFactoryImpl.class,e.getMessage(),e);
+        }
+        
+        // htmlpage modified itself
+        bob = new StringBuilder();
+        bob.append("SELECT vi.identifier as pident from htmlpage_version_info vi ")
+        .append("join identifier ii on (ii.id=vi.identifier) ")
+        .append("where vi.version_ts >= ? ")
+        .append(" and vi.version_ts <= ? ")
+        .append(" and vi.live_inode is not null and vi.deleted=").append(DbConnectionFactory.getDBFalse())
+        .append(" and ii.host_inode=? ")
+        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+        dc.setSQL(bob.toString());
+        dc.addParam(startDate);
+        dc.addParam(endDate);
+        dc.addParam(host.getIdentifier());
+        dc.addParam(likepattern);
+        
+        try {
+            for (Map<String,Object> row : dc.loadObjectResults())
+                ret.add((String)row.get("pident"));
+        } catch (DotDataException e) {
+            Logger.error(HTMLPageFactoryImpl.class,e.getMessage(),e);
+        }
+        
+        return new ArrayList<String>(ret);
+    }
+
 }
