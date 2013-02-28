@@ -127,9 +127,6 @@ public abstract class Publisher implements IPublisher {
 			return false;
 		}else if(config.getStartDate() != null && f.lastModified() <  config.getStartDate().getTime()){
 			return false;
-
-		}else if(config.getEndDate() != null && f.lastModified() >  config.getEndDate().getTime()){
-			return false;
 		}
 
 
