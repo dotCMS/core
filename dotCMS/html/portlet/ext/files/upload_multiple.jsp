@@ -18,6 +18,7 @@
 <%@page import="com.dotmarketing.portlets.files.business.FileAPI"%>
 <%@page import="com.dotmarketing.portlets.folders.business.FolderAPI"%>
 <%@ page import="com.dotmarketing.util.*" %>
+<%@ include file="/html/portlet/ext/browser/view_browser_js_inc.jsp" %>
 <%
 //gets referer
 String referer = (request.getParameter("referer") != null ) ? request.getParameter("referer") : "" ;
