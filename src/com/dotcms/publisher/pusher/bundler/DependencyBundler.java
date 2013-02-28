@@ -7,7 +7,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publisher.util.DependencyManager;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
@@ -29,7 +28,7 @@ public class DependencyBundler implements IBundler {
 	PublisherAPI pubAPI = null;
 	PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	FolderAPI fAPI = APILocator.getFolderAPI();
-	
+
 	public final static String CONTENT_EXTENSION = ".content.xml" ;
 
 	@Override
@@ -56,7 +55,7 @@ public class DependencyBundler implements IBundler {
 			throws DotBundleException {
 		if(LicenseUtil.getLevel()<400)
 	        throw new RuntimeException("need an enterprise prime license to run this bundler");
-	
+
 		try {
 			DependencyManager dp = new DependencyManager(systemUser);
 			dp.setDependencies(config);
@@ -71,7 +70,7 @@ public class DependencyBundler implements IBundler {
 	public FileFilter getFileFilter(){
 		return new ContentBundlerFilter();
 	}
-	
+
 	public class ContentBundlerFilter implements FileFilter{
 
 		@Override
