@@ -42,6 +42,9 @@ public class AssetFileNameFilter implements FileFilter {
 			else if( name.startsWith(".")){
 				return false;
 	        }
+			else if(name.equals("timemachine")) {
+			    return false;
+			}
         }
 		return true;
 		
