@@ -455,14 +455,17 @@ function restoreUploadCompleted() {
 	hideRestoreIndex();
 }
 
+
 dojo.ready(function() {
-	dojo.require("dojox.form.Uploader");
+	/*dojo.require("dojox.form.Uploader");
     dojo.require("dojox.embed.Flash");
     if(dojox.embed.Flash.available){
       dojo.require("dojox.form.uploader.plugins.Flash");
     }else{
       dojo.require("dojox.form.uploader.plugins.IFrame");
-    }
+    }*/
+	if(dojo.isIE && dojo.isIE<10) dojo.require("dojox.form.uploader.plugins.Flash");
+	else dojo.require("dojox.form.uploader.plugins.HTML5");
 });
 
 function connectUploadEvents() {
