@@ -174,20 +174,39 @@ public class PublisherAPIImpl extends PublisherAPI{
 						dc.setSQL(OCLINSERTSQL);
 					}
 
+					PermissionAPI strPerAPI = APILocator.getPermissionAPI();
+
 					Identifier iden = APILocator.getIdentifierAPI().find(identifier);
 					String type = "";
 
 					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
 						// check if it is a structure
 						Structure st = StructureCache.getStructureByInode(identifier);
-						if(UtilMethods.isSet(st))
+						Folder folder = null;
+
+						if(UtilMethods.isSet(st)) {
+							if (!strPerAPI.doesUserHavePermission(st,PermissionAPI.PERMISSION_PUBLISH, user)) {
+								Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + st.getIdentifier() );
+								continue;
+							}
+
 							type = "structure";
+						}
 						// check if it is a folder
-						else if(UtilMethods.isSet(APILocator.getFolderAPI().find(identifier, user, false))) {
+						else if(UtilMethods.isSet(folder = APILocator.getFolderAPI().find(identifier, user, false))) {
+							if (!strPerAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_PUBLISH, user)) {
+								Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + folder.getIdentifier() );
+								continue;
+							}
+
 							type = "folder";
 						}
 
 					} else {
+						if (!strPerAPI.doesUserHavePermission(iden,PermissionAPI.PERMISSION_PUBLISH, user)) {
+							Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + iden.getId() );
+							continue;
+					    }
 						type = UtilMethods.isSet(APILocator.getHostAPI().find(identifier, user, false))?"host":iden.getAssetType();
 					}
 
