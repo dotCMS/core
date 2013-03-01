@@ -79,6 +79,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.HostUtil;
@@ -653,7 +654,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			catch(DotContentletValidationException ve) {
 				SessionMessages.add(httpReq, "error", "message.contentlet.copy.relation.not_valid");
 				_handleException(ve, req);			
-			}		
+			}
+			catch(DotWorkflowException we) {
+			    SessionMessages.add(httpReq, "error", "message.contentlet.copy.mandatory.workflow");
+			    _handleException(we, req);
+			}
 			catch (Exception ae) {
 				_handleException(ae, req);
 			}
