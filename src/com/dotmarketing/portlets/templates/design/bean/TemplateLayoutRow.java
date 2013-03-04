@@ -51,6 +51,9 @@ public class TemplateLayoutRow {
         if ( value.equals( YUI_ONE_COLUMN_CLASS ) ) {//1 Column (100)
             columnsCount = 1;
             gridWidths = new Integer[]{100};
+        } else if ( value.equals( YUI_TWO_COLUMN_CLASS_G ) ) {//2 Column (50/50)
+            columnsCount = 2;
+            gridWidths = new Integer[]{50, 50};
         } else if ( value.equals( YUI_TWO_COLUMN_CLASS_GC ) ) {//2 Column (66/33)
             columnsCount = 2;
             gridWidths = new Integer[]{66, 33};
@@ -66,6 +69,9 @@ public class TemplateLayoutRow {
         } else if ( value.equals( YUI_THREE_COLUMN_CLASS ) ) {//3 Column (33/33/33)
             columnsCount = 3;
             gridWidths = new Integer[]{33, 33, 33};
+        } else if ( value.equals( YUI_FOUR_COLUMN_CLASS ) ) {//3 Column (33/33/33)
+            columnsCount = 4;
+            gridWidths = new Integer[]{25, 25, 25, 25};
         } else {//1 Column (100)
             columnsCount = 1;
             gridWidths = new Integer[]{100};

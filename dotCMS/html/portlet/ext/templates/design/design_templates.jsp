@@ -216,9 +216,9 @@
 		fileSelector.show();
 	}
 
-	
-	
-	
+
+
+
 	function previewTemplate(name, params) {
 
 		var theme = dijit.byId("themeDiv");
@@ -235,8 +235,8 @@
 	var previewWindow;
 	function openWindowWithPost(url, name, params) {
 		if (previewWindow) {
-			previewWindow.close();	
-		
+			previewWindow.close();
+
 		}
 
 		previewWindow = window.open(url, "previewWindow", params);
@@ -287,7 +287,7 @@
 
         dojo.byId("themePreviewForm").submit();
     }
-	
+
 	dojo.addOnLoad (function(){
 		var tab =dijit.byId("mainTabContainer");
 	   	dojo.connect(tab, 'selectChild',
@@ -299,7 +299,7 @@
 			});
 
 	});
-	
+
 
 
 	function addFileCallback(file) {
@@ -429,7 +429,7 @@
                                     <option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
                                     <option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
 									<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
-									
+
 								</select>
 							</dd>
 						</dl>
@@ -473,8 +473,8 @@
 					</div>
 					<div class="clear"></div>
 				</div>
-				
-				
+
+
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows")%></div>
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
@@ -494,11 +494,13 @@
 									        <td>
 												<select name="<%=sb.getId()+sb.getIdentifier()%>" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)">
 													<option value="1" <%if(sb.getValue().equals("")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+													<option value="yui-g-template" <%if(sb.getValue().equals("yui-g-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
 													<option value="yui-gc-template" <%if(sb.getValue().equals("yui-gc-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
 													<option value="yui-gd-template" <%if(sb.getValue().equals("yui-gd-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
 													<option value="yui-ge-template" <%if(sb.getValue().equals("yui-ge-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
 													<option value="yui-gf-template" <%if(sb.getValue().equals("yui-gf-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
 													<option value="yui-gb-template" <%if(sb.getValue().equals("yui-gb-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
+													<option value="yui-js-template" <%if(sb.getValue().equals("yui-js-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
 												</select>
 									        </td>
 										</tr>
@@ -516,8 +518,8 @@
 					</div>
 					<div class="clear"></div>
 				</div>
-				
-				
+
+
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
 				<div id="contentletActionsHanger">
 					<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
@@ -581,15 +583,15 @@
                                     <option value="resp-template" selected="selected">Responsive</option>
                                     <option value="doc4-template">975px</option>
                                     <option value="doc3-template">100%</option>
-									
+
 								</select>
 							</dd>
 						</dl>
 					</div>
 				</div>
-				
+
 				<div class="clear"></div>
-				
+
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
@@ -608,9 +610,9 @@
 						</dl>
 					</div>
 				</div>
-				
+
 				<div class="clear"></div>
-				
+
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
@@ -629,7 +631,7 @@
 					</div>
 					<div class="clear"></div>
 				</div>
-				
+
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows") %></div>
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
@@ -641,11 +643,14 @@
 								        <td>
 											<select name="select_splitBody0" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody0',0)">
 												<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+												<option value="yui-g-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
 												<option value="yui-gc-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
 												<option value="yui-gd-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
 												<option value="yui-ge-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
 												<option value="yui-gf-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
 												<option value="yui-gb-template"><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
+												<option value="yui-js-template"><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
+
 											</select>
 								        </td>
 									</tr>
@@ -660,7 +665,7 @@
 					</div>
 					<div class="clear"></div>
 				</div>
-				
+
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
 				<div id="contentletActionsHanger">
 					<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
@@ -765,52 +770,52 @@
 			</dl>
 		</div>
 	</div>
-	
+
 	<div id="previewThemeTab" style="position:absolute; position:absolute;top:40px;left:10px;right:10px;bottom:0px;" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Preview") %>" >
 
 		<div class="yui-g portlet-toolbar">
 			<div class="yui-u" style="text-align:right;">
-			
+
 			<div dojoType="dijit.form.DropDownButton" data-dojo-props="iconClass:'mobileIcon', showLabel:true">
 				<span><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Mobile Preview"))%></span>
 					<div dojoType="dijit.Menu">
-					
+
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=340,height=480')" >
 		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPhone") %>
 		                </div>
-					
+
 					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=1024,height=768')">
 		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPad") %>
 		                </div>
-		                
+
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=640,height=920')" >
 		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPhone (Retina)") %>
 		                </div>
-		                
+
 		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=2048,height=1536')" >
 		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPad (Retina)") %>
 		                </div>
-		                
+
 					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
 		                    <span class="androidIcon"></span> <%= LanguageUtil.get(pageContext,"Android (Moto-Droid)") %>
 		                </div>
 
 		           </div>
 			</div>
-			
-			
-			
-			
+
+
+
+
 
 			</div>
 		</div>
-			
-			
-			
-			
+
+
+
+
 		<iframe id="previewThemeIFrame" name="previewThemeIFrame"
-				style="width:99%;height:90%;border:1px solid black;"  
-				scrolling='auto' 
+				style="width:99%;height:90%;border:1px solid black;"
+				scrolling='auto'
 				frameborder='1'>
 			</iframe>
 
@@ -856,7 +861,7 @@
 	<input type="hidden" name="hostId" id="themePreviewHostId">
 	<input type="hidden" name="bodyTemplateHTML" id="themePreviewBodyTemplateHTML">
 	<input type="hidden" name="themePreviewRandom" id="themePreviewRandom">
-	
+
 </form>
 
 
