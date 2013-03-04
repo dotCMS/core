@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collection;
 
-import org.apache.commons.beanutils.BeanUtils;
-
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publisher.pusher.bundler.RelationshipBundler;
 import com.dotcms.publisher.pusher.wrapper.RelationshipWrapper;
@@ -47,10 +45,8 @@ public class RelationshipHandler implements IHandler {
 						RelationshipFactory.deleteRelationship(aRel);					
 				} else {
 					if(!relationshipAlreadyExists){
-						RelationshipFactory.saveRelationship(relationshipWrapper.getRelationship());
-					}else{
-						BeanUtils.copyProperties(aRel, relationshipWrapper.getRelationship());
-						RelationshipFactory.saveRelationship(aRel);
+						Relationship rel = relationshipWrapper.getRelationship();
+						RelationshipFactory.saveRelationship(rel,rel.getInode());
 					}					
 				}
 			}
