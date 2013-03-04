@@ -37,7 +37,7 @@ public class LinkCheckerUtil {
 		for(InvalidLink c : list){
 			sb.append("<li>");
 			sb.append("<strong> Link: </strong>");
-			sb.append(c.getUrl());
+			sb.append("<a href='"+c.getUrl()+"'>"+c.getUrl()+"</a>");
 			sb.append("; <strong> Http return code: </strong>");
 			sb.append(c.getStatusCode());
 			sb.append("</li>");
