@@ -68,11 +68,11 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 			String bundleId = UUID.randomUUID().toString();			
 			identifiers.add(ref.getIdentifier());
 			
-			publisherAPI.addContentsToPublish(identifiers, bundleId, publishDate);
+			publisherAPI.addContentsToPublish(identifiers, bundleId, publishDate, processor.getUser());
 			if(!_contentPushNeverExpire && (!"".equals(_contentPushExpireDate.trim()) && !"".equals(_contentPushExpireTime.trim()))){
 				bundleId = UUID.randomUUID().toString();
 				Date expireDate = dateFormat.parse(_contentPushExpireDate+"-"+_contentPushExpireTime);
-				publisherAPI.addContentsToUnpublish(identifiers, bundleId, expireDate);
+				publisherAPI.addContentsToUnpublish(identifiers, bundleId, expireDate, processor.getUser());
 			}
 		} catch (DotPublisherException e) {
 			Logger.debug(PushPublishActionlet.class, e.getMessage());

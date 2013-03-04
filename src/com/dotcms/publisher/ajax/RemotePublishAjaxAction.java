@@ -186,7 +186,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				if(!_contentPushNeverExpire && (!"".equals(_contentPushExpireDate.trim()) && !"".equals(_contentPushExpireTime.trim()))){
 					bundleId = UUID.randomUUID().toString();
 					Date expireDate = dateFormat.parse(_contentPushExpireDate+"-"+_contentPushExpireTime);
-					publisherAPI.addContentsToUnpublish(ids, bundleId, expireDate);
+					publisherAPI.addContentsToUnpublish(ids, bundleId, expireDate, getUser());
 				}
 			} catch (DotPublisherException e) {
 				Logger.debug(PushPublishActionlet.class, e.getMessage());

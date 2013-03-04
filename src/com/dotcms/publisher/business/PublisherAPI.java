@@ -35,18 +35,8 @@ public abstract class PublisherAPI {
 	 * Include in the publishing_queue table the identifier used to get contents to publish
 	 * @param con Contentlet
 	 */
-	public abstract void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate) throws DotPublisherException;
-	/**
-	 * Include in the publishing_queue table the identifier used to get contents to publish
-	 * @param con Contentlet
-	 */
 	public abstract void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user) throws DotPublisherException;
 	
-	/**
-	 * Include in the publishing_queue table the identifier used to get contents to UN-publish
-	 * @param con Contentlet
-	 */
-	public abstract void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate) throws DotPublisherException;
 	/**
 	 * Include in the publishing_queue table the identifier used to get contents to UN-publish
 	 * @param con Contentlet
