@@ -517,11 +517,22 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
     @Override
     protected void refreshContentUnderHost(Host host) throws DotDataException {
-        final String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+ 
-                " SELECT distinct identifier.id, identifier.id, ?, ? " +
-                " FROM contentlet join identifier ON contentlet.identifier=identifier.id "+ 
-                " WHERE identifier.host_inode=?";
+        String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+ 
+                " SELECT id, id, ?, ? " +
+                " FROM identifier "+ 
+                " WHERE asset_type='contentlet' and identifier.host_inode=?";
         DotConnect dc = new DotConnect();
+        dc.setSQL(sql);
+        dc.addParam(REINDEX_JOURNAL_PRIORITY_CONTENT_REINDEX);
+        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT); 
+        dc.addParam(host.getIdentifier());
+        dc.loadResult();
+        
+        // https://github.com/dotCMS/dotCMS/issues/2229
+        sql =   " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+ 
+                " SELECT asset_id, asset_id, ?, ? " +
+                " FROM permission_reference "+ 
+                " WHERE reference_id=?";
         dc.setSQL(sql);
         dc.addParam(REINDEX_JOURNAL_PRIORITY_CONTENT_REINDEX);
         dc.addParam(REINDEX_ACTION_REINDEX_OBJECT); 
