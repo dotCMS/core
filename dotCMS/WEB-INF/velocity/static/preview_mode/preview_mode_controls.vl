@@ -158,7 +158,7 @@
 			}
 			html = html + '<td align="center">$languagewebapi.getFromUserLanguage("modes.Page") ' + _dotPage; + '</td>';
 			if(hasNext){
-				html = html + '<td align="right" width="100"><a href="javascript:_dotNextWidgetPage()">$languagewebapi.getFromUserLanguage("modes.Next")</a></td></tr></table></td>';	
+				html = html + "<td align='right' width='100'><a href='javascript:_dotNextWidgetPage()'>$languagewebapi.getFromUserLanguage('modes.Next')</a></td></tr></table></td>";	
 			} else {
 				html = html + '<td width="100">&nbsp;<td></tr></table</td>';
 			}
@@ -183,7 +183,7 @@
 					var cell3 = row.insertCell();
 					cell3.width = "100";
 					cell3.align= "right";										
-					cell3.innerHTML = '<a href="javascript:_dotNextWidgetPage()">$languagewebapi.getFromUserLanguage("modes.Next")</a>';	
+					cell3.innerHTML = "<a href='javascript:_dotNextWidgetPage()'>$languagewebapi.getFromUserLanguage('modes.Next')</a>";	
 				} else {
 					var cell3 = row.insertCell();
 					cell3.width = "100";															

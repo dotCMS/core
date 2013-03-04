@@ -875,4 +875,17 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan,"htmlpage");
     }
+
+
+    @Override
+    public List<String> findUpdatedHTMLPageIds(Host host, Date startDate, Date endDate) {
+        return findUpdatedHTMLPageIdsByURI(host, "/*", true, startDate, endDate);
+    }
+
+
+    @Override
+    public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,
+            boolean include, Date startDate, Date endDate) {
+        return htmlPageFactory.findUpdatedHTMLPageIdsByURI(host, pattern, include, startDate, endDate);
+    }
 }
