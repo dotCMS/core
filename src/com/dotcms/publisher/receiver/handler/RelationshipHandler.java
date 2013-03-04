@@ -47,7 +47,11 @@ public class RelationshipHandler implements IHandler {
 					if(!relationshipAlreadyExists){
 						Relationship rel = relationshipWrapper.getRelationship();
 						RelationshipFactory.saveRelationship(rel,rel.getInode());
-					}					
+					}else{// delete if exists and recreate
+						RelationshipFactory.deleteRelationship(aRel);
+						Relationship rel = relationshipWrapper.getRelationship();
+						RelationshipFactory.saveRelationship(rel,rel.getInode());
+					}
 				}
 			}
 		}catch(Exception e){
