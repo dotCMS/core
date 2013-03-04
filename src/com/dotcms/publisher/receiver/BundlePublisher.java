@@ -32,6 +32,7 @@ import com.dotcms.publisher.receiver.handler.HostHandler;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publisher.receiver.handler.LanguageHandler;
 import com.dotcms.publisher.receiver.handler.LinkHandler;
+import com.dotcms.publisher.receiver.handler.RelationshipHandler;
 import com.dotcms.publisher.receiver.handler.StructureHandler;
 import com.dotcms.publisher.receiver.handler.TemplateHandler;
 import com.dotcms.publishing.DotPublishingException;
@@ -65,9 +66,15 @@ public class BundlePublisher extends Publisher {
         handlers.add(new HostHandler());
         handlers.add(new FolderHandler());
         
-        if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES"))
+        if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")){
         	handlers.add(new StructureHandler());
-
+			/**
+			 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
+			 * 
+			 */        	
+        	handlers.add(new RelationshipHandler());
+        }
+        
         handlers.add(new ContainerHandler());
         handlers.add(new TemplateHandler());
         handlers.add(new HTMLPageHandler());
@@ -75,6 +82,8 @@ public class BundlePublisher extends Publisher {
         handlers.add(new ContentHandler());
         handlers.add(new LanguageHandler());
         handlers.add(new LinkHandler());
+        
+        
         
         auditAPI = PublishAuditAPI.getInstance();
 

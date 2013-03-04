@@ -49,6 +49,9 @@ public class DependencyManager {
 	private Set<String> containers;
 	private Set<String> contents;
 	private Set<String> links;
+	
+	private Set<String> relationships;
+	
 	private User user;
 	
 	public DependencyManager(User user) { 
@@ -60,6 +63,7 @@ public class DependencyManager {
 		containers = new HashSet<String>();
 		contents = new HashSet<String>();
 		links = new HashSet<String>();
+		relationships = new HashSet<String>();
 		this.user = user;
 	}
 	
@@ -100,6 +104,7 @@ public class DependencyManager {
 		config.setStructures(structures);
 		config.setContents(contents);
 		config.setLinks(links);
+		config.setRelationships(relationships);
 	}
 	
 	private void setHostDependencies() {
@@ -368,6 +373,7 @@ public class DependencyManager {
 			Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
 			
 			//Getting all related content
+			
 			for (Contentlet con : cs) {
 				contentsToProcess.add(con);
 				
@@ -376,6 +382,14 @@ public class DependencyManager {
 				
 				for (Relationship rel : contentRel.keySet()) {
 					contentsToProcess.addAll(contentRel.get(rel));
+					/** 
+					 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
+					 * 
+					 * We need the relationships in which the single related content is involved.
+					 * 
+					 */	
+					if(contentRel.get(rel).size()>0)
+						relationships.add(rel.getInode());
 				}
 			}
 			
