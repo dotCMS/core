@@ -1,10 +1,10 @@
 package com.dotmarketing.portlets.templates.design.util;
 
 public class DesignTemplateHtmlCssConstants {
-	
+
 	// DEFAULT CSS FILE PATH
 	public static final String PATH_CSS_YUI 							= "/html/css/template/reset-fonts-grids.css";
-	
+
 	// DESIGN TEMPLATE
 	public static final String ADD_CONTAINER_SPAN_CLASS 				= "addContainerSpan";
 	public static final String TITLE_CONTAINER_SPAN_CLASS 				= "titleContainerSpan";
@@ -20,11 +20,13 @@ public class DesignTemplateHtmlCssConstants {
 	public static final String COLUMN_CONTAINER_CLASS					= "yui-u-template";
 
     public static final String YUI_ONE_COLUMN_CLASS                     = "1";//1 Column (100)
+    public static final String YUI_TWO_COLUMN_CLASS_G                  = "yui-g-template";//2 Column (50/50)
     public static final String YUI_TWO_COLUMN_CLASS_GC                  = "yui-gc-template";//2 Column (66/33)
     public static final String YUI_TWO_COLUMN_CLASS_GD                  = "yui-gd-template";//2 Column (33/66)
     public static final String YUI_TWO_COLUMN_CLASS_GE                  = "yui-ge-template";//2 Column (75/25)
     public static final String YUI_TWO_COLUMN_CLASS_GF                  = "yui-gf-template";//2 Column (25/75)
     public static final String YUI_THREE_COLUMN_CLASS                   = "yui-gb-template";//3 Column (33/33/33)
+    public static final String YUI_FOUR_COLUMN_CLASS                   = "yui-js-template";//3 Column (33/33/33)
 
     public static final String YUI_LAYOUT_LEFT_CLASS_T1                 = "yui-t1-template";//layout-160-left
     public static final String YUI_LAYOUT_LEFT_CLASS_T2                 = "yui-t2-template";//layout-240-left
@@ -49,6 +51,6 @@ public class DesignTemplateHtmlCssConstants {
 	public static final String STYLE_DISPLAY_NONE 						= "display: none;";
 	public static final String START_COMMENT 							= "<!-- ";
 	public static final String END_COMMENT 								= " -->";
-	
-	
+
+
 }
