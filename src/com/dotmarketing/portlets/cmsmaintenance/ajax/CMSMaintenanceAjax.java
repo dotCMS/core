@@ -387,7 +387,7 @@ public class CMSMaintenanceAjax {
 	                	continue;
 	                }
 
-	                if(Contentlet.class.equals(clazz)){
+	                if(com.dotmarketing.portlets.contentlet.business.Contentlet.class.equals(clazz)){
 	                	Logger.debug(this, "Processing contentlets. This will take a little bit longer...");
 	                }
 
