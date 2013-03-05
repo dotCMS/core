@@ -401,7 +401,15 @@ public class ContentletAjax {
 		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
 	}
 
-	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, 
+	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, String orderBy, String modDateFrom, 
+	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	    return searchContentlets(structureInode,fields,categories,showDeleted,filterSystemHost,filterUnpublish,filterLocked,page,0,orderBy,modDateFrom,modDateTo);
+	}
+	
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, 
+	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom, 
+	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		HttpSession sess = WebContextFactory.get().getSession();
@@ -417,7 +425,8 @@ public class ContentletAjax {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
 
-		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
+		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked, 
+		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo);
 	}
 
 	/**
