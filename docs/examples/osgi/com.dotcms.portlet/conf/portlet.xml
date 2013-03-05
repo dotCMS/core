@@ -47,7 +47,7 @@
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
             <name>view-jsp</name>
-            <value>/ext/view.jsp</value>
+            <value>/ext/hello.jsp</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>

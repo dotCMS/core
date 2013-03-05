@@ -26,12 +26,12 @@ public class Activator extends GenericBundleActivator {
         //actionConfig.setScope("session");
 
         // Creating an ForwardConfig Instance
-        ForwardConfig forwardConfig = new ActionForward( "portlet.ext.plugins.hello.world.struts", "/plugins/hello.world/strutshelloworld/view.jsp", false );
+        ForwardConfig forwardConfig = new ActionForward( "portlet.ext.plugins.hello.world.struts", "/ext/strutshelloworld/view.jsp", false );
         // Adding the ForwardConfig to the ActionConfig
         actionConfig.addForwardConfig( forwardConfig );
 
         // Creating another ForwardConfig Instance
-        forwardConfig = new ActionForward( "portlet.ext.plugins.hello.world.struts.max", "/plugins/hello.world/strutshelloworld/view_hello.jsp", false );
+        forwardConfig = new ActionForward( "portlet.ext.plugins.hello.world.struts.max", "/ext/strutshelloworld/view_hello.jsp", false );
         // Adding the ForwardConfig to the ActionConfig
         actionConfig.addForwardConfig( forwardConfig );
 
