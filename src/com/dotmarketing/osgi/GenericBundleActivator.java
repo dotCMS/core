@@ -11,7 +11,16 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.VelocityUtil;
+import com.liferay.portal.ejb.PortletManagerImpl;
+import com.liferay.portal.ejb.PortletManagerUtil;
+import com.liferay.portal.model.Portlet;
+import com.liferay.util.SimpleCachePool;
 import org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.struts.Globals;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.config.ActionConfig;
+import org.apache.struts.config.ModuleConfig;
+import org.apache.struts.config.impl.ModuleConfigImpl;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
@@ -20,11 +29,9 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
-import java.beans.IntrospectionException;
-import java.io.File;
+import javax.servlet.ServletContext;
 import java.lang.reflect.Field;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,9 +48,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private Collection<ToolInfo> viewTools;
     private Collection<WorkFlowActionlet> actionlets;
     private Map<String, String> jobs;
+    private Collection<ActionConfig> actions;
+    private Collection<Portlet> portlets;
     private Collection preHooks;
     private Collection postHooks;
-    private ClassLoaderUtil classLoaderUtil = new ClassLoaderUtil();
+    private ActivatorUtil activatorUtil = new ActivatorUtil();
 
     private ClassLoader getFelixClassLoader () {
         return this.getClass().getClassLoader();
@@ -99,67 +108,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
                     e.printStackTrace();
                 }
             }
-        }
-
-        //Use this new "combined" class loader
-        Thread.currentThread().setContextClassLoader( combinedLoader );
-    }
-
-    /**
-     * Register a bundle library, this library must be a bundle inside the felix load folder.
-     *
-     * @param bundleJarFileName bundle file name
-     * @throws Exception
-     */
-    protected void registerBundleLibrary ( String bundleJarFileName ) throws Exception {
-
-        //Felix directories
-        String felixDirectory = Config.CONTEXT.getRealPath( File.separator + "WEB-INF" + File.separator + "felix" );
-        String autoLoadDirectory = felixDirectory + File.separator + "load";
-
-        //Adding the library to the application classpath
-        addFileToClasspath( autoLoadDirectory + File.separator + bundleJarFileName );
-    }
-
-    /**
-     * Adds a file to the classpath.
-     *
-     * @param filePath a String pointing to the file
-     * @throws java.io.IOException
-     */
-    protected void addFileToClasspath ( String filePath ) throws Exception {
-
-        File fileToAdd = new File( filePath );
-        addFileToClasspath( fileToAdd );
-    }
-
-    /**
-     * Adds a file to the classpath
-     *
-     * @param toAdd the file to be added
-     * @throws java.io.IOException
-     */
-    protected void addFileToClasspath ( File toAdd ) throws Exception {
-
-        addURLToApplicationClassLoader( toAdd.toURI().toURL() );
-    }
-
-    private void addURLToApplicationClassLoader ( URL url ) throws IntrospectionException {
-
-        ClassLoader contextClassLoader = getContextClassLoader();
-
-        // Create a ClassLoader using the given url
-        URLClassLoader urlClassLoader = new URLClassLoader( new URL[]{url} );
-
-        CombinedLoader combinedLoader;
-        if ( contextClassLoader instanceof CombinedLoader ) {
-            combinedLoader = (CombinedLoader) contextClassLoader;
-            //Chain to the current thread classloader
-            combinedLoader.addLoader( urlClassLoader );
-        } else {
-            combinedLoader = new CombinedLoader( contextClassLoader );
-            //Chain to the current thread classloader
-            combinedLoader.addLoader( urlClassLoader );
         }
 
         //Use this new "combined" class loader
@@ -242,11 +190,114 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
     }
 
+    /**
+     * Will inject this bundle context inside the dotCMS context
+     *
+     * @param name a reference class inside this bundle jar
+     * @throws Exception
+     */
+    private void injectContext ( String name ) throws Exception {
+
+        //Verify if the class is already in the system class loader
+        Class currentClass = null;
+        try {
+            currentClass = Class.forName( name, true, ClassLoader.getSystemClassLoader() );
+        } catch ( ClassNotFoundException e ) {
+            //Do nothing, the class is not inside the system classloader
+        }
+
+        //Get the class from this bundle context
+        Class clazz = Class.forName( name, true, getFelixClassLoader() );
+        URL classURL = clazz.getProtectionDomain().getCodeSource().getLocation();
+
+        //Verify if we have our UrlOsgiClassLoader on the main class loaders
+        UrlOsgiClassLoader urlOsgiClassLoader = activatorUtil.findCustomURLLoader( ClassLoader.getSystemClassLoader() );
+        if ( urlOsgiClassLoader != null ) {
+
+            if ( urlOsgiClassLoader.contains( classURL ) ) {
+                //The classloader and the class content is already in the system classloader, so we need to reload the jar contents
+                urlOsgiClassLoader.reload( classURL );
+            } else {
+                urlOsgiClassLoader.addURL( classURL );
+            }
+        } else {
+
+            if ( currentClass != null ) {
+                if ( currentClass.getClassLoader() instanceof UrlOsgiClassLoader ) {
+                    urlOsgiClassLoader = (UrlOsgiClassLoader) currentClass.getClassLoader();
+                }
+            }
+
+            if ( urlOsgiClassLoader == null ) {
+                //Getting the reference of a known class in order to get the base/main class loader
+                Class baseClass = getContextClassLoader().loadClass( "org.quartz.Job" );
+                //Creates our custom class loader in order to use it to inject the class code inside dotcms context
+                urlOsgiClassLoader = new UrlOsgiClassLoader( classURL, baseClass.getClassLoader() );
+            } else {
+                //The classloader and the class content in already in the system classloader, so we need to reload the jar contents
+                urlOsgiClassLoader.reload( classURL );
+            }
+
+            /*
+            In order to inject the class code inside dotcms context this is the main part of the process,
+            is required to insert our custom class loader inside dotcms class loaders hierarchy.
+             */
+            ClassLoader loader = activatorUtil.findFirstLoader( ClassLoader.getSystemClassLoader() );
+
+            Field parentLoaderField = ClassLoader.class.getDeclaredField( "parent" );
+            parentLoaderField.setAccessible( true );
+            parentLoaderField.set( loader, urlOsgiClassLoader );
+            parentLoaderField.setAccessible( false );
+        }
+    }
+
     //*******************************************************************
     //*******************************************************************
     //****************REGISTER SERVICES METHODS**************************
     //*******************************************************************
     //*******************************************************************
+
+    /**
+     * Register the portlets on the given configuration files
+     *
+     * @param xmls
+     * @throws Exception
+     */
+    @SuppressWarnings ("unchecked")
+    protected void registerPortlets ( String[] xmls ) throws Exception {
+
+        portlets = PortletManagerUtil.initWAR( null, xmls );
+    }
+
+    /**
+     * Register a given ActionMapping
+     *
+     * @param actionMapping
+     * @throws Exception
+     */
+    protected void registerActionMapping ( ActionMapping actionMapping ) throws Exception {
+
+        if ( actions == null ) {
+            actions = new ArrayList<ActionConfig>();
+        }
+
+        String actionClassType = actionMapping.getType();
+
+        //Will inject the action classes inside the dotCMS context
+        injectContext( actionClassType );
+
+        ModuleConfig moduleConfig = activatorUtil.getModuleConfig();
+        //We need to unfreeze this module in order to add new action mappings
+        activatorUtil.unfreeze( moduleConfig );
+
+        //Adding the ActionConfig to the ForwardConfig
+        moduleConfig.addActionConfig( actionMapping );
+        //moduleConfig.freeze();
+
+        actions.add( actionMapping );
+
+        Logger.info( this, "Added Struts Action Mapping: " + actionClassType );
+    }
 
     /**
      * Register a given Quartz Job scheduled task
@@ -263,57 +314,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
             jobs = new HashMap<String, String>();
         }
 
-        //Verify if the job class is already in the system class loader
-        Class currentJobClass = null;
-        try {
-            currentJobClass = Class.forName( scheduledTask.getJavaClassName(), true, ClassLoader.getSystemClassLoader() );
-        } catch ( ClassNotFoundException e ) {
-            //Do nothing, the class is not inside the system classloader
-        }
-
-        //Get the job class from this bundle context
-        Class jobClass = Class.forName( scheduledTask.getJavaClassName(), true, getFelixClassLoader() );
-        URL jobClassURL = jobClass.getProtectionDomain().getCodeSource().getLocation();
-
-        //Verify if we have our UrlOsgiClassLoader on the main class loaders
-        UrlOsgiClassLoader urlOsgiClassLoader = classLoaderUtil.findCustomURLLoader( ClassLoader.getSystemClassLoader() );
-        if ( urlOsgiClassLoader != null ) {
-
-            if ( urlOsgiClassLoader.contains( jobClassURL ) ) {
-                //The classloader and the job content in already in the system classloader, so we need to reload the jar contents
-                urlOsgiClassLoader.reload( jobClassURL );
-            } else {
-                urlOsgiClassLoader.addURL( jobClassURL );
-            }
-        } else {
-
-            if ( currentJobClass != null ) {
-                if ( currentJobClass.getClassLoader() instanceof UrlOsgiClassLoader ) {
-                    urlOsgiClassLoader = (UrlOsgiClassLoader) currentJobClass.getClassLoader();
-                }
-            }
-
-            if ( urlOsgiClassLoader == null ) {
-                //Getting the reference of a known class in order to get the base/main class loader
-                Class baseJobClass = getContextClassLoader().loadClass( "org.quartz.Job" );
-                //Creates our custom class loader in order to use it to inject the job code inside dotcms context
-                urlOsgiClassLoader = new UrlOsgiClassLoader( jobClassURL, baseJobClass.getClassLoader() );
-            } else {
-                //The classloader and the job content in already in the system classloader, so we need to reload the jar contents
-                urlOsgiClassLoader.reload( jobClassURL );
-            }
-
-            /*
-            In order to inject the job code inside dotcms context this is the main part of the process,
-            is required to insert our custom class loader inside dotcms class loaders hierarchy.
-             */
-            ClassLoader loader = classLoaderUtil.findFirstLoader( ClassLoader.getSystemClassLoader() );
-
-            Field parentLoaderField = ClassLoader.class.getDeclaredField( "parent" );
-            parentLoaderField.setAccessible( true );
-            parentLoaderField.set( loader, urlOsgiClassLoader );
-            parentLoaderField.setAccessible( false );
-        }
+        //Will inject the job classes inside the dotCMS context
+        injectContext( scheduledTask.getJavaClassName() );
 
         /*
         Schedules the given job in the quartz system, and depending on the sequentialScheduled
@@ -431,6 +433,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterPreHooks();
         unregisterPostHooks();
         unregisterQuartzJobs();
+        unregisterActionMappings();
+        unregisterPortles();
     }
 
     /**
@@ -507,6 +511,22 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
     }
 
+    protected void unregisterActionMappings () throws Exception {
+
+        if ( actions != null ) {
+
+            ModuleConfig moduleConfig = activatorUtil.getModuleConfig();
+            //We need to unfreeze this module in order to add new action mappings
+            activatorUtil.unfreeze( moduleConfig );
+
+            for ( ActionConfig actionConfig : actions ) {
+                moduleConfig.removeActionConfig( actionConfig );
+            }
+            moduleConfig.freeze();
+        }
+
+    }
+
     /**
      * Unregister all the registered Quartz Jobs
      *
@@ -519,14 +539,32 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 QuartzUtils.removeJob( jobName, jobs.get( jobName ) );
             }
 
-            /*UrlOsgiClassLoader loader = classLoaderUtil.findCustomURLLoader( ClassLoader.getSystemClassLoader() );
+            /*UrlOsgiClassLoader loader = activatorUtil.findCustomURLLoader( ClassLoader.getSystemClassLoader() );
             if ( loader != null ) {
                 loader.getInstrumentation().removeTransformer( loader.getTransformer() );
             }*/
         }
     }
 
-    class ClassLoaderUtil {
+    /**
+     * Unregister all the registered Quartz Jobs
+     *
+     * @throws SchedulerException
+     */
+    protected void unregisterPortles () throws Exception {
+
+        if ( portlets != null ) {
+
+            String scpId = PortletManagerImpl.class.getName() + "." + "SHARED_KEY";
+            Map portletsPool = (Map) SimpleCachePool.get( scpId );
+
+            for ( Portlet portlet : portlets ) {
+                portletsPool.remove( portlet.getPrimaryKey().getPortletId() );
+            }
+        }
+    }
+
+    class ActivatorUtil {
 
         public UrlOsgiClassLoader findCustomURLLoader ( ClassLoader loader ) {
 
@@ -546,6 +584,19 @@ public abstract class GenericBundleActivator implements BundleActivator {
             } else {
                 return findFirstLoader( loader.getParent() );
             }
+        }
+
+        public ModuleConfig getModuleConfig () {
+            ServletContext servletContext = Config.CONTEXT;
+            return (ModuleConfig) servletContext.getAttribute( Globals.MODULE_KEY );
+        }
+
+        public void unfreeze ( ModuleConfig moduleConfig ) throws NoSuchFieldException, IllegalAccessException {
+
+            Field configuredField = ModuleConfigImpl.class.getDeclaredField( "configured" );//We need to access it using reflection
+            configuredField.setAccessible( true );
+            configuredField.set( moduleConfig, false );
+            configuredField.setAccessible( false );
         }
 
     }
