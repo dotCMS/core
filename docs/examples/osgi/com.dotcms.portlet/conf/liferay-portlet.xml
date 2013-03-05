@@ -3,6 +3,6 @@
 
 <portlets>
     <portlet id="EXT_HELLO_WORLD" struts-path="hello_velocity" narrow="true"/>
-    <portlet id="EXT_STRUTS_HELLO_WORLD" struts-path="ext/strutshello/view_hello" narrow="true"/>
+    <portlet id="EXT_STRUTS_HELLO_WORLD" struts-path="ext/strutshello" narrow="true"/>
     <portlet id="EXT_JSP_HELLO_WORLD" struts-path="hello_jsp" narrow="true"/>
 </portlets>
