@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.structure.factories;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -297,6 +298,18 @@ public class RelationshipFactory {
     	
     	
     }
+    
+    /**
+     * ISSUE 2222: https://github.com/dotCMS/dotCMS/issues/2222
+     * 
+     * @author Graziano Aliberti
+     * Mar 4, 2013 - 4:54:16 PM
+     */
+	public static void saveRelationship(Relationship relationship, String inode) throws DotHibernateException {
+		Date now = new Date();
+		relationship.setiDate(now);
+		HibernateUtil.saveWithPrimaryKey(relationship, inode);
+	}    
 
     // ### DELETE ###
     public static void deleteRelationship(String inode) throws DotHibernateException {
