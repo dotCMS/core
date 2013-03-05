@@ -16,7 +16,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.input.TailerListenerAdapter;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -67,16 +69,13 @@ public class TailLogServlet extends HttpServlet {
 		
 		
 		String fileName = request.getParameter("fileName");
-		
-		try{
-			fileName = UtilMethods.validateFileName(fileName);
-		}
-		catch (Exception e) {
-			Logger.error(this.getClass(), e.getMessage());
+	
+		if(!fileName.startsWith(com.dotmarketing.util.FileUtil.getAbsolutlePath(com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER")))){
+			response.sendError(403);
+			AdminLogger.log(TailLogServlet.class, "service", "Someone tried to use the TailLogServlet to display a file not in the logs directory");
 			return;
 		}
 		
-
 		// clean and check passed in filename against allowed files
 
 		
@@ -101,7 +100,7 @@ public class TailLogServlet extends HttpServlet {
 
 		File file = null;
 		try {
-			file = new File(getServletContext().getRealPath(logFolder + "/" + fileName));
+			file = new File(fileName);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "unable to open log file '" + logFolder
 					+ "' please set the config variable TAIL_LOG_SERVLET_FILEPATH correctly");
@@ -128,7 +127,7 @@ public class TailLogServlet extends HttpServlet {
 		long startPosition = ((file.length() - 5000) < 0) ? 0 : file.length() - 5000;
 
 		MyTailerListener listener = new MyTailerListener();
-		listener.handle("Tailing " + logFolder + "/" + fileName);
+		listener.handle("Tailing " + fileName);
 		listener.handle("----------------------------- ");
 		tailer = new Tailer(file, listener, 1000);
 		tailer.setStartPosition(startPosition);
