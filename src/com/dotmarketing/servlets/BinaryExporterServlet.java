@@ -133,7 +133,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 	
        
         String servletPath = req.getServletPath();
@@ -219,7 +219,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					assetIdentifier = content.getIdentifier();
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
-				    if(req.getSession().getAttribute("tm_date")!=null) {
+				    if(req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
 				        live=true;
 				        Identifier ident=APILocator.getIdentifierAPI().find(assetIdentifier);
 				        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
