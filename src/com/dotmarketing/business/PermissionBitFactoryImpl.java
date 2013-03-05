@@ -1901,11 +1901,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			contAPI.refresh((Contentlet)permissionable);
 		}
 		//DOTCMS-4959
-		if(permissionable instanceof Host && ((Host)permissionable).isSystemHost()){
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			contAPI.refresh(((Host)permissionable).getStructure());
-			//http://jira.dotmarketing.net/browse/DOTCMS-5768
-			permissionCache.clearCache();
+		if(permissionable instanceof Host) { 
+		    if(((Host)permissionable).isSystemHost()){
+		        ContentletAPI contAPI = APILocator.getContentletAPI();
+	            contAPI.refresh(((Host)permissionable).getStructure());
+	            //http://jira.dotmarketing.net/browse/DOTCMS-5768
+	            permissionCache.clearCache();
+		    }
+		    else {
+		        // https://github.com/dotCMS/dotCMS/issues/2229
+		        APILocator.getContentletAPI().refreshContentUnderHost((Host)permissionable);
+		    }
 		}
 	}
 
