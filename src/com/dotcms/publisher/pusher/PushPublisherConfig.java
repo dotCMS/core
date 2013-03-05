@@ -18,7 +18,8 @@ public class PushPublisherConfig extends PublisherConfig {
 		HTMLPAGES,
 		CONTAINERS, 
 		CONTENTS, 
-		LINKS
+		LINKS,
+		RELATIONSHIPS
 	}
 	
 	private Operation operation;
@@ -146,7 +147,16 @@ public class PushPublisherConfig extends PublisherConfig {
 		return (Set<String>) get(AssetTypes.LINKS.name());
 	
 	}
-
+	@SuppressWarnings("unchecked")
+	public Set<String> getRelationships() {
+		if(get(AssetTypes.RELATIONSHIPS.name()) == null){
+			Set<String> relationshipsToBuild =   new HashSet<String>();
+			put(AssetTypes.RELATIONSHIPS.name(), relationshipsToBuild);
+		}
+		
+		return (Set<String>) get(AssetTypes.RELATIONSHIPS.name());
+		
+	}
 	public void setHTMLPages(Set<String> htmlPages) {		
 		put(AssetTypes.HTMLPAGES.name(), htmlPages);
 	}
@@ -166,5 +176,10 @@ public class PushPublisherConfig extends PublisherConfig {
 	public void setLinks(Set<String> links) {
 		put(AssetTypes.LINKS.name(), links);
 	}
+	
+	public void setRelationships(Set<String> relationships) {
+		put(AssetTypes.RELATIONSHIPS.name(), relationships);
+	}
+	
 	
 }

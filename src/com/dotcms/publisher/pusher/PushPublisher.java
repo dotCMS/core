@@ -28,6 +28,7 @@ import com.dotcms.publisher.pusher.bundler.HTMLPageBundler;
 import com.dotcms.publisher.pusher.bundler.HostBundler;
 import com.dotcms.publisher.pusher.bundler.LanguageBundler;
 import com.dotcms.publisher.pusher.bundler.LinkBundler;
+import com.dotcms.publisher.pusher.bundler.RelationshipBundler;
 import com.dotcms.publisher.pusher.bundler.StructureBundler;
 import com.dotcms.publisher.pusher.bundler.TemplateBundler;
 import com.dotcms.publisher.util.TrustFactory;
@@ -248,9 +249,14 @@ public class PushPublisher extends Publisher {
 		list.add(HTMLPageBundler.class);
 		list.add(LinkBundler.class);
 		
-		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES"))
+		if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")){
 			list.add(StructureBundler.class);
-		
+			/**
+			 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
+			 * 
+			 */
+			list.add(RelationshipBundler.class);			
+		}
 		list.add(LanguageBundler.class);
 		
 		return list;
