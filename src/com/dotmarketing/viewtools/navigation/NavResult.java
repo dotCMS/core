@@ -39,7 +39,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     private String title;
     private String href;
     private int order;
-    private boolean hrefVelocity;
+    private String codeLink;
     private String parent;
     private String type;
     private String permissionId;
@@ -56,7 +56,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         this.hostId=hostId;
         this.folderId=folderId;
         this.parent=parent;
-        hrefVelocity=false;
+
         title=href="";
         order=0;
         checkPermissions=Config.getBooleanProperty("ENABLE_NAV_PERMISSION_CHECK",false);
@@ -87,22 +87,33 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         this.title = title;
     }
 
+
     public String getHref() {
-        return hrefVelocity ?
-            UtilMethods.evaluateVelocity(href, VelocityServlet.velocityCtx.get())
-            : 
-            href;
+        return href;
     }
 
     public void setHref(String href) {
         this.href = href;
-        this.hrefVelocity=false;
     }
     
-    public void setHrefVelocity(String vtl) {
-        this.href=vtl;
-        this.hrefVelocity=true;
+    public boolean isCodeLink() {
+    	return this.codeLink !=null;
     }
+    
+    
+    public String getCodeLink() {
+    	if(this.codeLink !=null  && (this.codeLink.contains("$") || this.codeLink.contains("#"))){ 
+    		return   UtilMethods.evaluateVelocity(codeLink, VelocityServlet.velocityCtx.get());
+    	}else{
+			return codeLink;
+		}
+	}
+
+	public void setCodeLink(String codeLink) {
+		this.codeLink = codeLink;
+	}
+
+
 
     public int getOrder() {
         return order;
@@ -116,7 +127,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
         HttpServletRequest req=(HttpServletRequest) ctx.get("request");
         if(req!=null)
-            return !hrefVelocity && req.getRequestURI().contains(href);
+            return !isCodeLink() && req.getRequestURI().contains(href);
         else
             return false;
     }
@@ -202,7 +213,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     }
     
     public String toString() {
-        if(!hrefVelocity) {
+        if(!isCodeLink()) {
             String titleToShow;
             try {
                 titleToShow=getTitle();
@@ -212,7 +223,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
             return "<a href='"+getHref()+"' title='"+titleToShow+"'>"+titleToShow+"</a>";
         }
         else {
-            return getHref();
+            return getCodeLink();
         }
     }    
     
