@@ -80,8 +80,6 @@
 	var structureWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Structure")) %>';
 	var noPermissionsSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "no-permissions-saved")) %>';
 	var categoriesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Category")) %>';
-	console.log("filesWillInheritMsg: " + filesWillInheritMsg);
-	console.log("categoriesWillInheritMsg: " + categoriesWillInheritMsg);
 
 	//HTML Templates
 	var inheritedSourcesTemplate = '<span class="${icon}"></span> ${path}';
@@ -118,9 +116,6 @@
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';
 	var structureClassName = '<%= Structure.class.getCanonicalName() %>';
 	var categoryClassName = '<%= Category.class.getCanonicalName() %>';
-
-	console.log("fileClassName: " + fileClassName);
-	console.log("categoryClassName: " + categoryClassName);
 
 	var dijits = [];
 
@@ -173,10 +168,6 @@
 	}
 
 	function renderPermissionsCallback(permissions) {
-
-		dojo.forEach(permissions, function(value){
-			console.log(value);
-		});
 
 
 		if(!doesUserHavePermissionsToEdit) {
