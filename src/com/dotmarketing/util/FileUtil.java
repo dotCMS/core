@@ -141,11 +141,21 @@ public class FileUtil {
 
 	}
 	
-	
-	
-	
-	
-	
+
+	/**
+	 * This method will figure out if the passed in path is relative meaning relative to the WAR and will
+	 * use the Servlet.CONTEXT to find the real path or if the passed in path is Absolutely meaning absolute 
+	 * to the file system.  It will return the full path or the file or directory
+	 * @param path the passed in path. If it starts with a / or \ or [a-z]: then it is considered a full path
+	 * @return
+	 */
+	public static String getAbsolutlePath(String path){
+		if(RegEX.contains(path, "^[a-zA-Z]:|^/|^\\\\")){
+			return path;
+		}else{
+			return com.dotmarketing.util.Config.CONTEXT.getRealPath(path);
+		}
+	}
 }
 
 final class PNGFileNameFilter implements FilenameFilter {

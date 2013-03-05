@@ -333,6 +333,35 @@ public class FileUtil {
 		return listFiles(dir, false);
 	}
 
+	public static File[] listFileHandles(String fileName, Boolean includeSubDirs) throws IOException {
+		return listFileHandles(new File(fileName), includeSubDirs);
+	}
+	
+	public static File[] listFileHandles(File dir, Boolean includeSubDirs) throws IOException {
+		FileFilter fileFilter = new FileFilter() {
+	        public boolean accept(File file) {
+	            return file.isDirectory();
+	        }
+	    };
+	File[] subFolders = dir.listFiles(fileFilter);
+
+	List<File> files = new ArrayList<File>();
+
+	List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
+
+	for (File file : fileArray) {
+		if(file.isFile()) {
+			if(includeSubDirs && containsParentFolder(file, subFolders)) {
+				files.add(file);
+			} else {
+				files.add(file);
+			}
+		}
+	}
+
+	return (File[])files.toArray(new File[0]);
+	}
+	
 	public static String[] listFiles(File dir, Boolean includeSubDirs) throws IOException {
 		 FileFilter fileFilter = new FileFilter() {
 		        public boolean accept(File file) {
@@ -343,7 +372,7 @@ public class FileUtil {
 
 		List<String> files = new ArrayList<String>();
 
-		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE));
+		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
 
 		for (File file : fileArray) {
 			if(file.isFile()) {

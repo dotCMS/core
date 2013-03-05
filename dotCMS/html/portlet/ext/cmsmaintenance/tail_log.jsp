@@ -1,22 +1,22 @@
+<%@page import="java.io.File"%>
 <%
 
 	String regex = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_FILE_REGEX");
 	if(!com.dotmarketing.util.UtilMethods.isSet(regex)){
 		regex=".*";
 	}
-	String[] files = com.liferay.util.FileUtil.listFiles(
-	        com.dotmarketing.util.Config.CONTEXT.getRealPath(
-	                com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER")), true);
+	String logPath = com.dotmarketing.util.FileUtil.getAbsolutlePath(com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER"));
+	File[] files = com.liferay.util.FileUtil.listFileHandles(logPath, true);
 	java.util.regex.Pattern pp = java.util.regex.Pattern.compile(regex);
-	java.util.List<String> l = new java.util.ArrayList<String>();
-	for(String x : files){
-		if(pp.matcher(x).matches()){
+	java.util.List<File> l = new java.util.ArrayList<File>();
+	for(File x : files){
+		if(pp.matcher(x.getName()).matches()){
 			l.add(x);
 		}
 	}
 	// http://jira.dotmarketing.net/browse/DOTCMS-6271
 	// put matched files set to an array with exact size and then sort them
-	files = l.toArray(new String[l.size()]);
+	files = l.toArray(new File[l.size()]);
 	java.util.Arrays.sort(files);
 
 
@@ -240,9 +240,9 @@
 		<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Tail")%>:
 		<select name="fileName" dojoType="dijit.form.FilteringSelect" ignoreCase="true" id="fileName" style="width:250px;" onchange="reloadTail();">
 			<option value=""></option>
-			<%for(String f: files){ %>
+			<%for(File f: files){ %>
 
-					<option value="<%= f%>"><%= f%></option>
+					<option value="<%= f.getPath()%>"><%= f.getPath().replace(logPath + File.separator, "")%></option>
 
 			<%} %>
 		</select>
