@@ -66,9 +66,13 @@ td {font-size: 100%;}
 	dojo.require('dotcms.dojo.data.UsersReadStore');
 	dojo.require("dojox.timing._base");
 	dojo.require("dojo.hash");
+	dojo.require("dotcms.dojo.push.PushHandler");	
 
+	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Syncronization")%>');
+	
 	dojo.connect(dojo.global, "onhashchange", refresh);
 
+	
     function refresh() {
 
     	var hashValue = decodeURIComponent(dojo.hash());
@@ -674,6 +678,10 @@ td {font-size: 100%;}
 			toFocus.focus();
 		}
 	}
+	
+	function remoteSyncronization () {
+		pushHandler.showDialog(structureInode);
+	}
 
 </script>
 
@@ -716,6 +724,8 @@ td {font-size: 100%;}
 				<div id="catHolder" style="text-align: center; " class="claro"></div>
 				<div style="height: 15px; text-align: right; margin-top: 5px">
 					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
+					&nbsp;
+					<button dojoType="dijit.form.Button" type="button" onClick="alert();" iconClass="pushIcon"><%= LanguageUtil.get(pageContext,"Remote-Syncronization") %></button>					
 				</div>
 				<input type="hidden" name="fullCommand" id="fullCommand" value="">
 			</div>

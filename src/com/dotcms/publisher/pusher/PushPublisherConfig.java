@@ -18,7 +18,8 @@ public class PushPublisherConfig extends PublisherConfig {
 		HTMLPAGES,
 		CONTAINERS, 
 		CONTENTS, 
-		LINKS
+		LINKS,
+		CATEGORIES
 	}
 	
 	private Operation operation;
@@ -146,6 +147,16 @@ public class PushPublisherConfig extends PublisherConfig {
 		return (Set<String>) get(AssetTypes.LINKS.name());
 	
 	}
+	@SuppressWarnings("unchecked")
+	public Set<String> getCategories() {
+		if(get(AssetTypes.CATEGORIES.name()) == null){
+			Set<String> categoriesToBuild =   new HashSet<String>();
+			put(AssetTypes.CATEGORIES.name(), categoriesToBuild);
+		}
+
+		return (Set<String>) get(AssetTypes.LINKS.name());
+	
+	}	
 
 	public void setHTMLPages(Set<String> htmlPages) {		
 		put(AssetTypes.HTMLPAGES.name(), htmlPages);
@@ -165,6 +176,9 @@ public class PushPublisherConfig extends PublisherConfig {
 	
 	public void setLinks(Set<String> links) {
 		put(AssetTypes.LINKS.name(), links);
+	}
+	public void setCategories(Set<String> categories){
+		put(AssetTypes.CATEGORIES.name(),categories);
 	}
 	
 }

@@ -15,6 +15,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
@@ -95,6 +96,7 @@ public class PublisherAPIImpl extends PublisherAPI{
     						// check if it is a structure
     						Structure st = StructureCache.getStructureByInode(identifier);
     						Folder folder = null;
+    						Category category = null;
 
     						if(UtilMethods.isSet(st)) {
     							if (!strPerAPI.doesUserHavePermission(st,PermissionAPI.PERMISSION_PUBLISH, user)) {
@@ -113,6 +115,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 
     							type = "folder";
     						}
+    						
+    						/**
+    						 * ISSUE 2244: https://github.com/dotCMS/dotCMS/issues/2244
+    						 * 
+    						 */
+    						// check if it is a category
+    						else if(UtilMethods.isSet(category = APILocator.getCategoryAPI().find(identifier, user, false))) {
+    							if (!strPerAPI.doesUserHavePermission(category,PermissionAPI.PERMISSION_PUBLISH, user)) {
+    								Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + category.getIdentifier() );
+    								continue;
+    							}
+
+    							type = "category";
+    						}    						
 					    }
 					    catch(Exception ex) {
 					        // well, none of those
