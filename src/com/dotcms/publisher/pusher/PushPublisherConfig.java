@@ -19,6 +19,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		CONTAINERS, 
 		CONTENTS, 
 		LINKS,
+		RELATIONSHIPS,
 		CATEGORIES
 	}
 	
@@ -157,7 +158,17 @@ public class PushPublisherConfig extends PublisherConfig {
 		return (Set<String>) get(AssetTypes.LINKS.name());
 	
 	}	
-
+	@SuppressWarnings("unchecked")	
+	public Set<String> getRelationships() {
+		if(get(AssetTypes.RELATIONSHIPS.name()) == null){
+			Set<String> relationshipsToBuild =   new HashSet<String>();
+			put(AssetTypes.RELATIONSHIPS.name(), relationshipsToBuild);
+		}
+		
+		return (Set<String>) get(AssetTypes.RELATIONSHIPS.name());
+		
+	}
+	
 	public void setHTMLPages(Set<String> htmlPages) {		
 		put(AssetTypes.HTMLPAGES.name(), htmlPages);
 	}
@@ -180,5 +191,10 @@ public class PushPublisherConfig extends PublisherConfig {
 	public void setCategories(Set<String> categories){
 		put(AssetTypes.CATEGORIES.name(),categories);
 	}
+	
+	public void setRelationships(Set<String> relationships) {
+		put(AssetTypes.RELATIONSHIPS.name(), relationships);
+	}
+	
 	
 }

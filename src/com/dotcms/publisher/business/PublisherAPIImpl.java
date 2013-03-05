@@ -17,6 +17,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -94,7 +95,13 @@ public class PublisherAPIImpl extends PublisherAPI{
 					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
 					    try {
     						// check if it is a structure
-    						Structure st = StructureCache.getStructureByInode(identifier);
+    						Structure st = null;
+					    	List<Structure> sts = StructureFactory.getStructures();
+    						for (Structure s : sts) {
+    							if(s.getInode().equals(identifier)) {
+    								st = s;
+    							}
+							}
     						Folder folder = null;
     						Category category = null;
 
@@ -197,7 +204,13 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
 						// check if it is a structure
-						Structure st = StructureCache.getStructureByInode(identifier);
+						Structure st = null;
+				    	List<Structure> sts = StructureFactory.getStructures();
+						for (Structure s : sts) {
+							if(s.getInode().equals(identifier)) {
+								st = s;
+							}
+						}
 						Folder folder = null;
 
 						if(UtilMethods.isSet(st)) {
