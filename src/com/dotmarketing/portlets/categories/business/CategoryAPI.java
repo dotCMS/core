@@ -64,6 +64,15 @@ public interface CategoryAPI {
 	public void delete(Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
+	 * Remove all categories from the system
+	 * @param object
+	 * @throws DotDataException
+	 * @throws DotSecurityException 
+	 */
+	public void deleteAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	
+	
+	/**
 	 * This method get a category object from the cache based
 	 * on the passed inode, if the object does not exist
 	 * a null value is returned

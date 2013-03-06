@@ -33,9 +33,14 @@ public class CategoryHandler implements IHandler {
 	public void handle(File bundleFolder) throws Exception {
 		Collection<File> categories = FileUtil.listFilesRecursively(bundleFolder, new CategoryBundler().getFileFilter());
 		pushCategoryUtil = new PushCategoryUtil(categories);
-		handleCategories(categories);
-		CategoryCache cache = CacheLocator.getCategoryCache();
-		cache.clearCache();
+		if(pushCategoryUtil.getCategoryXMLCount()>0){
+			// first step: delete ALL categories
+			catAPI.deleteAll(userAPI.getSystemUser(), true);
+			pushCategoryUtil = new PushCategoryUtil(categories);
+			handleCategories(categories);
+			CategoryCache cache = CacheLocator.getCategoryCache();
+			cache.clearCache();
+		}
 	}
 
 	/**

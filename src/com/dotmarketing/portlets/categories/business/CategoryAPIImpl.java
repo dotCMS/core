@@ -92,6 +92,15 @@ public class CategoryAPIImpl implements CategoryAPI {
 		catFactory.delete(object);
 		
 	}
+		
+	public void deleteAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		List<Category> all = findAll(user, respectFrontendRoles);
+		for(Category category : all) {
+			removeChildren(category, user, respectFrontendRoles);
+			delete(category, user, respectFrontendRoles);
+		}
+		
+	}	
 	
 	/*public Category find(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		return find(Long.parseLong(id), user, respectFrontendRoles);
@@ -553,6 +562,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		return false;
 	}
+
 
 
 
