@@ -64,6 +64,15 @@ public interface CategoryAPI {
 	public void delete(Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
+	 * Remove all categories from the system
+	 * @param object
+	 * @throws DotDataException
+	 * @throws DotSecurityException 
+	 */
+	public void deleteAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	
+	
+	/**
 	 * This method get a category object from the cache based
 	 * on the passed inode, if the object does not exist
 	 * a null value is returned
@@ -166,6 +175,14 @@ public interface CategoryAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void save(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	
+	/**
+	 * Publish Remote categories,
+	 * in this case we don't need to check if this category exists into the system but just save with its own inode.
+	 * 
+	 * Mar 6, 2013 - 10:12:47 AM
+	 */
+	public void publishRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves the list of children categories associated

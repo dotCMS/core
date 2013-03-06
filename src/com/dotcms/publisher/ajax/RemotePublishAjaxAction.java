@@ -160,20 +160,25 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
 				try {
 					
-					// if the asset is a folder put the inode instead of the identifier
-					Folder folder = null;
-					try {
-						folder = APILocator.getFolderAPI().find(_assetId, getUser(), false);
-					} catch(DotDataException e) {
-					}
-					
-					if(folder!=null && UtilMethods.isSet(folder.getInode())) {
+					// check for the categories
+					if(_assetId.equals("CAT")){
 						ids.add(_assetId);
-					} else {
-						// if the asset is not a folder and has identifier, put it, if not, put the inode
-						Identifier iden = APILocator.getIdentifierAPI().findFromInode(_assetId);
-						ids.add(iden.getId());
-					}
+					}else{
+						// if the asset is a folder put the inode instead of the identifier
+						Folder folder = null;
+						try {
+							folder = APILocator.getFolderAPI().find(_assetId, getUser(), false);
+						} catch(DotDataException e) {
+						}
+						
+						if(folder!=null && UtilMethods.isSet(folder.getInode())) {
+							ids.add(_assetId);
+						} else {
+							// if the asset is not a folder and has identifier, put it, if not, put the inode
+							Identifier iden = APILocator.getIdentifierAPI().findFromInode(_assetId);
+							ids.add(iden.getId());
+						}						
+					}					
 				} catch(DotStateException e) {
 					ids.add(_assetId);
 				} catch (DotSecurityException e) {
@@ -198,7 +203,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				Logger.error(PushPublishActionlet.class, e.getMessage(), e);
 			}	
 	}
-	
 	
 	public void downloadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
