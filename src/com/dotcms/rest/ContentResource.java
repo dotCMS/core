@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.HashSet;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,6 +32,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -121,7 +120,8 @@ public class ContentResource extends WebResource {
 			} else if(inodePassed = UtilMethods.isSet(inode)) {
 				cons.add(APILocator.getContentletAPI().find(inode, user, true));
 			} else if(queryPassed = UtilMethods.isSet(query)) {
-					cons = APILocator.getContentletAPI().search(query,new Integer(limit),new Integer(offset),orderBy,user,true);
+			    String tmDate=(String)request.getSession().getAttribute("tm_date");
+			    cons = ContentUtils.pull(query, offset, limit,orderBy,user,tmDate);
 			}
 		} catch (Exception e) {
 			if(idPassed) {
