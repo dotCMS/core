@@ -15,10 +15,16 @@ import com.liferay.portal.ejb.PortletManagerImpl;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.util.SimpleCachePool;
+import org.apache.catalina.core.ApplicationContext;
+import org.apache.catalina.core.ApplicationContextFacade;
+import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.core.StandardWrapper;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.struts.Globals;
+import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.config.ActionConfig;
+import org.apache.struts.config.ForwardConfig;
 import org.apache.struts.config.ModuleConfig;
 import org.apache.struts.config.impl.ModuleConfigImpl;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
@@ -50,6 +56,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private Map<String, String> jobs;
     private Collection<ActionConfig> actions;
     private Collection<Portlet> portlets;
+    private Map<String, StandardWrapper> servlets;
     private Collection preHooks;
     private Collection postHooks;
     private ActivatorUtil activatorUtil = new ActivatorUtil();
@@ -270,6 +277,52 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
+     * Method that will create and add an ActionForward to a ActionMapping,this call is mandatory for the creation as ActionForwards
+     * because extra logic will be required for jsp forwards to work.
+     *
+     * @param actionMapping
+     * @param name
+     * @param path
+     * @param redirect
+     * @return
+     * @throws Exception
+     */
+    protected ForwardConfig registerActionForward ( ActionMapping actionMapping, String name, String path, Boolean redirect ) throws Exception {
+
+        if ( servlets == null ) {
+            servlets = new HashMap<String, StandardWrapper>();
+        }
+
+        StandardContext standardContext = activatorUtil.getStandardContext();
+
+        // Creating an ForwardConfig Instance
+        ForwardConfig forwardConfig = new ActionForward( name, path, redirect );
+        // Adding the ForwardConfig to the ActionConfig
+        actionMapping.addForwardConfig( forwardConfig );
+
+        if ( path.contains( ".jsp" ) ) {
+
+            //We need to register our jsp as a servlet, That means we need to generate the name of the jsp after compilation
+            String jspName = path.substring( path.lastIndexOf( "/" ) + 1, path.length() );
+            String compiledJspName = jspName.replace( "_", "_005f" ).replace( ".jsp", "_jsp" );
+
+            String compiledJsp = path.replace( "/", "." ).replace( jspName, compiledJspName );
+            compiledJsp = "org.apache.jsp" + compiledJsp;
+
+            //Create the servlet for the forward jsp file
+            StandardWrapper servlet = new StandardWrapper();
+            servlet.setServletClass( compiledJsp );
+            servlet.setName( compiledJsp );
+            standardContext.addChild( servlet );
+            standardContext.addServletMapping( "/html" + path, compiledJsp );
+
+            servlets.put( "/html" + path, servlet );
+        }
+
+        return forwardConfig;
+    }
+
+    /**
      * Register a given ActionMapping
      *
      * @param actionMapping
@@ -435,6 +488,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterQuartzJobs();
         unregisterActionMappings();
         unregisterPortles();
+        unregisterServlets();
     }
 
     /**
@@ -564,6 +618,26 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
     }
 
+    /**
+     * Unregister all the registered servlets and mappings
+     *
+     * @throws SchedulerException
+     */
+    protected void unregisterServlets () throws Exception {
+
+        if ( servlets != null ) {
+            StandardContext standardContext = activatorUtil.getStandardContext();
+
+            for ( String mapping : servlets.keySet() ) {
+                StandardWrapper servlet = servlets.get( mapping );
+
+                //Remove the registered servlet and mapping
+                standardContext.removeChild( servlet );
+                standardContext.removeServletMapping( mapping );
+            }
+        }
+    }
+
     class ActivatorUtil {
 
         public UrlOsgiClassLoader findCustomURLLoader ( ClassLoader loader ) {
@@ -589,6 +663,24 @@ public abstract class GenericBundleActivator implements BundleActivator {
         public ModuleConfig getModuleConfig () {
             ServletContext servletContext = Config.CONTEXT;
             return (ModuleConfig) servletContext.getAttribute( Globals.MODULE_KEY );
+        }
+
+        public StandardContext getStandardContext () throws Exception {
+
+            ServletContext servletContext = Config.CONTEXT;
+            ApplicationContextFacade applicationContextFacade = ((ApplicationContextFacade) servletContext);
+
+            Field contextField = ApplicationContextFacade.class.getDeclaredField( "context" );//We need to access it using reflection
+            contextField.setAccessible( true );
+            ApplicationContext applicationContext = (ApplicationContext) contextField.get( applicationContextFacade );
+            contextField.setAccessible( false );
+
+            contextField = ApplicationContext.class.getDeclaredField( "context" );//We need to access it using reflection
+            contextField.setAccessible( true );
+            StandardContext standardContext = (StandardContext) contextField.get( applicationContext );
+            contextField.setAccessible( false );
+
+            return standardContext;
         }
 
         public void unfreeze ( ModuleConfig moduleConfig ) throws NoSuchFieldException, IllegalAccessException {
