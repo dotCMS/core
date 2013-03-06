@@ -25,6 +25,13 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+/**
+ * The Category Bundler: in this case we don't need any kind of categories Set because we push every time all the system categories.
+ * 
+ * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+ *
+ * Mar 6, 2013 - 9:34:34 AM
+ */
 public class CategoryBundler implements IBundler {
 
 	private PushPublisherConfig config;
@@ -86,16 +93,17 @@ public class CategoryBundler implements IBundler {
 				+ APILocator.getHostAPI().findSystemHost().getHostname() +File.separator + uri;
 
 		File strFile = new File(myFileUrl);
-		strFile.mkdirs();
-
-		BundlerUtil.objectToXML(categoryWrapper, strFile, true);
-		strFile.setLastModified(Calendar.getInstance().getTimeInMillis());
+		if(!strFile.exists()){
+			strFile.mkdirs();
+	
+			BundlerUtil.objectToXML(categoryWrapper, strFile, true);
+			strFile.setLastModified(Calendar.getInstance().getTimeInMillis());
+		}
 	}
 	
 	@Override
-	public FileFilter getFileFilter() {
-		// TODO Auto-generated method stub
-		return null;
+	public FileFilter getFileFilter() {		
+		return new CategoryBundlerFilter();
 	}
 
 	private Set<String> getChildrenInodes(List<Category> children){
@@ -105,11 +113,22 @@ public class CategoryBundler implements IBundler {
 		return inodes;
 	}
 	
+	/**
+	 * For each top level category creates the children's xml recursively.  
+	 * 
+	 * Mar 6, 2013 - 9:33:00 AM
+	 */
 	private void writeChildren(File bundleRoot, Set<String> inodes) throws DotDataException, DotSecurityException, IOException, DotBundleException, DotPublisherException{
 		for(String inode: inodes){
 			Category cat = catAPI.find(inode, userAPI.getSystemUser(), true);
 			if(null!=cat && UtilMethods.isSet(cat.getInode())){
-				if(cat.hasChildren()){
+				if(catAPI.findChildren(userAPI.getSystemUser(), cat.getInode(), true, null).size()>0){
+					CategoryWrapper wrapper = new CategoryWrapper();
+					wrapper.setTopLevel(false);
+					wrapper.setCategory(cat);
+					wrapper.setOperation(config.getOperation());
+					wrapper.setChildren(null);
+					writeCategory(bundleRoot,wrapper);					
 					Set<String> childrenInodes = getChildrenInodes(catAPI.getAllChildren(cat, userAPI.getSystemUser(), true));
 					writeChildren(bundleRoot, childrenInodes);
 				}else{ // write the category
@@ -123,5 +142,14 @@ public class CategoryBundler implements IBundler {
 			}
 		}
 		
+	}
+	
+	public class CategoryBundlerFilter implements FileFilter {
+
+		@Override
+		public boolean accept(File pathname) {
+			return (pathname.isDirectory() || pathname.getName().endsWith(CATEGORY_EXTENSION));
+		}
+
 	}
 }

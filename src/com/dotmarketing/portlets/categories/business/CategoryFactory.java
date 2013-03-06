@@ -65,6 +65,13 @@ public abstract class CategoryFactory {
 	protected abstract void save(Category object) throws DotDataException;
 	
 	/**
+	 * This method saves a category in the system coming by a Remote publishing.
+	 * @param object
+	 * @throws DotDataException
+	 */
+	protected abstract void saveRemote(Category object) throws DotDataException;	
+	
+	/**
 	 * Retrieves the list of children categories associated
 	 * to the given id/inode, this method can be used
 	 * to retrived associated categories to another

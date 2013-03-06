@@ -143,6 +143,35 @@ public class CategoryAPIImpl implements CategoryAPI {
 		
 	}
 	
+	public void publishRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		boolean isANewCategory = false;
+		
+		//Checking permissions
+		if(InodeUtils.isSet(object.getInode()) || parent == null) {
+			//Object is not new or is a top level category
+			//if it is a new top level category the user should be a cms administrator
+			// and that's checked in the permissions api
+			 if(!com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole().getId())){
+              if(!perAPI.doesUserHavePermission(object, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) 
+				throw new DotSecurityException("User doesn't have permission to edit the category = " + object.getInode());
+			 }
+		} else {
+			//Object is new and a parent was provided so we check in the parent permissions 
+			if(!perAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) 
+				throw new DotSecurityException("User doesn't have permission to save this category = " + 
+						object.getInode() + " having as parent the category = " + parent.getInode());
+			
+			isANewCategory = true;
+		}
+		
+		catFactory.saveRemote(object);
+		
+		if(isANewCategory && parent != null) {
+			catFactory.addChild(parent, object, null);
+			perAPI.copyPermissions(parent, object);
+		}
+	}
+	
 	public void addChild(Categorizable parent, Category child, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 		
@@ -544,6 +573,8 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		return false;
 	}
+
+
 
 	
 }

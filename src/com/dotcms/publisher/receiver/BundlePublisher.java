@@ -24,6 +24,7 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPIImpl;
+import com.dotcms.publisher.receiver.handler.CategoryHandler;
 import com.dotcms.publisher.receiver.handler.ContainerHandler;
 import com.dotcms.publisher.receiver.handler.ContentHandler;
 import com.dotcms.publisher.receiver.handler.FolderHandler;
@@ -60,31 +61,34 @@ public class BundlePublisher extends Publisher {
     public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
         if(LicenseUtil.getLevel()<200)
             throw new RuntimeException("need an enterprise licence to run this");
-        
         handlers = new ArrayList<IHandler>();
         //The order is really important
-        handlers.add(new HostHandler());
-        handlers.add(new FolderHandler());
-        
-        if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")){
-        	handlers.add(new StructureHandler());
-			/**
-			 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
-			 * 
-			 */        	
-        	handlers.add(new RelationshipHandler());
-        }
-        
-        handlers.add(new ContainerHandler());
-        handlers.add(new TemplateHandler());
-        handlers.add(new HTMLPageHandler());
-        
-        handlers.add(new ContentHandler());
-        handlers.add(new LanguageHandler());
-        handlers.add(new LinkHandler());
-        
-        
-        
+    	
+        /**
+		 * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
+		 * 
+		 */        
+       	handlers.add(new CategoryHandler());
+       	handlers.add(new HostHandler());
+       	handlers.add(new FolderHandler());
+           
+       	if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")){
+       		handlers.add(new StructureHandler());
+   			/**
+   			 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
+   			 * 
+   			 */        	
+           	handlers.add(new RelationshipHandler());
+       	}
+           
+       	handlers.add(new ContainerHandler());
+       	handlers.add(new TemplateHandler());
+       	handlers.add(new HTMLPageHandler());
+           
+       	handlers.add(new ContentHandler());
+       	handlers.add(new LanguageHandler());
+       	handlers.add(new LinkHandler());
+
         auditAPI = PublishAuditAPI.getInstance();
 
         this.config = super.init(config);
