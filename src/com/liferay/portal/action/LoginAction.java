@@ -130,12 +130,12 @@ public class LoginAction extends Action {
 					e instanceof UserActiveException) {
 
 					SessionErrors.add(req, e.getClass().getName());
-
+					SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + ParamUtil.getString(req, "my_account_login").toLowerCase() + " has been made from IP: " + req.getRemoteAddr());
 					return mapping.findForward("portal.login");
 				}
 				else {
 					req.setAttribute(PageContext.EXCEPTION, e);
-
+					SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + ParamUtil.getString(req, "my_account_login").toLowerCase() + " has been made from IP: " + req.getRemoteAddr());
 					return mapping.findForward(Constants.COMMON_ERROR);
 				}
 			}
@@ -267,8 +267,8 @@ public class LoginAction extends Action {
 		}
 
 		if (authResult != Authenticator.SUCCESS) {
-			//Logger.info(this, "An ivalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
-			SecurityLogger.logInfo(this.getClass(),"User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
+			//Logger.info(this, "An invalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
+			SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
 			throw new AuthException();
 		}
 		
