@@ -330,7 +330,9 @@
 							inode = st.getInode();
 							title = st.getName();
 							structureName = assetType;
-						} else {
+						} else if (assetType.equals("category")) {
+							title = LanguageUtil.get(pageContext, "remote-syncronization-title");
+						} else { 						
 							title = LanguageUtil.get(pageContext, "publisher_No_Title");
 						}
 
