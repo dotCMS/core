@@ -164,6 +164,19 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			}
 		}
 	}
+	
+
+	@Override
+	protected void saveRemote(Category object) throws DotDataException {
+		HibernateUtil.saveWithPrimaryKey(object, object.getInode());
+		try {
+			cleanParentChildrenCaches(object);
+			catCache.remove(object);
+			catCache.put(object);
+		} catch (DotCacheException e) {
+			throw new DotDataException(e.getMessage(), e);
+		}		
+	}	
 
 	@Override
 	protected void addChild(Categorizable parent, Category child, String relationType) throws DotDataException {
@@ -694,5 +707,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			return returnValue;
 		}
 	}
+
 
 }
