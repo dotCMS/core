@@ -213,6 +213,8 @@ function addLayout(layout){
 }
 
 function addGrid(gridId, yuiBId, rowCount){
+
+
 	var mainDiv = document.getElementById("yui-main-template");
 	var yuiBDiv = document.getElementById(yuiBId);
 	if(null==yuiBDiv){ // create
@@ -225,6 +227,9 @@ function addGrid(gridId, yuiBId, rowCount){
 		while (yuiBDiv.hasChildNodes()) {
 			yuiBDiv.removeChild(yuiBDiv.lastChild);
 		}
+
+		yuiBDiv.setAttribute("class","yui-b-template");
+		yuiBDiv.setAttribute("id",yuiBId);
 	}
 	if(1!=gridId){
 		// delete the first Add Container link created when was created the grid (100% body, default creation)
@@ -233,8 +238,13 @@ function addGrid(gridId, yuiBId, rowCount){
 		var yuiU2 = document.createElement("div");
 		var yuiU3 = document.createElement("div");
 		var yuiU4 = document.createElement("div");
-		gridDiv.setAttribute("class",gridId);
-		gridDiv.setAttribute("id",gridId);
+
+		var gridDiv_2 = null;
+		var gridContainer = null;
+
+		("yui-js-template"==gridId) ? gridDiv.setAttribute("class","yui-g-template") : gridDiv.setAttribute("class",gridId);
+		("yui-js-template"==gridId) ? gridDiv.setAttribute("id","yui-g-template") : gridDiv.setAttribute("id",gridId);
+
 		yuiUFirst.setAttribute("class","yui-u-template first");
 		yuiUFirst.setAttribute("id",rowCount+"_yui-u-grid-1");
 		yuiUFirst.innerHTML=getAddContainer(rowCount+"_yui-u-grid-1")+"<h1>Body</h1>";
@@ -243,6 +253,7 @@ function addGrid(gridId, yuiBId, rowCount){
 		yuiU2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-2")+"<h1>Body</h1>";
 		gridDiv.appendChild(yuiUFirst);
 		gridDiv.appendChild(yuiU2);
+
 		if("yui-gb-template"==gridId){
 			yuiU3.setAttribute("class","yui-u-template");
 			yuiU3.setAttribute("id",rowCount+"_yui-u-grid-3");
@@ -250,26 +261,46 @@ function addGrid(gridId, yuiBId, rowCount){
 			gridDiv.appendChild(yuiU3);
 		}
 		if("yui-js-template"==gridId){
-			yuiU3.setAttribute("class","yui-u-template");
-			yuiU3.setAttribute("id",rowCount+"_yui-u-grid-3");
-			yuiU3.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
-			gridDiv.appendChild(yuiU3);
-			
-			yuiU4.setAttribute("class","yui-u-template");
-			yuiU4.setAttribute("id",rowCount+"_yui-u-grid-4");
-			yuiU4.innerHTML=getAddContainer(rowCount+"_yui-u-grid-4")+"<h1>Body</h1>";
-			gridDiv.appendChild(yuiU4);
+
+			gridDiv_2 = document.createElement("div");
+			gridDiv_2.setAttribute("class","yui-g-template");
+			gridDiv_2.setAttribute("id","yui-g-template");
+			gridDiv_2.setAttribute("style", "margin-right:10px");
+
+			var yuiUFirst_2 = document.createElement("div");
+			var yuiU2_2 = document.createElement("div");
+
+			yuiUFirst_2.setAttribute("class","yui-u-template first");
+			yuiUFirst_2.setAttribute("id",rowCount+"_yui-u-grid-3");
+			yuiUFirst_2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
+			gridDiv_2.appendChild(yuiUFirst_2);
+
+			yuiU2_2.setAttribute("class","yui-u-template");
+			yuiU2_2.setAttribute("id",rowCount+"_yui-u-grid-4");
+			yuiU2_2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-4")+"<h1>Body</h1>";
+			gridDiv_2.appendChild(yuiU2_2);
+
+			gridContainer = document.createElement("div");
+			gridContainer.setAttribute("class","yui-g-template");
+			gridContainer.setAttribute("id","yui-js-template");
+			gridContainer.appendChild(gridDiv);
+			gridContainer.appendChild(gridDiv_2);
+
 		}
-		
-		
-		yuiBDiv.appendChild(gridDiv);
+
+
+		if("yui-js-template"==gridId){
+			yuiBDiv.appendChild(gridContainer);
+		} else  {
+			yuiBDiv.appendChild(gridDiv);
+		}
 	}else{
 		yuiBDiv.innerHTML=getAddContainer(yuiBId)+"<h1>Body</h1>";
 	}
 
-	
-	
-	
+
+
+
     //In order to keep a list of the containers used by this template
     parseCurrentContainers();
 }

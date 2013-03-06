@@ -101,7 +101,20 @@ td {font-size: 100%;}
 		CategoryAjax.sortCategory(this.name, this.value);
 	};
 
+	var sortSelectable = function() {
+		dojo.forEach(
+			      dojo.query('[unselectable]'),
+			      function(selectTag){
+			        selectTag.unselectable = 'off';
+			      }
+			    );
+			 
+	};
+
+	
 	var fixFocus = function() {
+		
+		
 		var toBlur = document.activeElement;
 
 		if(toBlur.id!="addCatName" &&
@@ -126,6 +139,7 @@ td {font-size: 100%;}
 			maxLength: 15,
 			type : "text",
 			onChange : sortCat,
+			onClick : sortSelectable,
 			onBlur: fixFocus
 		});
 
@@ -137,6 +151,7 @@ td {font-size: 100%;}
 		myStore = new dojox.data.QueryReadStore({
 			url : '/categoriesServlet'+params
 		});
+		
 
 	}
 
@@ -233,6 +248,10 @@ td {font-size: 100%;}
 				dojo.byId("warningDiv").innerHTML = '<br><br>';
 			}
 		});
+		
+		 
+		
+		 
 
 	});
 
