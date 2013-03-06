@@ -209,10 +209,8 @@ public class LoginFactory {
 	            						+ " was able to connect to Salesforce server from IP: " + request.getRemoteAddr());
 	            			}
 	            			if(saveSalesForceInfoInUserActivityLog){
-	            				ActivityLogger.logInfo(LoginFactory.class, "dotCMS-Salesforce Plugin" , 
-	        		        			"User " + user.getEmailAddress()  +
-	        	        				" was able to connect to Salesforce server from IP: " + request.getRemoteAddr(), 
-	        	        				APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(),false).getHostname());
+	            				SecurityLogger.logInfo(LoginFactory.class, "dotCMS-Salesforce Plugin :" + 
+	            						"User " + user.getEmailAddress()  + " was able to connect to Salesforce server from IP: " + request.getRemoteAddr());
 	            			}
                   	  		String instanceURL = request.getSession().getAttribute(SalesForceUtils.INSTANCE_URL).toString();
                   	  		String accessToken = request.getSession().getAttribute(SalesForceUtils.ACCESS_TOKEN).toString();
