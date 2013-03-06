@@ -64,7 +64,7 @@ public class CategoryBundler implements IBundler {
 				wrapper.setCategory(topLevel);
 				wrapper.setOperation(config.getOperation());
 				// get all children
-				Set<String> childrenInodes = getChildrenInodes(catAPI.getAllChildren(topLevel, userAPI.getSystemUser(), true));
+				Set<String> childrenInodes = getChildrenInodes(catAPI.findChildren(userAPI.getSystemUser(), topLevel.getInode(), true, null));
 				wrapper.setChildren(childrenInodes);
 				writeCategory(bundleRoot,wrapper);
 				writeChildren(bundleRoot,childrenInodes);
@@ -122,14 +122,15 @@ public class CategoryBundler implements IBundler {
 		for(String inode: inodes){
 			Category cat = catAPI.find(inode, userAPI.getSystemUser(), true);
 			if(null!=cat && UtilMethods.isSet(cat.getInode())){
-				if(catAPI.findChildren(userAPI.getSystemUser(), cat.getInode(), true, null).size()>0){
+				List<Category> children = catAPI.findChildren(userAPI.getSystemUser(), cat.getInode(), true, null);
+				if(children.size()>0){
 					CategoryWrapper wrapper = new CategoryWrapper();
 					wrapper.setTopLevel(false);
 					wrapper.setCategory(cat);
 					wrapper.setOperation(config.getOperation());
-					wrapper.setChildren(null);
+					wrapper.setChildren(getChildrenInodes(children));
 					writeCategory(bundleRoot,wrapper);					
-					Set<String> childrenInodes = getChildrenInodes(catAPI.getAllChildren(cat, userAPI.getSystemUser(), true));
+					Set<String> childrenInodes = getChildrenInodes(children);
 					writeChildren(bundleRoot, childrenInodes);
 				}else{ // write the category
 					CategoryWrapper wrapper = new CategoryWrapper();

@@ -168,7 +168,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	@Override
 	protected void saveRemote(Category object) throws DotDataException {
-		HibernateUtil.save(object);
+		HibernateUtil.saveWithPrimaryKey(object, object.getInode());
 		try {
 			cleanParentChildrenCaches(object);
 			catCache.remove(object);

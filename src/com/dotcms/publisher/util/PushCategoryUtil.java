@@ -8,19 +8,15 @@ import java.util.Collection;
 import java.util.List;
 
 import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class PushCategoryUtil {
 	
-	private CategoryAPI catAPI;
 	private Collection<File> categories;
 	private XStream xstream;
 	
 	public PushCategoryUtil(Collection<File> categories){
-		catAPI = APILocator.getCategoryAPI();
 		this.categories = categories;
 		xstream=new XStream(new DomDriver());
 	}
