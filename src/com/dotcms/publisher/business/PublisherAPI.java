@@ -23,6 +23,9 @@ public abstract class PublisherAPI {
 	public static final long TO_UNPUBLISH_FILTER=2;
 	public static final long ERRORS_FILTER=3;
 	
+	// category
+	protected static final String CATEGORY="CAT";
+	
 	private static PublisherAPI pubAPI = null;
 	public static PublisherAPI getInstance(){
 		if(pubAPI == null){
