@@ -21,7 +21,13 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		dialog = new dotcms.dijit.RemotePublisherDialog();
 		dialog.title = this.title;
 		dialog.show();
-	}, 
+	},
+	showCategoryDialog: function(){		
+		this.assetIdentifier = "CAT";
+		dialog = new dotcms.dijit.RemotePublisherDialog();
+		dialog.title = this.title;
+		dialog.show();
+	},
 	remoteUnPublish : function(assetId) {
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/unPublish",
