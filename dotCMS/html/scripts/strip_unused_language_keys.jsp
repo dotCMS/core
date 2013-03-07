@@ -69,7 +69,7 @@ for(File x : oldfiles.listFiles() ){
 	while ((line = br.readLine()) != null) {
 		
 		if(line.startsWith("#")){
-			bo.write(line + "  ");
+			bo.write(line + "\n");
 			lastLineBreak=false;
 			continue;
 		}
