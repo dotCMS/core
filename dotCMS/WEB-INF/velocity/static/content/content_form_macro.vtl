@@ -369,7 +369,7 @@ var theme = 'dmundra';
 								<span class="contentHint">${field.hint}</span>
 							</span>
 						#end
-	    				#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
+	    				#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end $text.get($field.fieldName)</label>
 	    			#end
 	    			</dt>
 	    			#set($velocityVarName = "default${field.velocityVarName.substring(0,1).toUpperCase()}${field.velocityVarName.substring(1)}")
