@@ -14,11 +14,9 @@ import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.ejb.PortletManagerImpl;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.model.Portlet;
+import com.liferay.portal.util.Constants;
 import com.liferay.util.SimpleCachePool;
-import org.apache.catalina.core.ApplicationContext;
-import org.apache.catalina.core.ApplicationContextFacade;
-import org.apache.catalina.core.StandardContext;
-import org.apache.catalina.core.StandardWrapper;
+import org.apache.felix.http.api.ExtHttpService;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.struts.Globals;
 import org.apache.struts.action.ActionForward;
@@ -35,8 +33,10 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
+import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +49,9 @@ import java.util.Map;
  */
 public abstract class GenericBundleActivator implements BundleActivator {
 
+    private static final String INIT_PARAM_VIEW_JSP = "view-jsp";
+    private static final String MAPPING_PROXY_SERVLET = "/app";
+
     private PrimitiveToolboxManager toolboxManager;
     private WorkflowAPIOsgiService workflowOsgiService;
     private Collection<ToolInfo> viewTools;
@@ -56,7 +59,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private Map<String, String> jobs;
     private Collection<ActionConfig> actions;
     private Collection<Portlet> portlets;
-    private Map<String, StandardWrapper> servlets;
+    private Collection<Servlet> servlets;
     private Collection preHooks;
     private Collection postHooks;
     private ActivatorUtil activatorUtil = new ActivatorUtil();
@@ -68,6 +71,16 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private ClassLoader getContextClassLoader () {
         //return ClassLoader.getSystemClassLoader();
         return Thread.currentThread().getContextClassLoader();
+    }
+
+    /**
+     * Returns the mapping defined in the web.xml for the OSGIProxyServlet
+     *
+     * @return
+     */
+    private String getProxyServletMapping () {
+        //TODO: We need to put it in a configuration file
+        return MAPPING_PROXY_SERVLET;
     }
 
     /**
@@ -204,6 +217,17 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws Exception
      */
     private void injectContext ( String name ) throws Exception {
+        injectContext( name, true );
+    }
+
+    /**
+     * Will inject this bundle context inside the dotCMS context
+     *
+     * @param name   a reference class inside this bundle jar
+     * @param reload force the reload of a class if is already loaded
+     * @throws Exception
+     */
+    private void injectContext ( String name, Boolean reload ) throws Exception {
 
         //Verify if the class is already in the system class loader
         Class currentClass = null;
@@ -223,7 +247,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
             if ( urlOsgiClassLoader.contains( classURL ) ) {
                 //The classloader and the class content is already in the system classloader, so we need to reload the jar contents
-                urlOsgiClassLoader.reload( classURL );
+                if ( reload ) {
+                    urlOsgiClassLoader.reload( classURL );
+                }
             } else {
                 urlOsgiClassLoader.addURL( classURL );
             }
@@ -242,7 +268,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 urlOsgiClassLoader = new UrlOsgiClassLoader( classURL, baseClass.getClassLoader() );
             } else {
                 //The classloader and the class content in already in the system classloader, so we need to reload the jar contents
-                urlOsgiClassLoader.reload( classURL );
+                if ( reload ) {
+                    urlOsgiClassLoader.reload( classURL );
+                }
             }
 
             /*
@@ -271,7 +299,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws Exception
      */
     @SuppressWarnings ("unchecked")
-    protected Collection<Portlet> registerPortlets ( String[] xmls ) throws Exception {
+    protected Collection<Portlet> registerPortlets ( BundleContext context, String[] xmls ) throws Exception {
 
         portlets = PortletManagerUtil.initWAR( null, xmls );
 
@@ -280,16 +308,17 @@ public abstract class GenericBundleActivator implements BundleActivator {
             if ( portlet.getPortletClass().equals( "com.liferay.portlet.JSPPortlet" ) ) {
 
                 Map initParams = portlet.getInitParams();
-                String jspPath = (String) initParams.get( "view-jsp" );
+                String jspPath = (String) initParams.get( INIT_PARAM_VIEW_JSP );
 
                 if ( !jspPath.startsWith( "/" ) ) {
                     jspPath = "/" + jspPath;
                 }
 
-                String servletMapping = "/html" + jspPath;
                 //Create a Servlet for this jsp
-                StandardWrapper servlet = activatorUtil.createServletFromJspPath( jspPath, servletMapping );
-                servlets.put( servletMapping, servlet );
+                activatorUtil.registerServletForJsp( context, jspPath );
+
+                //And we change the mapping in order to work with our OSGIProxyServlet (/app/* mapping)
+                portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, getProxyServletMapping() + Constants.MAPPING_OSGI_BUNDLE + jspPath );
             }
         }
 
@@ -297,7 +326,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
-     * Method that will create and add an ActionForward to a ActionMapping,this call is mandatory for the creation as ActionForwards
+     * Method that will create and add an ActionForward to a ActionMapping,this call is mandatory for the creation of ActionForwards
      * because extra logic will be required for jsp forwards to work.
      *
      * @param actionMapping
@@ -307,27 +336,21 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @return
      * @throws Exception
      */
-    protected ForwardConfig registerActionForward ( ActionMapping actionMapping, String name, String path, Boolean redirect ) throws Exception {
+    protected ForwardConfig registerActionForward ( BundleContext context, ActionMapping actionMapping, String name, String path, Boolean redirect ) throws Exception {
 
-        if ( servlets == null ) {
-            servlets = new HashMap<String, StandardWrapper>();
+        if ( !path.startsWith( "/" ) ) {
+            path = "/" + path;
         }
+        String forwardMapping = getProxyServletMapping() + Constants.MAPPING_OSGI_BUNDLE + path;
 
         // Creating an ForwardConfig Instance
-        ForwardConfig forwardConfig = new ActionForward( name, path, redirect );
+        ForwardConfig forwardConfig = new ActionForward( name, forwardMapping, redirect );
         // Adding the ForwardConfig to the ActionConfig
         actionMapping.addForwardConfig( forwardConfig );
 
         if ( path.contains( ".jsp" ) ) {
-
-            if ( !path.startsWith( "/" ) ) {
-                path = "/" + path;
-            }
-
-            String servletMapping = "/html" + path;
             //Create a Servlet for this jsp
-            StandardWrapper servlet = activatorUtil.createServletFromJspPath( path, servletMapping );
-            servlets.put( servletMapping, servlet );
+            activatorUtil.registerServletForJsp( context, path );
         }
 
         return forwardConfig;
@@ -359,7 +382,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         //moduleConfig.freeze();
 
         actions.add( actionMapping );
-
         Logger.info( this, "Added Struts Action Mapping: " + actionClassType );
     }
 
@@ -489,7 +511,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * Utility method to unregister all the possible services and/or tools registered by this activator class.
      * Some how we have to try to clean up anything added on the deploy if this bundle.
      */
-    protected void unregisterServices () throws Exception {
+    protected void unregisterServices ( BundleContext context ) throws Exception {
 
         unregisterActionlets();
         unregisterViewToolServices();
@@ -499,7 +521,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterQuartzJobs();
         unregisterActionMappings();
         unregisterPortles();
-        unregisterServlets();
+        unregisterServlets( context );
     }
 
     /**
@@ -634,17 +656,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @throws SchedulerException
      */
-    protected void unregisterServlets () throws Exception {
+    protected void unregisterServlets ( BundleContext context ) throws Exception {
 
         if ( servlets != null ) {
-            StandardContext standardContext = activatorUtil.getStandardContext();
 
-            for ( String mapping : servlets.keySet() ) {
-                StandardWrapper servlet = servlets.get( mapping );
-
-                //Remove the registered servlet and mapping
-                standardContext.removeChild( servlet );
-                standardContext.removeServletMapping( mapping );
+            for ( Servlet servlet : servlets ) {
+                activatorUtil.unregisterServlet( context, servlet );
             }
         }
     }
@@ -676,27 +693,96 @@ public abstract class GenericBundleActivator implements BundleActivator {
             return (ModuleConfig) servletContext.getAttribute( Globals.MODULE_KEY );
         }
 
-        public StandardContext getStandardContext () throws Exception {
+        public void unfreeze ( ModuleConfig moduleConfig ) throws NoSuchFieldException, IllegalAccessException {
 
-            ServletContext servletContext = Config.CONTEXT;
-            ApplicationContextFacade applicationContextFacade = ((ApplicationContextFacade) servletContext);
-
-            Field contextField = ApplicationContextFacade.class.getDeclaredField( "context" );//We need to access it using reflection
-            contextField.setAccessible( true );
-            ApplicationContext applicationContext = (ApplicationContext) contextField.get( applicationContextFacade );
-            contextField.setAccessible( false );
-
-            contextField = ApplicationContext.class.getDeclaredField( "context" );//We need to access it using reflection
-            contextField.setAccessible( true );
-            StandardContext standardContext = (StandardContext) contextField.get( applicationContext );
-            contextField.setAccessible( false );
-
-            return standardContext;
+            Field configuredField = ModuleConfigImpl.class.getDeclaredField( "configured" );//We need to access it using reflection
+            configuredField.setAccessible( true );
+            configuredField.set( moduleConfig, false );
+            configuredField.setAccessible( false );
         }
 
-        public StandardWrapper createServletFromJspPath ( String jspPath, String servletMapping ) throws Exception {
+        /**
+         * Creates and register a Servlet for a given jsp file
+         *
+         * @param context
+         * @param mapping
+         * @throws Exception
+         */
+        @SuppressWarnings ("unchecked")
+        public void registerServletForJsp ( BundleContext context, String mapping ) throws Exception {
 
-            StandardContext standardContext = activatorUtil.getStandardContext();
+            if ( servlets == null ) {
+                servlets = new ArrayList<Servlet>();
+            }
+
+            ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
+            if ( sRef != null ) {
+
+                //TODO: Why don't use it in the same way as the activators???, classpaths :)
+                /*
+                 On the felix framework initialization dotCMS loads this class (ExtHttpService) using its own classloader.
+                 So I can't use directly this class and its implementation because on this class felix can't use its
+                 instance (Created with its classloader because the dotCMS classloader already loaded the same classes,
+                 meaning we have in memory a definition that is not the one provided by felix and for that are different, nice... :) ),
+                 That will cause runtime errors.
+                 */
+
+                //ExtHttpService httpService = (ExtHttpService) context.getService( sRef );
+                Object httpService = context.getService( sRef );
+
+                /*Class[] params = new Class[]{
+                        java.lang.String.class,
+                        javax.servlet.Servlet.class,
+                        java.util.Dictionary.class,
+                        org.osgi.service.http.HttpContext.class};
+                Method registerServletMethod = httpService.getClass().getMethod( "registerServlet", params );*/
+                Method registerServletMethod = httpService.getClass().getMethods()[2];//registerServlet
+
+                //Generate the compiled name for this jsp
+                String jspName = servletNameForJsp( mapping );
+                //Create and instance of this jsp in order to create the servlet
+                Object jspServlet = getInstanceFor( jspName );
+
+                Object[] invParams = new Object[]{Constants.TEXT_HTML_DIR + mapping, jspServlet, null, null};
+                registerServletMethod.invoke( httpService, invParams );
+                //httpService.registerServlet( Constants.TEXT_HTML_DIR + mapping, (Servlet) jspObject, null, null );
+
+                servlets.add( (Servlet) jspServlet );
+            }
+        }
+
+        /**
+         * Unregister a given servlet
+         *
+         * @param context
+         * @param servlet
+         * @throws Exception
+         */
+        @SuppressWarnings ("unchecked")
+        public void unregisterServlet ( BundleContext context, Servlet servlet ) throws Exception {
+
+            ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
+            if ( sRef != null ) {
+                Object httpService = context.getService( sRef );
+
+                //Method unregisterServletMethod = httpService.getClass().getMethod( "unregisterServlet", javax.servlet.Servlet.class );
+                Method unregisterServletMethod = httpService.getClass().getMethods()[7];//unregisterServlet
+
+                unregisterServletMethod.invoke( httpService, servlet );
+            }
+        }
+
+        /**
+         * Given a jsp path this method will generated the compiled name for the jsp file
+         *
+         * @param jspPath
+         * @return
+         */
+        private String servletNameForJsp ( String jspPath ) {
+
+            if ( !jspPath.startsWith( "/" ) ) {
+                jspPath = "/" + jspPath;
+            }
 
             //We need to register our jsp as a servlet, That means we need to generate the name of the jsp after compilation
             String jspName = jspPath.substring( jspPath.lastIndexOf( "/" ) + 1, jspPath.length() );
@@ -705,22 +791,19 @@ public abstract class GenericBundleActivator implements BundleActivator {
             String compiledJsp = jspPath.replace( "/", "." ).replace( jspName, compiledJspName );
             compiledJsp = "org.apache.jsp" + compiledJsp;
 
-            //Create the servlet for the forward jsp file
-            StandardWrapper servlet = new StandardWrapper();
-            servlet.setServletClass( compiledJsp );
-            servlet.setName( compiledJsp );
-            standardContext.addChild( servlet );
-            standardContext.addServletMapping( servletMapping, compiledJsp );
-
-            return servlet;
+            return compiledJsp;
         }
 
-        public void unfreeze ( ModuleConfig moduleConfig ) throws NoSuchFieldException, IllegalAccessException {
+        private Object getInstanceFor ( String name ) throws Exception {
 
-            Field configuredField = ModuleConfigImpl.class.getDeclaredField( "configured" );//We need to access it using reflection
-            configuredField.setAccessible( true );
-            configuredField.set( moduleConfig, false );
-            configuredField.setAccessible( false );
+            Class clazz;
+            try {
+                clazz = Class.forName( name );
+            } catch ( ClassNotFoundException e ) {
+                injectContext( name, false );
+                clazz = Class.forName( name );
+            }
+            return clazz.newInstance();
         }
 
     }
