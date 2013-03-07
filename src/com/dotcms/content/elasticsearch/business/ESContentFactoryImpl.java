@@ -1849,6 +1849,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
 
             matches = RegEX.find(query, "\\[([0-9]*) (to) ([0-9]*)\\]");
+            if(matches.isEmpty()){
+            	matches = RegEX.find(query, "\\[([a-z]*) (to) ([a-z]*)\\]");
+            }
             for (RegExMatch regExMatch : matches) {
                 query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + " to "
                         + regExMatch.getGroups().get(2).getMatch() + "]", "["
