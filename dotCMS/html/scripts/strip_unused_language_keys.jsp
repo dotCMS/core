@@ -1,19 +1,3 @@
-<%@page import="java.io.InputStreamReader"%>
-<%@page import="java.io.OutputStreamWriter"%>
-<%@page import="java.io.FileOutputStream"%>
-<%@page import="java.io.BufferedWriter"%>
-<%@page import="java.io.OutputStream"%>
-<%@page import="java.io.BufferedReader"%>
-<%@page import="java.util.Set"%>
-<%@page import="java.nio.charset.Charset"%>
-<%@page import="java.nio.MappedByteBuffer"%>
-<%@page import="java.nio.channels.FileChannel"%>
-<%@page import="java.io.StringWriter"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="java.io.File"%>
-<%@page import="java.io.FileInputStream"%>
-<%@page import="java.io.InputStream"%>
-<%@page import="java.util.Properties"%>
 <%
 Properties prop = new Properties();       
 
@@ -75,14 +59,17 @@ for(File x : oldfiles.listFiles() ){
 	fot = new FileOutputStream(newFile);
 	bo = new BufferedWriter(new OutputStreamWriter(fot, Charset.forName("UTF-8")));
 	
-
-	out.println("working:" + x);
-	out.println("<BR>");
+	response.setContentType("text/plain");
+	out.println("file:\t" + x);
+	
 	boolean lastLineBreak = false;
+	Set<String> keys = new HashSet<String>();
+	int dupes = 0;
+	int written = 0;
 	while ((line = br.readLine()) != null) {
 		
 		if(line.startsWith("#")){
-			bo.write(line + "\n");
+			bo.write(line + "  ");
 			lastLineBreak=false;
 			continue;
 		}
@@ -96,6 +83,13 @@ for(File x : oldfiles.listFiles() ){
 		}
 
 		String key = line.split("=")[0];
+		key=key.trim();
+		if(keys.contains(key)){
+			dupes++;
+			continue;	
+		}
+		keys.add(key);
+		
 		
 		if(key.startsWith("javax.portlet.title") 
 				|| key.startsWith("message.") 
@@ -105,10 +99,13 @@ for(File x : oldfiles.listFiles() ){
 				|| key.startsWith("publisher_status_")
 				||  myFile.contains(key )  ){
 			lastLineBreak=false;
+			written++;
 			bo.write(line + "\n");
 		}
 	}
-	
+	out.println("wrote:\t" + written );
+	out.println("dupes:\t" + dupes );
+	out.println("" );
 	bo.close();
 	br.close();
 	
@@ -117,4 +114,21 @@ for(File x : oldfiles.listFiles() ){
 
 
 %>
-
+<%@page import="java.util.HashSet"%>
+<%@page import="java.util.Map"%>
+<%@page import="java.io.InputStreamReader"%>
+<%@page import="java.io.OutputStreamWriter"%>
+<%@page import="java.io.FileOutputStream"%>
+<%@page import="java.io.BufferedWriter"%>
+<%@page import="java.io.OutputStream"%>
+<%@page import="java.io.BufferedReader"%>
+<%@page import="java.util.Set"%>
+<%@page import="java.nio.charset.Charset"%>
+<%@page import="java.nio.MappedByteBuffer"%>
+<%@page import="java.nio.channels.FileChannel"%>
+<%@page import="java.io.StringWriter"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="java.io.File"%>
+<%@page import="java.io.FileInputStream"%>
+<%@page import="java.io.InputStream"%>
+<%@page import="java.util.Properties"%>
