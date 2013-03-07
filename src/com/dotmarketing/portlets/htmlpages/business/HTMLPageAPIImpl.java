@@ -263,13 +263,24 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 	@SuppressWarnings("unchecked")
 	public HTMLPage getWorkingHTMLPageByPageURL(String htmlPageURL, Folder folder) throws DotStateException, DotDataException, DotSecurityException {
-		List<HTMLPage> htmlPages = APILocator.getFolderAPI().getWorkingHTMLPages(folder, APILocator.getUserAPI().getSystemUser(),false);
-		for(HTMLPage page:htmlPages){
-			if(htmlPageURL.equalsIgnoreCase(page.getPageUrl())){
-				return page;
+		HTMLPage ret = null;
+		if(folder != null && InodeUtils.isSet(folder.getInode())){
+			Host h = APILocator.getHostAPI().find(folder.getHostId(), APILocator.getUserAPI().getSystemUser(), true);
+			String p = folder.getPath();
+			if(UtilMethods.isSet(p)){
+				if(!p.startsWith("/")){
+					p = "/" + p;
+				}
+				if(!p.endsWith("/")){
+					p = p + "/";
+				}
+				Identifier i = APILocator.getIdentifierAPI().find(h, folder.getPath() + htmlPageURL);
+				if(i != null && InodeUtils.isSet(i.getId())){
+					ret = (HTMLPage)APILocator.getVersionableAPI().findWorkingVersion(i, APILocator.getUserAPI().getSystemUser(), true);
+				}
 			}
 		}
-		return null;
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
