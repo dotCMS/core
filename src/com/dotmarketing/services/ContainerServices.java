@@ -12,8 +12,8 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -54,7 +54,7 @@ public class ContainerServices {
         sb.append("#set ($CONTAINER_IDENTIFIER_INODE = '" ).append(identifier.getInode() ).append( "')");
         sb.append("#set ($CONTAINER_INODE = '" ).append(container.getInode() ).append( "')");
         sb.append("#set ($CONTAINER_MAX_CONTENTLETS = " ).append( container.getMaxContentlets()).append( ")");
-        Structure st = (Structure) InodeFactory.getInode(container.getStructureInode(), Structure.class);
+        Structure st = StructureCache.getStructureByInode(container.getStructureInode());
         sb.append("#set ($CONTAINER_STRUCTURE_NAME = \"" ).append( (UtilMethods.isSet(st.getName())?st.getName():"") ).append( "\")");
         sb.append("#set ($STATIC_CONTAINER = " ).append( !UtilMethods.isSet(container.getLuceneQuery()) ).append(")");
         sb.append("#set ($SORT_PAGE = \"" ).append( container.getSortContentletsBy() ).append( "\")");
@@ -112,7 +112,7 @@ public class ContainerServices {
             
             //let's do the search of contentlets using lucene query 
             if (isDynamic) {
-               Structure containerStructure = (Structure) InodeFactory.getInode(container.getStructureInode(), Structure.class);
+                Structure containerStructure = StructureCache.getStructureByInode(container.getStructureInode());
 
                 sb.append("#set ($contentletResultsMap" ).append( identifier.getInode() ).append( 
                         " = $contents.searchWithLuceneQuery(\"").append( containerStructure.getInode() ).append("\", " ).append(
