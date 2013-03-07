@@ -22,8 +22,8 @@ public class Activator extends GenericBundleActivator {
         //actionConfig.setScope("session");
 
         //Create and register the forwards for this mapping
-        registerActionForward( actionConfig, "portlet.ext.plugins.hello.world.struts", "/strutshelloworld/view.jsp", false );
-        registerActionForward( actionConfig, "portlet.ext.plugins.hello.world.struts.max", "/strutshelloworld/view_hello.jsp", false );
+        registerActionForward( context, actionConfig, "portlet.ext.plugins.hello.world.struts", "/strutshelloworld/view.jsp", false );
+        registerActionForward( context, actionConfig, "portlet.ext.plugins.hello.world.struts.max", "/strutshelloworld/view_hello.jsp", false );
 
         //And finally register the ActionMapping
         registerActionMapping( actionConfig );
@@ -34,13 +34,13 @@ public class Activator extends GenericBundleActivator {
         //Register our portlets
         String[] xmls = new String[]{Http.URLtoString( context.getBundle().getResource( "conf/portlet.xml" ) ),
                 Http.URLtoString( context.getBundle().getResource( "conf/liferay-portlet.xml" ) )};
-        registerPortlets( xmls );
+        registerPortlets( context, xmls );
     }
 
     public void stop ( BundleContext context ) throws Exception {
 
         //Unregister all the bundle services
-        unregisterServices();
+        unregisterServices( context );
     }
 
 }

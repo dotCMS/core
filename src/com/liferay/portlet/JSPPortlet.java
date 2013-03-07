@@ -107,16 +107,19 @@ public class JSPPortlet extends GenericPortlet {
 	protected void include(String path, RenderRequest req, RenderResponse res)
 		throws IOException, PortletException {
 		
-		PortletRequestDispatcher prd = null;
+		PortletRequestDispatcher prd;
 		if(useWEBINFDIR){
-			prd =
-				getPortletContext().getRequestDispatcher(
-					"/WEB-INF" + path);
+			prd = getPortletContext().getRequestDispatcher( "/WEB-INF" + path);
 		}else{
-		prd =
-			getPortletContext().getRequestDispatcher(
-				Constants.TEXT_HTML_DIR + path);
-		}
+
+            if ( path.contains( Constants.MAPPING_OSGI_BUNDLE ) ) {
+                path = path.replace( Constants.MAPPING_OSGI_BUNDLE, Constants.TEXT_HTML_DIR );
+            } else {
+                path = Constants.TEXT_HTML_DIR + path;
+            }
+
+            prd = getPortletContext().getRequestDispatcher( path );
+        }
 		if (prd == null) {
 			_log.error(path + " is not a valid include");
 		}

@@ -6,8 +6,4 @@ Bundle-Version: 1.0
 Bundle-Activator: com.dotmarketing.osgi.portlet.Activator
 DynamicImport-Package: *
 Import-Package:  org.osgi.framework,
- org.osgi.util.tracker,
- javax.servlet,
- javax.servlet.http,
- org.osgi.service.http,
- org.apache.felix.http.api
+ org.osgi.util.tracker
