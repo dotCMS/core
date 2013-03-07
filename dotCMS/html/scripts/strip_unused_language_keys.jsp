@@ -101,6 +101,8 @@ for(File x : oldfiles.listFiles() ){
 				|| key.startsWith("message.") 
 				|| key.startsWith("errors.") 
 				|| key.startsWith("prompt.") 
+				|| key.startsWith("com.dotmarketing.portlets.workflows.actionlet.") 
+				|| key.startsWith("publisher_status_")
 				||  myFile.contains(key )  ){
 			lastLineBreak=false;
 			bo.write(line + "\n");
