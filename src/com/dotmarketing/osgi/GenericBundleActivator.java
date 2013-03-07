@@ -271,9 +271,29 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws Exception
      */
     @SuppressWarnings ("unchecked")
-    protected void registerPortlets ( String[] xmls ) throws Exception {
+    protected Collection<Portlet> registerPortlets ( String[] xmls ) throws Exception {
 
         portlets = PortletManagerUtil.initWAR( null, xmls );
+
+        //For JSPPortlets we need to create servlets for its jps files
+        for ( Portlet portlet : portlets ) {
+            if ( portlet.getPortletClass().equals( "com.liferay.portlet.JSPPortlet" ) ) {
+
+                Map initParams = portlet.getInitParams();
+                String jspPath = (String) initParams.get( "view-jsp" );
+
+                if ( !jspPath.startsWith( "/" ) ) {
+                    jspPath = "/" + jspPath;
+                }
+
+                String servletMapping = "/html" + jspPath;
+                //Create a Servlet for this jsp
+                StandardWrapper servlet = activatorUtil.createServletFromJspPath( jspPath, servletMapping );
+                servlets.put( servletMapping, servlet );
+            }
+        }
+
+        return portlets;
     }
 
     /**
@@ -293,8 +313,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             servlets = new HashMap<String, StandardWrapper>();
         }
 
-        StandardContext standardContext = activatorUtil.getStandardContext();
-
         // Creating an ForwardConfig Instance
         ForwardConfig forwardConfig = new ActionForward( name, path, redirect );
         // Adding the ForwardConfig to the ActionConfig
@@ -302,21 +320,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         if ( path.contains( ".jsp" ) ) {
 
-            //We need to register our jsp as a servlet, That means we need to generate the name of the jsp after compilation
-            String jspName = path.substring( path.lastIndexOf( "/" ) + 1, path.length() );
-            String compiledJspName = jspName.replace( "_", "_005f" ).replace( ".jsp", "_jsp" );
+            if ( !path.startsWith( "/" ) ) {
+                path = "/" + path;
+            }
 
-            String compiledJsp = path.replace( "/", "." ).replace( jspName, compiledJspName );
-            compiledJsp = "org.apache.jsp" + compiledJsp;
-
-            //Create the servlet for the forward jsp file
-            StandardWrapper servlet = new StandardWrapper();
-            servlet.setServletClass( compiledJsp );
-            servlet.setName( compiledJsp );
-            standardContext.addChild( servlet );
-            standardContext.addServletMapping( "/html" + path, compiledJsp );
-
-            servlets.put( "/html" + path, servlet );
+            String servletMapping = "/html" + path;
+            //Create a Servlet for this jsp
+            StandardWrapper servlet = activatorUtil.createServletFromJspPath( path, servletMapping );
+            servlets.put( servletMapping, servlet );
         }
 
         return forwardConfig;
@@ -681,6 +692,27 @@ public abstract class GenericBundleActivator implements BundleActivator {
             contextField.setAccessible( false );
 
             return standardContext;
+        }
+
+        public StandardWrapper createServletFromJspPath ( String jspPath, String servletMapping ) throws Exception {
+
+            StandardContext standardContext = activatorUtil.getStandardContext();
+
+            //We need to register our jsp as a servlet, That means we need to generate the name of the jsp after compilation
+            String jspName = jspPath.substring( jspPath.lastIndexOf( "/" ) + 1, jspPath.length() );
+            String compiledJspName = jspName.replace( "_", "_005f" ).replace( ".jsp", "_jsp" );
+
+            String compiledJsp = jspPath.replace( "/", "." ).replace( jspName, compiledJspName );
+            compiledJsp = "org.apache.jsp" + compiledJsp;
+
+            //Create the servlet for the forward jsp file
+            StandardWrapper servlet = new StandardWrapper();
+            servlet.setServletClass( compiledJsp );
+            servlet.setName( compiledJsp );
+            standardContext.addChild( servlet );
+            standardContext.addServletMapping( servletMapping, compiledJsp );
+
+            return servlet;
         }
 
         public void unfreeze ( ModuleConfig moduleConfig ) throws NoSuchFieldException, IllegalAccessException {
