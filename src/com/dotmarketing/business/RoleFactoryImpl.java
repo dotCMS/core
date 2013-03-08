@@ -341,7 +341,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		List<Role> roles = rc.getRootRoles();
 		if(roles == null){
 			HibernateUtil hu = new HibernateUtil(Role.class);
-			hu.setQuery("from " + Role.class.getName() + " where parent = id order by role_name");
+			hu.setQuery("from " + Role.class.getName() + " where parent = id and (role_key = '' or role_key is null or role_key <> '" + RoleAPI.USERS_ROOT_ROLE_KEY + "') order by role_name");
 			roles = (List<Role>)hu.list();
 			try {
 				populatChildrenForRoles(roles);
