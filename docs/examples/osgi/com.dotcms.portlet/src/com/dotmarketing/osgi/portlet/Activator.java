@@ -22,8 +22,8 @@ public class Activator extends GenericBundleActivator {
         //actionConfig.setScope("session");
 
         //Create and register the forwards for this mapping
-        registerActionForward( context, actionConfig, "portlet.ext.plugins.hello.world.struts", "/strutshelloworld/view.jsp", false );
-        registerActionForward( context, actionConfig, "portlet.ext.plugins.hello.world.struts.max", "/strutshelloworld/view_hello.jsp", false );
+        registerActionForward( context, actionConfig, "portlet.ext.plugins.hello.world.struts", "/ext/strutshelloworld/view.jsp", false );
+        registerActionForward( context, actionConfig, "portlet.ext.plugins.hello.world.struts.max", "/ext/strutshelloworld/view_hello.jsp", false );
 
         //And finally register the ActionMapping
         registerActionMapping( actionConfig );
