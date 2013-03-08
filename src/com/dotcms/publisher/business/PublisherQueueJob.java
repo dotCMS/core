@@ -10,6 +10,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
 
+import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
@@ -50,7 +51,7 @@ public class PublisherQueueJob implements StatefulJob {
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
 		    Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
-		    updatePublishExpireDates(arg0.getFireTime());
+		    PublishDateUpdater.updatePublishExpireDates(arg0.getFireTime());
 		    Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
 			
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
@@ -140,47 +141,6 @@ public class PublisherQueueJob implements StatefulJob {
 
 	}
 	
-	//need to move this method to Enterprise when we enteprise the Publisher. 
-	private void updatePublishExpireDates(Date fireTime) throws DotDataException, DotSecurityException {
-		User systemU = APILocator.getUserAPI().getSystemUser();
-	    String toPublish="select working_inode from identifier join contentlet_version_info " +
-	    		" on (identifier.id=contentlet_version_info.identifier) " +
-	    		" where syspublish_date is not null and syspublish_date<=? " +
-	    		" and (sysexpire_date is null or sysexpire_date >= ?) " + 
-	    		" and (live_inode is null or live_inode<>working_inode) "; 
-	    
-	    DotConnect dc=new DotConnect();
-	    dc.setSQL(toPublish);
-	    dc.addParam(fireTime);
-	    dc.addParam(fireTime);
-	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults()){
-	    	
-	    	try{
-	    		Contentlet c = APILocator.getContentletAPI().find( (String)mm.get("working_inode"), systemU, false);
-	    		APILocator.getContentletAPI().publish(c, APILocator.getUserAPI().loadUserById(c.getModUser(), systemU, false), false);
-	    	}
-			catch(Exception e){
-				Logger.debug(this.getClass(), "content failed to publish: " +  e.getMessage());
-			}
-	    }
-	    String toExpire="select id,lang from identifier join contentlet_version_info " +
-	    		" on (identifier.id=contentlet_version_info.identifier) " +
-	    		" where sysexpire_date is not null and sysexpire_date<=? " +
-	    		" and live_inode is not null";
-	    dc.setSQL(toExpire);
-	    dc.addParam(fireTime);
-	    for(Map<String,Object> mm : (List<Map<String,Object>>)dc.loadResults()) {
-	        long lang=mm.get("lang") instanceof String ? Long.parseLong((String)mm.get("lang")) : ((Number)mm.get("lang")).longValue();
-	        try{
-		    	Contentlet c = APILocator.getContentletAPI().findContentletByIdentifier((String)mm.get("id"), true, lang, systemU, false);
-		    	APILocator.getContentletAPI().unpublish(c, APILocator.getUserAPI().loadUserById(c.getModUser(), systemU, false), false);
-	    	}
-			catch(Exception e){
-				Logger.debug(this.getClass(), "content failed to publish: " +  e.getMessage());
-			}
-	    }
-        
-	}
 	
 	private void updateAuditStatus() throws DotPublisherException, DotDataException {
 		ClientConfig clientConfig = new DefaultClientConfig();
