@@ -8,7 +8,7 @@
         <portlet-class>com.liferay.portlet.VelocityPortlet</portlet-class>
         <init-param>
             <name>view-template</name>
-            <value>/view.vtl</value>
+            <value>/ext/view.vtl</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -47,7 +47,7 @@
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
             <name>view-jsp</name>
-            <value>/hello.jsp</value>
+            <value>/ext/hello.jsp</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
