@@ -28,10 +28,16 @@ public abstract class RoleCache implements Cachable{
 	
 	abstract protected List<String> getLayoutsForRole(String roleId);
 	
+	abstract protected List<Role> getRootRoles();
+	
+	abstract protected List<Role> addRootRoles(List<Role> roles);
+	
 	/**
 	 * FLushes both key and roleid cache
 	 */
 	abstract public void clearCache();
+	
+	abstract public void clearRootRoleCache();
 	
 	abstract protected void clearRoleCache();
 	
