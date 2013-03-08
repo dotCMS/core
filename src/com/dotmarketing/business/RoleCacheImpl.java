@@ -16,9 +16,13 @@ public class RoleCacheImpl extends RoleCache {
 	private String userGroup = "dotCMSUserRoleCache";
 
 	private String layoutGroup = "dotCMSLayoutCache";
+	
+	private String rootRolesGroup = "dotCMSRootRolesCache";
+	
+	private final String rootRoleKey = "ROOT";
 
 	// region's name for the cache
-	private String[] groupNames = {primaryGroup,userGroup,layoutGroup};
+	private String[] groupNames = {primaryGroup,userGroup,layoutGroup, rootRolesGroup};
 
 	public RoleCacheImpl() {
 		cache = CacheLocator.getCacheAdministrator();
@@ -40,6 +44,29 @@ public class RoleCacheImpl extends RoleCache {
 		
 	}
 
+	@Override
+	protected List<Role> getRootRoles() {
+		List<Role> ret = null;
+		try {
+			ret = (List<Role>)cache.get(rootRoleKey, rootRolesGroup);
+		} catch (DotCacheException e) {
+			Logger.debug(this, "Cache Entry not found", e);
+		}
+		return ret;
+	}
+	
+	@Override
+	protected List<Role> addRootRoles(List<Role> roles) {		
+		cache.put(rootRoleKey, roles, rootRolesGroup);		
+		List<Role> l = null;
+		try {
+			l = (List<Role>)cache.get(rootRoleKey, rootRolesGroup);
+		} catch (DotCacheException e) {
+			Logger.warn(this, "Cache not find root roles in cache after adding", e);
+		}
+		return l;
+	}
+	
 	@Override
 	protected Role get(String key) {
 		Role role = null;
@@ -67,6 +94,7 @@ public class RoleCacheImpl extends RoleCache {
 		cache.flushGroup(userGroup);
 		cache.flushGroup(keyGroup);
 		cache.flushGroup(layoutGroup);
+		cache.flushGroup(rootRolesGroup);
 	}
 
 	/* (non-Javadoc)
@@ -77,6 +105,7 @@ public class RoleCacheImpl extends RoleCache {
 			cache.remove(primaryGroup + key,primaryGroup);
 			cache.remove(userGroup + key,userGroup);
 			cache.remove(keyGroup + key,keyGroup);
+			cache.flushGroup(rootRolesGroup);
 		}catch (Exception e) {
 			Logger.debug(this, "Cache not able to be removed", e);
 		}
@@ -106,6 +135,11 @@ public class RoleCacheImpl extends RoleCache {
 		cache.flushGroup(keyGroup);
 	}
 
+	@Override
+	public void clearRootRoleCache() {
+		cache.flushGroup(rootRolesGroup);
+	}
+	
 	@Override
 	protected void clearUserRoleCache() {
 		cache.flushGroup(userGroup);
@@ -147,7 +181,7 @@ public class RoleCacheImpl extends RoleCache {
 		}
 		return l;
 	}
-
+	
 	@Override
 	protected List<String> getLayoutsForRole(String roleId) {
 		String key = layoutGroup + roleId;
