@@ -15,6 +15,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SalesForceUtils;
 import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
@@ -208,10 +209,8 @@ public class LoginFactory {
 	            						+ " was able to connect to Salesforce server from IP: " + request.getRemoteAddr());
 	            			}
 	            			if(saveSalesForceInfoInUserActivityLog){
-	            				ActivityLogger.logInfo(LoginFactory.class, "dotCMS-Salesforce Plugin" , 
-	        		        			"User " + user.getEmailAddress()  +
-	        	        				" was able to connect to Salesforce server from IP: " + request.getRemoteAddr(), 
-	        	        				APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(),false).getHostname());
+	            				SecurityLogger.logInfo(LoginFactory.class, "dotCMS-Salesforce Plugin :" + 
+	            						"User " + user.getEmailAddress()  + " was able to connect to Salesforce server from IP: " + request.getRemoteAddr());
 	            			}
                   	  		String instanceURL = request.getSession().getAttribute(SalesForceUtils.INSTANCE_URL).toString();
                   	  		String accessToken = request.getSession().getAttribute(SalesForceUtils.ACCESS_TOKEN).toString();
@@ -258,13 +257,16 @@ public class LoginFactory {
                 	response.addCookie(autoLoginCookie);
                 }
 
+        		SecurityLogger.logInfo(LoginFactory.class,"User " + userName + " has sucessfully login from IP: " + request.getRemoteAddr());
 
                 return true;
             }
         } catch (NoSuchUserException e) {
+			SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made from IP: " + request.getRemoteAddr());
         	throw e;
         } catch (Exception e) {
             Logger.error(LoginFactory.class, "Login Failed: " + e);
+			SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made from IP: " + request.getRemoteAddr());
         }
 
         return false;
