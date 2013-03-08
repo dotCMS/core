@@ -69,7 +69,7 @@ public class StructureAPIImpl implements StructureAPI {
                 Field field = st.getFieldVar(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME);
                 conAPI.delete( conAPI.search(
                         "+structureInode:" + sf.getInode() + 
-                        " +" + field.getFieldContentlet() + ":" + st.getInode(), 0, 0,
+                        " +structureInode:" + st.getInode(), 0, 0,
                         "", user, false), user, false);
             }
         }
