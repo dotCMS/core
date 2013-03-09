@@ -15,6 +15,7 @@ import com.liferay.portal.ejb.PortletManagerImpl;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.Constants;
+import com.liferay.util.FileUtil;
 import com.liferay.util.SimpleCachePool;
 import org.apache.felix.http.api.ExtHttpService;
 import org.apache.felix.http.proxy.DispatcherTracker;
@@ -53,7 +54,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private static final String INIT_PARAM_VIEW_TEMPLATE = "view-template";
     private static final String MAPPING_PROXY_SERVLET = "/app";
     private static final String PATH_SEPARATOR = "/";
-    private static final String OSGI_FOLDER = "osgi";
+    private static final String OSGI_FOLDER = "/osgi";
 
     private PrimitiveToolboxManager toolboxManager;
     private WorkflowAPIOsgiService workflowOsgiService;
@@ -316,16 +317,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 if ( !jspPath.startsWith( PATH_SEPARATOR ) ) {
                     jspPath = PATH_SEPARATOR + jspPath;
                 }
-                //For jsp we don't need to know the container folder, we just need to know the hierarchy inside that folder....
-                jspPath = activatorUtil.removeContainerFolder( jspPath );
 
                 activatorUtil.moveResources( context, jspPath );
 
-                //Create a Servlet for this jsp
-                activatorUtil.registerServletForJsp( context, jspPath );
-
                 //And we change the mapping in order to work with our OSGIProxyServlet (/app/* mapping)
-                portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, getProxyServletMapping() + Constants.MAPPING_OSGI_BUNDLE + jspPath );
+                portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, activatorUtil.getBundleFolder( context ) + jspPath );
             } else if ( portlet.getPortletClass().equals( "com.liferay.portlet.VelocityPortlet" ) ) {
 
                 Map initParams = portlet.getInitParams();
@@ -335,13 +331,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
                     templatePath = PATH_SEPARATOR + templatePath;
                 }
 
-                //Create a Servlet for this jsp
-                activatorUtil.registerResources( context, templatePath );
+                activatorUtil.moveResources( context, templatePath );
 
                 //And we change the mapping in order to work with our OSGIProxyServlet (/app/* mapping)
                 //portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getProxyServletMapping() + templatePath );
                 //portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getProxyServletMapping() + Constants.MAPPING_OSGI_BUNDLE + templatePath );
-                portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getProxyServletMapping() + "/html" + templatePath );
+                portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, Constants.TEXT_HTML_DIR + activatorUtil.getBundleFolder( context ) + templatePath );
             }
         }
 
@@ -364,9 +359,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
         if ( !path.startsWith( PATH_SEPARATOR ) ) {
             path = PATH_SEPARATOR + path;
         }
-        //For jsp we don't need to know the container folder, we just need to know the hierarchy inside that folder....
-        path = activatorUtil.removeContainerFolder( path );
-        String forwardMapping = getProxyServletMapping() + Constants.MAPPING_OSGI_BUNDLE + path;
+
+        String forwardMapping = activatorUtil.getBundleFolder( context ) + path;
 
         // Creating an ForwardConfig Instance
         ForwardConfig forwardConfig = new ActionForward( name, forwardMapping, redirect );
@@ -374,11 +368,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         actionMapping.addForwardConfig( forwardConfig );
 
         activatorUtil.moveResources( context, path );
-
-        if ( path.contains( ".jsp" ) ) {
-            //Create a Servlet for this jsp
-            activatorUtil.registerServletForJsp( context, path );
-        }
 
         return forwardConfig;
     }
@@ -549,6 +538,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterActionMappings();
         unregisterPortles();
         unregisterServlets( context );
+        activatorUtil.cleanResources( context );
     }
 
     /**
@@ -820,10 +810,25 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
         }
 
+        private String getBundleFolder ( BundleContext context ) {
+            return OSGI_FOLDER + File.separator + context.getBundle().getBundleId();
+        }
+
+        private void cleanResources ( BundleContext context ) {
+
+            ServletContext servletContext = Config.CONTEXT;
+            String resourcesPath = servletContext.getRealPath( Constants.TEXT_HTML_DIR + getBundleFolder( context ) );
+
+            File resources = new File( resourcesPath );
+            if ( resources.exists() ) {
+                FileUtil.deltree( resources );
+            }
+        }
+
         private void moveResources ( BundleContext context, String resourcePath ) throws Exception {
 
             ServletContext servletContext = Config.CONTEXT;
-            String destinationPath = servletContext.getRealPath( OSGI_FOLDER + File.separator + context.getBundle().getBundleId() );
+            String destinationPath = servletContext.getRealPath( Constants.TEXT_HTML_DIR + getBundleFolder( context ) );
 
             String containerFolder = getContainerFolder( resourcePath );
 
@@ -834,36 +839,38 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 String entryPath = entryUrl.getPath();
 
                 String resourceFilePath = destinationPath + entryPath;
+                File resourceFile = new File( resourceFilePath );
 
-                InputStream in = null;
-                OutputStream out = null;
-                try {
-                    File resourceFile = new File( resourceFilePath );
-                    if ( !resourceFile.exists() ) {
+                if ( !resourceFile.exists() ) {
+
+                    InputStream in = null;
+                    OutputStream out = null;
+                    try {
                         if ( !resourceFile.getParentFile().exists() ) {
                             resourceFile.getParentFile().mkdirs();
                         }
                         resourceFile.createNewFile();
-                    }
 
-                    in = entryUrl.openStream();
-                    out = new FileOutputStream( resourceFile );
+                        in = entryUrl.openStream();
+                        out = new FileOutputStream( resourceFile );
 
-                    byte[] buffer = new byte[1024];
-                    int length;
-                    while ( (length = in.read( buffer )) > 0 ) {
-                        out.write( buffer, 0, length );
-                    }
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ( (length = in.read( buffer )) > 0 ) {
+                            out.write( buffer, 0, length );
+                        }
 
-                } finally {
-                    if ( in != null ) {
-                        in.close();
-                    }
-                    if ( out != null ) {
-                        out.flush();
-                        out.close();
+                    } finally {
+                        if ( in != null ) {
+                            in.close();
+                        }
+                        if ( out != null ) {
+                            out.flush();
+                            out.close();
+                        }
                     }
                 }
+
             }
 
         }

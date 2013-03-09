@@ -331,13 +331,9 @@ public class PortletRequestProcessor extends StxxTilesRequestProcessor {
 		RenderResponse renderResponse =
 			(RenderResponse)req.getAttribute(WebKeys.JAVAX_PORTLET_RESPONSE);
 
-        String path;
-        if ( uri.contains( Constants.MAPPING_OSGI_BUNDLE ) ) {
-            path = uri.replace( Constants.MAPPING_OSGI_BUNDLE, Constants.TEXT_HTML_DIR );
-        } else {
-            path = Constants.TEXT_HTML_DIR + uri;
-        }
-        PortletRequestDispatcherImpl prd = (PortletRequestDispatcherImpl) portletConfig.getPortletContext().getRequestDispatcher( path );
+		PortletRequestDispatcherImpl prd = (PortletRequestDispatcherImpl)
+			portletConfig.getPortletContext().getRequestDispatcher(
+				Constants.TEXT_HTML_DIR + uri);
 
 		try {
 			if (prd == null) {

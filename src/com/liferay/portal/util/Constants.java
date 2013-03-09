@@ -123,7 +123,4 @@ public interface Constants {
 	
 	public static final String DELETEHVAR = "deletehostvar";
 
-    //OSGI
-    public static final String MAPPING_OSGI_BUNDLE = "/osgi-bundle";
-
 }

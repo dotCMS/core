@@ -4,7 +4,6 @@
 
     <property name="build.dir" value="build"/>
     <property name="src.dir" value="src"/>
-    <property name="src.jsp" value="ext"/>
     <property name="jar.name" value="bundle-${plugin.name}.jar"/>
     <property name="jar.file" value="${build.dir}/jar/${jar.name}"/>
 
@@ -12,17 +11,14 @@
     <property name="lib.app" value="${app.base}/dotCMS/WEB-INF/lib"/>
     <property name="lib.bundles" value="${app.base}/dotCMS/WEB-INF/felix/bundle"/>
     <property name="lib.server" value="${app.base}/tomcat/lib"/>
-    <property name="bin.server" value="${app.base}/tomcat/bin"/>
     <property name="deploy.dir" value="${app.base}/dotCMS/WEB-INF/felix/load"/>
     <property name="build.classes" value="${build.dir}/classes"/>
-    <property name="build.jsp" value="${build.dir}/jsp"/>
 
     <property name="meta-inf.dir" value="META-INF"/>
     <property name="classpath.dir" value="classpath"/>
     <property name="manifest.file" value="${meta-inf.dir}/MANIFEST.MF"/>
 
     <path id="files-classpath">
-        <pathelement location="${java.home}/../lib/tools.jar"/>
         <fileset dir="${lib.app}">
             <include name="**/*.jar"/>
         </fileset>
@@ -35,50 +31,20 @@
         <fileset dir="${lib.server}">
             <include name="**/*.jar"/>
         </fileset>
-        <fileset dir="${bin.server}">
-            <include name="**/*.jar"/>
-        </fileset>
         <!--Bundles can depend on other bundles-->
         <fileset dir="${deploy.dir}">
             <include name="**/*.jar"/>
         </fileset>
         <pathelement path="${build.classes}"/>
-        <pathelement path="${build.jsp}"/>
+        <pathelement path="../../build/classes"/>
     </path>
 
     <target name="build" depends="clean,compile,jar"/>
-
-    <target name="jsp">
-
-        <mkdir dir="${build.jsp}"/>
-
-        <taskdef classname="com.dotmarketing.util.jasper.DotJasperTask" name="jasper2" >
-            <classpath id="jspc.classpath" refid="files-classpath"/>
-        </taskdef>
-
-        <jasper2
-                validateXml="false"
-                uriroot="${src.jsp}"
-                javaEncoding="UTF-8"
-                webXmlFragment="${build.dir}/web.xml"
-                outputDir="${build.jsp}/">
-
-        </jasper2>
-        <javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8"
-               fork="true" srcdir="${src.jsp}" destdir="${build.jsp}" source="1.5"
-               target="1.5" compiler="javac1.5" nowarn="true" optimize="true"
-               memoryinitialsize="256m" memorymaximumsize="512m">
-            <classpath refid="files-classpath" />
-        </javac>
-    </target>
-
-    <target name="compile" depends="jsp">
+    <target name="compile">
 
         <echo>Building at: ${plugin.name} at ${basedir}</echo>
         <mkdir dir="${build.classes}"/>
-        <mkdir dir="${build.jsp}"/>
         <mkdir dir="${src.dir}"/>
-
         <!--
           CREATE THE LIB DIRECTORIES IF IT DOESN'T EXIST.
           THIS PREVENTS THE javac TASK FROM FAILING
@@ -87,8 +53,6 @@
         <javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}"
                source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" memoryinitialsize="256m"
                memorymaximumsize="512m">
-
-            <src path="${build.jsp}"/>
             <classpath refid="files-classpath"/>
         </javac>
         <!-- copying other resource within src folder in the classpath -->
