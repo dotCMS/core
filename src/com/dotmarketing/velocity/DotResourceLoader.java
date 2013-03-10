@@ -297,7 +297,7 @@ public class DotResourceLoader extends ResourceLoader {
                     Contentlet cc = conAPI.findContentletByIdentifier(identifier.getInode(), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
                 	if(cc!=null && UtilMethods.isSet(cc.getInode()) &&
                 	        (LanguageWebAPI.canDefaultContentToDefaultLanguage()
-                	        || cc.getStructure().getVelocityVarName().equalsIgnoreCase("forms"))) {
+                	        || cc.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_WIDGET)) {
                 		contentlet = cc;
                 	} else {
                 		throw e;

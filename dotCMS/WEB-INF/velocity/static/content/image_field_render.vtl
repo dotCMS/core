@@ -5,20 +5,20 @@
 
 #if(!$UtilMethods.isSet($fieldDefaultValue.getFileName()))
 	<div class="imageInputs">        
-    	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" onchange="setFileNameFromPath(this.value,'${fieldAux.velocityVarName}');" value="Browse" class="imageField" /> 
+    	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" onchange="setFileNameFromPath(this.value,'${fieldAux.velocityVarName}');" value="$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.browse')" class="imageField" /> 
         <div class="browseFile"> 
         	<input type="text" name="fileName" id="${fieldAux.velocityVarName}fileName" style="width:150px;" /> 
-            <button class="dmundra dijitButtonNode browse" name="Browse">Browse</button>  
+            <button class="dmundra dijitButtonNode browse" name="Browse">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.browse')</button>  
         </div> 
-	    <button class="dmundra dijitButtonNode removeFile" onclick="clearFileField('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+	    <button class="dmundra dijitButtonNode removeFile" onclick="clearFileField('${fieldAux.velocityVarName}');">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.remove')</button><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 	</div>
 #else
 	## Edit content
-	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="imageField" style="visibility:hidden;" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.browse')" class="imageField" style="visibility:hidden;" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 	
 	<div id="${fieldAux.velocityVarName}Container" >
 		<input type="hidden" id="${fieldAux.velocityVarName}oldImageInode" name="${fieldAux.velocityVarName}oldImageInode" value="$contentMap.get(${fieldAux.velocityVarName}).getIdentifier()" />
-		$fieldDefaultValue.getFileName()  <button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>
+		$fieldDefaultValue.getFileName()  <button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.remove')</button>
 		#set($showDim = 300)
 		<div style="position:relative;width:$showDimpx;">
             <img src="$fieldDefaultValue.getURI()" width="300" height="300"
