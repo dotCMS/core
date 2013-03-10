@@ -2,7 +2,7 @@
 
 
 #if(!$UtilMethods.isSet($fieldDefaultValue.getName()))
-	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" />     <button class="dmundra dijitButtonNode removeFile" onclick="clearFileField('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+	<input type="file" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" value="Browse" class="fileField" />     <button class="dmundra dijitButtonNode removeFile" onclick="clearFileField('${fieldAux.velocityVarName}');">$text.getFromSessionLanguage("org.dotcms.frontend.content.submission.remove")</button><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 
 #else
 	## Edit content
@@ -11,7 +11,7 @@
 		<input type="hidden" id="${fieldAux.velocityVarName}oldBinaryInode" name="${fieldAux.velocityVarName}oldBinaryInode" value="$contentMap.get('inode')" />
 		#if($UtilMethods.isImage($fieldDefaultValue.getName()))
 			#set($showDim=300)
-			  $fieldDefaultValue.getName()   <button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>                
+			  $fieldDefaultValue.getName()   <button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.remove')</button>                
 			<div style="position:relative;">
                         <img src="/contentAsset/image/$contentMap.get('inode')/${fieldAux.velocityVarName}/?byInode=1&filter=Thumbnail&thumbnail_w=$showDim&thumbnail_h=$showDim"
                                 class="thumbnailDiv thumbnailDiv${fieldAux.velocityVarName}"
@@ -24,7 +24,7 @@
         	 	<a class="bg" href="javascript: serveFile('','$contentMap.get('inode')','binaryFile');"
     	      	id="${fieldAux.velocityVarName}BinaryFile">$fieldDefaultValue.getName()</a>
          		<br/>
-         		<button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.get('org.dotcms.frontend.content.submission.remove')</button>
+         		<button dojoType="dijit.form.Button" onclick="removeFile('${fieldAux.velocityVarName}');">$text.getFromSessionLanguage("org.dotcms.frontend.content.submission.remove")</button>
     		</div>	
 		#end
 			
