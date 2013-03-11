@@ -235,11 +235,11 @@ public class LanguageAPIImpl implements LanguageAPI {
 			for(LanguageKey keyEntry : keys) {
 				if(keyEntry.getKey().equals(key))
 					value= keyEntry.getValue();
-				}
-				keys = getLanguageKeys(lang.getLanguageCode());
-				for(LanguageKey keyEntry : keys) {
-				if(keyEntry.getKey().equals(key))
-					value= keyEntry.getValue();
+			}
+			keys = getLanguageKeys(lang.getLanguageCode());
+			for(LanguageKey keyEntry : keys) {
+    			if(keyEntry.getKey().equals(key))
+    				value= keyEntry.getValue();
 			}
 			if(value==null)
 			{
