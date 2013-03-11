@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -4048,4 +4049,66 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         return conFac.indexCount(buffy.toString());
     }
+    
+	@Override
+	public List<Map<String, String>> getMostViewedContent(String structureVariableName, String startDateStr, String endDateStr, User user) {
+		
+		String[] dateFormats = new String[] { "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm",
+                "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
+                "hh:mm:ss aa", "HH:mm:ss", "yyyy-MM-dd"};
+
+		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+		
+		String structureInode = StructureCache.getStructureByVelocityVarName(structureVariableName).getInode();
+		if(!UtilMethods.isSet(structureInode))
+			return result;
+		
+		GregorianCalendar gCal = new GregorianCalendar();
+		Date endDate = gCal.getTime();
+		gCal.add(2, -3);
+		Date startDate = gCal.getTime();// Default interval
+		
+		if(!UtilMethods.isSet(startDateStr) && !UtilMethods.isSet(endDateStr)){
+			GregorianCalendar gc = new GregorianCalendar();
+			endDate = gc.getTime();
+			gc.add(2, -3);
+			startDate = gc.getTime();
+		}else if(!UtilMethods.isSet(startDateStr)){
+			try {
+				endDate = DateUtil.convertDate(endDateStr, dateFormats);
+				Calendar gc = new GregorianCalendar();
+				gc.setTime(endDate);
+				gc.add(2, -3);
+				startDate = gc.getTime();
+			} catch (java.text.ParseException e) {
+				GregorianCalendar gc = new GregorianCalendar();
+				endDate = gc.getTime();
+				gc.add(2, -3);
+				startDate = gc.getTime();
+			}
+		}else if(!UtilMethods.isSet(endDateStr)){
+			try {
+				startDate = DateUtil.convertDate(endDateStr, dateFormats);
+				Calendar gc = new GregorianCalendar();
+				gc.setTime(startDate);
+				gc.add(2, +3);
+				endDate = gc.getTime();
+			} catch (java.text.ParseException e) {
+				GregorianCalendar gc = new GregorianCalendar();
+				endDate = gc.getTime();
+				gc.add(2, -3);
+				startDate = gc.getTime();
+			}
+		}else{
+			try {
+				startDate = DateUtil.convertDate(startDateStr, dateFormats);
+				endDate = DateUtil.convertDate(endDateStr, dateFormats);
+			} catch (java.text.ParseException e) {}
+		}
+		
+		try {
+			result = conFac.getMostViewedContent(structureInode, startDate, endDate , user);
+		} catch (Exception e) {}
+		return result;
+	}    
 }
