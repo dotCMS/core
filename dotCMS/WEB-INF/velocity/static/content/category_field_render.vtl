@@ -21,13 +21,13 @@
 		<option value="$cate.categoryName,$cate.inode" >$cate.categoryName</option>
 	#end    
 </select>
-<button dojoType="dijit.form.Button" onClick='clearCategoriesList("${fieldAux.velocityVarName}" , "${fieldAux.velocityVarName}Names")' iconClass="plusIcon"> Clear</button>
+<button dojoType="dijit.form.Button" onClick='clearCategoriesList("${fieldAux.velocityVarName}" , "${fieldAux.velocityVarName}Names")' iconClass="plusIcon"> $text.getFromSessionLanguage("org.dotcms.frontend.content.submission.clear")</button>
 <span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
 <br/>
 <div dojoType="dijit.layout.ContentPane" name="${fieldAux.velocityVarName}categoriesbox" id="${fieldAux.velocityVarName}categoriesbox" class="boxer" hasShadow="true">
  	#set($selectedCatName = '')
  	#if($fieldDefaultValue == [])
-		<div name="${fieldAux.velocityVarName}categorieslist" id="${fieldAux.velocityVarName}categorieslist"> No categories selected</div>
+		<div name="${fieldAux.velocityVarName}categorieslist" id="${fieldAux.velocityVarName}categorieslist"> $text.getFromSessionLanguage("org.dotcms.frontend.content.submission.nocat")</div>
 	#else
 		<div name="${fieldAux.velocityVarName}categorieslist" id="${fieldAux.velocityVarName}categorieslist">
 			#foreach($defaultSelectedCats in $fieldDefaultValue)
