@@ -170,22 +170,44 @@ if(!statePopUp || portletException){%>
 
 
 
-<script>
-	function showHelp(){
+<script type="text/javascript">
+	var shown=false;
+	function showHelp() {
 		var helpUrl = "http://dotcms.com/inline-help/2.0/<%=portlet.getPortletId() %>";
-		var dialog = new dijit.Dialog({
-			title: "dotCMS Help",
-			content: "<iframe id='myIframe' src='" + helpUrl + "' width='600' height='510' style='border: 0 none;margin:-10px;'></iframe>",
-			loadingMessage: "Loading...",
-			style: "width:600px;height:540px;padding:0;"
-    	});
-    	dialog.show();
+        require(["dojo/_base/fx", "dojo/dom", "dojo/window", "dojo/dom-construct","dojo/dom-style"], function(baseFx, dom, win, cons, dstyle) {
+        	var vp=win.getBox(win.doc);
+        	if(!shown) {
+        	    shown=true;
+        		cons.create("iframe",{id:"helpiframe",src:helpUrl,width:'600', height:vp.h-40, style:'border: 0 none;margin:-10px;' },"helpcontent");
+	        	baseFx.animateProperty({
+	                node: dom.byId("helpId"),
+	                duration: 600,
+	                properties: { top: {start:vp.h-30,end:20 } }
+	            }).play();
+        	}
+        	else {
+        		shown=false;
+        		baseFx.animateProperty({
+                    node: dom.byId("helpId"),
+                    duration: 600,
+                    onEnd:function() {
+                        cons.destroy('helpiframe');
+                        dstyle.set(dom.byId('helpId'),"top","");
+                        dstyle.set(dom.byId('helpId'),"bottom","-1px");
+                    },
+                    properties: { top: {end:vp.h-30,start:20 } }
+                }).play();
+        		
+        	}
+        });
 	}
+	
 </script>
 
 
-<div class="helpId">
+<div class="helpId" id="helpId">
 	<a href="#" onclick="showHelp();" class="dotcmsHelpButton"><%=LanguageUtil.get(pageContext, "help") %></a>
+	<div id="helpcontent"></div>
 </div>
 
 
