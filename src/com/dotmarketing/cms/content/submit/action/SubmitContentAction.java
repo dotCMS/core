@@ -33,6 +33,8 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -57,8 +59,9 @@ import com.liferay.util.servlet.UploadServletRequest;
 public class SubmitContentAction extends DispatchAction{
 
 
-	private CategoryAPI catAPI = APILocator.getCategoryAPI();
-	private HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+	private final LanguageAPI langAPI = APILocator.getLanguageAPI();
+    private final CategoryAPI catAPI = APILocator.getCategoryAPI();
+	private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 
 	public ActionForward unspecified(ActionMapping mapping, ActionForm lf, HttpServletRequest request, HttpServletResponse response) {
 		ActionForward forward = new ActionForward("/");
@@ -460,37 +463,50 @@ public class SubmitContentAction extends DispatchAction{
 		}catch (DotContentletValidationException ve) {
 			HibernateUtil.rollbackTransaction();
 			Logger.debug(this, ve.getMessage());
+			
+			Language userlang=langAPI.getLanguage(
+            			        (String)request.getSession().getAttribute(
+            			                com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
 
 			if(ve.hasRequiredErrors()){ 
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
 				for (Field errorField : reqs) {
+				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+						errors.add(Globals.ERROR_KEY, 
+						        new ActionMessage("secure.form.error.message.contentlet", fname, 
+						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
-						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.required", errorField.getFieldName()));
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.required", fname));
 					}
 				}
 			}
 			if(ve.hasLengthErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
 				for (Field errorField : reqs) {
+				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+						errors.add(Globals.ERROR_KEY, 
+						        new ActionMessage("secure.form.error.message.contentlet", fname,
+						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
-						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.maxlength", errorField.getFieldName(),"255"));
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.maxlength", fname,"255"));
 					}
 				}
 			}
 			if(ve.hasPatternErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
 				for (Field errorField : reqs) {
+				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+						errors.add(Globals.ERROR_KEY, 
+						        new ActionMessage("secure.form.error.message.contentlet", fname,
+						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
-						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.format", errorField.getFieldName()));
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.format", fname));
 					}
 				}
 			}
@@ -503,22 +519,28 @@ public class SubmitContentAction extends DispatchAction{
 			if(ve.hasUniqueErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_UNIQUE);
 				for (Field errorField : reqs) {
+				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+						errors.add(Globals.ERROR_KEY, 
+						        new ActionMessage("secure.form.error.message.contentlet", fname,
+						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
-						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.unique", errorField.getFieldName()));
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.unique", fname));
 					}
 				}
 			}
 			if(ve.hasBadTypeErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
 				for (Field errorField : reqs) {
+				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, new ActionMessage("secure.form.error.message.contentlet", errorField.getFieldName(),customizedMessage));
+						errors.add(Globals.ERROR_KEY, 
+						        new ActionMessage("secure.form.error.message.contentlet", fname,
+						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
-						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.invalid.image", errorField.getFieldName()));
+						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.invalid.image", fname));
 					}
 				}
 			}

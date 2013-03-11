@@ -292,10 +292,13 @@ public class DotResourceLoader extends ResourceLoader {
                 try {
 	                contentlet = conAPI.findContentletByIdentifier(identifier.getInode(), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
                 } catch (DotContentletStateException e) {
-                	if(LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
-                		LanguageAPI langAPI = APILocator.getLanguageAPI();
-           		 		language = Long.toString(langAPI.getDefaultLanguage().getId());
-           		 		contentlet = conAPI.findContentletByIdentifier(identifier.getInode(), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
+                    LanguageAPI langAPI = APILocator.getLanguageAPI();
+                    language = Long.toString(langAPI.getDefaultLanguage().getId());
+                    Contentlet cc = conAPI.findContentletByIdentifier(identifier.getInode(), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
+                	if(cc!=null && UtilMethods.isSet(cc.getInode()) &&
+                	        (LanguageWebAPI.canDefaultContentToDefaultLanguage()
+                	        || cc.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_WIDGET)) {
+                		contentlet = cc;
                 	} else {
                 		throw e;
                 	}
