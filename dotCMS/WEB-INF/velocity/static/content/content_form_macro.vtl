@@ -254,7 +254,7 @@ var theme = 'dmundra';
 								</script>
 								#set($className = ' last')
 							#end
-							<li id="${field.velocityVarName}TabTab" class="beta${className}">${field.fieldName}</li>
+							<li id="${field.velocityVarName}TabTab" class="beta${className}">$text.get($field.fieldName)</li>
 				    		<script language="javascript">
 							        tabsList[index] = "${field.velocityVarName}Tab";
 							        tabsRequiredList["${field.velocityVarName}Tab"]=0;
