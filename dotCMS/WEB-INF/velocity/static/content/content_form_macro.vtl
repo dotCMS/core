@@ -1020,6 +1020,7 @@ var theme = 'dmundra';
     	#end
 
     	#if($contentUseCaptcha || $contentUseAudioCaptcha)
+    		 customErrorMessages["captcha"]="";
 	    	if(!lengthValid(document.getElementById("captcha"), 1, "captcha")){
 				return false;
 			}
