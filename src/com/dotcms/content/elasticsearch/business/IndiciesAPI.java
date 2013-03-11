@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import java.io.Serializable;
 import java.sql.Connection;
 
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
@@ -12,7 +13,7 @@ import com.dotmarketing.exception.DotDataException;
  * @author Jorge Urdaneta
  */
 public interface IndiciesAPI {
-    public static class IndiciesInfo {
+    public static class IndiciesInfo implements Serializable {
         public String live, working, reindex_live, reindex_working, site_search;
     }
     
