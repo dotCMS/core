@@ -904,6 +904,8 @@ var theme = 'dmundra';
 					#set($customErrorMessages = $submitcontenttool.getFieldVariableValue($structure.getVelocityVarName(), $field.velocityVarName, "errorFieldMessage"))
 					#if(!$UtilMethods.isSet($customErrorMessages))
 						#set($customErrorMessages ="")
+					#else
+					    #set($customErrorMessages = $text.get($customErrorMessages))
 					#end
 
 					#if("$field.getFieldType().toUpperCase()"=="TEXT")
