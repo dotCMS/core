@@ -4063,9 +4063,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 		if(!UtilMethods.isSet(structureInode))
 			return result;
 		
-		Date startDate = new Date();
-		Date endDate = new Date();
-
+		GregorianCalendar gCal = new GregorianCalendar();
+		Date endDate = gCal.getTime();
+		gCal.add(2, -3);
+		Date startDate = gCal.getTime();// Default interval
+		
 		if(!UtilMethods.isSet(startDateStr) && !UtilMethods.isSet(endDateStr)){
 			GregorianCalendar gc = new GregorianCalendar();
 			endDate = gc.getTime();
@@ -4097,6 +4099,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				gc.add(2, -3);
 				startDate = gc.getTime();
 			}
+		}else{
+			try {
+				startDate = DateUtil.convertDate(startDateStr, dateFormats);
+				endDate = DateUtil.convertDate(endDateStr, dateFormats);
+			} catch (java.text.ParseException e) {}
 		}
 		
 		try {
