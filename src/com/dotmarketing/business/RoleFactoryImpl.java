@@ -307,6 +307,9 @@ public class RoleFactoryImpl extends RoleFactory {
 			Logger.error(this, "Error populating role children", e);
 			throw new DotDataException("Error populating role children", e);
 		}
+		if(r.getParent().equals(r.getId())){
+			rc.clearRootRoleCache();
+		}
 		rc.add(r);
 		HibernateUtil.evict(r);
 		AdminLogger.log(RoleFactoryImpl.class, "save", "Role saved Id :"+r.getId());
@@ -325,6 +328,9 @@ public class RoleFactoryImpl extends RoleFactory {
 		hu.setParam(role.getId());
 		Role r = (Role)hu.load();
 		HibernateUtil.delete(r);
+		if(r.getParent().equals(r.getId())){
+			rc.clearRootRoleCache();
+		}
 		rc.remove(r.getId());
 		rc.remove(r.getRoleKey());
 		rc.clearRoleCache();
@@ -335,23 +341,27 @@ public class RoleFactoryImpl extends RoleFactory {
 	
 	@Override
 	protected List<Role> findRootRoles() throws DotDataException {
-		HibernateUtil hu = new HibernateUtil(Role.class);
-		hu.setQuery("from " + Role.class.getName() + " where parent = id order by role_name");
-		List<Role> roles = (List<Role>)hu.list();
-		try {
-			populatChildrenForRoles(roles);
-			for (Role role : roles) {
-				translateFQNFromDB(role);	
+		List<Role> roles = rc.getRootRoles();
+		if(roles == null){
+			HibernateUtil hu = new HibernateUtil(Role.class);
+			hu.setQuery("from " + Role.class.getName() + " where parent = id and (role_key = '' or role_key is null or role_key <> '" + RoleAPI.USERS_ROOT_ROLE_KEY + "') order by role_name");
+			roles = (List<Role>)hu.list();
+			try {
+				populatChildrenForRoles(roles);
+				for (Role role : roles) {
+					translateFQNFromDB(role);	
+				}
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(), e);
+				throw new DotDataException(e.getMessage(), e);
 			}
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-		if(roles != null){
-			for (Role role : roles) {
-				HibernateUtil.evict(role);
-				rc.add(role);
+			if(roles != null){
+				for (Role role : roles) {
+					HibernateUtil.evict(role);
+					rc.add(role);
+				}
 			}
+			rc.addRootRoles(roles);
 		}
 		return roles;
 	}
@@ -535,7 +545,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	
 	private void populatChildrenForRoles(List<Role> roles) throws Exception{
 		Map<String,Role> roleMap = UtilMethods.convertListToHashMap(roles, "getId", String.class);
-		String sql = "select cr1.id as childId, cr2.id as parentId  from cms_role cr1, cms_role cr2 where cr1.parent in (:param1) and cr1.parent = cr2.id " +
+		String sql = "select distinct cr1.id as childId, cr2.id as parentId  from cms_role cr1, cms_role cr2 where cr1.parent in (:param1) and cr1.parent = cr2.id " +
 				"and cr1.parent != cr1.id";
 		DotConnect dc = new DotConnect();
 		List<Map<String,String>> sqlResults = new ArrayList<Map<String,String>>();
@@ -572,8 +582,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			if(childrenList == null){
 				childrenList = new ArrayList<String>();
 			}
-			if(!childrenList.contains(row.get("childid")))
-				childrenList.add(row.get("childid"));
+			childrenList.add(row.get("childid"));
 			if(roleMap.get(row.get("parentid")) != null)
 				roleMap.get(row.get("parentid")).setRoleChildren(childrenList);
 		}

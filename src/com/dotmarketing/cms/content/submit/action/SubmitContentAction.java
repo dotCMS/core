@@ -45,6 +45,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.UploadServletRequest;
 
@@ -234,7 +235,10 @@ public class SubmitContentAction extends DispatchAction{
 			if(useCaptcha){
 
 				if(!CaptchaUtil.isValidImageCaptcha(request)){
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.required", "Validation Image"));
+					User user = com.liferay.portal.util.PortalUtil.getUser(request);
+					String mes=LanguageUtil.get(user, "org.dotcms.frontend.content.submission.captcha.validation.image");
+					mes = mes.replace(":", "");
+					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.required", mes));
 					saveMessages(session, errors);
 					if(errors.size() > 0 && UtilMethods.isSet(params)){
 						referrer=referrer+"?"+params.substring(1);
