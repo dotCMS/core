@@ -86,7 +86,7 @@ public class SubmitContentAction extends DispatchAction{
 		String moderatorRole="";
 		List<Field> imageFields = new ArrayList<Field>();
 		List<Field> fileFields = new ArrayList<Field>();
-
+		String fName = "";
 
 		/**
 		 * Getting Referrer
@@ -336,6 +336,7 @@ public class SubmitContentAction extends DispatchAction{
 						}else{
 							cve.addBadTypeField(f);
 							hasError = true;
+							fName = title;
 							continue;
 						}
 					}
@@ -554,7 +555,19 @@ public class SubmitContentAction extends DispatchAction{
 		}
 
 		if(errors.size() > 0 && UtilMethods.isSet(params)){
-			referrer=referrer+"?"+params.substring(1);
+			String[] pList = params.split("&");
+            String l = "";
+            if(!fName.isEmpty()){
+            	for(String x : pList){
+            		if((!x.contains(fName)) && !x.isEmpty()){
+            			l = l + "&" + x;
+                    }
+                }
+            }
+            else{
+            	l = params.substring(1);
+            }
+            referrer=referrer+"?"+l;
 			af = new ActionForward(referrer);
 			af.setRedirect(true);
 		}
