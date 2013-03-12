@@ -22,6 +22,10 @@
 
 package com.liferay.portal.ejb;
 
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.model.Portlet;
+
 /**
  * <a href="PortletManager.java.html"><b><i>View Source</i></b></a>
  *
@@ -65,6 +69,8 @@ public interface PortletManager {
 
 	public java.util.List initWAR(java.lang.String servletContextName,
 		java.lang.String[] xmls) throws java.rmi.RemoteException;
+
+    public Portlet removePortletFromPool ( String companyId, String portletId ) throws SystemException, PortalException;
 
 	public com.liferay.portal.model.Portlet updatePortlet(
 		java.lang.String portletId, java.lang.String groupId,
