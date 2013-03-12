@@ -1,6 +1,7 @@
 package com.dotmarketing.servlets.ajax;
 
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -96,6 +97,12 @@ public abstract class AjaxAction {
 				map.put(key, x);
 				key = null;
 			}
+		}
+		
+		Enumeration parameters=request.getParameterNames();
+		while(parameters.hasMoreElements()) {
+		    String par = (String)parameters.nextElement();
+		    map.put(par, request.getParameter(par));
 		}
 		
 		this.params = map;
