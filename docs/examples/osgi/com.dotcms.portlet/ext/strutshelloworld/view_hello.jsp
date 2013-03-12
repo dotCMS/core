@@ -6,5 +6,5 @@
 <%@ include file="/html/common/messages_inc.jsp" %>
 
 <div id="main">
-    <%= request.getAttribute( "hello" ) %> I am in Maximized View XXXX
+    <%= request.getAttribute( "hello" ) %> I am in Maximized View
 </div>

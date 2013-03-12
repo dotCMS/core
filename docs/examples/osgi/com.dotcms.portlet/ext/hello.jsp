@@ -7,5 +7,5 @@
 
 <div id="main">
     <% String x = "Hello World";%>
-    <%= x %> XXXX
+    <%= x %>
 </div>

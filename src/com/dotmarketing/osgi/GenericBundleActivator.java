@@ -2,6 +2,7 @@ package com.dotmarketing.osgi;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
@@ -11,10 +12,14 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.VelocityUtil;
-import com.liferay.portal.ejb.PortletManagerImpl;
+import com.liferay.portal.ejb.PortletManager;
+import com.liferay.portal.ejb.PortletManagerFactory;
 import com.liferay.portal.ejb.PortletManagerUtil;
+import com.liferay.portal.ejb.PortletPK;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.Constants;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.SimpleCachePool;
 import org.apache.felix.http.api.ExtHttpService;
@@ -52,7 +57,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
     private static final String INIT_PARAM_VIEW_JSP = "view-jsp";
     private static final String INIT_PARAM_VIEW_TEMPLATE = "view-template";
-    private static final String MAPPING_PROXY_SERVLET = "/app";
     private static final String PATH_SEPARATOR = "/";
     private static final String OSGI_FOLDER = "/osgi";
 
@@ -63,7 +67,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private Map<String, String> jobs;
     private Collection<ActionConfig> actions;
     private Collection<Portlet> portlets;
-    private Collection<String> servlets;
     private Collection preHooks;
     private Collection postHooks;
     private ActivatorUtil activatorUtil = new ActivatorUtil();
@@ -75,16 +78,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private ClassLoader getContextClassLoader () {
         //return ClassLoader.getSystemClassLoader();
         return Thread.currentThread().getContextClassLoader();
-    }
-
-    /**
-     * Returns the mapping defined in the web.xml for the OSGIProxyServlet
-     *
-     * @return
-     */
-    private String getProxyServletMapping () {
-        //TODO: We need to put it in a configuration file
-        return MAPPING_PROXY_SERVLET;
     }
 
     /**
@@ -642,11 +635,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             for ( String jobName : jobs.keySet() ) {
                 QuartzUtils.removeJob( jobName, jobs.get( jobName ) );
             }
-
-            /*UrlOsgiClassLoader loader = activatorUtil.findCustomURLLoader( ClassLoader.getSystemClassLoader() );
-            if ( loader != null ) {
-                loader.getInstrumentation().removeTransformer( loader.getTransformer() );
-            }*/
         }
     }
 
@@ -659,11 +647,22 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         if ( portlets != null ) {
 
-            String scpId = PortletManagerImpl.class.getName() + "." + "SHARED_KEY";
-            Map portletsPool = (Map) SimpleCachePool.get( scpId );
+            PortletManager portletManager = PortletManagerFactory.getManager();
+            Company company = PublicCompanyFactory.getDefaultCompany();
 
             for ( Portlet portlet : portlets ) {
-                portletsPool.remove( portlet.getPrimaryKey().getPortletId() );
+                PortletPK id = portlet.getPrimaryKey();
+                portletManager.removePortletFromPool( company.getCompanyId(), id.getPortletId() );
+
+                String scpId = PortalUtil.class.getName() + "." + javax.portlet.Portlet.class.getName();
+                if ( !portlet.isWARFile() ) {
+                    scpId += "." + company.getCompanyId();
+                }
+
+                Map map = (Map) SimpleCachePool.get( scpId );
+                if ( map != null ) {
+                    map.remove( portlet.getPortletId() );
+                }
             }
         }
     }
@@ -674,14 +673,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws SchedulerException
      */
     protected void unregisterServlets ( BundleContext context ) throws Exception {
-
-        if ( servlets != null ) {
-
-            /*for ( String servletMapping : servlets ) {
-                activatorUtil.unregisterServlet( context, servletMapping );
-            }*/
-            activatorUtil.unregisterAll( context );
-        }
+        activatorUtil.unregisterAll( context );
     }
 
     class ActivatorUtil {
@@ -720,18 +712,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
 
         /**
-         * Creates and register a Servlet for a given jsp file
+         * Unregister a given servlet
          *
          * @param context
-         * @param mapping
+         * @param path
          * @throws Exception
          */
         @SuppressWarnings ("unchecked")
-        private void registerServletForJsp ( BundleContext context, String mapping ) throws Exception {
-
-            if ( servlets == null ) {
-                servlets = new ArrayList<String>();
-            }
+        private void registerResources ( BundleContext context, String path ) throws Exception {
 
             ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
             if ( sRef != null ) {
@@ -750,49 +738,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 /*Class[] params = new Class[]{
                         java.lang.String.class,
-                        javax.servlet.Servlet.class,
-                        java.util.Dictionary.class,
-                        org.osgi.service.http.HttpContext.class};
-                Method registerServletMethod = httpService.getClass().getMethod( "registerServlet", params );*/
-                Method registerServletMethod = httpService.getClass().getMethods()[2];//registerServlet
-
-                //Generate the compiled name for this jsp
-                String jspName = servletNameForJsp( mapping );
-                //Create and instance of this jsp in order to create the servlet
-                Object jspServlet = getInstanceFor( jspName );
-                //Servlet mapping
-                mapping = Constants.TEXT_HTML_DIR + mapping;
-
-                Object[] invParams = new Object[]{mapping, jspServlet, null, null};
-                registerServletMethod.invoke( httpService, invParams );
-                //httpService.registerServlet( Constants.TEXT_HTML_DIR + mapping, (Servlet) jspObject, null, null );
-
-                servlets.add( mapping );
-            }
-        }
-
-        /**
-         * Unregister a given servlet
-         *
-         * @param context
-         * @param path
-         * @throws Exception
-         */
-        @SuppressWarnings ("unchecked")
-        private void registerResources ( BundleContext context, String path ) throws Exception {
-
-            if ( servlets == null ) {
-                servlets = new ArrayList<String>();
-            }
-
-            ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
-            if ( sRef != null ) {
-
-                //ExtHttpService httpService = (ExtHttpService) context.getService( sRef );
-                Object httpService = context.getService( sRef );
-
-                /*Class[] params = new Class[]{
-                        java.lang.String.class,
                         java.lang.String.class,
                         org.osgi.service.http.HttpContext.class};
                 Method registerResourcesMethod = httpService.getClass().getMethod( "registerResources", params );*/
@@ -805,8 +750,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 Object[] invParams = new Object[]{mapping, path, null};
                 registerResourcesMethod.invoke( httpService, invParams );
                 //httpService.registerResources( mapping, path, null );
-
-                servlets.add( mapping );
             }
         }
 
@@ -894,58 +837,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
         }
 
-        /**
-         * Unregister a servlet using a given mapping servlet
-         *
-         * @param context
-         * @param mapping
-         * @throws Exception
-         */
-        @SuppressWarnings ("unchecked")
-        private void unregisterServlet ( BundleContext context, String mapping ) throws Exception {
-
-            ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
-            if ( sRef != null ) {
-                Object httpService = context.getService( sRef );
-
-                //Method unregisterServletMethod = httpService.getClass().getMethod( "unregister", java.lang.String.class );
-                Method unregisterMethod = httpService.getClass().getMethods()[0];//unregister
-                unregisterMethod.invoke( httpService, mapping );
-            }
-        }
-
-        /**
-         * Given a jsp path this method will generated the compiled name for the jsp file
-         *
-         * @param jspPath
-         * @return
-         */
-        private String servletNameForJsp ( String jspPath ) {
-
-            if ( !jspPath.startsWith( PATH_SEPARATOR ) ) {
-                jspPath = PATH_SEPARATOR + jspPath;
-            }
-
-            //We need to register our jsp as a servlet, That means we need to generate the name of the jsp after compilation
-            String jspName = jspPath.substring( jspPath.lastIndexOf( PATH_SEPARATOR ) + 1, jspPath.length() );
-            String compiledJspName = jspName.replace( "_", "_005f" ).replace( ".jsp", "_jsp" );
-
-            String compiledJsp = jspPath.replace( PATH_SEPARATOR, "." ).replace( jspName, compiledJspName );
-            compiledJsp = "org.apache.jsp" + compiledJsp;
-
-            return compiledJsp;
-        }
-
-        private String removeContainerFolder ( String path ) {
-
-            int index = path.indexOf( PATH_SEPARATOR );
-            if ( path.startsWith( PATH_SEPARATOR ) ) {
-                index = path.indexOf( PATH_SEPARATOR, 1 );
-            }
-
-            return path.substring( index, path.length() );
-        }
-
         private String getContainerFolder ( String path ) {
 
             if ( !path.startsWith( PATH_SEPARATOR ) ) {
@@ -958,18 +849,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
 
             return path.substring( 1, index + 1 );
-        }
-
-        private Object getInstanceFor ( String name ) throws Exception {
-
-            Class clazz;
-            try {
-                clazz = Class.forName( name );
-            } catch ( ClassNotFoundException e ) {
-                injectContext( name, false );
-                clazz = Class.forName( name );
-            }
-            return clazz.newInstance();
         }
 
     }
