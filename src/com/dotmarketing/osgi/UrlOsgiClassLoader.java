@@ -173,4 +173,9 @@ public class UrlOsgiClassLoader extends URLClassLoader {
         return instrumentation;
     }
 
+    @Override
+    public URL[] getURLs () {
+        return new URL[]{};
+    }
+
 }
