@@ -525,7 +525,7 @@ dojo.require("dojox.layout.ContentPane");
 	 	if(data["referer"] != null && data["referer"] != '' && !data["contentletLocked"] ) {
 
 			<%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-				//self.location = data["referer"]+"&structure_id=<%=structure.getInode()%>&content_inode=" + data["contentletInode"];
+				self.location = data["referer"]+"&structure_id=<%=structure.getInode()%>&content_inode=" + data["contentletInode"];
 			<%}else{%>
 				self.location = data["referer"] + "&content_inode=" + data["contentletInode"];
 			<%}%>
