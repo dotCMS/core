@@ -296,7 +296,8 @@
 	                var myselect = new dijit.form.FilteringSelect({
 	                         id: "langcombo",
 	                         name: "lang",
-	                         value: '<%=contentletForm.getLanguageId()%>',
+	                         value: '<%=structure.getStructureType()==Structure.STRUCTURE_TYPE_WIDGET ? // widgets only on default lang 
+	                                 APILocator.getLanguageAPI().getDefaultLanguage().getId() : contentletForm.getLanguageId()%>',
 	                         required: true,
 	                         store: langStore,
 	                         searchAttr: "lang",
@@ -311,6 +312,13 @@
 	                    },
 	                    dojo.byId("langcombo"));
 	                updateSelectBoxImage(myselect);
+	                <% if(structure.getStructureType()==Structure.STRUCTURE_TYPE_WIDGET) {%>
+	                      myselect.set('disabled','disabled');
+	                      new dijit.Tooltip({
+	                          connectId: ["combo_zone2"],
+	                          label: "<%=LanguageUtil.get(pageContext,"Widget-only-deflang")%>"
+	                      });
+	                <% } %>
 	            </script>
 			</div>
 		<%} %>
