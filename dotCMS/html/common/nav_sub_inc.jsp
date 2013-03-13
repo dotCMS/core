@@ -574,7 +574,7 @@ dojo.require("dojo.cookie");
             && request.getSession().getAttribute(
                 WebKeys.PRINCIPAL_USER_ID) == null) {
     %>
-        <div id="portal_login_as_users_wrapper" dojoType="dijit.Dialog" style="display:none;height:180px;vertical-align: middle;" draggable="false" >
+        <div id="portal_login_as_users_wrapper" dojoType="dijit.Dialog"  style="display:none;height:180px;vertical-align: middle;padding-top:15px\9;" draggable="false" >
             <div id="portal_loginas_errors"></div>
             <form id="portal_login_as_users_form" action="<%=CTX_PATH%>/portal<%=PortalUtil.getAuthorizedPath(request)%>/login_as?referer=<%=CTX_PATH%>" method="post">
                 <div id="portal_login_as_users_select" class="formRow" style="text-align:center;">
