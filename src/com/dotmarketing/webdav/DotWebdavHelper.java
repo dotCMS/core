@@ -268,19 +268,21 @@ public class DotWebdavHelper {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage());
 		} 
-		// FileName
-		String fileName = getFileName(path);
-		fileName = deleteSpecialCharacter(fileName);
-
-		if (InodeUtils.isSet(host.getInode())) {
-			try {
-				returnValue = fileAPI.fileNameExists(folder, fileName);
-				if(!returnValue){
-					returnValue = APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "");
-				}
-			} catch (Exception ex) {
-				Logger.debug(this, "Error verifying if file already exists",ex);
-			}
+		if(folder!=null && InodeUtils.isSet(folder.getInode())) {
+    		// FileName
+    		String fileName = getFileName(path);
+    		fileName = deleteSpecialCharacter(fileName);
+    
+    		if (InodeUtils.isSet(host.getInode())) {
+    			try {
+    				returnValue = fileAPI.fileNameExists(folder, fileName);
+    				if(!returnValue){
+    					returnValue = APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "");
+    				}
+    			} catch (Exception ex) {
+    				Logger.debug(this, "Error verifying if file already exists",ex);
+    			}
+    		}
 		}
 		return returnValue;
 	}
