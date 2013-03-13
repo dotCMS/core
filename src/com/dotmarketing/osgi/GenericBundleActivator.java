@@ -59,6 +59,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private static final String INIT_PARAM_VIEW_TEMPLATE = "view-template";
     private static final String PATH_SEPARATOR = "/";
     private static final String OSGI_FOLDER = "/osgi";
+    private static final String VELOCITY_FOLDER = "/WEB-INF/velocity";
 
     private PrimitiveToolboxManager toolboxManager;
     private WorkflowAPIOsgiService workflowOsgiService;
@@ -300,8 +301,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         portlets = PortletManagerUtil.initWAR( null, xmls );
 
-        //For JSPPortlets we need to create servlets for its jps files
         for ( Portlet portlet : portlets ) {
+
             if ( portlet.getPortletClass().equals( "com.liferay.portlet.JSPPortlet" ) ) {
 
                 Map initParams = portlet.getInitParams();
@@ -311,9 +312,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
                     jspPath = PATH_SEPARATOR + jspPath;
                 }
 
+                //Copy all the resources inside the folder of the given resource to the corresponding dotCMS folders
                 activatorUtil.moveResources( context, jspPath );
-
-                //And we change the mapping in order to work with our OSGIProxyServlet (/app/* mapping)
                 portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, activatorUtil.getBundleFolder( context ) + jspPath );
             } else if ( portlet.getPortletClass().equals( "com.liferay.portlet.VelocityPortlet" ) ) {
 
@@ -324,20 +324,19 @@ public abstract class GenericBundleActivator implements BundleActivator {
                     templatePath = PATH_SEPARATOR + templatePath;
                 }
 
-                activatorUtil.moveResources( context, templatePath );
-
-                //And we change the mapping in order to work with our OSGIProxyServlet (/app/* mapping)
-                //portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getProxyServletMapping() + templatePath );
-                //portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getProxyServletMapping() + Constants.MAPPING_OSGI_BUNDLE + templatePath );
-                portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, Constants.TEXT_HTML_DIR + activatorUtil.getBundleFolder( context ) + templatePath );
+                //Copy all the resources inside the folder of the given resource to the corresponding velocity dotCMS folders
+                activatorUtil.moveVelocityResources( context, templatePath );
+                portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, activatorUtil.getBundleFolder( context ) + templatePath );
             }
+
+            Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
         }
 
         return portlets;
     }
 
     /**
-     * Method that will create and add an ActionForward to a ActionMapping,this call is mandatory for the creation of ActionForwards
+     * Method that will create and add an ActionForward to a ActionMapping, this call is mandatory for the creation of ActionForwards
      * because extra logic will be required for jsp forwards to work.
      *
      * @param actionMapping
@@ -360,6 +359,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         // Adding the ForwardConfig to the ActionConfig
         actionMapping.addForwardConfig( forwardConfig );
 
+        //Copy all the resources inside the folder of the given resource to the corresponding dotCMS folders
         activatorUtil.moveResources( context, path );
 
         return forwardConfig;
@@ -608,6 +608,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
     }
 
+    /**
+     * Unregister all the registered ActionMappings
+     *
+     * @throws Exception
+     */
     protected void unregisterActionMappings () throws Exception {
 
         if ( actions != null ) {
@@ -651,14 +656,18 @@ public abstract class GenericBundleActivator implements BundleActivator {
             Company company = PublicCompanyFactory.getDefaultCompany();
 
             for ( Portlet portlet : portlets ) {
-                PortletPK id = portlet.getPrimaryKey();
-                portletManager.removePortletFromPool( company.getCompanyId(), id.getPortletId() );
 
+                //PK
+                PortletPK id = portlet.getPrimaryKey();
+                //Cache key
                 String scpId = PortalUtil.class.getName() + "." + javax.portlet.Portlet.class.getName();
                 if ( !portlet.isWARFile() ) {
                     scpId += "." + company.getCompanyId();
                 }
 
+                //Clean-up the caches
+                portletManager.removePortletFromPool( company.getCompanyId(), id.getPortletId() );
+                //Clean-up the caches
                 Map map = (Map) SimpleCachePool.get( scpId );
                 if ( map != null ) {
                     map.remove( portlet.getPortletId() );
@@ -698,11 +707,22 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
         }
 
+        private String getBundleFolder ( BundleContext context ) {
+            return OSGI_FOLDER + File.separator + context.getBundle().getBundleId();
+        }
+
         private ModuleConfig getModuleConfig () {
             ServletContext servletContext = Config.CONTEXT;
             return (ModuleConfig) servletContext.getAttribute( Globals.MODULE_KEY );
         }
 
+        /**
+         * In order to be able to add ActionMappings we need to unfreeze the module config, that freeze status don't allow modifications.
+         *
+         * @param moduleConfig
+         * @throws NoSuchFieldException
+         * @throws IllegalAccessException
+         */
         private void unfreeze ( ModuleConfig moduleConfig ) throws NoSuchFieldException, IllegalAccessException {
 
             Field configuredField = ModuleConfigImpl.class.getDeclaredField( "configured" );//We need to access it using reflection
@@ -712,69 +732,73 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
 
         /**
-         * Unregister a given servlet
+         * Deletes the generated folders and copied files inside dotCMS for this bundle
          *
          * @param context
-         * @param path
-         * @throws Exception
          */
-        @SuppressWarnings ("unchecked")
-        private void registerResources ( BundleContext context, String path ) throws Exception {
-
-            ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
-            if ( sRef != null ) {
-
-                //TODO: Why don't use it in the same way as the activators???, classpaths :)
-                /*
-                 On the felix framework initialization dotCMS loads this class (ExtHttpService) using its own classloader.
-                 So I can't use directly this class and its implementation because on this class felix can't use its
-                 instance (Created with its classloader because the dotCMS classloader already loaded the same classes,
-                 meaning we have in memory a definition that is not the one provided by felix and for that are different, nice... :) ),
-                 That will cause runtime errors.
-                 */
-
-                //ExtHttpService httpService = (ExtHttpService) context.getService( sRef );
-                Object httpService = context.getService( sRef );
-
-                /*Class[] params = new Class[]{
-                        java.lang.String.class,
-                        java.lang.String.class,
-                        org.osgi.service.http.HttpContext.class};
-                Method registerResourcesMethod = httpService.getClass().getMethod( "registerResources", params );*/
-                Method registerResourcesMethod = httpService.getClass().getMethods()[3];//registerResources
-
-                //Servlet mapping
-                String mapping = Constants.TEXT_HTML_DIR + path;
-                //String mapping = path;
-
-                Object[] invParams = new Object[]{mapping, path, null};
-                registerResourcesMethod.invoke( httpService, invParams );
-                //httpService.registerResources( mapping, path, null );
-            }
-        }
-
-        private String getBundleFolder ( BundleContext context ) {
-            return OSGI_FOLDER + File.separator + context.getBundle().getBundleId();
-        }
-
         private void cleanResources ( BundleContext context ) {
 
             ServletContext servletContext = Config.CONTEXT;
-            String resourcesPath = servletContext.getRealPath( Constants.TEXT_HTML_DIR + getBundleFolder( context ) );
 
+            //Cleaning the resources under the html folder
+            String resourcesPath = servletContext.getRealPath( Constants.TEXT_HTML_DIR + getBundleFolder( context ) );
             File resources = new File( resourcesPath );
+            if ( resources.exists() ) {
+                FileUtil.deltree( resources );
+            }
+
+            //Now cleaning the resources under the velocity folder
+            resourcesPath = servletContext.getRealPath( VELOCITY_FOLDER + getBundleFolder( context ) );
+            resources = new File( resourcesPath );
             if ( resources.exists() ) {
                 FileUtil.deltree( resources );
             }
         }
 
-        private void moveResources ( BundleContext context, String resourcePath ) throws Exception {
+        /**
+         * Util method to copy all the resources inside the folder of the given resource to the corresponding velocity dotCMS folders
+         *
+         * @param context
+         * @param referenceResourcePath reference resource to get its container folder and move the resources inside that folder
+         * @throws Exception
+         */
+        private void moveVelocityResources ( BundleContext context, String referenceResourcePath ) throws Exception {
+
+            ServletContext servletContext = Config.CONTEXT;
+            String destinationPath = servletContext.getRealPath( VELOCITY_FOLDER + getBundleFolder( context ) );
+
+            moveResources( context, referenceResourcePath, destinationPath );
+        }
+
+        /**
+         * Util method to copy all the resources inside the folder of the given resource to the corresponding dotCMS folders
+         *
+         * @param context
+         * @param referenceResourcePath reference resource to get its container folder and move the resources inside that folder
+         * @throws Exception
+         */
+        private void moveResources ( BundleContext context, String referenceResourcePath ) throws Exception {
 
             ServletContext servletContext = Config.CONTEXT;
             String destinationPath = servletContext.getRealPath( Constants.TEXT_HTML_DIR + getBundleFolder( context ) );
 
-            String containerFolder = getContainerFolder( resourcePath );
+            moveResources( context, referenceResourcePath, destinationPath );
+        }
 
+        /**
+         * Util method to copy all the resources inside a folder to a given destination
+         *
+         * @param context
+         * @param referenceResourcePath reference resource to get its container folder and move the resources inside that folder
+         * @param destinationPath
+         * @throws Exception
+         */
+        private void moveResources ( BundleContext context, String referenceResourcePath, String destinationPath ) throws Exception {
+
+            //Get the container folder of the given resource
+            String containerFolder = getContainerFolder( referenceResourcePath );
+
+            //Find all the resources under that folder
             Enumeration<URL> entries = context.getBundle().findEntries( containerFolder, "*.*", true );
             while ( entries.hasMoreElements() ) {
 
@@ -783,7 +807,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 String resourceFilePath = destinationPath + entryPath;
                 File resourceFile = new File( resourceFilePath );
-
                 if ( !resourceFile.exists() ) {
 
                     InputStream in = null;
@@ -837,6 +860,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
         }
 
+        /**
+         * Util method to get the container folder of a given resource inside this bundle
+         *
+         * @param path
+         * @return
+         */
         private String getContainerFolder ( String path ) {
 
             if ( !path.startsWith( PATH_SEPARATOR ) ) {
