@@ -1482,11 +1482,11 @@ dojo.require("dotcms.dojo.push.PushHandler");
 			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Page-published")) %>');
 		}
 	}
-	
+
 	function remotePublish (objId) {
-		
+
 		pushHandler.showDialog(objId);
-		
+
 	}
 
 	function unpublishHTMLPage (objId, referer) {
