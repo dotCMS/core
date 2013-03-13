@@ -8,4 +8,7 @@ import com.liferay.portal.model.User;
 
 public interface StructureAPI {
     void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException;
+    
+    
+    Structure find(String inode, User user) throws DotSecurityException, DotDataException, DotStateException;
 }
