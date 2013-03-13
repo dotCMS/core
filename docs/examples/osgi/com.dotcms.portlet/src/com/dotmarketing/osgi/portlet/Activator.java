@@ -1,7 +1,6 @@
 package com.dotmarketing.osgi.portlet;
 
 import com.dotmarketing.osgi.GenericBundleActivator;
-import com.liferay.util.Http;
 import org.apache.struts.action.ActionMapping;
 import org.osgi.framework.BundleContext;
 
@@ -11,29 +10,27 @@ public class Activator extends GenericBundleActivator {
     public void start ( BundleContext context ) throws Exception {
 
         //************************************************************
-        //********REGISTER THE ACTION REQUIRED BY THE PORTLET*********
+        //*****REGISTER THE ACTION REQUIRED BY THE STRUTS PORTLET*****
         //************************************************************
-        // Creating an ActionConfig Instance
-        ActionMapping actionConfig = new ActionMapping();
+        //Creating an ActionMapping Instance
+        ActionMapping actionMapping = new ActionMapping();
 
-        // Configure the instance
-        actionConfig.setPath( "/ext/strutshello/view_hello" );
-        actionConfig.setType( "com.dotmarketing.osgi.portlet.HelloWorldAction" );
-        //actionConfig.setScope("session");
+        //Configure the instance
+        actionMapping.setPath( "/ext/strutshello/view_hello" );
+        actionMapping.setType( "com.dotmarketing.osgi.portlet.HelloWorldAction" );
 
         //Create and register the forwards for this mapping
-        registerActionForward( context, actionConfig, "portlet.ext.plugins.hello.world.struts", "/ext/strutshelloworld/view.jsp", false );
-        registerActionForward( context, actionConfig, "portlet.ext.plugins.hello.world.struts.max", "/ext/strutshelloworld/view_hello.jsp", false );
+        registerActionForward( context, actionMapping, "portlet.ext.plugins.hello.world.struts", "/ext/strutshelloworld/view.jsp", false );
+        registerActionForward( context, actionMapping, "portlet.ext.plugins.hello.world.struts.max", "/ext/strutshelloworld/view_hello.jsp", false );
 
         //And finally register the ActionMapping
-        registerActionMapping( actionConfig );
+        registerActionMapping( actionMapping );
 
         //************************************************************
         //*******************REGISTER THE PORTLETS********************
         //************************************************************
         //Register our portlets
-        String[] xmls = new String[]{Http.URLtoString( context.getBundle().getResource( "conf/portlet.xml" ) ),
-                Http.URLtoString( context.getBundle().getResource( "conf/liferay-portlet.xml" ) )};
+        String[] xmls = new String[]{"conf/portlet.xml", "conf/liferay-portlet.xml"};
         registerPortlets( context, xmls );
     }
 

@@ -21,6 +21,7 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.FileUtil;
+import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
 import org.apache.felix.http.api.ExtHttpService;
 import org.apache.felix.http.proxy.DispatcherTracker;
@@ -299,7 +300,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
     @SuppressWarnings ("unchecked")
     protected Collection<Portlet> registerPortlets ( BundleContext context, String[] xmls ) throws Exception {
 
-        portlets = PortletManagerUtil.initWAR( null, xmls );
+        String[] confFiles = new String[]{Http.URLtoString( context.getBundle().getResource( xmls[0] ) ),
+                Http.URLtoString( context.getBundle().getResource( xmls[1] ) )};
+
+        //Read the portlets xml files and create them
+        portlets = PortletManagerUtil.initWAR( null, confFiles );
 
         for ( Portlet portlet : portlets ) {
 
