@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.publisher.business.EndpointDetail"%>
@@ -12,12 +13,31 @@
 	String bundleId = request.getParameter("bundle");
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	PublishAuditHistory currentEndpointHistory = null;
+	String assetTitle = null;
+	String assetType=null;
+			
+	
+	
+	
+	
 	int status = 0;
 	if(null!=bundleId){
 		PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus(bundleId);
 		String pojo_string = (String)publishAuditStatus.getStatusPojo().getSerialized();
 		currentEndpointHistory = PublishAuditHistory.getObjectFromString(pojo_string);
 		status = publishAuditStatus.getStatus().getCode();
+		
+		if(currentEndpointHistory.getAssets() != null && currentEndpointHistory.getAssets().size()>0){
+			for(String id : currentEndpointHistory.getAssets().keySet()){
+				assetType = currentEndpointHistory.getAssets().get(id);
+				assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); 
+				break;
+					
+			}
+			
+		}
+		
+		
 	}
 %>
 
@@ -31,47 +51,58 @@
 
 <% if(null!=currentEndpointHistory){%>
 
-	<div style="padding-left:10px;font-size: small;color: gray;">
-		<div style="float:left">
-			<h3><%= LanguageUtil.get(pageContext, "status") %>: <%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(status))%></h3>
-			<b>id</b>: <%=bundleId %>
-		</div>
-		<div style="float:right">
-			<button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
-		</div>
-		<div class="clear"></div>
-	</div>
-	
-	<div style="width: 350px; margin:20px 15px 20px 2px; text-align: left;" class="callOutBox2">            
+
+       
     	<table class="listingTable shadowBox">
+    		<tr>
+    			<th><%= LanguageUtil.get(pageContext, "title") %></th>
+    			<td><b><%=assetTitle %></span></b> (<%=assetType %>)
+    			
+					<div style="float:right">
+						<button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
+					</div>
+    			
+    			
+    			</td>
+    		</tr>
+    		<tr>
+    			<th><%= LanguageUtil.get(pageContext, "status") %>:</th>
+    			<td> <%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(status))%></td>
+    		</tr>
+    		<tr>
+    			<th><%= LanguageUtil.get(pageContext, "publisher_Identifier") %>
+    			</td>
+    			<td> <%=bundleId %>
+    			</td>
+    		</tr>
 	    	<tr>
-	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_Start") %>: </b></td>
+	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_Start") %>: </b></th>
 	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleStart(),"MM/dd/yyyy hh:mma") %></td>
 	    	
 	    	</tr>
 	    	<tr>
-	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_End") %>: </b></td>
+	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_End") %>: </b></th>
 	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleEnd(),"MM/dd/yyyy hh:mma") %></td>
 	    	
 	    	</tr>
 	    	<tr>
-	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_Start") %>: </b></td>
+	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_Start") %>: </b></th>
 	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishStart(),"MM/dd/yyyy hh:mma") %></td>
 	    	
 	    	</tr>
 	    	<tr>
-	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_End") %>: </b></td>
+	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_End") %>: </b></th>
 	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishEnd(),"MM/dd/yyyy hh:mma") %></td>
 	    	
 	    	</tr>
 	    	<tr>
-	    		<td><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Asset_Number") %>: </b></td>
+	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Asset_Number") %>: </b></th>
 	    		<td style="background: white"><%=currentEndpointHistory.getAssets().size() %></td>
 	    	
 	    	</tr>
     	</table>
-	</div>
-	
+
+	<div>&nbsp;</div>
 	<table class="listingTable shadowBox">
 		<tr>		
 			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Audit_Endpoint") %></strong></th>			
