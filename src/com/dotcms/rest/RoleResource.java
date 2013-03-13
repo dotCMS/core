@@ -199,13 +199,20 @@ public class RoleResource extends WebResource {
 			return "";
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
+		Role userRole = roleAPI.loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
 		List<Role> roles = roleAPI.findRolesByNameFilter(query, -1, -1);
 
 		LinkedHashMap<String, Object> resultTree = new LinkedHashMap<String, Object>();
 
 
 		for (Role r : roles) {
+
 			String DBFQN =  r.getDBFQN();
+
+			if(DBFQN.contains(userRole.getId())) {
+				continue;
+			}
+
 			String node = DBFQN.split(" --> ")[0];
 			int offset = DBFQN.indexOf(" --> ");
 
