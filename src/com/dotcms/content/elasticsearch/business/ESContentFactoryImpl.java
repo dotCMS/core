@@ -43,6 +43,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -1091,13 +1092,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
                      .append(" and contentletvi.deleted = ")
                      .append(com.dotmarketing.db.DbConnectionFactory.getDBFalse());
         }
+        
+        long deflanguageId = langAPI.getDefaultLanguage().getId();
         if (languageId == 0) {
-            languageId = langAPI.getDefaultLanguage().getId();
-            condition.append(" and contentletvi.lang = ").append(languageId);
+            condition.append(" and contentletvi.lang = ").append(deflanguageId);
         }else if(languageId == -1){
             Logger.debug(this, "LanguageId is -1 so we will not use a language to pull contentlets");
         }else{
-            condition.append(" and contentletvi.lang = ").append(languageId);
+            String formsStInode=StructureCache.getStructureByVelocityVarName("forms").getInode();
+            condition.append(" and (contentletvi.lang = ").append(languageId)
+                     .append(" or contentlet.structure_inode='").append(formsStInode).append("') ");
         }
 
         HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
@@ -2005,4 +2009,58 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 return ERROR_DATE;
             }
         }
+        
+		public List<Map<String, String>> getMostViewedContent(String structureInode, Date startDate, Date endDate, User user) throws DotDataException {
+
+			List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+			
+			String sql = " select content_ident, sum(num_views) " +
+					" from " +
+					" ( select clickstream_request.associated_identifier as content_ident, count(clickstream_request.associated_identifier) as num_views " +
+					" from contentlet, clickstream_request, contentlet_version_info " +
+					" where contentlet.structure_inode = ? " +  
+					" and contentlet.inode=contentlet_version_info.live_inode " +
+					" and contentlet_version_info.deleted = " + DbConnectionFactory.getDBFalse() +
+					" and clickstream_request.associated_identifier = contentlet.identifier " +
+					" and clickstream_request.timestampper between ? and ? " + // startDate and endDate
+					" group by clickstream_request.associated_identifier " +
+					" UNION ALL " +
+					" select analytic_summary_content.inode as content_ident, sum(analytic_summary_content.hits) as num_views " +
+					" from analytic_summary_content, analytic_summary , analytic_summary_period, contentlet,  contentlet_version_info " +
+					" where analytic_summary_content.summary_id = analytic_summary.id " +
+					" and analytic_summary.summary_period_id = analytic_summary_period.id " +
+					" and analytic_summary_period.full_date between ? and ? " + // startDate and endDate 
+					" and contentlet.structure_inode = ? " +  
+					" and contentlet.inode= contentlet_version_info.live_inode " +
+					" and contentlet_version_info.deleted = " + DbConnectionFactory.getDBFalse() + 
+					" and analytic_summary_content.inode = contentlet.identifier " +
+					" group by content_ident  ) consolidated_tab " +
+					" group by content_ident order by sum desc; ";
+		
+			DotConnect dc = new DotConnect();
+	        dc.setSQL(sql);      
+	        dc.addParam(structureInode);
+	        dc.addParam(startDate);
+	        dc.addParam(endDate);
+	        dc.addParam(startDate);
+	        dc.addParam(endDate);
+	        dc.addParam(structureInode);
+	        
+	        List<Map<String, String>> contentIdentifiers = dc.loadResults();
+	        
+	        PermissionAPI perAPI = APILocator.getPermissionAPI();
+	        IdentifierAPI identAPI = APILocator.getIdentifierAPI();
+	        
+	        for(Map<String, String> ident:contentIdentifiers){
+	        	Identifier identifier = identAPI.find(ident.get("content_ident"));
+	        	if(perAPI.doesUserHavePermission(identifier, PermissionAPI.PERMISSION_READ, user)){
+	        		Map<String, String> h = new HashMap<String, String>();
+	        		h.put("identifier", ident.get("content_ident"));
+	        		h.put("numberOfViews", ident.get("numberOfViews"));
+	        		result.add(h);
+	        	}
+	        }
+	        
+			return result;
+		}        
 }

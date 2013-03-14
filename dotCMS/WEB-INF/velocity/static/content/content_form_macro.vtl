@@ -106,19 +106,19 @@ var theme = 'dmundra';
 
 	    	    #if("$!relationship.getChildStructure().inode" == "$structure.inode" && "$!relationship.getCardinality()"=="0" && $temp.indexOf(',') != -1)
 	    	    	#set($options = "")
-	    	    	#set($relationShipsError = "$!{relationShipsError} $text.get('org.dotcms.frontend.content.submission.1.n.cardinality') ${relationship.getRelationTypeValue()} $text.get('org.dotcms.frontend.content.submission.not.allow.multiple.parents')")
+	    	    	#set($relationShipsError = "$!{relationShipsError} $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.1.n.cardinality') ${relationship.getRelationTypeValue()} $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.not.allow.multiple.parents')")
 	    	    #else
 	    			#set($options = "${options}${relationship.getRelationTypeValue()}=${temp};")
 	    		#end
 	    	#else
 				#set($options = "")
-	    	    #set($relationShipsError = "$!{relationShipsError} $text.get('org.dotcms.frontend.content.submission.missing.relationship') ${relationship.getRelationTypeValue()}<br/>")
+	    	    #set($relationShipsError = "$!{relationShipsError} $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.missing.relationship') ${relationship.getRelationTypeValue()}<br/>")
 	    	#end
 	    #else
 	    	#if($UtilMethods.isSet($temp) && $temp.indexOf("$relationship.getRelationTypeValue()") == -1)
 	    		#if("$!relationship.getChildStructure().inode" == "$structure.inode" && "$!relationship.getCardinality()"=="0" && $temp.indexOf(',') != -1)
 	    	    	#set($options = "")
-	    	    	#set($relationShipsError = "$!{relationShipsError} $text.get('org.dotcms.frontend.content.submission.1.n.cardinality') ${relationship.getRelationTypeValue()} $text.get('org.dotcms.frontend.content.submission.not.allow.multiple.parents')")
+	    	    	#set($relationShipsError = "$!{relationShipsError} $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.1.n.cardinality') ${relationship.getRelationTypeValue()} $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.not.allow.multiple.parents')")
 	    	    #else
 	    			#set($options = "${options}${relationship.getRelationTypeValue()}=${temp};")
 	    		#end
@@ -136,7 +136,7 @@ var theme = 'dmundra';
 <div class="submitContent">
 	<div class="formTop">&nbsp;</div>
 	<div class="formBody">
-		$text.get('org.dotcms.frontend.content.submission.structure.dont.exists')
+		$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.structure.dont.exists')
 	</div>
 </div>
 
@@ -254,7 +254,7 @@ var theme = 'dmundra';
 								</script>
 								#set($className = ' last')
 							#end
-							<li id="${field.velocityVarName}TabTab" class="beta${className}">${field.fieldName}</li>
+							<li id="${field.velocityVarName}TabTab" class="beta${className}">$text.get($field.fieldName)</li>
 				    		<script language="javascript">
 							        tabsList[index] = "${field.velocityVarName}Tab";
 							        tabsRequiredList["${field.velocityVarName}Tab"]=0;
@@ -305,9 +305,9 @@ var theme = 'dmundra';
 				</div>
 				<div id="tabButton$tabCount" class="submitButton" #if($tabCount > 0) style="display:none" #end >
 				   #if($tabCount > 0)
-				    <button dojoType="dijit.form.Button" onclick="showPreviousTab(); return false;" >$text.get('org.dotcms.frontend.content.submission.previous')</button>
+				    <button dojoType="dijit.form.Button" onclick="showPreviousTab(); return false;" >$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.previous')</button>
 				   #end
-					<button dojoType="dijit.form.Button" onclick="showNextTab(); return false;" >$text.get('org.dotcms.frontend.content.submission.next')</button>
+					<button dojoType="dijit.form.Button" onclick="showNextTab(); return false;" >$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.next')</button>
 			    </div>
 			    #set($tabCount = $math.add($tabCount ,1))
 			    #set($submitTabName = "${field.velocityVarName}Tab")
@@ -320,7 +320,7 @@ var theme = 'dmundra';
 					</dl>
 					<dl class="formFieldSet" id="${field.velocityVarName}FieldSet">
 						<div class="group">
-		    				<div class="formDivider">${field.fieldName}</div>
+		    				<div class="formDivider">$text.get($field.fieldName)</div>
 	    				</div><!-- end .group -->
 
 				#elseif($field.fieldType == 'categories_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
@@ -366,10 +366,10 @@ var theme = 'dmundra';
 	    				#if($UtilMethods.isSet($field.hint))
 	    					<a href="#" id="tip-$field.getVelocityVarName()"><span class="hintIcon"></span></a>
 							<span dojoType="dijit.Tooltip" connectId="tip-$field.getVelocityVarName()" position="above" style="width:100px;">
-								<span class="contentHint">${field.hint}</span>
+								<span class="contentHint">$text.get($field.hint)</span>
 							</span>
 						#end
-	    				#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
+	    				#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end $text.get($field.fieldName)</label>
 	    			#end
 	    			</dt>
 	    			#set($velocityVarName = "default${field.velocityVarName.substring(0,1).toUpperCase()}${field.velocityVarName.substring(1)}")
@@ -817,7 +817,7 @@ var theme = 'dmundra';
 			#if($contentUseCaptcha)
 				<div class="group">
 				    <dt class="formFieldLabel">
-		    			<label for="captchaformFieldLabel">$text.get('org.dotcms.frontend.content.submission.captcha')</label>
+		    			<label for="captchaformFieldLabel">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.captcha')</label>
 		    		</dt>
 		    		<dd class="formFieldInput">
 		    			<div id="captcha-image">
@@ -837,7 +837,7 @@ var theme = 'dmundra';
 		         </div>
 		         <div class="group">
 				    <dt class="formFieldLabel">
-		    			<label for="captcha"><img src="/html/images/icons/required.gif"/> $text.get('org.dotcms.frontend.content.submission.captcha.validation.image')</label>
+		    			<label for="captcha"><img src="/html/images/icons/required.gif"/> $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.captcha.validation.image')</label>
 		    		</dt>
 		    		<dd class="formFieldInput">
 			        	<input id="captcha" name="captcha"  dojoType="dijit.form.TextBox" maxlength="20" type="text" ><span id="alertcaptcha" class="errorMessages"></span>
@@ -856,9 +856,9 @@ var theme = 'dmundra';
 		<div id="tabButton$tabCount" ></div>
 		<div id="submitButton" class="submitButton" #if($tabCount > 0) style="display:none" #end>
 		   #if($tabCount > 0)
-		    <button dojoType="dijit.form.Button" type="button" onclick="showPreviousTab();" >$text.get('org.dotcms.frontend.content.submission.previous')</button>
+		    <button dojoType="dijit.form.Button" type="button" onclick="showPreviousTab();" >$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.previous')</button>
 		   #end
-		   <button dojoType="dijit.form.Button" id="buttonSubmitButton" type="button" onclick="submitContent('$submitTabName');">$text.get('org.dotcms.frontend.content.submission.save')</button>
+		   <button dojoType="dijit.form.Button" id="buttonSubmitButton" type="button" onclick="submitContent('$submitTabName');">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.save')</button>
 	    </div>
 	</form>
 	<div style="clear:both"></div>
@@ -868,7 +868,7 @@ var theme = 'dmundra';
   <div class="submitContent">
 		<div class="formTop">&nbsp;</div>
 		<div class="formBody">
-			$text.get('org.dotcms.frontend.content.submission.not.proper.permissions')
+			$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.not.proper.permissions')
 		</div>
 		<div style="clear:both"></div>
 	</div>
@@ -878,7 +878,7 @@ var theme = 'dmundra';
 	<div class="submitContent">
 		<div class="formTop">&nbsp;</div>
 		<div class="formBody">
-			$text.get('org.dotcms.frontend.content.submission.login.message1') <a href="/dotCMS/login">$text.get('org.dotcms.frontend.content.submission.login.message2')</a> $text.get('org.dotcms.frontend.content.submission.login.message3') ${structure.name}.
+			$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.login.message1') <a href="/dotCMS/login">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.login.message2')</a> $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.login.message3') ${structure.name}.
 			$session.setAttribute("REDIRECT_AFTER_LOGIN","${VTLSERVLET_URI}?$!{request.getQueryString()}")
 		</div>
 		<div style="clear:both"></div>
@@ -904,6 +904,8 @@ var theme = 'dmundra';
 					#set($customErrorMessages = $submitcontenttool.getFieldVariableValue($structure.getVelocityVarName(), $field.velocityVarName, "errorFieldMessage"))
 					#if(!$UtilMethods.isSet($customErrorMessages))
 						#set($customErrorMessages ="")
+					#else
+					    #set($customErrorMessages = $text.get($customErrorMessages))
 					#end
 
 					#if("$field.getFieldType().toUpperCase()"=="TEXT")
@@ -1020,6 +1022,7 @@ var theme = 'dmundra';
     	#end
 
     	#if($contentUseCaptcha || $contentUseAudioCaptcha)
+    		 customErrorMessages["captcha"]="";
 	    	if(!lengthValid(document.getElementById("captcha"), 1, "captcha")){
 				return false;
 			}

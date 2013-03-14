@@ -241,6 +241,19 @@ public class LanguageWebAPI implements ViewTool {
 		return message;
 	}
 	
+	public String getFromSessionLanguage(String key) throws LanguageException {
+	    String language = null;
+        if (language == null)
+            language = request.getParameter("languageId");
+        if (language == null)
+            language = (String) request.getSession().getAttribute(
+                    com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
+        if (language == null)
+            language = String.valueOf(langAPI.getDefaultLanguage().getId());
+        Language lang=APILocator.getLanguageAPI().getLanguage(language);
+        return LanguageUtil.get(LanguageUtil.getLocale(lang.getLanguageCode()),key);
+	}
+	
 }
    
     

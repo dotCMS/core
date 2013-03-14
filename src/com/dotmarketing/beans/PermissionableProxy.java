@@ -15,6 +15,20 @@ public  class PermissionableProxy implements Permissionable {
 
 	public void setType(String type) {
 		this.type = type;
+		if(type ==null) return;
+		if(type.equals("contentlet") || type.equals("host")) {
+			setPermissionByIdentifier(true);
+		} else if (type.equals("htmlpage")) {
+			setPermissionByIdentifier(true);
+		} else if (type.equals("folder")) {
+			setPermissionByIdentifier(false);
+		} else if (type.equals("template")) {
+			setPermissionByIdentifier(true);
+		} else if (type.equals("containers")) {
+			setPermissionByIdentifier(true);
+		} else if (type.equals("structure")) {
+			setPermissionByIdentifier(false);
+		} 
 	}
 
 	private static final long serialVersionUID = 1L;

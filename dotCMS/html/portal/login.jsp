@@ -366,6 +366,10 @@ function showLanguageSelector(){
 			   </div>
 			<%------/  Language Selector -----%>
 			
+			<div class="inputCaption" style="float:right;">
+            	<a href="javascript:showForgot()"><%= LanguageUtil.get(pageContext, "forgot-password") %></a>
+            </div>
+			
 		<!-- /Button Row --->
 	</div>
 

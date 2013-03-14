@@ -2157,4 +2157,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return value;
     }
 	
+	@Override
+	public List<Map<String, String>> getMostViewedContent(String structureVariableName,
+			String startDate, String endDate, User user) {
+
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.getMostViewedContent(structureVariableName, startDate, endDate, user);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		List<Map<String, String>> c = conAPI.getMostViewedContent(structureVariableName, startDate, endDate, user);
+		for(ContentletAPIPostHook post : postHooks){
+			post.getMostViewedContent(structureVariableName, startDate, endDate, user);
+		}
+		return c;
+	}
 }

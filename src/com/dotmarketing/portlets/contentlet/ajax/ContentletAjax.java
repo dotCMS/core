@@ -1196,7 +1196,7 @@ public class ContentletAjax {
 					elementValue = null;
 				}
 				//http://jira.dotmarketing.net/browse/DOTCMS-5802
-				boolean populate = req.getSession().getAttribute("populateAccept")!=null?
+				/*boolean populate = req.getSession().getAttribute("populateAccept")!=null?
 						((Boolean)req.getSession().getAttribute("populateAccept")).booleanValue():false;
 						if(populate && elementValue!=null){
 							String siblingData = req.getSession().getAttribute(elementName+"-sibling")!=null?
@@ -1210,7 +1210,8 @@ public class ContentletAjax {
 													String fieldValue = binFile.getName();
 													File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
 															+ java.io.File.separator + user.getUserId()
-															+ java.io.File.separator + fieldValue);
+															+ java.io.File.separator + elementName + 
+															java.io.File.separator + fieldValue);
 
 														if(!destFile.exists()){
 															destFile.createNewFile();
@@ -1224,7 +1225,7 @@ public class ContentletAjax {
 									}catch(Exception e){
 										Logger.error(this.getClass(), e.getMessage(), e);
 									}
-						}
+						}*/
 
 			}
 			contentletFormData.put(elementName, elementValue);

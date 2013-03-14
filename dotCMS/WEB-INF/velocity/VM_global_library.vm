@@ -440,27 +440,28 @@
 	$numViews
 #end
 
-#macro (getMostViewed $structureName)
+#macro (getMostViewed $structureVariableName)
+
 	#set ($list = $contents.getEmptyList())
 	
-	#if ($UtilMethods.isSet($structureName))
-		#if (!$UtilMethods.isSet($mostViewedTrailingDate))
-			#set ($mostViewedTrailingDate = 'desc')
+	#if ($UtilMethods.isSet($structureVariableName))
+		
+		#if (!$UtilMethods.isSet($mostViewedStartDate))
+			#set ($mostViewedStartDate = '')
+		#end
+		
+		#if (!$UtilMethods.isSet($mostViewedEndDate))
+			#set ($mostViewedEndDate = '')
 		#end
 		
 		#if (!$UtilMethods.isSet($mostViewedLimit))
 			#set ($mostViewedLimit = 20)
 		#end
 		
-		#set ($structure = $structures.findStructureByName($structureName))
-		
-		#set ($query = "select associated_identifier as identifier from (select count(clickstream_request.associated_identifier) as num_views, clickstream_request.associated_identifier")
-		#set ($query = "${query} from contentlet, inode, clickstream_request, contentlet_version_info where contentlet.structure_inode='${structure.inode}' and contentlet.inode=contentlet_version_info.live_inode and contentlet_version_info.deleted=0 and")
-		#set ($query = "${query} contentlet.inode=inode.inode and contentlet.identifier=clickstream_request.associated_identifier group by clickstream_request.associated_identifier)")
-		#set ($query = "${query} as identifier_num_views order by num_views ${mostViewedTrailingDate}")
-		#getSQLResults($query)
-		
+		#set ($results = $dotcontent.getMostViewedContent($structureVariableName, $mostViewedStartDate, $mostViewedEndDate))
+
 		#if ($UtilMethods.isSet($results))
+		
 			#if ($mostViewedLimit < $results.size())
 				#set ($results = $results.subList(0, $mostViewedLimit))
 			#end
@@ -469,6 +470,7 @@
 				#getContentMapDetailByIdentifier($identifier.identifier)
 				$!list.add(${math.sub($velocityCount,1)}, $content)
 			#end
+			
 		#end
 	#end
 #end
