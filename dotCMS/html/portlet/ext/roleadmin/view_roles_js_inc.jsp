@@ -292,15 +292,15 @@
 
 		var menu = dijit.byId("roleTreeMenu");
         // when we right-click anywhere on the tree, make sure we open the menu
-        menu.bindDomNode(dojo.byId('rolesTree'));
+        menu.bindDomNode(dojo.byId('tree-container'));
 
 		dojo.connect(menu, "_openMyself", this, (function(e) {
 
             var tn = dijit.getEnclosingWidget(e.target);
 			var item = tn.lastFocused;
-
 // 			var role = findRole(item.id, flatTree);
-			var role = findRole(item.id);
+
+			var role = findRole(item.id.replace("treeNode-",""));
 			var locked = eval(norm(role.locked));
 			var system = eval(norm(role.system));
 
