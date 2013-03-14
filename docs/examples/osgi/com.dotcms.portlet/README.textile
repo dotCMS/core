@@ -35,7 +35,10 @@ h2. Components
 
 h3. Resources:
 
-* *conf/* Folder (Folder that contains the configuration files for the Portlets definitions)
+* *conf/* Folder (Folder that contains the configuration files for the Portlets definitions) - Both files on this folder are MANDATORY (!)
+** *conf/portlet.xml* The standard JSR-286 portlet configuration file.
+** *conf/liferay-portlet.xml* This file describes some optional Liferay-specific enhancements for JSR-286 portlets that are installed on a Liferay Portal server.
+
 * *ext/* Folder (Folder that contains the files used by the defined Portles)
 ** *ext/view.vtl* Velocity file use it by the Velocity Portlet
 ** *ext/hello.jsp* Jsp file use it by the Jsp Portlet
