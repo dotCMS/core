@@ -70,6 +70,10 @@ public class TailLogServlet extends HttpServlet {
 		
 		String fileName = request.getParameter("fileName");
 	
+		if(fileName.trim().isEmpty()) {
+		    return;
+		}
+		
 		if(!fileName.startsWith(com.dotmarketing.util.FileUtil.getAbsolutlePath(com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER")))){
 			response.sendError(403);
 			AdminLogger.log(TailLogServlet.class, "service", "Someone tried to use the TailLogServlet to display a file not in the logs directory");
