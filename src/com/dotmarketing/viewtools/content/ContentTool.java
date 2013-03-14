@@ -1,6 +1,7 @@
 package com.dotmarketing.viewtools.content;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -367,5 +368,19 @@ public class ContentTool implements ViewTool {
 			q+=" +deleted:false ";
 		}
 	  	return q;
+	}
+	
+
+    /**
+     * Gets the top viewed contents identifiers and numberOfViews  for a particular structure for a specified date interval
+     * 
+     * @param structureVariableName
+     * @param startDate
+     * @param endDate
+     * @param user
+     * @return
+     */
+	public List<Map<String, String>> getMostViewedContent(String structureVariableName, String startDate, String endDate) {
+		return APILocator.getContentletAPI().getMostViewedContent(structureVariableName, startDate, endDate, user);
 	}
 }

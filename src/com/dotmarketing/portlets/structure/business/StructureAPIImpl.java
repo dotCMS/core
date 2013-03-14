@@ -97,5 +97,20 @@ public class StructureAPIImpl implements StructureAPI {
         StructureCache.removeStructure(st);
         StructureServices.removeStructureFile(st);
     }
+
+	@Override
+	public Structure find(String inode, User user) throws DotSecurityException, DotDataException, DotStateException {
+		Structure s = StructureFactory.getStructureByInode(inode);
+		if(!APILocator.getPermissionAPI().doesUserHavePermission(s, PermissionAPI.PERMISSION_READ, user)){
+			throw new DotSecurityException("User " + user + " does not have permission to struct " +inode);
+		}
+		return s;
+				
+		
+	}
+    
+    
+    
+    
     
 }

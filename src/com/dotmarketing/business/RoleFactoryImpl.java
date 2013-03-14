@@ -329,6 +329,9 @@ public class RoleFactoryImpl extends RoleFactory {
 		hu.setParam(role.getId());
 		Role r = (Role)hu.load();
 		HibernateUtil.delete(r);
+		if(r.getParent().equals(r.getId())){
+			rc.clearRootRoleCache();
+		}
 		rc.remove(r.getId());
 		rc.remove(r.getRoleKey());
 		rc.clearRoleCache();

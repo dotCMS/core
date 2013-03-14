@@ -34,6 +34,7 @@
 .copyright{font-size:10px;color:#555;text-align:center;}
 .serverID{position:absolute;top:35px;right:10px;}
 .helpId{position:fixed;left:50px;bottom:-1px;color:#ddd;z-index:9999;}
+#helpcontent{border:5px solid #000;}
 .dotcmsHelpButton{
 	display:block;
 	padding:6px 25px;

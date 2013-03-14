@@ -262,7 +262,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		} catch (DotDataException e) {
 			Logger.error(Folder.class, e.getMessage(), e);
 		} catch (Exception e) {
-
+			Logger.debug(this, " This is usually not a problem as it is usually just the identifier not being found" +  e.getMessage(), e);
 		}
 
 		return id!=null?id.getPath():null;

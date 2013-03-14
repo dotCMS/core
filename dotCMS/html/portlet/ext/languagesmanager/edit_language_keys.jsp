@@ -197,7 +197,12 @@
 		}
 
 		dijit.byId('savingKeysDialog').show();
-		LanguageAjax.saveKeys(currentLanguage,currentCountry,keysToAdd,keysToUpdate,keysToDelete,saveKeysCallback);				
+		LanguageAjax.saveKeys(currentLanguage,currentCountry,keysToAdd,keysToUpdate,keysToDelete,saveKeysCallback);
+		 var form = $('fm');
+         form.action = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString()%>"> <portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" /></portlet:actionURL>';
+         form.cmd.value = 'edit';
+         form.id.value = <%= language.getId() %>;
+         form.submit();
 		
 	}
 
