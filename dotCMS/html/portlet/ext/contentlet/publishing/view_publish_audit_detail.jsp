@@ -27,7 +27,7 @@
 		currentEndpointHistory = PublishAuditHistory.getObjectFromString(pojo_string);
 		status = publishAuditStatus.getStatus().getCode();
 		
-		if(currentEndpointHistory.getAssets() != null && currentEndpointHistory.getAssets().size()>0){
+		if(currentEndpointHistory != null && currentEndpointHistory.getAssets() != null && currentEndpointHistory.getAssets().size()>0){
 			for(String id : currentEndpointHistory.getAssets().keySet()){
 				assetType = currentEndpointHistory.getAssets().get(id);
 				assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); 
