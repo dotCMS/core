@@ -3,14 +3,13 @@ h1. README
 
 This bundle plugin is an example of how to create and add Portlets using an OSGI bundle plugin.
 This example have the code to create three types of Portlets:
-* Velocity Portlet: Portlet that will display content using a velocity file
-* Jsp Portlet: Portlet that will display content using a jsp file
-* Struts Portlet: Portlet that will call an Struts Action class that will use a jsp file in order to display content.
+* *Velocity Portlet*: Portlet that will display content using a velocity file
+* *Jsp Portlet*: Portlet that will display content using a jsp file
+* *Struts Portlet*: Portlet that will call an Struts Action class that will use a jsp file in order to display content.
 
 h2. How to create a bundle plugin for Portles
 
-In order to create this OSGI plugin, you must write the *META-INF/MANIFEST*
-to be inserted into OSGI jar.
+In order to create this OSGI plugin, you must write the *META-INF/MANIFEST* to be inserted into OSGI jar.
 
 In this *MANIFEST* you must specify (see template plugin):
 
@@ -18,7 +17,7 @@ In this *MANIFEST* you must specify (see template plugin):
 * *Bundle-SymbolicName*: A short an unique name for the bundle
 * *Bundle-Activator*: Package and name of your Activator class (example: com.dotmarketing.osgi.portlet.Activator)
 * *DynamicImport-Package: **
-p(.Dynamically add required imports the plugin may need without add them explicitly</spam>
+Dynamically add required imports the plugin may need without add them explicitly</spam>
 * *Import-Package*: This is a comma separated list of package's name. In this list there must be the packages that you are using inside the bundle plugin and that are exported by the dotCMS runtime.
 
 
