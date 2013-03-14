@@ -158,6 +158,10 @@ public class FileUtil {
 			else  {
 				try {
 					JNALibrary.link(source.getAbsolutePath(), destination.getAbsolutePath());
+					// setting this means we will try again if we cannot hard link
+					if( !destination.exists() ){
+						hardLinks = false;
+					}
 				} catch (IOException e) {
 					Logger.error(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
 							+ ", destination: " + destination.getAbsolutePath());
