@@ -69,7 +69,10 @@ public class PushUtils {
 	    	if(!file.isHidden()) {
 	    		// Create an entry for the file
 	    		if(!dir.equals("."))
-	    			taos.putArchiveEntry(new TarArchiveEntry(file, dir+File.separator+file.getName()));
+	    			if(File.separator.equals("\\")){
+	    				dir = dir.replaceAll("\\\\", "/");
+	    			}
+	    			taos.putArchiveEntry(new TarArchiveEntry(file, dir + "/" + file.getName()));
 				if (file.isFile()) {
 			        // Add the file to the archive
 					BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
