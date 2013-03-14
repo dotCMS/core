@@ -322,7 +322,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		    	
 		    	
 		    	String ext = UtilMethods.getFileExtension(data.getDataFile().getName());
-		    	File tmp = File.createTempFile(data.getDataFile().getName(), "." +ext);
+		    	File tmp = File.createTempFile("binaryexporter", "." +ext);
 		    	FileUtil.copyFile(data.getDataFile(), tmp);
 		    	tmp.deleteOnExit(); 
 		    	if(req.getParameter("binaryFieldId") != null){
