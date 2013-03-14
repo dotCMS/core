@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.beans.PermissionableProxy"%>
 <%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
@@ -190,7 +191,8 @@
 		
 		
 			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
-			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Content") %></strong></th>	
+			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>	
+			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Type") %></strong></th>	
 			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>	
 			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
 			<th style="width:150px" nowrap="nowrap" align="center" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
@@ -204,29 +206,14 @@
 			
 			PermissionableProxy pp = new PermissionableProxy();
 			for(String key : bundleAssets.keySet()) {
-				
+
 				String identifier = key;
 				String assetType = bundleAssets.get(key);
-				
+				pp.setInode(identifier);
 				pp.setIdentifier(identifier);
 				pp.setType(assetType);
-				pp.setInode(identifier);
 				
-				
-				if(assetType.equals("contentlet") || assetType.equals("host")) {
-					pp.setPermissionByIdentifier(true);
-				} else if (assetType.equals("htmlpage")) {
-					pp.setPermissionByIdentifier(true);
-				} else if (assetType.equals("folder")) {
-					pp.setPermissionByIdentifier(false);
-				} else if (assetType.equals("template")) {
-					pp.setPermissionByIdentifier(true);
-				} else if (assetType.equals("containers")) {
-					pp.setPermissionByIdentifier(true);
-				} else if (assetType.equals("structure")) {
-					pp.setPermissionByIdentifier(false);
-				} 
-				
+
 				break;
 			}
 			
@@ -242,23 +229,29 @@
 							id="chkBox<%=c.getBundleId()%>"/>
 				</td>	
 			
-			
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-				
 					<%=c.getBundleId().split("-")[0]%>...
 				</td>
-				<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-					<%try{ %>
-						<span class="contentIncSpan">
-						<%for(int i =0 ;i < c.getStatusPojo().getAssets().size();i++){ %>
-							<%=APILocator.getContentletAPI().findContentletByIdentifier(c.getStatusPojo().getAssets().get(i), false,APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false ).getTitle() %>
-							<br>
-							<%if(i ==2) { %>(<%=c.getStatusPojo().getAssets().size() - i -1 %> <%= LanguageUtil.get(pageContext, "more") %>)<%break;} %>
-						<%} %>
-						</span>
-					<%}catch(Exception e) {%>
-					
+				<%try{ %>
+
+					<%for(String id : bundleAssets.keySet()) { %>
+						<%String assetType = bundleAssets.get(id); %>
+						<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
+						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+							<%= assetTitle %>
+						</td>
+						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+							<%= assetType%>
+						</td>
 					<%} %>
+				<%}catch(Exception e) {%>
+					<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+						-
+					</td>
+					<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+						-
+					</td>
+				<%} %>
 				</td>
 			    <td valign="top" nowrap="nowrap" align="center"><%=LanguageUtil.get(pageContext, "publisher_status_" + c.getStatus().toString()) %></td>
 			    <td valign="top" nowrap="nowrap"><%=UtilMethods.dateToHTMLDate(c.getCreateDate(),"MM/dd/yyyy hh:mma") %></td>
