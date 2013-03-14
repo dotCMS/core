@@ -1276,7 +1276,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentlets.add(contentlet);
         conFac.deleteVersion(contentlet);
 
-        indexAPI.removeContentFromIndex(contentlet);
+        ContentletVersionInfo cinfo=APILocator.getVersionableAPI().getContentletVersionInfo(
+                contentlet.getIdentifier(), contentlet.getLanguageId());
+        
+        if(cinfo.getWorkingInode().equals(contentlet.getInode()) || 
+                (InodeUtils.isSet(cinfo.getLiveInode()) && cinfo.getLiveInode().equals(contentlet.getInode())))
+            // we remove from index if it is the working or live version
+            indexAPI.removeContentFromIndex(contentlet);
+        
         CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
         // jira.dotmarketing.net/browse/DOTCMS-1073
