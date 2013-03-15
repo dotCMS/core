@@ -1,16 +1,16 @@
 h1. README
 
-This bundle plugin is an example of how to create and add Portlets (administrative tools) using an OSGI bundle plugin.
-This example includes the code to create three types of Portlets:
-* *Velocity Portlet*: Portlet that will display portlet content using a velocity file
-* *Jsp Portlet*: Portlet that will display portlet content using a jsp file
-* *Struts Portlet*: Portlet that will call an Struts Action class that will use a jsp file in order to display portlet content.
+This bundle plugin is an example of how to create and add Portlets for use in the dotCMS' administrative console using an OSGI bundle plugin.
+This example includes the code to create three different types of Portlets, all of which are supported by dotCMS:
+* *Velocity Portlet*: a Portlet implementation that will display portlet content using a velocity file
+* *Jsp Portlet*: a Portlet implementation that will display portlet content using a jsp file
+* *Struts Portlet*: a Portlet implementation  that will call an Struts Action class that will use a jsp file in order to display portlet content.
 
-h2. How to create a bundle plugin for Portles
+h2. How to create an OSGI bundle for Portlets
 
 In order to create this OSGI plugin, you must create a *META-INF/MANIFEST* to be included in the OSGI jar.
 
-In this *MANIFEST* you must specify (see template plugin):
+In this *MANIFEST* you must specify (see the included plugin as an example):
 
 * *Bundle-Name*: The name of your bundle
 * *Bundle-SymbolicName*: A short and unique name for the bundle
