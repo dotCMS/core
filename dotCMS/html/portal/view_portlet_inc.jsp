@@ -204,10 +204,11 @@ if(!statePopUp || portletException){%>
 	
 </script>
 
+<%if(request.getParameter("in_frame")==null){%>
 
 <div class="helpId" id="helpId">
 	<a href="#" onclick="showHelp();" class="dotcmsHelpButton"><%=LanguageUtil.get(pageContext, "help") %></a>
 	<div id="helpcontent"></div>
 </div>
-
+<%} %>
 
