@@ -58,7 +58,7 @@
 	#tailContainer {
 		margin-top:10px;
 		margin-bottom:30px;
-		height:100%;
+		height:80%;
 		width:94%;
 		position: relative;
 		top: 40px;;
