@@ -194,6 +194,7 @@
 		}
 
 
+
 	    treeModel = new dijit.tree.TreeStoreModel({
 	        store: store,
 	        query: { top:true },
@@ -203,14 +204,14 @@
 	        childrenAttrs: ["children"]
 	    });
 
-	    var treeContainer = dijit.byId('tree-container');
+	    var treeContainer = dijit.byId('rolesTree');
 
 	    if(treeContainer && treeContainer instanceof dijit.Tree) {
 			treeContainer.destroyRecursive(false);
 	    }
 
-	    dojo.destroy("tree-container");
-	    dojo.create('div',{id:'tree-container'},'rolesTree');
+	    dojo.destroy("rolesTree");
+	    dojo.create('div',{id:'rolesTree'},'rolesTreeWrapper');
 
 	    initializeRolesTreeWidget(treeModel, autoExpand);
 	}
@@ -227,28 +228,26 @@
 			},
 
 			getIconClass: function (item, opened) {
-// 				var role = findRole(item.id, flatTree);
-// 				var role = findRole(item.id);
-// 				var icon = "";
-// 				if(role) {
-// 					var locked = eval(norm(role.locked));
-// 					if(locked) {
-// 						return "lockIcon";
-// 					}
-// 				}
+				var role = findRole(item.id);
+				var icon = "";
+				if(role) {
+					var locked = eval(norm(role.locked));
+					if(locked) {
+						return "lockIcon";
+					}
+				}
 				return "";
 			},
 
 			getIconStyle: function (item, opened) {
-// 				var role = findRole(item.id, flatTree);
-// 				var role = findRole(item.id);
-// 				var icon = "";
-// 				if(role) {
-// 					var locked = eval(norm(role.locked));
-// 					if(locked) {
-// 						return { };
-// 					}
-// 				}
+				var role = findRole(item.id);
+				var icon = "";
+				if(role) {
+					var locked = eval(norm(role.locked));
+					if(locked) {
+						return { };
+					}
+				}
 				return { width: 0, height: 0 };
 			},
 
@@ -286,13 +285,12 @@
 	        showRoot: false,
 	        autoExpand: autoExpand,
 	        persist: false
-	    }, "tree-container");
-
+	    }, "rolesTree");
 
 
 		var menu = dijit.byId("roleTreeMenu");
         // when we right-click anywhere on the tree, make sure we open the menu
-        menu.bindDomNode(dojo.byId('tree-container'));
+        menu.bindDomNode(dojo.byId('rolesTree'));
 
 		dojo.connect(menu, "_openMyself", this, (function(e) {
 
@@ -569,9 +567,7 @@
 	function saveRoleCallback (newRole) {
 
 		dijit.byId('addRoleDialog').hide();
-		loadRolesTree((function () {
-			roleClicked(newRole.id);
-		}).bind(this));
+		buildRolesTree();
 
 	}
 
@@ -603,7 +599,7 @@
 
 		dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
 		dojo.byId('editRoleButtonWrapper').style.display = 'none';
-		loadRolesTree();
+		buildRolesTree();
 		showDotCMSSystemMessage(roleRemovedMsg);
 	}
 
@@ -619,7 +615,7 @@
 	}
 
 	function lockRoleCallback (lockedRoleId) {
-		loadRolesTree();
+		buildRolesTree();
 		if (norm(currentRoleId) == norm(lockedRoleId)) {
 			dojo.byId('editRoleButtonWrapper').style.display = 'none';
 		}
@@ -627,7 +623,7 @@
 	}
 
 	function unlockRoleCallback (unlockedRoleId) {
-		loadRolesTree();
+		buildRolesTree();
 		if (norm(currentRoleId) == norm(unlockedRoleId) && !eval(norm(currentRole.system))) {
 			dojo.byId('editRoleButtonWrapper').style.display = '';
 		}

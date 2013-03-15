@@ -18,6 +18,8 @@
 	dojo.require("dojox.grid.DataGrid");
 	dojo.require("dojo.data.ItemFileReadStore");
 	dojo.require("dijit.dijit");
+	dojo.require("dojox.data.JsonRestStore")
+
 
 	//I18n messages
 	var abondonUserChangesConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "abondon-user-changes-confirm")) %>';
@@ -94,7 +96,7 @@
         if(e){
        	  dojo.style(e, "height", viewport_height -155+"px");
         }
-       
+
     	//var  e =  dojo.byId("usersListWrapper");
        	//dojo.style(e, "height", viewport_height -240+"px");
 
@@ -142,6 +144,7 @@
 			    }
 			)
 
+		buildRolesTree();
 		//Loading the grid for first time
 		UserAjax.getUsersList(null, null, { start: 0, limit: 50 }, dojo.hitch(this, getUsersListCallback));
 	});
@@ -458,9 +461,48 @@
 	//Function that kicks the loading of user roles
 	function loadUserRolesTree (userid) {
 		dojo.style(dojo.byId('noRolesFound'), { display: 'none' });
-		dojo.style(dojo.byId('loadingRolesWrapper'), { display: '' });
-		dojo.style(dojo.byId('userRolesTreeWrapper'), { display: 'none' });
-		UserAjax.getUserRoles(userid, loadUserRolesTreeCallback);
+		UserAjax.getUserRoles(userid, builtUserRolesMutiSelect);
+	}
+
+	function builtUserRolesMutiSelect(roles) {
+		var userRolesSelect = dijit.byId('userRolesSelect');
+
+	    if(userRolesSelect && userRolesSelect instanceof dijit.form.MultiSelect) {
+	    	userRolesSelect.destroyRecursive(false);
+	    }
+
+		dojo.destroy("userRolesSelect");
+	    dojo.create('select',{id:'userRolesSelect'},'userRolesSelectWrapper');
+
+		require(["dojo/ready", "dijit/form/MultiSelect", "dijit/form/Button", "dojo/dom", "dojo/_base/window"], function(ready, MultiSelect, Button, dom, win){
+
+		        var sel = dojo.byId("userRolesSelect");
+		        var n = 0;
+		        for(var i = 0; i<roles.length; i++) {
+		            var c = win.doc.createElement('option');
+		            var dbfqn = roles[i].DBFQN.split(" --> ");
+		            var nodeName = '';
+
+		            for(var j=0; j<dbfqn.length; j++) {
+		            	var roleId = dbfqn[j];
+		            	var role = findRole(roleId);
+
+		            	if(j<dbfqn.length-1) {
+		            		nodeName+= role.name + ' --> ';
+		            	} else {
+		            		nodeName+= role.name;
+		            	}
+
+		            }
+
+		            c.innerHTML = nodeName;
+		            c.value = roles[i].id;
+		            sel.appendChild(c);
+		        }
+		        var myMultiSelect = new MultiSelect({ name: 'userRolesSelect', style:"width:100%; height:100%" }, sel);
+
+
+		});
 	}
 
 	var userRoles;
@@ -473,33 +515,40 @@
     		${nodeName}\
 		</label>';
 
-	//Callback from the server with the info about the user roles
-	//and kicks the find of the tree of roles
-	function loadUserRolesTreeCallback (roles) {
-		userRoles = roles;
-		RoleAjax.getRolesTree(true, null, false, buildUserRolesTreeCallback);
-	}
+	function buildRolesTree(tree) {
+		dojo.style(dojo.byId('loadingRolesWrapper'), { display: '' });
+		dojo.style(dojo.byId('userRolesTreeWrapper'), { display: 'none' });
+		var autoExpand = false;
 
-	//Callback from the server with the tree of roles to load
-	function buildUserRolesTreeCallback (tree) {
+		if(tree==null) {
+			store = new dojox.data.JsonRestStore({ target: "/api/role/id", labelAttribute:"name"});
+		} else {
+			store = new dojo.data.ItemFileReadStore({ data: tree });
+			autoExpand = true;
+		}
 
-		//Flattening the tree for later used
-		rolesTree = tree;
-		flattenTree(tree);
-
-		//constructing the data stores for dojo tree
-		var treeData = { identifier: 'id', label: 'name', items: [ { id: 'root', name: 'Roles', top: true,
-            children: tree } ] };
-
-		var store = new dojo.data.ItemFileReadStore({ data: treeData });
-
-	    var treeModel = new dijit.tree.TreeStoreModel({
+	    treeModel = new dijit.tree.TreeStoreModel({
 	        store: store,
 	        query: { top:true },
 	        rootId: "root",
 	        rootLabel: "Root",
+	        deferItemLoadingUntilExpand: true,
 	        childrenAttrs: ["children"]
 	    });
+
+	    var treeContainer = dijit.byId('userRolesTree');
+
+	    if(treeContainer && treeContainer instanceof dijit.Tree) {
+			treeContainer.destroyRecursive(false);
+	    }
+
+	    dojo.destroy("userRolesTree");
+	    dojo.create('div',{id:'userRolesTree'},'userRolesTreeWrapper');
+
+	    initializeRolesTreeWidget(treeModel, autoExpand);
+	}
+
+	function initializeRolesTreeWidget(treeModel, autoExpand) {
 
 		//Overriding the dojo tree nodes to allow having html within nodes
 	    dojo.declare("dotcms.dojo.RolesTreeNode", dijit._TreeNode, {
@@ -515,20 +564,12 @@
 				dojo.parser.parse(this.labelNode);
 			}
 	    });
-
 		//Overriding the dojo tree to handle some of our own actions
 		dojo.declare("dotcms.dojo.RolesTree", dijit.Tree, {
 
-			//Checks if a node should be checked or not
 			_isItemChecked: function(item) {
 
-				var branch = getRoleFlatUpBranch(item.id[0]);
 
-				for(var i = 0; i < branch.length; i++) {
-					var role = branch[i];
-					if(findRole(role.id, userRoles))
-						return true;
-				}
 				return false;
 
 			},
@@ -536,7 +577,7 @@
 			//Returns the node text based on the treeRoleOptionTemplate html template
 			getLabel: function(item) {
 				var checked = this._isItemChecked(item)?"checked=\"checked\"":"";
-				var role = findRole(item.id, flatTree);
+				var role = findRole(item.id);
 				var editusers = role==null?false:(dojo.isArray(role.editUsers)?eval(role.editUsers[0]):eval(role.editUsers));
 				var html = dojo.string.substitute(treeRoleOptionTemplate, {
 						nodeId: item.id, nodeName: item.name, nodeChecked:checked, nodeDisabled: (editusers?"":"disabled=\"disabled\"") })
@@ -553,57 +594,42 @@
 				return { width: 0, height: 0 };
 			},
 
-			//Overring the tree node creating to use our own version that let you put html within the node
 			_createTreeNode: function (args) {
-				args.id = "treeNode-" + args.item.id[0];
+				args.item.id[0] = args.item.id[0].replace(/_/g, "-");
+				args.id = "treeNode-" + norm(args.item.id);
 				return new dotcms.dojo.RolesTreeNode(args);
 			},
-
-			//Hooking the onclick of the node action to check/uncheck the role
-			onClick: function (item, treenode, event) {
-				if(event.target.id == 'role_node_label_' + item.id) {
-					var checkbox = dijit.byId('role_node_' + item.id + '_chk');
-					if(checkbox && !checkbox.attr('disabled')) {
-						var checked = checkbox.attr('value') != false;
-						checkbox.attr('value', checked?false:'on');
-						roleChecked(item.id);
-					}
-				}
-			},
+// 			//Hooking the onclick of the node action to check/uncheck the role
+// 			onClick: function (item, treenode, event) {
+// 				if(event.target.id == 'role_node_label_' + item.id) {
+// 					var checkbox = dijit.byId('role_node_' + item.id + '_chk');
+// 					if(checkbox && !checkbox.attr('disabled')) {
+// 						var checked = checkbox.attr('value') != false;
+// 						checkbox.attr('value', checked?false:'on');
+// 						roleChecked(item.id);
+// 					}
+// 				}
+// 			},
 
 			//Some housekeeping after tree creation
 			postCreate: function () {
-
-				//Calling the parent
+// 				//Calling the parent
 				this.inherited(arguments);
-				//hiding the role loading image
+// 				//hiding the role loading image
 				dojo.style(dojo.byId('loadingRolesWrapper'), { display: 'none' });
-				//Showing the tree
+// 				//Showing the tree
 				dojo.style(dojo.byId('userRolesTreeWrapper'), { display: '' });
 
-				//Filtering to show only user assigned roles by defult the first time the tree loads
-				dijit.byId('onlyUserRolesFilter').attr('value', false)
+
 			}
 
 		});
-
-		//Unregistering any old loaded tree and nodes before try to render a new tree
-		if (dijit.byId('userRolesTree')) {
-			flatTree.each(function (role) {
-				if(dijit.byId("role_node_" + role.id + "_chk")) {
-					dijit.registry.remove("role_node_" + role.id + "_chk");
-				}
-				if(dijit.byId('treeNode-' + role.id))
-					dijit.registry.remove('treeNode-' + role.id);
-			});
-			dijit.registry.remove('userRolesTree');
-			dijit.registry.remove('treeNode-root');
-		}
 
 		//Rendering the tree
 	   	var tree = new dotcms.dojo.RolesTree({
 	        model: treeModel,
 	        showRoot: false,
+	        autoExpand: autoExpand,
 	        persist: false
 	    }, "userRolesTree");
 
@@ -1268,12 +1294,12 @@
 		TagAjax.addTag(tagName, currentUser.userId, currentUser.inode, showResult);
 	}
 	function showResult(result) {
-		DWRUtil.removeAllRows("tags_table");	
+		DWRUtil.removeAllRows("tags_table");
 		var table = document.getElementById("tags_table");
 		console.log(result);
 		var tags =  result.tags;
 		console.log(tags);
-		if (tags.length > 0) {			
+		if (tags.length > 0) {
 			var row = table.insertRow(table.rows.length);
 			row.setAttribute("bgColor","#EEEEEE");
 			var cell = row.insertCell (row.cells.length);
@@ -1382,6 +1408,26 @@
 
 	function updateUserLocaleCallback(){
 		showDotCMSSystemMessage(userLocaleSavedMsg);
+	}
+
+	function findRole(roleid) {
+
+		var roleNode;
+
+		var xhrArgs = {
+			url : "/api/role/method/loadRole/id/" + roleid,
+			handleAs : "json",
+			sync: true,
+			load : function(data) {
+				roleNode = data;
+			},
+			error : function(error) {
+				targetNode.innerHTML = "An unexpected error occurred: " + error;
+			}
+		}
+
+		var deferred = dojo.xhrGet(xhrArgs);
+		return roleNode;
 	}
 
 

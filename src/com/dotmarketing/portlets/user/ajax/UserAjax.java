@@ -164,10 +164,18 @@ public class UserAjax {
 
 	public List<Map<String, Object>> getUserRoles (String userId) throws DotDataException {
 		List<Map<String, Object>> roleMaps = new ArrayList<Map<String,Object>>();
+		Role userRole = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
+
 		if(UtilMethods.isSet(userId)){
 			RoleAPI roleAPI = APILocator.getRoleAPI();
 			List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(userId, false);
 			for(com.dotmarketing.business.Role r : roles) {
+
+				String DBFQN =  r.getDBFQN();
+
+				if(DBFQN.contains(userRole.getId())) {
+					continue;
+				}
 				roleMaps.add(r.toMap());
 			}
 		}
