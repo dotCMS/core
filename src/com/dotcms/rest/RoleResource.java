@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ public class RoleResource extends WebResource {
 		Boolean onlyUserAssignableRoles = params.get("onlyUserAssignableRoles")!=null;
 		String roleId = params.get("id");
 		String method = params.get("method");
+		String userId = params.get("userId");
 
 		if(UtilMethods.isSet(method) && method.equals("full")) {
 			return getRolesTree();  // Loads all the Roles for the Parent Filtering Select
@@ -51,8 +53,18 @@ public class RoleResource extends WebResource {
 			json.append("[ { id: 'root', name: 'Roles', top: true, children: ").append("[");
 			int rolesCounter = 0;
 			List<Role> rootRoles = roleAPI.findRootRoles();
+			Map<String, String> userRoles = null;
+
+			if(UtilMethods.isSet(userId)) {
+				userRoles = getUserRoles(userId);
+			}
 
 			for(Role r : rootRoles) {
+
+				// if a UserId is passed, we want a tree without the userRoles, so exclude them from resulting json
+				if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
+					continue;
+				}
 
 				if(onlyUserAssignableRoles) {
 
@@ -285,6 +297,26 @@ public class RoleResource extends WebResource {
 
 		String jsonStr = json.toString();
 		return jsonStr.length()>0?jsonStr.substring(0, jsonStr.length()-1):jsonStr;
+	}
+
+	private Map<String, String> getUserRoles (String userId) throws DotDataException {
+		Map<String, String> userRolesMap = new HashMap<String,String>();
+		Role userRole = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
+
+		if(UtilMethods.isSet(userId)){
+			RoleAPI roleAPI = APILocator.getRoleAPI();
+			List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(userId, false);
+			for(com.dotmarketing.business.Role r : roles) {
+
+				String DBFQN =  r.getDBFQN();
+
+				if(DBFQN.contains(userRole.getId())) {
+					continue;
+				}
+				userRolesMap.put(r.getId(), r.getId());
+			}
+		}
+		return userRolesMap;
 	}
 
 
