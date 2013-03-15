@@ -101,8 +101,9 @@ function runNow() {
 	dojo.xhr('GET',{
         url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/runCheckNow',
         handleAs: 'json',
+        preventCache: true,
         load: function() {
-        	disableButtons('');
+        	disableButtons(false);
         	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNING_BG")%>");
         }
 	});
