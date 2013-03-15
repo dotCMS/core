@@ -280,6 +280,15 @@ public class PortletManagerImpl
 		return portlets;
 	}
 
+    public Portlet removePortletFromPool ( String companyId, String portletId ) throws SystemException, PortalException {
+
+        if ( companyId.equals( User.DEFAULT ) ) {
+            throw new SystemException();
+        }
+
+        return (Portlet) _getPortletsPool( companyId ).remove( portletId );
+    }
+
 	public Portlet updatePortlet(
 			String portletId, String groupId, String defaultPreferences,
 			boolean narrow, String roles, boolean active)
@@ -294,7 +303,7 @@ public class PortletManagerImpl
 		}
 
 		groupId = _SHARED_KEY;
-		
+
 //		try {
 //			Group group = GroupUtil.findByPrimaryKey(groupId);
 //
@@ -873,5 +882,5 @@ public class PortletManagerImpl
 	private static final Log _log = LogFactory.getLog(PortletManagerImpl.class);
 
 	private static final String _SHARED_KEY = "SHARED_KEY";
-	
+
 }
