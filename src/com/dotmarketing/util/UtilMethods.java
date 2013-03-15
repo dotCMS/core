@@ -1873,25 +1873,6 @@ public class UtilMethods {
         return uri;
     }
 
-    public static boolean revomeDir(String path) {
-        File dir = new File(path);
-        if (!dir.isDirectory()) {
-            return false;
-        }
-        File[] children = dir.listFiles();
-        for (File child : children) {
-            boolean ok = true;
-            if (child.isDirectory())
-                ok = revomeDir(child.getAbsolutePath());
-            if (ok)
-                ok = child.delete();
-            if (!ok)
-                return ok;
-        }
-
-        return dir.delete();
-    }
-
     // Liferay users utility methods
     public static String getUserFullName(String userId) {
     	User usr = null;
