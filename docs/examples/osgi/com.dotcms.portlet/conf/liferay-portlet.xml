@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<!DOCTYPE portlets>
+
+<portlets>
+    <portlet id="EXT_HELLO_WORLD" narrow="true"/>
+    <portlet id="EXT_STRUTS_HELLO_WORLD" struts-path="ext/strutshello" narrow="true"/>
+    <portlet id="EXT_JSP_HELLO_WORLD" narrow="true"/>
+</portlets>

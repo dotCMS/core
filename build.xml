@@ -39,6 +39,8 @@
 	<property name="build.lib" value="${build.dir}/lib" />
 	<property name="lib.app" value="${basedir}/dotCMS/WEB-INF/lib" />
 	<property name="classes.app" value="${basedir}/dotCMS/WEB-INF/classes" />
+	<property name="osgi.velocity.dir" value="${basedir}/dotCMS/WEB-INF/velocity/osgi" />
+	<property name="osgi.html.dir" value="${basedir}/dotCMS/html/osgi" />
 	<property name="build.war" value="${build.dir}/war" />
 	<property name="build.compiler.fulldepend" value="true" />
 	<property name="deploy.dir" value="${basedir}/dotCMS/WEB-INF/lib" />
@@ -120,6 +122,8 @@
 		<delete failonerror="false" includeemptydirs="true">
 			<fileset dir="${classes.app}" includes="**/*" />
 		</delete>
+        <delete dir="${osgi.html.dir}" />
+        <delete dir="${osgi.velocity.dir}" />
 	</target>
 
 
