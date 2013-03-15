@@ -34,7 +34,7 @@ public class RoleResource extends WebResource {
 		Boolean onlyUserAssignableRoles = params.get("onlyUserAssignableRoles")!=null;
 		String roleId = params.get("id");
 		String method = params.get("method");
-		String userId = params.get("userId");
+		String userId = params.get("userid");
 
 		if(UtilMethods.isSet(method) && method.equals("full")) {
 			return getRolesTree();  // Loads all the Roles for the Parent Filtering Select
@@ -49,22 +49,24 @@ public class RoleResource extends WebResource {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		StringBuilder json = new StringBuilder();
 
+		Map<String, String> userRoles = null;
+
+		if(UtilMethods.isSet(userId)) {
+			userRoles = getUserRoles(userId);
+		}
+
 		if(!UtilMethods.isSet(roleId)) {  // Loads Root Roles
 			json.append("[ { id: 'root', name: 'Roles', top: true, children: ").append("[");
 			int rolesCounter = 0;
 			List<Role> rootRoles = roleAPI.findRootRoles();
-			Map<String, String> userRoles = null;
 
-			if(UtilMethods.isSet(userId)) {
-				userRoles = getUserRoles(userId);
-			}
 
 			for(Role r : rootRoles) {
 
 				// if a UserId is passed, we want a tree without the userRoles, so exclude them from resulting json
-				if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
-					continue;
-				}
+//				if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
+//					continue;
+//				}
 
 				if(onlyUserAssignableRoles) {
 
@@ -103,6 +105,10 @@ public class RoleResource extends WebResource {
 				int childCounter = 0;
 				for(String childId : children) {
 					Role r = roleAPI.loadRoleById(childId);
+
+//					if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
+//						continue;
+//					}
 
 					if(onlyUserAssignableRoles) {
 
