@@ -58,3 +58,13 @@ This activator have 2 main important fragments of code:
 # Will manually register the Portlets making use of the method *registerPortlets*.
 
 * PLEASE note the *unregisterServices()* call on the *stop* method, this call is MANDATORY (!) as it will allow us to clean and remove the registered Portlets and related code (like registered ActionMappings ).
+
+h3. Multi language support
+
+The creation of the Portlets will generate the following language keys in order to use them and set the title for the Portlets:
+* javax.portlet.title.EXT_HELLO_WORLD
+* javax.portlet.title.EXT_JSP_HELLO_WORLD
+* javax.portlet.title.EXT_STRUTS_HELLO_WORLD
+
+In order to add multilanguage values for those keys:
+*CMS Admin* -> *Language Variables* -> *Edit Default Language Variables* -> Add the values for the above keys
