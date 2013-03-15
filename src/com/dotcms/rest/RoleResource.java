@@ -64,9 +64,9 @@ public class RoleResource extends WebResource {
 			for(Role r : rootRoles) {
 
 				// if a UserId is passed, we want a tree without the userRoles, so exclude them from resulting json
-//				if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
-//					continue;
-//				}
+				if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
+					continue;
+				}
 
 				if(onlyUserAssignableRoles) {
 
@@ -83,7 +83,10 @@ public class RoleResource extends WebResource {
 						continue;
 				}
 
-				json.append("{id: '").append(r.getId()).append("', $ref: '").append(r.getId()).append("', name: '").append(r.getName()).append("', children:true}");
+				json.append("{id: '").append(r.getId()).append("', ");
+				json.append("$ref: '").append(r.getId()).append("', ");
+				json.append("name: '").append(r.getName()).append("', ");
+				json.append(" children:true}");
 
 				if(rolesCounter+1 < rootRoles.size()) {
 					json.append(", ");
@@ -106,9 +109,9 @@ public class RoleResource extends WebResource {
 				for(String childId : children) {
 					Role r = roleAPI.loadRoleById(childId);
 
-//					if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
-//						continue;
-//					}
+					if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
+						continue;
+					}
 
 					if(onlyUserAssignableRoles) {
 
