@@ -217,7 +217,7 @@
 				break;
 			}
 			
-			if(permAPI.doesUserHavePermission(pp, PermissionAPI.PERMISSION_PUBLISH, user)) {
+			if(permAPI.doesUserHavePermission(pp, PermissionAPI.PERMISSION_PUBLISH, user) || bundleAssets.keySet().size()==0) {
 		%>
 			<tr <%=errorclass%>>
 				<td style="width:30px;text-align:center;" valign="top">
@@ -233,7 +233,7 @@
 					<%=c.getBundleId().split("-")[0]%>...
 				</td>
 				<%try{ %>
-
+					<% if(bundleAssets.keySet().size()>0){ %>
 					<%for(String id : bundleAssets.keySet()) { %>
 						<%String assetType = bundleAssets.get(id); %>
 						<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
@@ -242,6 +242,14 @@
 						</td>
 						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 							<%= assetType%>
+						</td>
+					<%} %>
+					<%}else{ %>
+						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+							&nbsp;
+						</td>
+						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+							&nbsp;
 						</td>
 					<%} %>
 				<%}catch(Exception e) {%>

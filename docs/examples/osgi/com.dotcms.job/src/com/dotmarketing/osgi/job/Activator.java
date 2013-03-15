@@ -37,7 +37,7 @@ public class Activator extends GenericBundleActivator {
 
     public void stop ( BundleContext context ) throws Exception {
         //Unregister all the bundle services
-        unregisterServices();
+        unregisterServices( context );
     }
 
 }
