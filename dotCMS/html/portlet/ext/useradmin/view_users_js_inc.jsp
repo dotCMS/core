@@ -144,7 +144,7 @@
 			    }
 			)
 
-		buildRolesTree();
+
 		//Loading the grid for first time
 		UserAjax.getUsersList(null, null, { start: 0, limit: 50 }, dojo.hitch(this, getUsersListCallback));
 	});
@@ -272,6 +272,7 @@
 				break;
 			case 'userRolesTab':
 				loadUserRolesTree(userId);
+				buildRolesTree();
 				break;
 			case 'userPermissionsTab':
 				RoleAjax.getUserRole(userId, userRoleCallback);
@@ -521,7 +522,7 @@
 		var autoExpand = false;
 
 		if(tree==null) {
-			store = new dojox.data.JsonRestStore({ target: "/api/role/id", labelAttribute:"name"});
+			store = new dojox.data.JsonRestStore({ target: "/api/role/userid/"+currentUser.id+"/id", labelAttribute:"name"});
 		} else {
 			store = new dojo.data.ItemFileReadStore({ data: tree });
 			autoExpand = true;
@@ -576,6 +577,7 @@
 
 			//Returns the node text based on the treeRoleOptionTemplate html template
 			getLabel: function(item) {
+				console.log(item);
 				var checked = this._isItemChecked(item)?"checked=\"checked\"":"";
 				var role = findRole(item.id);
 				var editusers = role==null?false:(dojo.isArray(role.editUsers)?eval(role.editUsers[0]):eval(role.editUsers));
@@ -624,6 +626,19 @@
 			}
 
 		});
+
+		//Unregistering any old loaded tree and nodes before try to render a new tree
+		if (dijit.byId('userRolesTree')) {
+			flatTree.each(function (role) {
+				if(dijit.byId("role_node_" + role.id + "_chk")) {
+					dijit.registry.remove("role_node_" + role.id + "_chk");
+				}
+				if(dijit.byId('treeNode-' + role.id))
+					dijit.registry.remove('treeNode-' + role.id);
+			});
+			dijit.registry.remove('userRolesTree');
+			dijit.registry.remove('treeNode-root');
+		}
 
 		//Rendering the tree
 	   	var tree = new dotcms.dojo.RolesTree({
@@ -931,15 +946,15 @@
 	}
 
 	//Finds a role within the given list of roles
-	function findRole(roleid, roles) {
-		for(var i = 0; i < roles.length; i++) {
-			var id1 = dojo.isArray(roles[i].id)?roles[i].id[0]:roles[i].id;
-			var id2 = dojo.isArray(roleid)?roleid[0]:roleid;
-			if(id1 == id2)
-				return roles[i];
-		}
-		return null;
-	}
+// 	function findRole(roleid, roles) {
+// 		for(var i = 0; i < roles.length; i++) {
+// 			var id1 = dojo.isArray(roles[i].id)?roles[i].id[0]:roles[i].id;
+// 			var id2 = dojo.isArray(roleid)?roleid[0]:roleid;
+// 			if(id1 == id2)
+// 				return roles[i];
+// 		}
+// 		return null;
+// 	}
 
 	//Additional information tab functions
 
