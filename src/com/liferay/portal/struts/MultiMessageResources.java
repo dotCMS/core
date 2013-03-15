@@ -75,37 +75,28 @@ public class MultiMessageResources extends PropertyMessageResources {
 		_servletContext = servletContext;
 	}
 
-	protected void loadLocale(String localeKey) {
-		synchronized (locales) {
-			if (locales.get(localeKey) != null) {
-				return;
-			}
+    protected void loadLocale ( String localeKey ) {
 
-			locales.put(localeKey, localeKey);
-		}
+        synchronized ( locales ) {
+            if ( locales.get( localeKey ) != null ) {
+                return;
+            }
 
-		String[] names = StringUtil.split(config.replace('.', '/'));
+            locales.put( localeKey, localeKey );
+        }
 
-		for (int i = 0; i < names.length; i++) {
-			String name = names[i];
-			if (localeKey.length() > 0) {
-				name += "_" + localeKey;
-			}
-			name += ".properties";
+        String[] names = StringUtil.split( config.replace( '.', '/' ) );
 
-			_loadProps(name, localeKey);
-		}
+        for ( int i = 0; i < names.length; i++ ) {
+            String name = names[i];
+            if ( localeKey.length() > 0 ) {
+                name += "_" + localeKey;
+            }
+            name += ".properties";
 
-		for (int i = 0; i < names.length; i++) {
-			String name = names[i];
-			if (localeKey.length() > 0) {
-				name += "_" + localeKey;
-			}
-			name += ".properties";
-
-			_loadProps(name, localeKey);
-		}
-	}
+            _loadProps( name, localeKey );
+        }
+    }
 
 	private void _loadProps(
 		String name, String localeKey) {

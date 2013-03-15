@@ -1,26 +1,5 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.PrintWriter;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.db.HibernateUtil;
@@ -32,20 +11,27 @@ import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.struts.MultiMessageResources;
+import org.apache.struts.Globals;
 
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
  * @author  will
  * @author  david torres
- * 
+ *
  */
 public class LanguageFactoryImpl extends LanguageFactory {
-	
+
 	public LanguageFactoryImpl () {
-		
+
 	}
-	
+
 	@Override
     protected void deleteLanguage(Language language) {
         try {
@@ -59,11 +45,11 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	@Override
     protected Language getLanguage(String languageCode, String countryCode) {
-    	
+
         try {
-        	
+
         	Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode, countryCode);
-        	
+
         	if(lang == null) {
 	            HibernateUtil dh = new HibernateUtil(Language.class);
 	            dh.setQuery(
@@ -75,14 +61,14 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	            	CacheLocator.getLanguageCache().addLanguage(lang);
 	            }
         	}
-        	
+
         	return lang;
-        	
+
         } catch (Exception e) {
             Logger.error(LanguageFactoryImpl.class, "getLanguage failed:" + e, e);
             throw new DotRuntimeException(e.toString());
         }
-        
+
     }
 
 	@Override
@@ -101,7 +87,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	@Override
     protected Language createDefaultLanguage() {
-    	
+
         Language language = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE"));
         language.setCountry(Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY"));
         language.setCountryCode(Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE"));
@@ -114,15 +100,15 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		} catch (DotHibernateException e) {
             Logger.error(LanguageFactoryImpl.class, "getLanguage failed to save the language.", e);
             throw new DotRuntimeException(e.toString(), e);
-			
+
 		}
-        
+
         //adds it to the cache
 		CacheLocator.getLanguageCache().removeLanguage(language);
 		CacheLocator.getLanguageCache().addLanguage(language);
-        
+
         return language;
-        
+
     }
 
 	@Override
@@ -144,7 +130,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
             Logger.error(LanguageFactoryImpl.class, "getLanguage failed:" + e, e);
             throw new DotRuntimeException(e.toString());
         }
-        
+
     }
 
 	@Override
@@ -152,7 +138,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	protected List<Language> getLanguages() {
         try {
         	Language defaultLang = getDefaultLanguage();
-        	
+
             HibernateUtil dh = new HibernateUtil(Language.class);
             dh.setQuery("from language in class com.dotmarketing.portlets.languagesmanager.model.Language order by id");
 
@@ -200,15 +186,15 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 		return language.getLanguageCode() + "_" + language.getCountryCode();
 	}
-    
+
     private static Language defaultLanguage;
-    
+
 	@Override
     protected Language getDefaultLanguage () {
         if (defaultLanguage == null) {
             defaultLanguage = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE"));
             if (defaultLanguage.getId() == 0)
-                defaultLanguage = createDefaultLanguage();            
+                defaultLanguage = createDefaultLanguage();
         }
         return defaultLanguage;
     }
@@ -240,7 +226,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		}
     	return ret+File.separator;
     }
-    
+
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode) {
 
@@ -248,15 +234,15 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	}
 
 	private Map<String, Date> readTimeStamps = new HashMap<String, Date>();
-	
+
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode, String countryCode) {
 
 		String code = countryCode == null ? langCode : langCode + "_" + countryCode;
 		String filePath = getGlobalVariablesPath() + "cms_language_" + code + ".properties";
-		
+
 		boolean forceRead = false;
-		
+
 		if(readTimeStamps.get(filePath) != null) {
 			Date lastReadTime = readTimeStamps.get(filePath);
 	        int refreshInterval = Config.getIntProperty("LANGUAGES_REFRESH_INTERVAL", 1);
@@ -266,10 +252,10 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					forceRead = true;
 			}
 		}
-		
-		
+
+
 		List<LanguageKey> list = null;
-		
+
 		if(!forceRead) {
 			try {
 				list = CacheLocator.getLanguageCache().getLanguageKeys(langCode, countryCode);
@@ -278,14 +264,14 @@ public class LanguageFactoryImpl extends LanguageFactory {
 				throw new DotRuntimeException(e1.getMessage(), e1);
 			}
 		}
-		
+
 		if (list == null) {
 			// Create empty file
 			File from = new java.io.File(filePath);
 			if (!from.exists()) {
 				return new ArrayList<LanguageKey>();
 			}
-			
+
 
 			list = new LinkedList<LanguageKey>();
 			LineNumberReader lineNumberReader = null;
@@ -345,20 +331,20 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	protected void createLanguageFiles(Language lang) {
         String langCodeAndCountryCode = lang.getLanguageCode() + "_" + lang.getCountryCode();
         String langCode = lang.getLanguageCode();
-        
+
         PrintWriter pw2 = null;
         try {
-        	
+
             String filePath = getGlobalVariablesPath()+"cms_language_" + langCodeAndCountryCode + ".properties";
             // Create empty file
             File from = new java.io.File(filePath);
-           
+
             if (!from.exists()) {
             	if (!from.getParentFile().exists()) {
             		from.getParentFile().mkdir();
             	}
             	from.createNewFile();
-            	
+
         	}
 
             filePath = getGlobalVariablesPath()+"cms_language_" + langCode + ".properties";
@@ -371,21 +357,21 @@ public class LanguageFactoryImpl extends LanguageFactory {
             	pw2.write("## END PLUGINS\n");
             	pw2.flush();
         	}
-            
+
         } catch (IOException e) {
             Logger.error(this, "_checkLanguagesFiles:Property File Copy Failed " + e, e);
             throw new DotRuntimeException(e.getMessage(), e);
         } finally {
             if(pw2 != null)
 				pw2.close();
-        }				
+        }
 	}
 
 	private void saveLanguageKeys(String fileLangName, Map<String, String> keys, Set<String> toDeleteKeys) throws IOException {
 
 		if(keys == null)
 			keys = new HashMap<String, String>();
-		
+
 		FileInputStream fileReader = null;
 		PrintWriter tempFileWriter = null;
 
@@ -393,16 +379,16 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		File file = new java.io.File(filePath);
 		String tempFilePath = getGlobalVariablesPath() + "cms_language_" + fileLangName + ".properties.temp";
 		File tempFile = new java.io.File(tempFilePath);
-		
+
 		try {
 			if (tempFile.exists())
 				tempFile.delete();
 			if (tempFile.createNewFile()) {
 				fileReader = new FileInputStream(file);
 				LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(fileReader, "UTF8"));
-				
+
 				tempFileWriter = new PrintWriter(tempFilePath, "UTF8");
-				
+
 				toDeleteKeys = new HashSet<String>(toDeleteKeys);
 				for(Map.Entry<String, String> keyEntry : new HashMap<String, String>(keys).entrySet()) {
 					if(!UtilMethods.isSet(keyEntry.getKey()) || !UtilMethods.isSet(keyEntry.getValue())) {
@@ -411,7 +397,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 							toDeleteKeys.add(keyEntry.getKey());
 					}
 				}
-				
+
 				Map<String, String> newKeys = new HashMap<String, String>();
 				newKeys.putAll(keys);
 				String line = "";
@@ -453,7 +439,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 				tempFileWriter.flush();
 				tempFileWriter.close();
 			}
-			
+
 		}
 
 		FileChannel fileToChannel = null;
@@ -482,20 +468,20 @@ public class LanguageFactoryImpl extends LanguageFactory {
 				fileToChannel.close();
 			}
 		}
-		
+
 		tempFile.delete();
 	}
-	
+
 	@Override
 	protected void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException {
-		
+
         String langCodeAndCountryCode = lang.getLanguageCode() + "_" + lang.getCountryCode();
         String langCode = lang.getLanguageCode();
 
         createLanguageFiles(lang);
 		if(generalKeys == null) {
 			generalKeys = new HashMap<String, String>();
-		
+
 		}
 		if(specificKeys == null) {
 			specificKeys = new HashMap<String, String>();
@@ -515,9 +501,14 @@ public class LanguageFactoryImpl extends LanguageFactory {
     		}
    			saveLanguageKeys(langCodeAndCountryCode, specificKeys, toDeleteKeys);
 	    	saveLanguageKeys(langCode, generalKeys, toDeleteKeys);
-	    	CacheLocator.getLanguageCache().removeLanguageKeys(lang.getLanguageCode(), lang.getCountryCode());
-	    	CacheLocator.getLanguageCache().removeLanguageKeys(lang.getLanguageCode(), null);
-		} catch (IOException e) {
+
+            //Cleaning cache
+            CacheLocator.getLanguageCache().removeLanguageKeys( lang.getLanguageCode(), lang.getCountryCode() );
+            CacheLocator.getLanguageCache().removeLanguageKeys( lang.getLanguageCode(), null );
+            //Force the reading of the languages files as we add/remove/edit keys
+            MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
+            messages.reload();
+        } catch (IOException e) {
 			Logger.error(this, "A IOException as occurred while saving the properties files", e);
 			throw new DotRuntimeException("A IOException as occurred while saving the properties files", e);
 		}
