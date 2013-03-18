@@ -49,11 +49,11 @@ public class RoleResource extends WebResource {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		StringBuilder json = new StringBuilder();
 
-		Map<String, String> userRoles = null;
-
-		if(UtilMethods.isSet(userId)) {
-			userRoles = getUserRoles(userId);
-		}
+//		Map<String, String> userRoles = null;
+//
+//		if(UtilMethods.isSet(userId)) {
+//			userRoles = getUserRoles(userId);
+//		}
 
 		if(!UtilMethods.isSet(roleId)) {  // Loads Root Roles
 			json.append("[ { id: 'root', name: 'Roles', top: true, children: ").append("[");
@@ -64,9 +64,9 @@ public class RoleResource extends WebResource {
 			for(Role r : rootRoles) {
 
 				// if a UserId is passed, we want a tree without the userRoles, so exclude them from resulting json
-				if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
-					continue;
-				}
+//				if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
+//					continue;
+//				}
 
 				if(onlyUserAssignableRoles) {
 
@@ -109,9 +109,10 @@ public class RoleResource extends WebResource {
 				for(String childId : children) {
 					Role r = roleAPI.loadRoleById(childId);
 
-					if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
-						continue;
-					}
+//					// if a UserId is passed, we want a tree without the userRoles, so exclude them from resulting json
+//					if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
+//						continue;
+//					}
 
 					if(onlyUserAssignableRoles) {
 
@@ -273,7 +274,7 @@ public class RoleResource extends WebResource {
 			LinkedHashMap<String, Object> existingMap = (LinkedHashMap<String, Object>) map.get(node);
 
 			if(existingMap!=null) {
-				buildTree(existingMap, subNodes); // if exists past the existing HashMap to continue looking for children
+				buildTree(existingMap, subNodes); // if exists pass the existing HashMap to continue looking for children
 			} else {
 				map.put(node,  buildTree(new LinkedHashMap<String, Object>(), subNodes)); // if does not exist put the key and continue building recursively
 			}
@@ -305,30 +306,9 @@ public class RoleResource extends WebResource {
 		}
 
 		String jsonStr = json.toString();
+		// removing comma after last item
 		return jsonStr.length()>0?jsonStr.substring(0, jsonStr.length()-1):jsonStr;
 	}
-
-	private Map<String, String> getUserRoles (String userId) throws DotDataException {
-		Map<String, String> userRolesMap = new HashMap<String,String>();
-		Role userRole = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
-
-		if(UtilMethods.isSet(userId)){
-			RoleAPI roleAPI = APILocator.getRoleAPI();
-			List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(userId, false);
-			for(com.dotmarketing.business.Role r : roles) {
-
-				String DBFQN =  r.getDBFQN();
-
-				if(DBFQN.contains(userRole.getId())) {
-					continue;
-				}
-				userRolesMap.put(r.getId(), r.getId());
-			}
-		}
-		return userRolesMap;
-	}
-
-
 
 
 }
