@@ -117,10 +117,10 @@
 							</div>
 							<div id="actionsDiv" style="width: 6%; text-align:center;  float:left; height:80%; margin-left: 2%; margin-right:1%; margin-top: 15%; ">
 								<div style="">
-									<button dojoType="dijit.form.Button" onclick="clearUserRolesFilter()" type="button" disabled="disabled">&#62;&#62;</button>
+									<button id="addUserRoleBtn" dojoType="dijit.form.Button" onclick="addUserRoles()" type="button" disabled="disabled">&#62;&#62;</button>
 								</div>
 								<div style="margin-top:5px">
-									<button dojoType="dijit.form.Button" onclick="clearUserRolesFilter()" type="button" disabled="disabled">&#60;&#60;</button>
+									<button id="removeUserRoleBtn" dojoType="dijit.form.Button" onclick="removeUserRoles()" type="button" disabled="disabled">&#60;&#60;</button>
 								</div>
 							</div>
 							<div style="height:100%; width:45%;">

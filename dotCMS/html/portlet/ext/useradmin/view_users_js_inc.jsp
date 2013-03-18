@@ -459,6 +459,14 @@
 
 	//User roles
 
+
+	var userRoles;
+	var rolesTree;
+	var flatTree = [];
+	var rolesCheckedCounter = 0;
+	var rolesChecked = new Array();;
+	var rolesAdded = new Array();;
+
 	//Function that kicks the loading of user roles
 	function loadUserRolesTree (userid) {
 		dojo.style(dojo.byId('noRolesFound'), { display: 'none' });
@@ -475,40 +483,44 @@
 		dojo.destroy("userRolesSelect");
 	    dojo.create('select',{id:'userRolesSelect'},'userRolesSelectWrapper');
 
-		require(["dojo/ready", "dijit/form/MultiSelect", "dijit/form/Button", "dojo/dom", "dojo/_base/window"], function(ready, MultiSelect, Button, dom, win){
+		require(["dojo/ready", "dijit/form/MultiSelect", "dijit/form/Button", "dojo/dom", "dojo/_base/window", "dojo/on"], function(ready, MultiSelect, Button, dom, win, on){
 
 		        var sel = dojo.byId("userRolesSelect");
 		        var n = 0;
 		        for(var i = 0; i<roles.length; i++) {
 		            var c = win.doc.createElement('option');
-		            var dbfqn = roles[i].DBFQN.split(" --> ");
-		            var nodeName = '';
-
-		            for(var j=0; j<dbfqn.length; j++) {
-		            	var roleId = dbfqn[j];
-		            	var role = findRole(roleId);
-
-		            	if(j<dbfqn.length-1) {
-		            		nodeName+= role.name + ' --> ';
-		            	} else {
-		            		nodeName+= role.name;
-		            	}
-
-		            }
-
+		            var nodeName = getDBFQNLabel(roles[i].DBFQN);
 		            c.innerHTML = nodeName;
 		            c.value = roles[i].id;
 		            sel.appendChild(c);
 		        }
-		        var myMultiSelect = new MultiSelect({ name: 'userRolesSelect', style:"width:100%; height:100%" }, sel);
+		        var myMultiSelect = new MultiSelect({ name: 'userRolesSelect', id: 'userRolesSelect', style:"width:100%; height:100%" }, sel);
+
+		        on(myMultiSelect, "click", function(e){
+		        	handleUserRoleClick(e);
+		        });
 
 
 		});
 	}
 
-	var userRoles;
-	var rolesTree;
-	var flatTree = [];
+	function getDBFQNLabel(DBFQN) {
+        var nodeName = '';
+        var dbfqnItems = DBFQN.split(" --> ");
+
+        for(var j=0; j<dbfqnItems.length; j++) {
+        	var roleId = dbfqnItems[j];
+        	var role = findRole(roleId);
+
+        	if(j<dbfqnItems.length-1) {
+        		nodeName+= role.name + ' --> ';
+        	} else {
+        		nodeName+= role.name;
+        	}
+        }
+
+        return nodeName;
+	}
 
 	var treeRoleOptionTemplate = '<input id="role_node_${nodeId}_chk" name="role_node_${nodeId}_chk" dojoType="dijit.form.CheckBox" ${nodeChecked} ${nodeDisabled}\
 		value="on" onChange="roleChecked(\'${nodeId}\')">\
@@ -577,13 +589,28 @@
 
 			//Returns the node text based on the treeRoleOptionTemplate html template
 			getLabel: function(item) {
-				console.log(item);
-				var checked = this._isItemChecked(item)?"checked=\"checked\"":"";
-				var role = findRole(item.id);
-				var editusers = role==null?false:(dojo.isArray(role.editUsers)?eval(role.editUsers[0]):eval(role.editUsers));
-				var html = dojo.string.substitute(treeRoleOptionTemplate, {
-						nodeId: item.id, nodeName: item.name, nodeChecked:checked, nodeDisabled: (editusers?"":"disabled=\"disabled\"") })
-				return html;
+				var alreadyAdded = false;
+
+				for(var i=0; i<rolesAdded.length; i++) {
+					if(norm(item.id)==rolesAdded[i]) {
+						alreadyAdded = true;
+						break;
+					}
+				}
+
+				if(!alreadyAdded) {
+					var checked = this._isItemChecked(item)?"checked=\"checked\"":"";
+					var role = findRole(item.id);
+					var editusers = role==null?false:(dojo.isArray(role.editUsers)?eval(role.editUsers[0]):eval(role.editUsers));
+					var html = dojo.string.substitute(treeRoleOptionTemplate, {
+							nodeId: item.id, nodeName: item.name, nodeChecked:checked, nodeDisabled: (editusers?"":"disabled=\"disabled\"") })
+					return html;
+				} else {
+					return dojo.string.substitute('${nodeName}', { nodeId: item.id, nodeName: item.name });
+				}
+
+
+
 			},
 
 			//Hiding the icon that dojo tries to attach to every node
@@ -598,8 +625,22 @@
 
 			_createTreeNode: function (args) {
 				args.item.id[0] = args.item.id[0].replace(/_/g, "-");
-				args.id = "treeNode-" + norm(args.item.id);
-				return new dotcms.dojo.RolesTreeNode(args);
+				var alreadyAdded = false;
+
+				for(var i=0; i<rolesAdded.length; i++) {
+					if(norm(args.item.id)==rolesAdded[i]) {
+						alreadyAdded = true;
+						break;
+					}
+				}
+
+				if(!alreadyAdded) {
+					args.id = "treeNode-" + norm(args.item.id);
+					return new dotcms.dojo.RolesTreeNode(args);
+				} else {
+					args.id = "treeNode-" + norm(args.item.id);
+					return new dijit._TreeNode(args);
+				}
 			},
 // 			//Hooking the onclick of the node action to check/uncheck the role
 // 			onClick: function (item, treenode, event) {
@@ -765,11 +806,66 @@
 		filterUserRolesDeferred ();
 	}
 
+	function addUserRoles() {
+
+		require(["dojo/_base/window", ], function(win){
+			var select = dojo.byId("userRolesSelect");
+
+			for(var i=0; i<rolesChecked.length; i++) {
+				var roleCheck = rolesChecked[i];
+				var id = roleCheck.id.replace("role_node_", "").replace("_chk", "");
+				var alreadyAdded = false;
+
+				// check if the role is already added in the multiselect
+				for(var j=0; j<select.options.length; j++) {
+					var option = select.options[j];
+
+					if(option.value == id) {
+						alreadyAdded = true;
+						break;
+					}
+				}
+
+				if(!alreadyAdded) {
+					var role = findRole(id);
+					var dbfqnLabel = getDBFQNLabel(role.DBFQN);
+		            var c = win.doc.createElement('option');
+		            c.innerHTML = dbfqnLabel;
+		            c.value = id;
+		            select.appendChild(c);
+
+
+		            // remove the just added role from the tree
+		            rolesAdded.push(id);
+				}
+			}
+
+			dijit.byId("addUserRoleBtn").setAttribute('disabled',true);
+			buildRolesTree();
+
+
+		});
+
+	}
+
+	function removeUserRoles() {
+
+	}
+
+	function handleUserRoleClick(e) {
+		var select = dijit.byId("userRolesSelect");
+		var selectedRoles = select.getSelected();
+
+		dijit.byId("removeUserRoleBtn").setAttribute('disabled',selectedRoles.length==0);
+	}
+
 	//Action executed when a tree checkbox is hit
 	function roleChecked(id) {
 		var checkbox = dijit.byId('role_node_' + id + '_chk');
 		var checked = checkbox.attr('value') != false;
 		if (checked) {
+			rolesCheckedCounter++;
+			rolesChecked.push(checkbox);
 			//If role is check everything underneath should be checked
 			var branchDown = getRoleFlatDownBranch(id);
 			branchDown.each(function (role) {
@@ -779,6 +875,9 @@
 			});
 		}
 		else {
+			rolesCheckedCounter--;
+			rolesChecked.splice(rolesChecked.indexOf(checkbox), 1);
+
 			//If role is un-checked everything above should be unchecked
 			var branchesUp = getRoleFlatUpBranch(id);
 			branchesUp.each(function (role) {
@@ -787,6 +886,9 @@
 					checkbox.attr('value', false);
 			});
 		}
+
+		dijit.byId("addUserRoleBtn").setAttribute('disabled',rolesCheckedCounter==0);
+
 	}
 
 	//Resets the roles selection to how it was when loaded
