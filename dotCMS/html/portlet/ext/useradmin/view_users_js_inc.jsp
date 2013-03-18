@@ -249,7 +249,9 @@
 		dojo.byId('userProfileTabs').style.display = '';
 		dojo.byId('loadingUserProfile').style.display = 'none';
 
+		initStructures();
 		loadUserRolesTree(currentUser.id);
+		buildRolesTree();
 		dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
 	}
 
@@ -271,8 +273,8 @@
 			case 'userDetailsTab':
 				break;
 			case 'userRolesTab':
+				initStructures();
 				loadUserRolesTree(userId);
-				buildRolesTree();
 				break;
 			case 'userPermissionsTab':
 				RoleAjax.getUserRole(userId, userRoleCallback);
@@ -463,9 +465,16 @@
 	var userRoles;
 	var rolesTree;
 	var flatTree = [];
-	var rolesCheckedCounter = 0;
-	var rolesChecked = new Array();;
-	var rolesAdded = new Array();;
+	var rolesCheckedCounter;
+	var rolesChecked;
+	var rolesAdded;
+
+	function initStructures () {
+
+		rolesCheckedCounter = 0;
+		rolesChecked = new Array();
+		rolesAdded = new Array();
+	}
 
 	//Function that kicks the loading of user roles
 	function loadUserRolesTree (userid) {
@@ -493,6 +502,17 @@
 		            c.innerHTML = nodeName;
 		            c.value = roles[i].id;
 		            sel.appendChild(c);
+
+		            var alreadyAdded = false;
+		            for(var j=0; j<rolesAdded.length; j++) {
+		            	if(rolesAdded[j]==roles[i].id) {
+		            		alreadyAdded = true;
+		            		break;
+		            	}
+		            }
+
+		            if(!alreadyAdded)
+		            	rolesAdded.push(roles[i].id);
 		        }
 		        var myMultiSelect = new MultiSelect({ name: 'userRolesSelect', id: 'userRolesSelect', style:"width:100%; height:100%" }, sel);
 
@@ -849,7 +869,19 @@
 	}
 
 	function removeUserRoles() {
+		var select = dojo.byId("userRolesSelect");
 
+		for(var j=0; j<select.options.length; j++) {
+			var option = select.options[j];
+		    if(option.selected) {
+		    	select.options[j] = null;
+		    	rolesAdded.splice(rolesAdded.indexOf(option.value), 1);
+		    }
+
+		}
+
+		dijit.byId("removeUserRoleBtn").setAttribute('disabled',true);
+		buildRolesTree();
 	}
 
 	function handleUserRoleClick(e) {
@@ -916,37 +948,37 @@
 
 	//Saves the current selection of roles
 	function saveRoles () {
-		var userId = currentUser.id;
-		var selectedRoles = [];
-		var rolesToCheck = dojo.map(rolesTree, function(x) { return x });
-		var i = 0;
-		var roleIdsSelected = [];
+// 		var selectedRoles = [];
+// 		var rolesToCheck = dojo.map(rolesTree, function(x) { return x });
+// 		var i = 0;
+// 		var roleIdsSelected = [];
 
-		//It only send the top checked roles to the server is assumed that everything underneath is
-		//checked as well so that should not be sent to the server to be saved
-		while(i < rolesToCheck.length) {
-			var role = rolesToCheck[i];
-			if(!dijit.byId('role_node_' + role.id + '_chk')) {
-				var checked = findRole(role.id, userRoles) != null;
-				var disabled = false;
-			} else {
-				var checked = dijit.byId('role_node_' + role.id + '_chk').attr('value') != false;
-				var disabled = dijit.byId('role_node_' + role.id + '_chk').attr('disabled');
-			}
+// 		//It only send the top checked roles to the server is assumed that everything underneath is
+// 		//checked as well so that should not be sent to the server to be saved
+// 		while(i < rolesToCheck.length) {
+// 			var role = rolesToCheck[i];
+// 			if(!dijit.byId('role_node_' + role.id + '_chk')) {
+// 				var checked = findRole(role.id, userRoles) != null;
+// 				var disabled = false;
+// 			} else {
+// 				var checked = dijit.byId('role_node_' + role.id + '_chk').attr('value') != false;
+// 				var disabled = dijit.byId('role_node_' + role.id + '_chk').attr('disabled');
+// 			}
 
-			if(!checked) {
-				var children = role.children;
-				if(children != null) {
-					children.each(function (child) {
-						rolesToCheck.push(child);
-					});
-				}
-			} else if(!disabled) {
-				roleIdsSelected.push(role.id[0]);
-			}
-			i++;
-		}
-		UserAjax.updateUserRoles(userId, roleIdsSelected, saveRolesCallback);
+// 			if(!checked) {
+// 				var children = role.children;
+// 				if(children != null) {
+// 					children.each(function (child) {
+// 						rolesToCheck.push(child);
+// 					});
+// 				}
+// 			} else if(!disabled) {
+// 				roleIdsSelected.push(role.id[0]);
+// 			}
+// 			i++;
+// 		}
+
+		UserAjax.updateUserRoles(currentUser.id, rolesAdded, saveRolesCallback);
 	}
 
 	//Callback from the server after successful save
@@ -1546,7 +1578,6 @@
 		var deferred = dojo.xhrGet(xhrArgs);
 		return roleNode;
 	}
-
 
 
 </script>
