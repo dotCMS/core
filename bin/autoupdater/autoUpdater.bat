@@ -25,10 +25,11 @@ set CMD_LINE_ARGS= ""%CMD_LINE_ARGS% -url http://www.dotcms.com:8080/servlets/up
 echo %CMD_LINE_ARGS%|findstr /i "home" >nul:
 if %errorlevel%==1 goto :home_not_found
 :home_not_found
+:: Set the location of this batch file as the current folder
+cd /d %~dp0
 SET CurrDir=%CD%
 CD..
 SET InstPath=%CD%
-CD..
 SET RootPath=%CD%
 CD %CurrDir%
 set CMD_LINE_ARGS= ""%CMD_LINE_ARGS% -home %RootPath%""
