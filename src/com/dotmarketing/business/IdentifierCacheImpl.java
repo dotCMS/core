@@ -100,7 +100,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 
 	protected String getIdentifierFromInode(Versionable versionable)  {
 
-		if(versionable ==null || versionable.getInode() ==null){
+		if(versionable ==null || !InodeUtils.isSet(versionable.getInode())){
 			return null;
 		}
 		String value = null;
