@@ -629,6 +629,7 @@
 </form>
 
 <div class="messageZone" id="messageZone" style="display: none;">
+  <i class="loadingIcon"></i>
   <%= LanguageUtil.get(pageContext, "Loading")%>...
 </div>
 
