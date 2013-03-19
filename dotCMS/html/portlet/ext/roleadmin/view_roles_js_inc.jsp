@@ -156,29 +156,9 @@
 	});
 
 
-	//Function that kicks the loading of user roles
-	// if a callback is passed it will be called after the loading finishes
-// 	function loadRolesTree (callback) {
-// 		loadRolesTreeCallback = callback;
-// 		RoleAjax.getRolesTree(false, "", true, buildUserRolesTreeCallback);
-// 	}
-
-// 	var rolesTree;
-// 	var flatTree = [];
-
 	var treeRoleOptionTemplate = '${nodeName}';
-
 	var treeModel;
 	var jsonStore;
-
-	//Callback from the server with the tree of roles to load
-// 	function buildUserRolesTreeCallback (tree) {
-
-// 		//Flattening the tree for later used
-// 		rolesTree = tree;
-// 		flattenTree(tree);
-
-// 	}
 
 	function buildRolesTree(tree) {
 		dojo.style(dojo.byId('noRolesFound'), { display: 'none' });
@@ -192,8 +172,6 @@
 			store = new dojo.data.ItemFileReadStore({ data: tree });
 			autoExpand = true;
 		}
-
-
 
 	    treeModel = new dijit.tree.TreeStoreModel({
 	        store: store,
@@ -223,7 +201,6 @@
 
 			//Returns the node text based on the treeRoleOptionTemplate html template
 			getLabel: function(item) {
-// 				alert('label');
 				return dojo.string.substitute(treeRoleOptionTemplate, { nodeId: item.id, nodeName: item.name });
 			},
 
@@ -273,8 +250,6 @@
 				dojo.style(dojo.byId('loadingRolesWrapper'), { display: 'none' });
 				//Showing the tree
 				dojo.style(dojo.byId('rolesTreeWrapper'), { display: '' });
-
-
 			}
 
 		});
@@ -296,7 +271,6 @@
 
             var tn = dijit.getEnclosingWidget(e.target);
 			var item = tn.lastFocused;
-// 			var role = findRole(item.id, flatTree);
 
 			var role = findRole(item.id.replace("treeNode-",""));
 			var locked = eval(norm(role.locked));
@@ -360,49 +334,14 @@
 
 		debugger;
 		var tree = dijit.byId('rolesTree');
-
 		var matchesCount = 0;
 
 		dojo.style(dojo.byId('noRolesFound'), { display: 'none' });
 
 		var query = dojo.byId('rolesFilter').value;
-
-// 		if(query == '') {
-// 			for(var i = 0; i < this.flatTree.length; i++) {
-// 				var role = this.flatTree[i];
-// 				var treeNode = dojo.byId('treeNode-' + norm(role.id))
-// 				if(treeNode)
-// 					dojo.style(treeNode, { display: ''})
-// 			}
-// 			return;
-// 		}
-
 		var filteredRoles = searchRoles(query);
 
 		buildRolesTree(filteredRoles);
-
-
-
-// 		var branches = getRolesFlatUpBranches(roles);
-
-
-// 		for(var i = 0; i < flatTree.length; i++) {
-// 			var role = flatTree[i];
-// 			var roleId = norm(role.id);
-
-// 			var treeNode = dojo.byId('treeNode-' + roleId)
-// 			if(treeNode) {
-// 				if(!findRole(roleId, branches)) {
-// 					dojo.style(treeNode, { display: 'none'});
-// 					var dijitNode = dijit.byId(treeNode.id);
-// 				} else {
-// 					dojo.style(treeNode, { display: ''});
-// 					var dijitNode = dijit.byId(treeNode.id);
-// 					tree._expandNode(dijitNode)
-// 					matchesCount++;
-// 				}
-// 			}
-// 		}
 
 		if(filteredRoles && filteredRoles.items[0].children.length == 0)
 			dojo.style(dojo.byId('noRolesFound'), { display: '' });
@@ -424,7 +363,6 @@
 		if(!roleId)
 			roleId = currentRoleId;
 
-// 		var role = findRole(roleId, flatTree);
 		var role = findRole(roleId);
 
 		currentRoleId = role.id;
@@ -451,23 +389,6 @@
 
 	//Initializing the parent role select box
 	function initializeParentRolesSelect() {
-// 		var selectData = {
-// 				identifier: 'id',
-// 				label: 'name',
-// 				items: []
-// 			};
-
-// 		var rolesIt = [];
-
-// 		retrieveRolesData(0, rolesTree, rolesIt);
-
-// 		selectData.items.push({ id: "0", name: "Root Role" })
-// 		rolesIt.each(function(roleSt) {
-// 			var roleName = addPadding(norm(roleSt.role.name), roleSt.level, "--> ")
-// 			selectData.items.push({ id: norm(roleSt.role.id), name: roleName })
-// 		});
-
-// 		var store = new dojo.data.ItemFileReadStore({ data: selectData });
 		var jsonStore = new dojox.data.JsonRestStore({ target: "/api/role/method/full"});
 
 		if(dijit.byId('parentRole')) {
@@ -493,8 +414,6 @@
 		isNewRole = true;
 		initializeParentRolesSelect();
 
-// 		setRoleName(null);
-
 		dojo.byId('addRoleErrorMessagesList').innerHTML = '';
 		dijit.byId('roleName').reset();
 		dijit.byId('roleKey').reset();
@@ -516,15 +435,6 @@
 		}
 		return retStr;
 	}
-
-// 	function retrieveRolesData(level, roles, rolesIt) {
-// 		roles.each((function(role) {
-// 			rolesIt.push({ level: level, role: role })
-// 			if(role.children && role.children.length > 0) {
-// 				retrieveRolesData((level + 1), role.children, rolesIt)
-// 			}
-// 		}).bind(this));
-// 	}
 
 	//Handler when the user clicks the cancel button
 	function cancelAddNewRole () {
@@ -561,7 +471,6 @@
 			});
 		}
 
-
 	}
 
 	function saveRoleCallback (newRole) {
@@ -594,8 +503,6 @@
 	//Callback from the server to confirm a user deletion
 	function deleteRoleCallback () {
 		dojo.style(dojo.byId('roleTabs'), { display: 'none' });
-
-		//dojo.style(dojo.byId('usersGridWrapper'), { visibility: 'hidden' });
 
 		dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
 		dojo.byId('editRoleButtonWrapper').style.display = 'none';
@@ -655,7 +562,6 @@
 	function roleClicked (roleId) {
 
 		currentRoleId = roleId;
-// 		var role = findRole(roleId, flatTree);
 		var role = findRole(roleId);
 		currentRole = role;
 		setRoleName(role);
@@ -673,12 +579,6 @@
 		} else {
 			dojo.byId('deleteRoleButtonWrapper').style.display = '';
 		}
-
-		/* if(!eval(norm(role.editUsers))) {
-			dojo.byId('editRoleUsersWrapper').style.display = 'none';
-		} else {
-			dojo.byId('editRoleUsersWrapper').style.display = '';
-		} */
 
 		renderCurrentTab();
 	}
@@ -1366,20 +1266,6 @@
 		return dojo.isArray(value)?value[0]:value;
 	}
 
-// 	//Takes the hierarchically tree of roles
-// 	function flattenTree(tree){
-// 		flatTree = [];
-// 		flattenTreeRec(tree);
-// 	}
-
-// 	function flattenTreeRec (tree) {
-// 		tree.each(function (node) {
-// 			flatTree.push(node);
-// 			if (node.children)
-// 				flattenTreeRec(node.children);
-// 		});
-// 	}
-
 	//Used to filter roles
 	function searchRoles(query){
 
@@ -1399,40 +1285,8 @@
 
 		var deferred = dojo.xhrGet(xhrArgs);
 
-
-// 		var matches = [];
-// 		for(var i = 0; i < roles.length; i++) {
-// 			var roleName = dojo.isArray(roles[i].name)?roles[i].name[0]:roles[i].name;
-// 			var regexQuery = new RegExp(query, "i");
-// 			if(roleName.match(regexQuery))
-// 				matches.push(roles[i]);
-// 		}
-// 		return matches;
-
-// 		console.log(roles);
 		return roles;
 	}
-
-	//Retrieves a plain list of roles up in the same branch of the given roles
-// 	function getRolesFlatUpBranches(roles) {
-// 		branches = []
-
-// 		for(var i = 0; i < roles.length; i++) {
-// 			var role = roles[i];
-// 			branches.push(role);
-// 			var parentId = dojo.isArray(role.parent)?role.parent[0]:role.parent;
-// 			var roleId = dojo.isArray(role.id)?role.id[0]:role.id;
-
-// 			while(parentId && parentId != roleId) {
-// 				role = findRole(role.parent, flatTree);
-// 				branches.push(role);
-// 				var parentId = dojo.isArray(role.parent)?role.parent[0]:role.parent;
-// 				var roleId = dojo.isArray(role.id)?role.id[0]:role.id;
-// 			}
-
-// 		}
-// 		return branches;
-// 	}
 
 	//Retrieves a plain list of roles up in the same branch of the given role
 	function getRoleFlatUpBranch(role) {

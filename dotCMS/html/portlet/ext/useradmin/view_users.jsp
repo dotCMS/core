@@ -109,7 +109,7 @@
 
 						<div id=userRolesContainer style="overflow: hidden; height: 80%; ">
 							<div  style="width: 45%; height: 100%; float:left; padding-left:8px; ">
-								<div style="text-align: center; "><%= LanguageUtil.get(pageContext, "Roles to select") %>:</div>
+								<div style="text-align: center; "><%= LanguageUtil.get(pageContext, "Roles-To-Grant") %>:</div>
 								<div id="userRolesTreeWrapper" style="float:left; width: 100%; height:85%;display: none; padding:5px; border:1px solid #ccc;">
 
 									<div id="userRolesTree"></div>
@@ -124,17 +124,10 @@
 								</div>
 							</div>
 							<div style="height:100%; width:45%;">
-								<div style="text-align: center; padding-left: 160%"><%= LanguageUtil.get(pageContext, "User Roles") %>:</div>
+								<div style="text-align: center; padding-left: 160%"><%= LanguageUtil.get(pageContext, "Roles-Granted") %>:</div>
 								<div id="userRolesSelectWrapper" style="width: 100%;height:87%;"></div>
 							</div>
 						</div>
-
-<!-- 						<div id="roleFilterWrapper" style="vertical-align:middle;margin-left:10px;"> -->
-<%-- 							<b><%= LanguageUtil.get(pageContext, "Filter") %>:</b> <input dojoType="dijit.form.TextBox" onkeyup="filterUserRoles()" trim="true" name="userRolesFilter" id="userRolesFilter"> --%>
-<%-- 							<button dojoType="dijit.form.Button" onclick="clearUserRolesFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button> --%>
-<!-- 							<span><input type="checkbox" dojoType="dijit.form.CheckBox"  onclick="filterOnlyUserRoles()" id="onlyUserRolesFilter" /> -->
-<%-- 							<label for="onlyUserRolesFilter"><%= LanguageUtil.get(pageContext, "User-asigined-roles-only") %></label></span> --%>
-<!-- 						</div> -->
 
 						<div id="loadingRolesWrapper">
 							<img src="/html/js/lightbox/images/loading.gif">
