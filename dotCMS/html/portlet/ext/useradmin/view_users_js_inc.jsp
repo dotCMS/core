@@ -97,25 +97,6 @@
        	  dojo.style(e, "height", viewport_height -155+"px");
         }
 
-    	//var  e =  dojo.byId("usersListWrapper");
-       	//dojo.style(e, "height", viewport_height -240+"px");
-
-    	//var  e =  dojo.byId("userRolesTreeWrapper");
-		//dojo.style(e, "height", viewport_height -350+"px");
-
-		//var  e =  dojo.byId("userInfoWrapper");
-		//dojo.style(e, "height", viewport_height -380+"px");
-
-    	//var  e =  dojo.byId("additionalUserInfoFormWrapper");
-       	//dojo.style(e, "height", viewport_height -370+"px");
-
-		//var  e =  dojo.byId("marketingInfoWrapper");
-       	//dojo.style(e, "height", viewport_height -300+"px");
-
-       	//if(dojo.byId("permissionsAccordionContainerWrapper")){
-       		//var  e =  dojo.byId("permissionsAccordionContainerWrapper");
-           //dojo.style(e, "height", viewport_height -375+"px");
-       	//}
 
 	}
 	// need the timeout for back buttons
@@ -662,17 +643,6 @@
 					return new dijit._TreeNode(args);
 				}
 			},
-// 			//Hooking the onclick of the node action to check/uncheck the role
-// 			onClick: function (item, treenode, event) {
-// 				if(event.target.id == 'role_node_label_' + item.id) {
-// 					var checkbox = dijit.byId('role_node_' + item.id + '_chk');
-// 					if(checkbox && !checkbox.attr('disabled')) {
-// 						var checked = checkbox.attr('value') != false;
-// 						checkbox.attr('value', checked?false:'on');
-// 						roleChecked(item.id);
-// 					}
-// 				}
-// 			},
 
 			//Some housekeeping after tree creation
 			postCreate: function () {
@@ -948,36 +918,6 @@
 
 	//Saves the current selection of roles
 	function saveRoles () {
-// 		var selectedRoles = [];
-// 		var rolesToCheck = dojo.map(rolesTree, function(x) { return x });
-// 		var i = 0;
-// 		var roleIdsSelected = [];
-
-// 		//It only send the top checked roles to the server is assumed that everything underneath is
-// 		//checked as well so that should not be sent to the server to be saved
-// 		while(i < rolesToCheck.length) {
-// 			var role = rolesToCheck[i];
-// 			if(!dijit.byId('role_node_' + role.id + '_chk')) {
-// 				var checked = findRole(role.id, userRoles) != null;
-// 				var disabled = false;
-// 			} else {
-// 				var checked = dijit.byId('role_node_' + role.id + '_chk').attr('value') != false;
-// 				var disabled = dijit.byId('role_node_' + role.id + '_chk').attr('disabled');
-// 			}
-
-// 			if(!checked) {
-// 				var children = role.children;
-// 				if(children != null) {
-// 					children.each(function (child) {
-// 						rolesToCheck.push(child);
-// 					});
-// 				}
-// 			} else if(!disabled) {
-// 				roleIdsSelected.push(role.id[0]);
-// 			}
-// 			i++;
-// 		}
-
 		UserAjax.updateUserRoles(currentUser.id, rolesAdded, saveRolesCallback);
 	}
 
@@ -1078,17 +1018,6 @@
 
 		return branches;
 	}
-
-	//Finds a role within the given list of roles
-// 	function findRole(roleid, roles) {
-// 		for(var i = 0; i < roles.length; i++) {
-// 			var id1 = dojo.isArray(roles[i].id)?roles[i].id[0]:roles[i].id;
-// 			var id2 = dojo.isArray(roleid)?roleid[0]:roleid;
-// 			if(id1 == id2)
-// 				return roles[i];
-// 		}
-// 		return null;
-// 	}
 
 	//Additional information tab functions
 

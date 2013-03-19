@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +10,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
 import com.dotmarketing.business.APILocator;
@@ -20,21 +18,57 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+
 
 @Path("/role")
 public class RoleResource extends WebResource {
 
+	/**
+	 * Returns a JSON representation of Roles in the System.
+	 * To retrieve the Root Roles, use: /api/role/
+	 * To retrieve the children of a given role, use:/api/role/id/<role-id>
+	 * To retrieve the entire Roles Tree, use /api/role/method/full
+	 * To query the roles tree by Role Name, use /api/role/method/filter/query/<your-query>
+	 *
+	 * @param request
+	 * @param response
+	 * @param path
+	 * @param name
+	 * @return
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+
 	@GET
 	@Path("/{path:.*}")
 	@Produces("application/json")
-	public String getRootRoles(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path, @QueryParam("name") String name) throws DotStateException, DotDataException, DotSecurityException {
+	public String getRoles(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws DotStateException, DotDataException, DotSecurityException {
 		Map<String, String> params = parsePath(path);
 		Boolean excludeUserRoles = params.get("excludeUserRoles")!=null;
 		Boolean onlyUserAssignableRoles = params.get("onlyUserAssignableRoles")!=null;
 		String roleId = params.get("id");
 		String method = params.get("method");
-		String userId = params.get("userid");
+		String username = params.get(USER);
+		String password = params.get(PASSWORD);
+
+		/* User authentication */
+		User user = null;
+
+		try {
+			user = authenticateUser(username, password, request);
+		} catch (Exception e) {
+			Logger.warn(this, "Not valid user");
+			throw new DotSecurityException("Not valid User");
+		}
+
+		if(user==null) {
+			throw new DotSecurityException("Not valid User");
+		}
+
 
 		if(UtilMethods.isSet(method) && method.equals("full")) {
 			return getRolesTree();  // Loads all the Roles for the Parent Filtering Select
@@ -49,12 +83,6 @@ public class RoleResource extends WebResource {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		StringBuilder json = new StringBuilder();
 
-//		Map<String, String> userRoles = null;
-//
-//		if(UtilMethods.isSet(userId)) {
-//			userRoles = getUserRoles(userId);
-//		}
-
 		if(!UtilMethods.isSet(roleId)) {  // Loads Root Roles
 			json.append("[ { id: 'root', name: 'Roles', top: true, children: ").append("[");
 			int rolesCounter = 0;
@@ -62,11 +90,6 @@ public class RoleResource extends WebResource {
 
 
 			for(Role r : rootRoles) {
-
-				// if a UserId is passed, we want a tree without the userRoles, so exclude them from resulting json
-//				if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
-//					continue;
-//				}
 
 				if(onlyUserAssignableRoles) {
 
@@ -108,11 +131,6 @@ public class RoleResource extends WebResource {
 				int childCounter = 0;
 				for(String childId : children) {
 					Role r = roleAPI.loadRoleById(childId);
-
-//					// if a UserId is passed, we want a tree without the userRoles, so exclude them from resulting json
-//					if(UtilMethods.isSet(userId) && UtilMethods.isSet(userRoles.get(r.getId()))) {
-//						continue;
-//					}
 
 					if(onlyUserAssignableRoles) {
 

@@ -81,7 +81,7 @@ public class ContentResource extends WebResource {
 		/* Authenticate the User if passed */
 
 		try {
-			user = authenticateUser(username, password);
+			user = authenticateUser(username, password, request);
 		} catch (Exception e) {
 			Logger.warn(this, "Error authenticating user, username: " + username + ", password: " + password);
 		}
@@ -171,10 +171,10 @@ public class ContentResource extends WebResource {
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
 			}
-			
+
 			Set<String> jsonFields=getJSONFields(s);
 			for(String key : m.keySet())
-			    if(jsonFields.contains(key)) 
+			    if(jsonFields.contains(key))
 			        m.put(key, c.getKeyValueProperty(key));
 
 			sb.append(xstream.toXML(m));
@@ -206,12 +206,12 @@ public class ContentResource extends WebResource {
 
 		return json.toString();
 	}
-	
+
 	private Set<String> getJSONFields(Structure s) {
 	    Set<String> jsonFields=new HashSet<String>();
         for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode()))
             if(f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()))
-                jsonFields.add(f.getVelocityVarName());   
+                jsonFields.add(f.getVelocityVarName());
         return jsonFields;
 	}
 
@@ -221,7 +221,7 @@ public class ContentResource extends WebResource {
 		Map<String,Object> map = con.getMap();
 
 		Set<String> jsonFields=getJSONFields(s);
-		
+
 		for(String key : map.keySet()) {
 			if(Arrays.binarySearch(ignoreFields, key) < 0)
 			    if(jsonFields.contains(key)) {

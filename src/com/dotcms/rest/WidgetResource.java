@@ -40,7 +40,7 @@ public class WidgetResource extends WebResource {
 		String password = params.get(PASSWORD);
 		User user = null;
 		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-		
+
 		if(params.get(LANGUAGE) != null){
 			try{
 				language= Long.parseLong(params.get(LANGUAGE))	;
@@ -51,25 +51,25 @@ public class WidgetResource extends WebResource {
 		}
 		String inode = null;
 		boolean live = true;
-		
-		
 
-		
+
+
+
 		/* Authenticate the User if passed */
 
-		user = authenticateUser(username, password);
+		user = authenticateUser(username, password, request);
 
 		if(user!=null){
 			live=	(params.get(LIVE) == null || ! "false".equals(params.get(LIVE)));
 			inode = params.get(INODE);
 		}
-		
+
 		if(!UtilMethods.isSet(id) && !UtilMethods.isSet(inode)) {
 			response.getWriter().println("Please pass an id (or inode + user) in via the url");
-			
+
 			return null;
 		}
-		
+
 		/* Fetching the widget using id passed */
 		Contentlet widget = null;
 		if(UtilMethods.isSet(inode)){
@@ -77,10 +77,10 @@ public class WidgetResource extends WebResource {
 		}
 		else{
 			widget = APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true);
-			
+
 		}
-		
-		
+
+
 
 		return parseWidget(request, response, widget);
 
