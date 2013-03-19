@@ -371,112 +371,118 @@ public class DependencyManager {
 
 		}
 	}
+	
+	private void processList(List<Contentlet> cons) throws DotDataException, DotSecurityException {
+	    Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
+
+        //Getting all related content
+
+        for (Contentlet con : cons) {
+            contentsToProcess.add(con);
+
+            Map<Relationship, List<Contentlet>> contentRel =
+                    APILocator.getContentletAPI().findContentRelationships(con, user);
+
+            for (Relationship rel : contentRel.keySet()) {
+                contentsToProcess.addAll(contentRel.get(rel));
+                /**
+                 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
+                 *
+                 * We need the relationships in which the single related content is involved.
+                 *
+                 */
+                if(contentRel.get(rel).size()>0)
+                    relationships.add(rel.getInode());
+            }
+        }
+
+        
+        // Adding the Contents (including related) and adding filesAsContent
+        
+        for (Contentlet con : contentsToProcess) {
+
+            contents.add(con.getIdentifier()); // adding the content (including related)
+            folders.add(con.getFolder()); // adding content folder
+
+            try {
+                if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES",false)) {
+                    List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
+                            APILocator.getFolderAPI().find(con.getFolder(), user, false));
+                    folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
+                            APILocator.getFolderAPI().find(con.getFolder(), user, false)));
+                    for(HTMLPage htmlPage: folderHtmlPages) {
+                        htmlPages.add(htmlPage.getIdentifier());
+
+                        // working template working page
+                        Template workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(htmlPage.getTemplateId(), user, false);
+                        // live template working page
+                        Template liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(), user, false);
+
+                        // Templates dependencies
+                        templates.add(htmlPage.getTemplateId());
+
+                        // Containers dependencies
+                        List<Container> containerList = new ArrayList<Container>();
+                        containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
+                        containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
+
+                        for (Container container : containerList) {
+                            containers.add(container.getIdentifier());
+                            // Structure dependencies
+                            structures.add(container.getStructureInode());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Logger.debug(this, e.toString());
+            }
+
+            if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")) {
+                structures.add(con.getStructureInode());
+            }
+
+            //Copy asset files to bundle folder keeping original folders structure
+            List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
+
+            for(Field ff : fields) {
+                if (ff.getFieldType().equals(Field.FieldType.IMAGE.toString())
+                        || ff.getFieldType().equals(Field.FieldType.FILE.toString())) {
+
+                    try {
+                        String value = "";
+                        if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
+                            value = APILocator.getContentletAPI().getFieldValue(con, ff).toString();
+                        }
+                        //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
+                        Identifier id = APILocator.getIdentifierAPI().find(value);
+                        if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
+                            contents.add(id.getId()); // adding files as content
+                        }
+                    } catch (Exception ex) {
+                        Logger.debug(this, ex.toString());
+                        throw new DotStateException("Problem occured while publishing file");
+                    }
+                }
+
+            }
+
+        }
+
+	}
 
 	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
-
-		List<Contentlet> cs = new ArrayList<Contentlet>();
-
 		try {
-
-		for(String luceneQuery: luceneQueries) {
-			cs = APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false);
-
-			Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
-
-			//Getting all related content
-
-			for (Contentlet con : cs) {
-				contentsToProcess.add(con);
-
-				Map<Relationship, List<Contentlet>> contentRel =
-						APILocator.getContentletAPI().findContentRelationships(con, user);
-
-				for (Relationship rel : contentRel.keySet()) {
-					contentsToProcess.addAll(contentRel.get(rel));
-					/**
-					 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
-					 *
-					 * We need the relationships in which the single related content is involved.
-					 *
-					 */
-					if(contentRel.get(rel).size()>0)
-						relationships.add(rel.getInode());
-				}
-			}
-
-			// Adding the Contents (including related) and adding filesAsContent
-
-			for (Contentlet con : contentsToProcess) {
-
-				contents.add(con.getIdentifier()); // adding the content (including related)
-				folders.add(con.getFolder()); // adding content folder
-
-				try {
-					if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES",false)) {
-						List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
-								APILocator.getFolderAPI().find(con.getFolder(), user, false));
-						folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
-								APILocator.getFolderAPI().find(con.getFolder(), user, false)));
-						for(HTMLPage htmlPage: folderHtmlPages) {
-							htmlPages.add(htmlPage.getIdentifier());
-
-							// working template working page
-							Template workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(htmlPage.getTemplateId(), user, false);
-							// live template working page
-							Template liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(), user, false);
-
-							// Templates dependencies
-							templates.add(htmlPage.getTemplateId());
-
-							// Containers dependencies
-							List<Container> containerList = new ArrayList<Container>();
-							containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
-							containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
-
-							for (Container container : containerList) {
-								containers.add(container.getIdentifier());
-								// Structure dependencies
-								structures.add(container.getStructureInode());
-							}
-						}
-					}
-				} catch (Exception e) {
-					Logger.debug(this, e.toString());
-				}
-
-				if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")) {
-					structures.add(con.getStructureInode());
-				}
-
-				//Copy asset files to bundle folder keeping original folders structure
-				List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
-
-				for(Field ff : fields) {
-					if (ff.getFieldType().equals(Field.FieldType.IMAGE.toString())
-		                    || ff.getFieldType().equals(Field.FieldType.FILE.toString())) {
-
-		                try {
-		                    String value = "";
-		                    if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
-		                        value = APILocator.getContentletAPI().getFieldValue(con, ff).toString();
-		                    }
-		                    //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
-		                    Identifier id = APILocator.getIdentifierAPI().find(value);
-		                    if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
-		                        contents.add(id.getId()); // adding files as content
-		                    }
-		                } catch (Exception ex) {
-		                    Logger.debug(this, ex.toString());
-		                    throw new DotStateException("Problem occured while publishing file");
-		                }
-		            }
-
-				}
-
-			}
-
-
-		}
+		    // we need to process contents already taken as dependency
+            for(String id : contents)
+                processList(
+                   APILocator.getContentletAPI()
+                      .search("+identifier:"+id, 0, 0, "moddate", user, false));
+            
+    		for(String luceneQuery: luceneQueries) {
+    		    List<Contentlet> cs = APILocator.getContentletAPI().search(
+    		            luceneQuery, 0, 0, "moddate", user, false);
+    			processList(cs);
+    		}
 
 		} catch (Exception e) {
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
