@@ -178,7 +178,7 @@ if(!statePopUp || portletException){%>
         	var vp=win.getBox(win.doc);
         	if(!shown) {
         	    shown=true;
-        		cons.create("iframe",{id:"helpiframe",src:helpUrl,width:'600', height:vp.h-40, style:'border: 0 none;margin:-10px;' },"helpcontent");
+        		cons.create("iframe",{id:"helpiframe",src:helpUrl,width:'600', height:vp.h-60, style:'border: 0 none;' },"helpcontent");
 	        	baseFx.animateProperty({
 	                node: dom.byId("helpId"),
 	                duration: 600,
