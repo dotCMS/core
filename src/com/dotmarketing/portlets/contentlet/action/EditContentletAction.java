@@ -1034,7 +1034,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 		
 		String langId = req.getParameter("lang");
-		if(UtilMethods.isSet(langId)){
+		if(contentlet.getStructure().getStructureType()!=Structure.STRUCTURE_TYPE_WIDGET &&
+		        // we need to respect language if it is a widget as it only make sense for default lang
+		        UtilMethods.isSet(langId)){
 			contentlet.setLanguageId(Long.parseLong(langId));
 		}
 
