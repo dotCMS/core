@@ -34,39 +34,37 @@ public class WebResource {
 	protected static final String INODE = "inode";
 	protected static final String LIVE = "live";
 	protected static final String LANGUAGE = "language";
-	protected User authenticateUser(String username, String password, HttpServletRequest req) throws DotDataException, DotSecurityException {
-		/* Authenticating the User if passed */
-		User user = null;
-		try {
-			if(UtilMethods.isSet(username) && UtilMethods.isSet(password) && LoginFactory.doLogin(username, password)) {
-				Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 
-				if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-					user = APILocator.getUserAPI().loadByUserByEmail(username, APILocator.getUserAPI().getSystemUser(), false);
-				} else {
-					user = APILocator.getUserAPI().loadUserById(username, APILocator.getUserAPI().getSystemUser(), false);
+	protected User authenticateUser(String username, String password, HttpServletRequest req) throws DotDataException, DotSecurityException {
+		User user = null;
+
+			if(UtilMethods.isSet(username) && UtilMethods.isSet(password)) { // providing login and password so let's try to authenticate
+
+				try {
+					if(LoginFactory.doLogin(username, password)) {
+						Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
+
+						if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
+							user = APILocator.getUserAPI().loadByUserByEmail(username, APILocator.getUserAPI().getSystemUser(), false);
+						} else {
+							user = APILocator.getUserAPI().loadUserById(username, APILocator.getUserAPI().getSystemUser(), false);
+						}
+					} else {
+						Logger.debug(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
+					}
+
+				}  catch (com.liferay.portal.NoSuchUserException e1) {
+					Logger.debug(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
+					SecurityLogger.logDebug(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
+				}
+
+			} else {  // neither providing login nor password, so let's check if we have a user logged in
+				try {
+					user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
+				}  catch (Exception e) {
+					Logger.debug(this.getClass(), "Can't retrieve user from session");
 				}
 			}
-		} catch (NoSuchUserException e1) {
-			Logger.info(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
-			SecurityLogger.logInfo(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
-		} catch (com.liferay.portal.NoSuchUserException e1) {
-			Logger.info(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
-			SecurityLogger.logInfo(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
-		}
-
-		if(user==null) {
-			try {
-				user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
-			} catch (DotRuntimeException e) {
-				Logger.info(this.getClass(), e.getMessage());
-			} catch (PortalException e) {
-				Logger.info(this.getClass(), e.getMessage());
-			} catch (SystemException e) {
-				Logger.info(this.getClass(), e.getMessage());
-			}
-
-		}
 
 		return user;
 	}
