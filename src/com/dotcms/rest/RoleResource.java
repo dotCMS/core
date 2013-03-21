@@ -48,27 +48,12 @@ public class RoleResource extends WebResource {
 	@Produces("application/json")
 	public String getRoles(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws DotStateException, DotDataException, DotSecurityException {
 		Map<String, String> params = parsePath(path);
+		authenticateUser(params.get(USER), params.get(PASSWORD), request, true);
+
 		Boolean excludeUserRoles = params.get("excludeUserRoles")!=null;
 		Boolean onlyUserAssignableRoles = params.get("onlyUserAssignableRoles")!=null;
 		String roleId = params.get("id");
 		String method = params.get("method");
-		String username = params.get(USER);
-		String password = params.get(PASSWORD);
-
-		/* User authentication */
-		User user = null;
-
-		try {
-			user = authenticateUser(username, password, request);
-		} catch (Exception e) {
-			Logger.warn(this, "Not valid user");
-			throw new DotSecurityException("Not valid User");
-		}
-
-		if(user==null) {
-			throw new DotSecurityException("Not valid User");
-		}
-
 
 		if(UtilMethods.isSet(method) && method.equals("full")) {
 			return getRolesTree();  // Loads all the Roles for the Parent Filtering Select

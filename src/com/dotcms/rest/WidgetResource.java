@@ -33,12 +33,10 @@ public class WidgetResource extends WebResource {
 	@Path("/{path:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws ResourceNotFoundException, ParseErrorException, Exception {
-
 		Map<String, String> params = parsePath(path);
+		User user = authenticateUser(params.get(USER), params.get(PASSWORD), false);
+
 		String id = params.get(ID);
-		String username = params.get(USER);
-		String password = params.get(PASSWORD);
-		User user = null;
 		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
 		if(params.get(LANGUAGE) != null){
@@ -51,13 +49,6 @@ public class WidgetResource extends WebResource {
 		}
 		String inode = null;
 		boolean live = true;
-
-
-
-
-		/* Authenticate the User if passed */
-
-		user = authenticateUser(username, password, request);
 
 		if(user!=null){
 			live=	(params.get(LIVE) == null || ! "false".equals(params.get(LIVE)));
