@@ -49,10 +49,9 @@ public class ContentResource extends WebResource {
 	@Path("/{path:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) {
-
-		/* Getting values from the URL  */
-
 		Map<String, String> params = parsePath(path);
+		User user = authenticateUser(params.get(USER), params.get(PASSWORD), false);
+
 		String render = params.get(RENDER);
 		String type = params.get(TYPE);
 		String query = params.get(QUERY);
@@ -60,11 +59,8 @@ public class ContentResource extends WebResource {
 		String orderBy = params.get(ORDERBY);
 		String limitStr = params.get(LIMIT);
 		String offsetStr = params.get(OFFSET);
-		String username = params.get(USER);
-		String password = params.get(PASSWORD);
 		String inode = params.get(INODE);
 		String result = null;
-		User user = null;
 		type = UtilMethods.isSet(type)?type:"json";
 		orderBy = UtilMethods.isSet(orderBy)?orderBy:"modDate desc";
 		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -76,14 +72,6 @@ public class ContentResource extends WebResource {
 			catch(Exception e){
 				Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
 			}
-		}
-
-		/* Authenticate the User if passed */
-
-		try {
-			user = authenticateUser(username, password, request);
-		} catch (Exception e) {
-			Logger.warn(this, "Error authenticating user, username: " + username + ", password: " + password);
 		}
 
 		/* Limit and Offset Parameters Handling, if not passed, using default */
