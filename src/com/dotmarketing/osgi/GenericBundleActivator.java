@@ -280,16 +280,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 }
             }
 
-            /*
-            In order to inject the class code inside dotcms context this is the main part of the process,
-            is required to insert our custom class loader inside dotcms class loaders hierarchy.
-             */
-            ClassLoader loader = activatorUtil.findFirstLoader( ClassLoader.getSystemClassLoader() );
-
-            Field parentLoaderField = ClassLoader.class.getDeclaredField( "parent" );
-            parentLoaderField.setAccessible( true );
-            parentLoaderField.set( loader, urlOsgiClassLoader );
-            parentLoaderField.setAccessible( false );
+            urlOsgiClassLoader.linkClassLoaders();
         }
     }
 
@@ -711,15 +702,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
         }
 
-        private ClassLoader findFirstLoader ( ClassLoader loader ) {
-
-            if ( loader.getParent() == null ) {
-                return loader;
-            } else {
-                return findFirstLoader( loader.getParent() );
-            }
-        }
-
         private String getBundleFolder ( BundleContext context ) {
             return OSGI_FOLDER + File.separator + context.getBundle().getBundleId();
         }
@@ -865,6 +847,18 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
             ServiceReference sRef = context.getServiceReference( ExtHttpService.class.getName() );
             if ( sRef != null ) {
+
+                /*
+                 Why don't use it in the same way as the activators???, classpaths :)
+
+                 On the felix framework initialization dotCMS loads this class (ExtHttpService) using its own classloader.
+                 So I can't use directly this class and its implementation because on this class felix can't use its
+                 instance (Created with its own classloader because the dotCMS classloader already loaded the same class,
+                 meaning we have in memory a definition that is not the one provided by felix and for that reason they are different, nice... :) ),
+                 That will cause runtime errors and that's why we use reflection.
+                 */
+
+                //ExtHttpService httpService = (ExtHttpService) context.getService( sRef );
                 Object httpService = context.getService( sRef );
 
                 //Method unregisterServletMethod = httpService.getClass().getMethod( "unregisterAll" );
