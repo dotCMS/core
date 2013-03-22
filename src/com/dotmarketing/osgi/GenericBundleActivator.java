@@ -87,7 +87,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @param context
      */
-    protected void initializeServices ( BundleContext context ) {
+    protected void initializeServices ( BundleContext context ) throws Exception {
 
         forceHttpServiceLoading( context );
         //Forcing the loading of the ToolboxManager
@@ -98,8 +98,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
     /**
      * Allow to this bundle/elements to be visible and accessible from the host classpath
+     *
+     * @param context
+     * @throws Exception
      */
-    protected void publishBundleServices ( BundleContext context ) {
+    protected void publishBundleServices ( BundleContext context ) throws Exception {
 
         //Classloaders
         ClassLoader felixClassLoader = getFelixClassLoader();
@@ -121,10 +124,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
             String[] forceOverride = overrideClasses.split( "," );
             for ( String classToOverride : forceOverride ) {
                 try {
-                    //Just loading the custom implementation will allows to override the one the classloader already had loaded
-                    combinedLoader.loadClass( classToOverride.trim() );
-                } catch ( ClassNotFoundException e ) {
-                    e.printStackTrace();
+                    injectContext( classToOverride.trim() );
+                } catch ( Exception e ) {
+                    Logger.error( this, "Error overriding class: " + classToOverride, e );
+                    throw e;
                 }
             }
         }
@@ -187,7 +190,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @param context
      */
-    private void forceHttpServiceLoading ( BundleContext context ) {
+    private void forceHttpServiceLoading ( BundleContext context ) throws Exception {
 
         try {
             //Working with the http bridge
@@ -205,7 +208,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
             }
         } catch ( Exception e ) {
-            e.printStackTrace();
+            Logger.error( this, "Error loading HttpService.", e );
+            throw e;
         }
     }
 
@@ -244,7 +248,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         UrlOsgiClassLoader urlOsgiClassLoader = activatorUtil.findCustomURLLoader( ClassLoader.getSystemClassLoader() );
         if ( urlOsgiClassLoader != null ) {
 
-            if ( urlOsgiClassLoader.contains( classURL ) ) {
+            if ( urlOsgiClassLoader.contains( classURL ) ) {//Verify if this URL is already in our custom ClassLoader
                 //The classloader and the class content is already in the system classloader, so we need to reload the jar contents
                 if ( reload ) {
                     urlOsgiClassLoader.reload( classURL );
@@ -265,6 +269,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 Class baseClass = getContextClassLoader().loadClass( "org.quartz.Job" );
                 //Creates our custom class loader in order to use it to inject the class code inside dotcms context
                 urlOsgiClassLoader = new UrlOsgiClassLoader( classURL, baseClass.getClassLoader() );
+                //We may have classes we want to override from e beginning, for example a custom implementation of a dotCMS class
+                if ( reload ) {
+                    urlOsgiClassLoader.reload( classURL );
+                }
             } else {
                 //The classloader and the class content in already in the system classloader, so we need to reload the jar contents
                 if ( reload ) {
