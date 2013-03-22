@@ -66,7 +66,6 @@ import com.dotmarketing.startup.runonce.Task00950AddTablePublishingEndpoint;
 import com.dotmarketing.startup.runonce.Task01000LinkChequerTable;
 import com.dotmarketing.startup.runonce.Task01005TemplateThemeField;
 import com.dotmarketing.startup.runonce.Task01015AddPublishExpireDateToIdentifier;
-import com.dotmarketing.startup.runonce.Task500820CreateDefaultWorkflow;
 
 public class TaskLocatorUtil {
 
@@ -136,8 +135,6 @@ public class TaskLocatorUtil {
         ret.add(Task01005TemplateThemeField.class);
         ret.add(Task01015AddPublishExpireDateToIdentifier.class);
         
-        
-        ret.add(Task500820CreateDefaultWorkflow.class);
         return ret;
     }
 
