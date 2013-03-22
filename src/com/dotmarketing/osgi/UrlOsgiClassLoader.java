@@ -113,7 +113,7 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                 String className = entry.getName().replace( "/", "." ).replace( ".class", "" );
 
                 //We just want to redefine loaded classes, we don't want to load something that will not be use it
-                Class currentClass = findLoadedClass( className );
+                Class currentClass = searchClassForReloading( className );
                 if ( currentClass != null ) {
 
                     InputStream in = null;
@@ -148,6 +148,27 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
             }
         }
+    }
+
+    /**
+     * Search for a given class. This method will be call it when a class needs to be reload it, in order to do that
+     * we will search first on the main classLoader (dotCMS ClassLoader) and if the class is not loaded and exist in dotCMS we
+     * want to load it to redefine it with our implementation or changes.
+     *
+     * @param className
+     * @return
+     */
+    private Class searchClassForReloading ( String className ) {
+
+        Class foundClass;
+        try {
+            //First let search this class in the main dotCMS class loader
+            foundClass = mainClassLoader.loadClass( className );
+        } catch ( ClassNotFoundException e ) {
+            foundClass = findLoadedClass( className );
+        }
+
+        return foundClass;
     }
 
     /**
