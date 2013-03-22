@@ -31,20 +31,6 @@ public class WebResource {
 	protected static final String LIVE = "live";
 	protected static final String LANGUAGE = "language";
 
-	/**
-	 * Tries to authenticate with given user/password. If succeed, returns the authenticated user.
-	 * If do not succeed, throws a ForbiddenException when rejectWhenNoUser is TRUE,
-	 * or null if rejectWhenNoUser is FALSE
-	 *
-	 * @param username
-	 * @param password
-	 * @param rejectWhenNoUser if TRUE, throws a ForbiddenException when authentication fails.
-	 * @return authenticated user
-	 */
-
-	protected User authenticateUser(String username, String password, boolean rejectWhenNoUser) {
-		return authenticateUser(username, password, null, rejectWhenNoUser);
-	}
 
 	/**
 	 * Tries to authenticate with given user/password. If succeed, returns the authenticated user.
@@ -60,6 +46,7 @@ public class WebResource {
 
 	protected User authenticateUser(String username, String password, HttpServletRequest req, boolean rejectWhenNoUser) throws ForbiddenException {
 		User user = null;
+		String ip = req!=null?req.getRemoteAddr():"";
 
 		if(UtilMethods.isSet(username) && UtilMethods.isSet(password)) { // providing login and password so let's try to authenticate
 
@@ -73,16 +60,16 @@ public class WebResource {
 						user = APILocator.getUserAPI().loadUserById(username, APILocator.getUserAPI().getSystemUser(), false);
 					}
 				} else { // doLogin returning false
-					Logger.warn(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
-					SecurityLogger.logDebug(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
+					Logger.warn(this.getClass(), "Request IP: " + ip + ". No Such User Found. Username: " + username + ", Password: " + password);
+					SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ".No Such User Found. Username: " + username + ", Password: " + password);
 					throw new ForbiddenException("Forbidden Resource");
 				}
 
 			}  catch (Exception e) {  // doLogin throwing Exception
 				//
 				if(Config.getBooleanProperty("REJECT_REST_API_WITH_NO_USER", false) || rejectWhenNoUser) {
-					Logger.warn(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
-					SecurityLogger.logDebug(this.getClass(), "No Such User Found. Username: " + username + ", Password: " + password);
+					Logger.warn(this.getClass(), "Request IP: " + ip + ".No Such User Found. Username: " + username + ", Password: " + password);
+					SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ".No Such User Found. Username: " + username + ", Password: " + password);
 					throw new ForbiddenException("Forbidden Resource");
 				}
 			}
