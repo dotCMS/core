@@ -1,23 +1,32 @@
 package com.dotcms.publishing.job;
 
 import java.io.IOException;
-import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.joda.time.DateTime;
+import org.elasticsearch.common.joda.time.DateTimeZone;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.facet.FacetBuilders;
+import org.elasticsearch.search.facet.statistical.StatisticalFacet;
+import org.elasticsearch.search.facet.statistical.StatisticalFacetBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
-import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -56,25 +65,6 @@ public class SiteSearchJobImpl {
         
         
         boolean incremental = dataMap.getString("incremental") != null;
-        DateFormat df = new java.text.SimpleDateFormat("yyyy-M-d HH:mm:ss");
-        Date start = null;
-        Date end =null;
-        
-        try{
-            String startDateStr = dataMap.getString("startDateDate") + " " +dataMap.getString("startDateTime").replaceAll("T",""); 
-            start = df.parse(startDateStr);
-        }
-        catch(Exception e){
-            
-        }
-        try{
-            String endDateStr = dataMap.getString("endDateDate") + " " +dataMap.getString("endDateTime").replaceAll("T",""); 
-            end = df.parse(endDateStr);
-        }
-        catch(Exception e){
-            
-        }
-        
         
         User userToRun = APILocator.getUserAPI().getSystemUser();
 
@@ -156,9 +146,43 @@ public class SiteSearchJobImpl {
                 config.setId(x);
             }
             
-    
-            config.setStartDate(start);
-            config.setEndDate(end);
+            if(incremental) {
+                config.setEndDate(jobContext.getFireTime());
+                
+                config.setStartDate(null);
+                try {
+                    /* this one is not so bad. it will take the date of the last time this job ran.
+                     * the issue here is that every time we restart dotCMS it will come as null so
+                     * we will do a full site search index build.
+                     * 
+                    SearchResponse response = new ESClient().getClient().prepareSearch().setIndices(config.getIndexName())
+                        .addSort("modified", SortOrder.DESC).addField("modified").setSize(1)
+                        .setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
+                    if(response.hits().hits().length>0) {
+                        Date maxMod = response.hits().hits()[0].field("modified").getValue();
+                        config.setStartDate(maxMod);
+                    }*/
+                    
+                    /* this approach is taking the max modified date from documents in the index (if any).
+                     * that way we can avoid doing a full build every time we restart dotCMS
+                     */
+                    SearchResponse response = new ESClient().getClient().prepareSearch().setIndices(config.getIndexName())
+                            .setQuery(QueryBuilders.matchAllQuery())
+                            .addFacet(FacetBuilders.statisticalFacet("maxmod").field("modified")).execute().actionGet();
+                    StatisticalFacet maxmod = (StatisticalFacet)response.facets().facetsAsMap().get("maxmod");
+                    if(maxmod.getCount()>0)
+                        config.setStartDate(new DateTime((long)maxmod.getMax(),DateTimeZone.UTC).toDate());
+                    
+                }
+                catch(Exception ex) {
+                    Logger.warn(this, "can't determine max modified date on sitesearch index "+config.getIndexName(),ex);
+                }
+            }
+            else {
+                // set null explicitly just in case
+                config.setEndDate(null);
+                config.setStartDate(null);
+            }
             config.setIncremental(incremental);
             config.setUser(userToRun);
             if(include){
