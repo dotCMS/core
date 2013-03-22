@@ -6,11 +6,10 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.startup.StartupTask;
 
-public class Task500820CreateDefaultWorkflow implements StartupTask {
+public class Task01020CreateDefaultWorkflow implements StartupTask {
 
 	@Override
 	public boolean forceRun() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 
