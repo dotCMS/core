@@ -50,7 +50,7 @@ public class ContentResource extends WebResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) {
 		Map<String, String> params = parsePath(path);
-		User user = authenticateUser(params.get(USER), params.get(PASSWORD), false);
+		User user = authenticateUser(params.get(USER), params.get(PASSWORD), request, false);
 
 		String render = params.get(RENDER);
 		String type = params.get(TYPE);

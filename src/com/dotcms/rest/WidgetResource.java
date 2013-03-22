@@ -34,7 +34,7 @@ public class WidgetResource extends WebResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws ResourceNotFoundException, ParseErrorException, Exception {
 		Map<String, String> params = parsePath(path);
-		User user = authenticateUser(params.get(USER), params.get(PASSWORD), false);
+		User user = authenticateUser(params.get(USER), params.get(PASSWORD), request, false);
 
 		String id = params.get(ID);
 		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
