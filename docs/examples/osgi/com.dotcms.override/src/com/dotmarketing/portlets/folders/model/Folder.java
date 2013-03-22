@@ -284,8 +284,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
         //TODO: New code in this class!
         Logger.info( this, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" );
-        Logger.info( this, "Modified Code..." );
-        Logger.info( this, "getPath-Original: retvalue=" + (id != null ? id.getPath() : null) );
+        Logger.info( this, "Modified Code, this class was redefined." );
         Logger.info( this, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" );
         //TODO: New code in this class!
 
