@@ -244,11 +244,6 @@ public class PublisherConfig implements Map<String, Object> {
 		params = new HashMap<String, Object>();
 		setId(UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_'));
 
-		Date startDate = new java.util.Date();
-		startDate.setTime(0);
-		setStartDate(startDate);
-		setEndDate(new java.util.Date());
-
 		setLanguage(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
 		setTimeStamp(new Date());
