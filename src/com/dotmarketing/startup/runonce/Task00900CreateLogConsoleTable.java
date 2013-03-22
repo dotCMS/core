@@ -2,7 +2,6 @@ package com.dotmarketing.startup.runonce;
 
 import java.sql.SQLException;
 
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -33,7 +32,6 @@ public class Task00900CreateLogConsoleTable implements StartupTask {
 				createNewTablesMySQL();
 			}
 
-			APILocator.getWorkflowAPI().createDefaultScheme();
 
 		} catch (Exception e) {
 			throw new DotDataException(e.getMessage(), e);
