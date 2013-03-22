@@ -54,8 +54,6 @@ import com.dotmarketing.startup.runonce.Task00860ExtendServerIdsMSSQL;
 import com.dotmarketing.startup.runonce.Task00865AddTimestampToVersionTables;
 import com.dotmarketing.startup.runonce.Task00900CreateLogConsoleTable;
 import com.dotmarketing.startup.runonce.Task00905FixAddFolderAfterDelete;
-import com.dotmarketing.startup.runonce.Task00910AddEscalationFields;
-import com.dotmarketing.startup.runonce.Task00911CreateDefaultWorkflowSchema;
 import com.dotmarketing.startup.runonce.Task00920AddContentletVersionSystemHost;
 import com.dotmarketing.startup.runonce.Task00922FixdotfolderpathMSSQL;
 import com.dotmarketing.startup.runonce.Task00925UserIdTypeChange;
@@ -122,7 +120,6 @@ public class TaskLocatorUtil {
 		ret.add(Task00865AddTimestampToVersionTables.class);
 		ret.add(Task00900CreateLogConsoleTable.class);
 		ret.add(Task00905FixAddFolderAfterDelete.class);
-		ret.add(Task00910AddEscalationFields.class);
         ret.add( Task00920AddContentletVersionSystemHost.class );
         ret.add(Task00922FixdotfolderpathMSSQL.class);
         ret.add(Task00925UserIdTypeChange.class);
