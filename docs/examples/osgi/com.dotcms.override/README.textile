@@ -12,8 +12,8 @@ In this *MANIFEST* you must specify (see the included plugin as an example):
 * *Bundle-Name*: The name of your bundle
 * *Bundle-SymbolicName*: A short an unique name for the bundle
 * *Bundle-Activator*: Package and name of your Activator class (example: com.dotmarketing.osgi.override.Activator)
-* *Override-Classes*: true/false
-If true any class already defined by the dotCMS classLoaders will be redefined (override it) by the ones defined on this OSGI bundle.
+* *Override-Classes*: Comma separated list of classes.
+List of classes we are trying to override, in order to override any dotCMS class is mandatory to add it to this list because dotCMS implementation of the class will be already loaded by the dotCMS class loader so if we don't explicit specify the classes to override the class loader wont try to load them.
 * *DynamicImport-Package: **
 Dynamically add required imports the plugin may need without add them explicitly
 * *Import-Package*: This is a comma separated list of the names of packages to import. In this list there must be the packages that you are using inside your osgi bundle plugin and are exported and exposed by the dotCMS runtime.
@@ -44,7 +44,7 @@ This bundle activator extends from *com.dotmarketing.osgi.GenericBundleActivator
 h2. Testing
 
 For our redefinition of the class *com.dotmarketing.portlets.folders.model.Folder* we modified the body of the *getPath()* method, we just added some debugging lines in order to prove it is working.
-The *Folder* class is call it by our activator (*com.dotmarketing.osgi.override.Activator*) which prove the OSGI bundle is using our redefinition of the Folder class, but in order to demonstrate dotCMS is using it go to:
+The *Folder* class is call it by our activator (*com.dotmarketing.osgi.override.Activator*) which prove the OSGI bundle is using our redefinition of the Folder class, but in order to demonstrate the dotCMS context is using it too go to:
 *dotCMS Admin* -> *Site Browser* -> Select any folder on the tree -> *Add Folder*
 The *Add Folder* use the *Folder* class and if you deployed your OSGI plugin the debugging code we added should be visible on the logs.
 ________________________________________________________________________________________
