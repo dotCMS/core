@@ -68,7 +68,8 @@
 	}
 	
 	function refreshAuditList(urlParams){
-		var url = "/html/portlet/ext/contentlet/publishing/view_publish_audit_list.jsp?"+ urlParams;		
+		var ran=new Date().getTime();
+		var url = "/html/portlet/ext/contentlet/publishing/view_publish_audit_list.jsp?v="+ ran + "&" + urlParams;		
 		
 		var myCp = dijit.byId("auditContent");	
 		
@@ -100,7 +101,8 @@
 	
 	function refreshLuceneList(urlParams){
 		lastLuceneUrlParams = urlParams;
-		var url = "/html/portlet/ext/contentlet/publishing/view_publish_content_list.jsp?"+ urlParams;		
+		var ran=new Date().getTime();
+		var url = "/html/portlet/ext/contentlet/publishing/view_publish_content_list.jsp?v="+ ran + "&" + urlParams;		
 		
 		var myCp = dijit.byId("searchLuceneContent");
 		

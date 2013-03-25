@@ -1,11 +1,72 @@
 package com.dotmarketing.util;
 
-import com.dotmarketing.fixtask.tasks.*;
-import com.dotmarketing.startup.runalways.*;
-import com.dotmarketing.startup.runonce.*;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import com.dotmarketing.fixtask.tasks.FixTask00001CheckAssetsMissingIdentifiers;
+import com.dotmarketing.fixtask.tasks.FixTask00003CheckContainersInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00004CheckFileAssetsInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00005CheckHTMLPagesInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00006CheckLinksInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00007CheckTemplatesInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00008CheckTreeInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00009CheckContentletsInexistentInodes;
+import com.dotmarketing.fixtask.tasks.FixTask00011RenameHostInFieldVariableName;
+import com.dotmarketing.fixtask.tasks.FixTask00012UpdateAssetsHosts;
+import com.dotmarketing.fixtask.tasks.FixTask00020DeleteOrphanedIdentifiers;
+import com.dotmarketing.fixtask.tasks.FixTask00021CheckOrphanedAssets;
+import com.dotmarketing.fixtask.tasks.FixTask00030DeleteOrphanedAssets;
+import com.dotmarketing.fixtask.tasks.FixTask00040CheckFileAssetsMimeType;
+import com.dotmarketing.fixtask.tasks.FixTask00050FixInodesWithoutContentlets;
+import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
+import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
+import com.dotmarketing.startup.runalways.Task00001LoadSchema;
+import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
+import com.dotmarketing.startup.runalways.Task00004LoadStarter;
+import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
+import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
+import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
+import com.dotmarketing.startup.runalways.Task00008CreateDefaultWorkflowScheme;
+import com.dotmarketing.startup.runonce.Task00760AddContentletStructureInodeIndex;
+import com.dotmarketing.startup.runonce.Task00765AddUserForeignKeys;
+import com.dotmarketing.startup.runonce.Task00766AddFieldVariableTable;
+import com.dotmarketing.startup.runonce.Task00767FieldVariableValueTypeChange;
+import com.dotmarketing.startup.runonce.Task00768CreateTagStorageFieldOnHostStructure;
+import com.dotmarketing.startup.runonce.Task00769UpdateTagDataModel;
+import com.dotmarketing.startup.runonce.Task00775DropUnusedTables;
+import com.dotmarketing.startup.runonce.Task00780UUIDTypeChange;
+import com.dotmarketing.startup.runonce.Task00782CleanDataInconsistencies;
+import com.dotmarketing.startup.runonce.Task00785DataModelChanges;
+import com.dotmarketing.startup.runonce.Task00790DataModelChangesForWebAssets;
+import com.dotmarketing.startup.runonce.Task00795LiveWorkingToIdentifier;
+import com.dotmarketing.startup.runonce.Task00800CreateTemplateContainers;
+import com.dotmarketing.startup.runonce.Task00805AddRenameFolderProcedure;
+import com.dotmarketing.startup.runonce.Task00810FilesAsContentChanges;
+import com.dotmarketing.startup.runonce.Task00815WorkFlowTablesChanges;
+import com.dotmarketing.startup.runonce.Task00820CreateNewWorkFlowTables;
+import com.dotmarketing.startup.runonce.Task00825UpdateLoadRecordsToIndex;
+import com.dotmarketing.startup.runonce.Task00835CreateIndiciesTables;
+import com.dotmarketing.startup.runonce.Task00840FixContentletVersionInfo;
+import com.dotmarketing.startup.runonce.Task00845ChangeLockedOnToTimeStamp;
+import com.dotmarketing.startup.runonce.Task00850DropOldFilesConstraintInWorkflow;
+import com.dotmarketing.startup.runonce.Task00855FixRenameFolder;
+import com.dotmarketing.startup.runonce.Task00860ExtendServerIdsMSSQL;
+import com.dotmarketing.startup.runonce.Task00865AddTimestampToVersionTables;
+import com.dotmarketing.startup.runonce.Task00900CreateLogConsoleTable;
+import com.dotmarketing.startup.runonce.Task00905FixAddFolderAfterDelete;
+import com.dotmarketing.startup.runonce.Task00910AddEscalationFields;
+import com.dotmarketing.startup.runonce.Task00920AddContentletVersionSystemHost;
+import com.dotmarketing.startup.runonce.Task00922FixdotfolderpathMSSQL;
+import com.dotmarketing.startup.runonce.Task00925UserIdTypeChange;
+import com.dotmarketing.startup.runonce.Task00930AddIdentifierIndex;
+import com.dotmarketing.startup.runonce.Task00935LogConsoleTableData;
+import com.dotmarketing.startup.runonce.Task00940AlterTemplateTable;
+import com.dotmarketing.startup.runonce.Task00945AddTableContentPublishing;
+import com.dotmarketing.startup.runonce.Task00950AddTablePublishingEndpoint;
+import com.dotmarketing.startup.runonce.Task01000LinkChequerTable;
+import com.dotmarketing.startup.runonce.Task01005TemplateThemeField;
+import com.dotmarketing.startup.runonce.Task01015AddPublishExpireDateToIdentifier;
+import com.dotmarketing.startup.runonce.Task01020CreateDefaultWorkflow;
 
 public class TaskLocatorUtil {
 
@@ -61,7 +122,6 @@ public class TaskLocatorUtil {
 		ret.add(Task00900CreateLogConsoleTable.class);
 		ret.add(Task00905FixAddFolderAfterDelete.class);
 		ret.add(Task00910AddEscalationFields.class);
-		ret.add(Task00911CreateDefaultWorkflowSchema.class);
         ret.add( Task00920AddContentletVersionSystemHost.class );
         ret.add(Task00922FixdotfolderpathMSSQL.class);
         ret.add(Task00925UserIdTypeChange.class);
@@ -75,6 +135,8 @@ public class TaskLocatorUtil {
         ret.add(Task01000LinkChequerTable.class);
         ret.add(Task01005TemplateThemeField.class);
         ret.add(Task01015AddPublishExpireDateToIdentifier.class);
+        ret.add(Task01020CreateDefaultWorkflow.class);
+        
         return ret;
     }
 

@@ -7,7 +7,6 @@ import java.util.Set;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
-import com.liferay.portal.language.LanguageException;
 
 public interface LanguageAPI {
 
@@ -76,10 +75,4 @@ public interface LanguageAPI {
      */
     public void clearCache();
     
-	public void addLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys) throws DotDataException, LanguageException;
-	
-	public void updateLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys) throws DotDataException, LanguageException;
-	
-	public void deleteLanguageKeys(Language lang,Set<String> toDeleteKeys) throws DotDataException, LanguageException;
-	
 }
