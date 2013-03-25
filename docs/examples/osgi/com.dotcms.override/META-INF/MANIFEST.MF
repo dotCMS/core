@@ -5,6 +5,7 @@ Bundle-ManifestVersion: 2
 Bundle-SymbolicName: overrideClassesOSGI
 Bundle-Version: 2.5.1
 Bundle-Activator: com.dotmarketing.osgi.override.Activator
-Override-Classes: com.dotmarketing.util.FileUtil
+Override-Classes: com.dotmarketing.portlets.folders.model.Folder
+DynamicImport-Package: *
 Import-Package: org.osgi.framework,
  com.dotmarketing.osgi

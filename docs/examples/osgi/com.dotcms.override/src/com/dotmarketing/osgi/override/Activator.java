@@ -1,7 +1,7 @@
 package com.dotmarketing.osgi.override;
 
 import com.dotmarketing.osgi.GenericBundleActivator;
-import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.portlets.folders.model.Folder;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -16,8 +16,12 @@ public class Activator extends GenericBundleActivator {
         //Expose bundle elements
         publishBundleServices( context );
 
-        //Trying to use our custom implementation of this class, after the last method call should be possible
-        FileUtil.newTestMethod();
+        /**
+         * Trying to use our custom implementation of this class, after the last method call should be possible
+         * if was added the Override-Classes property inside the MANIFEST.MF.
+         */
+        Folder folder = new Folder();
+        folder.getPath();
     }
 
     public void stop ( BundleContext context ) throws Exception {
