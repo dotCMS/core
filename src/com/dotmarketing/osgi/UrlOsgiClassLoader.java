@@ -25,6 +25,7 @@ public class UrlOsgiClassLoader extends URLClassLoader {
     Instrumentation instrumentation;
     OSGIClassTransformer transformer;
 
+    private ClassLoader topClassLoader;
     private ClassLoader mainClassLoader;
 
     private Collection<URL> urls;
@@ -47,6 +48,9 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
         //Set our main class loader in order to use it in case we don't find a reference to a class we need to load
         this.mainClassLoader = mainClassLoader;
+
+        //Search for the top class loader in the dotCMS class loaders hierarchy
+        this.topClassLoader = findTopLoader( ClassLoader.getSystemClassLoader() );
     }
 
     @Override
@@ -100,6 +104,13 @@ public class UrlOsgiClassLoader extends URLClassLoader {
      */
     public void reload ( URL url ) throws Exception {
 
+        /*
+         Remove our custom class loader from the dotCMS class loaders hierarchy in order to avoid problems redefining
+         a class that should not even be loaded like the Activator or any class that should live just in the context
+         of the OSGI plugin.
+          */
+        unlinkClassLoaders();
+
         File jarFile = new File( url.toURI() );
         JarFile jar = new JarFile( jarFile );
 
@@ -113,7 +124,7 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                 String className = entry.getName().replace( "/", "." ).replace( ".class", "" );
 
                 //We just want to redefine loaded classes, we don't want to load something that will not be use it
-                Class currentClass = findLoadedClass( className );
+                Class currentClass = searchClassForReloading( className );
                 if ( currentClass != null ) {
 
                     InputStream in = null;
@@ -147,6 +158,74 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                 }
 
             }
+        }
+
+        //Link again the class loaders
+        linkClassLoaders();
+    }
+
+    /**
+     * Search for a given class. This method will be call it when a class needs to be reload it, in order to do that
+     * we will search first on the main classLoader (dotCMS ClassLoader) and if the class is not loaded and exist in dotCMS we
+     * want to load it to redefine it with our implementation or changes.
+     *
+     * @param className
+     * @return
+     */
+    private Class searchClassForReloading ( String className ) {
+
+        Class foundClass;
+        try {
+            //First let search this class in the main dotCMS class loader
+            foundClass = mainClassLoader.loadClass( className );
+        } catch ( ClassNotFoundException e ) {
+            foundClass = findLoadedClass( className );
+        }
+
+        return foundClass;
+    }
+
+    /**
+     * In order to inject an OSGI bundle class code inside dotCMS context it is required to insert our
+     * custom class loader with the OSGI bundle classes inside the dotCMS class loaders hierarchy.
+     *
+     * @throws Exception
+     */
+    public void linkClassLoaders () throws Exception {
+
+        //Inject our custom class loader
+        Field parentLoaderField = ClassLoader.class.getDeclaredField( "parent" );
+        parentLoaderField.setAccessible( true );
+        parentLoaderField.set( topClassLoader, this );
+        parentLoaderField.setAccessible( false );
+    }
+
+    /**
+     * Remove our custom class loader from the dotCMS class loaders hierarchy.
+     *
+     * @throws Exception
+     */
+    public void unlinkClassLoaders () throws Exception {
+
+        //Remove our custom class loader
+        Field parentLoaderField = ClassLoader.class.getDeclaredField( "parent" );
+        parentLoaderField.setAccessible( true );
+        parentLoaderField.set( topClassLoader, null );
+        parentLoaderField.setAccessible( false );
+    }
+
+    /**
+     * Search for the top class loader in the dotCMS class loaders hierarchy
+     *
+     * @param loader base class loader
+     * @return The class loader at the top of the dotCMS class loaders hierarchy
+     */
+    private ClassLoader findTopLoader ( ClassLoader loader ) {
+
+        if ( loader.getParent() == null ) {
+            return loader;
+        } else {
+            return findTopLoader( loader.getParent() );
         }
     }
 
