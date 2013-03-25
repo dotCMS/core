@@ -34,6 +34,7 @@
 
 	Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
 	String contentletInode = String.valueOf(contentlet.getInode());
+	Map con = contentlet.getMap();
 
 	Language defaultLang = langAPI.getDefaultLanguage();
     String languageId = String.valueOf(defaultLang.getId());
@@ -652,8 +653,10 @@
 					href += "&relname_inodes=" + '<%= rel.getInode()%>';
 					href += "&referer=" + escape(referer);
 
-					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
-						return;
+					if(doesChanges()){
+						if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
+							return;
+					}
 
 					window.location=href;
 				}
@@ -670,6 +673,44 @@
 				dojo.require("dojo.dnd.Source");
 
 				var <%= relationJsName %>RelatedCons;
+				
+				<jsp:include page="/html/portlet/ext/contentlet/field/tiny_mce_config.jsp"/>
+				
+				function doesChanges(){
+
+					var formEle = document.getElementById('fm').elements;
+					for (var i=0;i<formEle.length;i++){
+						if(formEle[i].className=="editWYSIWYGField"){
+							tinymce.EditorManager.get(formEle[i].id).remove();
+							(new tinymce.Editor(formEle[i].id, tinyMCEProps)).render();
+						}
+						formEle[i].value = formEle[i].value.replace(/^\s+|\s+$/g, '');
+						formEle[i].value = formEle[i].value.replace(/\n/g, '');
+						<%
+						Iterator it = con.entrySet().iterator();
+						while (it.hasNext()) {
+							Map.Entry pairs = (Map.Entry)it.next();
+							String v = "";
+							if(pairs.getValue()!=null){
+								v = pairs.getValue().toString();
+								v = v.replaceAll("\'","\\\\'");
+								v = v.replaceAll("\"","\\\\\"");
+								v = v.replaceAll("\n","");
+								if(v.matches("(.*)-(.*)-(.*):(.*):(.*)")){
+									int index = v.lastIndexOf( ':' );
+									v = v.substring(0,index);
+								}
+							}
+						%>
+						if ("<%=pairs.getKey()%>"== formEle[i].id && "<%= v%>" != formEle[i].value && formEle[i].value != "") {
+							return true;
+						}				
+					<%}
+						    
+					%>
+					}
+					return false;
+				}
 
 				function <%= relationJsName %>buildListing(nodeId,data){
 					var srcNode = document.getElementById(nodeId);
@@ -779,8 +820,10 @@
 				// to edit a related content, with proper referer
 				function <%= relationJsName %>editRelatedContent(inode, siblingInode, langId){
 					
-					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
-						return;
+					if(doesChanges()){
+						if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
+							return;
+					}
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";

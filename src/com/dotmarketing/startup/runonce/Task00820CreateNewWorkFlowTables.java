@@ -2,7 +2,6 @@ package com.dotmarketing.startup.runonce;
 
 import java.sql.SQLException;
 
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -393,11 +392,6 @@ public class Task00820CreateNewWorkFlowTables implements StartupTask {
             else{
             	createNewTablesMySQL();
             }
-
-            // I know I should not call an API
-            // but this is better than having people get an error
-            // when they try to edit content
-            APILocator.getWorkflowAPI().createDefaultScheme();
 
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(),e);

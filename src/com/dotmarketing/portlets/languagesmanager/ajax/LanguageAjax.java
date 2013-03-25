@@ -7,12 +7,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.struts.Globals;
 import org.directwebremoting.WebContext;
 import org.directwebremoting.WebContextFactory;
 
@@ -31,8 +28,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.struts.MultiMessageResources;
-import com.liferay.util.servlet.SessionMessages;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -147,8 +142,6 @@ public class LanguageAjax {
 
 		Map<String, String> generalKeysToAdd = new HashMap<String, String>();
 		Map<String, String> specificKeysToAdd  = new HashMap<String, String>();
-		Map<String, String> generalKeysToUpdate = new HashMap<String, String>();
-		Map<String, String> specificKeysToUpdate  = new HashMap<String, String>();
 		Set<String> deleteKeys = new HashSet<String>();
 		Language lang = langAPI.getLanguage(languageCode, countryCode);
 		String delim = WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR;
@@ -160,8 +153,12 @@ public class LanguageAjax {
 			String generalValue = str.substring(firstDelimIndex+delim.length(),secondDelimIndex);
 			String specificValue = str.substring(secondDelimIndex+delim.length());
 
-			generalKeysToAdd.put(key, generalValue);
-			specificKeysToAdd.put(key, specificValue);
+			if(UtilMethods.isSet(generalValue)){
+				generalKeysToAdd.put(key, generalValue);
+			}
+			if(UtilMethods.isSet(specificValue)){
+				specificKeysToAdd.put(key, specificValue);
+			}
 		}
 
 		for(String str:keysToUpdate){
@@ -171,19 +168,19 @@ public class LanguageAjax {
 			String generalValue = str.substring(firstDelimIndex+delim.length(),secondDelimIndex);
 			String specificValue = str.substring(secondDelimIndex+delim.length());
 
-			generalKeysToUpdate.put(key, generalValue);
-			specificKeysToUpdate.put(key, specificValue);
+			if(UtilMethods.isSet(generalValue)){
+				generalKeysToAdd.put(key, generalValue);
+			}
+			if(UtilMethods.isSet(specificValue)){
+				specificKeysToAdd.put(key, specificValue);
+			}
 		}
 		for(String str:keysToDelete){
 			deleteKeys.add(str);
 		}
 
 		try {
-			langAPI.addLanguageKeys(lang, generalKeysToAdd, specificKeysToAdd);
-			langAPI.updateLanguageKeys(lang, generalKeysToUpdate, specificKeysToUpdate);
-			langAPI.deleteLanguageKeys(lang, deleteKeys);
-		} catch (LanguageException e) {
-			Logger.error(this, e.getMessage());
+			langAPI.saveLanguageKeys(lang, generalKeysToAdd, specificKeysToAdd, deleteKeys);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage());
 		}

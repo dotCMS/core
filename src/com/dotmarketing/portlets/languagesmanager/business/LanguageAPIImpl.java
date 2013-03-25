@@ -1,9 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,9 +16,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
-import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -138,37 +133,6 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	public void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException {
-		factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
-		
-	}
-	
-	public void addLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys) throws DotDataException, LanguageException {
-		
-		List<LanguageKey> existingGeneralKeys = getLanguageKeys(lang.getLanguageCode());
-		List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
-		
-		for(LanguageKey key:existingGeneralKeys){
-			if(generalKeys.containsKey(key.getKey()))				
-				throw new DotDataException(LanguageUtil.get(UtilMethods.getDefaultCompany().getCompanyId(),UtilMethods.getDefaultCompany().getLocale(), "message.languagemanager.key.already.registered"));			
-		}
-		for(LanguageKey key:existingSpecificKeys){
-			if(specificKeys.containsKey(key.getKey()))
-				throw new DotDataException(LanguageUtil.get(UtilMethods.getDefaultCompany().getCompanyId(),UtilMethods.getDefaultCompany().getLocale(), "message.languagemanager.key.already.registered"));
-		}
-		
-		for(LanguageKey key:existingGeneralKeys){
-			generalKeys.put(key.getKey(), key.getValue());			
-		}
-		for(LanguageKey key:existingSpecificKeys){
-			specificKeys.put(key.getKey(), key.getValue());			
-		}
-		
-		factory.saveLanguageKeys(lang, generalKeys, specificKeys, null);
-		
-	}
-	
-	public void updateLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys) throws DotDataException, LanguageException {
-		
 		List<LanguageKey> existingGeneralKeys = getLanguageKeys(lang.getLanguageCode());
 		List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
 		
@@ -191,28 +155,10 @@ public class LanguageAPIImpl implements LanguageAPI {
 		for(LanguageKey key:existingSpecificKeys){
 			specificKeys.put(key.getKey(), key.getValue());			
 		}
+		factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
 		
-		factory.saveLanguageKeys(lang, generalKeys, specificKeys, null);		
 	}
-	
-	public void deleteLanguageKeys(Language lang,Set<String> toDeleteKeys) throws DotDataException, LanguageException {
 		
-		List<LanguageKey> existingGeneralKeys = getLanguageKeys(lang.getLanguageCode());
-		List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
-		Map<String, String> generalKeys = new HashMap<String, String>();
-		Map<String, String> specificKeys = new HashMap<String, String>();
-		
-		for(LanguageKey key:existingGeneralKeys){
-			generalKeys.put(key.getKey(), key.getValue());
-		}
-		for(LanguageKey key:existingSpecificKeys){
-			specificKeys.put(key.getKey(), key.getValue());
-		}
-		
-		factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);		
-	}
-
-	
 		public String getStringKey (Language lang, String key){
 			User user1=null;
 			try {

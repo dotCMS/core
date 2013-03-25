@@ -2015,7 +2015,7 @@
         
         dojo.addOnLoad(function () {
         structureChanged(true);
-        useLoadingMessage("Loading");
+        useLoadingMessage("<i class='loadingIcon'></i> Loading");
 
         //DWR sync mode doesn't work in Chrome. Forcing sync with the flag 'loadingSearchFields'
         if (dojo.isChrome) {

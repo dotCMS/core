@@ -385,44 +385,15 @@ public class LanguageFactoryImpl extends LanguageFactory {
 				tempFile.delete();
 			if (tempFile.createNewFile()) {
 				fileReader = new FileInputStream(file);
-				LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(fileReader, "UTF8"));
 
 				tempFileWriter = new PrintWriter(tempFilePath, "UTF8");
 
-				toDeleteKeys = new HashSet<String>(toDeleteKeys);
-				for(Map.Entry<String, String> keyEntry : new HashMap<String, String>(keys).entrySet()) {
-					if(!UtilMethods.isSet(keyEntry.getKey()) || !UtilMethods.isSet(keyEntry.getValue())) {
-						keys.remove(keyEntry.getKey());
-						if(UtilMethods.isSet(keyEntry.getKey()) && !UtilMethods.isSet(keyEntry.getValue()))
-							toDeleteKeys.add(keyEntry.getKey());
-					}
+				for (String k : toDeleteKeys) {
+					keys.remove(k);
 				}
-
-				Map<String, String> newKeys = new HashMap<String, String>();
-				newKeys.putAll(keys);
-				String line = "";
-				while ((line = lineNumberReader.readLine()) != null) {
-					for (Map.Entry<String, String> keyEntry : keys.entrySet()) {
-						Pattern pattern = Pattern.compile(keyEntry.getKey() + "\\s*=(.*)");
-						Matcher m = pattern.matcher(line);
-						if (m.matches()) {
-							line = m.replaceAll(keyEntry.getKey() + "=" + keyEntry.getValue().replaceAll("\\$", "&#36;"));
-							newKeys.remove(keyEntry.getKey());
-						}
-					}
-					for (String key : toDeleteKeys) {
-						Pattern pattern = Pattern.compile(key + "\\s*=(.*)");
-						Matcher m = pattern.matcher(line);
-						if (m.matches()) {
-							line = null;
-							newKeys.remove(key);
-							break;
-						}
-					}
-					if (line != null)
-						tempFileWriter.println(line);
-				}
-				for(Map.Entry<String,String> newKey : newKeys.entrySet()) {
+				
+			
+				for(Map.Entry<String,String> newKey : keys.entrySet()) {
 					tempFileWriter.println(newKey.getKey() + "=" + newKey.getValue());
 				}
 			} else {
@@ -441,7 +412,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			}
 
 		}
-
+		
 		FileChannel fileToChannel = null;
 		FileChannel fileFromChannel = null;
 
@@ -469,7 +440,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			}
 		}
 
-		tempFile.delete();
+ 		tempFile.delete();
 	}
 
 	@Override
@@ -499,8 +470,12 @@ public class LanguageFactoryImpl extends LanguageFactory {
     			if(!entry.getKey().matches("[A-Za-z0-9-_\\.]+"))
     				throw new DotDataException("Invalid key submitted, only keys that match [A-Za-z0-9-_]+ are allowed");
     		}
-   			saveLanguageKeys(langCodeAndCountryCode, specificKeys, toDeleteKeys);
-	    	saveLanguageKeys(langCode, generalKeys, toDeleteKeys);
+    		if((toDeleteKeys!= null && toDeleteKeys.size()>0) || (specificKeys!=null && specificKeys.size()>0)){
+    			saveLanguageKeys(langCodeAndCountryCode, specificKeys, toDeleteKeys);
+    		}
+    		if((toDeleteKeys!= null && toDeleteKeys.size()>0) || (specificKeys!=null && generalKeys.size()>0)){
+    			saveLanguageKeys(langCode, generalKeys, toDeleteKeys);
+    		}
 
             //Cleaning cache
             CacheLocator.getLanguageCache().removeLanguageKeys( lang.getLanguageCode(), lang.getCountryCode() );
