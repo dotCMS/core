@@ -2,29 +2,23 @@ package com.dotcms.publishing.job;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.joda.time.DateTime;
-import org.elasticsearch.common.joda.time.DateTimeZone;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.facet.FacetBuilders;
-import org.elasticsearch.search.facet.statistical.StatisticalFacet;
-import org.elasticsearch.search.facet.statistical.StatisticalFacetBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
+import com.dotcms.enterprise.publishing.bundlers.StaticHTMLPageBundler;
+import com.dotcms.enterprise.publishing.bundlers.URLMapBundler;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
+import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotmarketing.beans.Host;
@@ -32,6 +26,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.sitesearch.model.SiteSearchAudit;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -49,9 +44,14 @@ public class SiteSearchJobImpl {
     public void run(JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticSearchException, IOException {
         if(LicenseUtil.getLevel()<200)
             return;
-                    
+
         JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
-        List<Host> selectedHosts = new ArrayList<Host>();
+        
+        String jobId=(String)dataMap.get("JOB_ID");
+        if(jobId==null) {
+            jobId=dataMap.getString("QUARTZ_JOB_NAME");
+        }
+        
         boolean indexAll = UtilMethods.isSet((String) dataMap.get("indexAll")) ? true : false;
         String[] indexHosts = null;
         Object obj = (dataMap.get("indexhost") != null) ?dataMap.get("indexhost") : new String[0];
@@ -81,6 +81,25 @@ public class SiteSearchJobImpl {
             }   
         }
         
+        Date startDate,endDate;
+        if(incremental) {
+            endDate=jobContext.getFireTime();
+            
+            startDate=null;
+            try {
+                List<SiteSearchAudit> recentAudits = APILocator.getSiteSearchAuditAPI().findRecentAudits(jobId, 0, 1);
+                if(recentAudits.size()>0)
+                    startDate=recentAudits.get(0).getFireDate();
+            }
+            catch(Exception ex) {
+                Logger.warn(this, "can't determine last audit entry for this job",ex);
+            }
+        }
+        else {
+            // set null explicitly just in case
+            startDate=endDate=null;
+        }
+        
         String[] languageToIndex=(String[])dataMap.get("langToIndex");
         int counter = 0;  
         String indexName = null;
@@ -88,10 +107,10 @@ public class SiteSearchJobImpl {
         for(String lang : languageToIndex) {
         	counter = counter + 1;
             SiteSearchConfig config = new SiteSearchConfig();
-            
+            config.setJobId(jobId);
             config.setLanguage(Long.parseLong(lang));       
             
-            config.setJobId(dataMap.getString("QUARTZ_JOB_NAME"));
+            config.setJobName(dataMap.getString("QUARTZ_JOB_NAME"));
     
             List<Host> hosts=new ArrayList<Host>();
     
@@ -146,43 +165,8 @@ public class SiteSearchJobImpl {
                 config.setId(x);
             }
             
-            if(incremental) {
-                config.setEndDate(jobContext.getFireTime());
-                
-                config.setStartDate(null);
-                try {
-                    /* this one is not so bad. it will take the date of the last time this job ran.
-                     * the issue here is that every time we restart dotCMS it will come as null so
-                     * we will do a full site search index build.
-                     * 
-                    SearchResponse response = new ESClient().getClient().prepareSearch().setIndices(config.getIndexName())
-                        .addSort("modified", SortOrder.DESC).addField("modified").setSize(1)
-                        .setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
-                    if(response.hits().hits().length>0) {
-                        Date maxMod = response.hits().hits()[0].field("modified").getValue();
-                        config.setStartDate(maxMod);
-                    }*/
-                    
-                    /* this approach is taking the max modified date from documents in the index (if any).
-                     * that way we can avoid doing a full build every time we restart dotCMS
-                     */
-                    SearchResponse response = new ESClient().getClient().prepareSearch().setIndices(config.getIndexName())
-                            .setQuery(QueryBuilders.matchAllQuery())
-                            .addFacet(FacetBuilders.statisticalFacet("maxmod").field("modified")).execute().actionGet();
-                    StatisticalFacet maxmod = (StatisticalFacet)response.facets().facetsAsMap().get("maxmod");
-                    if(maxmod.getCount()>0)
-                        config.setStartDate(new DateTime((long)maxmod.getMax(),DateTimeZone.UTC).toDate());
-                    
-                }
-                catch(Exception ex) {
-                    Logger.warn(this, "can't determine max modified date on sitesearch index "+config.getIndexName(),ex);
-                }
-            }
-            else {
-                // set null explicitly just in case
-                config.setEndDate(null);
-                config.setStartDate(null);
-            }
+            config.setStartDate(startDate);
+            config.setEndDate(endDate);
             config.setIncremental(incremental);
             config.setUser(userToRun);
             if(include){
@@ -194,6 +178,41 @@ public class SiteSearchJobImpl {
             }
             
             APILocator.getPublisherAPI().publish(config,status);
+            
+        }
+        
+        int filesCount=0,pagesCount=0,urlmapCount=0;
+        for(BundlerStatus bs : status.getBundlerStatuses()) {
+            if(bs.getBundlerClass().equals(StaticHTMLPageBundler.class.getName()))
+                pagesCount+=bs.getTotal();
+            else if(bs.getBundlerClass().equals(FileAssetBundler.class.getName()))
+                filesCount+=bs.getTotal();
+            else if(bs.getBundlerClass().equals(URLMapBundler.class.getName()))
+                urlmapCount+=bs.getTotal();
+        }
+        
+        
+        try {
+            SiteSearchAudit audit=new SiteSearchAudit();
+            audit.setPagesCount(pagesCount);
+            audit.setFilesCount(filesCount);
+            audit.setUrlmapsCount(urlmapCount);
+            audit.setAllHosts(indexAll);
+            audit.setFireDate(jobContext.getFireTime());
+            audit.setHostList(UtilMethods.join(indexHosts,","));
+            audit.setIncremental(incremental);
+            audit.setStartDate(startDate);
+            audit.setEndDate(endDate);
+            audit.setIndexName(indexName);
+            audit.setJobId(jobId);
+            audit.setJobName(dataMap.getString("QUARTZ_JOB_NAME"));
+            audit.setLangList(UtilMethods.join(languageToIndex,","));
+            audit.setPath(UtilMethods.join(paths,","));
+            audit.setPathInclude(include);
+            APILocator.getSiteSearchAuditAPI().save(audit);
+        }
+        catch(DotDataException ex) {
+            Logger.warn(this, "can't save audit data",ex);
         }
     }
 
