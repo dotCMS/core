@@ -44,8 +44,7 @@ class SiteSearchAuditFactoryImpl implements SiteSearchAuditFactory {
     public List<SiteSearchAudit> findRecentAudits(String jobId, int offset, int limit) throws DotDataException {
         DotConnect dc=new DotConnect();
         dc.setSQL(auditSQL.findrecent);
-        dc.addParam(jobId);
-        auditSQL.setRecentLimits(dc, limit, offset);
+        auditSQL.setRecentParams(dc, jobId, limit, offset);
         List<Map<String,Object>> results = dc.loadObjectResults();
         List<SiteSearchAudit> recents=new ArrayList<SiteSearchAudit>();
         for (Map<String, Object> map : results) {

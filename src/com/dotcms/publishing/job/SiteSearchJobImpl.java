@@ -23,6 +23,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
@@ -44,6 +45,8 @@ public class SiteSearchJobImpl {
     public void run(JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticSearchException, IOException {
         if(LicenseUtil.getLevel()<200)
             return;
+        
+        HibernateUtil.startTransaction();
 
         JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
         
@@ -169,11 +172,10 @@ public class SiteSearchJobImpl {
             config.setEndDate(endDate);
             config.setIncremental(incremental);
             config.setUser(userToRun);
-            if(include){
+            if(include) {
                 config.setIncludePatterns(paths);
             }
-            else{
-                
+            else {
                 config.setExcludePatterns(paths);
             }
             
@@ -213,6 +215,9 @@ public class SiteSearchJobImpl {
         }
         catch(DotDataException ex) {
             Logger.warn(this, "can't save audit data",ex);
+        }
+        finally {
+            HibernateUtil.closeSession();
         }
     }
 
