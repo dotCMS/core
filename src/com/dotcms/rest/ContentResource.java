@@ -46,28 +46,30 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 public class ContentResource extends WebResource {
 
 	@GET
-	@Path("/{path:.*}")
+	@Path("/{params:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) {
-		Map<String, String> params = parsePath(path);
-		User user = authenticateUser(params.get(USER), params.get(PASSWORD), request, false);
+	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) {
+		InitDataObject initData = init(params, AuthType.PARAMS, request, false);
 
-		String render = params.get(RENDER);
-		String type = params.get(TYPE);
-		String query = params.get(QUERY);
-		String id = params.get(ID);
-		String orderBy = params.get(ORDERBY);
-		String limitStr = params.get(LIMIT);
-		String offsetStr = params.get(OFFSET);
-		String inode = params.get(INODE);
+		Map<String, String> paramsMap = initData.getParamsMap();
+		User user = initData.getUser();
+
+		String render = paramsMap.get(RENDER);
+		String type = paramsMap.get(TYPE);
+		String query = paramsMap.get(QUERY);
+		String id = paramsMap.get(ID);
+		String orderBy = paramsMap.get(ORDERBY);
+		String limitStr = paramsMap.get(LIMIT);
+		String offsetStr = paramsMap.get(OFFSET);
+		String inode = paramsMap.get(INODE);
 		String result = null;
 		type = UtilMethods.isSet(type)?type:"json";
 		orderBy = UtilMethods.isSet(orderBy)?orderBy:"modDate desc";
 		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-		if(params.get(LANGUAGE) != null){
+		if(paramsMap.get(LANGUAGE) != null){
 			try{
-				language= Long.parseLong(params.get(LANGUAGE))	;
+				language= Long.parseLong(paramsMap.get(LANGUAGE))	;
 			}
 			catch(Exception e){
 				Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
@@ -93,7 +95,7 @@ public class ContentResource extends WebResource {
 		} catch(NumberFormatException e) {
 		}
 
-		boolean live = (params.get(LIVE) == null || ! "false".equals(params.get(LIVE)));
+		boolean live = (paramsMap.get(LIVE) == null || ! "false".equals(paramsMap.get(LIVE)));
 
 		/* Fetching the content using a query if passed or an id */
 

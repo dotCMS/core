@@ -159,6 +159,7 @@
 	var treeRoleOptionTemplate = '${nodeName}';
 	var treeModel;
 	var jsonStore;
+	var lastSelectedNode;
 
 	function buildRolesTree(tree) {
 		dojo.style(dojo.byId('noRolesFound'), { display: 'none' });
@@ -229,11 +230,37 @@
 			},
 
 			onClick: function(item) {
-				if(roleClickedDeferredHandler) {
-					clearTimeout(roleClickedDeferredHandler);
+
+
+				if(dijit.byId("rolesTree").selectedNode) {
+
+					if(roleClickedDeferredHandler) {
+						clearTimeout(roleClickedDeferredHandler);
+					}
+					var roleClickedDeferred = dojo.hitch(this, roleClicked, item.id);
+					roleClickedDeferredHandler = setTimeout(roleClickedDeferred, 500);
+
+				} else {
+					dojo.byId('editRoleButtonWrapper').style.display = 'none';
+					dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
+					dojo.style(dojo.byId('roleTabs'), { display: 'none' });
+					currentRoleId=null;
+					currentRole=null;
 				}
-				var roleClickedDeferred = dojo.hitch(this, roleClicked, item.id);
-				roleClickedDeferredHandler = setTimeout(roleClickedDeferred, 500);
+
+				if(lastSelectedNode) {
+					lastSelectedNode.labelNode.style.fontWeight="normal";
+					lastSelectedNode = null;
+				}
+
+
+				if(dijit.byId("rolesTree").selectedNode) {
+					dijit.byId("rolesTree").selectedNode.labelNode.style.fontWeight="bold";
+					lastSelectedNode = dijit.byId("rolesTree").selectedNode;
+
+				}
+
+
 			},
 
 			_createTreeNode: function (args) {
@@ -329,7 +356,7 @@
 
 	}
 
-	//The logic is executed deferred within 600 ms to handle multiple user keystrokes
+	//The logic is executed deferred within 50 ms to handle multiple user keystrokes
 	function filterRolesDeferred () {
 
 		debugger;
@@ -339,13 +366,35 @@
 		dojo.style(dojo.byId('noRolesFound'), { display: 'none' });
 
 		var query = dojo.byId('rolesFilter').value;
-		var filteredRoles = searchRoles(query);
 
-		buildRolesTree(filteredRoles);
+		if(query!=null && query.length> 0 && query.length<3) {
+			hideToolTip();
+			setTimeout("showToolTip()", 3000);
+		} else if(query=='' || (query!=null && query.length>2)) {
+			hideToolTip();
+			lastSelectedNode = null;
+			var filteredRoles = searchRoles(query);
 
-		if(filteredRoles && filteredRoles.items[0].children.length == 0)
-			dojo.style(dojo.byId('noRolesFound'), { display: '' });
+			buildRolesTree(filteredRoles);
+
+			if(filteredRoles && filteredRoles.items[0].children.length == 0)
+				dojo.style(dojo.byId('noRolesFound'), { display: '' });
+
+		}
 	}
+
+	function hideToolTip() {
+		require(["dijit/Tooltip", "dojo/domReady!"], function(Tooltip){
+		    Tooltip.hide(dojo.byId("rolesFilter"));
+		});
+	}
+
+	function showToolTip() {
+		require(["dijit/Tooltip", "dojo/domReady!"], function(Tooltip){
+		    Tooltip.show("Type at least 3 characters to activate search", dojo.byId("rolesFilter"));
+		});
+	}
+
 
 	//Event handler for clearing the users filter
 	function clearRolesFilter () {
@@ -360,8 +409,10 @@
 	var newRole = false;
 	function editRole(roleId) {
 
-		if(!roleId)
+		if(!roleId) {
 			roleId = currentRoleId;
+		}
+
 
 		var role = findRole(roleId);
 
@@ -369,14 +420,16 @@
 		currentRole = role;
 
 		isNewRole = false;
-		initializeParentRolesSelect()
-
 		setRoleName(role);
 
 		dijit.byId('roleName').attr('value', norm(role.name));
 		dijit.byId('roleKey').attr('value', norm(role.roleKey));
 		var parentRoleId = norm(role.parent);
-		dijit.byId('parentRole').setValue(parentRoleId == role.id?"0":parentRoleId);
+
+		var parent = findRole(parentRoleId);
+		dijit.byId('parentRole').set('value', parent.id==role.id?"Root Role":parent.name);
+		dojo.byId('parentRoleValue').value = parent.id==role.id?"0":parent.id
+// 		dijit.byId('parentRole').set('displayedValue', parent.id==role.id?"Root Role":parent.name);
 		dijit.byId('editUsers').attr('value', norm(role.editUsers) == true?true:false);
 		dijit.byId('editPermissions').attr('value', norm(role.editPermissions) == true?true:false);
 		dijit.byId('editTabs').attr('value', norm(role.editLayouts) == true?true:false);
@@ -387,32 +440,11 @@
 
 	//Executed when adding a new user
 
-	//Initializing the parent role select box
-	function initializeParentRolesSelect() {
-		var jsonStore = new dojox.data.JsonRestStore({ target: "/api/role/method/full"});
-
-		if(dijit.byId('parentRole')) {
-			dijit.byId('parentRole').destroyRecursive(false);
-			dojo.place('<select id="parentRole"></select>', "parentRoleWrapper", "only");
-		}
-
-        var filteringSelect = new dijit.form.FilteringSelect({
-            id: "parentRole",
-            name: "parentRole",
-            store: jsonStore,
-            searchAttr: "name",
-            required: true,
-            labelType: "html"
-        },
-        "parentRole");
-
-	}
 
 	var isNewRole = false;
 	function addNewRole() {
 
 		isNewRole = true;
-		initializeParentRolesSelect();
 
 		dojo.byId('addRoleErrorMessagesList').innerHTML = '';
 		dijit.byId('roleName').reset();
@@ -422,8 +454,13 @@
 		dijit.byId('editTabs').reset();
 		dijit.byId('roleDescription').reset();
 
-		if (currentRoleId)
-			dijit.byId('parentRole').attr('value', currentRoleId);
+		if (currentRole) {
+			dojo.byId('parentRoleValue').value = currentRole.id;
+			dijit.byId('parentRole').set('value', currentRole.name);
+		} else {
+			dojo.byId('parentRoleValue').value = "0";
+			dijit.byId('parentRole').set('value', "Root Role");
+		}
 
 		dijit.byId('addRoleDialog').show();
 	}
@@ -450,12 +487,13 @@
 
 		var roleName = dijit.byId('roleName').attr('value');
 		var roleKey = dijit.byId('roleKey').attr('value') == ''?null:dijit.byId('roleKey').attr('value');
-		var parentRoleId = dijit.byId('parentRole').getValue();
+		var parentRoleId = dojo.byId('parentRoleValue').value;
 		var canEditUsers = dijit.byId('editUsers').checked;
 		var canEditPermissions = dijit.byId('editPermissions').checked;
 		var canEditLayouts = dijit.byId('editTabs').checked;
 		var description = dijit.byId('roleDescription').attr('value');
 
+		console.log(parentRoleId);
 		currentRoleId = norm(currentRoleId);
 
 		if(isNewRole) {
@@ -506,6 +544,7 @@
 
 		dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
 		dojo.byId('editRoleButtonWrapper').style.display = 'none';
+		lastSelectedNode = null;
 		buildRolesTree();
 		showDotCMSSystemMessage(roleRemovedMsg);
 	}
@@ -1379,6 +1418,15 @@
 				return layoutList[i];
 		}
 		return null;
+	}
+
+	var filterValidation = function(constraints){
+
+// 		setTimeout(function(){
+			        return "{3,}";
+
+// 		},3000);
+
 	}
 </script>
 

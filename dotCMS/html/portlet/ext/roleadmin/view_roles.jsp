@@ -20,7 +20,8 @@
 			<dt><%= LanguageUtil.get(pageContext, "Key") %>:</dt>
 			<dd><input id="roleKey" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
 			<dt><%= LanguageUtil.get(pageContext, "Parent") %>:</dt>
-			<dd id="parentRoleWrapper"><select id="parentRole"></select></dd>
+			<dd id="parentRoleWrapper"><input type="text" id="parentRole" dojoType="dijit.form.TextBox" readonly="readonly" value="Root Role"/>
+										<input type="hidden" id="parentRoleValue" value="0" />   </dd>
 			<dt><%= LanguageUtil.get(pageContext, "can-grant") %>:</dt>
 			<dd>
 				<input id="editUsers" type="checkbox" value="true" dojoType="dijit.form.CheckBox" /> <%= LanguageUtil.get(pageContext, "users") %>
@@ -101,7 +102,7 @@
 <!-- START Tool Bar -->
 <div class="buttonBoxLeft">
 	<span style="vertical-align:middle;"><%= LanguageUtil.get(pageContext, "Filter") %>:</span>
-	<input dojoType="dijit.form.TextBox" onkeyup="filterRoles()" trim="true" id="rolesFilter">
+	<input dojoType="dijit.form.TextBox" onkeyup="filterRoles()" trim="true" id="rolesFilter" >
 	<button dojoType="dijit.form.Button" onclick="clearRolesFilter()" iconClass="resetIcon" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 </div>
 

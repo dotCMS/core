@@ -18,9 +18,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 
 @Path("/role")
@@ -35,7 +33,7 @@ public class RoleResource extends WebResource {
 	 *
 	 * @param request
 	 * @param response
-	 * @param path
+	 * @param params
 	 * @param name
 	 * @return
 	 * @throws DotStateException
@@ -44,16 +42,17 @@ public class RoleResource extends WebResource {
 	 */
 
 	@GET
-	@Path("/{path:.*}")
+	@Path("/{params:.*}")
 	@Produces("application/json")
-	public String getRoles(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws DotStateException, DotDataException, DotSecurityException {
-		Map<String, String> params = parsePath(path);
-		authenticateUser(params.get(USER), params.get(PASSWORD), request, true);
+	public String getRoles(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
+		InitDataObject initData = init(params, AuthType.PARAMS_OR_SESSION, request, true);
 
-		Boolean excludeUserRoles = params.get("excludeUserRoles")!=null;
-		Boolean onlyUserAssignableRoles = params.get("onlyUserAssignableRoles")!=null;
-		String roleId = params.get("id");
-		String method = params.get("method");
+		Map<String, String> paramsMap = initData.getParamsMap();
+
+		Boolean excludeUserRoles = paramsMap.get("excludeUserRoles")!=null;
+		Boolean onlyUserAssignableRoles = paramsMap.get("onlyUserAssignableRoles")!=null;
+		String roleId = paramsMap.get("id");
+		String method = paramsMap.get("method");
 
 		if(UtilMethods.isSet(method) && method.equals("full")) {
 			return getRolesTree();  // Loads all the Roles for the Parent Filtering Select
@@ -61,7 +60,7 @@ public class RoleResource extends WebResource {
 			String roleMap = getRole(roleId);
 			return roleMap; // Loads all the data for a given Role ID
 		} else if(UtilMethods.isSet(method) && method.equals("filter")) {
-			String rolesMap = getRolesByQuery(params.get("query"));
+			String rolesMap = getRolesByQuery(paramsMap.get("query"));
 			return rolesMap; // Loads all the data for a given Role ID
 		}
 
