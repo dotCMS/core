@@ -1,5 +1,25 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.PrintWriter;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.struts.Globals;
+
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.db.HibernateUtil;
@@ -12,13 +32,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.struts.MultiMessageResources;
-import org.apache.struts.Globals;
-
-import java.io.*;
-import java.nio.channels.FileChannel;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  *
@@ -463,12 +476,16 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 		try {
     		for(Map.Entry<String, String> entry : generalKeys.entrySet()) {
+    			if(entry ==null || entry.getKey() ==null)
+    				continue;
     			if(!entry.getKey().matches("[A-Za-z0-9-_\\.]+"))
-    				throw new DotDataException("Invalid key submitted, only keys that match [A-Za-z0-9-_]+ are allowed");
+    				throw new DotDataException("Invalid key :'" +entry.getKey()  +"' submitted, only keys that match [A-Za-z0-9-_\\.]+ are allowed");
     		}
     		for(Map.Entry<String, String> entry : specificKeys.entrySet()) {
+    			if(entry ==null || entry.getKey() ==null)
+    				continue;
     			if(!entry.getKey().matches("[A-Za-z0-9-_\\.]+"))
-    				throw new DotDataException("Invalid key submitted, only keys that match [A-Za-z0-9-_]+ are allowed");
+    				throw new DotDataException("Invalid key :'" +entry.getKey()  +"' submitted, only keys that match [A-Za-z0-9-_\\.]+ are allowed");
     		}
     		if((toDeleteKeys!= null && toDeleteKeys.size()>0) || (specificKeys!=null && specificKeys.size()>0)){
     			saveLanguageKeys(langCodeAndCountryCode, specificKeys, toDeleteKeys);
