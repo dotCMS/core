@@ -21,8 +21,9 @@ abstract class SiteSearchAuditSQL {
             "  lang_list,path,path_include,files_count,pages_count,urlmaps_count,index_name) " +
             " values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     
-    String findrecent="select * from sitesearch_audit where job_id=? limit ? offset ? order by fire_date desc";
-    void setRecentLimits(DotConnect dc, int limit, int offset) {
+    String findrecent="select * from sitesearch_audit where job_id=? order by fire_date desc limit ? offset ?";
+    void setRecentParams(DotConnect dc, String jobId, int limit, int offset) {
+        dc.addParam(jobId);
         dc.addParam(limit);
         dc.addParam(offset);
     }

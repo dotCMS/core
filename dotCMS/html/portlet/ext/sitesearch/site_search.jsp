@@ -808,10 +808,15 @@ function showNewIndexDialog() {
 } 
 
 function refreshAuditData(jobId,offset,limit) {
-	dijit.byId("auditCp").href="/html/portlet/ext/sitesearch/site_search_audit.jsp"
-			+(jobId ? "?jobId="+jobId : "")+
-			+(offset ? "&offset="+offset : "")
-			+(limit ? "&limit="+offset : "");
+	var url="/html/portlet/ext/sitesearch/site_search_audit.jsp";
+	if(jobId) {
+		url+="?jobId="+jobId;
+		if(offset)
+			url+="&offset="+offset;
+		if(limit)
+			url+="&limit="+limit;
+	}
+	dijit.byId("auditCp").attr("href",url);
 }
 
 dojo.addOnLoad (function(){
@@ -911,6 +916,9 @@ function  resizeBrowser(){
         
         var  e =  dojo.byId("indexStatsCp");
         dojo.style(e, "height", viewport_height -250+ "px")
+        
+        var  e =  dojo.byId("auditTabCp");
+        dojo.style(e, "height", viewport_height -210+ "px")
         
 }
 
