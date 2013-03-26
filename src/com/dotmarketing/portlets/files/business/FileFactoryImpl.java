@@ -272,7 +272,7 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
         
         // files modified itself
         bob = new StringBuilder();
-        bob.append("SELECT vi.identifier as pident from htmlpage_version_info vi ")
+        bob.append("SELECT vi.identifier as pident from fileasset_version_info vi ")
         .append("join identifier ii on (ii.id=vi.identifier) ")
         .append("where vi.version_ts >= ? ")
         .append(" and vi.version_ts <= ? ")
