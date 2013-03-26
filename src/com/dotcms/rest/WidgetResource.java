@@ -30,18 +30,20 @@ public class WidgetResource extends WebResource {
 
 
 	@GET
-	@Path("/{path:.*}")
+	@Path("/{params:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws ResourceNotFoundException, ParseErrorException, Exception {
-		Map<String, String> params = parsePath(path);
-		User user = authenticateUser(params.get(USER), params.get(PASSWORD), request, false);
+	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws ResourceNotFoundException, ParseErrorException, Exception {
+		InitDataObject initData = init(params, AuthType.PARAMS, request, false);
 
-		String id = params.get(ID);
+		Map<String, String> paramsMap = initData.getParamsMap();
+		User user = initData.getUser();
+
+		String id = paramsMap.get(ID);
 		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-		if(params.get(LANGUAGE) != null){
+		if(paramsMap.get(LANGUAGE) != null){
 			try{
-				language= Long.parseLong(params.get(LANGUAGE))	;
+				language= Long.parseLong(paramsMap.get(LANGUAGE))	;
 			}
 			catch(Exception e){
 				Logger.error(this.getClass(), "Invald language passed in, defaulting to, well, the default");
@@ -51,8 +53,8 @@ public class WidgetResource extends WebResource {
 		boolean live = true;
 
 		if(user!=null){
-			live=	(params.get(LIVE) == null || ! "false".equals(params.get(LIVE)));
-			inode = params.get(INODE);
+			live=	(paramsMap.get(LIVE) == null || ! "false".equals(paramsMap.get(LIVE)));
+			inode = paramsMap.get(INODE);
 		}
 
 		if(!UtilMethods.isSet(id) && !UtilMethods.isSet(inode)) {
