@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.files.business;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -164,6 +165,11 @@ public interface FileFactory {
 
 
     public  File getFileByURI(String uri, String hostId, boolean live) throws DotDataException, DotSecurityException ;
+	
+    
+    
+    
+    public List<String> findUpdatedFileIdsByURI(Host host, String pattern, boolean include, Date startDate, Date endDate);
 
     
 }

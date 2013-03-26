@@ -262,4 +262,10 @@ public interface FileAPI {
 
 
     public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException;
+
+
+	List<String> findUpdatedLegacyFileIds(Host h, Date startDate, Date endDate);
+
+
+	List<String> findUpdatedLegacyFileIds(Host host, String pattern, boolean include, Date startDate, Date endDate);
 }
