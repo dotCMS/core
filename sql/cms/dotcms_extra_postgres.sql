@@ -753,7 +753,7 @@ CREATE TABLE publishing_end_point (
 	sending bool);
 
 create table sitesearch_audit (
-    job_id varchar(36) primary key,
+    job_id varchar(36),
     job_name varchar(255) not null,
     fire_date timestamp not null,
     incremental bool not null,
@@ -767,5 +767,6 @@ create table sitesearch_audit (
     files_count integer not null,
     pages_count integer not null,
     urlmaps_count integer not null,
-    index_name varchar(100) not null
+    index_name varchar(100) not null,
+    primary key(job_id,fire_date)
 );

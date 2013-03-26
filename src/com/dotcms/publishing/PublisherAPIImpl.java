@@ -47,8 +47,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 				}
 			}
 			
-			
-			if(config.isIncremental() ){
+			/*if(config.isIncremental() ){
 				if(BundlerUtil.bundleExists(config)){
 					PublisherConfig p = BundlerUtil.readBundleXml(config);
 					if(p.getEndDate() != null){
@@ -65,13 +64,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 					config.setStartDate(new Date(0));
 					config.setEndDate(new Date());
 				}
-			}
-			
-			
-			
-			
-			
-			
+			}*/
 			
 			
 			// run bundlers

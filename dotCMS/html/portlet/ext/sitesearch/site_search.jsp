@@ -807,6 +807,13 @@ function showNewIndexDialog() {
 	dijit.byId('createIndexDialog').show()
 } 
 
+function refreshAuditData(jobId,offset,limit) {
+	dijit.byId("auditCp").href="/html/portlet/ext/sitesearch/site_search_audit.jsp"
+			+(jobId ? "?jobId="+jobId : "")+
+			+(offset ? "&offset="+offset : "")
+			+(limit ? "&limit="+offset : "");
+}
+
 dojo.addOnLoad (function(){
 	var tab =dijit.byId("mainTabContainer");
    	dojo.connect(tab, 'selectChild',
@@ -823,6 +830,9 @@ dojo.addOnLoad (function(){
 			  	}
 			  	if(selectedTab.id =="scheduleTabCp"){
 			  		refreshJobSchedule();
+			  	}
+			  	if(selectedTab.id=="auditTabCp") {
+			  		refreshAuditData();
 			  	}
 		});
    	refreshIndexStats();
@@ -962,6 +972,10 @@ function  resizeBrowser(){
 		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
 			<div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
 		</div>
+		
+		<div id="auditTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "sitesearch-audit-tab") %>">
+            <div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="auditCp"></div>
+        </div>
 		
 	</div>
 
