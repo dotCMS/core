@@ -47,7 +47,8 @@ public class PublisherAPIImpl implements PublisherAPI {
 				}
 			}
 			
-			/*if(config.isIncremental() ){
+			if(config.isIncremental() && config.getEndDate()==null && config.getStartDate()==null) {
+			    // if its incremental and start/end dates aren't se we take it from latest bundle 
 				if(BundlerUtil.bundleExists(config)){
 					PublisherConfig p = BundlerUtil.readBundleXml(config);
 					if(p.getEndDate() != null){
@@ -55,16 +56,16 @@ public class PublisherAPIImpl implements PublisherAPI {
 						config.setEndDate(new Date());
 					}
 					else{
-						config.setStartDate(p.getEndDate());
+					    config.setStartDate(null);
 						config.setEndDate(new Date());	
 						
 					}
 				}
 				else{
-					config.setStartDate(new Date(0));
+					config.setStartDate(null);
 					config.setEndDate(new Date());
 				}
-			}*/
+			}
 			
 			
 			// run bundlers
