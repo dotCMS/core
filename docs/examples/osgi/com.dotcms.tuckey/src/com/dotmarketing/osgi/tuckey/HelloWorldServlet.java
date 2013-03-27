@@ -20,6 +20,11 @@ public class HelloWorldServlet extends HttpServlet {
 
         out.println( "<html><body>" );
         out.println( "<h1>Hello Word</h1>" );
+
+        if ( httpServletRequest.getParameter( "browser" ) != null ) {
+            out.println( "<br><br><h3>from google Chrome</h3>" );
+        }
+
         out.println( "</body></html>" );
 
         out.close();
