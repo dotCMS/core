@@ -716,10 +716,10 @@ CREATE TABLE publishing_end_point (
 create table sitesearch_audit (
     job_id varchar(36),
     job_name varchar(255) not null,
-    fire_date timestamp not null,
+    fire_date DATETIME not null,
     incremental tinyint not null,
-    start_date timestamp,
-    end_date timestamp,
+    start_date DATETIME,
+    end_date DATETIME,
     host_list varchar(500) not null,
     all_hosts tinyint not null,
     lang_list varchar(500) not null,

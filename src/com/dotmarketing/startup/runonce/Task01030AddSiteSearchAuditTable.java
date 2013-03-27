@@ -94,10 +94,10 @@ public class Task01030AddSiteSearchAuditTable extends AbstractJDBCStartupTask {
         return  "create table sitesearch_audit (\n"+
                 "    job_id varchar(36),\n"+
                 "    job_name varchar(255) not null,\n"+
-                "    fire_date timestamp not null,\n"+
+                "    fire_date DATETIME not null,\n"+
                 "    incremental tinyint not null,\n"+
-                "    start_date timestamp,\n"+
-                "    end_date timestamp,\n"+
+                "    start_date DATETIME,\n"+
+                "    end_date DATETIME,\n"+
                 "    host_list varchar(500) not null,\n"+
                 "    all_hosts tinyint not null,\n"+
                 "    lang_list varchar(500) not null,\n"+

@@ -4,10 +4,12 @@ import com.dotmarketing.common.db.DotConnect;
 
 class MsAuditSQL extends SiteSearchAuditSQL {
     public MsAuditSQL() {
-        findrecent="select top ? * from ( "+
-                   " select *, ROW_NUMBER() over (order by fire_date desc) as rnn " +
-                   " from sitesearch_audit where job_id=? "+ 
-                   ") xx where rnn >=?";
+        // see the "top (?)"?
+        // keep an eye here http://www.mirthcorp.com/community/forums/showthread.php?t=2190
+        findrecent="select top (?) * from ( "+
+                   " select satt.*, ROW_NUMBER() over (order by fire_date desc) as r_n_n " +
+                   " from sitesearch_audit satt where job_id=? "+ 
+                   " ) subqueryname where r_n_n >=?";
     }
     
     @Override
