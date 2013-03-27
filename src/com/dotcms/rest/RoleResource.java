@@ -26,10 +26,9 @@ public class RoleResource extends WebResource {
 
 	/**
 	 * Returns a JSON representation of Roles in the System.
-	 * To retrieve the Root Roles, use: /api/role/
-	 * To retrieve the children of a given role, use:/api/role/id/<role-id>
-	 * To retrieve the entire Roles Tree, use /api/role/method/full
-	 * To query the roles tree by Role Name, use /api/role/method/filter/query/<your-query>
+	 * To load a role, use:/api/role/id/{id}
+	 * To retrieve the children of a given role, use:/api/role/children/id/{id}
+	 * To get roles by name, use /api/role/name/{name}
 	 *
 	 * @param request
 	 * @param response
@@ -42,54 +41,24 @@ public class RoleResource extends WebResource {
 	 */
 
 	@GET
-	@Path("/{params:.*}")
+	@Path("/children/{params:.*}")
 	@Produces("application/json")
-	public String getRoles(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
+	public String getRoleChildren(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
 		InitDataObject initData = init(params, AuthType.PARAMS_OR_SESSION, request, true);
 
 		Map<String, String> paramsMap = initData.getParamsMap();
-
-		Boolean excludeUserRoles = paramsMap.get("excludeUserRoles")!=null;
-		Boolean onlyUserAssignableRoles = paramsMap.get("onlyUserAssignableRoles")!=null;
 		String roleId = paramsMap.get("id");
-		String method = paramsMap.get("method");
-
-		if(UtilMethods.isSet(method) && method.equals("full")) {
-			return getRolesTree();  // Loads all the Roles for the Parent Filtering Select
-		} else if(UtilMethods.isSet(method) && method.equals("loadRole")) {
-			String roleMap = getRole(roleId);
-			return roleMap; // Loads all the data for a given Role ID
-		} else if(UtilMethods.isSet(method) && method.equals("filter")) {
-			String rolesMap = getRolesByQuery(paramsMap.get("query"));
-			return rolesMap; // Loads all the data for a given Role ID
-		}
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		StringBuilder json = new StringBuilder();
 
-		if(!UtilMethods.isSet(roleId)) {  // Loads Root Roles
+		if(!UtilMethods.isSet(roleId) || roleId.equals("root")) {  // Loads Root Roles
 			json.append("[ { id: 'root', name: 'Roles', top: true, children: ").append("[");
 			int rolesCounter = 0;
 			List<Role> rootRoles = roleAPI.findRootRoles();
 
 
 			for(Role r : rootRoles) {
-
-				if(onlyUserAssignableRoles) {
-
-					//If the role has no children and is not user assignable then we don't include it
-					if(!r.isEditUsers() && (r.getRoleChildren() == null || r.getRoleChildren().size() == 0))
-						continue;
-					//Special case the users roles branch should be entirely hidden
-					if(r.getRoleKey() != null && r.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY))
-						continue;
-				}
-
-				if(excludeUserRoles) {
-					if(r.getRoleKey() != null && r.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY))
-						continue;
-				}
-
 				json.append("{id: '").append(r.getId()).append("', ");
 				json.append("$ref: '").append(r.getId()).append("', ");
 				json.append("name: '").append(r.getName()).append("', ");
@@ -116,21 +85,6 @@ public class RoleResource extends WebResource {
 				for(String childId : children) {
 					Role r = roleAPI.loadRoleById(childId);
 
-					if(onlyUserAssignableRoles) {
-
-						//If the role has no children and is not user assignable then we don't include it
-						if(!r.isEditUsers() && (r.getRoleChildren() == null || r.getRoleChildren().size() == 0))
-							continue;
-						//Special case the users roles branch should be entirely hidden
-						if(r.getRoleKey() != null && r.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY))
-							continue;
-					}
-
-					if(excludeUserRoles) {
-						if(r.getRoleKey() != null && r.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY))
-							continue;
-					}
-
 					json.append("{id: '").append(r.getId()).append("', $ref: '").append(r.getId()).append("', name: '").append(r.getName()).append("', children:true}");
 
 					if(childCounter+1 < children.size()) {
@@ -148,47 +102,10 @@ public class RoleResource extends WebResource {
 		return json.toString();
 	}
 
-	private String getRolesTree () throws DotDataException {
-		StringBuilder toReturn = new StringBuilder();
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		List<Role> rootRoles = roleAPI.findRootRoles();
-
-		for(Role r : rootRoles) {
-			toReturn.append(constructRoleMap(r, 0));
-		}
-
-		String toReturnStr = toReturn.toString();
-		String finalStr = "[{id: '0', name: 'Root Role'}, " + toReturnStr.substring(0, toReturnStr.length()-2) + "]";
-
-		return finalStr;
-	}
-
-	private String constructRoleMap(Role role, int level) throws DotDataException {
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		StringBuilder roleMap = new StringBuilder();
-		String depth = "";
-
-		if(role!=null){
-			 for(int i=0; i<level; i++) {
-				 depth+= "-->";
-			 }
-        	 roleMap.append("{name: '").append(depth).append(role.getName()).append("', id: '").append(role.getId()).append("'}, ");
-        }
-
-		if(role!=null && role.getRoleChildren() != null) {
-
-			level++;
-
-			for(String id : role.getRoleChildren()) {
-				Role childRole = roleAPI.loadRoleById(id);
-				roleMap.append(constructRoleMap(childRole, level));
-			}
-		}
-
-		return roleMap.toString();
-	}
-
-	private String getRole(String roleId) throws DotDataException {
+	@GET
+	@Path("/id/{id}/{params:.*}")
+	@Produces("application/json")
+	public String loadRole(@PathParam("id") String roleId) throws DotDataException {
 		if(roleId.equalsIgnoreCase("root")) {
 			return "{id:'0', name: 'Root Role'}";
 		}
@@ -216,15 +133,18 @@ public class RoleResource extends WebResource {
 		return node.toString();
 	}
 
+	@GET
+	@Path("/name/{name}/{params:.*}")
+	@Produces("application/json")
 	@SuppressWarnings("unchecked")
-	private String getRolesByQuery(String query) throws DotDataException {
+	public String getRolesByQuery(@PathParam("name") String name) throws DotDataException {
 
-		if(!UtilMethods.isSet(query))
+		if(!UtilMethods.isSet(name))
 			return "";
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role userRole = roleAPI.loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
-		List<Role> roles = roleAPI.findRolesByNameFilter(query, -1, -1);
+		List<Role> roles = roleAPI.findRolesByNameFilter(name, -1, -1);
 
 		LinkedHashMap<String, Object> resultTree = new LinkedHashMap<String, Object>();
 
