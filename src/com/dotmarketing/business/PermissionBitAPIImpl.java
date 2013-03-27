@@ -165,7 +165,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if (permissionable != null && (!InodeUtils.isSet(permissionable.getPermissionId())) || (role == null)) {
 			return false;
 		}
-
+		
+		// Folders do not have PUBLISH, use EDIT instead
+		if(PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType()) && permissionType == PERMISSION_PUBLISH){
+			permissionType=PERMISSION_EDIT;
+		}
+		
 		List<Permission> perms =  getPermissions(permissionable, true);
 		for(Permission p : perms){
 			if(p.matchesPermission(permissionType) && p.getRoleId().equals(role.getId())){
@@ -226,6 +231,13 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	public boolean doesUserHaveInheriablePermissions(Permissionable parentPermissionable, String type, int requiredPermissions, User user) throws DotDataException {
 
+		
+		// Folders do not have PUBLISH, use EDIT instead
+		if(PermissionableType.FOLDERS.getCanonicalName().equals(type) && requiredPermissions == PERMISSION_PUBLISH){
+			requiredPermissions=PERMISSION_EDIT;
+		}
+		
+		
 		List<Permission> fPerms = getInheritablePermissionsRecurse(parentPermissionable);
 		String asset = null;
 		boolean haveType=false;
@@ -281,7 +293,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if(user!=null && user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
 			return true;
 		}
-
+		
+		// Folders do not have PUBLISH, use EDIT instead
+		if(PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType()) && permissionType == PERMISSION_PUBLISH){
+			permissionType=PERMISSION_EDIT;
+		}
+		
 		// http://jira.dotmarketing.net/browse/DOTCMS-6943
 		// everybody should be able to use file structures
         if (permissionable instanceof Structure

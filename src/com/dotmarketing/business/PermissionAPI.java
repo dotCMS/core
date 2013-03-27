@@ -9,6 +9,7 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
@@ -52,6 +53,7 @@ public interface PermissionAPI {
 		put("TEMPLATE_LAYOUTS", Template.TEMPLATE_LAYOUTS_CANONICAL_NAME);
 		put("STRUCTURES", Structure.class.getCanonicalName());
 		put("CONTENTLETS", Contentlet.class.getCanonicalName());
+		put("CATEGORY", Category.class.getCanonicalName());
    }};
 
    public enum PermissionableType {
@@ -63,8 +65,11 @@ public interface PermissionAPI {
 	   TEMPLATES(Template.class.getCanonicalName()),
 	   TEMPLATE_LAYOUTS(Template.TEMPLATE_LAYOUTS_CANONICAL_NAME),
 	   STRUCTURES(Structure.class.getCanonicalName()),
-	   CONTENTLETS(Contentlet.class.getCanonicalName());
+	   CONTENTLETS(Contentlet.class.getCanonicalName()),
+	   CATEGORY(Category.class.getCanonicalName());
 
+	   
+	   
 	   private final String canonicalName;
 
 	   PermissionableType(String canonicalName) {
