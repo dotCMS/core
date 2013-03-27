@@ -3,6 +3,7 @@ package com.dotmarketing.osgi;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
@@ -39,6 +40,7 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
+import org.tuckey.web.filters.urlrewrite.Rule;
 
 import javax.servlet.ServletContext;
 import java.io.File;
@@ -72,6 +74,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private Map<String, String> jobs;
     private Collection<ActionConfig> actions;
     private Collection<Portlet> portlets;
+    private Collection<Rule> rules;
     private Collection preHooks;
     private Collection postHooks;
     private ActivatorUtil activatorUtil = new ActivatorUtil();
@@ -430,6 +433,30 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
+     * Adds a given tuckey Rule to the url rewrite filter
+     *
+     * @param rule
+     * @throws Exception
+     */
+    protected void addRewriteRule ( Rule rule ) throws Exception {
+
+        //Get a reference of our url rewrite filter
+        DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
+        if ( urlRewriteFilter != null ) {
+
+            if ( rules == null ) {
+                rules = new ArrayList<Rule>();
+            }
+
+            //Adding the Rule to the filter
+            urlRewriteFilter.addRule( rule );
+            rules.add( rule );
+        } else {
+            throw new RuntimeException( "Non UrlRewriteFilter found!" );
+        }
+    }
+
+    /**
      * Register a WorkFlowActionlet service
      *
      * @param context
@@ -538,6 +565,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterActionMappings();
         unregisterPortles();
         unregisterServlets( context );
+        unregisterRewriteRule();
         activatorUtil.cleanResources( context );
     }
 
@@ -690,6 +718,28 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterServlets ( BundleContext context ) throws Exception {
         activatorUtil.unregisterAll( context );
+    }
+
+    /**
+     * Unregister all the registered Rewrite Rules
+     *
+     * @throws Exception
+     */
+    protected void unregisterRewriteRule () throws Exception {
+
+        if ( rules != null ) {
+
+            //Get a reference of our url rewrite filter
+            DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
+            if ( urlRewriteFilter != null ) {
+                for ( Rule rule : rules ) {
+                    //Remove from the filter this rule
+                    urlRewriteFilter.removeRule( rule );
+                }
+            } else {
+                throw new RuntimeException( "Non UrlRewriteFilter found!" );
+            }
+        }
     }
 
     class ActivatorUtil {

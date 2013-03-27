@@ -87,6 +87,10 @@
 			<param-value>axis.servlet.</param-value>
 		</init-param>
 	</filter>
+    <filter>
+        <filter-name>UrlRewriteFilter</filter-name>
+        <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
+    </filter>
 	<!--END DOTMARKETING FILTERS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
@@ -219,6 +223,10 @@
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+    <filter-mapping>
+        <filter-name>UrlRewriteFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 	<!--
 	<filter>
   		<filter-name>Compression Filter</filter-name>
