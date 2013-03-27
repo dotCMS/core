@@ -40,6 +40,7 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
+import org.tuckey.web.filters.urlrewrite.NormalRule;
 import org.tuckey.web.filters.urlrewrite.Rule;
 
 import javax.servlet.ServletContext;
@@ -454,6 +455,47 @@ public abstract class GenericBundleActivator implements BundleActivator {
         } else {
             throw new RuntimeException( "Non UrlRewriteFilter found!" );
         }
+    }
+
+    /**
+     * Creates and add tuckey rules
+     *
+     * @param from the url to match from
+     * @param to   url for redirecting/passing through to
+     * @param type Posible values:
+     *             <ul>
+     *             <li><strong>forward</strong>: Requests matching the "conditions" for this "rule", and the URL in the "from" element will be internally forwarded to the URL specified in the "to" element. Note: In this case the "to" URL must be in the same context as UrlRewriteFilter. This is the same as doing:
+     *             <br>RequestDispatcher rq = request.getRequestDispatcher([to value]);
+     *             <br>rq.forward(request, response);</li>
+     *             <li><strong>passthrough</strong>:Identical to "forward".</li>
+     *             <li><strong>redirect</strong>:Requests matching the "conditions" and the "from" for this rule will be HTTP redirected. This is the same a doing:
+     *             <br>HttpServletResponse.sendRedirect([to value]))</li>
+     *             <li><strong>permanent-redirect</strong>:The same as doing:
+     *             <br>response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+     *             <br>response.setHeader("Location", [to value]);
+     *             <br>(note, SC_MOVED_PERMANENTLY is HTTP status code 301)</li>
+     *             <li><strong>temporary-redirect</strong>:The same as doing:
+     *             <br>response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+     *             <br>response.setHeader("Location", [to value]);
+     *             <br>(note, SC_MOVED_TEMPORARILY is HTTP status code 302)</li>
+     *             <li><strong>pre-include</strong></li>
+     *             <li><strong>post-include</strong></li>
+     *             <li><strong>proxy</strong>: The request will be proxied to the full url specified. commons-http and commons-codec must both be in the classpath to use this feature.</li>
+     *             </ul>
+     * @param name rule name
+     * @throws Exception
+     */
+    protected void addRewriteRule ( String from, String to, String type, String name ) throws Exception {
+
+        //Create the tuckey rule
+        NormalRule rule = new NormalRule();
+        rule.setFrom( from );
+        rule.setToType( type );
+        rule.setTo( to );
+        rule.setName( name );
+
+        //And add the rewrite rule
+        addRewriteRule( rule );
     }
 
     /**

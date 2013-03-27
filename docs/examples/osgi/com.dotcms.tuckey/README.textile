@@ -48,3 +48,4 @@ h2. Testing
 * *Accessing our simple test servlet*: http://localhost:8080/app/helloworld
 * *Testing the forward rule*: http://localhost:8080/example/url/forward
 * *Testing the redirect rule*: http://localhost:8080/example/url/redirect
+* *Testing the conditions*: http://localhost:8080/example/url/condition -> If call it using google Chrome it will display the message "from google Chrome" if not, will do nothing (404 error).
