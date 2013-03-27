@@ -9,8 +9,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.velocity.runtime.resource.ResourceManager;
@@ -27,6 +30,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -40,10 +44,12 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactoryImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
@@ -243,6 +249,55 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 		return file;
 	}
 
+	
+	
+    @Override
+    public List<String> findUpdatedFileIdsByURI(Host host, String pattern, boolean include, Date startDate,Date endDate){
+    	
+        Set<String> ret = new HashSet<String>();
+        
+        String likepattern=RegEX.replaceAll(pattern, "%", "\\*");
+        
+        String concat;
+        if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+            concat=" concat(ii.parent_path, ii.asset_name) ";
+        }else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+            concat=" (ii.parent_path + ii.asset_name) ";
+        }else {
+            concat=" (ii.parent_path || ii.asset_name) ";
+        }
+    	
+        StringBuilder bob = new StringBuilder();
+        DotConnect dc = new DotConnect();
+        
+        // files modified itself
+        bob = new StringBuilder();
+        bob.append("SELECT vi.identifier as pident from fileasset_version_info vi ")
+        .append("join identifier ii on (ii.id=vi.identifier) ")
+        .append("where vi.version_ts >= ? ")
+        .append(" and vi.version_ts <= ? ")
+        .append(" and vi.live_inode is not null and vi.deleted=").append(DbConnectionFactory.getDBFalse())
+        .append(" and ii.host_inode=? ")
+        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+        dc.setSQL(bob.toString());
+        dc.addParam(startDate);
+        dc.addParam(endDate);
+        dc.addParam(host.getIdentifier());
+        dc.addParam(likepattern);
+        
+        try {
+            for (Map<String,Object> row : dc.loadObjectResults())
+                ret.add((String)row.get("pident"));
+        } catch (DotDataException e) {
+            Logger.error(HTMLPageFactoryImpl.class,e.getMessage(),e);
+        }
+        
+        return new ArrayList<String>(ret);
+
+    	
+    }
+	
+	
 	public Folder getFileFolder(File file, String hostId) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Folder.class);
 		hu.setSQLQuery("select {folder.*} from folder,identifier,inode folder_1_ where folder.identifier = identifier.id and "
