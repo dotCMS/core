@@ -2,6 +2,7 @@ package com.dotmarketing.beans;
 
 import java.util.List;
 
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
@@ -17,16 +18,25 @@ public  class PermissionableProxy implements Permissionable {
 		this.type = type;
 		if(type ==null) return;
 		if(type.equals("contentlet") || type.equals("host")) {
+			this.type = PermissionableType.CONTENTLETS.getCanonicalName();
 			setPermissionByIdentifier(true);
 		} else if (type.equals("htmlpage")) {
+			this.type = PermissionableType.HTMLPAGES.getCanonicalName();
 			setPermissionByIdentifier(true);
-		} else if (type.equals("folder")) {
-			setPermissionByIdentifier(false);
 		} else if (type.equals("template")) {
+			this.type = PermissionableType.TEMPLATES.getCanonicalName();
 			setPermissionByIdentifier(true);
 		} else if (type.equals("containers")) {
+			this.type = PermissionableType.CONTAINERS.getCanonicalName();
 			setPermissionByIdentifier(true);
+		} else if (type.equals("folder")) {
+			this.type = PermissionableType.FOLDERS.getCanonicalName();
+			setPermissionByIdentifier(false);
 		} else if (type.equals("structure")) {
+			this.type = PermissionableType.STRUCTURES.getCanonicalName();
+			setPermissionByIdentifier(false);
+		} else if (type.equals("category")) {
+			this.type = PermissionableType.CATEGORY.getCanonicalName();
 			setPermissionByIdentifier(false);
 		} 
 	}
