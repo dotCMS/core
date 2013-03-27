@@ -209,7 +209,7 @@ public class SiteSearchJobImpl {
             audit.setJobId(jobId);
             audit.setJobName(dataMap.getString("QUARTZ_JOB_NAME"));
             audit.setLangList(UtilMethods.join(languageToIndex,","));
-            audit.setPath(UtilMethods.join(paths,","));
+            audit.setPath(paths.size()>0 ? UtilMethods.join(paths,",") : "/*");
             audit.setPathInclude(include);
             APILocator.getSiteSearchAuditAPI().save(audit);
         }
