@@ -87,7 +87,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 																"create_date TIMESTAMP)";
 	
 	private static final String MYCREATESQL_PQA				=	"CREATE TABLE IF NOT EXISTS publishing_queue_audit " +
-																"(bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, " +
+																"(bundle_id VARCHAR(36) PRIMARY KEY NOT NULL, " +
 																"status INTEGER, " +
 																"status_pojo text, " +
 																"status_updated DATETIME, " +

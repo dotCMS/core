@@ -38,7 +38,7 @@ public class Task00950AddTablePublishingEndpoint implements StartupTask {
 	private static final String MYCREATESQL_PEP				=	"CREATE TABLE IF NOT EXISTS publishing_end_point " +
 																"(id varchar(36) PRIMARY KEY, " +
 																"group_id varchar(700), " +
-																"server_name varchar(700) unique, " +
+																"server_name varchar(255) unique, " +
 																"address varchar(250), " +
 																"port varchar(10), " +
 																"protocol varchar(10), " +																
