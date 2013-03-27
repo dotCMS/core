@@ -533,6 +533,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .ttfIcon, .woffIcon, .eotIcon, .svgIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1840px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .twitterIcon{background: url(/html/images/icons/twitter.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .icoIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1920px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.epubIcon, .ibooksIcon, .azwIcon, .kf8Icon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -100px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 .worldOn {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -0px -1940px;width:22px;height:22px;margin:0 1px 0 7px;display:inline-block;vertical-align:top;}
 

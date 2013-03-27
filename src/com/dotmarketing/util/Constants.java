@@ -115,5 +115,8 @@ public final class Constants {
 	
 	//http://jira.dotmarketing.net/browse/DOTCMS-6442
 	public static final String WYSIWYG_PLAIN_SEPARATOR = "@PLAIN";
-	
+
+    public static final String PROPERTIES_UPDATE_FILE_LOCATION = "com/dotcms/autoupdater/update.properties";
+    public static final String PROPERTY_UPDATE_FILE_UPDATE_URL = "update.url";
+
 }

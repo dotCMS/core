@@ -48,6 +48,7 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
 
+@Deprecated
 public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 
 	private PermissionAPI permissionAPI;
@@ -148,7 +149,22 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 		return newFile;
 	}
 
-
+	@Override
+	public List<String> findUpdatedLegacyFileIds(Host h, Date startDate, Date endDate){
+		return findUpdatedLegacyFileIds(h,  "/*", true, startDate, endDate);
+		
+	}
+	
+	
+    @Override
+    public List<String> findUpdatedLegacyFileIds(Host host, String pattern,
+            boolean include, Date startDate, Date endDate) {
+        return ffac.findUpdatedFileIdsByURI(host, pattern, include, startDate, endDate);
+    }
+	
+	
+	
+	
 	public File getWorkingFileByFileName(String fileName, Folder folder, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException {
 		File f = ffac.getWorkingFileByFileName(fileName, folder);
 		if(!InodeUtils.isSet(f.getInode())){
