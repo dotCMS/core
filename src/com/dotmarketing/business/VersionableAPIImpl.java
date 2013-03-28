@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -343,12 +344,19 @@ public class VersionableAPIImpl implements VersionableAPI {
         }
         else {
             VersionInfo info = vfac.getVersionInfo(versionable.getVersionId());
-            info = vfac.refreshVersionInfoFromDb(info);
+
             if(info ==null || !UtilMethods.isSet(info.getIdentifier())) {
                 // Not yet created
                 vfac.createVersionInfo(ident, versionable.getInode());
             }
             else {
+            	try{
+            	info = vfac.refreshVersionInfoFromDb(info);
+            	}
+            	catch(Exception e){
+            		Logger.error(this.getClass(), "version info data in cache, not in db, id:" + info.getIdentifier());
+            	}
+            	
                 info.setWorkingInode(versionable.getInode());
                 vfac.saveVersionInfo(info);
             }
