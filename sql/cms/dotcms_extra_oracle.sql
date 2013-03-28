@@ -833,3 +833,22 @@ CREATE TABLE publishing_end_point (
 	enabled number(1,0) DEFAULT 0,
 	auth_key nclob,
 	sending number(1,0) DEFAULT 0);
+
+create table sitesearch_audit (
+    job_id varchar2(36),
+    job_name varchar2(255) not null,
+    fire_date timestamp not null,
+    incremental number(1,0) not null,
+    start_date timestamp,
+    end_date timestamp,
+    host_list varchar2(500) not null,
+    all_hosts number(1,0) not null,
+    lang_list varchar2(500) not null,
+    path varchar2(500) not null,
+    path_include number(1,0) not null,
+    files_count number(10,0) not null,
+    pages_count number(10,0) not null,
+    urlmaps_count number(10,0) not null,
+    index_name varchar2(100) not null,
+    primary key(job_id,fire_date)
+);
