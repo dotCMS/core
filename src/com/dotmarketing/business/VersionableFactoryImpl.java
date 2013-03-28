@@ -188,7 +188,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         vi.setVersionTs(new Date());
         
         HibernateUtil.saveOrUpdate(vi);
-
+        HibernateUtil.flush();
         icache.removeVersionInfoFromCache(vi.getIdentifier());
 
     }
@@ -241,6 +241,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         cVer.setVersionTs(new Date());
         
         HibernateUtil.save(cVer);
+        HibernateUtil.flush();
         icache.addContentletVersionInfoToCache(cVer);
         return cVer;
     }
@@ -261,7 +262,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ver.setWorkingInode(workingInode);
         ver.setVersionTs(new Date());
         HibernateUtil.save(ver);
-        //icache.addVersionInfoToCache(ver);
+        HibernateUtil.flush();
+        icache.addVersionInfoToCache(ver);
         return ver;
     }
 

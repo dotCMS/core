@@ -57,6 +57,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 			if(oldLink!=null) {
 				oldLink.copy(menuLink);
 				HibernateUtil.saveOrUpdate(oldLink);
+				HibernateUtil.flush();
 				menuLink = oldLink;
 			} else {
 				HibernateUtil.saveWithPrimaryKey(menuLink, menuLink.getInode());
