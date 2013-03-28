@@ -417,10 +417,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
 			for (Link linker : links) {
 				Link link = (Link) linker;
-				if (link.isWorking()) {
 
 					Identifier identifier = APILocator.getIdentifierAPI().find(link);
-
 					if (!InodeUtils.isSet(identifier.getInode())) {
 						Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: link inode = " + link.getInode()
 								+ " doesn't have a valid identifier associated.");
@@ -428,9 +426,9 @@ public class FolderAPIImpl implements FolderAPI  {
 					}
 
 					papi.removePermissions(link);
+					APILocator.getMenuLinkAPI().delete(link, user, false);
 
-					APILocator.getIdentifierAPI().delete(identifier);
-				}
+				
 			}
 
 			/******** delete possible orphaned identifiers under the folder *********/

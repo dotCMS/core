@@ -97,21 +97,19 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 			throw new DotSecurityException("You don't have permission to write on the given folder.");
 		}
 			
-		Link workingLink = null;
-		
+
+		Identifier identifier = null;
 		if (InodeUtils.isSet(menuLink.getIdentifier())) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(menuLink);
+			identifier = APILocator.getIdentifierAPI().find(menuLink);
 			if(!UtilMethods.isSet(identifier.getId())) {
 				identifier = APILocator.getIdentifierAPI().createNew(menuLink, destination, menuLink.getIdentifier());
 			}
-			createAsset(menuLink, user.getUserId(), destination, identifier, false);
-			workingLink = (Link) saveAsset(menuLink, identifier, user, false);
-		} else {
-			createAsset(menuLink, user.getUserId(), destination);
-			workingLink = menuLink;
 		}
+		menuLink.setIdentifier(identifier.getId());
+		save(menuLink);
+
 		
-		APILocator.getIdentifierAPI().updateIdentifierURI(workingLink, destination);
+		APILocator.getIdentifierAPI().updateIdentifierURI(menuLink, destination);
 		
 	}
 	
@@ -161,6 +159,13 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
     @Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException {
         return deleteOldVersions(assetsOlderThan,"links");
+    }
+    
+    
+    @Override
+    public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException{
+    	return menuLinkFactory.load(inode);
+    	
     }
 
 }
