@@ -163,9 +163,14 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
     
     
     @Override
-    public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException{
-    	return menuLinkFactory.load(inode);
+    public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException{
     	
+    	Link link = menuLinkFactory.load(inode);
+    	
+    	if(!APILocator.getPermissionAPI().doesUserHavePermission(link, PermissionAPI.PERMISSION_READ, user,respectFrontEndRoles)){
+    		throw new DotSecurityException("User "+ user + " does not have permission to link " + inode);
+    	}
+    	return link;
     }
 
 }

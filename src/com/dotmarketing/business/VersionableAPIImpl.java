@@ -349,7 +349,6 @@ public class VersionableAPIImpl implements VersionableAPI {
                 vfac.createVersionInfo(ident, versionable.getInode());
             }
             else {
-            	info = vfac.refreshVersionInfoFromDb(info);
                 info.setWorkingInode(versionable.getInode());
                 vfac.saveVersionInfo(info);
             }

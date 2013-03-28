@@ -912,7 +912,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		ChildrenCondition cond = new ChildrenCondition();
         cond.working=true;
-        cond.deleted=false;
+        //cond.deleted=false;
 		List list = ffac.getChildrenClass(parent, Link.class, cond);
 
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);

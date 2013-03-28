@@ -35,7 +35,8 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 	public Link load(String inode) throws DotHibernateException{
 		
 		HibernateUtil dh = new HibernateUtil(Link.class);
-		return (Link) dh.find(inode);
+
+		return (Link) dh.load(inode);
 		
 		
 	}

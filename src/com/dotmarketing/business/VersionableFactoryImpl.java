@@ -261,7 +261,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ver.setWorkingInode(workingInode);
         ver.setVersionTs(new Date());
         HibernateUtil.save(ver);
-        icache.addVersionInfoToCache(ver);
+        //icache.addVersionInfoToCache(ver);
         return ver;
     }
 
@@ -270,8 +270,11 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		icache.removeVersionInfoFromCache(id);
 	    VersionInfo info = getVersionInfo(id);
 		if(info!=null && UtilMethods.isSet(info.getIdentifier())) {
+			String ident = info.getIdentifier();
 			HibernateUtil.delete(info);
+			icache.removeFromCacheByIdentifier(ident);
 		}
+
 	}
 
 	@Override

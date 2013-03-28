@@ -116,8 +116,9 @@ public interface MenuLinkAPI {
      * @param inode
      * @return
      * @throws DotDataException 
+     * @throws DotSecurityException 
      */
-    public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException;
+    public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
 
 	
