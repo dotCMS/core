@@ -49,27 +49,27 @@ public class ContentResource extends WebResource {
 	@Path("/{params:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) {
-		InitDataObject initData = init(params, AuthType.PARAMS, request, false);
+		InitDataObject initData = init(params, true, request, false);
 
 		Map<String, String> paramsMap = initData.getParamsMap();
 		User user = initData.getUser();
 
-		String render = paramsMap.get(RENDER);
-		String type = paramsMap.get(TYPE);
-		String query = paramsMap.get(QUERY);
-		String id = paramsMap.get(ID);
-		String orderBy = paramsMap.get(ORDERBY);
-		String limitStr = paramsMap.get(LIMIT);
-		String offsetStr = paramsMap.get(OFFSET);
-		String inode = paramsMap.get(INODE);
+		String render = paramsMap.get(RESTParams.RENDER.getValue());
+		String type = paramsMap.get(RESTParams.TYPE.getValue());
+		String query = paramsMap.get(RESTParams.QUERY.getValue());
+		String id = paramsMap.get(RESTParams.ID.getValue());
+		String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
+		String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
+		String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
+		String inode = paramsMap.get(RESTParams.INODE.getValue());
 		String result = null;
 		type = UtilMethods.isSet(type)?type:"json";
 		orderBy = UtilMethods.isSet(orderBy)?orderBy:"modDate desc";
 		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-		if(paramsMap.get(LANGUAGE) != null){
+		if(paramsMap.get(RESTParams.LANGUAGE.getValue()) != null){
 			try{
-				language= Long.parseLong(paramsMap.get(LANGUAGE))	;
+				language= Long.parseLong(paramsMap.get(RESTParams.LANGUAGE.getValue()))	;
 			}
 			catch(Exception e){
 				Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
@@ -95,7 +95,7 @@ public class ContentResource extends WebResource {
 		} catch(NumberFormatException e) {
 		}
 
-		boolean live = (paramsMap.get(LIVE) == null || ! "false".equals(paramsMap.get(LIVE)));
+		boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || ! "false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
 
 		/* Fetching the content using a query if passed or an id */
 

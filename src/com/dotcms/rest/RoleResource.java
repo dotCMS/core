@@ -26,8 +26,8 @@ public class RoleResource extends WebResource {
 
 	/**
 	 * Returns a JSON representation of Roles in the System.
-	 * To load a role, use:/api/role/id/{id}
-	 * To retrieve the children of a given role, use:/api/role/children/id/{id}
+	 * To load a role, use:/api/role/loadbyid/{id}
+	 * To retrieve the children of a given role, use:/api/role/loadchildren/id/{id}
 	 * To get roles by name, use /api/role/name/{name}
 	 *
 	 * @param request
@@ -41,10 +41,10 @@ public class RoleResource extends WebResource {
 	 */
 
 	@GET
-	@Path("/children/{params:.*}")
+	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
-	public String getRoleChildren(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
-		InitDataObject initData = init(params, AuthType.PARAMS_OR_SESSION, request, true);
+	public String loadChildren(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
+		InitDataObject initData = init(params, true, request, true);
 
 		Map<String, String> paramsMap = initData.getParamsMap();
 		String roleId = paramsMap.get("id");
@@ -103,9 +103,14 @@ public class RoleResource extends WebResource {
 	}
 
 	@GET
-	@Path("/id/{id}/{params:.*}")
+	@Path("/loadbyid/{params:.*}")
 	@Produces("application/json")
-	public String loadRole(@PathParam("id") String roleId) throws DotDataException {
+	public String loadById(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException {
+		InitDataObject initData = init(params, true, request, true);
+
+		Map<String, String> paramsMap = initData.getParamsMap();
+		String roleId = paramsMap.get("id");
+
 		if(roleId.equalsIgnoreCase("root")) {
 			return "{id:'0', name: 'Root Role'}";
 		}
@@ -134,10 +139,14 @@ public class RoleResource extends WebResource {
 	}
 
 	@GET
-	@Path("/name/{name}/{params:.*}")
+	@Path("/loadbyname/{params:.*}")
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
-	public String getRolesByQuery(@PathParam("name") String name) throws DotDataException {
+	public String loadByName(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException {
+		InitDataObject initData = init(params, true, request, true);
+
+		Map<String, String> paramsMap = initData.getParamsMap();
+		String name = paramsMap.get("name");
 
 		if(!UtilMethods.isSet(name))
 			return "";

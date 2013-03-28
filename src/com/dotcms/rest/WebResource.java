@@ -4,8 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
 
-import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
@@ -15,31 +16,13 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.sun.jersey.core.util.Base64;
+import com.sun.jersey.spi.container.ContainerRequest;
 
 public class WebResource {
 
-	protected static final String RENDER = "render";
-	protected static final String TYPE = "type";
-	protected static final String QUERY = "query";
-	protected static final String ORDERBY = "orderby";
-	protected static final String LIMIT = "limit";
-	protected static final String OFFSET = "offset";
-	protected static final String USER = "user";
-	protected static final String PASSWORD = "password";
-	protected static final String ID = "id";
-	protected static final String INODE = "inode";
-	protected static final String LIVE = "live";
-	protected static final String LANGUAGE = "language";
-
-	public enum AuthType {
-	    NO_AUTH,
-	    PARAMS,
-	    SESSION,
-	    PARAMS_OR_SESSION,
-	}
-
 	/**
-	 * <p>Checks if SSL is required. If so, throws a ForbiddenException when no secure request is provided.
+	 * <p>Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenException.
 	 *
 	 * @param request
 	 */
@@ -49,7 +32,7 @@ public class WebResource {
 	}
 
 	/**
-	 * <p>1) Checks if SSL is required. If so, throws a ForbiddenException when no secure request is provided.
+	 * <p>1) Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenException.
 	 * <p>2) If 1) does not throw an exception, returns an {@link InitDataObject} with a <code>Map</code> containing
 	 * the keys and values extracted from <code>params</code>
 	 *
@@ -74,26 +57,27 @@ public class WebResource {
 
 	/**
 	 *
-	 * <p>1) Checks if SSL is required. If so, throws a <code>ForbiddenException</code> when no secure <code>request</code> is provided.
+	 * <p>1) Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenException.
 	 * <p>2) If 1) does not throw an exception, returns an {@link InitDataObject} with:
 	 *
-	 * <br>a) a <code>Map</code> with the keys and values extracted from <code>params</code>
+	 * <br>a) a <code>Map</code> with the keys and values extracted from <code>params</code>.
 	 *
-	 * <br><br>b) a {@link User}, according to <code>authType</code>.
-	 * <br>	If authType is NO_AUTH, performs no authentication and returns null.
-	 * <br>	If authType is PARAMS, gets the username and password from <code>params</code> and tries to authenticate.
-	 * <br>	If authType is SESSION, tries to get the logged in user from <code>request</code>.
-	 * <br>	If authType is PARAMS_OR_SESSION, acts like PARAMS if both username and password are contained in <code>params</code>. If not, acts like SESSION.
+	 *<br><br>if <code>authenticate</code> is set to <code>true</code>:
+	 * <br>b) , an authenticated {@link User}, if found.
+	 * If no {@link User} can be retrieved, and <code>rejectWhenNoUser</code> is <code>true</code>, it will throw an exception,
+	 * otherwise returns <code>null</code>.
 	 *
+	 * <br><br>There are five ways to get the {@link User} and are executed in the following order.
+	 * 1) Authentication
 	 *
 	 * @param params a string containing parameters in the /key/value form
-	 * @param authType
+	 * @param authenticate
 	 * @param request
 	 * @param rejectWhenNoUser determines whether a ForbiddenException is thrown or not when authentication fails.
 	 * @return an initDataObject with the resulting <code>Map</code>
 	 */
 
-	protected InitDataObject init(String params, AuthType authType, HttpServletRequest request, boolean rejectWhenNoUser) {
+	protected InitDataObject init(String params, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser) {
 
 		checkForceSSL(request);
 
@@ -105,7 +89,7 @@ public class WebResource {
 		Map<String, String> paramsMap = buildParamsMap(params);
 		User user = null;
 
-		user = authenticateUser(paramsMap, request, rejectWhenNoUser, authType);
+		user = authenticateUser(paramsMap, request, rejectWhenNoUser);
 
 		initData.setParamsMap(paramsMap);
 		initData.setUser(user);
@@ -113,60 +97,86 @@ public class WebResource {
 		return initData;
 	}
 
-	/**
-	 * <p>Tries to authenticate depending on <code>authType</code> param.
-	 * <br>	If authType is NO_AUTH, performs no authentication and returns null.
-	 * <br>	If authType is PARAMS, gets the username and password from <code>params</code> and tries to authenticate.
-	 * <br>	If authType is SESSION, tries to get the logged in user from <code>request</code>.
-	 * <br>	If authType is PARAMS_OR_SESSION, acts like PARAMS if both username and password are contained in <code>params</code>. If not, acts like SESSION.
-	 *
-	 * @param paramsMap
-	 * @param request
-	 * @param rejectWhenNoUser determines whether a ForbiddenException is thrown or not when authentication fails.
-	 * @param authType
-	 * @return authenticated user
-	 */
+	private User authenticateUser(Map<String, String> paramsMap, HttpServletRequest request, boolean rejectWhenNoUser) {
 
-	private User authenticateUser(Map<String, String> paramsMap, HttpServletRequest request, boolean rejectWhenNoUser, AuthType authType) throws ForbiddenException {
+		boolean forcefrontendauth = false;
 
-		switch (authType) {
-		case NO_AUTH:
-			return null;
+		User user = (user = authenticateUserFromURL(paramsMap, request)) != null ? user
+				: (user = authenticateUserFromPost(paramsMap, request)) != null ? user
+						: (user = authenticateUserFromHeaderAuth(paramsMap, request)) != null ? user
+								: (user = authenticateUserFromBasicAuth(paramsMap, request)) != null ? user
+										: !forcefrontendauth ? (user = getBackUserFromRequest(request)) != null ? user
+												: (user = getFrontEndUserFromRequest(request))
+												: (user = getFrontEndUserFromRequest(request)) != null ? user : null;
 
-		case PARAMS:
-			return authenticateUserFromParams(paramsMap, request, rejectWhenNoUser);
 
-		case SESSION:
-			return getUserFromRequest(request, rejectWhenNoUser);
+		if(user==null && (Config.getBooleanProperty("REJECT_REST_API_WITH_NO_USER", false) || rejectWhenNoUser) ) {
+			throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
+		}
 
-		case PARAMS_OR_SESSION:
-			User user = authenticateUserFromParams(paramsMap, request, rejectWhenNoUser);
+		return user;
+	}
 
-			if(user==null)
-				user = getUserFromRequest(request, rejectWhenNoUser);
+	private User authenticateUserFromURL(Map<String, String> paramsMap, HttpServletRequest request) {
 
-			return user;
+		String username = paramsMap.get(RESTParams.USER.getValue());
+		String password = paramsMap.get(RESTParams.PASSWORD.getValue());
 
-		default:
+		return authenticateUser(username, password, request);
+	}
+
+	private User authenticateUserFromPost(Map<String, String> paramsMap, HttpServletRequest request) {
+
+		String username = request.getParameter(RESTParams.USER.getValue());
+		String password = paramsMap.get(RESTParams.PASSWORD.getValue());
+
+		return authenticateUser(username, password, request);
+	}
+
+	private User authenticateUserFromBasicAuth(Map<String, String> paramsMap, HttpServletRequest request) {
+
+		// Extract authentication credentials
+		String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
+
+		if(UtilMethods.isSet(authentication) && authentication.startsWith("Basic ")) {
+			authentication = authentication.substring("Basic ".length());
+			String[] values = new String(Base64.base64Decode(authentication)).split(":");
+			if (values.length < 2) {
+				// "Invalid syntax for username and password"
+				throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
+			}
+			String username = values[0];
+			String password = values[1];
+
+			return authenticateUser(username, password, request);
+		} else {
 			return null;
 		}
 	}
 
-	/**
-	 * Tries to authenticate with the username and password contained in the paramsMap, if set.
-	 *
-	 * @param paramsMap
-	 * @param req
-	 * @param rejectWhenNoUser determines whether a ForbiddenException is thrown or not when authentication fails.
-	 * @return
-	 */
+	private User authenticateUserFromHeaderAuth(Map<String, String> paramsMap, HttpServletRequest request) {
+		// Extract authentication credentials
+		String authentication = request.getHeader("DOTAUTH");
 
-	private User authenticateUserFromParams(Map<String, String> paramsMap, HttpServletRequest req, boolean rejectWhenNoUser) {
+		if(UtilMethods.isSet(authentication)) {
+			String[] values = new String(Base64.base64Decode(authentication)).split(":");
+			if (values.length < 2) {
+				// "Invalid syntax for username and password"
+				throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
+			}
+			String username = values[0];
+			String password = values[1];
+
+			return authenticateUser(username, password, request);
+		} else {
+			return null;
+		}
+	}
+
+
+	private User authenticateUser(String username, String password, HttpServletRequest req) {
 		User user = null;
 		String ip = req!=null?req.getRemoteAddr():"";
-
-		String username = paramsMap.get(USER);
-		String password = paramsMap.get(PASSWORD);
 
 		if(UtilMethods.isSet(username) && UtilMethods.isSet(password)) { // providing login and password so let's try to authenticate
 
@@ -184,59 +194,67 @@ public class WebResource {
 
 					Logger.warn(this.getClass(), "Request IP: " + ip + ".Can't authenticate user. Username: " + username);
 					SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ".Can't authenticate user. Username: " + username);
-					throw new ForbiddenException("Forbidden Resource");
+					throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
 				}
 
 			}  catch (Exception e) {  // doLogin throwing Exception
 
 				Logger.warn(this.getClass(), "Request IP: " + ip + ".Can't authenticate user. Username: " + username);
 				SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ".Can't authenticate user. Username: " + username);
-				throw new ForbiddenException("Forbidden Resource");
+				throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
 			}
 
 		} else if(UtilMethods.isSet(username) || UtilMethods.isSet(password)){ // providing login or password
 
 			Logger.warn(this.getClass(), "Request IP: " + ip + ".Can't authenticate user.");
 			SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ".Can't authenticate user.");
-			throw new ForbiddenException("Forbidden Resource");
+			throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
 		}
 
 		return user;
 	}
 
+
 	/**
-	 * This method returns the logged in user from request. If no user can be retrieved and rejectWhenNoUser is true, throws a ForbiddenException,
-	 * otherwise returns null.
+	 * This method returns the Backend logged in user from request.
 	 *
 	 * @param request
-	 * @param rejectWhenNoUser Determines whether an exception will be thrown or not when no user can be retrieved
 	 * @return
 	 */
 
-	private User getUserFromRequest(HttpServletRequest req, boolean rejectWhenNoUser) {
+	private User getBackUserFromRequest(HttpServletRequest req) {
 		User user = null;
 
 		if(UtilMethods.isSet(req)) { // let's check if we have a request and try to get the user logged in from it
 			try {
 				user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
 			}  catch (Exception e) {
-
-				if(Config.getBooleanProperty("REJECT_REST_API_WITH_NO_USER", false) || rejectWhenNoUser) {
-					Logger.warn(this.getClass(), "Can't retrieve user from session");
-					throw new ForbiddenException("Forbidden Resource");
-				} else {
-					Logger.warn(this.getClass(), "Can't retrieve user from session");
-				}
+				Logger.warn(this.getClass(), "Can't retrieve Backend User from session");
 			}
-		} else if(Config.getBooleanProperty("REJECT_REST_API_WITH_NO_USER", false) || rejectWhenNoUser) { // we don't have a request. If rejectWhenNoUser is true, throw exception
-			Logger.warn(this.getClass(), "No Valid Request");
-			throw new ForbiddenException("Forbidden Resource");
-		} else {
-			Logger.warn(this.getClass(), "No Valid Request");
 		}
 
 		return user;
+	}
 
+	/**
+	 * This method returns the Frontend logged in user from request.
+	 *
+	 * @param request
+	 * @return
+	 */
+
+	private User getFrontEndUserFromRequest(HttpServletRequest req) {
+		User user = null;
+
+		if(UtilMethods.isSet(req)) { // let's check if we have a request and try to get the user logged in from it
+			try {
+				user = WebAPILocator.getUserWebAPI().getLoggedInFrontendUser(req);
+			}  catch (Exception e) {
+				Logger.warn(this.getClass(), "Can't retrieve user from session");
+			}
+		}
+
+		return user;
 	}
 
 	/**
@@ -265,7 +283,7 @@ public class WebResource {
 
 	private void checkForceSSL(HttpServletRequest request) {
 		if(Config.getBooleanProperty("FORCE_SSL_ON_RESP_API", false) && UtilMethods.isSet(request) && !request.isSecure())
-			throw new ForbiddenException("SSL Required.");
+			throw new SecurityException("SSL Required.", Response.Status.FORBIDDEN);
 
 	}
 
