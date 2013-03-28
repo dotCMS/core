@@ -121,7 +121,8 @@ public class PluginRoot {
 
         //Now we need to get all the files under the ROOT folder of the plugin, for now lets focus in files with extension ie: ROOT/folder/folder/fileName.xyz
         //Directories with out files are going to be ignore
-        String[] rootFilesPaths = PluginUtil.listFiles( ROOT_FOLDER + ".+\\..+", pluginJar );
+        // well... in fact we need those with no extension too https://github.com/dotCMS/dotCMS/issues/2388
+        String[] rootFilesPaths = PluginUtil.listFiles( ROOT_FOLDER + ".+", pluginJar );
         for ( String rootFilePath : rootFilesPaths ) {
 
             //Getting the relative path based on the ROOT path, ie: ROOT/tomcat/conf/server.xml --> tomcat/conf/server.xml
