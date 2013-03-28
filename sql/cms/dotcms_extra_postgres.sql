@@ -752,3 +752,21 @@ CREATE TABLE publishing_end_point (
 	auth_key text,
 	sending bool);
 
+create table sitesearch_audit (
+    job_id varchar(36),
+    job_name varchar(255) not null,
+    fire_date timestamp not null,
+    incremental bool not null,
+    start_date timestamp,
+    end_date timestamp,
+    host_list varchar(500) not null,
+    all_hosts bool not null,
+    lang_list varchar(500) not null,
+    path varchar(500) not null,
+    path_include bool not null,
+    files_count integer not null,
+    pages_count integer not null,
+    urlmaps_count integer not null,
+    index_name varchar(100) not null,
+    primary key(job_id,fire_date)
+);
