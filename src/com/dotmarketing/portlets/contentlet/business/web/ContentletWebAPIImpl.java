@@ -141,17 +141,18 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			Logger.debug(this, "HTMLPage inode=" + contentletFormData.get("htmlpage_inode"));
 			Logger.debug(this, "Container inode=" + contentletFormData.get("contentcontainer_inode"));
 
-			if (contentletFormData.get("htmlpage_inode") != null
-					&& contentletFormData.get("contentcontainer_inode") != null) {
-				try {
-					Logger.debug(this, "I'm setting my contentlet parents");
-					_addToParents(contentletFormData, user, isAutoSave);
-				} catch (DotSecurityException e) {
-					throw new DotSecurityException(e.getMessage());
-				} catch (Exception ae) {
-					throw new Exception(ae.getMessage());
-				}
-			}
+            if ( InodeUtils.isSet( (String) contentletFormData.get( "htmlpage_inode" ) )
+                    && InodeUtils.isSet( (String) contentletFormData.get( "contentcontainer_inode" ) ) ) {
+
+                try {
+                    Logger.debug( this, "I'm setting my contentlet parents" );
+                    _addToParents( contentletFormData, user, isAutoSave );
+                } catch ( DotSecurityException e ) {
+                    throw new DotSecurityException( e.getMessage() );
+                } catch ( Exception ae ) {
+                    throw new Exception( ae.getMessage() );
+                }
+            }
 
 
 			cont = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
@@ -291,11 +292,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		currentContentlet.setStringProperty("wfActionId", (String) contentletFormData.get("wfActionId"));
 		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
 		currentContentlet.setStringProperty("wfActionAssign", (String) contentletFormData.get("wfActionAssign"));
-		
+
 		/**
-		 * 
+		 *
 		 * Push Publishing Actionlet
-		 * 
+		 *
 		 */
 		currentContentlet.setStringProperty("wfPublishDate", (String) contentletFormData.get("wfPublishDate"));
 		currentContentlet.setStringProperty("wfPublishTime", (String) contentletFormData.get("wfPublishTime"));
@@ -329,10 +330,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				if(action != null
 						&& ! action.requiresCheckout()
 						&& APILocator.getContentletAPI().canLock(currentContentlet, user)){
-				    
+
 				    if(currentContentlet.isLocked())
 				        APILocator.getContentletAPI().unlock(currentContentlet, user, false);
-				    
+
 						currentContentlet.setModUser(user.getUserId());
 						currentContentlet = APILocator.getWorkflowAPI().fireWorkflowNoCheckin(currentContentlet,user).getContentlet();
 						contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
@@ -491,19 +492,19 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if(!isAutoSave){
 
 				currentContentlet.setInode(null);
-				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats, perAPI.getPermissions(currentContentlet, false, true), user, false);			
+				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats, perAPI.getPermissions(currentContentlet, false, true), user, false);
 
 
 			}else{
 				 // Existing contentlet auto save
 				Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
 				List<Relationship> rels = RelationshipFactory
-											.getAllRelationshipsByStructure(currentContentlet
-											.getStructure());
+											.getAllRelationshipsByStructure( currentContentlet
+                                                    .getStructure() );
 				for (Relationship r : rels) {
 					if (!contentRelationships.containsKey(r)) {
 						contentRelationships
-								.put(r, new ArrayList<Contentlet>());
+								.put( r, new ArrayList<Contentlet>() );
 					}
 					List<Contentlet> cons = conAPI.getRelatedContent(
 							currentContentlet, r, user, true);
