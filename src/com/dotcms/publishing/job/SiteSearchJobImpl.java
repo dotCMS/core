@@ -1,7 +1,6 @@
 package com.dotcms.publishing.job;
 
 import java.io.IOException;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -15,14 +14,20 @@ import org.quartz.JobExecutionException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
+import com.dotcms.enterprise.publishing.bundlers.StaticHTMLPageBundler;
+import com.dotcms.enterprise.publishing.bundlers.URLMapBundler;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
+import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
-import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.sitesearch.model.SiteSearchAudit;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -40,9 +45,16 @@ public class SiteSearchJobImpl {
     public void run(JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticSearchException, IOException {
         if(LicenseUtil.getLevel()<200)
             return;
-                    
+        
+        HibernateUtil.startTransaction();
+
         JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
-        List<Host> selectedHosts = new ArrayList<Host>();
+        
+        String jobId=(String)dataMap.get("JOB_ID");
+        if(jobId==null) {
+            jobId=dataMap.getString("QUARTZ_JOB_NAME");
+        }
+        
         boolean indexAll = UtilMethods.isSet((String) dataMap.get("indexAll")) ? true : false;
         String[] indexHosts = null;
         Object obj = (dataMap.get("indexhost") != null) ?dataMap.get("indexhost") : new String[0];
@@ -56,25 +68,6 @@ public class SiteSearchJobImpl {
         
         
         boolean incremental = dataMap.getString("incremental") != null;
-        DateFormat df = new java.text.SimpleDateFormat("yyyy-M-d HH:mm:ss");
-        Date start = null;
-        Date end =null;
-        
-        try{
-            String startDateStr = dataMap.getString("startDateDate") + " " +dataMap.getString("startDateTime").replaceAll("T",""); 
-            start = df.parse(startDateStr);
-        }
-        catch(Exception e){
-            
-        }
-        try{
-            String endDateStr = dataMap.getString("endDateDate") + " " +dataMap.getString("endDateTime").replaceAll("T",""); 
-            end = df.parse(endDateStr);
-        }
-        catch(Exception e){
-            
-        }
-        
         
         User userToRun = APILocator.getUserAPI().getSystemUser();
 
@@ -91,6 +84,25 @@ public class SiteSearchJobImpl {
             }   
         }
         
+        Date startDate,endDate;
+        if(incremental) {
+            endDate=jobContext.getFireTime();
+            
+            startDate=null;
+            try {
+                List<SiteSearchAudit> recentAudits = APILocator.getSiteSearchAuditAPI().findRecentAudits(jobId, 0, 1);
+                if(recentAudits.size()>0)
+                    startDate=recentAudits.get(0).getFireDate();
+            }
+            catch(Exception ex) {
+                Logger.warn(this, "can't determine last audit entry for this job",ex);
+            }
+        }
+        else {
+            // set null explicitly just in case
+            startDate=endDate=null;
+        }
+        
         String[] languageToIndex=(String[])dataMap.get("langToIndex");
         int counter = 0;  
         String indexName = null;
@@ -98,10 +110,10 @@ public class SiteSearchJobImpl {
         for(String lang : languageToIndex) {
         	counter = counter + 1;
             SiteSearchConfig config = new SiteSearchConfig();
-            
+            config.setJobId(jobId);
             config.setLanguage(Long.parseLong(lang));       
             
-            config.setJobId(dataMap.getString("QUARTZ_JOB_NAME"));
+            config.setJobName(dataMap.getString("QUARTZ_JOB_NAME"));
     
             List<Host> hosts=new ArrayList<Host>();
     
@@ -156,20 +168,56 @@ public class SiteSearchJobImpl {
                 config.setId(x);
             }
             
-    
-            config.setStartDate(start);
-            config.setEndDate(end);
+            config.setStartDate(startDate);
+            config.setEndDate(endDate);
             config.setIncremental(incremental);
             config.setUser(userToRun);
-            if(include){
+            if(include) {
                 config.setIncludePatterns(paths);
             }
-            else{
-                
+            else {
                 config.setExcludePatterns(paths);
             }
             
             APILocator.getPublisherAPI().publish(config,status);
+            
+        }
+        
+        int filesCount=0,pagesCount=0,urlmapCount=0;
+        for(BundlerStatus bs : status.getBundlerStatuses()) {
+            if(bs.getBundlerClass().equals(StaticHTMLPageBundler.class.getName()))
+                pagesCount+=bs.getTotal();
+            else if(bs.getBundlerClass().equals(FileAssetBundler.class.getName()))
+                filesCount+=bs.getTotal();
+            else if(bs.getBundlerClass().equals(URLMapBundler.class.getName()))
+                urlmapCount+=bs.getTotal();
+        }
+        
+        
+        try {
+            SiteSearchAudit audit=new SiteSearchAudit();
+            audit.setPagesCount(pagesCount);
+            audit.setFilesCount(filesCount);
+            audit.setUrlmapsCount(urlmapCount);
+            audit.setAllHosts(indexAll);
+            audit.setFireDate(jobContext.getFireTime());
+            audit.setHostList(UtilMethods.join(indexHosts,","));
+            audit.setIncremental(incremental);
+            audit.setStartDate(startDate);
+            audit.setEndDate(endDate);
+            audit.setIndexName(indexName);
+            audit.setJobId(jobId);
+            audit.setJobName(dataMap.getString("QUARTZ_JOB_NAME"));
+            audit.setLangList(UtilMethods.join(languageToIndex,","));
+            audit.setPath(paths.size()>0 ? UtilMethods.join(paths,",") : "/*");
+            audit.setPathInclude(include);
+            APILocator.getSiteSearchAuditAPI().save(audit);
+        }
+        catch(DotDataException ex) {
+            Logger.warn(this, "can't save audit data",ex);
+        }
+        finally {
+            HibernateUtil.closeSession();
         }
     }
 

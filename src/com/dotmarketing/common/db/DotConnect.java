@@ -477,7 +477,7 @@ public class DotConnect {
      */
     public void addParam(java.util.Date x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (date): " + x);
-        paramList.add(paramList.size(), new Timestamp(x.getTime()));
+        paramList.add(paramList.size(), x!=null ? new Timestamp(x.getTime()) : x);
     }
     
     
