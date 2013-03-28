@@ -64,16 +64,21 @@ public class WebResource {
 	 *
 	 *<br><br>if <code>authenticate</code> is set to <code>true</code>:
 	 * <br>b) , an authenticated {@link User}, if found.
-	 * If no {@link User} can be retrieved, and <code>rejectWhenNoUser</code> is <code>true</code>, it will throw an exception,
+	 * If no User can be retrieved, and <code>rejectWhenNoUser</code> is <code>true</code>, it will throw an exception,
 	 * otherwise returns <code>null</code>.
 	 *
-	 * <br><br>There are five ways to get the {@link User} and are executed in the following order.
-	 * 1) Authentication
+	 * <br><br>There are five ways to get the User. They are executed in the specified order. When found, the remaining ways won't be executed.
+	 * <br>1) Using username and password contained in <code>params</code>.
+	 * <br>2) Using username and password contained in the <code>request</code> parameters.
+	 * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter DOTAUTH.
+	 * <br>4) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
+	 * <br>5) From the session. It first tries to get the Backend logged in user. If no user found, tries to get the Frontend logged in user.
 	 *
-	 * @param params a string containing parameters in the /key/value form
+	 *
+	 * @param params a string containing the URL parameters in the /key/value form
 	 * @param authenticate
 	 * @param request
-	 * @param rejectWhenNoUser determines whether a ForbiddenException is thrown or not when authentication fails.
+	 * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
 	 * @return an initDataObject with the resulting <code>Map</code>
 	 */
 
@@ -97,7 +102,22 @@ public class WebResource {
 		return initData;
 	}
 
-	private User authenticateUser(Map<String, String> paramsMap, HttpServletRequest request, boolean rejectWhenNoUser) {
+	/**
+	 * Returns an authenticated {@link User}. There are five ways to get the User.
+	 * They are executed in the specified order. When found, the remaining ways won't be executed.
+	 * <br><br>1) Using username and password contained in <code>params</code>.
+	 * <br>2) Using username and password contained in the <code>request</code> parameters.
+	 * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter DOTAUTH.
+	 * <br>4) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
+	 * <br>5) From the session. It first tries to get the Backend logged in user. If no user found, tries to get the Frontend logged in user.
+	 *
+	 * @param paramsMap a map containing the URL parameters
+	 * @param request
+	 * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
+	 * @return
+	 */
+
+	private User authenticateUser(Map<String, String> paramsMap, HttpServletRequest request, boolean rejectWhenNoUser) throws SecurityException  {
 
 		boolean forcefrontendauth = false;
 
@@ -133,7 +153,7 @@ public class WebResource {
 		return authenticateUser(username, password, request);
 	}
 
-	private User authenticateUserFromBasicAuth(Map<String, String> paramsMap, HttpServletRequest request) {
+	private User authenticateUserFromBasicAuth(Map<String, String> paramsMap, HttpServletRequest request) throws SecurityException  {
 
 		// Extract authentication credentials
 		String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
@@ -154,7 +174,7 @@ public class WebResource {
 		}
 	}
 
-	private User authenticateUserFromHeaderAuth(Map<String, String> paramsMap, HttpServletRequest request) {
+	private User authenticateUserFromHeaderAuth(Map<String, String> paramsMap, HttpServletRequest request) throws SecurityException  {
 		// Extract authentication credentials
 		String authentication = request.getHeader("DOTAUTH");
 
@@ -173,8 +193,19 @@ public class WebResource {
 		}
 	}
 
+	/**
+	 * Authenticates and returns a {@link User} using <code>username</code> and <code>password</code>.
+	 * If a wrong <code>username</code> or <code>password</code> are provided,
+	 * a SecurityException is thrown
+	 *
+	 * @param username
+	 * @param password
+	 * @param req
+	 * @return
+	 */
 
-	private User authenticateUser(String username, String password, HttpServletRequest req) {
+
+	private User authenticateUser(String username, String password, HttpServletRequest req) throws SecurityException {
 		User user = null;
 		String ip = req!=null?req.getRemoteAddr():"";
 
@@ -192,22 +223,22 @@ public class WebResource {
 					}
 				} else { // doLogin returning false
 
-					Logger.warn(this.getClass(), "Request IP: " + ip + ".Can't authenticate user. Username: " + username);
-					SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ".Can't authenticate user. Username: " + username);
+					Logger.warn(this.getClass(), "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
+					SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
 					throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
 				}
 
 			}  catch (Exception e) {  // doLogin throwing Exception
 
-				Logger.warn(this.getClass(), "Request IP: " + ip + ".Can't authenticate user. Username: " + username);
-				SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ".Can't authenticate user. Username: " + username);
+				Logger.warn(this.getClass(), "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
+				SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
 				throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
 			}
 
 		} else if(UtilMethods.isSet(username) || UtilMethods.isSet(password)){ // providing login or password
 
-			Logger.warn(this.getClass(), "Request IP: " + ip + ".Can't authenticate user.");
-			SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ".Can't authenticate user.");
+			Logger.warn(this.getClass(), "Request IP: " + ip + ". Can't authenticate user.");
+			SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ". Can't authenticate user.");
 			throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
 		}
 
