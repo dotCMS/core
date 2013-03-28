@@ -105,6 +105,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 				identifier = APILocator.getIdentifierAPI().createNew(menuLink, destination, menuLink.getIdentifier());
 			}
 		}
+		menuLink.setModUser(user.getUserId());
 		menuLink.setIdentifier(identifier.getId());
 		save(menuLink);
 
