@@ -634,3 +634,22 @@ CREATE TABLE IF NOT EXISTS publishing_end_point (
 	auth_key text,
 	sending tinyint
 );
+
+create table sitesearch_audit (
+    job_id varchar(36),
+    job_name varchar(255) not null,
+    fire_date datetime not null,
+    incremental tinyint not null,
+    start_date datetime,
+    end_date datetime,
+    host_list varchar(500) not null,
+    all_hosts tinyint not null,
+    lang_list varchar(500) not null,
+    path varchar(500) not null,
+    path_include tinyint not null,
+    files_count integer not null,
+    pages_count integer not null,
+    urlmaps_count integer not null,
+    index_name varchar(100) not null,
+    primary key(job_id,fire_date)
+);
