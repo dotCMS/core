@@ -379,7 +379,6 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
         .append("join template_version_info tvi on (p.template_id = tvi.identifier) ")
         .append("where tvi.version_ts >= ? ")
         .append(" and tvi.version_ts <= ? ")
-        .append(" and vi.live_inode is not null and vi.deleted=").append(DbConnectionFactory.getDBFalse())
         .append(" and ii.host_inode=? ")
         .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
         dc.setSQL(bob.toString());
@@ -403,7 +402,6 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
         .append("join container_version_info cvi on (tc.container_id = cvi.identifier) ")
         .append("where cvi.version_ts >= ? ")
         .append(" and cvi.version_ts <= ? ")
-        .append(" and hvi.live_inode is not null and hvi.deleted=").append(DbConnectionFactory.getDBFalse())
         .append(" and ii.host_inode=? ")
         .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
         dc.setSQL(bob.toString());
@@ -426,7 +424,6 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
         .append("join contentlet_version_info cvi on (mt.child = cvi.identifier) ")
         .append("where cvi.version_ts >= ? ")
         .append(" and cvi.version_ts <= ? ")
-        .append(" and hvi.live_inode is not null and hvi.deleted=").append(DbConnectionFactory.getDBFalse())
         .append(" and ii.host_inode=? ")
         .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
         dc.setSQL(bob.toString());
@@ -448,7 +445,6 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
         .append("join identifier ii on (ii.id=vi.identifier) ")
         .append("where vi.version_ts >= ? ")
         .append(" and vi.version_ts <= ? ")
-        .append(" and vi.live_inode is not null and vi.deleted=").append(DbConnectionFactory.getDBFalse())
         .append(" and ii.host_inode=? ")
         .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
         dc.setSQL(bob.toString());
