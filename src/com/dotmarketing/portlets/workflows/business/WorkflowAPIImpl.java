@@ -177,15 +177,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void saveSchemeForStruct(Structure struc, WorkflowScheme scheme) throws DotDataException {
 
 		try{
-			HibernateUtil.startTransaction();
 			wfac.saveSchemeForStruct(struc.getInode(), scheme);
 		}
 		catch(DotDataException e){
-			HibernateUtil.rollbackTransaction();
 			throw e;
-		}
-		finally{
-			HibernateUtil.commitTransaction();
 		}
 	}
 	public WorkflowScheme findSchemeForStruct(Structure struct) throws DotDataException {
@@ -246,7 +241,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteStep(WorkflowStep step) throws DotDataException {
 
 
-		boolean localTransaction = startLocalTransaction();
+		boolean localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 		try{
 			List<WorkflowAction> actions = wfac.findActions(step);
 			for(WorkflowAction action : actions){
@@ -337,7 +332,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException {
-		boolean local = startLocalTransaction();
+		boolean local = HibernateUtil.startLocalTransactionIfNeeded();
 		try{
 			wfac.deleteWorkflowTask(task);
 
@@ -695,7 +690,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     	}
 
     	try {
-			boolean localTransaction = startLocalTransaction();
+			boolean localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
 			WorkflowActionClass actionClass= wfac.findActionClass(params.get(0).getActionClassId());
 			//wfac.deleteWorkflowActionClassParameters(actionClass);
@@ -715,25 +710,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		finally{
 			HibernateUtil.commitTransaction();
 		}
-    }
-
-
-
-
-
-    boolean startLocalTransaction() throws DotDataException{
-    	boolean startTransaction = false;
-
-    	try {
-    		startTransaction = DbConnectionFactory.getConnection().getAutoCommit();
-			if(startTransaction){
-				HibernateUtil.startTransaction();
-			}
-		} catch (SQLException e) {
-			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
-			throw new DotDataException(e.getMessage());
-		}
-		return startTransaction;
     }
 
 	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
@@ -775,7 +751,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void fireWorkflowPostCheckin(WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-		boolean local = startLocalTransaction();
+		boolean local = HibernateUtil.startLocalTransactionIfNeeded();
 
 		try{
 			if(!processor.inProcess()){
