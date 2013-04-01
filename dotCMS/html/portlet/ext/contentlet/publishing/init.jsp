@@ -27,6 +27,6 @@ if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCM
 }
 
 String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layoutId + "&p_p_id=EXT_CONTENT_PUBLISHING_TOOL&");%>
-<%	if(LicenseUtil.getLevel()<400){ %>
+<%	if(LicenseUtil.getLevel()<300){ %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/not_licensed.jsp" %>
 <%return;} %>
