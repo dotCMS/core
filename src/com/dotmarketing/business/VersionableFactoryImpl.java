@@ -122,11 +122,11 @@ public class VersionableFactoryImpl extends VersionableFactory {
             if(ident==null || !UtilMethods.isSet(ident.getId()))
                 return null;
             Class clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
-            HibernateUtil dh = new HibernateUtil(clazz);
+            HibernateUtil dh = new HibernateUtil();
             dh.setQuery("from "+clazz.getName()+" where identifier=?");
             dh.setParam(identifier);
             Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
-            vi=(VersionInfo)dh.load();
+            vi=(VersionInfo)dh.load(); 
             if(!UtilMethods.isSet(vi.getIdentifier())) {
             	vi.setIdentifier(identifier);
             	vi.setWorkingInode("NOTFOUND");
