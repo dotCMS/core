@@ -66,6 +66,11 @@ public class SendVCalendarDetail extends DispatchAction {
 			if(UtilMethods.isSet(recurrenceStartDate)){
 				startDate = dateFormat.parse(recurrenceStartDate);
 			}
+			if(!UtilMethods.isSet(inode)){
+				return null;
+			}
+			
+			
 			
 			if(UtilMethods.isSet(recurrenceEndDate)){
 			
