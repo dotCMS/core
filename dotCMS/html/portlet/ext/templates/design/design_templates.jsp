@@ -771,59 +771,52 @@
 		</div>
 	</div>
 
-	<div id="previewThemeTab" style="position:absolute; position:absolute;top:40px;left:10px;right:10px;bottom:0px;" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Preview") %>" >
+    <div id="previewThemeTab"
+         style="top:40px;left:10px;right:10px;bottom:0;"
+         dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Preview") %>">
 
-		<div class="yui-g portlet-toolbar">
-			<div class="yui-u" style="text-align:right;">
+        <div class="yui-g portlet-toolbar">
+            <div class="yui-u" style="text-align:right;">
 
-			<div dojoType="dijit.form.DropDownButton" data-dojo-props="iconClass:'mobileIcon', showLabel:true">
-				<span><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Mobile Preview"))%></span>
-					<div dojoType="dijit.Menu">
+                <div dojoType="dijit.form.DropDownButton" data-dojo-props="iconClass:'mobileIcon', showLabel:true">
+                    <span><%=UtilMethods.escapeSingleQuotes( LanguageUtil.get( pageContext, "Mobile Preview" ) )%></span>
 
-		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=340,height=480')" >
-		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPhone") %>
-		                </div>
+                    <div dojoType="dijit.Menu">
 
-					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=1024,height=768')">
-		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPad") %>
-		                </div>
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=340,height=480')">
+                            <span class="appleIcon"></span> <%= LanguageUtil.get( pageContext, "iPhone" ) %>
+                        </div>
 
-		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=640,height=920')" >
-		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPhone (Retina)") %>
-		                </div>
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=1024,height=768')">
+                            <span class="appleIcon"></span> <%= LanguageUtil.get( pageContext, "iPad" ) %>
+                        </div>
 
-		                <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=2048,height=1536')" >
-		                    <span class="appleIcon"></span> <%= LanguageUtil.get(pageContext,"iPad (Retina)") %>
-		                </div>
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=640,height=920')">
+                            <span class="appleIcon"></span> <%= LanguageUtil.get( pageContext, "iPhone (Retina)" ) %>
+                        </div>
 
-					 	<div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
-		                    <span class="androidIcon"></span> <%= LanguageUtil.get(pageContext,"Android (Moto-Droid)") %>
-		                </div>
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=2048,height=1536')">
+                            <span class="appleIcon"></span> <%= LanguageUtil.get( pageContext, "iPad (Retina)" ) %>
+                        </div>
 
-		           </div>
-			</div>
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
+                            <span class="androidIcon"></span> <%= LanguageUtil.get( pageContext, "Android (Moto-Droid)" ) %>
+                        </div>
 
+                    </div>
+                </div>
 
+            </div>
+        </div>
 
+        <iframe id="previewThemeIFrame"
+                name="previewThemeIFrame"
+                style="width:99%; min-height:766px; height:90%; border:1px solid black;"
+                scrolling='auto'
+                frameborder='1'>
+        </iframe>
 
-
-			</div>
-		</div>
-
-
-
-
-		<iframe id="previewThemeIFrame" name="previewThemeIFrame"
-				style="width:99%;height:90%;border:1px solid black;"
-				scrolling='auto'
-				frameborder='1'>
-			</iframe>
-
-
-	</div>
-
-
-
+    </div>
 
 
 	<!-- Permissions Tab -->
