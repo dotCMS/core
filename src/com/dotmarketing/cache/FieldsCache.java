@@ -3,18 +3,14 @@ package com.dotmarketing.cache;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 /**
  * @author David
@@ -184,7 +180,7 @@ public class FieldsCache {
         
         
         try {
-			return (List<FieldVariable>) cache.get(key,getPrimaryGroup());
+			return (List<FieldVariable>) cache.get(key,getFieldsVarGroup());
 		} catch (DotCacheException e) {
 			return null;
 		}
@@ -192,7 +188,7 @@ public class FieldsCache {
     
 	public static void addFieldVariables(Field field, List<FieldVariable> vars) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        String key = getPrimaryGroup() + field.getInode();
+        String key = getFieldsVarGroup() + field.getInode();
         cache.put(key, vars, getFieldsVarGroup());
 
     }
