@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotmarketing.portlets.fileassets.business.IFileAsset"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
@@ -36,15 +37,35 @@ if(contentletId == null){
 	return;
 }
 ContentletAPI capi = APILocator.getContentletAPI();
-Contentlet content = capi.find(contentletId, user, false);
 
-
-Language lang = APILocator.getLanguageAPI().getLanguage(((Contentlet) content).getLanguageId()) ;
-Structure structure = content.getStructure(); 
-List<Field> fields = structure.getFields();
-
-Identifier id = APILocator.getIdentifierAPI().find(content);
+Contentlet content=null;
+Language lang=null;
+Structure structure=null;
+List<Field> fields=null;
+Identifier id=null;
 String conPath ="";
+boolean hasPermissions=true;
+try {
+	content = capi.find(contentletId, user, false);
+	
+	
+	lang = APILocator.getLanguageAPI().getLanguage(((Contentlet) content).getLanguageId()) ;
+	structure = content.getStructure(); 
+	fields = structure.getFields();
+	
+	id = APILocator.getIdentifierAPI().find(content);
+
+}
+catch(DotSecurityException dse) {
+    hasPermissions=false;
+}
+
+if(!hasPermissions) {
+    %> <%=LanguageUtil.get(pageContext, "you-do-not-have-the-required-permissions") %> <%
+}
+else {
+    
+
 try{
 	Host conHost = APILocator.getHostAPI().find(content.getHost() , user, true);
 	
@@ -59,6 +80,7 @@ try{
 catch(Exception e){
 	Logger.error(this.getClass(), "unable to find host for contentlet"  + content.getIdentifier());
 }
+
 
 String cssPath = Config.getStringProperty("WYSIWYG_CSS");
 String content_css=null;
@@ -570,3 +592,5 @@ dojo.ready(function(){
 		</table>
 	</div>
 </div>
+
+<% } %>
