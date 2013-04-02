@@ -106,11 +106,8 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		boolean localTransaction = false;
 		try {
-			localTransaction = HibernateUtil.getSession().connection().getAutoCommit();
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-			if (localTransaction) {
-				HibernateUtil.startTransaction();
-			}
 
 			return ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
 
