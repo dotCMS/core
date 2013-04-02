@@ -24,10 +24,23 @@ import com.dotmarketing.util.UtilMethods;
 public class RoleResource extends WebResource {
 
 	/**
-	 * <p>Returns a JSON with the id, name, and a list with the children of the given role id.
-	 * If no id is given, returns the root node (not a role) and its children (root roles)
-	 * Each child contains the id, name and a boolean indicating
-	 * if it has children.
+	 * <p>Returns a JSON representation of the Role with the given id, including its first level children.
+	 * <br>The role node contains: id, name, locked, children.
+	 * <br>- id: id of the role
+	 * <br>- name: name of the role
+	 * <br>- locked: boolean that indicates if the role is locked
+	 * <br>- children: a list of the role's first level children
+	 *
+	 * <br><p>Each child node contains: id, name, locked, children.
+	 * <br>- id: id of the child role
+	 * <br>- name: name of the child role
+	 * <br>- locked: boolean that indicates if the child role is locked
+	 * <br>- children: boolean that indicates if the child role has children
+	 *
+	 *
+	 * <br><p>If no id is given, returns the root node (not a role) and its first level children (root roles)
+	 *
+	 * <br><p>This is used to lazy-load the Tree (UI) of roles in the Role Manager of dotCMS Admin
 	 *
 	 * Usage: /loadchildren/id/{id}
 	 * Example usage 1: /loadchildren/id/2adccac3-a56b-4078-be40-94e343f20712
@@ -108,10 +121,16 @@ public class RoleResource extends WebResource {
 	}
 
 	/**
-	 * Returns a JSON representation of the Role with the given id.
-	 * <br>The resulting role node contains the fields:
-	 * DBFQN, FQN, description, editLayouts, editPermissions, editUsers,
+	 * <p>Returns a JSON representation of the Role with the given id.
+	 * <br>The resulting role node contains the following fields:
+	 * <br>DBFQN, FQN, description, editLayouts, editPermissions, editUsers,
 	 * id, locked, name, parent, roleKey, system. See {@link Role}.
+	 *
+	 * <p>This is used to load all the info of a role when clicked on the Tree (UI) in the Role Manager
+	 * of dotCMS Admin
+	 *
+	 * <p>Usage: /api/role/loadbyid/id/{id}
+	 * <br>Example usage: /api/role/loadbyid/id/2adccac3-a56b-4078-be40-94e343f20712
 	 *
 	 * @param request
 	 * @param params a string containing the URL parameters
@@ -156,9 +175,18 @@ public class RoleResource extends WebResource {
 	}
 
 	/**
-	 * Returns a JSON tree structure whose leaves names contain the passed "name" parameter.
-	 * This is used to feed the resulting Dojo Tree in the Role Manager when using
+	 * Returns a JSON tree structure whose leaves names contain the given "name" parameter.
+	 * Each node contains the fields: id, name, locked, children.
+	 * - id: id of the child role
+	 * - name: name of the child role
+	 * - locked: boolean that indicates if the child role is locked
+	 * - children: list of the role's first level children, if any.
+	 *
+	 * This is used to feed the resulting Tree (UI) in the Role Manager of dotCMS Admin when using
 	 * the filter functionality
+	 *
+	 * Usage: /api/role/loadbyname/name/<id>
+	 * Example usage: /api/role/loadbyid/id/2adccac3-a56b-4078-be40-94e343f20712
 	 *
 	 *
 	 * @param request
