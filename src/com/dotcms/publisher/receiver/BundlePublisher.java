@@ -144,9 +144,9 @@ public class BundlePublisher extends Publisher {
             HibernateUtil.startTransaction();
             
             //Execute the handlers
-            for(IHandler handler : handlers )
+            for(IHandler handler : handlers ){
             	handler.handle(folderOut);
-
+            }
 
             HibernateUtil.commitTransaction();
         } catch (Exception e) {
