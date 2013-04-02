@@ -124,13 +124,13 @@
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="white-space:nowrap;height:400px;">
 
 <!-- START Left Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;margin-top:38px;overflow:auto;" class="lineRight">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;margin-top:38px;" class="lineRight">
 		<div id="loadingRolesWrapper"><img src="/html/js/lightbox/images/loading.gif"></div>
 
-		<div id="rolesTreeWrapper" style="display: none;padding:10px 0 10px 10px;">
+		<div id="rolesTreeWrapper" style="display: none;padding:10px 0 10px 10px; height:100%">
 
 
-			<div id="rolesTree" ></div>
+			<div id="rolesTree" style=""></div>
 	        <ul dojoType="dijit.Menu" id="roleTreeMenu" style="display: none;">
 	            <li dojoType="dijit.MenuItem" iconClass="editIcon" id="editRoleMenu"><%= LanguageUtil.get(pageContext, "edit-role") %></li>
 	            <li dojoType="dijit.MenuItem" iconClass="lockIcon" id="lockRoleMenu"><%= LanguageUtil.get(pageContext, "lock-role") %></li>

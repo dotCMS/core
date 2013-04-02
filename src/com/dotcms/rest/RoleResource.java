@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -25,15 +24,15 @@ import com.dotmarketing.util.UtilMethods;
 public class RoleResource extends WebResource {
 
 	/**
-	 * Returns a JSON representation of Roles in the System.
-	 * To load a role, use:/api/role/loadbyid/{id}
-	 * To retrieve the children of a given role, use:/api/role/loadchildren/id/{id}
-	 * To get roles by name, use /api/role/name/{name}
+	 * <p>Returns a JSON with the children of the specified role.
+	 * The JSON for each child contains the id, name and a boolean indicating
+	 * if it has children.
+	 *
+	 *
+	 * <br>Usage: /loadchildren/id/{id}
 	 *
 	 * @param request
-	 * @param response
-	 * @param params
-	 * @param name
+	 * @param params a string containing the URL parameters
 	 * @return
 	 * @throws DotStateException
 	 * @throws DotDataException
@@ -43,7 +42,7 @@ public class RoleResource extends WebResource {
 	@GET
 	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
-	public String loadChildren(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
+	public String loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
 		InitDataObject initData = init(params, true, request, true);
 
 		Map<String, String> paramsMap = initData.getParamsMap();
@@ -62,6 +61,7 @@ public class RoleResource extends WebResource {
 				json.append("{id: '").append(r.getId()).append("', ");
 				json.append("$ref: '").append(r.getId()).append("', ");
 				json.append("name: '").append(r.getName()).append("', ");
+				json.append("locked: '").append(r.isLocked()).append("', ");
 				json.append(" children:true}");
 
 				if(rolesCounter+1 < rootRoles.size()) {
@@ -77,7 +77,8 @@ public class RoleResource extends WebResource {
 			Role role = roleAPI.loadRoleById(roleId);
 			List<String> children = role.getRoleChildren();
 
-			json.append("{ id: '").append(role.getId()).append("', name: '").append(role.getName()).append("', children: ").append("[");
+			json.append("{ id: '").append(role.getId()).append("', name: '").append(role.getName()).append("', locked: '")
+			.append(role.isLocked()).append("', children: ").append("[");
 
 			if(children!=null) {
 
@@ -85,7 +86,8 @@ public class RoleResource extends WebResource {
 				for(String childId : children) {
 					Role r = roleAPI.loadRoleById(childId);
 
-					json.append("{id: '").append(r.getId()).append("', $ref: '").append(r.getId()).append("', name: '").append(r.getName()).append("', children:true}");
+					json.append("{id: '").append(r.getId()).append("', $ref: '").append(r.getId()).append("', name: '")
+					.append(r.getName()).append("', locked: ").append(r.isLocked()).append(", children:true}");
 
 					if(childCounter+1 < children.size()) {
 						json.append(", ");
@@ -102,6 +104,18 @@ public class RoleResource extends WebResource {
 		return json.toString();
 	}
 
+	/**
+	 * Returns a JSON representation of the Role with the given id.
+	 * <br>The resulting role node contains the fields:
+	 * DBFQN, FQN, description, editLayouts, editPermissions, editUsers,
+	 * id, locked, name, parent, roleKey, system. See {@link Role}.
+	 *
+	 * @param request
+	 * @param params a string containing the URL parameters
+	 * @return
+	 * @throws DotDataException
+	 */
+
 	@GET
 	@Path("/loadbyid/{params:.*}")
 	@Produces("application/json")
@@ -111,7 +125,7 @@ public class RoleResource extends WebResource {
 		Map<String, String> paramsMap = initData.getParamsMap();
 		String roleId = paramsMap.get("id");
 
-		if(roleId.equalsIgnoreCase("root")) {
+		if(!UtilMethods.isSet(roleId) || roleId.equalsIgnoreCase("root")) {
 			return "{id:'0', name: 'Root Role'}";
 		}
 
@@ -137,6 +151,18 @@ public class RoleResource extends WebResource {
 
 		return node.toString();
 	}
+
+	/**
+	 * Returns a JSON tree structure whose leaves names contain the passed "name" parameter.
+	 * This is used to feed the resulting Dojo Tree in the Role Manager when using
+	 * the filter functionality
+	 *
+	 *
+	 * @param request
+	 * @param params
+	 * @return
+	 * @throws DotDataException
+	 */
 
 	@GET
 	@Path("/loadbyname/{params:.*}")
@@ -228,7 +254,8 @@ public class RoleResource extends WebResource {
 		}
 		for (String key : map.keySet()) {
 			Role r = roleAPI.loadRoleById(key);
-			json.append("{ id: '").append(r.getId().replace('-', '_')).append("', name: '").append(r.getName()).append("', children: ").append("[");
+			json.append("{ id: '").append(r.getId().replace('-', '_')).append("', name: '").append(r.getName())
+			.append("', locked: ").append(r.isLocked()).append(", children: ").append("[");
 
 			LinkedHashMap<String, Object> children = (LinkedHashMap<String, Object>) map.get(key);
 			json.append(buildFilteredJsonTree(children));

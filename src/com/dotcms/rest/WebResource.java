@@ -119,7 +119,7 @@ public class WebResource {
 
 	private User authenticateUser(Map<String, String> paramsMap, HttpServletRequest request, boolean rejectWhenNoUser) throws SecurityException  {
 
-		boolean forcefrontendauth = false;
+		boolean forcefrontendauth = Config.getBooleanProperty("FORCE_FRONT_END_AUTH", false);
 
 		User user = (user = authenticateUserFromURL(paramsMap, request)) != null ? user
 				: (user = authenticateUserFromPost(paramsMap, request)) != null ? user

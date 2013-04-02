@@ -145,7 +145,6 @@
 	dojo.addOnLoad(function () {
 		dwr.util.useLoadingMessage("<%=LanguageUtil.get(pageContext, "Loading")%>....");
 		buildRolesTree ();
-// 		loadRolesTree ();
 		dwr.engine.setErrorHandler(function(message, error) {
 			console.log(error);
 			showDotCMSErrorMessage("A system error as occurred " + message);
@@ -167,9 +166,10 @@
 		dojo.style(dojo.byId('rolesTreeWrapper'), { display: 'none' });
 		var autoExpand = false;
 
+		// if tree is null, we are not filtering, so load the root nodes only calling RoleResource
 		if(tree==null) {
-			store = new dojox.data.JsonRestStore({ target: "/api/role/id", labelAttribute:"name"});
-		} else {
+			store = new dojox.data.JsonRestStore({ target: "/api/role/loadchildren/id/", labelAttribute:"name"});
+		} else { // if tree is not null, we need to build a store with the JSON tree contained in it
 			store = new dojo.data.ItemFileReadStore({ data: tree });
 			autoExpand = true;
 		}
@@ -206,10 +206,9 @@
 			},
 
 			getIconClass: function (item, opened) {
-				var role = findRole(item.id);
 				var icon = "";
-				if(role) {
-					var locked = eval(norm(role.locked));
+				if(item) {
+					var locked = eval(norm(item.locked));
 					if(locked) {
 						return "lockIcon";
 					}
@@ -218,10 +217,9 @@
 			},
 
 			getIconStyle: function (item, opened) {
-				var role = findRole(item.id);
 				var icon = "";
-				if(role) {
-					var locked = eval(norm(role.locked));
+				if(item) {
+					var locked = eval(norm(item.locked));
 					if(locked) {
 						return { };
 					}
@@ -248,18 +246,18 @@
 					currentRole=null;
 				}
 
+				// used to remove the highlight (bold) from the last selected treeNode
 				if(lastSelectedNode) {
 					lastSelectedNode.labelNode.style.fontWeight="normal";
 					lastSelectedNode = null;
 				}
 
-
+				// used to highlight (bold) the current selected treeNode
 				if(dijit.byId("rolesTree").selectedNode) {
 					dijit.byId("rolesTree").selectedNode.labelNode.style.fontWeight="bold";
 					lastSelectedNode = dijit.byId("rolesTree").selectedNode;
 
 				}
-
 
 			},
 
@@ -277,6 +275,8 @@
 				dojo.style(dojo.byId('loadingRolesWrapper'), { display: 'none' });
 				//Showing the tree
 				dojo.style(dojo.byId('rolesTreeWrapper'), { display: '' });
+				dojo.style(dojo.byId('rolesTree'), { height: '100%' });
+
 			}
 
 		});
@@ -365,20 +365,28 @@
 
 		dojo.style(dojo.byId('noRolesFound'), { display: 'none' });
 
-		var query = dojo.byId('rolesFilter').value;
+		var name = dojo.byId('rolesFilter').value;
 
-		if(query!=null && query.length> 0 && query.length<3) {
+		// if less than 3 characters are typed in the filter textbox, a tooltip will show up after 3 seconds
+		if(name!=null && name.length> 0 && name.length<3) {
 			hideToolTip();
 			setTimeout("showToolTip()", 3000);
-		} else if(query=='' || (query!=null && query.length>2)) {
+		} else if(name=='' || (name!=null && name.length>2)) {// if filter textbox is empty, or at least has 3 chars, we build the resulting tree
 			hideToolTip();
 			lastSelectedNode = null;
-			var filteredRoles = searchRoles(query);
-
+			var filteredRoles = searchRoles(name);
 			buildRolesTree(filteredRoles);
 
 			if(filteredRoles && filteredRoles.items[0].children.length == 0)
 				dojo.style(dojo.byId('noRolesFound'), { display: '' });
+
+			if(name=='') {
+				dojo.byId('editRoleButtonWrapper').style.display = 'none';
+				dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
+				dojo.style(dojo.byId('roleTabs'), { display: 'none' });
+				currentRoleId=null;
+				currentRole=null;
+			}
 
 		}
 	}
@@ -561,15 +569,24 @@
 	}
 
 	function lockRoleCallback (lockedRoleId) {
-		buildRolesTree();
+		var node = dijit.byId("treeNode-"+lockedRoleId);
+		node.iconNode.className = 'lockIcon';
+		node.iconNode.style.width = '';
+		node.iconNode.style.height = '';
+
 		if (norm(currentRoleId) == norm(lockedRoleId)) {
 			dojo.byId('editRoleButtonWrapper').style.display = 'none';
 		}
 		showDotCMSSystemMessage(roleLockedMsg);
+
 	}
 
 	function unlockRoleCallback (unlockedRoleId) {
-		buildRolesTree();
+		var node = dijit.byId("treeNode-"+unlockedRoleId);
+		node.iconNode.className = '';
+		node.iconNode.style.width = '0px';
+		node.iconNode.style.height = '0px';
+
 		if (norm(currentRoleId) == norm(unlockedRoleId) && !eval(norm(currentRole.system))) {
 			dojo.byId('editRoleButtonWrapper').style.display = '';
 		}
@@ -1311,7 +1328,7 @@
 		var roles;
 
 		var xhrArgs = {
-				url : "/api/role/method/filter/query/" + query,
+				url : "/api/role/loadbyname/name/" + query + "/",
 				handleAs : "json",
 				sync: true,
 				load : function(data) {
@@ -1382,11 +1399,10 @@
 	//Finds a role within the given list of roles
 
 	function findRole(roleid) {
-
 		var roleNode;
 
 		var xhrArgs = {
-			url : "/api/role/method/loadRole/id/" + roleid,
+			url : "/api/role/loadbyid/id/" + roleid,
 			handleAs : "json",
 			sync: true,
 			load : function(data) {
