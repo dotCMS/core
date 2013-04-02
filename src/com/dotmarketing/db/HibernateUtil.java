@@ -806,8 +806,6 @@ public class HibernateUtil {
 		}try{
 			Session session = getSession();
 			session.flush();
-			if(!session.connection().getAutoCommit())
-				session.connection().commit();
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to flush Hibernate Session ", e);
 		}

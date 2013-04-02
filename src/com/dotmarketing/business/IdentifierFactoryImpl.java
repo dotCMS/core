@@ -257,7 +257,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 						if(UtilMethods.isSet(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))//DOTCMS-7093
 							uri = cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
 					} catch (IOException e) {
-						// TODO
+						Logger.debug(this, e.getMessage() + " Issue happened while assigning Binary Field");
 					}
 				}
 				identifier.setAssetType("contentlet");
