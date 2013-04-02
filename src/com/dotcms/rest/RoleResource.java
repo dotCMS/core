@@ -24,12 +24,14 @@ import com.dotmarketing.util.UtilMethods;
 public class RoleResource extends WebResource {
 
 	/**
-	 * <p>Returns a JSON with the children of the specified role.
-	 * The JSON for each child contains the id, name and a boolean indicating
+	 * <p>Returns a JSON with the id, name, and a list with the children of the given role id.
+	 * If no id is given, returns the root node (not a role) and its children (root roles)
+	 * Each child contains the id, name and a boolean indicating
 	 * if it has children.
 	 *
-	 *
-	 * <br>Usage: /loadchildren/id/{id}
+	 * Usage: /loadchildren/id/{id}
+	 * Example usage 1: /loadchildren/id/2adccac3-a56b-4078-be40-94e343f20712
+	 * Example usage 2 (Root Roles): /loadchildren/
 	 *
 	 * @param request
 	 * @param params a string containing the URL parameters
@@ -58,6 +60,7 @@ public class RoleResource extends WebResource {
 
 
 			for(Role r : rootRoles) {
+
 				json.append("{id: '").append(r.getId()).append("', ");
 				json.append("$ref: '").append(r.getId()).append("', ");
 				json.append("name: '").append(r.getName()).append("', ");
