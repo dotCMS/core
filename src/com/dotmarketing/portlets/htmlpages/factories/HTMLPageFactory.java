@@ -275,7 +275,7 @@ public class HTMLPageFactory {
 
         //HibernateUtil.saveOrUpdate(identifier);
         APILocator.getIdentifierAPI().save( identifier );
-
+        
         //Add to Preview and Live Cache
         if ( (liveWebAsset != null) && (InodeUtils.isSet( liveWebAsset.getInode() )) ) {
             LiveCache.removeAssetFromCache( liveWebAsset );
@@ -300,6 +300,9 @@ public class HTMLPageFactory {
         }
         CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
+        if(APILocator.getPermissionAPI().isInheritingPermissions(workingWebAsset))
+            APILocator.getPermissionAPI().removePermissions(workingWebAsset);
+        
         return true;
     }
 
