@@ -535,7 +535,7 @@
 		var autoExpand = false;
 
 		if(tree==null) {
-			store = new dojox.data.JsonRestStore({ target: "/api/role/userid/"+currentUser.id+"/id", labelAttribute:"name"});
+			store = new dojox.data.JsonRestStore({ target: "/api/role/loadchildren/id", labelAttribute:"name"});
 		} else {
 			store = new dojo.data.ItemFileReadStore({ data: tree });
 			autoExpand = true;
@@ -1493,7 +1493,7 @@
 		var roleNode;
 
 		var xhrArgs = {
-			url : "/api/role/method/loadRole/id/" + roleid,
+			url : "/api/role/loadbyid/id/" + roleid,
 			handleAs : "json",
 			sync: true,
 			load : function(data) {
