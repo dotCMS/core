@@ -270,7 +270,7 @@ public class DependencyManager {
 					containers.add(container.getIdentifier());
 					// Structure dependencies
 					structures.add(container.getStructureInode());
-					List<MultiTree> treeList = MultiTreeFactory.getMultiTree(container.getIdentifier());
+					List<MultiTree> treeList = MultiTreeFactory.getMultiTree(workingPage,container);
 
 					for (MultiTree mt : treeList) {
 						String contentIdentifier = mt.getChild();
