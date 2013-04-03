@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
+
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -241,14 +243,12 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 
 	public PublisherConfig() {
-		params = new HashMap<String, Object>();
+		params = java.util.Collections.synchronizedMap(new LinkedHashMap<String, Object>());
 		setId(UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_'));
 
 		setLanguage(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
 		setTimeStamp(new Date());
-
-		params = new LinkedHashMap<String, Object>();
 
 	}
 
