@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.dotmarketing.business;
 
@@ -31,8 +31,8 @@ import com.liferay.portal.model.User;
  */
 public class RoleFactoryImpl extends RoleFactory {
 
-	private RoleCache rc = CacheLocator.getCmsRoleCache(); 
-	
+	private RoleCache rc = CacheLocator.getCmsRoleCache();
+
 	@Override
 	protected List<Role> findAllAssignableRoles(boolean showSystemRoles) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
@@ -40,7 +40,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		if(!showSystemRoles){
 			query = query + " and system = ?";
 		}
-		
+
 		hu.setQuery(query);
 		hu.setParam(true);
 		if(!showSystemRoles){
@@ -48,12 +48,12 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		return hu.list();
 	}
-	
+
 	@Override
 	protected Role getRoleById(String roleId) throws DotDataException {
 		return getRoleById(roleId, true);
 	}
-	
+
 	protected Role getRoleById(String roleId, boolean translateFQN) throws DotDataException {
 		Role r = null;
 		r = rc.get(roleId);
@@ -88,7 +88,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		return r;
 	}
-	
+
 	@Override
 	protected List<Role> loadRolesForUser(String userId) throws DotDataException {
 		try {
@@ -126,15 +126,16 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 	}
 
-	
+
 	@Override
 	protected List<Role> getRolesByName(String filter, int start, int limit) throws DotDataException {
-		if(filter !=null)filter ="";
+		if(filter==null) return new ArrayList<Role>();
+
 		filter = "%" + filter.toLowerCase() + "%";
 		return getRolesByNameFiltered(filter, start, limit);
 	}
-	
-	
+
+
 	@Override
 	protected List<Role> getRolesByNameFiltered(String filter, int start, int limit) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
@@ -162,7 +163,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		return roles;
 	}
-	
+
 	@Override
 	protected Role findRoleByName(String rolename, Role parent) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
@@ -200,7 +201,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		return role;
 	}
-	
+
 	@Override
 	protected void addRoleToUser(Role role, User user) throws DotDataException {
 		UsersRoles ur = new UsersRoles();
@@ -209,7 +210,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		HibernateUtil.save(ur);
 		rc.addRoleToUser(user.getUserId(), role.getId());
 	}
-	
+
 	@Override
 	protected void removeRoleFromUser(Role role, User user)	throws DotDataException {
 		DotConnect dc = new DotConnect();
@@ -219,7 +220,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		dc.loadResult();
 		rc.remove(user.getUserId());
 	}
-	
+
 	@Override
 	protected Role save(Role role) throws DotDataException {
 //		role.setRoleKey(UUIDGenerator.generateUuid());
@@ -244,7 +245,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				throw new DotDataException("Error populating role to save", e);
 			}
 		} else {
-			
+
 			r = role;
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
 				String roleKey= VelocityUtil.convertToVelocityVariable(r.getName());
@@ -255,7 +256,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd H:mm:ss.S");
 				String date= sdf.format(new java.util.Date());
 				if(total>0){
-					
+
 					roleKey= UtilMethods.toCamelCase(r.getName())+date;
 				}
 				r.setRoleKey(roleKey);
@@ -263,7 +264,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			}
 			HibernateUtil.save(r);
 		}
-		
+
 		//We need to update the role FQN and well as the role children, grand-children, etc as well
 		List<Role> rolesToUpdate = new ArrayList<Role>();
 		Queue<String> roleIdsToProcess = new LinkedList<String>();
@@ -285,20 +286,20 @@ public class RoleFactoryImpl extends RoleFactory {
 			if(parentRole.getRoleChildren() != null)
 				roleIdsToProcess.addAll(parentRole.getRoleChildren());
 		}
-		
+
 		for(Role roleToUpdate : rolesToUpdate) {
 			setFQNForDB(roleToUpdate);
 			HibernateUtil.save(roleToUpdate);
 		}
-		
+
 		translateFQNFromDB(r);
-				
+
 		if(r.getParent() != null){
 			rc.remove(r.getParent());
 			Role parent = getRoleById(r.getParent());
 			rc.remove(parent.getRoleKey());
 		}
-		
+
 		List<Role> singleRole = new ArrayList<Role>();
 		singleRole.add(r);
 		try {
@@ -313,10 +314,10 @@ public class RoleFactoryImpl extends RoleFactory {
 		rc.add(r);
 		HibernateUtil.evict(r);
 		AdminLogger.log(RoleFactoryImpl.class, "save", "Role saved Id :"+r.getId());
-		
+
 		return r;
 	}
-	
+
 	@Override
 	protected void delete(Role role) throws DotDataException {
 		DotConnect dc = new DotConnect();
@@ -334,11 +335,11 @@ public class RoleFactoryImpl extends RoleFactory {
 		rc.remove(r.getId());
 		rc.remove(r.getRoleKey());
 		rc.clearRoleCache();
-		
+
 		AdminLogger.log(RoleFactoryImpl.class, "delete", "Role deleted Id :"+r.getId());
-		
+
 	}
-	
+
 	@Override
 	protected List<Role> findRootRoles() throws DotDataException {
 		List<Role> roles = rc.getRootRoles();
@@ -349,7 +350,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			try {
 				populatChildrenForRoles(roles);
 				for (Role role : roles) {
-					translateFQNFromDB(role);	
+					translateFQNFromDB(role);
 				}
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
@@ -365,7 +366,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		return roles;
 	}
-	
+
 	@Override
 	protected List<String> findUserIdsForRole(Role role) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
@@ -381,13 +382,13 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		return ret;
 	}
-	
+
 	protected void fillChildrensRecursive(List<String> list, List<String> ids) throws DotDataException {
 	    DotConnect dc=new DotConnect();
 	    StringBuilder sb=new StringBuilder();
 	    sb.append("SELECT id FROM cms_role WHERE parent in (");
 	    boolean first=true;
-	    for(String id : ids) { 
+	    for(String id : ids) {
 	        if(first) first=false;
 	        else sb.append(',');
 	        sb.append('\'').append(id).append('\'');
@@ -405,15 +406,15 @@ public class RoleFactoryImpl extends RoleFactory {
 	    if(newchilds.size()>0)
 	        fillChildrensRecursive(list, newchilds);
 	}
-	
+
 	@Override
 	protected boolean doesUserHaveRole(User user, Role role) throws DotDataException {
-		
+
 		if(user == null || role ==null) {
 			Logger.debug(this, "User or Role was Null");
 			return false;
 		}
-		
+
 		List<String> roles = rc.getRoleIdsForUser(user.getUserId());
 		if(roles == null){
 		    List<Role> rolelist=loadRolesForUser(user.getUserId());
@@ -437,7 +438,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			return false;
 		}
 	}
-	
+
 	@Override
 	protected List<String> loadLayoutIdsForRole(Role role) throws DotDataException {
 		List<String> layouts = rc.getLayoutsForRole(role.getId());
@@ -456,7 +457,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		return layouts;
 	}
-	
+
 	@Override
 	protected void addLayoutToRole(Layout layout, Role role) throws DotDataException {
 		LayoutsRoles lr = new LayoutsRoles();
@@ -465,7 +466,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		HibernateUtil.save(lr);
 		rc.removeLayoutsOnRole(role.getId());
 	}
-	
+
 	@Override
 	protected void removeLayoutFromRole(Layout layout, Role role) throws DotDataException {
 		DotConnect dc = new DotConnect();
@@ -475,7 +476,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		dc.loadResult();
 		rc.removeLayoutsOnRole(role.getId());
 	}
-	
+
 	@Override
 	protected Role findRoleByFQN(String FQN) throws DotDataException {
 		if(FQN == null){
@@ -500,7 +501,7 @@ public class RoleFactoryImpl extends RoleFactory {
 					rFQN = rFQN + " --> " + parentId;
 				}
 			}
-			
+
 			HibernateUtil hu = new HibernateUtil(Role.class);
 			hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
 			hu.setParam(rFQN);
@@ -511,7 +512,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		return r;
 	}
-	
+
 	@Override
 	protected Role loadRoleByKey(String key) throws DotDataException {
 		Role r = null;
@@ -542,7 +543,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		return r;
 	}
-	
+
 	private void populatChildrenForRoles(List<Role> roles) throws Exception{
 		Map<String,Role> roleMap = UtilMethods.convertListToHashMap(roles, "getId", String.class);
 		String sql = "select distinct cr1.id as childId, cr2.id as parentId  from cms_role cr1, cms_role cr2 where cr1.parent in (:param1) and cr1.parent = cr2.id " +
@@ -572,9 +573,9 @@ public class RoleFactoryImpl extends RoleFactory {
 			sqlResults = dc.loadResults();
 			populatChildrenForRolesHelper(roleMap,sqlResults);
 		}
-		
+
 	}
-	
+
 	private void populatChildrenForRolesHelper(Map<String,Role> roleMap, List<Map<String,String>> sqlResults){
 		for (Map<String, String> row : sqlResults) {
 			List<String> childrenList = roleMap.get(row.get("parentid")) != null?
@@ -587,7 +588,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				roleMap.get(row.get("parentid")).setRoleChildren(childrenList);
 		}
 	}
-	
+
 	private void setFQNForDB(Role role) throws DotDataException{
 		if(role.getParent().equals(role.getId())){
 			role.setDBFQN(role.getId());
@@ -602,7 +603,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			role.setDBFQN(fqn);
 		}
 	}
-	
+
 	private void translateFQNFromDB(Role role) throws DotDataException{
 		String fqn = role.getDBFQN();
 		if(!fqn.contains("-->")){
@@ -654,11 +655,11 @@ public class RoleFactoryImpl extends RoleFactory {
 		dc.addParam(user.getUserId());
 		dc.addParam(roleUUID);
 		dc.loadResult();
-		
+
 		rc.remove(user.getUserId());
-		
+
 		return loadRoleByKey(user.getUserId());
 
 	}
-	
+
 }

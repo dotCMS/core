@@ -420,8 +420,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if("Host".equals(contentlet.getStructure().getVelocityVarName())){
 			return actions;
 		}
-		boolean isNew  = !UtilMethods.isSet(contentlet.getIdentifier());
-		boolean isLocked = contentlet.isLocked();
+		boolean isNew  = !UtilMethods.isSet(contentlet.getInode());
+		//boolean isLocked = contentlet.isLocked();
 		boolean canLock = false;
 		String lockedUserId =  null;
 		try{

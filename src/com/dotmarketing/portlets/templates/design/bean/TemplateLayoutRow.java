@@ -69,7 +69,7 @@ public class TemplateLayoutRow {
         } else if ( value.equals( YUI_THREE_COLUMN_CLASS ) ) {//3 Column (33/33/33)
             columnsCount = 3;
             gridWidths = new Integer[]{33, 33, 33};
-        } else if ( value.equals( YUI_FOUR_COLUMN_CLASS ) ) {//3 Column (33/33/33)
+        } else if ( value.equals( YUI_FOUR_COLUMN_CLASS ) ) {//4 Column (25/25/25/25)
             columnsCount = 4;
             gridWidths = new Integer[]{25, 25, 25, 25};
         } else {//1 Column (100)
