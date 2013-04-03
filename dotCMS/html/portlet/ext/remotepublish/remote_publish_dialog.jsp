@@ -15,19 +15,55 @@ GregorianCalendar cal = new GregorianCalendar();
 
 %>
 
+
+<script type="text/javascript">
+
+
+alert("test");
+function togglePublishExpireDivs(){
+	
+	var x = "publish" ;
+	if(dijit.byId("iwtExpire").isChecked()){
+		x = "expire" ;
+		
+	}
+	else 	if(dijit.byId("iwtPublishExpire").isChecked()){
+		x = "publishexpire" ;
+	}
+	alert(x);
+}
+
+</script>
+
 <!--  DOTCMS-7085 -->
 <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>"> 
 
-<div style="width:430px;">
+<div style="width:430px;>
+		
+		
+		
+		
+		
+		<div class="fieldWrapper">
+			<div class="fieldName" style="width:80px">
+				<%= LanguageUtil.get(pageContext, "I-want-to") %>:
+			</div>
+			<div class="fieldValue">
+				<input type="radio" dojoType="dijit.form.RadioButton" checked="true" onChange="pushHandler.togglePublishExpireDivs()" value="publish" name="iWantTo" id="iwtPublish" ><label for="iwtPublish"><%= LanguageUtil.get(pageContext, "publish") %></label>&nbsp;
+				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="expire" name="iWantTo" id="iwtExpire" ><label for="iwtExpire"><%= LanguageUtil.get(pageContext, "delete") %></label>&nbsp;
+				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="publishexpire" name="iWantTo" id="iwtPublishExpire" ><label for="iwtPublishExpire"><%= LanguageUtil.get(pageContext, "publish") %> &amp; <%= LanguageUtil.get(pageContext, "delete") %></label>
+			</div>
+			<div class="clear"></div>
+		</div>
 		
 
 		<%
 			String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
 			String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
 		%>
-		
-		<div class="fieldWrapper">
-			<br>
+		<br>
+		<div class="fieldWrapper" id="publishTimeDiv">
+			
 			<div class="fieldName" style="width:80px">
 				<%= LanguageUtil.get(pageContext, "Publish") %>:
 			</div>
@@ -48,7 +84,7 @@ GregorianCalendar cal = new GregorianCalendar();
 			<div class="clear"></div>
 		</div>
 		
-		<div class="fieldWrapper">
+		<div class="fieldWrapper" id="expireTimeDiv" style="display:none">
 			<div class="fieldName" style="width:80px"><%= LanguageUtil.get(pageContext, "publisher_Expire") %> :
 			</div>
 			<div class="fieldValue">
