@@ -1045,28 +1045,27 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			contentlet.setModDate(cal.getTime());
 		}
 
-		if(UtilMethods.isSet(sib)) {
+		if(!UtilMethods.isSet(contentlet.getInode())) {
 		    req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
 		}
-		else {
-    		if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && workingContentlet.isLocked()){
-    			
-    			String lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
-    			if(user.getUserId().equals(lockedUserId)){
-    				req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
-    			}else{
-    				req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
-    			}
-    		}else{
-    			req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
-    		}
-    
-    		if (contentlet.isArchived()) {
-    			Company comp = PublicCompanyFactory.getDefaultCompany();
-    			String message = LanguageUtil.get(comp.getCompanyId(), user.getLocale(), "message.contentlet.edit.deleted");
-    			SessionMessages.add(req, "custommessage", message);
-    		}
+		else if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && workingContentlet.isLocked()){
+			
+			String lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
+			if(user.getUserId().equals(lockedUserId)){
+				req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
+			}else{
+				req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
+			}
+		}else{
+			req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
 		}
+
+		if (contentlet.isArchived()) {
+			Company comp = PublicCompanyFactory.getDefaultCompany();
+			String message = LanguageUtil.get(comp.getCompanyId(), user.getLocale(), "message.contentlet.edit.deleted");
+			SessionMessages.add(req, "custommessage", message);
+		}
+		
 		//	http://jira.dotmarketing.net/browse/DOTCMS-1073	
 		//  retrieve file names while edit
 		/*Logger.debug(this,"EditContentletAAction : retrieving binary field values.");
