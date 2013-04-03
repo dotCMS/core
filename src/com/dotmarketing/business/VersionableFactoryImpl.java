@@ -147,16 +147,14 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	 * @throws DotStateException
 	 */
     @Override
-    protected VersionInfo refreshVersionInfoFromDb(VersionInfo info) throws DotDataException,
+    protected VersionInfo findVersionInfoFromDb(Identifier identifer) throws DotDataException,
             DotStateException {
-
-            Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
-            Class clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
+            Class clazz = UtilMethods.getVersionInfoType(identifer.getAssetType());
             VersionInfo vi= null;
             if(clazz != null) {
 	            HibernateUtil dh = new HibernateUtil(clazz);
 	            dh.setQuery("from "+clazz.getName()+" where identifier=?");
-	            dh.setParam(info.getIdentifier());
+	            dh.setParam(identifer.getId());
 	            Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
 	            vi=(VersionInfo)dh.load();
             }
@@ -178,7 +176,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
     protected void saveVersionInfo(VersionInfo info) throws DotDataException, DotStateException {
 
     	//reload versionInfo from db (JIRA-7203)
-        VersionInfo vi=(VersionInfo) refreshVersionInfoFromDb(info);
+        Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
+        VersionInfo vi=(VersionInfo) findVersionInfoFromDb(ident);
         try {
 			BeanUtils.copyProperties(vi, info);
 		} catch (Exception e) {
@@ -241,8 +240,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
         cVer.setVersionTs(new Date());
         
         HibernateUtil.save(cVer);
-        HibernateUtil.flush();
-        icache.addContentletVersionInfoToCache(cVer);
         return cVer;
     }
 
@@ -262,8 +259,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ver.setWorkingInode(workingInode);
         ver.setVersionTs(new Date());
         HibernateUtil.save(ver);
-        HibernateUtil.flush();
-        icache.addVersionInfoToCache(ver);
         return ver;
     }
 

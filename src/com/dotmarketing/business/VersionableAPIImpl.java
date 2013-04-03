@@ -343,20 +343,13 @@ public class VersionableAPIImpl implements VersionableAPI {
             }
         }
         else {
-            VersionInfo info = vfac.getVersionInfo(versionable.getVersionId());
+            VersionInfo info = vfac.findVersionInfoFromDb(ident);
 
             if(info ==null || !UtilMethods.isSet(info.getIdentifier())) {
                 // Not yet created
                 vfac.createVersionInfo(ident, versionable.getInode());
             }
             else {
-            	try{
-            	info = vfac.refreshVersionInfoFromDb(info);
-            	}
-            	catch(Exception e){
-            		Logger.error(this.getClass(), "version info data in cache, not in db, id:" + info.getIdentifier());
-            	}
-            	
                 info.setWorkingInode(versionable.getInode());
                 vfac.saveVersionInfo(info);
             }
