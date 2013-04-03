@@ -297,7 +297,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 		List<String> parentIds = catCache.getParents(child);
 		List<Category> parents = null;
-		if( parentIds == null || parentIds.isEmpty() ) {
+		if( parentIds == null ) {
 			HibernateUtil hu = new HibernateUtil(Category.class);
 			hu.setSQLQuery("select {category.*} from inode category_1_, category, tree " +
 					"where tree.child = ? and tree.parent = category.inode and category_1_.inode = category.inode " +
