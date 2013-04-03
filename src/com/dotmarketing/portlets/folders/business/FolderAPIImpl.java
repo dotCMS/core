@@ -311,8 +311,11 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user + " does not have permission to edit " + folder.getName());
 		}
-
-
+		
+		
+		if(folder != null && FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
+			throw new DotSecurityException("YOU CANNOT DELETE THE SYSTEM FOLDER");
+		}
 		boolean localTransaction = false;
 
 		// start transactional delete
