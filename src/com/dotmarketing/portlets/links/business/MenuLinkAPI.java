@@ -27,6 +27,9 @@ public interface MenuLinkAPI {
 	 */
 	public Link copy(Link sourceLink, Folder destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
+	
+	
+	
 	/**
 	 * Preserves the menuLink in the given folder, if link already exists creates a new version of the given link and moves it to the given folder
 	 * 
@@ -105,5 +108,18 @@ public interface MenuLinkAPI {
 	public List<Link> findLinks(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
     public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException;
+
+
+
+    /**
+     * Finds a link based on its inode
+     * @param inode
+     * @return
+     * @throws DotDataException 
+     * @throws DotSecurityException 
+     */
+    public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
+
+
 	
 }

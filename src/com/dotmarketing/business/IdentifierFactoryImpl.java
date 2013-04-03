@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -106,19 +107,18 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		Identifier identifier = find(webasset);
 		Identifier folderId = find(folder);
 		ic.removeFromCacheByVersionable(webasset);
-		
+		identifier.setURI(folderId.getPath() + identifier.getInode());
 		if (webasset instanceof HTMLPage) {
 			identifier.setURI(folderId.getPath() + ((HTMLPage) webasset).getPageUrl());
 		} else if (webasset instanceof File) {
 			identifier.setURI(folderId.getPath() + ((File) webasset).getFileName());
-		} else if (webasset instanceof Link) {
-			identifier.setURI(folderId.getPath() + ((Link) webasset).getProtocal() + ((Link) webasset).getUrl());
+		}else if (webasset instanceof Contentlet){
+			Contentlet c =(Contentlet) webasset;
+			if(c.getStructure().getStructureType() ==Structure.STRUCTURE_TYPE_FILEASSET){
+				FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(c);
+				identifier.setURI(folderId.getPath() + fa.getFileName());
+			}
 		}
-
-		else {
-			identifier.setURI(folderId.getPath() + identifier.getInode());
-		}
-
 		saveIdentifier(identifier);
 
 	}
@@ -257,7 +257,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 						if(UtilMethods.isSet(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))//DOTCMS-7093
 							uri = cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
 					} catch (IOException e) {
-						// TODO
+						Logger.debug(this, e.getMessage() + " Issue happened while assigning Binary Field");
 					}
 				}
 				identifier.setAssetType("contentlet");

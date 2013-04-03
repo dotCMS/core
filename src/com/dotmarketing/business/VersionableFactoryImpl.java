@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-
 import org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Identifier;
@@ -16,7 +13,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -130,7 +126,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             dh.setQuery("from "+clazz.getName()+" where identifier=?");
             dh.setParam(identifier);
             Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
-            vi=(VersionInfo)dh.load();
+            vi=(VersionInfo)dh.load(); 
             if(!UtilMethods.isSet(vi.getIdentifier())) {
             	vi.setIdentifier(identifier);
             	vi.setWorkingInode("NOTFOUND");
@@ -150,16 +146,15 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-    private VersionInfo refreshVersionInfoFromDb(VersionInfo info) throws DotDataException,
+    @Override
+    protected VersionInfo findVersionInfoFromDb(Identifier identifer) throws DotDataException,
             DotStateException {
-
-            Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
-            Class clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
+            Class clazz = UtilMethods.getVersionInfoType(identifer.getAssetType());
             VersionInfo vi= null;
             if(clazz != null) {
 	            HibernateUtil dh = new HibernateUtil(clazz);
 	            dh.setQuery("from "+clazz.getName()+" where identifier=?");
-	            dh.setParam(info.getIdentifier());
+	            dh.setParam(identifer.getId());
 	            Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
 	            vi=(VersionInfo)dh.load();
             }
@@ -181,7 +176,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
     protected void saveVersionInfo(VersionInfo info) throws DotDataException, DotStateException {
 
     	//reload versionInfo from db (JIRA-7203)
-        VersionInfo vi=(VersionInfo) refreshVersionInfoFromDb(info);
+        Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
+        VersionInfo vi=(VersionInfo) findVersionInfoFromDb(ident);
         try {
 			BeanUtils.copyProperties(vi, info);
 		} catch (Exception e) {
@@ -191,8 +187,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
         vi.setVersionTs(new Date());
         
         HibernateUtil.saveOrUpdate(vi);
+        HibernateUtil.flush();
         icache.removeVersionInfoFromCache(vi.getIdentifier());
-        icache.addVersionInfoToCache(vi);
+
     }
 
     @Override
@@ -243,7 +240,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
         cVer.setVersionTs(new Date());
         
         HibernateUtil.save(cVer);
-        icache.addContentletVersionInfoToCache(cVer);
         return cVer;
     }
 
@@ -263,7 +259,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ver.setWorkingInode(workingInode);
         ver.setVersionTs(new Date());
         HibernateUtil.save(ver);
-        icache.addVersionInfoToCache(ver);
         return ver;
     }
 
@@ -272,8 +267,11 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		icache.removeVersionInfoFromCache(id);
 	    VersionInfo info = getVersionInfo(id);
 		if(info!=null && UtilMethods.isSet(info.getIdentifier())) {
+			String ident = info.getIdentifier();
 			HibernateUtil.delete(info);
+			icache.removeFromCacheByIdentifier(ident);
 		}
+
 	}
 
 	@Override

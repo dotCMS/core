@@ -7,6 +7,8 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 /**
@@ -146,7 +148,22 @@ public class MultiTreeFactory {
 		}
 		//return new java.util.ArrayList();
 	}
+	@SuppressWarnings("unchecked")
+	public static java.util.List<MultiTree> getMultiTree(HTMLPage htmlPage, Container container) {
+		try {
+			HibernateUtil dh = new HibernateUtil(MultiTree.class);
+			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? and parent2 = ? ");
+			dh.setParam(htmlPage.getIdentifier());
+			dh.setParam(container.getIdentifier());
 
+			return dh.list();
+            
+		} catch (Exception e) {
+            Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
+			throw new DotRuntimeException(e.toString());
+		}
+		//return new java.util.ArrayList();
+	}
 	@SuppressWarnings("unchecked")
 	public static java.util.List<MultiTree> getMultiTreeByChild(String contentIdentifier) {
 		try {
