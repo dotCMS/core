@@ -107,11 +107,26 @@
 							</div>
 		        		</div>
 
-						<div id="roleFilterWrapper" style="vertical-align:middle;margin-left:10px;">
-							<b><%= LanguageUtil.get(pageContext, "Filter") %>:</b> <input dojoType="dijit.form.TextBox" onkeyup="filterUserRoles()" trim="true" name="userRolesFilter" id="userRolesFilter">
-							<button dojoType="dijit.form.Button" onclick="clearUserRolesFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
-							<span><input type="checkbox" dojoType="dijit.form.CheckBox"  onclick="filterOnlyUserRoles()" id="onlyUserRolesFilter" />
-							<label for="onlyUserRolesFilter"><%= LanguageUtil.get(pageContext, "User-asigined-roles-only") %></label></span>
+						<div id=userRolesContainer style="overflow: hidden; height: 80%; ">
+							<div  style="width: 45%; height: 100%; float:left; padding-left:8px; ">
+								<div style="text-align: center; "><%= LanguageUtil.get(pageContext, "Roles-To-Grant") %>:</div>
+								<div id="userRolesTreeWrapper" style="float:left; width: 100%; height:85%;display: none; padding:5px; border:1px solid #ccc;">
+
+									<div id="userRolesTree"></div>
+								</div>
+							</div>
+							<div id="actionsDiv" style="width: 6%; text-align:center;  float:left; height:80%; margin-left: 2%; margin-right:1%; margin-top: 15%; ">
+								<div style="">
+									<button id="addUserRoleBtn" dojoType="dijit.form.Button" onclick="addUserRoles()" type="button" disabled="disabled">&#62;&#62;</button>
+								</div>
+								<div style="margin-top:5px">
+									<button id="removeUserRoleBtn" dojoType="dijit.form.Button" onclick="removeUserRoles()" type="button" disabled="disabled">&#60;&#60;</button>
+								</div>
+							</div>
+							<div style="height:100%; width:45%;">
+								<div style="text-align: center; padding-left: 160%"><%= LanguageUtil.get(pageContext, "Roles-Granted") %>:</div>
+								<div id="userRolesSelectWrapper" style="width: 100%;height:87%;"></div>
+							</div>
 						</div>
 
 						<div id="loadingRolesWrapper">
@@ -122,9 +137,7 @@
 							<%= LanguageUtil.get(pageContext, "No-roles-found") %>
 						</div>
 
-						<div id="userRolesTreeWrapper" style="display: none; padding:5px 10px 10px 25px; border-bottom:1px solid #ccc;">
-							<div id="userRolesTree"></div>
-						</div>
+
 
 						<div class="buttonRow">
 							<button dojoType="dijit.form.Button" onclick="resetRoles()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Reset") %></button>
