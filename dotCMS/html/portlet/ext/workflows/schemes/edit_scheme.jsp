@@ -1,11 +1,9 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page
-	import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
+<%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
-<%@page
-	import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="java.util.List"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
@@ -28,9 +26,13 @@
 	} catch (Exception e) {
 	}
 %>
-	<div dojoType="dijit.form.Form" id="addEditSchemeForm" jsId="addEditSchemeForm" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfSchemeAjax" method="POST">
+	<div dojoType="dijit.form.Form" id="addEditSchemeForm" jsId="addEditSchemeForm" encType="multipart/form-data"
+         action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfSchemeAjax" method="POST"
+         style="height: 278px!important;">
+
 		<input type="hidden" name="cmd" value="save">
 		<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
+
 		<!-- START Listing Results -->
 		<table class="listingTable" style="width:90%">
 
