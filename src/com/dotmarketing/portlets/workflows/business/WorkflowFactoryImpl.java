@@ -390,8 +390,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		Contentlet c = new Contentlet();
 		c.setIdentifier(task.getWebasset());
 
-		HibernateUtil.startTransaction();
+		boolean localTransaction = false;
 		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
 			/* Clean the comments */
 			db.setSQL("delete from workflow_comment where workflowtask_id = ?");
 			db.addParam(task.getId());
@@ -412,12 +414,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(task.getId());
 			db.loadResult();
 
-			HibernateUtil.commitTransaction();
-			cache.remove(c);
 		} catch (final Exception e) {
-			HibernateUtil.rollbackTransaction();
+			if(localTransaction){
+				HibernateUtil.rollbackTransaction();
+			}
 			Logger.error(this, "deleteWorkflowTask failed:" + e, e);
 			throw new DotDataException(e.toString());
+		}
+		finally{
+			if(localTransaction){
+				HibernateUtil.commitTransaction();
+			}
+			cache.remove(c);	
 		}
 	}
 

@@ -97,21 +97,22 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 			throw new DotSecurityException("You don't have permission to write on the given folder.");
 		}
 			
-		Link workingLink = null;
-		
+
+		Identifier identifier = null;
 		if (InodeUtils.isSet(menuLink.getIdentifier())) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(menuLink);
+			identifier = APILocator.getIdentifierAPI().find(menuLink);
 			if(!UtilMethods.isSet(identifier.getId())) {
 				identifier = APILocator.getIdentifierAPI().createNew(menuLink, destination, menuLink.getIdentifier());
 			}
-			createAsset(menuLink, user.getUserId(), destination, identifier, false);
-			workingLink = (Link) saveAsset(menuLink, identifier, user, false);
-		} else {
-			createAsset(menuLink, user.getUserId(), destination);
-			workingLink = menuLink;
 		}
+		menuLink.setModUser(user.getUserId());
+		menuLink.setIdentifier(identifier.getId());
+		save(menuLink);
+
 		
-		APILocator.getIdentifierAPI().updateIdentifierURI(workingLink, destination);
+		//if(!destination.getHostId().equals(identifier.getHostId()) || !destination.getPath().equals(identifier.getParentPath())){
+			APILocator.getIdentifierAPI().updateIdentifierURI(menuLink, destination);
+		//}
 		
 	}
 	
@@ -161,6 +162,18 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
     @Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException {
         return deleteOldVersions(assetsOlderThan,"links");
+    }
+    
+    
+    @Override
+    public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException{
+    	
+    	Link link = menuLinkFactory.load(inode);
+    	
+    	if(!APILocator.getPermissionAPI().doesUserHavePermission(link, PermissionAPI.PERMISSION_READ, user,respectFrontEndRoles)){
+    		throw new DotSecurityException("User "+ user + " does not have permission to link " + inode);
+    	}
+    	return link;
     }
 
 }
