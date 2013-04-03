@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -342,7 +343,8 @@ public class VersionableAPIImpl implements VersionableAPI {
             }
         }
         else {
-            VersionInfo info = vfac.getVersionInfo(versionable.getVersionId());
+            VersionInfo info = vfac.findVersionInfoFromDb(ident);
+
             if(info ==null || !UtilMethods.isSet(info.getIdentifier())) {
                 // Not yet created
                 vfac.createVersionInfo(ident, versionable.getInode());

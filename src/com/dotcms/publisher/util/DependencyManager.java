@@ -147,11 +147,11 @@ public class DependencyManager {
 			}
 
 		} catch (DotSecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			Logger.error(this, e.getMessage(),e);
 		}
 	}
 
@@ -171,11 +171,11 @@ public class DependencyManager {
 
 			setFolderListDependencies(folderList);
 		} catch (DotSecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			Logger.error(this, e.getMessage(),e);
 		}
 	}
 
@@ -270,7 +270,7 @@ public class DependencyManager {
 					containers.add(container.getIdentifier());
 					// Structure dependencies
 					structures.add(container.getStructureInode());
-					List<MultiTree> treeList = MultiTreeFactory.getMultiTree(container.getIdentifier());
+					List<MultiTree> treeList = MultiTreeFactory.getMultiTree(workingPage,container);
 
 					for (MultiTree mt : treeList) {
 						String contentIdentifier = mt.getChild();
@@ -280,11 +280,11 @@ public class DependencyManager {
 				}
 			}
 		} catch (DotSecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			Logger.error(this, e.getMessage(),e);
 		}
 	}
 
@@ -310,11 +310,11 @@ public class DependencyManager {
 			}
 
 		} catch (DotSecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			Logger.error(this, e.getMessage(),e);
 		}
 
 	}
@@ -343,34 +343,46 @@ public class DependencyManager {
 			}
 
 		} catch (DotSecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Logger.error(this, e.getMessage(),e);
 		}
 
 	}
 
 
 	private void setStructureDependencies() {
-
-		for (String inode : structures) {
-			Structure st = StructureCache.getStructureByInode(inode);
-			hosts.add(st.getHost()); // add the host dependency
-			folders.add(st.getFolder()); // add the folder dependency
-
-			// Related structures
-			List<Relationship> relations = RelationshipFactory.getAllRelationshipsByStructure(st);
-
-			for (Relationship r : relations) {
-				relationships.add(r.getInode());
-				structures.add(r.getChildStructureInode());
-				structures.add(r.getParentStructureInode());
-			}
-
+		Set<String> s = new HashSet<String>();
+		s.addAll(structures);
+		for (String inode : s) {
+			structureDependencyHelper(inode);
 		}
 	}
+
+	
+	
+	private void structureDependencyHelper(String stInode){
+		Structure st = StructureCache.getStructureByInode(stInode);
+		hosts.add(st.getHost()); // add the host dependency
+		folders.add(st.getFolder()); // add the folder dependency
+
+		// Related structures
+		List<Relationship> relations = RelationshipFactory.getAllRelationshipsByStructure(st);
+
+		for (Relationship r : relations) {
+			relationships.add(r.getInode());
+			if(!structures.contains(r.getChildStructureInode())){
+				structures.add(r.getChildStructureInode());
+				structureDependencyHelper(r.getChildStructureInode());
+			}
+			if(!structures.contains(r.getParentStructureInode())){
+				structures.add(r.getParentStructureInode());
+				structureDependencyHelper(r.getParentStructureInode());
+			}
+		}
+	}
+		
 	
 	private void processList(List<Contentlet> cons) throws DotDataException, DotSecurityException {
 	    Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();

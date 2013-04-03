@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -316,19 +317,32 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 	@Override
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException{
-		HibernateUtil.startTransaction();
+		boolean local = false;
+		try{
 			try {
-				HibernateUtil.delete("from template_containers in class com.dotmarketing.beans.TemplateContainers where template_id = '" + template.getIdentifier() + "'");
-				for(Container container:containerIdentifiers){
-					TemplateContainers templateContainer = new  TemplateContainers();
-					templateContainer.setTemplateId(template.getIdentifier());
-					templateContainer.setContainerId(container.getIdentifier());
-					HibernateUtil.save(templateContainer);
-				}
-			} catch (DotHibernateException e) {
+				local = HibernateUtil.startLocalTransactionIfNeeded();
+			} catch (DotDataException e1) {
+				Logger.error(TemplateFactoryImpl.class,e1.getMessage(),e1);
+				throw new DotHibernateException("Unable to start a local transaction " + e1.getMessage(), e1);
+			}
+			HibernateUtil.delete("from template_containers in class com.dotmarketing.beans.TemplateContainers where template_id = '" + template.getIdentifier() + "'");
+			for(Container container:containerIdentifiers){
+				TemplateContainers templateContainer = new  TemplateContainers();
+				templateContainer.setTemplateId(template.getIdentifier());
+				templateContainer.setContainerId(container.getIdentifier());
+				HibernateUtil.save(templateContainer);
+			}
+		}catch(DotHibernateException e){
+			if(local){
 				HibernateUtil.rollbackTransaction();
 			}
-		HibernateUtil.commitTransaction();
+			throw new DotWorkflowException(e.getMessage());
+	
+		}finally{
+			if(local){
+				HibernateUtil.commitTransaction();
+			}
+		}
 	}
 	
 	@Override

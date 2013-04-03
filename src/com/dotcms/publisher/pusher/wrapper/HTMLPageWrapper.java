@@ -1,5 +1,6 @@
 package com.dotcms.publisher.pusher.wrapper;
 
+import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -8,6 +9,7 @@ public class HTMLPageWrapper {
 	private HTMLPage page;
 	private Identifier pageId;
 	private VersionInfo vi;
+	private Operation operation;
 
 	public HTMLPageWrapper(HTMLPage page, Identifier pageId) {
 		this.page = page;
@@ -42,6 +44,20 @@ public class HTMLPageWrapper {
 	 */
 	public void setVi(VersionInfo vi) {
 		this.vi = vi;
+	}
+
+	/**
+	 * @return the operation
+	 */
+	public Operation getOperation() {
+		return operation;
+	}
+
+	/**
+	 * @param operation the operation to set
+	 */
+	public void setOperation(Operation operation) {
+		this.operation = operation;
 	}
 	
 	

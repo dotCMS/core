@@ -537,7 +537,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"ON p.bundle_id=a.bundle_id "+
 			"where "+
 			"((a.status != ? and a.status != ?) or a.status is null ) "+
-			"order by publish_date ";
+			"order by publish_date ASC,operation ASC";
 
 
 	public List<Map<String, Object>> getQueueBundleIdsToProcess() throws DotPublisherException {

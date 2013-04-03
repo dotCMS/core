@@ -17,6 +17,7 @@ import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.links.model.Link;
@@ -29,20 +30,43 @@ import com.liferay.portal.model.User;
 public class MenuLinkFactoryImpl implements MenuLinkFactory {
 	static MenuLinkCache menuLinkCache = CacheLocator.getMenuLinkCache();
 
+	
+	@Override
+	public Link load(String inode) throws DotHibernateException{
+		
+		HibernateUtil dh = new HibernateUtil(Link.class);
+
+		return (Link) dh.load(inode);
+		
+		
+	}
+	
+	
+	
 	public void save(Link menuLink) throws DotDataException, DotStateException, DotSecurityException {
 		
 		
 		if(UtilMethods.isSet(menuLink.getInode())) {
-			Link oldLink = (Link) HibernateUtil.load(Link.class, menuLink.getInode());
+			Link oldLink = null;
+			try{
+				oldLink = (Link) HibernateUtil.load(Link.class, menuLink.getInode());
+			}catch(DotHibernateException dhe){
+				Logger.debug(this.getClass(), dhe.getMessage());
+			}
+			
 			if(oldLink!=null) {
 				oldLink.copy(menuLink);
 				HibernateUtil.saveOrUpdate(oldLink);
+				HibernateUtil.flush();
+				menuLink = oldLink;
 			} else {
 				HibernateUtil.saveWithPrimaryKey(menuLink, menuLink.getInode());
+				HibernateUtil.flush();
 			}
 			
 		} else {
 			HibernateUtil.save(menuLink);
+			HibernateUtil.flush();
 		}
 		if(UtilMethods.isSet(menuLink.getIdentifier())) {
     		menuLinkCache.add(menuLink.getInode(), menuLink);

@@ -46,4 +46,6 @@ public abstract class VersionableFactory {
 
     protected abstract void deleteContentletVersionInfo(String id, long lang) throws DotDataException;
 
+    protected abstract  VersionInfo findVersionInfoFromDb(Identifier identifier) throws DotDataException, DotStateException ;
+
 }

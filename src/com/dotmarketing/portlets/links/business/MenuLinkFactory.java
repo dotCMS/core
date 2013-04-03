@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.links.model.Link;
 import com.liferay.portal.model.User;
@@ -39,6 +40,18 @@ public interface MenuLinkFactory {
      * @throws DotDataException
      */
 	public List<Link> findLinks(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
+
+
+
+
+
+	/**
+	 * Finds a link based on its inode.  No caching
+	 * @param inode
+	 * @return
+	 * @throws DotHibernateException
+	 */
+	Link load(String inode) throws DotHibernateException;
 	
 	
 	

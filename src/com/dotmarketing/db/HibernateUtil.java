@@ -23,9 +23,11 @@ import net.sf.hibernate.cfg.Configuration;
 import net.sf.hibernate.cfg.Mappings;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -708,6 +710,21 @@ public class HibernateUtil {
 		sessionCleanupAndRollback();
 
 	}
+	
+	public static boolean startLocalTransactionIfNeeded() throws DotDataException{
+    	boolean startTransaction = false;
+
+    	try {
+    		startTransaction = DbConnectionFactory.getConnection().getAutoCommit();
+			if(startTransaction){
+				HibernateUtil.startTransaction();
+			}
+		} catch (SQLException e) {
+			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage());
+		}
+		return startTransaction;
+    }
 
 	public static void flush()  throws DotHibernateException{
 		try{
@@ -789,8 +806,6 @@ public class HibernateUtil {
 		}try{
 			Session session = getSession();
 			session.flush();
-			if(!session.connection().getAutoCommit())
-				session.connection().commit();
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to flush Hibernate Session ", e);
 		}

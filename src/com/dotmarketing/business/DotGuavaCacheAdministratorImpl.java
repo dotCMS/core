@@ -16,6 +16,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.client.Client;
 import org.jboss.cache.Fqn;
 import org.jgroups.Address;
 import org.jgroups.ChannelClosedException;
@@ -25,10 +27,16 @@ import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.menubuilders.RefreshMenus;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -418,46 +426,70 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	 * @see
 	 * com.dotmarketing.business.DotCacheAdministrator#remove(java.lang.String)
 	 */
-	public void remove(String key, String group) {
+	public void remove(final String key, final String group) {
 		if(key == null || group == null){
 			return;
 		}
-		key = key.toLowerCase();
-		group = group.toLowerCase();
-		removeLocalOnly(key, group);
+		Runnable cacheRemoveRunnable=new Runnable() {
+	         public void run() {
 
-		try {
-			if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
-				journalAPI.addCacheEntry(key, group);
-			} else if (useJgroups) {
-				Message msg = new Message(null, null, key + ":" + group);
+				String k = key.toLowerCase();
+				String g = group.toLowerCase();
+				removeLocalOnly(k, g);
+		
 				try {
-					channel.send(msg);
-				} catch (Exception e) {
-					Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+					if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
+						journalAPI.addCacheEntry(k, g);
+					} else if (useJgroups) {
+						Message msg = new Message(null, null, k + ":" + g);
+						try {
+							channel.send(msg);
+						} catch (Exception e) {
+							Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+						}
+					}
+				} catch (DotDataException e) {
+					Logger.error(this, "Unable to add journal entry for cluster", e);
 				}
+	         }
+		};
+		try {
+			if(!DbConnectionFactory.getConnection().getAutoCommit()){
+				HibernateUtil.addCommitListener(cacheRemoveRunnable);
 			}
-		} catch (DotDataException e) {
-			Logger.error(this, "Unable to add journal entry for cluster", e);
+		} catch (Exception e) {
+			Logger.error(DotGuavaCacheAdministratorImpl.class,e.getMessage(),e);
 		}
+		cacheRemoveRunnable.run();
 	}
 
-	public void removeLocalOnly(String key, String group) {
+	public void removeLocalOnly(final String key, final String group) {
 		if(key == null || group == null){
 			return;
 		}
-		key = key.toLowerCase();
-		group = group.toLowerCase();
-		Cache<String, Object>  cache = getCache(group);
-		cache.invalidate(key);
-		if(isDiskCache(group)){
-			try {
-				diskCache.remove(new Fqn(group, key), key.toLowerCase());
-			} catch (Exception e) {
-				Logger.error(DotGuavaCacheAdministratorImpl.class,e.getMessage(),e);
+		Runnable cacheRemoveRunnable=new Runnable() {
+	         public void run() {
+				String k = key.toLowerCase();
+				String g = group.toLowerCase();
+				Cache<String, Object>  cache = getCache(g);
+				cache.invalidate(k);
+				if(isDiskCache(g)){
+					try {
+						diskCache.remove(new Fqn(g, k), k.toLowerCase());
+					} catch (Exception e) {
+						Logger.error(DotGuavaCacheAdministratorImpl.class,e.getMessage(),e);
+					}
+				}
+	         }
+		};
+		try {
+			if(!DbConnectionFactory.getConnection().getAutoCommit()){
+				HibernateUtil.addCommitListener(cacheRemoveRunnable);
 			}
+		} catch (Exception e) {
+			Logger.error(DotGuavaCacheAdministratorImpl.class,e.getMessage(),e);
 		}
-		
+		cacheRemoveRunnable.run();
 	}
 
 	public Set<String> getKeys(String group) {

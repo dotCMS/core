@@ -486,25 +486,30 @@ public class WebAssetFactory {
 			throw new WebAssetException("You may not publish deleted assets!!!");
 		}
 		
-		HibernateUtil.startTransaction();
-		try{
-			// sets new working to live
-	        APILocator.getVersionableAPI().setLive(workingwebasset);
-			if(isNewVersion){
-			   workingwebasset.setModDate(new java.util.Date());
-			   workingwebasset.setModUser(user.getUserId());
-			}
-
-			// persists the webasset
-			HibernateUtil.saveOrUpdate(workingwebasset);
-			HibernateUtil.commitTransaction();
+		boolean localTransaction = false;
+		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+				// sets new working to live
+		        APILocator.getVersionableAPI().setLive(workingwebasset);
+				if(isNewVersion){
+				   workingwebasset.setModDate(new java.util.Date());
+				   workingwebasset.setModUser(user.getUserId());
+				}
+	
+				// persists the webasset
+				HibernateUtil.saveOrUpdate(workingwebasset);
 		}catch(Exception e){
 			Logger.error(WebAssetFactory.class, e.getMessage(), e);
-			HibernateUtil.rollbackTransaction();
+			if(localTransaction){
+				HibernateUtil.rollbackTransaction();
+			}
 		}
-		
+		finally{
+			if(localTransaction){
+				HibernateUtil.commitTransaction();
+			}
+		}
 		Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
-
 		
 		return livewebasset;
 	}

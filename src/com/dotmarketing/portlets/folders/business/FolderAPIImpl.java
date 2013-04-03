@@ -106,11 +106,8 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		boolean localTransaction = false;
 		try {
-			localTransaction = HibernateUtil.getSession().connection().getAutoCommit();
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-			if (localTransaction) {
-				HibernateUtil.startTransaction();
-			}
 
 			return ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
 
@@ -314,8 +311,11 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user + " does not have permission to edit " + folder.getName());
 		}
-
-
+		
+		
+		if(folder != null && FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
+			throw new DotSecurityException("YOU CANNOT DELETE THE SYSTEM FOLDER");
+		}
 		boolean localTransaction = false;
 
 		// start transactional delete
@@ -417,10 +417,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
 			for (Link linker : links) {
 				Link link = (Link) linker;
-				if (link.isWorking()) {
 
 					Identifier identifier = APILocator.getIdentifierAPI().find(link);
-
 					if (!InodeUtils.isSet(identifier.getInode())) {
 						Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: link inode = " + link.getInode()
 								+ " doesn't have a valid identifier associated.");
@@ -428,9 +426,9 @@ public class FolderAPIImpl implements FolderAPI  {
 					}
 
 					papi.removePermissions(link);
+					APILocator.getMenuLinkAPI().delete(link, user, false);
 
-					APILocator.getIdentifierAPI().delete(identifier);
-				}
+				
 			}
 
 			/******** delete possible orphaned identifiers under the folder *********/
@@ -914,7 +912,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		ChildrenCondition cond = new ChildrenCondition();
         cond.working=true;
-        cond.deleted=false;
+        //cond.deleted=false;
 		List list = ffac.getChildrenClass(parent, Link.class, cond);
 
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
