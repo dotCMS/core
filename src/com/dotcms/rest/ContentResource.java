@@ -46,44 +46,34 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 public class ContentResource extends WebResource {
 
 	@GET
-	@Path("/{path:.*}")
+	@Path("/{params:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) {
+	public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) {
+		InitDataObject initData = init(params, true, request, false);
 
-		/* Getting values from the URL  */
+		Map<String, String> paramsMap = initData.getParamsMap();
+		User user = initData.getUser();
 
-		Map<String, String> params = parsePath(path);
-		String render = params.get(RENDER);
-		String type = params.get(TYPE);
-		String query = params.get(QUERY);
-		String id = params.get(ID);
-		String orderBy = params.get(ORDERBY);
-		String limitStr = params.get(LIMIT);
-		String offsetStr = params.get(OFFSET);
-		String username = params.get(USER);
-		String password = params.get(PASSWORD);
-		String inode = params.get(INODE);
+		String render = paramsMap.get(RESTParams.RENDER.getValue());
+		String type = paramsMap.get(RESTParams.TYPE.getValue());
+		String query = paramsMap.get(RESTParams.QUERY.getValue());
+		String id = paramsMap.get(RESTParams.ID.getValue());
+		String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
+		String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
+		String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
+		String inode = paramsMap.get(RESTParams.INODE.getValue());
 		String result = null;
-		User user = null;
 		type = UtilMethods.isSet(type)?type:"json";
 		orderBy = UtilMethods.isSet(orderBy)?orderBy:"modDate desc";
 		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-		if(params.get(LANGUAGE) != null){
+		if(paramsMap.get(RESTParams.LANGUAGE.getValue()) != null){
 			try{
-				language= Long.parseLong(params.get(LANGUAGE))	;
+				language= Long.parseLong(paramsMap.get(RESTParams.LANGUAGE.getValue()))	;
 			}
 			catch(Exception e){
 				Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
 			}
-		}
-
-		/* Authenticate the User if passed */
-
-		try {
-			user = authenticateUser(username, password);
-		} catch (Exception e) {
-			Logger.warn(this, "Error authenticating user, username: " + username + ", password: " + password);
 		}
 
 		/* Limit and Offset Parameters Handling, if not passed, using default */
@@ -105,7 +95,7 @@ public class ContentResource extends WebResource {
 		} catch(NumberFormatException e) {
 		}
 
-		boolean live = (params.get(LIVE) == null || ! "false".equals(params.get(LIVE)));
+		boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || ! "false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
 
 		/* Fetching the content using a query if passed or an id */
 
@@ -171,10 +161,10 @@ public class ContentResource extends WebResource {
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
 			}
-			
+
 			Set<String> jsonFields=getJSONFields(s);
 			for(String key : m.keySet())
-			    if(jsonFields.contains(key)) 
+			    if(jsonFields.contains(key))
 			        m.put(key, c.getKeyValueProperty(key));
 
 			sb.append(xstream.toXML(m));
@@ -206,12 +196,12 @@ public class ContentResource extends WebResource {
 
 		return json.toString();
 	}
-	
+
 	private Set<String> getJSONFields(Structure s) {
 	    Set<String> jsonFields=new HashSet<String>();
         for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode()))
             if(f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()))
-                jsonFields.add(f.getVelocityVarName());   
+                jsonFields.add(f.getVelocityVarName());
         return jsonFields;
 	}
 
@@ -221,7 +211,7 @@ public class ContentResource extends WebResource {
 		Map<String,Object> map = con.getMap();
 
 		Set<String> jsonFields=getJSONFields(s);
-		
+
 		for(String key : map.keySet()) {
 			if(Arrays.binarySearch(ignoreFields, key) < 0)
 			    if(jsonFields.contains(key)) {

@@ -59,22 +59,28 @@ public class LanguageUtil {
 
 	public static final String DEFAULT_ENCODING = "UTF-8";
 
-	public static String get(User user, String key) throws LanguageException {
-		
-		
-		if(user ==null){
-			try{
-				user = PublicCompanyFactory.getDefaultCompany().getDefaultUser();
-			}
-			catch(Exception e){
-				Logger.error(LanguageUtil.class, "cannot find default user");
-			}
-		}
-		
-		String companyId=(user.getCompanyId()==null) ? PublicCompanyFactory.getDefaultCompanyId() : user.getCompanyId();
-		
-		return get(companyId, user.getLocale(), key);
-	}
+    /**
+     * Returns an internationalized value for a given kay and user
+     *
+     * @param user
+     * @param key
+     * @return
+     * @throws LanguageException
+     */
+    public static String get ( User user, String key ) throws LanguageException {
+
+        if ( user == null ) {
+            try {
+                user = PublicCompanyFactory.getDefaultCompany().getDefaultUser();
+            } catch ( Exception e ) {
+                Logger.error( LanguageUtil.class, "cannot find default user" );
+            }
+        }
+
+        String companyId = (user.getCompanyId() == null || user.getCompanyId().equals( User.DEFAULT )) ? PublicCompanyFactory.getDefaultCompanyId() : user.getCompanyId();
+        return get( companyId, user.getLocale(), key );
+    }
+
 	public static String get(Locale locale, String key) throws LanguageException {
 		return get(PublicCompanyFactory.getDefaultCompanyId(), locale, key);
 	}

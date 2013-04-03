@@ -131,7 +131,7 @@ public class PluginUtil {
 		while(entries.hasMoreElements()) {
 			JarEntry entry  = entries.nextElement();
 
-			if(entry.getName().matches(filterRegEx)) {
+			if(entry.getName().matches(filterRegEx) && !entry.isDirectory()) {
 				entriesRet.add(entry.getName());
 			}
 		}

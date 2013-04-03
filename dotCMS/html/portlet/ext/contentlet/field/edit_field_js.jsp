@@ -90,7 +90,7 @@ var cmsfile=null;
 			// if it is just time or date_time but the value exists
 			if (timePart != null) {
 				var time = timePart.value;
-				if(time) {
+				if(!isNaN(time) && time != null) {
 					var hour = time.getHours();
 					if(hour < 10) hour = "0" + hour;
 					var min = time.getMinutes();
@@ -98,6 +98,9 @@ var cmsfile=null;
 					dateValue += hour + ":" + min;
 					if(datePart==null)
 						dateValue+=":00";
+				}
+				else{
+					dateValue += "00:00";
 				}
 			} else {
 				dateValue += "00:00";

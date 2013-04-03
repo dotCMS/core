@@ -30,20 +30,20 @@ public class WidgetResource extends WebResource {
 
 
 	@GET
-	@Path("/{path:.*}")
+	@Path("/{params:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path) throws ResourceNotFoundException, ParseErrorException, Exception {
+	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws ResourceNotFoundException, ParseErrorException, Exception {
+		InitDataObject initData = init(params, true, request, false);
 
-		Map<String, String> params = parsePath(path);
-		String id = params.get(ID);
-		String username = params.get(USER);
-		String password = params.get(PASSWORD);
-		User user = null;
+		Map<String, String> paramsMap = initData.getParamsMap();
+		User user = initData.getUser();
+
+		String id = paramsMap.get(RESTParams.ID.getValue());
 		long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-		
-		if(params.get(LANGUAGE) != null){
+
+		if(paramsMap.get(RESTParams.LANGUAGE.getValue()) != null){
 			try{
-				language= Long.parseLong(params.get(LANGUAGE))	;
+				language= Long.parseLong(paramsMap.get(RESTParams.LANGUAGE.getValue()))	;
 			}
 			catch(Exception e){
 				Logger.error(this.getClass(), "Invald language passed in, defaulting to, well, the default");
@@ -51,25 +51,18 @@ public class WidgetResource extends WebResource {
 		}
 		String inode = null;
 		boolean live = true;
-		
-		
-
-		
-		/* Authenticate the User if passed */
-
-		user = authenticateUser(username, password);
 
 		if(user!=null){
-			live=	(params.get(LIVE) == null || ! "false".equals(params.get(LIVE)));
-			inode = params.get(INODE);
+			live=	(paramsMap.get(RESTParams.LIVE.getValue()) == null || ! "false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+			inode = paramsMap.get(RESTParams.INODE.getValue());
 		}
-		
+
 		if(!UtilMethods.isSet(id) && !UtilMethods.isSet(inode)) {
 			response.getWriter().println("Please pass an id (or inode + user) in via the url");
-			
+
 			return null;
 		}
-		
+
 		/* Fetching the widget using id passed */
 		Contentlet widget = null;
 		if(UtilMethods.isSet(inode)){
@@ -77,10 +70,10 @@ public class WidgetResource extends WebResource {
 		}
 		else{
 			widget = APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true);
-			
+
 		}
-		
-		
+
+
 
 		return parseWidget(request, response, widget);
 

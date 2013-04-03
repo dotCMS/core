@@ -58,8 +58,8 @@ public class PushPublisher extends Publisher {
 
 	@Override
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
-	    if(LicenseUtil.getLevel()<300)
-	        throw new RuntimeException("need an enterprise pro license to run this");
+		if(LicenseUtil.getLevel()<300)
+	        throw new RuntimeException("need an enterprise pro license to run this bundler");
 	    
 		this.config = super.init(config);
 		tFactory = new TrustFactory();
@@ -70,8 +70,8 @@ public class PushPublisher extends Publisher {
 
 	@Override
 	public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
-	    if(LicenseUtil.getLevel()<300)
-	        throw new RuntimeException("need an enterprise pro license to run this");
+		if(LicenseUtil.getLevel()<300)
+	        throw new RuntimeException("need an enterprise pro license to run this bundler");
 	    
 	    PublishAuditHistory currentStatusHistory = null;
 		try {
