@@ -49,6 +49,45 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		var deferred = dojo.xhrPost(xhrArgs);	
 	},
+	
+	togglePublishExpireDivs : function(){
+		
+
+		
+		var x = "publish" ;
+		if(dijit.byId("iwtExpire").getValue() != false){
+			x = "expire" ;
+			
+		}
+		else 	if(dijit.byId("iwtPublishExpire").getValue()!= false){
+			x = "publishexpire" ;
+		}
+
+		if("publish" == x){
+			dojo.style("publishTimeDiv","display", "");
+			dojo.style("expireTimeDiv","display", "none");
+
+			
+			
+		}else if("publishexpire" == x){
+			dojo.style("publishTimeDiv","display", "");
+			dojo.style("expireTimeDiv","display", "");
+
+		}
+		else{
+			dojo.style("publishTimeDiv","display", "none");
+			dojo.style("expireTimeDiv","display", "");
+
+			
+		}
+		
+		
+		
+		
+		
+	},
+	
+	
 	remotePublish : function(){
 		
 		// BEGIN: PUSH PUBLISHING ACTIONLET		
