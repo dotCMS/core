@@ -29,29 +29,24 @@ public class DotView implements View {
 	}
 
 	public void render(Map<String, ?> map, HttpServletRequest request, HttpServletResponse response) throws Exception {
-		
+        // get the VelocityContext
+        VelocityContext ctx = VelocityUtil.getWebContext(request, response);
 
-		// get the VelocityContext
-		VelocityContext ctx = VelocityUtil.getWebContext(request, response);
+        if (!pagePath.startsWith("redirect:")) {
+            // add the Spring map to the context
+            for(String x : map.keySet()){
+                ctx.put(x, map.get(x));
+            }
 
-		
-		// add the Spring map to the context
-		for(String x : map.keySet()){
-			ctx.put(x, map.get(x));
-		}
-		
-		// add the context to the request.attr
-		// where it will be picked up and used by the VelocityServlet
-		request.setAttribute(VelocityServlet.VELOCITY_CONTEXT, ctx);
-		
-		
-		
-		request.getRequestDispatcher(pagePath).forward(request, response);
-		
-		
-		
-		
+            // add the context to the request.attr
+            // where it will be picked up and used by the VelocityServlet
+            request.setAttribute(VelocityServlet.VELOCITY_CONTEXT, ctx);
 
-	}
+            request.getRequestDispatcher(pagePath).forward(request, response);
+        } else {
+            pagePath = pagePath.replaceFirst("redirect:", "");
+            response.sendRedirect(pagePath);
+        }
+    }
 
 }

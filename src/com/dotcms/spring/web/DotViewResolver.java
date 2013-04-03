@@ -29,17 +29,18 @@ public class DotViewResolver implements ViewResolver {
 
 	public View resolveViewName(String path, Locale locale) throws Exception {
 
+        if (!path.startsWith("redirect:")) {
+            path = (prefix != null) 
+                    ? prefix + path
+                            : path;
 
-		path = (prefix != null) 
-			? prefix + path
-					: path;
-		
-		path = (suffix != null) 
-			?  path + suffix
-					: path;
-		
-		return new DotView(path);
-	}
+                path = (suffix != null) 
+                    ?  path + suffix
+                            : path;
+        } 
+
+        return new DotView(path);
+    }
 	
 	
 	
