@@ -7,6 +7,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.liferay.portal.model.User;
 
@@ -42,9 +43,6 @@ public interface MenuLinkFactory {
 	public List<Link> findLinks(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
 
-
-
-
 	/**
 	 * Finds a link based on its inode.  No caching
 	 * @param inode
@@ -52,7 +50,17 @@ public interface MenuLinkFactory {
 	 * @throws DotHibernateException
 	 */
 	Link load(String inode) throws DotHibernateException;
-	
-	
+
+
+    /**
+     * Saves the link under the specified folder
+     * 
+     * @param menuLink menulink to save
+     * @param destination parent folder
+     * @throws DotSecurityException 
+     * @throws DotStateException 
+     * @throws DotDataException 
+     */
+	void save(Link menuLink, Folder destination) throws DotDataException, DotStateException, DotSecurityException;
 	
 }
