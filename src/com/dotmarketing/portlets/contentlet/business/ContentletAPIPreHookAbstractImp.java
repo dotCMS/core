@@ -560,4 +560,10 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 		return true;
 	}
 	
+	public boolean getMostViewedContent(String structureVariableName,
+			String startDate, String endDate, User user) {
+		return true;
+	}
+
+	
 }
