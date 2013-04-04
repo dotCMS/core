@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -733,42 +734,41 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void addLinkToContentlet () throws Exception {
 
         Link menuLink = null;
-        try {
 
-            String RELATION_TYPE = new Link().getType();
+        String RELATION_TYPE = new Link().getType();
 
-            //Getting a known structure
-            Structure structure = structures.iterator().next();
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
 
-            //Create a menu link
-            menuLink = createMenuLink();
+        //Create a menu link
+        menuLink = createMenuLink();
 
-            //Search the contentlets for this structure
-            List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-            Contentlet contentlet = contentletList.iterator().next();
+        //Search the contentlets for this structure
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+        Contentlet contentlet = contentletList.iterator().next();
 
-            //Add to this contentlet a link
-            contentletAPI.addLinkToContentlet( contentlet, menuLink.getInode(), RELATION_TYPE, user, false );
+        //Add to this contentlet a link
+        contentletAPI.addLinkToContentlet( contentlet, menuLink.getInode(), RELATION_TYPE, user, false );
 
-            //Verify if the link was associated
-            //List<Link> relatedLinks = contentletAPI.getRelatedLinks( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
+        //Verify if the link was associated
+        //List<Link> relatedLinks = contentletAPI.getRelatedLinks( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
 
-            //Get the contentlet Identifier to gather the menu links
-            Identifier menuLinkIdentifier = APILocator.getIdentifierAPI().find( menuLink );
+        //Get the contentlet Identifier to gather the menu links
+        Identifier menuLinkIdentifier = APILocator.getIdentifierAPI().find( menuLink );
 
-            //Verify if the relation was created
-            Tree tree = TreeFactory.getTree( contentlet.getInode(), menuLinkIdentifier.getInode(), RELATION_TYPE );
+        //Verify if the relation was created
+        Tree tree = TreeFactory.getTree( contentlet.getInode(), menuLinkIdentifier.getInode(), RELATION_TYPE );
 
-            //Validations
-            assertNotNull( tree );
-            assertNotNull( tree.getParent() );
-            assertNotNull( tree.getChild() );
-            assertEquals( tree.getParent(), contentlet.getInode() );
-            assertEquals( tree.getChild(), menuLinkIdentifier.getInode() );
-            assertEquals( tree.getRelationType(), RELATION_TYPE );
-        } finally {
-            menuLinkAPI.delete( menuLink, user, false );
-        }
+        //Validations
+        assertNotNull( tree );
+        assertNotNull( tree.getParent() );
+        assertNotNull( tree.getChild() );
+        assertEquals( tree.getParent(), contentlet.getInode() );
+        assertEquals( tree.getChild(), menuLinkIdentifier.getInode() );
+        assertEquals( tree.getRelationType(), RELATION_TYPE );
+    
+        menuLinkAPI.delete( menuLink, user, false );
+    
     }
 
     /**
@@ -1113,7 +1113,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Now a new contentlet
         Contentlet newContentlet = createContentlet( testStructure, null, false );
-
+        
         //Now we need to delete it
         contentletAPI.delete( newContentlet, user, false );
 
@@ -1122,6 +1122,28 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+        
+        // make sure the db is totally clean up
+        
+        DotConnect dc=new DotConnect();
+        dc.setSQL("select * from identifier where id=?");
+        dc.addParam(newContentlet.getIdentifier());
+        assertEquals(0,dc.loadObjectResults().size());
+        
+        dc.setSQL("select * from inode where inode=?");
+        dc.addParam(newContentlet.getInode());
+        assertEquals(0,dc.loadObjectResults().size());
+        
+        dc.setSQL("select * from contentlet_version_info where identifier=? or working_inode=? or live_inode=?");
+        dc.addParam(newContentlet.getIdentifier());
+        dc.addParam(newContentlet.getInode());
+        dc.addParam(newContentlet.getInode());
+        assertEquals(0, dc.loadObjectResults().size());
+        
+        dc.setSQL("select * from contentlet where inode=? or identifier=?");
+        dc.addParam(newContentlet.getInode());
+        dc.addParam(newContentlet.getIdentifier());
+        assertEquals(0, dc.loadObjectResults().size());
     }
 
     /**
