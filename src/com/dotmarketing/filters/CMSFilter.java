@@ -88,9 +88,6 @@ public class CMSFilter implements Filter {
         uri = URLDecoder.decode(uri, "UTF-8");
 
 		Company company = PublicCompanyFactory.getDefaultCompany();
-		TimeZone companyTimeZone = company.getTimeZone();
-		TimeZone.setDefault(companyTimeZone);
-
 
 
         /*
