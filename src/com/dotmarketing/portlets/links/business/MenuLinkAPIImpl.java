@@ -97,22 +97,9 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 			throw new DotSecurityException("You don't have permission to write on the given folder.");
 		}
 			
-
-		Identifier identifier = null;
-		if (InodeUtils.isSet(menuLink.getIdentifier())) {
-			identifier = APILocator.getIdentifierAPI().find(menuLink);
-			if(!UtilMethods.isSet(identifier.getId())) {
-				identifier = APILocator.getIdentifierAPI().createNew(menuLink, destination, menuLink.getIdentifier());
-			}
-		}
 		menuLink.setModUser(user.getUserId());
-		menuLink.setIdentifier(identifier.getId());
-		save(menuLink);
-
 		
-		//if(!destination.getHostId().equals(identifier.getHostId()) || !destination.getPath().equals(identifier.getParentPath())){
-			APILocator.getIdentifierAPI().updateIdentifierURI(menuLink, destination);
-		//}
+		menuLinkFactory.save(menuLink, destination);
 		
 	}
 	
