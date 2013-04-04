@@ -55,6 +55,10 @@ import com.liferay.portal.model.User;
 
 public class RemotePublishAjaxAction extends AjaxAction {
 	
+	public static final String DIALOG_ACTION_EXPIRE="expire";
+	public static final String DIALOG_ACTION_PUBLISH="publish";
+	public static final String DIALOG_ACTION_PUBLISH_AND_EXPIRE="publishexpire";
+	
 	@Override
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {		
 		return;
@@ -151,8 +155,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				String _contentPushPublishTime = request.getParameter("remotePublishTime");
 				String _contentPushExpireDate = request.getParameter("remotePublishExpireDate");
 				String _contentPushExpireTime = request.getParameter("remotePublishExpireTime");
-				boolean _contentPushNeverExpire = "on".equals(request.getParameter("remotePublishNeverExpire"))?true:false;
-
+				String _iWantTo = request.getParameter("iWantTo");
+				
 				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 				Date publishDate = dateFormat.parse(_contentPushPublishDate+"-"+_contentPushPublishTime);
 				
@@ -186,12 +190,15 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				}
 				
 				String bundleId = UUID.randomUUID().toString();			
-				
-				publisherAPI.addContentsToPublish(ids, bundleId, publishDate, getUser());
-				if(!_contentPushNeverExpire && (!"".equals(_contentPushExpireDate.trim()) && !"".equals(_contentPushExpireTime.trim()))){
-					bundleId = UUID.randomUUID().toString();
-					Date expireDate = dateFormat.parse(_contentPushExpireDate+"-"+_contentPushExpireTime);
-					publisherAPI.addContentsToUnpublish(ids, bundleId, expireDate, getUser());
+				if(_iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH) || _iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE)){
+					publisherAPI.addContentsToPublish(ids, bundleId, publishDate, getUser());
+				}
+				if(_iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE) || _iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE)){
+					if((!"".equals(_contentPushExpireDate.trim()) && !"".equals(_contentPushExpireTime.trim()))){
+						bundleId = UUID.randomUUID().toString();
+						Date expireDate = dateFormat.parse(_contentPushExpireDate+"-"+_contentPushExpireTime);
+						publisherAPI.addContentsToUnpublish(ids, bundleId, expireDate, getUser());
+					}
 				}
 			} catch (DotPublisherException e) {
 				Logger.debug(PushPublishActionlet.class, e.getMessage());
