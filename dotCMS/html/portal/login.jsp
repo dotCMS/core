@@ -167,7 +167,7 @@ if(errorMessage != null){
 <script type="text/javascript">
 	
 	dojo.addOnLoad(function(){
-		if (dojo.isIE <= 7) {
+		if (dojo.isIE <= 8) {
 			CFInstall.check({
 				mode: "overlay"
 			});
