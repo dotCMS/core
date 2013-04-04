@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.publisher.ajax.RemotePublishAjaxAction"%>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
 <%@ include file="/html/common/init.jsp" %>
@@ -38,7 +39,7 @@ function togglePublishExpireDivs(){
 <!--  DOTCMS-7085 -->
 <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>"> 
 
-<div style="width:430px;>
+<div style="width:430px;" dojoType="dijit.form.Form" id="publishForm">
 		
 		
 		
@@ -49,9 +50,9 @@ function togglePublishExpireDivs(){
 				<%= LanguageUtil.get(pageContext, "I-want-to") %>:
 			</div>
 			<div class="fieldValue">
-				<input type="radio" dojoType="dijit.form.RadioButton" checked="true" onChange="pushHandler.togglePublishExpireDivs()" value="publish" name="iWantTo" id="iwtPublish" ><label for="iwtPublish"><%= LanguageUtil.get(pageContext, "publish") %></label>&nbsp;
-				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="expire" name="iWantTo" id="iwtExpire" ><label for="iwtExpire"><%= LanguageUtil.get(pageContext, "delete") %></label>&nbsp;
-				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="publishexpire" name="iWantTo" id="iwtPublishExpire" ><label for="iwtPublishExpire"><%= LanguageUtil.get(pageContext, "publish") %> &amp; <%= LanguageUtil.get(pageContext, "delete") %></label>
+				<input type="radio" dojoType="dijit.form.RadioButton" checked="true" onChange="pushHandler.togglePublishExpireDivs()" value="<%= RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH %>" name="wfIWantTo" id="iwtPublish" ><label for="iwtPublish"><%= LanguageUtil.get(pageContext, "publish") %></label>&nbsp;
+				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="<%= RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE %>" name="wfIWantTo" id="iwtExpire" ><label for="iwtExpire"><%= LanguageUtil.get(pageContext, "delete") %></label>&nbsp;
+				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="<%= RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE %>" name="wfIWantTo" id="iwtPublishExpire" ><label for="iwtPublishExpire"><%= LanguageUtil.get(pageContext, "publish") %> &amp; <%= LanguageUtil.get(pageContext, "delete") %></label>
 			</div>
 			<div class="clear"></div>
 		</div>
@@ -92,14 +93,12 @@ function togglePublishExpireDivs(){
 				type="text" 
 				dojoType="dijit.form.DateTextBox" 
 				validate="return false;"   
-				id="wfExpireDateAux" name="wfExpireDateAux" value="" style="width: 110px;">
+				id="wfExpireDateAux" name="wfExpireDateAux" value="now" style="width: 110px;">
 							
 							
-			<input type="text" name="wfExpireTimeAux" id="wfExpireTimeAux" value=""
+			<input type="text" name="wfExpireTimeAux" id="wfExpireTimeAux" value="now"
 			    data-dojo-type="dijit.form.TimeTextBox"	
 				style="width: 100px;" />
-				
-			&nbsp;&nbsp;<input type="checkbox" dojoType="dijit.form.CheckBox" checked="checked" name="wfNeverExpire" id="wfNeverExpire" > <%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %>
 			</div>
 			<div class="clear"></div>
 		</div>
