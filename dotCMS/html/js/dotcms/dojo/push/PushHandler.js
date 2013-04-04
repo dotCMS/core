@@ -116,11 +116,12 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 				: (dojo.byId("wfExpireTimeAux"))	
 					? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireTimeAux").value,{timePattern: "H-m", selector: "time"}) : ""
 							: "";			
-		var neverExpire = (dijit.byId("wfNeverExpire"))			
-			? dijit.byId("wfNeverExpire").getValue()
-				: (dojo.byId("wfNeverExpire"))	
-					? dojo.byId("wfNeverExpire").value
-							: "";
+		
+		var iWantTo = (dijit.byId("publishForm").attr('value').wfIWantTo)			
+		? dijit.byId("publishForm").attr('value').wfIWantTo
+			: (dijit.byId("publishForm").attr('value').wfIWantTo)	
+				? dijit.byId("publishForm").attr('value').wfIWantTo
+						: "";
 					
 		// END: PUSH PUBLISHING ACTIONLET
 		
@@ -131,7 +132,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		dojo.byId("remotePublishTime").value=publishTime;
 		dojo.byId("remotePublishExpireDate").value=expireDate;
 		dojo.byId("remotePublishExpireTime").value=expireTime;
-		dojo.byId("remotePublishNeverExpire").value=neverExpire;
+		dojo.byId("iWantTo").value=iWantTo;
 		// END: PUSH PUBLISHING ACTIONLET
 		
 		var xhrArgs = {
