@@ -239,6 +239,7 @@ public class URLMapFilter implements Filter {
 					try {
 						cons = conAPI.searchIndex(query.toString(), 1, 0, (hostIsRequired?"conhost, modDate": "modDate"), user, true);
 						ContentletSearch c = cons.get(0);
+						session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,String.valueOf(conAPI.find(c.getInode(), user, true).getLanguageId()));
 						request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
 						request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
 						request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, c.getIdentifier());
