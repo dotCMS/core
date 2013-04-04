@@ -471,6 +471,10 @@ public class LinkFactory {
 
         //HibernateUtil.saveOrUpdate(identifier);
         APILocator.getIdentifierAPI().save( identifier );
+        
+        if(APILocator.getPermissionAPI().isInheritingPermissions(currentLink)) {
+            APILocator.getPermissionAPI().removePermissions(currentLink);
+        }
 
         //Refresh the menus
         if ( parent != null ) {
