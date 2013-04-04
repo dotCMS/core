@@ -52,6 +52,7 @@ public class CMISBaseTest extends TestBase {
         user = APILocator.getUserAPI().getSystemUser();
         repoId = CMISUtils.REPOSITORY_ID;
         rootPath = CMISUtils.ROOT_PATH;
+        cmisManager = new CMISManager();
         cmisManager.createAndInitRepository();
         
         contentlets = new ArrayList<Contentlet>();
