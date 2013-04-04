@@ -489,13 +489,13 @@ public class DependencyManager {
 	}
 
 	private List<String> getContentIds(List<String> luceneQueries){
-		List<String> ret = new ArrayList<>();
-		List<ContentletSearch> cs = new ArrayList<>();
+		List<String> ret = new ArrayList<String>();
+		List<ContentletSearch> cs = new ArrayList<ContentletSearch>();
 		for(String luceneQuery: luceneQueries) {
 		    try {
 				cs = APILocator.getContentletAPI().searchIndex(
 				        luceneQuery, 0, 0, "moddate", user, false);
-			} catch (ParseException | DotSecurityException | DotDataException e) {
+			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}
 		}
