@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.lucene.queryParser.ParseException;
+
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
@@ -19,6 +21,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -84,7 +87,7 @@ public class DependencyManager {
 				folders.add(asset.getAsset());
 			} else if(asset.getType().equals("host")) {
 				hosts.add(asset.getAsset());
-			}
+			}  
 		}
 
 		if(config.getOperation().equals(Operation.PUBLISH)) {
@@ -95,7 +98,10 @@ public class DependencyManager {
     		setContainerDependencies();
     		setStructureDependencies();
     		setContentDependencies(config.getLuceneQueries());
+		}else{
+			contents.addAll(getContentIds(config.getLuceneQueries()));
 		}
+		
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -482,6 +488,23 @@ public class DependencyManager {
 
 	}
 
+	private List<String> getContentIds(List<String> luceneQueries){
+		List<String> ret = new ArrayList<>();
+		List<ContentletSearch> cs = new ArrayList<>();
+		for(String luceneQuery: luceneQueries) {
+		    try {
+				cs = APILocator.getContentletAPI().searchIndex(
+				        luceneQuery, 0, 0, "moddate", user, false);
+			} catch (ParseException | DotSecurityException | DotDataException e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
+		for (ContentletSearch contentletSearch : cs) {
+			ret.add(contentletSearch.getIdentifier());
+		}
+		return ret;
+	}
+	
 	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
