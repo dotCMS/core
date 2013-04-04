@@ -388,7 +388,8 @@ public class ContentletBaseTest extends TestBase {
 
         //Save the contentlet
         contentlet = contentletAPI.checkin( contentlet, categories, structurePermissions, user, true );
-
+        contentletAPI.isInodeIndexed(contentlet.getInode());
+        
         if ( createWithContainer ) {
             //Create a container
             addContainer( contentlet );
