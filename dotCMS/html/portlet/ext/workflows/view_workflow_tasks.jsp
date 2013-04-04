@@ -263,6 +263,7 @@
 		var assignedTo = dijit.byId("assignedTo");
 		assignedTo.displayedValue="";
 		assignedTo.setValue("<%=myRole.getId()%>");
+		doFilter();
 	}
 	<%if(isAdministrator){%>
 	    var show4All=false;
