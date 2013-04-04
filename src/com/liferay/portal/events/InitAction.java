@@ -72,11 +72,6 @@ public class InitAction extends SimpleAction {
 				new Locale(userLanguage, userCountry, userVariant));
 		}
 
-		// Set default time zone
-
-		TimeZone.setDefault(
-			TimeZone.getTimeZone(SystemProperties.get("user.timezone")));
-
 		// Log4J
 
 		if (GetterUtil.get(PropsUtil.get(
