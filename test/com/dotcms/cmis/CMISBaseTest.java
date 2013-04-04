@@ -23,10 +23,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import com.dotcms.TestBase;
-import com.dotcms.enterprise.cmis.DotCMSUtils;
-import com.dotcms.enterprise.cmis.cmisobj.api.StoreManager;
-import com.dotcms.enterprise.cmis.cmisobj.impl.StoreManagerImpl;
-import com.dotcms.enterprise.cmis.server.Service;
+import com.dotcms.enterprise.cmis.server.CMISManager;
+import com.dotcms.enterprise.cmis.server.CMISService;
+import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -39,28 +38,26 @@ public class CMISBaseTest extends TestBase {
 
 	protected static User user;
 	protected static List<Contentlet> contentlets;
-	protected static StoreManager storeManager;
 	protected static CallContext callContext;
 	protected static ObjectInfoHandler objectInfos;
 	protected static String repoId;
 	protected static String rootPath;
-	protected static Service dotRepo;
+	protected static CMISService dotRepo;
+	protected static CMISManager cmisManager;
 	
     @BeforeClass
     public static void prepare () throws DotSecurityException, DotDataException {
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
-        repoId = DotCMSUtils.REPOSITORY_ID;
-        rootPath = DotCMSUtils.ROOT_PATH;        
-        storeManager = new StoreManagerImpl();
-        String repositoryId = DotCMSUtils.REPOSITORY_ID;
-        String typeCreatorClassName = "com.dotcms.enterprise.cmis.types.DefaultTypeSystemCreator";
-        storeManager.createAndInitRepository(repositoryId, typeCreatorClassName);
+        repoId = CMISUtils.REPOSITORY_ID;
+        rootPath = CMISUtils.ROOT_PATH;
+        cmisManager = new CMISManager();
+        cmisManager.createAndInitRepository();
         
         contentlets = new ArrayList<Contentlet>();
         Map<String, String> map = new HashMap<String, String>();
-        dotRepo = new Service(map, storeManager);
+        dotRepo = new CMISService(map, cmisManager);
         callContext = new DotCallContextObjectHandler();
         objectInfos = new DotCallContextObjectHandler();
         dotRepo.setCallContext(callContext);
@@ -71,8 +68,8 @@ public class CMISBaseTest extends TestBase {
     }
     
     protected static ObjectInFolderList getRootFolderChildren(){
-		return dotRepo.getChildren(DotCMSUtils.REPOSITORY_ID,
-				DotCMSUtils.ROOT_ID, "", "", Boolean.valueOf(false),
+		return dotRepo.getChildren(CMISUtils.REPOSITORY_ID,
+				CMISUtils.ROOT_ID, "", "", Boolean.valueOf(false),
 				IncludeRelationships.NONE, "", Boolean.valueOf(false),
 				BigInteger.valueOf(1000), BigInteger.valueOf(0), null);
     }
@@ -114,7 +111,7 @@ public class CMISBaseTest extends TestBase {
         if(!UtilMethods.isSet(folderId))
         	folderId = getdefaultHostId();
         
-		return dotRepo.createDocument(DotCMSUtils.REPOSITORY_ID, result,
+		return dotRepo.createDocument(CMISUtils.REPOSITORY_ID, result,
 				folderId, contentStream, VersioningState.MAJOR, null, null,
 				null, null);
     }
@@ -123,12 +120,12 @@ public class CMISBaseTest extends TestBase {
         PropertiesImpl props = new PropertiesImpl();
         props.addProperty(new PropertyIdImpl(PropertyIds.OBJECT_TYPE_ID, BaseTypeId.CMIS_FOLDER.value()));
         props.addProperty(new PropertyStringImpl(PropertyIds.NAME, folderName));
-		return dotRepo.createFolder(DotCMSUtils.REPOSITORY_ID, props,
+		return dotRepo.createFolder(CMISUtils.REPOSITORY_ID, props,
 				getdefaultHostId(), null, null, null, null);
     }
     
     protected static ObjectList doQuery(String query){
-		return dotRepo.query(DotCMSUtils.REPOSITORY_ID, query,
+		return dotRepo.query(CMISUtils.REPOSITORY_ID, query,
 				Boolean.valueOf(false), Boolean.valueOf(false),
 				IncludeRelationships.NONE, "", BigInteger.valueOf(1000),
 				BigInteger.valueOf(0), null);
