@@ -21,7 +21,7 @@ public class FixCmisFilter implements Filter {
 			HttpServletRequest request = (HttpServletRequest) req;
 			HttpServletResponse response = (HttpServletResponse) res;
 
-		      if (request.getRequestURI().startsWith("/cmis/")) {
+		      if (request.getRequestURI().startsWith("/cmis")) {
 		          Logger.debug(this, "CMIS Filter Activated.");
 		          FixCmisResponseWrapper wrappedResponse = new FixCmisResponseWrapper(response);
 		          chain.doFilter(req, wrappedResponse);

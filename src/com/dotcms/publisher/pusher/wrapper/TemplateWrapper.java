@@ -1,5 +1,6 @@
 package com.dotcms.publisher.pusher.wrapper;
 
+import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -8,6 +9,7 @@ public class TemplateWrapper {
 	private Identifier templateId;
 	private Template template;
 	private VersionInfo vi;
+	private Operation operation;
 	
 	public TemplateWrapper(Identifier templateId, Template template) {
 		this.templateId = templateId;
@@ -42,5 +44,19 @@ public class TemplateWrapper {
 	 */
 	public void setVi(VersionInfo vi) {
 		this.vi = vi;
+	}
+	
+	/**
+	 * @return the operation
+	 */
+	public Operation getOperation() {
+		return operation;
+	}
+
+	/**
+	 * @param operation the operation to set
+	 */
+	public void setOperation(Operation operation) {
+		this.operation = operation;
 	}
 }

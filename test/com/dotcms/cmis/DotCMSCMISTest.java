@@ -7,7 +7,7 @@ import java.math.BigInteger;
 
 import org.junit.Test;
 
-import com.dotcms.enterprise.cmis.DotCMSUtils;
+import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
 
@@ -29,7 +29,7 @@ public class DotCMSCMISTest extends CMISBaseTest {
         
         assertTrue( ! doQuery("SELECT * FROM cmis:document WHERE cmis:name LIKE '%a%'").getNumItems().equals(BigInteger.valueOf(0)));
         
-        assertTrue( ! doQuery("SELECT * FROM cmis:folder WHERE IN_FOLDER('" + DotCMSUtils.ROOT_ID + "')").getNumItems().equals(BigInteger.valueOf(0)));
+        assertTrue( ! doQuery("SELECT * FROM cmis:folder WHERE IN_FOLDER('" + CMISUtils.ROOT_ID + "')").getNumItems().equals(BigInteger.valueOf(0)));
         
     }
 }

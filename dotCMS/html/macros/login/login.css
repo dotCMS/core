@@ -19,6 +19,7 @@
 .macro-login-box-row-center{
 	padding: 5px;
 	text-align: center;
+	padding-right: 150px;
 }
 
 .macro-login-box-row-center label{
@@ -27,7 +28,7 @@
 }
 
 .macro-login-box-row label{
-	width: 70px;
+	width: 100px;
 	float: left;
 	text-align: right;
 	padding-right: 5px;
