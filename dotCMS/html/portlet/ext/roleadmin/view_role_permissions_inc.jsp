@@ -6,7 +6,7 @@
 	
 	<div id="rolePermissionsMsg"></div>
 	
- 	<div id="permissionsCascadeMsg" class="warningHeader " style="display:none;">
+ 	<div id="permissionsCascadeMsg" class="warningHeader " style="display:none;position: absolute;">
 		<div class="warningText" id="permissionsCascadeMsgText"></div>
 	</div>
 	
