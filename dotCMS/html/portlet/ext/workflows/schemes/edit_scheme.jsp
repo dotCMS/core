@@ -85,7 +85,7 @@
 						<td nowrap="true" align="right"><%=LanguageUtil.get(pageContext, "Default-Initial-Action")%>:</td>
 						<td>
 							<%if(actions !=  null) {%>
-								<select name="schemeEntryAction" dojoType="dijit.form.Select" style="width:250px;">
+								<select name="schemeEntryAction" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 									<option value=""><%=LanguageUtil.get(pageContext, "None") %></option>
 									<%for(WorkflowAction action : actions){ %>
 										<option value="<%=action.getId()%>" <%=(!action.isNew() && action.getId().equals(scheme.getEntryActionId())) ? "selected='true'" :"" %>><%=action.getName() %></option>
