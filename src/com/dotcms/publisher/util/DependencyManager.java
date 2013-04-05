@@ -508,14 +508,13 @@ public class DependencyManager {
 	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
-            for(String id : contents)
-                processList(
-                   APILocator.getContentletAPI()
-                      .search("+identifier:"+id, 0, 0, "moddate", user, false));
+			Set<String> cons = new HashSet<String>(contents);
+            for(String id : cons){
+                processList(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
+            }
             
     		for(String luceneQuery: luceneQueries) {
-    		    List<Contentlet> cs = APILocator.getContentletAPI().search(
-    		            luceneQuery, 0, 0, "moddate", user, false);
+    		    List<Contentlet> cs = APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false);
     			processList(cs);
     		}
 
