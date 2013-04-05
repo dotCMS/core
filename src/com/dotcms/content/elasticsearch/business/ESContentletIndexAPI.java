@@ -379,7 +379,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 	private void removeContentFromIndex(final Contentlet content, final boolean onlyLive, final List<Relationship> relationships) throws DotHibernateException {
 		 Runnable indexRunner = new Runnable() {
-	        	public List<Relationship> relationships;
 	            public void run() {
 	        	    try {
 	            	    String id=content.getIdentifier()+"_"+content.getLanguageId();
