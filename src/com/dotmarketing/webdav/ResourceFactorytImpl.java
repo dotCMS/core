@@ -224,7 +224,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	 * @see com.bradmcevoy.http.ResourceFactory#getSupportedLevels()
 	 */
 	public String getSupportedLevels() {
-		return "1,2,3";
+		return "1,2";
 	}
 
     public void init(ApplicationConfig config, HttpManager manager) {
