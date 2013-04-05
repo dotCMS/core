@@ -141,7 +141,7 @@
 	</filter-mapping>
   <filter-mapping>
 		<filter-name>FixCmisFilter</filter-name>
-		<url-pattern>/cmis/*</url-pattern>
+		<url-pattern>/cmis</url-pattern>
 	</filter-mapping>
 <!--
   <filter-mapping>
