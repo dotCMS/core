@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.lucene.queryParser.ParseException;
-
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
@@ -392,6 +390,7 @@ public class DependencyManager {
 	
 	private void processList(List<Contentlet> cons) throws DotDataException, DotSecurityException {
 	    Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
+	    Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
 
         //Getting all related content
 
@@ -414,10 +413,38 @@ public class DependencyManager {
             }
         }
 
+        for (Contentlet con : contentsToProcess) {
+        	contentsWithDependenciesToProcess.add(con);
+	        //Copy asset files to bundle folder keeping original folders structure
+	        List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
+	
+	        for(Field ff : fields) {
+	            if (ff.getFieldType().equals(Field.FieldType.IMAGE.toString())
+	                    || ff.getFieldType().equals(Field.FieldType.FILE.toString())) {
+	
+	                try {
+	                    String value = "";
+	                    if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
+	                        value = APILocator.getContentletAPI().getFieldValue(con, ff).toString();
+	                    }
+	                    //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
+	                    Identifier id = APILocator.getIdentifierAPI().find(value);
+	                    if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
+	                    	contentsWithDependenciesToProcess.addAll(
+	                    			APILocator.getContentletAPI()
+	                                .search("+identifier:"+id.getId(), 0, 0, "moddate", user, false));
+	                    }
+	                } catch (Exception ex) {
+	                    Logger.debug(this, ex.toString());
+	                    throw new DotStateException("Problem occured while publishing file");
+	                }
+	            }
+	
+	        }
+        }
         
         // Adding the Contents (including related) and adding filesAsContent
-        
-        for (Contentlet con : contentsToProcess) {
+        for (Contentlet con : contentsWithDependenciesToProcess) {
 
             contents.add(con.getIdentifier()); // adding the content (including related)
             folders.add(con.getFolder()); // adding content folder
@@ -458,32 +485,6 @@ public class DependencyManager {
             if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")) {
                 structures.add(con.getStructureInode());
             }
-
-            //Copy asset files to bundle folder keeping original folders structure
-            List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
-
-            for(Field ff : fields) {
-                if (ff.getFieldType().equals(Field.FieldType.IMAGE.toString())
-                        || ff.getFieldType().equals(Field.FieldType.FILE.toString())) {
-
-                    try {
-                        String value = "";
-                        if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
-                            value = APILocator.getContentletAPI().getFieldValue(con, ff).toString();
-                        }
-                        //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
-                        Identifier id = APILocator.getIdentifierAPI().find(value);
-                        if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
-                            contents.add(id.getId()); // adding files as content
-                        }
-                    } catch (Exception ex) {
-                        Logger.debug(this, ex.toString());
-                        throw new DotStateException("Problem occured while publishing file");
-                    }
-                }
-
-            }
-
         }
 
 	}
