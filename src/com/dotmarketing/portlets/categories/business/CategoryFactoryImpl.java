@@ -291,36 +291,38 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		return parents;
 	}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected List<Category> getParents(Categorizable child) throws DotDataException {
+    @SuppressWarnings ("unchecked")
+    @Override
+    protected List<Category> getParents ( Categorizable child ) throws DotDataException {
 
-		List<String> parentIds = catCache.getParents(child);
-		List<Category> parents = null;
-		if( parentIds == null ) {
-			HibernateUtil hu = new HibernateUtil(Category.class);
-			hu.setSQLQuery("select {category.*} from inode category_1_, category, tree " +
-					"where tree.child = ? and tree.parent = category.inode and category_1_.inode = category.inode " +
-			"and category_1_.type = 'category' order by sort_order asc, category_name asc");
-			hu.setParam(child.getCategoryId());
-			parents = (List<Category>) hu.list();
-			try {
-				catCache.putParents(child, parents);
-			} catch (DotCacheException e) {
-				throw new DotDataException(e.getMessage(), e);
-			}
-		} else {
-			parents = new ArrayList<Category>();
-			for(String id : parentIds) {
-				Category cat = find(id);
-				if(cat != null) {
-					parents.add(cat);
-				}
-			}
-		}
+        List<String> parentIds = catCache.getParents( child );
+        List<Category> parents;
+        if ( parentIds == null || parentIds.isEmpty() ) {
 
-		return parents;
-	}
+            HibernateUtil hu = new HibernateUtil( Category.class );
+            hu.setSQLQuery( "select {category.*} from inode category_1_, category, tree " +
+                    "where tree.child = ? and tree.parent = category.inode and category_1_.inode = category.inode " +
+                    "and category_1_.type = 'category' order by sort_order asc, category_name asc" );
+            hu.setParam( child.getCategoryId() );
+            parents = (List<Category>) hu.list();
+
+            try {
+                catCache.putParents( child, parents );
+            } catch ( DotCacheException e ) {
+                throw new DotDataException( e.getMessage(), e );
+            }
+        } else {
+            parents = new ArrayList<Category>();
+            for ( String id : parentIds ) {
+                Category cat = find( id );
+                if ( cat != null ) {
+                    parents.add( cat );
+                }
+            }
+        }
+
+        return parents;
+    }
 
 	@Override
 	protected void removeChild(Categorizable parent, Category child, String relationType) throws DotDataException {
@@ -625,9 +627,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			s = conn.createStatement();
 			String sql = "";
 			sql = catSQL.getCreateSortChildren(inode);
-			s.executeUpdate(sql);
+			s.executeUpdate( sql );
 			sql = catSQL.getUpdateSort();
-			s.executeUpdate(sql);
+			s.executeUpdate( sql );
 			sql = catSQL.getDropSort();
 			s.executeUpdate(sql);
 			conn.commit();
