@@ -191,8 +191,11 @@ public class BundlePublisher extends Publisher {
 			Logger.error(BundlePublisher.class,"Unable to update audit table : " + e.getMessage(),e);
 		}
         
-        DbConnectionFactory.closeConnection();
-
+        try {
+            HibernateUtil.closeSession();
+        } catch (DotHibernateException e) {
+            Logger.warn(this, e.getMessage(),e);
+        }
         return config;
     }
 
