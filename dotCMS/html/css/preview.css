@@ -79,6 +79,9 @@
 .dotEditWidget{background: #fff url(/html/images/icons/gear.png) 5px center no-repeat;}
 .dotEditWidgetDisabled{background:url(/html/images/icons/gear_disabled.png) 5px center no-repeat;}
 
+.dotEditForm{background: #fff url(/html/images/icons/ui-scroll-pane-form.png) 5px center no-repeat;}
+.dotEditFormDisabled{background:url(/html/images/icons/ui-scroll-pane-form.png) 5px center no-repeat;}
+
 .dotMoveContent{float:right;margin:2px 4px 0 0;}
 .dotMoveContent a,.moveContent span{height:16px;width:16px;display:block;float:left;cursor:hand;}
 
