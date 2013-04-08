@@ -47,7 +47,10 @@ String conPath ="";
 boolean hasPermissions=true;
 try {
 	content = capi.find(contentletId, user, false);
-	
+	if(content == null){
+		out.println(LanguageUtil.get(pageContext, "the-selected-content-cannot-be-found"));
+		return;
+	}
 	
 	lang = APILocator.getLanguageAPI().getLanguage(((Contentlet) content).getLanguageId()) ;
 	structure = content.getStructure(); 
