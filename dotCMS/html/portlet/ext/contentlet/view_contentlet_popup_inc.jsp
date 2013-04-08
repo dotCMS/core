@@ -47,7 +47,10 @@ String conPath ="";
 boolean hasPermissions=true;
 try {
 	content = capi.find(contentletId, user, false);
-	
+	if(content == null){
+		out.println(LanguageUtil.get(pageContext, "the-selected-content-cannot-be-found"));
+		return;
+	}
 	
 	lang = APILocator.getLanguageAPI().getLanguage(((Contentlet) content).getLanguageId()) ;
 	structure = content.getStructure(); 
@@ -82,13 +85,9 @@ catch(Exception e){
 }
 
 
-String cssPath = Config.getStringProperty("WYSIWYG_CSS");
-String content_css=null;
-if(UtilMethods.isSet(cssPath)){
-	content_css = "content_css : \"" + cssPath + "\",";
-}else{
-	content_css = "content_css : \"/css/base.css\",";
-}      
+
+String content_css = "content_css : \"" + Config.getStringProperty("WYSIWYG_CSS", "/html/css/tiny_mce.css") + "\",";
+
 %>
 
 <script language="javascript" type="text/javascript" src="/html/js/tinymce/jscripts/tiny_mce/tiny_mce_gzip.js"></script>
