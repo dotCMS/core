@@ -1069,10 +1069,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     result.add(convertFatContentletToContentlet(fatty));
                 }
             }
-            HibernateUtil.closeSession();
         } catch (Exception e) {
-            Logger.debug(this, e.toString());
-            HibernateUtil.closeSession();
+            throw new DotDataException(e.getMessage(),e);
         }
 
         return result;

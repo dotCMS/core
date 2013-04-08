@@ -1,5 +1,22 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.lucene.queryParser.ParseException;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotmarketing.beans.Identifier;
@@ -9,12 +26,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
+import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
@@ -30,15 +47,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UUIDGenerator;
-
-import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.lucene.queryParser.ParseException;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import java.util.*;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba.
@@ -1106,7 +1114,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see Contentlet
      */
     @Test
-    public void delete () throws DotSecurityException, DotDataException {
+    public void delete () throws Exception {
 
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
@@ -1125,25 +1133,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         
         // make sure the db is totally clean up
         
-        DotConnect dc=new DotConnect();
-        dc.setSQL("select * from identifier where id=?");
-        dc.addParam(newContentlet.getIdentifier());
-        assertEquals(0,dc.loadObjectResults().size());
-        
-        dc.setSQL("select * from inode where inode=?");
-        dc.addParam(newContentlet.getInode());
-        assertEquals(0,dc.loadObjectResults().size());
-        
-        dc.setSQL("select * from contentlet_version_info where identifier=? or working_inode=? or live_inode=?");
-        dc.addParam(newContentlet.getIdentifier());
-        dc.addParam(newContentlet.getInode());
-        dc.addParam(newContentlet.getInode());
-        assertEquals(0, dc.loadObjectResults().size());
-        
-        dc.setSQL("select * from contentlet where inode=? or identifier=?");
-        dc.addParam(newContentlet.getInode());
-        dc.addParam(newContentlet.getIdentifier());
-        assertEquals(0, dc.loadObjectResults().size());
+        AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
     }
 
     /**
