@@ -48,7 +48,7 @@
 	List<WorkflowAction> actions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);
 	List<WorkflowAction>  wfActionsAll= APILocator.getWorkflowAPI().findActions(step, user);
 
-	boolean canEdit = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user);
+	boolean canEdit = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, false);
 
 	List<WorkflowComment> comments = APILocator.getWorkflowAPI().findWorkFlowComments(task);
 	List<WorkflowHistory> history = APILocator.getWorkflowAPI().findWorkflowHistory(task);
