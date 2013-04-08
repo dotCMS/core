@@ -3,10 +3,10 @@ package com.dotmarketing.portlets.languagesmanager.ajax;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -44,94 +44,86 @@ public class LanguageAjax {
 	}
 
 	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode,int page) {
-		return getPaginatedLanguageKeys(languageCode, null,page);
+		return getPaginatedLanguageKeys(languageCode, null,page,"");
 	}
+	
+	private List<LanguageKey> filterList(List<LanguageKey> list, String filter) {
+	    List<LanguageKey> filtered=new ArrayList<LanguageKey>();
+	    for(LanguageKey lk : list) {
+	        if(lk.getKey().contains(filter) || lk.getValue().contains(filter)) {
+	            filtered.add(lk);
+	        }
+	    }
+	    return filtered;
+ 	}
 
-	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode, String countryCode,int page) {
+	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode, String countryCode,int page,String filter) {
 
-		int keysPerPage = 100;
+		int keysPerPage = 50;
 		int keyIndex = 1;
 		List<Map<String,Object>> result = new ArrayList<Map<String,Object>>();
 		List<Map<String,Object>> keysToShow = new ArrayList<Map<String,Object>>();
 
 	    //Normalizing lists for display
-	    List<LanguageKey> generalKeysList = new LinkedList<LanguageKey>(langAPI.getLanguageKeys(languageCode));
-	    Collections.sort(generalKeysList);
-	    List<LanguageKey> specificKeyList = new LinkedList<LanguageKey>(langAPI.getLanguageKeys(languageCode, countryCode));
-	    Collections.sort(specificKeyList);
-
-	    for(LanguageKey key: generalKeysList) {
-	    	int pos = Collections.binarySearch(specificKeyList, key);
-	    	if(pos < 0) {
-	    		LanguageKey newKey = new LanguageKey(key.getLanguageCode(), key.getCountryCode(), key.getKey(), "");
-	    		specificKeyList.add(-(pos + 1), newKey);
-	    	}
+	    List<LanguageKey> lkeys = langAPI.getLanguageKeys(languageCode);
+	    List<LanguageKey> skeys = langAPI.getLanguageKeys(languageCode, countryCode);
+	    if(UtilMethods.isSet(filter)) {
+	        lkeys=filterList(lkeys, filter);
+	        skeys=filterList(skeys, filter);
 	    }
-
-	    for(LanguageKey key: specificKeyList) {
-	    	int pos = Collections.binarySearch(generalKeysList, key);
-	    	if(pos < 0) {
-	    		LanguageKey newKey = new LanguageKey(key.getLanguageCode(), key.getCountryCode(), key.getKey(), "");
-	    		generalKeysList.add(-(pos + 1), newKey);
-	    	}
+	    
+	    TreeSet<String> allKeys=new TreeSet<String>();
+	    for (LanguageKey lk : lkeys) {
+            allKeys.add(lk.getKey());
+        }
+	    for (LanguageKey lk : skeys) {
+            allKeys.add(lk.getKey());
+        }
+	    
+	    final int beginIdx=Math.max((page-1) * keysPerPage, 0);
+	    final int endIdx=Math.min(page*keysPerPage, allKeys.size());
+	    
+	    String[] keys=allKeys.toArray(new String[allKeys.size()]);
+	    
+	    for(int i = beginIdx ; i < endIdx ; i++ ) {
+	        String key=keys[i];
+	        
+	        LanguageKey fake=new LanguageKey("", "", key, "");
+	        int lpos=Collections.binarySearch(lkeys, fake);
+	        int spos=Collections.binarySearch(skeys, fake);
+	        
+	        String gValue="", sValue="";
+	        if(lpos>=0) gValue=lkeys.get(lpos).getValue();
+	        if(spos>=0) sValue=skeys.get(spos).getValue();
+	        
+	        Map<String,Object> keyMap = new HashMap<String, Object>();
+            keyMap.put("key", key);
+            keyMap.put("generalValue", UtilMethods.webifyString(UtilMethods.escapeHTMLSpecialChars(gValue)));
+            keyMap.put("specificValue", UtilMethods.webifyString(UtilMethods.escapeHTMLSpecialChars(sValue)));
+            keyMap.put("idx", Integer.toString(keysToShow.size()));
+            keysToShow.add(keyMap);
 	    }
-
-	    String alternate = "alternate_1";
-		int idx = 0;
-		for(keyIndex = ((page-1) * keysPerPage); (keyIndex <= ((page * keysPerPage)+1) && (keyIndex < generalKeysList.size())); keyIndex++) {
-			LanguageKey generalKey = generalKeysList.get(keyIndex);
-			int pos = Collections.binarySearch(specificKeyList, generalKey);
-			LanguageKey specificKey;
-			if(pos >= 0)
-				specificKey = specificKeyList.get(pos);
-			else
-				specificKey = new LanguageKey(generalKey.getLanguageCode(), generalKey.getCountryCode(), generalKey.getKey(), "");
-
-			Map<String,Object> keyMap = new HashMap<String, Object>();
-			keyMap.put("key", generalKey.getKey());
-			keyMap.put("generalValue", UtilMethods.webifyString(UtilMethods.escapeHTMLSpecialChars(generalKey.getValue())));
-			keyMap.put("specificValue", UtilMethods.webifyString(UtilMethods.escapeHTMLSpecialChars(specificKey.getValue())));
-			keyMap.put("idx", ""+idx);
-			keyMap.put("alternate", alternate);
-			keysToShow.add(keyMap);
-			alternate = alternate.equals("alternate_1")?"alternate_2":"alternate_1";
-			idx++;
-		}
-
+	    
 		//Adding the result counters as the first row of the results
 		Map<String, Object> counters = new HashMap<String, Object>();
 		result.add(counters);
 
-		long total = generalKeysList.size();
+		long total = allKeys.size();
 		counters.put("total", total);
-		if (page == 0)
-			counters.put("hasPrevious", false);
-		else
-			counters.put("hasPrevious", page != 1);
+		
+		counters.put("hasPrevious", page>1);
 
 		if (page == 0)
 			counters.put("hasNext", false);
 		else
-			counters.put("hasNext", keysPerPage < keysToShow.size());
-
-		long end = total;
-		if (page != 0)
-			end = page * keysPerPage;
-
-		end = (end < total ? end : total);
-
-		int begin = 1;
-		if (page != 0)
-			begin = (page == 0 ? 0 : (page - 1) * keysPerPage);
-
-		begin = (end != 0 ? begin + 1: begin);
+			counters.put("hasNext", endIdx < allKeys.size());
 
 		int totalPages = 1;
 		if (page != 0)
 			totalPages = (int) Math.ceil((float) total / (float) keysPerPage);
 
-		counters.put("begin", begin);
-		counters.put("end", end);
+		counters.put("begin", beginIdx);
+		counters.put("end", endIdx);
 		counters.put("totalPages", totalPages);
 
 		result.addAll(keysToShow);
