@@ -393,8 +393,9 @@ public class DependencyManager {
 	    Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
 
         //Getting all related content
-
+	    
         for (Contentlet con : cons) {
+        	hosts.add(con.getHost()); // add the host dependency
             contentsToProcess.add(con);
 
             Map<Relationship, List<Contentlet>> contentRel =
@@ -414,6 +415,7 @@ public class DependencyManager {
         }
 
         for (Contentlet con : contentsToProcess) {
+        	hosts.add(con.getHost()); // add the host dependency
         	contentsWithDependenciesToProcess.add(con);
 	        //Copy asset files to bundle folder keeping original folders structure
 	        List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
@@ -445,7 +447,7 @@ public class DependencyManager {
         
         // Adding the Contents (including related) and adding filesAsContent
         for (Contentlet con : contentsWithDependenciesToProcess) {
-
+        	hosts.add(con.getHost()); // add the host dependency
             contents.add(con.getIdentifier()); // adding the content (including related)
             folders.add(con.getFolder()); // adding content folder
 
