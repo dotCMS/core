@@ -152,6 +152,7 @@ public interface CategoryAPI {
 	/**
 	 * Deletes all the children of a given parent inode
 	 * @return
+	 * @deprecated this will mess up with your transaction. Use removeXXXX methods instead
 	 */
 	
 	public void deleteChilren(String inode);
