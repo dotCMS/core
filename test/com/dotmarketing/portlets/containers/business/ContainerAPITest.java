@@ -9,6 +9,8 @@ import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -109,5 +111,30 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertEquals(newInode, cc.getInode());
         assertEquals(existingIdentifier, cc.getIdentifier());
         assertEquals(cc.getPreLoop(),"new preloop");
+    }
+    
+    @Test
+    public void delete() throws Exception {
+        Container container = new Container();
+        container.setCode("this is the code");
+        container.setFriendlyName("test container");
+        container.setTitle("his is the title");
+        container.setMaxContentlets(5);
+        container.setPreLoop("preloop code");
+        container.setPostLoop("postloop code");
+        
+        Structure st=StructureCache.getStructureByVelocityVarName("host");
+        
+        User user = APILocator.getUserAPI().getSystemUser();
+        Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        
+        Container saved = APILocator.getContainerAPI().save(container, st, host, user, false);
+        
+        String inode=saved.getInode();
+        String identifier=saved.getIdentifier();
+        
+        assertTrue(APILocator.getContainerAPI().delete(saved, user, false));
+        
+        AssetUtil.assertDeleted(inode, identifier, "containers");
     }
 }

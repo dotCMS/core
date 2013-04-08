@@ -149,7 +149,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				HibernateUtil.saveOrUpdate(cat);
 				cleanParentChildrenCaches(object);
 				
-				catCache.put(object);		
 			}catch(Exception ex){
 				throw new DotDataException(ex.getMessage(),ex);
 			}
@@ -158,7 +157,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			try {
 				cleanParentChildrenCaches(object);
 				catCache.remove(object);
-				catCache.put(object);
 			} catch (DotCacheException e) {
 				throw new DotDataException(e.getMessage(), e);
 			}
@@ -172,7 +170,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		try {
 			cleanParentChildrenCaches(object);
 			catCache.remove(object);
-			catCache.put(object);
 		} catch (DotCacheException e) {
 			throw new DotDataException(e.getMessage(), e);
 		}		
@@ -192,7 +189,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		}
 		try {
 			catCache.removeChild(parent, child);
-			catCache.addChild(parent, child, childCategories);
 		} catch (DotCacheException e) {
 			throw new DotDataException(e.getMessage(), e);
 		}
@@ -211,7 +207,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		}		
 		try {
 			catCache.removeParent(child, parent);
-			catCache.addParent(child, parent, parentCats);
 		} catch (DotCacheException e) {
 			throw new DotDataException(e.getMessage(), e);
 		}
@@ -398,7 +393,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		}
 		try {
 			catCache.removeChildren(parent);
-			catCache.putChildren(parent, children);
 		} catch (DotCacheException e) {
 			throw new DotDataException(e.getMessage(), e);
 		}
@@ -418,7 +412,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		}
 		try {
 			catCache.removeParents(child);
-			catCache.putParents(child, parents);
 		} catch (DotCacheException e) {
 			throw new DotDataException(e.getMessage(), e);
 		}
