@@ -20,7 +20,7 @@
 			<dt><%= LanguageUtil.get(pageContext, "Key") %>:</dt>
 			<dd><input id="roleKey" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
 			<dt><%= LanguageUtil.get(pageContext, "Parent") %>:</dt>
-			<dd id="parentRoleWrapper"><input type="text" id="parentRole" dojoType="dijit.form.TextBox" readonly="readonly" value="Root Role"/>
+			<dd id="parentRoleWrapper"><div id="parentRoleDiv"></div>
 										<input type="hidden" id="parentRoleValue" value="0" />   </dd>
 			<dt><%= LanguageUtil.get(pageContext, "can-grant") %>:</dt>
 			<dd>
