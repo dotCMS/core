@@ -433,7 +433,8 @@
 		var parentRoleId = norm(role.parent);
 
 		var parent = findRole(parentRoleId);
-		dijit.byId('parentRole').set('value', parent.id==role.id?"Root Role":parent.name);
+// 		dijit.byId('parentRole').set('value', parent.id==role.id?"Root Role":parent.name);
+		dojo.byId('parentRoleDiv').innerHTML = parent.id==role.id?"Root Role":parent.name;
 		dojo.byId('parentRoleValue').value = parent.id==role.id?"0":parent.id
 // 		dijit.byId('parentRole').set('displayedValue', parent.id==role.id?"Root Role":parent.name);
 		dijit.byId('editUsers').attr('value', norm(role.editUsers) == true?true:false);
@@ -462,10 +463,12 @@
 
 		if (currentRole) {
 			dojo.byId('parentRoleValue').value = currentRole.id;
-			dijit.byId('parentRole').set('value', currentRole.name);
+// 			dijit.byId('parentRole').set('value', currentRole.name);
+			dojo.byId('parentRoleDiv').innerHTML = currentRole.name;
 		} else {
 			dojo.byId('parentRoleValue').value = "0";
-			dijit.byId('parentRole').set('value', "Root Role");
+// 			dijit.byId('parentRole').set('value', "Root Role");
+			dojo.byId('parentRoleDiv').innerHTML = "Root Role";
 		}
 
 		dijit.byId('addRoleDialog').show();
