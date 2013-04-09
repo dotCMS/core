@@ -226,11 +226,16 @@ public class CategoryCacheImpl extends CategoryCache {
 		put(parent);
 	}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected void removeChild(Categorizable parent, Category child)throws DotDataException, DotCacheException {
-		cache.remove(categoryChildrenCacheGroup + parent.getCategoryId(), categoryChildrenCacheGroup);
-	}
+    @SuppressWarnings ("unchecked")
+    @Override
+    protected void removeChild ( Categorizable parent, Category child ) throws DotDataException, DotCacheException {
+        cache.remove( categoryChildrenCacheGroup + parent.getCategoryId(), categoryChildrenCacheGroup );
+
+        //updating parent list of the child as well
+        if ( parent instanceof Category ) {
+            cache.remove( categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup );
+        }
+    }
 
 	@SuppressWarnings("unchecked")
 	@Override
