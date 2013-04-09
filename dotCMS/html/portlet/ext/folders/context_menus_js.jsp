@@ -354,9 +354,6 @@ function getHTMLPagePopUp(i,ctxPath, objId, parentId, openNodes, referer,live,wo
 		    	    }
 			}
 
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="workflowIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" /><portlet:param name="cmd" value="add" /></portlet:actionURL>&webasset=' + objId + '&r=<%=r%>&userId=' + userId + '&referer=' + referer + openNodes + '\';">';
-   		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Request-a-Change")) %>';
-			strHTML += '</div>';
 		}
 		if (deleted!="1") {
 	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="statisticsIcon" onClick="top.location=\'<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpageviews/view_htmlpage_views" /></portlet:renderURL>&htmlpage=' + objId + '&userId=' + userId + '&r=<%=r%>&referer=' + referer + openNodes + '\';">';
