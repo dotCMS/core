@@ -106,7 +106,7 @@ public class RoleResource extends WebResource {
 					Role r = roleAPI.loadRoleById(childId);
 
 					json.append("{id: '").append(r.getId()).append("', $ref: '").append(r.getId()).append("', name: '")
-					.append(r.getName()).append("', locked: ").append(r.isLocked()).append(", children:true}");
+					.append(r.getName()).append("', locked: '").append(r.isLocked()).append("', children:true}");
 
 					if(childCounter+1 < children.size()) {
 						json.append(", ");
@@ -168,9 +168,9 @@ public class RoleResource extends WebResource {
 		node.append("FQN: '").append(role.getFQN()).append("',");
 		node.append("children: [],");
 		node.append("description: '").append(role.getDescription()).append("',");
-		node.append("editLayouts: '").append(role.isEditLayouts()).append("',");
-		node.append("editPermissions: '").append(role.isEditPermissions()).append("',");
-		node.append("editUsers: '").append(role.isEditUsers()).append("',");
+		node.append("editLayouts: ").append(role.isEditLayouts()).append(",");
+		node.append("editPermissions: ").append(role.isEditPermissions()).append(",");
+		node.append("editUsers: ").append(role.isEditUsers()).append(",");
 		node.append("id: '").append(role.getId()).append("',");
 		node.append("locked: '").append(role.isLocked()).append("',");
 		node.append("name: '").append(role.getName()).append("',");
