@@ -156,8 +156,6 @@
 
 
 	var treeRoleOptionTemplate = '${nodeName}';
-	var treeModel;
-	var jsonStore;
 	var lastSelectedNode;
 
 	function buildRolesTree(tree) {
@@ -168,11 +166,12 @@
 
 		// if tree is null, we are not filtering, so load the root nodes only calling RoleResource
 		if(tree==null) {
-			store = new dojox.data.JsonRestStore({ target: "/api/role/loadchildren/id/", labelAttribute:"name"});
+			store = new dojox.data.JsonRestStore({ target: "/api/role/loadchildren/time/"+new Date()+"/id/", labelAttribute:"name", urlPreventCache: true});
 		} else { // if tree is not null, we need to build a store with the JSON tree contained in it
 			store = new dojo.data.ItemFileReadStore({ data: tree });
 			autoExpand = true;
 		}
+
 
 	    treeModel = new dijit.tree.TreeStoreModel({
 	        store: store,
@@ -288,7 +287,6 @@
 	        autoExpand: autoExpand,
 	        persist: false
 	    }, "rolesTree");
-
 
 		var menu = dijit.byId("roleTreeMenu");
         // when we right-click anywhere on the tree, make sure we open the menu
