@@ -9,7 +9,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -57,7 +60,7 @@ public class RoleResource extends WebResource {
 	@GET
 	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
-	public String loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
+	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
 		InitDataObject initData = init(params, true, request, true);
 
 		Map<String, String> paramsMap = initData.getParamsMap();
@@ -103,7 +106,7 @@ public class RoleResource extends WebResource {
 					Role r = roleAPI.loadRoleById(childId);
 
 					json.append("{id: '").append(r.getId()).append("', $ref: '").append(r.getId()).append("', name: '")
-					.append(r.getName()).append("', locked: ").append(r.isLocked()).append(", children:true}");
+					.append(r.getName()).append("', locked: '").append(r.isLocked()).append("', children:true}");
 
 					if(childCounter+1 < children.size()) {
 						json.append(", ");
@@ -117,7 +120,12 @@ public class RoleResource extends WebResource {
 
 		}
 
-		return json.toString();
+		CacheControl cc = new CacheControl();
+		cc.setNoCache(true);
+
+		ResponseBuilder builder = Response.ok(json.toString(), "application/json");
+		return builder.cacheControl(cc).build();
+
 	}
 
 	/**
@@ -160,9 +168,9 @@ public class RoleResource extends WebResource {
 		node.append("FQN: '").append(role.getFQN()).append("',");
 		node.append("children: [],");
 		node.append("description: '").append(role.getDescription()).append("',");
-		node.append("editLayouts: '").append(role.isEditLayouts()).append("',");
-		node.append("editPermissions: '").append(role.isEditPermissions()).append("',");
-		node.append("editUsers: '").append(role.isEditUsers()).append("',");
+		node.append("editLayouts: ").append(role.isEditLayouts()).append(",");
+		node.append("editPermissions: ").append(role.isEditPermissions()).append(",");
+		node.append("editUsers: ").append(role.isEditUsers()).append(",");
 		node.append("id: '").append(role.getId()).append("',");
 		node.append("locked: '").append(role.isLocked()).append("',");
 		node.append("name: '").append(role.getName()).append("',");
