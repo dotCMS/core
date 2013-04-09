@@ -85,18 +85,27 @@ public abstract class CategoryCache implements Cachable{
 	 */
 	abstract protected void addChild(Categorizable parentId, Category child, List<Category> children) throws DotDataException, DotCacheException;
 
-	/**
-	 * Removes the list of children categories based 
-	 * using the given parent id/inode
-	 * @param parentId
-	 * @param children
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotCacheException 
-	 */
-	abstract protected void removeChildren(Categorizable parentId) throws DotDataException, DotCacheException;
-	
-	/**
+    /**
+     * Removes the list of children categories based using the given parent id/inode
+     *
+     * @param parentId
+     * @return
+     * @throws DotDataException
+     * @throws DotCacheException
+     */
+    abstract protected void removeChildren ( String parentId ) throws DotDataException, DotCacheException;
+
+    /**
+     * Removes the list of children categories based using the given parent category
+     *
+     * @param parent
+     * @return
+     * @throws DotDataException
+     * @throws DotCacheException
+     */
+    abstract protected void removeChildren ( Categorizable parent ) throws DotDataException, DotCacheException;
+
+    /**
 	 * Removes the list of children categories based 
 	 * using the given parent id/inode
 	 * @param parentId
@@ -136,17 +145,27 @@ public abstract class CategoryCache implements Cachable{
 	 */
 	abstract protected void addParent(Categorizable child, Category parent, List<Category> parents) throws DotDataException, DotCacheException;
 
-	/**
-	 * Removes the parents associated to the given children category
-	 * @param children
-	 * @param parents
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotCacheException 
-	 */
-	abstract protected void removeParents(Categorizable child) throws DotDataException, DotCacheException;
-	
-	/**
+    /**
+     * Removes the parents associated to the given children category
+     *
+     * @param childId
+     * @return
+     * @throws DotDataException
+     * @throws DotCacheException
+     */
+    abstract protected void removeParents ( String childId ) throws DotDataException, DotCacheException;
+
+    /**
+     * Removes the parents associated to the given children category
+     *
+     * @param child
+     * @return
+     * @throws DotDataException
+     * @throws DotCacheException
+     */
+    abstract protected void removeParents ( Categorizable child ) throws DotDataException, DotCacheException;
+
+    /**
 	 * Sets the list of parent categories of the given child id/inode
 	 * @param children
 	 * @param parents
