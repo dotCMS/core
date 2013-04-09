@@ -8,7 +8,6 @@ package com.dotmarketing.portlets.languagesmanager.action;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,14 +25,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.servlet.SessionMessages;
-
-import edu.emory.mathcs.backport.java.util.Collections;
 
 
 /**
@@ -68,12 +64,6 @@ public class EditLanguageKeysAction extends DotPortletAction {
         	}
         }
 
-        try {
-        	_retrieveLanguageKeys(req, res, config, form);
-        } catch (Exception e) {
-            _handleException(e, req);
-        }
-
         setForward(req, "portlet.ext.languagesmanager.edit_language_keys");
     }
 
@@ -101,38 +91,6 @@ public class EditLanguageKeysAction extends DotPortletAction {
         req.setAttribute(WebKeys.LANGUAGE_MANAGER_LIST, list);
     }
 
-	private void _retrieveLanguageKeys(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form)
-    throws Exception {
-		
-		Language lang = (Language) req.getAttribute(WebKeys.LANGUAGE_MANAGER_LANGUAGE);
-		
-	    //Normalizing lists for display
-	    List<LanguageKey> listGeneral = new LinkedList<LanguageKey>(langAPI.getLanguageKeys(lang.getLanguageCode()));
-	    Collections.sort(listGeneral);
-	    List<LanguageKey> listSpecific = new LinkedList<LanguageKey>(langAPI.getLanguageKeys(lang.getLanguageCode(), lang.getCountryCode()));
-	    Collections.sort(listSpecific);
-	    
-	    for(LanguageKey key: listGeneral) {
-	    	int pos = Collections.binarySearch(listSpecific, key);
-	    	if(pos < 0) {
-	    		LanguageKey newKey = new LanguageKey(key.getLanguageCode(), key.getCountryCode(), key.getKey(), "");
-	    		listSpecific.add(-(pos + 1), newKey);
-	    	}
-	    }
-
-	    for(LanguageKey key: listSpecific) {
-	    	int pos = Collections.binarySearch(listGeneral, key);
-	    	if(pos < 0) {
-	    		LanguageKey newKey = new LanguageKey(key.getLanguageCode(), key.getCountryCode(), key.getKey(), "");
-	    		listGeneral.add(-(pos + 1), newKey);
-	    	}
-	    }
-
-	    Map<String, List<LanguageKey>> map = new HashMap<String, List<LanguageKey>> ();
-	    map.put("general", listGeneral);
-	    map.put("specific", listSpecific);
-	    req.setAttribute(WebKeys.LANGUAGE_MANAGER_PROPERTIES, map);
-	}
 
     /* check for the existence of the languages resource files, if not create that */
     private void _checkLanguagesFiles(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form)

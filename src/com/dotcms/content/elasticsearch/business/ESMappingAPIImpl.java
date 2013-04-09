@@ -409,7 +409,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	@SuppressWarnings("unchecked")
 	protected void loadFields(Contentlet con, Map<String, String> m) throws DotDataException {
 	    FieldAPI fAPI=APILocator.getFieldAPI();
-	    List<Field> fields = FieldsCache.getFieldsByStructureInode(con.getStructureInode());
+	    List<Field> fields = new ArrayList<Field>(FieldsCache.getFieldsByStructureInode(con.getStructureInode()));
 	    
 	    Structure st=con.getStructure();
         for (Field f : fields) {
