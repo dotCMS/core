@@ -90,8 +90,6 @@ public class CategoryAPITest extends ContentletBaseTest {
         assertTrue( parents.size() > 0 );
         assertEquals( parents.get( 0 ), parentCategory );
 
-        //HibernateUtil.commitTransaction();
-
         //***************************************************************
         //Set up a new structure with categories
 
@@ -128,7 +126,7 @@ public class CategoryAPITest extends ContentletBaseTest {
         //Verify If we find the parent for these categories
         parents = categoryAPI.getParents( contentlet, user, false );
         assertNotNull( parents );
-        assertTrue( parents.size() > 0 );
+        assertTrue( parents.size() == 2 );
     }
 
 }
