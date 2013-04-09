@@ -1,19 +1,18 @@
 package com;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-
 import com.dotcms.cmis.DotCMSCMISTest;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
 import com.dotmarketing.business.PermissionAPITest;
+import com.dotmarketing.portlets.categories.business.CategoryAPITest;
 import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
-import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
 import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
 import com.dotmarketing.portlets.templates.business.TemplateAPITest;
-import com.dotcms.publisher.endpoint.business.*;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
 /**
  * Created by Jonathan Gamba.
@@ -32,7 +31,8 @@ import com.dotcms.publisher.endpoint.business.*;
         //LinkCheckerAPITest.class,
         TemplateAPITest.class,
         HTMLPageAPITest.class,
-        PublishingEndPointAPITest.class
+        PublishingEndPointAPITest.class,
+        CategoryAPITest.class
 
 //        CMISBaseTest.class
 } )
