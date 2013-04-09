@@ -133,52 +133,88 @@ public class CategoryCacheImpl extends CategoryCache {
 			cache.remove(categoryByKeyCacheGroup + object.getKey(), categoryByKeyCacheGroup);
 		}
 		cache.remove(primaryGroup + object.getCategoryId(),primaryGroup);
-		
-		
-		
-		
-
 	}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected void removeChildren(Categorizable parent) throws DotDataException, DotCacheException {
-		List<String> childrenIds = null;
-		try{
-			childrenIds = (List<String>) cache.get(categoryChildrenCacheGroup + parent.getCategoryId(),categoryChildrenCacheGroup);
-		}catch (DotCacheException e) {
-			Logger.debug(this, "Cache Entry not found", e);
-    	}
-		cache.remove(categoryChildrenCacheGroup + parent.getCategoryId(),categoryChildrenCacheGroup);
-		
-		//Updating the associated parent caches to keep it consistent
-		if(childrenIds != null) {
-			for(String child : childrenIds) {
-				cache.remove(categoryParentsCacheGroup + child, categoryParentsCacheGroup);
-			}
-		}
-		
-	}
+    /**
+     * Removes the list of children categories based using the given parent id/inode
+     *
+     * @param parentId
+     * @return
+     * @throws DotDataException
+     * @throws DotCacheException
+     */
+    @SuppressWarnings ("unchecked")
+    @Override
+    protected void removeChildren ( String parentId ) throws DotDataException, DotCacheException {
+        List<String> childrenIds = null;
+        try {
+            childrenIds = (List<String>) cache.get( categoryChildrenCacheGroup + parentId, categoryChildrenCacheGroup );
+        } catch ( DotCacheException e ) {
+            Logger.debug( this, "Cache Entry not found", e );
+        }
+        cache.remove( categoryChildrenCacheGroup + parentId, categoryChildrenCacheGroup );
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected void removeParents(Categorizable child)throws DotDataException, DotCacheException {
-		List<String> parentIds = null;
-		try{
-			parentIds = (List<String>) cache.get(categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup);
-		}catch (DotCacheException e) {
-			Logger.debug(this, "Cache Entry not found", e);
-    	}
-		cache.remove(categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup);
-		
-		//Updating the associated parent caches to keep it consistent
-		if(parentIds != null) {
-			for(String parentId : parentIds) {
-				cache.remove(categoryChildrenCacheGroup + parentId, categoryChildrenCacheGroup);
-			}
-		}
-		
-	}
+        //Updating the associated parent caches to keep it consistent
+        if ( childrenIds != null ) {
+            for ( String child : childrenIds ) {
+                cache.remove( categoryParentsCacheGroup + child, categoryParentsCacheGroup );
+            }
+        }
+    }
+
+    /**
+     * Removes the list of children categories based using the given parent category
+     *
+     * @param parent
+     * @return
+     * @throws DotDataException
+     * @throws DotCacheException
+     */
+    @Override
+    protected void removeChildren ( Categorizable parent ) throws DotDataException, DotCacheException {
+        removeChildren( parent.getCategoryId() );
+    }
+
+    /**
+     * Removes the parents associated to the given children category
+     *
+     * @param childId
+     * @return
+     * @throws DotDataException
+     * @throws DotCacheException
+     */
+    @SuppressWarnings ("unchecked")
+    @Override
+    protected void removeParents ( String childId ) throws DotDataException, DotCacheException {
+        List<String> parentIds = null;
+        try {
+            parentIds = (List<String>) cache.get( categoryParentsCacheGroup + childId, categoryParentsCacheGroup );
+        } catch ( DotCacheException e ) {
+            Logger.debug( this, "Cache Entry not found", e );
+        }
+        cache.remove( categoryParentsCacheGroup + childId, categoryParentsCacheGroup );
+
+        //Updating the associated parent caches to keep it consistent
+        if ( parentIds != null ) {
+            for ( String parentId : parentIds ) {
+                cache.remove( categoryChildrenCacheGroup + parentId, categoryChildrenCacheGroup );
+            }
+        }
+
+    }
+
+    /**
+     * Removes the parents associated to the given children category
+     *
+     * @param child
+     * @return
+     * @throws DotDataException
+     * @throws DotCacheException
+     */
+    @Override
+    protected void removeParents ( Categorizable child ) throws DotDataException, DotCacheException {
+        removeParents( child.getCategoryId() );
+    }
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -226,11 +262,16 @@ public class CategoryCacheImpl extends CategoryCache {
 		put(parent);
 	}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected void removeChild(Categorizable parent, Category child)throws DotDataException, DotCacheException {
-		cache.remove(categoryChildrenCacheGroup + parent.getCategoryId(), categoryChildrenCacheGroup);
-	}
+    @SuppressWarnings ("unchecked")
+    @Override
+    protected void removeChild ( Categorizable parent, Category child ) throws DotDataException, DotCacheException {
+        cache.remove( categoryChildrenCacheGroup + parent.getCategoryId(), categoryChildrenCacheGroup );
+
+        //updating parent list of the child as well
+        if ( parent instanceof Category ) {
+            cache.remove( categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup );
+        }
+    }
 
 	@SuppressWarnings("unchecked")
 	@Override
