@@ -538,10 +538,9 @@
 }
 .dmundra .dijitArrowButtonInner {
 	background-image:url(images/spriteArrows.png);
-	background-position: left top;
+	background-position: left 5px;
 	width: 7px;
 	height: 7px;
-	font-size: 1px;
 	margin: 0px 4px 0px 5px;
 }
 .dj_ie6 .dmundra .dijitArrowButtonInner {

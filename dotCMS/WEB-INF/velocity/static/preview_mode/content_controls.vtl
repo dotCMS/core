@@ -28,7 +28,7 @@
 	<div id="edit-$CONTENT_INODE" class="dotContentletEdit">	
 		#if($_widget == true)
 				#if($_isFormWidget)
-					<span class="dotEditContentDisabled"><img src="/html/images/icons/ui-scroll-pane-form.png" width="16" height="16" /> ${structures.findStructure($ContentletTitle).name}</span>
+					<span class="dotEditFormDisabled">${structures.findStructure($ContentletTitle).name}</span>
 				#elseif($EDIT_CONTENT_PERMISSION && $CONTAINER_NUM_CONTENTLETS > 0)
 					<a class="dotEditWidget" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$languagewebapi.getFromUserLanguage("modes.Edit-Widget")</a>
 				#else

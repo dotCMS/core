@@ -47,12 +47,7 @@ var tinyMCEProps = {
             cleanup : "true",
             urlconverter_callback : "cmsURLConverter",
             verify_css_classes : "false",
-            <%
-            //Get the default CSS file
-            String cssPath = Config.getStringProperty("WYSIWYG_CSS");
-	        if(InodeUtils.isSet(cssPath)){%>
-        		<%="content_css : \"" + cssPath + "\","%>	
-	        <%}%>	                  
+            content_css : "<%= Config.getStringProperty("WYSIWYG_CSS", "/html/css/tiny_mce.css")%>",              
             trim_span_elements : false,
             apply_source_formatting : true,
             valid_elements : "*[*]",

@@ -8,9 +8,6 @@
 <%	
 	List<Language> languages = (java.util.List) request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_MANAGER_LIST);
 	Language language = (Language) request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_MANAGER_LANGUAGE);
-	Map<String, List<LanguageKey>> keysMap = (Map<String, List<LanguageKey>>) request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_MANAGER_PROPERTIES);
-	List<LanguageKey> generalList = keysMap.get("general");
-	List<LanguageKey> specificList = keysMap.get("specific");
 	
 	StringBuilder buff = new StringBuilder();
 	buff.append("{identifier:'id', label:'label',imageurl:'imageurl',items:[");
@@ -114,41 +111,17 @@
 			return;
 		form.action = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString()%>"> <portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" /></portlet:actionURL>';
 		form.cmd.value = 'edit';
+		form.id.value = '<%= language.getId() %>';
 		form.submit();
 	}
 
 	function filterResults() {
-		var filterCriteria = Ext.get('filter').dom.value;
-		var found = 0;
-		for(i = 0; i < currentIndex; i++) {
-			if(filterCriteria != "" && Ext.get(currentLanguage + '-' + i + '-key').dom.value.search(filterCriteria) < 0 &&
-				Ext.get(currentLanguage + '-general-' + i + '-value').dom.value.search(filterCriteria) < 0 &&
-				Ext.get(currentLanguage + '-' + currentCountry + '-' + i + '-value').dom.value.search(filterCriteria) < 0) {
-				Ext.get('row-' + i).setVisibilityMode(Ext.Element.DISPLAY);
-				Ext.get('row-' + i).hide();
-			} else {
-				found++;
-				Ext.get('row-' + i).show();
-			}
-			if(found == 0 && filterCriteria != '') {
-				if(Ext.get('noprops') == null) {
-					var buffer = '<tr id="noprops">';
-					buffer += '<td colspan="4" align="center"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Properties-Found")) %></td>';
-					buffer += '</tr>';
-					Ext.get('propertiesTable').insertHtml('beforeEnd', buffer);
-				}
-						
-			} else if(found > 0) {
-				if(Ext.get('noprops') != null)
-					Ext.get('noprops').remove();
-			}
-		}
-		
+		viewLanguageKeys();
 	}
 
 	function clearFilter() {
 		Ext.get('filter').dom.value = "";
-		filterResults();
+		viewLanguageKeys();
 	}
 
 	function doSubmit() {
@@ -203,13 +176,14 @@
 
 	function saveKeysCallback(data){
 		dijit.byId('savingKeysDialog').hide();
-		window.location.href = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString()%>"> <portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" /></portlet:actionURL>';
+		viewLanguageKeys(currentPage);
 	}
 
 	function cancelEdit(form) {
-		var form = $('fm');
+		
 		if(dirty && !confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.languagemanager.abandon.applied.changes")) %>'))
 			return;
+		
 		self.location = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/languages_manager/view_languages_manager" /></portlet:renderURL>';
 	}
 
@@ -288,6 +262,7 @@
 		}
 ];
 
+	var loadProgressToggle;
 	function viewLanguageKeys(page){
 		
 		if (page == null)
@@ -295,7 +270,14 @@
 		else 
 			currentPage = page;
 		
-		LanguageAjax.getPaginatedLanguageKeys('<%=language.getLanguageCode()%>','<%=language.getCountryCode()%>',currentPage,viewLanguageKeysCallback);
+		var filter = Ext.get('filter').dom.value;
+		
+		
+		loadProgressToggle.show();
+		LanguageAjax.getPaginatedLanguageKeys('<%=language.getLanguageCode()%>',
+				                              '<%=language.getCountryCode()%>',
+				                              currentPage,filter,viewLanguageKeysCallback);
+		
 	}
 
 	
@@ -347,6 +329,7 @@
 			  },
 			  escapeHtml:false });
 		}
+		loadProgressToggle.hide();
 	}	
 
 	function showMatchingResults (num,begin,end,totalPages) {
@@ -424,6 +407,8 @@
 	dojo.addOnLoad(resizeBrowser);
 	dojo.connect(window, "onresize", this, "resizeBrowser");
 	dojo.addOnLoad (function(){
+		loadProgressToggle=new dojo.fx.Toggler({node:'loadProgress'});
+		loadProgressToggle.hide();
 		viewLanguageKeys(1);
 	});
 	
@@ -435,7 +420,7 @@
 <html:form action="/ext/languages_manager/edit_language_keys" styleId="fm">
 	<input type="hidden" name="id" value="<%= language.getId() %>">
 	<input type="hidden" name="cmd" value="save">
-	<input type="hidden" name="keys" value="generalList.size()">
+	
 	<input type="hidden" name="referer" value="<%= request.getParameter("referer") %>">
     
 <div class="yui-g buttonRow">
@@ -476,6 +461,7 @@
                 updateSelectBoxImage(myselect);
                 });
 		</script>
+		<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="loadProgress" id="loadProgress"></div>
 	</div>
 	<div class="yui-u" style="text-align:right;">
 		<%= LanguageUtil.get(pageContext, "Filter") %>:
@@ -555,6 +541,7 @@
 <div id="savingKeysDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Saving") %> . . ." style="display: none;">
 	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
 </div>
+
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingKeysDialog').closeButtonNode, 'visibility', 'hidden');
