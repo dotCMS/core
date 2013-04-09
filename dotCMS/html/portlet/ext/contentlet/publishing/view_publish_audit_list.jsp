@@ -192,7 +192,6 @@
 		
 			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
 			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>	
-			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Type") %></strong></th>	
 			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>	
 			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
 			<th style="width:150px" nowrap="nowrap" align="center" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
@@ -234,20 +233,18 @@
 				</td>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
-					<%for(String id : bundleAssets.keySet()) { %>
-						<%String assetType = bundleAssets.get(id); %>
-						<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
 						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-							<%= assetTitle %>
+						
+						<%int count=0;for(String id : bundleAssets.keySet()) { %>
+							<%if(count > 0){%><br /><%} %>
+							<%if(count > 2){%>...<%=bundleAssets.keySet().size()-3%> <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %><% break;} %>
+							<%String assetType = bundleAssets.get(id); %>
+							<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
+								<strong><%= assetType%></strong> : <%= assetTitle %>
+						<%count++;} %>
 						</td>
-						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-							<%= assetType%>
-						</td>
-					<%} %>
 					<%}else{ %>
-						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-							&nbsp;
-						</td>
+
 						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 							&nbsp;
 						</td>
@@ -256,11 +253,8 @@
 					<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 						-
 					</td>
-					<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-						-
-					</td>
+
 				<%} %>
-				</td>
 			    <td valign="top" nowrap="nowrap" align="center"><%=LanguageUtil.get(pageContext, "publisher_status_" + c.getStatus().toString()) %></td>
 			    <td valign="top" nowrap="nowrap"><%=UtilMethods.dateToHTMLDate(c.getCreateDate(),"MM/dd/yyyy hh:mma") %></td>
 			    <td valign="top" nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(c.getStatusUpdated()) %></td>
