@@ -178,6 +178,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
     	//reload versionInfo from db (JIRA-7203)
         Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
         VersionInfo vi=(VersionInfo) findVersionInfoFromDb(ident);
+        boolean isNew = vi==null || !InodeUtils.isSet(vi.getIdentifier());
         try {
 			BeanUtils.copyProperties(vi, info);
 		} catch (Exception e) {
@@ -186,7 +187,12 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
         vi.setVersionTs(new Date());
         
-        HibernateUtil.saveOrUpdate(vi);
+        if(isNew) {
+            HibernateUtil.save(vi);
+        }
+        else {
+            HibernateUtil.saveOrUpdate(vi);
+        }
         HibernateUtil.flush();
         icache.removeVersionInfoFromCache(vi.getIdentifier());
 
