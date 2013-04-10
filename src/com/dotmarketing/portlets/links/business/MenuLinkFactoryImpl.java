@@ -58,7 +58,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 				Logger.debug(this.getClass(), dhe.getMessage());
 			}
 			
-			if(oldLink!=null) {
+			if(oldLink!=null && InodeUtils.isSet(oldLink.getIdentifier())) {
 				oldLink.copy(menuLink);
 				HibernateUtil.saveOrUpdate(oldLink);
 				HibernateUtil.flush();
@@ -74,7 +74,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 				}else {
 					menuLink.setIdentifier(existingId);
 				}
-				HibernateUtil.save(menuLink);
+				HibernateUtil.saveOrUpdate(menuLink);
 				HibernateUtil.flush();
 			}
 			APILocator.getIdentifierAPI().updateIdentifierURI(menuLink, destination);
