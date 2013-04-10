@@ -7,6 +7,10 @@
 <%@page import="java.util.HashMap"%>
 <%@page import="org.osgi.framework.Bundle"%>
 <%@ page import="com.dotmarketing.util.OSGIUtil" %>
+
+<script type="text/javascript">
+    require(["dijit/form/SimpleTextarea"]);
+</script>
 <%
 Bundle[] ba = OSGIUtil.getInstance().getBundleContext().getBundles();
 
@@ -32,10 +36,11 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 </div>
 <div class="buttonBoxRight">
 	<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
-	<button dojoType="dijit.form.Button" onClick="bundles.reboot();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
+	<button dojoType="dijit.form.Button" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
+	<button dojoType="dijit.form.Button" onClick="bundles.extraPackages();" iconClass="editIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%></button>
 	<button dojoType="dijit.form.Button" onClick="mainAdmin.refresh();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
-
 </div>
+
 <div class="clear" style="height:40px;">&nbsp;</div>
 
 <div id="uploadOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%>" style="display: none;">
@@ -50,6 +55,20 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 			</div>
 		</form>
 	</div>
+</div>
+
+<div id="packagesOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%>" style="display: none;">
+    <div style="padding:30px 15px;">
+        <form id="modifyPackagesForm" name="modifyPackagesForm" method="post">
+            <input type="hidden" name="cmd" value="modifyPackages">
+            <div style="height: 400px;">
+                <textarea dojoType="dijit.form.SimpleTextarea" id="packages" name="packages" style="width:350px; height: 390px!important; overflow-y: scroll!important;"></textarea>
+            </div>
+            <div>
+                <button style="padding-top: 10px;" dojoType="dijit.form.Button" onClick='bundles.modifyExtraPackages()' iconClass="saveIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-modify-packages")%></button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <table class="listingTable" style="margin:0 0 25px 0;" id="bundlesTable">
