@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -63,7 +64,17 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 				HibernateUtil.flush();
 				menuLink = oldLink;
 			} else {
+				String existingId=menuLink.getIdentifier();
+				menuLink.setIdentifier(null);
 				HibernateUtil.saveWithPrimaryKey(menuLink, menuLink.getInode());
+
+				Identifier id=APILocator.getIdentifierAPI().find(existingId);
+				if(id==null || !InodeUtils.isSet(id.getId())) {
+					APILocator.getIdentifierAPI().createNew(menuLink, destination, existingId);
+				}else {
+					menuLink.setIdentifier(existingId);
+				}
+				HibernateUtil.save(menuLink);
 				HibernateUtil.flush();
 			}
 			APILocator.getIdentifierAPI().updateIdentifierURI(menuLink, destination);
