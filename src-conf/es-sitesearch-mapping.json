@@ -1,5 +1,6 @@
 {
     "dot_site_search": {
+      "_all" : {"enabled":false},
       "properties": {
         "content": {
           "type": "multi_field",
