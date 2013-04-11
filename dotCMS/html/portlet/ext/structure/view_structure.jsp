@@ -7,6 +7,7 @@
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
+<%@page import="com.dotcms.enterprise.LicenseUtil"%><script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 
 <%
 	java.util.Map params = new java.util.HashMap();
@@ -39,7 +40,7 @@
 	String orderby = (request.getParameter("orderBy") != null) ? request
 			.getParameter("orderBy")
 			: "";
-			
+
 	int STRUCTURE_TYPE_CONTENT = 1;
     int STRUCTURE_TYPE_WIDGET = 2;
     int STRUCTURE_TYPE_FORM = 3;
@@ -58,12 +59,18 @@
 	} catch (NumberFormatException e) {
 	}
 
-			
+    params = new java.util.HashMap();
+	params.put("struts_action",
+			new String[] { "" });
+	String viewStructures = com.dotmarketing.util.PortletURLUtil.getRenderURL(
+			request, WindowState.MAXIMIZED.toString(), params);
+
 
 %>
 <script language="Javascript">
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
 
+var currentStructureInode = "";
 
 function addNewStructure(){
 
@@ -82,7 +89,7 @@ function resetSearch() {
 }
 
 function submitfm() {
-	form = document.getElementById('fm');	
+	form = document.getElementById('fm');
 	form.pageNumber.value = 1;
 	var system = '0';
 	if (form.system.checked)
@@ -119,10 +126,10 @@ function editStructure(inode){
 }
 
 function changeBgOver(inode){
-	dojo.style("tr" + inode, "background", "#CDEAFD"); 
+	dojo.style("tr" + inode, "background", "#CDEAFD");
 }
 function changeBgOut(inode){
-	dojo.style("tr" + inode, "background", "#ffffff"); 
+	dojo.style("tr" + inode, "background", "#ffffff");
 }
 
 dojo.addOnLoad(function() {
@@ -146,7 +153,7 @@ dojo.addOnLoad(function() {
         }
     });
     menu.addChild(menuItem2);
-	
+
 	var menuItem3 = new dijit.MenuItem({
         label: "<%= LanguageUtil.get(pageContext, "View-all-Relationships") %>",
 		iconClass: "previewIcon",
@@ -165,7 +172,48 @@ dojo.addOnLoad(function() {
         }
     });
     dojo.byId("addNewStructure").appendChild(button.domNode);
+
 });
+
+dojo.require("dotcms.dojo.push.PushHandler");
+var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+
+function remotePublishStructure (inode) {
+	alert(inode);
+	pushHandler.showDialog(inode);
+}
+
+function deleteStructure(structureInode) {
+	currentStructureInode = structureInode;
+
+	if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.delete.structure.and.content")) %>')) {
+  	  StructureAjax.checkDependencies(structureInode, handleDepResponse);
+  	}
+}
+
+function handleDepResponse(data) {
+	if(data!=null) {
+		dojo.byId("depDiv").innerHTML = "<br />" + data;
+		dijit.byId("dependenciesDialog").show();
+	} else {
+		processDelete();
+	}
+}
+
+function processDelete() {
+	var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
+	href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_structure' />";
+	href = href + "<portlet:param name='referer' value='<%=viewStructures%>' />";
+	href = href + "<portlet:param name='cmd' value='<%=Constants.DELETE%>' />";
+	href = href + "</portlet:actionURL>";
+	href = href + "&inode=" + currentStructureInode;
+	document.location.href = href;
+}
+
+var popupMenusDiv;
+var popupMenus = "";
+var deleteLabel = "";
+
 </script>
 
 
@@ -200,17 +248,17 @@ dojo.addOnLoad(function() {
 				<option value="<%=next%>" <%=structureType == next?"selected='true'":""%>><%=strTypeName%></option>
 			<%} %>
 		</select>
-		
+
 		<input type="text" name="query" dojoType="dijit.form.TextBox" style="width:175px;" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
-		    
+
 		<button dojoType="dijit.form.Button" onClick="submitfm()" iconClass="searchIcon">
 		   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 		</button>
-            
+
 		<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
 		   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset")) %>
 		</button>
-            
+
 		<input type="checkbox" name="system" id="system" dojoType="dijit.form.CheckBox" <%if (UtilMethods.isSet(request.getParameter("system")) && request.getParameter("system").equals("1")) {%> checked="checked"<%}%> value="1" onClick="submitfm()"/><%= LanguageUtil.get(pageContext, "Structure-show-System") %>
 	</div>
 </form>
@@ -222,9 +270,10 @@ dojo.addOnLoad(function() {
 
 <!-- START Listing Results -->
 	<form action="" method="post" name="order">
+	<div id="results_table_popup_menus"></div>
 	<table class="listingTable" >
 		<tr>
-			
+
 			<th width="40%">
 				<a href="<portlet:actionURL>
 				<portlet:param name='struts_action' value='/ext/structure/view_structure' />
@@ -236,7 +285,7 @@ dojo.addOnLoad(function() {
 				<portlet:param name='orderBy' value='structuretype, upper(name)' /><portlet:param name='direction' value='asc'/>
 				</portlet:actionURL>" >
 				<%= LanguageUtil.get(pageContext, "Variable") %></a>
-				
+
 			</th>
 			<th width="30%" >
 				<a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_structure' />
@@ -246,18 +295,18 @@ dojo.addOnLoad(function() {
 			<th width="10%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Entries") %></th>
 			<th width="10%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Relationships") %></th>
 		</tr>
-	
-		<% 
+
+		<%
 		int structuresSize = ((Integer) request.getAttribute(com.dotmarketing.util.WebKeys.STRUCTURES_VIEW_COUNT)).intValue();
 		int k = 0;
-		
+
 		if (structures.size() > 0) {
 		for (int i = 0; i < structures.size(); i++) {
 			Structure structure = (Structure) structures.get(i);
 
-			
-			
-			
+
+
+
 			%>
 
 			<tr id="tr<%=structure.getInode()%>" class="alternate_1" onclick="editStructure('<%=structure.getInode()%>');">
@@ -271,7 +320,7 @@ dojo.addOnLoad(function() {
 					<% }else{ %>
 						<span class="contentIcon"></span>
 					<% } %>
-					
+
 					<%=structure.getName()%>
 				</td>
 				<td><%=structure.getVelocityVarName() %></td>
@@ -289,10 +338,31 @@ dojo.addOnLoad(function() {
 					<%= LanguageUtil.get(pageContext, "view") %></a>
 				</td>
 			</tr>
+
+			<script>
+
+				<%if(structure.getStructureType() == 3 ){%>
+				deleteLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Form-and-Entries")) %>';
+				<%}else{ %>
+				deleteLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Structure-and-Content")) %>';
+				<%} %>
+
+		    	popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=structure.getInode()%>\">";
+
+		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
+		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"stopIcon\" onClick=\"deleteStructure('<%=structure.getInode()%>');\">"+deleteLabel+"</div>";
+
+		        popupMenus += "</div>";
+
+		        popupMenusDiv = document.getElementById("results_table_popup_menus");
+		        popupMenusDiv.innerHTML = popupMenus;
+			</script>
+
  		<% } %>
 <!-- END Listing Results -->
 
-<!-- Start No Results -->	
+<!-- Start No Results -->
   <% }else { %>
 		<tr>
 			<td colspan="6">
@@ -302,11 +372,11 @@ dojo.addOnLoad(function() {
   <%}%>
 <!-- End No Results -->
 
-</table>
+	</table>
 
 <!-- Start Pagination -->
 	<div class="yui-gb buttonRow">
-		<div class="yui-u first" style="text-align:left;">		     
+		<div class="yui-u first" style="text-align:left;">
 			<% if (minIndex != 0) { %>
 				<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/structure/view_structure" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /><%if(UtilMethods.isSet(request.getParameter("system")) && request.getParameter("system").equals("1")){ %><portlet:param name="system" value="1" /><%} else {%><portlet:param name="system" value="0" /><%}%><portlet:param name="orderBy" value="<%= orderby %>" /></portlet:renderURL>';" iconClass="previousIcon" type="button">
 					<%= LanguageUtil.get(pageContext, "Previous") %>
@@ -327,4 +397,19 @@ dojo.addOnLoad(function() {
 <!-- END Pagination -->
 
 </form>
+<form id="remotePublishForm">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="iWantTo" id=iWantTo type="hidden" value="">
+</form>
+<div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:300px;vertical-align: middle; " draggable="true"
+	title="<%= LanguageUtil.get(pageContext, "message.structure.cantdelete") %>" >
+
+	<span style="color: red; font-weight: bold"><%= LanguageUtil.get(pageContext, "message.structure.notdeletestructure.container") %></span>
+
+	<div id="depDiv" style="overflow: auto; height: 220px"></div>
+</div>
 </liferay:box>
