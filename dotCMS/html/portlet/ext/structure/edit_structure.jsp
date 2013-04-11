@@ -114,14 +114,10 @@
 	dojo.require("dojo.dnd.Container");
 	dojo.require("dojo.dnd.Manager");
 	dojo.require("dojo.dnd.Source");
-	dojo.require("dotcms.dojo.push.PushHandler");
 
 	var structureInode = '<%=structure.getInode()%>';
 	<%-- This is the javascript Array that controls what is shown or hidden --%>
 	<%@ include file="/html/portlet/ext/structure/field_type_js_array.jsp" %>
-
-	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
-
 
 	function writeLabel(fieldType){
 		fieldType = fieldType.toLowerCase();
@@ -482,15 +478,6 @@ function disableFormFields(){
 			   }
 		    }
 		toggleSaveButton(true);
-}
-
-function remotePublishStructure () {
-	pushHandler.showDialog(structureInode);
-}
-
-function remoteUnPublishStructure () {
-	pushHandler.remoteUnPublish(structureInode);
-	showDotCMSSystemMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.remote.unpublish")) %>");
 }
 
 </script>
@@ -870,22 +857,6 @@ function remoteUnPublishStructure () {
 				</button>
 			<%}%>
 		<%} %>
-		<%
-			boolean enterprise = LicenseUtil.getLevel() > 199;
-			List<PublishingEndPoint> sendingEndpoints = APILocator.getPublisherEndPointAPI().getReceivingEndPoints();
-			boolean areSendingEndPoints = UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty();
-
-			if(UtilMethods.isSet(structure.getInode()) && enterprise && areSendingEndPoints && hasPublishPermissions) {
-		%>
-
-				<button dojoType="dijit.form.Button" id="remotePublishButton" onClick="remotePublishStructure();" iconClass="pushIcon" type="button">
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
-				</button>
-
-				<button dojoType="dijit.form.Button" id="remoteUnPublishButton" onClick="remoteUnPublishStructure();" iconClass="pushIcon" type="button">
-                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-UnPublish")) %>
-                </button>
-		<% } %>
 		<button dojoType="dijit.form.Button" id="saveButton" onClick="addNewStructure();" iconClass="saveIcon" type="button">
 
 					<%if(structure.getStructureType() == 3 ){%>
@@ -971,12 +942,3 @@ function remoteUnPublishStructure () {
 
 	<div id="depDiv" style="overflow: auto; height: 220px"></div>
 </div>
-
-<form id="remotePublishForm">
-	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
-	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
-	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
-	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
-	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
-	<input name="iWantTo" id=iWantTo type="hidden" value="">
-</form>
