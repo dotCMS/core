@@ -11,6 +11,7 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
+<%@page import="com.dotmarketing.cache.StructureCache"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Permissionable"%>
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
@@ -22,7 +23,6 @@
 <%@page import="com.dotmarketing.business.UserAPI"%>
 <%@page import="java.util.List"%>
 
-<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 
@@ -35,12 +35,19 @@
 	dojo.addOnLoad(function() {
 		UserAjax.getUserRolesValues('<%=user.getUserId()%>', '<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>', getUserRolesValuesCallBack);
 	});
-	
+
 	var enterprise = <%=LicenseUtil.getLevel() > 199%>;
 
 	<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
 	var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
+
+	<%
+	Structure fileStructure = StructureCache.getStructureByVelocityVarName("FileAsset");
+	WorkflowScheme fileWorkflow = APILocator.getWorkflowAPI().findSchemeForStruct(fileStructure);
+	%>
+
+	var filesMandatoryWorkflow = <%=fileWorkflow.isMandatory()%>
 
 
 	function getUserRolesValuesCallBack(response) {
@@ -70,14 +77,16 @@
 		    		strHTML += '<span class="hostIcon"></span>';
     				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Host")) %>';
 				strHTML += '</a>';
+
+				if(enterprise && sendingEndpoints) {
+					strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+				    	strHTML += '<span class="pushIcon"></span>';
+		        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+					strHTML += '</a>';
+				}
 			}
-			
-			if(enterprise && sendingEndpoints) {
-				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-			    	strHTML += '<span class="pushIcon"></span>';
-	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
-				strHTML += '</a>';
-			}
+
+
 
 			if (addChildren) {
 				var containerperm=<%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_12", user)%>;
@@ -110,7 +119,7 @@
 					    strHTML += '<span class="fileNewIcon"></span>';
 					    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 				    strHTML += '</a>';
-				    
+
 				    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);">';
                     strHTML += '<span class="fileNewIcon"></span>';
                     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
@@ -180,7 +189,7 @@
 		var write = hasWritePermissions(folder.permissions);
 		var publish = hasPublishPermissions(folder.permissions);
 		var addChildren = hasAddChildrenPermissions(folder.permissions);
-		
+
 		var strHTML = '';
 
 		if (write) {
@@ -199,7 +208,7 @@
 		    	strHTML += '<span class="folderGlobeIcon"></span>';
         		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publishall")) %>';
 			strHTML += '</a>';
-			
+
 			if(enterprise && sendingEndpoints) {
 				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
 			    	strHTML += '<span class="pushIcon"></span>';
@@ -362,6 +371,7 @@
    			}
 		}
 
+		console.log(file.wfActionMapList);
 
 		for (var i = 0; i < file.wfActionMapList.length; i++) {
 			var name = file.wfActionMapList[i].name;
@@ -399,6 +409,13 @@
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
 			}
 			strHTML += '</a>';
+
+			if(enterprise && sendingEndpoints && !filesMandatoryWorkflow) {
+				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+			    	strHTML += '<span class="pushIcon"></span>';
+	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+				strHTML += '</a>';
+			}
 		}
 
 		if (live && publish ) {
@@ -521,6 +538,13 @@
 	            	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
 				}
 			strHTML += '</a>';
+
+			if(enterprise && sendingEndpoints) {
+				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+			    	strHTML += '<span class="pushIcon"></span>';
+	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+				strHTML += '</a>';
+			}
 		}
 
 		if (live && publish) {
@@ -608,7 +632,7 @@
     				strHTML += '<span class="pagePropIcon"></span>';
            			strHTML += actionLabel;
 				strHTML += '</a>';
-			}			
+			}
 		}
 
         if (!archived) {
@@ -629,14 +653,14 @@
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
 			}
 			strHTML += '</a>';
-			
+
 			if(enterprise && sendingEndpoints) {
 				strHTML += '<a href="javascript: remotePublish(\'' + objId + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		    	strHTML += '<span class="pushIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
 			}
-			
+
 		}
 
 		if (live && publish) {
@@ -992,42 +1016,42 @@
     		var wfActionComments 	= comments;
 
     		var dia = dijit.byId("contentletWfDialog").hide();
-    		
-    		// BEGIN: PUSH PUBLISHING ACTIONLET						
-			var publishDate = (dijit.byId("wfPublishDateAux"))			
+
+    		// BEGIN: PUSH PUBLISHING ACTIONLET
+			var publishDate = (dijit.byId("wfPublishDateAux"))
 				? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
-					: (dojo.byId("wfPublishDateAux"))	
+					: (dojo.byId("wfPublishDateAux"))
 						? dojo.date.locale.format(dojo.byId("wfPublishDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"})
 								: "";
 
-			var publishTime = (dijit.byId("wfPublishTimeAux"))			
+			var publishTime = (dijit.byId("wfPublishTimeAux"))
 				? dojo.date.locale.format(dijit.byId("wfPublishTimeAux").getValue(),{timePattern: "H-m", selector: "time"})
-					: (dojo.byId("wfPublishTimeAux"))	
+					: (dojo.byId("wfPublishTimeAux"))
 						? dojo.date.locale.format(dojo.byId("wfPublishTimeAux").value,{timePattern: "H-m", selector: "time"})
 								: "";
-			
-						
-			var expireDate = (dijit.byId("wfExpireDateAux"))			
+
+
+			var expireDate = (dijit.byId("wfExpireDateAux"))
 				? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-					: (dojo.byId("wfExpireDateAux"))	
+					: (dojo.byId("wfExpireDateAux"))
 						? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
 								: "";
-			
-			var expireTime = (dijit.byId("wfExpireTimeAux"))			
+
+			var expireTime = (dijit.byId("wfExpireTimeAux"))
 				? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireTimeAux").getValue(),{timePattern: "H-m", selector: "time"}) : ""
-					: (dojo.byId("wfExpireTimeAux"))	
+					: (dojo.byId("wfExpireTimeAux"))
 						? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireTimeAux").value,{timePattern: "H-m", selector: "time"}) : ""
-								: "";			
-			var neverExpire = (dijit.byId("wfNeverExpire"))			
+								: "";
+			var neverExpire = (dijit.byId("wfNeverExpire"))
 				? dijit.byId("wfNeverExpire").getValue()
-					: (dojo.byId("wfNeverExpire"))	
+					: (dojo.byId("wfNeverExpire"))
 						? dojo.byId("wfNeverExpire").value
 								: "";
-						
+
 			// END: PUSH PUBLISHING ACTIONLET
-			
-			
-    		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate, 
+
+
+    		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
     				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);
 
     	}
