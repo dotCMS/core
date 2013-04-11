@@ -1664,7 +1664,6 @@
                 }
 
                 popupMenusDiv.innerHTML = popupMenus;
-<!--                 popupMenusDiv.innerHTML = strHTML; -->
 
                 dojo.parser.parse(dojo.byId("results_table_popup_menus"));
                 dojo.parser.parse(dojo.byId("results_table"));
