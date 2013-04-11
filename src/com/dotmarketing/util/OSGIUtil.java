@@ -3,6 +3,7 @@ package com.dotmarketing.util;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import org.apache.commons.io.IOUtils;
 import org.apache.felix.framework.FrameworkFactory;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
@@ -15,9 +16,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 
 import javax.servlet.ServletContextEvent;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -31,6 +30,9 @@ import java.util.Properties;
 public class OSGIUtil {
 
     public static final Long BUNDLE_HTTP_BRIDGE_ID = 6L;
+
+    private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
+    public String FELIX_EXTRA_PACKAGES_FILE;
 
     private static OSGIUtil instance;
 
@@ -61,14 +63,26 @@ public class OSGIUtil {
 
         servletContextEvent = context;
 
-        Properties configProps = loadConfig();
+        String felixDirectory = context.getServletContext().getRealPath( File.separator + "WEB-INF" + File.separator + "felix" );
+        FELIX_EXTRA_PACKAGES_FILE = felixDirectory + File.separator + "osgi-extra.conf";
 
-        String felixDir = context.getServletContext().getRealPath( File.separator + "WEB-INF" + File.separator + "felix" );
-        Logger.info( this, "Felix dir: " + felixDir );
-        String bundleDir = felixDir + File.separator + "bundle";
-        String cacheDir = felixDir + File.separator + "felix-cache";
-        String autoLoadDir = felixDir + File.separator + "load";
+        Logger.info( this, "Felix dir: " + felixDirectory );
+        String bundleDir = felixDirectory + File.separator + "bundle";
+        String cacheDir = felixDirectory + File.separator + "felix-cache";
+        String autoLoadDir = felixDirectory + File.separator + "load";
 
+        Properties configProps;
+        String extraPackages;
+        try {
+            configProps = loadConfig();
+            extraPackages = getExtraOSGIPackages();
+        } catch ( IOException e ) {
+            Logger.error( this, "Error loading the OSGI framework properties: " + e );
+            throw new RuntimeException( e );
+        }
+
+        //Setting the OSGI extra packages property
+        configProps.setProperty( PROPERTY_OSGI_PACKAGES_EXTRA, extraPackages );
         // we need gosh to not expecting stdin to work
         configProps.setProperty( "gosh.args", "--noi" );
 
@@ -179,6 +193,11 @@ public class OSGIUtil {
         throw new Exception( "Could not find framework factory." );
     }
 
+    /**
+     * Loads all the OSGI configured properties
+     *
+     * @return
+     */
     private Properties loadConfig () {
 
         Properties properties = new Properties();
@@ -192,6 +211,36 @@ public class OSGIUtil {
             }
         }
         return properties;
+    }
+
+    /**
+     * Returns the packages inside the <strong>osgi-extra.conf</strong> file, those packages are the value
+     * for the OSGI configuration property <strong>org.osgi.framework.system.packages.extra</strong>.
+     * <br/><br/>
+     * The property <strong>org.osgi.framework.system.packages.extra</strong> is use to set the list of packages the
+     * dotCMS context in going to expose to the OSGI context.
+     *
+     * @return
+     * @throws IOException
+     */
+    public String getExtraOSGIPackages () throws IOException {
+
+        String extraPackages;
+
+        //Reading the file with the extra packages
+        FileInputStream inputStream = new FileInputStream( FELIX_EXTRA_PACKAGES_FILE );
+        try {
+            extraPackages = IOUtils.toString( inputStream );
+        } finally {
+            inputStream.close();
+        }
+
+        //Clean up the properties, it is better to keep it simple and in a standard format
+        extraPackages = extraPackages.replaceAll( "\\\n", "" );
+        extraPackages = extraPackages.replaceAll( "\\\r", "" );
+        extraPackages = extraPackages.replaceAll( "\\\\", "" );
+
+        return extraPackages;
     }
 
 }

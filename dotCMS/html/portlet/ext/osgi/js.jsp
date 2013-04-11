@@ -14,6 +14,7 @@ dojo.subscribe("/dojo/hashchange", this, function(hash){mainAdmin.refresh();});
 
 
 dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
+
 	baseDiv : "osgiBundles",
 	constructor : function() {
 	},
@@ -56,6 +57,7 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
 
 
 dojo.declare("dotcms.dijit.osgi.Bundles", null, {
+
 	baseJsp : "/html/portlet/ext/osgi/bundles.jsp",
 	constructor : function() {
 		
@@ -65,6 +67,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		var href = this.baseJsp;
 		mainAdmin.show(href);
 	},
+
 	undeploy : function (jarName){
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=undeploy&jar=" + jarName,
@@ -85,6 +88,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		dojo.xhrPut(xhrArgs);
 		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	},
+
 	deploy : function(){
 		var availBundles = dijit.byId('availBundlesCombo');
 		if(availBundles.getValue() == undefined || availBundles.getValue()==""){
@@ -110,6 +114,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		dojo.xhrPut(xhrArgs);
 		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	},
+
 	start : function(bundleId){
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=start&bundleId=" + bundleId,
@@ -129,6 +134,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		dojo.xhrPut(xhrArgs);
 		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	},
+
 	stop : function(bundleId){
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=stop&bundleId=" + bundleId,
@@ -148,6 +154,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		dojo.xhrPut(xhrArgs);
 		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	},
+
 	add : function(){
 		var fm = dojo.byId("addBundle");
 
@@ -173,18 +180,24 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		dijit.byId('savingOSGIDialog').show();
 		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
 	},
-    reboot : function(){
 
-        if(confirm('<%=LanguageUtil.get(pageContext, "OSGI-restart-confirmation") %>')) {
+    reboot : function(askForConfirmation){
+
+        var canContinue = true;
+        if (askForConfirmation) {
+            canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-restart-confirmation") %>');
+        }
+
+        if(canContinue) {
             var xhrArgs = {
                 url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=restart",
                 handle : function(dataOrError, ioArgs) {
                     if (dojo.isString(dataOrError)) {
                         if (dataOrError.indexOf("FAILURE") == 0) {
-
-                        // needs logging
+                            // needs logging
+                            console.error(dataOrError);
                         } else {
-                        // needs logging
+                            // needs logging
                         }
                     } else {
                         // needs logging
@@ -195,7 +208,61 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
             dojo.xhrPut(xhrArgs);
             setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
         }
-	}
+	},
+
+    extraPackages : function (){
+        var xhrArgs = {
+            url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=getExtraPackages",
+            handle : function(dataOrError, ioArgs) {
+
+                if (dojo.isString(dataOrError)) {
+                    if (dataOrError.indexOf("FAILURE") == 0) {
+                        console.error(dataOrError);
+                    } else {
+                        var packages = dataOrError.replace("SUCCESS:", "");
+                        packages = packages.replace(/,/g, ",\n");
+                        dijit.byId('packages').set("value", packages);
+                    }
+                } else {
+                    //this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+                }
+            }
+        };
+        dijit.byId('packagesOSGIDialog').show();
+        dojo.xhrGet(xhrArgs);
+    },
+
+    modifyExtraPackages : function(){
+
+        var canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-modify-packages-confirmation") %>');
+        if(canContinue) {
+
+            var fm = dojo.byId("modifyPackagesForm");
+
+            require(["dojo/io/iframe"], function(ioIframe){
+                ioIframe.send({
+                    // The form node, which contains the
+                    // data. We also pull the URL and METHOD from it:
+                    form: fm,
+                    url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=modifyExtraPackages",
+                    method : "post",
+                    // The used data format:
+                    handleAs: "json",
+
+                    // Callback on successful call:
+                    load: function(response, ioArgs) {
+                        // return the response for succeeding callbacks
+                        //setTimeout(function() {mainAdmin.refresh();},7000);
+                        return response;
+                    }
+                });
+            });
+            dijit.byId('packagesOSGIDialog').hide();
+            dijit.byId('savingOSGIDialog').show();
+            setTimeout(function() {bundles.reboot(false);dijit.byId('savingOSGIDialog').hide();},4000);
+        }
+    }
+
 });
 
 var mainAdmin = new dotcms.dijit.osgi.MainAdmin({});
