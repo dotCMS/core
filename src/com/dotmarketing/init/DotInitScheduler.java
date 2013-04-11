@@ -683,8 +683,12 @@ public class DotInitScheduler {
 
                     if (isNew)
                         sched.scheduleJob(trigger);
-                    else
-                        sched.rescheduleJob("trigger20", "group20", trigger);
+                    else {
+                        CronTrigger existing=(CronTrigger)sched.getTrigger("trigger20", "group20");
+                        if(!existing.getCronExpression().equals(trigger.getCronExpression())) {
+                            sched.rescheduleJob("trigger20", "group20", trigger);
+                        }
+                    }
                 } catch (Exception e) {
                     Logger.error(DotInitScheduler.class, e.getMessage(),e);
                 }
