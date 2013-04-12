@@ -323,7 +323,7 @@
 			</div>
 		<%} %>
 		 	<input type="hidden" name="languageId" id="languageId" 
-				value="<%= (contentlet.getLanguageId() != 0) ? contentlet.getLanguageId() + "" : ((UtilMethods.isSet(request.getParameter("lang"))) ? request.getParameter("lang") : defaultLang.getId()) %>">
+				value="<%= (contentlet.getLanguageId() != 0) ? contentlet.getLanguageId() + "" : ((UtilMethods.isSet(request.getParameter("lang")) && structure.getStructureType()!=Structure.STRUCTURE_TYPE_WIDGET) ? request.getParameter("lang") : defaultLang.getId()) %>">
 	
 		<!-- END LANGUAGE -->
 

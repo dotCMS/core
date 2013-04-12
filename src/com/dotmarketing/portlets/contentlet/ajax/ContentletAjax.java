@@ -1552,7 +1552,7 @@ public class ContentletAjax {
 			}
 		}
 
-		if(!isAutoSave
+		/*if(!isAutoSave
 				&&(saveContentErrors == null
 						|| saveContentErrors.size() == 0)){
 
@@ -1563,7 +1563,7 @@ public class ContentletAjax {
 				referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);
 				Logger.debug(this, "Referer after being replaced=" + referer);
 			}
-		}
+		}*/
 		if(!isAutoSave){
 			if(InodeUtils.isSet(newInode) && !conAPI.isInodeIndexed(newInode)){
 				Logger.error(this, "Timed Out waiting for index to return");
