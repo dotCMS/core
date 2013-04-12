@@ -1103,7 +1103,7 @@
 
 	<!-- Message Resources -->
 	<!--  DOTMARKETING add content.cms_language -->
-	<message-resources parameter="messages.cms_language,messages.Language,messages.Language-ext" factory="com.liferay.portal.struts.MultiMessageResourcesFactory" />
+	<message-resources parameter="messages.Language,messages.Language-ext,messages.cms_language" factory="com.liferay.portal.struts.MultiMessageResourcesFactory" />
 	<!--  DOTMARKETING add content.cms_language -->
 	<!-- Stxx Plugin -->
 
