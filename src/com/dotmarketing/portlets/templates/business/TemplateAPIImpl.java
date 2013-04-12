@@ -461,7 +461,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public Template find(String inode, User user,  boolean respectFrontEndRoles) throws DotSecurityException,
 			DotDataException {
 		Template t =  templateFactory.find(inode);
-		if(!permissionAPI.doesUserHavePermission(t, PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
+		if(t!=null&&!permissionAPI.doesUserHavePermission(t, PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
 			throw new DotSecurityException("User does not have access to template:" + inode);
 		}
 		return t;
