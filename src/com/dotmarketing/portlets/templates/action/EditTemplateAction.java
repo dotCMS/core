@@ -659,7 +659,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		//copies the information back into the form bean
 		BeanUtils.copyProperties(form, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
-		BeanUtils.copyProperties(currentTemplate, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
+		BeanUtils.copyProperties(newTemplate, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
 
 
 
@@ -683,7 +683,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		//Calling the copy method from the factory
 		APILocator.getTemplateAPI().copy(currentTemplate, user);
-		
+
 		//super._editWebAsset(req, res, config, form, user,
 		//		WebKeys.TEMPLATE_EDIT);
 
