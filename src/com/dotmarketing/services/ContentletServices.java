@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -29,6 +30,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -506,11 +508,22 @@ public class ContentletServices {
 			velocityRootPath= Config.CONTEXT.getRealPath(velocityRootPath);
 		}
 		velocityRootPath += java.io.File.separator;
-		String filePath= folderPath + identifier.getInode() + "_" + asset.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
-		java.io.File f= new java.io.File(velocityRootPath + filePath);
-		f.delete();
-		DotResourceCache vc= CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+		List<Long> langs=new ArrayList<Long>();
+		langs.add(asset.getLanguageId());
+		if(asset.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_WIDGET) {
+		    for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
+		        if(lang.getId()!=asset.getLanguageId()) {
+		            langs.add(lang.getId());
+		        }
+		    }
+		}
+		for(Long lang : langs) {
+    		String filePath= folderPath + identifier.getInode() + "_" + lang + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
+    		java.io.File f= new java.io.File(velocityRootPath + filePath);
+    		f.delete();
+    		DotResourceCache vc= CacheLocator.getVeloctyResourceCache();
+            vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+	    }
         List<Field> fields= FieldsCache.getFieldsByStructureInode(asset.getStructureInode());
         for (Field field : fields) {
 			try {
