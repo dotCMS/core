@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,6 +28,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -461,11 +463,22 @@ public class ContentletMapServices {
 	public static void removeContentletMapFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath=(!EDIT_MODE) ? "live/" : "working/";
 		String velocityRoot=Config.CONTEXT.getRealPath("/WEB-INF/velocity/") + folderPath;
-		String filePath=  folderPath + identifier.getInode() + "_" + asset.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION");
-		java.io.File f=new java.io.File (velocityRoot + filePath);
-		f.delete();
-		DotResourceCache vc=CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+		List<Long> langs=new ArrayList<Long>();
+		langs.add(asset.getLanguageId());
+		if(asset.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_WIDGET) {
+		    for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
+		        if(lang.getId()!=asset.getLanguageId()) {
+		            langs.add(lang.getId());
+		        }
+		    }
+		}
+		for(Long lang : langs) {
+    		String filePath=  folderPath + identifier.getInode() + "_" + lang + "." + Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION");
+    		java.io.File f=new java.io.File (velocityRoot + filePath);
+    		f.delete();
+    		DotResourceCache vc=CacheLocator.getVeloctyResourceCache();
+            vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+		}
         List<Field> fields=FieldsCache.getFieldsByStructureInode(asset.getStructureInode());
         for (Field field : fields) {
 			try {
