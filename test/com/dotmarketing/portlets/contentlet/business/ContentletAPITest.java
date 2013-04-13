@@ -25,7 +25,9 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -1841,6 +1843,23 @@ public class ContentletAPITest extends ContentletBaseTest {
                 " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+datetimeFormat.format(d3)+
                 " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
         assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
+    }
+    
+    @Test(expected=DotContentletValidationException.class)
+    public void widgetOnlyForDefaultLanguage() throws Exception {
+        Structure sw=StructureCache.getStructureByVelocityVarName("SimpleWidget");
+        Language def=APILocator.getLanguageAPI().getDefaultLanguage();
+        for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
+            if(lang.getId()!=def.getId()) {
+                Contentlet widget = new Contentlet();
+                widget.setStructureInode(sw.getInode());
+                widget.setLanguageId(lang.getId());
+                widget.setStringProperty("widgetTitle", "test widget "+UUIDGenerator.generateUuid());
+                widget.setStringProperty("code", "hello boy!");
+                widget=contentletAPI.checkin(widget, user, false);
+            }
+        }
+        
     }
 
 }
