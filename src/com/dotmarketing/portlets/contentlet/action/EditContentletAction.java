@@ -107,7 +107,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private FieldAPI fAPI;
 	private RelationshipAPI relAPI;
 	private HostWebAPI hostWebAPI;
-	
+
 	private String currentHost;
 
 	public EditContentletAction() {
@@ -128,14 +128,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		boolean validate = true;
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-		
+
 		HttpSession ses = httpReq.getSession();
 
 		Logger.debug(this, "############################# Contentlet");
 
 		String cmd = req.getParameter(Constants.CMD);
 		String referer = req.getParameter("referer");
-		
+
 		Logger.debug(this, "EditContentletAction cmd=" + cmd);
 
 		HibernateUtil.startTransaction();
@@ -146,7 +146,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		currentHost = HostUtil.hostNameUtil(req, user);
 		//http://jira.dotmarketing.net/browse/DOTCMS-2273
 		//To transport PortletConfig, Layout objects using session.
-		//Needed for sendContentletPublishNotification of ContentletWebAPIImpl.java 		
+		//Needed for sendContentletPublishNotification of ContentletWebAPIImpl.java
 		ses.setAttribute(com.dotmarketing.util.WebKeys.JAVAX_PORTLET_CONFIG, config);
 		Layout layout = (Layout)req.getAttribute(com.liferay.portal.util.WebKeys.LAYOUT);
 		ses.setAttribute(com.dotmarketing.util.WebKeys.LAYOUT, layout);
@@ -256,7 +256,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 		}
 
-		
+
 		/*
 		 * If we are updating the contentlet, copy the information from the
 		 * struts bean to the hbm inode and run the update action and return to
@@ -274,7 +274,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					reindexContentlets(contentToIndexAfterCommit,cmd);
 					//This is called to preserve the values submitted in the form
 					//in case of a validation error
-					_loadForm(req, res, config, form, user, false);					
+					_loadForm(req, res, config, form, user, false);
 					setForward(req, "portlet.ext.contentlet.edit_contentlet");
 					return;
 				}catch (Exception ce) {
@@ -311,7 +311,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					SessionMessages.add(req, "error","message.saved.but.not.publish");
 				}
 
-				_sendToReferral(req, res, referer); 
+				_sendToReferral(req, res, referer);
 			} catch (Exception ae) {
 				_handleException(ae, req);
 			}
@@ -319,7 +319,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		/*
 		 * If we are deleting the contentlet, run the delete action and return
 		 * to the list
-		 * 
+		 *
 		 */
 		else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
 			try {
@@ -341,20 +341,20 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 			_sendToReferral(req, res, referer);
 		}
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_DELETE)) 
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_DELETE))
 		{
-			try 
+			try
 			{
 				Logger.debug(this,"Calling Full Delete Method");
-				Contentlet contentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);			
+				Contentlet contentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);
 				try{
 					conAPI.delete(contentlet, user, false);
 					SessionMessages.add(httpReq, "message", "message.contentlet.full_delete");
 				}catch (Exception e) {
 					SessionMessages.add(httpReq, "error", "message.contentlet.full_delete.error");
-				}	
+				}
 			}
-			catch(Exception ae) 
+			catch(Exception ae)
 			{
 				_handleException(ae, req);
 				return;
@@ -364,13 +364,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		/*
 		 * If we are undeleting the container, run the undelete action and
 		 * return to the list
-		 * 
+		 *
 		 */
 		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.UNDELETE)) {
 			try {
 				Logger.debug(this, "Calling UnDelete Method");
 				conAPI.unarchive(contentletToEdit, user, false);
-				SessionMessages.add(httpReq, "message", "message.contentlet.undelete");	
+				SessionMessages.add(httpReq, "message", "message.contentlet.undelete");
 			} catch (Exception ae) {
 				_handleException(ae, req);
 				return;
@@ -391,7 +391,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_handleException(ae, req);
 				return;
 			}
-			
+
 		}
 		/*
 		 * If we are unpublishing the container, run the unpublish action and
@@ -439,13 +439,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			Contentlet workingContentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);
 
-			/* 
+			/*
 			 href =  "<portlet:actionURL>";
 			 href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
 			 href += "<portlet:param name='cmd' value='edit' />";
 			 href += "<portlet:param name='referer' value='<%=referer%>' />";
 			 href += "</portlet:actionURL>";
-			 */ 
+			 */
 
 			HashMap params = new HashMap ();
 			params.put("struts_action", new String [] { "/ext/contentlet/edit_contentlet" });
@@ -481,13 +481,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 
 				// http://jira.dotmarketing.net/browse/DOTCMS-1073
-				// deleting uploaded files 
+				// deleting uploaded files
 				/*Logger.debug(this, "Deleting uploaded files");
 				java.io.File tempUserFolder = new java.io.File(Config.CONTEXT
 						.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
 						+ java.io.File.separator + user.getUserId());
 
-				FileUtil.deltree(tempUserFolder);*/				
+				FileUtil.deltree(tempUserFolder);*/
 
 				if(perAPI.doesUserHavePermission(contentletToEdit, PermissionAPI.PERMISSION_WRITE, user)) {
 					try{
@@ -536,9 +536,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		/**
 		 * If whe are going to unpublish a list of contentlets
 		 */
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_UNPUBLISH_LIST)) 
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_UNPUBLISH_LIST))
 		{
-			try {	
+			try {
 				_batchUnpublish(req, res, config, form, user,contentToIndexAfterCommit);
 			} catch (Exception ae) {
 				_handleException(ae, req);
@@ -554,9 +554,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		/**
 		 * If whe are going to publish a list of contentlets
 		 */
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_PUBLISH_LIST)) 
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_PUBLISH_LIST))
 		{
-			try {	
+			try {
 				_batchPublish(req, res, config, form, user,contentToIndexAfterCommit);
 			} catch (Exception ae) {
 				_handleException(ae, req);
@@ -570,42 +570,42 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		/**
 		 * If whe are going to archive a list of contentlets
 		 */
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_ARCHIVE_LIST)) 
-		{	
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_ARCHIVE_LIST))
+		{
 
-			try {	
+			try {
 				_batchArchive(req, res, config, form, user,contentToIndexAfterCommit);
 			} catch (Exception ae) {
 				_handleException(ae, req);
 				return;
-			}		
+			}
 			_sendToReferral(req, res, referer);
 
 		}
 		/**
 		 * If whe are going to un-archive a list of contentlets
 		 */
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_UNARCHIVE_LIST)) 
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_UNARCHIVE_LIST))
 		{
-			try {	
+			try {
 				_batchUnArchive(req, res, config, form, user,contentToIndexAfterCommit);
 			} catch (Exception ae) {
 				_handleException(ae, req);
 				return;
-			}		
+			}
 			_sendToReferral(req, res, referer);
 
 
 		}
 
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_REINDEX_LIST)) 
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_REINDEX_LIST))
 		{
-			try {	
+			try {
 				_batchReindex(req, res, config, form, user);
 			} catch (Exception ae) {
 				_handleException(ae, req);
 				return;
-			}		
+			}
 			_sendToReferral(req, res, referer);
 
 
@@ -614,9 +614,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		/**
 		 * If whe are going to un-archive a list of contentlets
 		 */
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_DELETE_LIST)) 
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_DELETE_LIST))
 		{
-			try {	
+			try {
 				_batchDelete(req, res, config, form, user,contentToIndexAfterCommit);
 			} catch (Exception ae) {
 				_handleException(ae, req);
@@ -625,13 +625,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			_sendToReferral(req, res, referer);
 
 		}
-		
+
 		/**
 		 * If whe are going to un-lock a list of contentlets
 		 */
-		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_UNLOCK_LIST)) 
+		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.FULL_UNLOCK_LIST))
 		{
-			try {	
+			try {
 				_batchUnlock(req, res, config, form, user,contentToIndexAfterCommit);
 			} catch (Exception ae) {
 				_handleException(ae, req);
@@ -648,12 +648,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		 */
 		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.COPY)) {
 			try {
-				Logger.debug(this, "Calling Copy Method");				
+				Logger.debug(this, "Calling Copy Method");
 				_copyWebAsset(req, res, config, form, user);
-			} 
+			}
 			catch(DotContentletValidationException ve) {
 				SessionMessages.add(httpReq, "error", "message.contentlet.copy.relation.not_valid");
-				_handleException(ve, req);			
+				_handleException(ve, req);
 			}
 			catch(DotWorkflowException we) {
 			    SessionMessages.add(httpReq, "error", "message.contentlet.copy.mandatory.workflow");
@@ -670,7 +670,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		reindexContentlets(contentToIndexAfterCommit,cmd);
 		HibernateUtil.commitTransaction();
-		
+
 		if(UtilMethods.isSet(req.getAttribute("inodeToWaitOn"))){
 			if(!conAPI.isInodeIndexed(req.getAttribute("inodeToWaitOn").toString())){
 				Logger.error(this, "Timedout waiting on index to return");
@@ -683,12 +683,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	// /// ************** ALL METHODS HERE *************************** ////////
 
 	protected void _retrieveWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form,User user) throws Exception {
-		String inode = req.getParameter("inode");				
+		String inode = req.getParameter("inode");
 		String inodeStr = (InodeUtils.isSet(inode) ? inode : "");
 		Contentlet contentlet = new Contentlet();
 
 		if(InodeUtils.isSet(inodeStr))
-		{			
+		{
 			Boolean makeEditable = Boolean.valueOf(req.getParameter("makeEditable"));
 			Boolean populateaccept = Boolean.valueOf(req.getParameter("populateaccept"));
 			if(makeEditable && !populateaccept){
@@ -749,8 +749,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		if(httpReq.getParameter("selected") != null){
 			httpReq.getSession().setAttribute("selectedStructure", st.getInode());
 		}
-		
-		if(!InodeUtils.isSet(contentlet.getInode()) && 
+
+		if(!InodeUtils.isSet(contentlet.getInode()) &&
 		        contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_WIDGET) {
 		    contentlet.setStructureInode(
 		            Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
@@ -764,8 +764,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private void _loadContentletRelationshipsInRequest(ActionRequest request, Contentlet contentlet, Structure structure,User user) throws DotDataException {
 		ContentletAPI contentletService = APILocator.getContentletAPI();
 		contentlet.setStructureInode(structure.getInode());
-		ContentletRelationships cRelationships = contentletService.getAllRelationships(contentlet); 		
-		
+		ContentletRelationships cRelationships = contentletService.getAllRelationships(contentlet);
+
 		//DOTCMS-6097, if we don't have the related piece of content in the language the user is looking at, we show the flag of the language user is on but in gray.
 		List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = cRelationships.getRelationshipsRecords();
 		for(ContentletRelationshipRecords contentletRelationshipRecords: relationshipRecords){
@@ -793,13 +793,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							newContentletsList.add(con);
 						}
 					} catch (DotSecurityException e) {
-						Logger.error(this, e.getMessage());						
+						Logger.error(this, e.getMessage());
 					}
 				}
-			}			
+			}
 			contentletRelationshipRecords.setRecords(newContentletsList);
 		}
-		
+
 		request.setAttribute(WebKeys.CONTENTLET_RELATIONSHIPS_EDIT, cRelationships);
 
 	}
@@ -897,12 +897,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 
 		String langId = structure.getStructureType()==Structure.STRUCTURE_TYPE_WIDGET ?
-		                Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()) : 
+		                Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()) :
 		                    req.getParameter("lang");
 		if(UtilMethods.isSet(langId)) {
 			try {
 				contentlet.setLanguageId(Integer.parseInt(langId));
-			} catch (NumberFormatException e) { 
+			} catch (NumberFormatException e) {
 				contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 			}
 		}else{
@@ -978,7 +978,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						Logger.debug(this, ex.toString());
 					}
 				}
-				
+
 			}
 		}
 
@@ -994,7 +994,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				String g2 = m.group(2);
 				cf.setReviewIntervalNum(g1);
 				cf.setReviewIntervalSelect(g2);
-			} 
+			}
 		}
 
 	}
@@ -1008,15 +1008,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		Contentlet contentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);
 		Contentlet workingContentlet = null;
-		
+
 		String sib= req.getParameter("sibbling");
 		Boolean populateaccept = Boolean.valueOf(req.getParameter("populateaccept"));
-		
+
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 		httpReq.getSession().setAttribute("populateAccept", populateaccept);
-		
-		
+
+
 		if(UtilMethods.isSet(sib))
 		{
 			Contentlet sibbling=conAPI.find(sib, user,false);
@@ -1034,15 +1034,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 			}
 		}
-		
+
 		if(InodeUtils.isSet(contentlet.getInode())){
 			workingContentlet = contAPI.findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, false);
 		}else{
 			workingContentlet = contentlet;
 		}
-		
+
 		String langId = req.getParameter("lang");
-		if(contentlet.getStructure().getStructureType()!=Structure.STRUCTURE_TYPE_WIDGET) {
+		if(UtilMethods.isSet(langId) && contentlet.getStructure().getStructureType()!=Structure.STRUCTURE_TYPE_WIDGET) {
 		    contentlet.setLanguageId(Long.parseLong(langId));
 		}
 		else if(!InodeUtils.isSet(contentlet.getInode())) {
@@ -1058,7 +1058,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		    req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
 		}
 		else if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && workingContentlet.isLocked()){
-			
+
 			String lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
 			if(user.getUserId().equals(lockedUserId)){
 				req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
@@ -1074,8 +1074,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String message = LanguageUtil.get(comp.getCompanyId(), user.getLocale(), "message.contentlet.edit.deleted");
 			SessionMessages.add(req, "custommessage", message);
 		}
-		
-		//	http://jira.dotmarketing.net/browse/DOTCMS-1073	
+
+		//	http://jira.dotmarketing.net/browse/DOTCMS-1073
 		//  retrieve file names while edit
 		/*Logger.debug(this,"EditContentletAAction : retrieving binary field values.");
 		Structure structure = contentlet.getStructure();
@@ -1106,7 +1106,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				String g2 = m.group(2);
 				cf.setReviewIntervalNum(g1);
 				cf.setReviewIntervalSelect(g2);
-			} 
+			}
 		}
 		//DOTCMS-6097
 		if(UtilMethods.isSet(req.getParameter("is_rel_tab")))
@@ -1147,9 +1147,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				/* Validate if the field is read only, if so then check to see if it's a new contentlet
 				 * and set the structure field default value, otherwise do not set the new value.
 				 */
-				if (!typeField.equals(Field.FieldType.HIDDEN.toString()) && 
-						!typeField.equals(Field.FieldType.IMAGE.toString()) && 
-						!typeField.equals(Field.FieldType.FILE.toString())) 
+				if (!typeField.equals(Field.FieldType.HIDDEN.toString()) &&
+						!typeField.equals(Field.FieldType.IMAGE.toString()) &&
+						!typeField.equals(Field.FieldType.FILE.toString()))
 				{
 					if(field.isReadOnly() && !InodeUtils.isSet(contentlet.getInode()))
 						value = field.getDefaultValue();
@@ -1191,7 +1191,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-		
+
 		String subcmd = req.getParameter("subcmd");
 
 		// Getting the contentlets variables to work
@@ -1218,13 +1218,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		try{
 			_populateContent(req, res, config, form, user, currentContentlet);
 			//http://jira.dotmarketing.net/browse/DOTCMS-1450
-			//The form doesn't have the identifier in it. so the populate content was setting it to 0 
+			//The form doesn't have the identifier in it. so the populate content was setting it to 0
 			currentContentlet.setIdentifier(currentContentident);
 		}catch (DotContentletValidationException ve) {
 			ae.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.invalid.form"));
 			req.setAttribute(Globals.ERROR_KEY, ae);
 			throw new DotContentletValidationException(ve.getMessage());
-		}		
+		}
 
 		//Saving interval review properties
 		if (contentletForm.isReviewContent()) {
@@ -1247,7 +1247,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				Category category = catAPI.find(arr[i], user, false);
 				if(!cats.contains(category))
 				{
-					cats.add(category);	
+					cats.add(category);
 				}
 
 			}
@@ -1272,7 +1272,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						if(!records.getRelationship().getRelationTypeValue().equals(relationType))
 							continue;
 						if(RelationshipFactory.isSameStructureRelationship(records.getRelationship()) &&
-								((!records.isHasParent() && relationHasParent.equals("no")) || 
+								((!records.isHasParent() && relationHasParent.equals("no")) ||
 										(records.isHasParent() && relationHasParent.equals("yes"))))
 							continue;
 						records.getRecords().add(conAPI.find(relateWith, user, false));
@@ -1288,7 +1288,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			//Checkin in the content
 			currentContentlet = conAPI.checkin(currentContentlet, contRel, cats, _getSelectedPermissions(req, currentContentlet), user, false);
-			
+
 	        if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
 	            Logger.debug(this, "publishing after checkin");
 	            ActivityLogger.logInfo(this.getClass(), "Publishing Contentlet "," User "+user.getFirstName()+" published content titled '"+currentContentlet.getTitle(), HostUtil.hostNameUtil(req, user));
@@ -1335,12 +1335,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					}
 
 					sb.append(errorMessage + ":<br>");
-					Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);			
+					Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);
 					for(Entry<Relationship,List<Contentlet>> relationship : relationshipContentlets.entrySet())
-					{			
+					{
 						sb.append(relationship.getKey().getRelationTypeValue() + ", ");
-					}					
-					sb.append("<br>");			
+					}
+					sb.append("<br>");
 				}
 				sb.append("<br>");
 
@@ -1357,7 +1357,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 			}
 
-			req.setAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_RELATIONSHIPS_EDIT, getCurrentContentletRelationships(req, user));			
+			req.setAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_RELATIONSHIPS_EDIT, getCurrentContentletRelationships(req, user));
 
 			throw ve;
 		}catch (Exception e) {
@@ -1366,13 +1366,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			Logger.error(this,"Contentlet failed during checkin",e);
 			throw e;
 		}finally{
-			if (ae != null && ae.size() > 0){ 
+			if (ae != null && ae.size() > 0){
 				req.setAttribute(Globals.ERROR_KEY, ae);
 			}
 		}
 		req.setAttribute("inodeToWaitOn", currentContentlet.getInode());
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, currentContentlet);
-		req.setAttribute(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);		
+		req.setAttribute(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 		if (Config.getBooleanProperty("CONTENT_CHANGE_NOTIFICATIONS") && !isNew)
 			_sendContentletPublishNotification(currentContentlet, reqImpl.getHttpServletRequest());
 
@@ -1416,18 +1416,18 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			params.put("struts_action", new String [] {"/ext/contentlet/edit_contentlet"});
 			params.put("cmd", new String [] {"edit"});
 			params.put("inode", new String [] { String.valueOf(contentlet.getInode()) });
-			String contentURL = PortletURLUtil.getActionURL(req, WindowState.MAXIMIZED.toString(), params);	
+			String contentURL = PortletURLUtil.getActionURL(req, WindowState.MAXIMIZED.toString(), params);
 			List<Map<String, Object>> references = conAPI.getContentletReferences(contentlet, currentUser, false);
 			List<Map<String, Object>> validReferences = new ArrayList<Map<String, Object>> ();
 
 
 			//Avoinding to send the email to the same users
-			for (Map<String, Object> reference : references) 
+			for (Map<String, Object> reference : references)
 			{
 				try
 				{
-					HTMLPage page = (HTMLPage)reference.get("page");					
-					User pageUser = APILocator.getUserAPI().loadUserById(page.getModUser(),APILocator.getUserAPI().getSystemUser(),false);		
+					HTMLPage page = (HTMLPage)reference.get("page");
+					User pageUser = APILocator.getUserAPI().loadUserById(page.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
 					if (!pageUser.getUserId().equals(currentUser.getUserId()))
 					{
 						reference.put("owner", pageUser);
@@ -1438,15 +1438,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				{
 					Logger.debug(this, "the reference has a null page");
 				}
-			}					
+			}
 			if (validReferences.size() > 0) {
-				ContentChangeNotificationThread notificationThread = 
+				ContentChangeNotificationThread notificationThread =
 					this.new ContentChangeNotificationThread (contentlet, validReferences, contentURL, hostWebAPI.getCurrentHost(req).getHostname());
 				notificationThread.start();
-			}			
+			}
 		}
 		catch(Exception ex)
-		{					
+		{
 			throw ex;
 		}
 	}
@@ -1478,7 +1478,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				for (Map<String, Object> reference : references) {
 					HTMLPage page = (HTMLPage)reference.get("page");
 					Host host = hostAPI.findParentHost(page, systemUser, false);
-					Company company = PublicCompanyFactory.getDefaultCompany(); 
+					Company company = PublicCompanyFactory.getDefaultCompany();
 					User pageUser = (User)reference.get("owner");
 
 					HashMap<String, Object> parameters = new HashMap<String, Object>();
@@ -1604,7 +1604,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			    Boolean populateaccept = Boolean.valueOf(req.getParameter("populateaccept"));
 			    if(UtilMethods.isSet(sib) && populateaccept)
 			        contentlet.setInode(sib);
-			    
+
 				//Setting categories in the contentlet form
 				List<String> categoriesArr = new ArrayList<String> ();
 				List<Category> cats = catAPI.getParents(contentlet, user, false);
@@ -1629,7 +1629,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					if(contentletForm.getStructure().getStructureType()!=Structure.STRUCTURE_TYPE_FORM){
 						req.setAttribute("structure_id",String.valueOf(contentletForm.getStructureInode()));
 					}
-				}				
+				}
 			}
 
 		} catch (Exception ex) {
@@ -1682,12 +1682,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				pr = response.getWriter();
 
 				List<Field> stFields = FieldsCache.getFieldsByStructureInode(st.getInode());
-				pr.print("Identifier");		
+				pr.print("Identifier");
 				pr.print(",languageCode");
 				pr.print(",countryCode");
 				for (Field f : stFields) {
 					//we cannot export fields of these types
-					if (f.getFieldType().equals(Field.FieldType.BUTTON.toString()) || 
+					if (f.getFieldType().equals(Field.FieldType.BUTTON.toString()) ||
 							f.getFieldType().equals(Field.FieldType.FILE.toString()) ||
 							f.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
 							f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
@@ -1710,11 +1710,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
 					pr.print("," +lang.getLanguageCode());
 					pr.print(","+lang.getCountryCode());
-					
+
 					for (Field f : stFields) {
 						try {
 							//we cannot export fields of these types
-							if (f.getFieldType().equals(Field.FieldType.BUTTON.toString()) || 
+							if (f.getFieldType().equals(Field.FieldType.BUTTON.toString()) ||
 									f.getFieldType().equals(Field.FieldType.FILE.toString()) ||
 									f.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
 									f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
@@ -1723,7 +1723,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								continue;
 
 							Object value = "";
-							if(conAPI.getFieldValue(content,f) != null)  
+							if(conAPI.getFieldValue(content,f) != null)
 								value = conAPI.getFieldValue(content,f);
 							String text = "";
 							if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
@@ -1731,7 +1731,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								Category category = catAPI.find(f.getValues(), user, false);
 								List<Category> children = catList;
 								List<Category> allChildren= catAPI.getAllChildren(category, user, false);
-								
+
 
 								if (children.size() >= 1 && catAPI.canUseCategory(category, user, false)) {
 									//children = (List<Category>)CollectionUtils.retainAll(catList, children);
@@ -1760,7 +1760,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 									} else if(f.getFieldType().equals(Field.FieldType.TIME.toString())) {
 										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_TIME);
 										text = formatter.format(value);
-									}                                    
+									}
 								} else {
 									text = value.toString();
 									if(text.endsWith(",")){
@@ -1784,7 +1784,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								pr.print(",\""+text+"\"");
 							} else
 								pr.print(","+text);
-						//http://jira.dotmarketing.net/browse/DOTCMS-3232	
+						//http://jira.dotmarketing.net/browse/DOTCMS-3232
 						/*if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
 							if(FolderAPI.SYSTEM_FOLDER.equals(content.getFolder()))
 							  pr.print(content.getHost());
@@ -1816,11 +1816,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 
-	
+
 
 	/**
 	 * Returns the relationships associated to the current contentlet
-	 * 
+	 *
 	 * @param		req ActionRequest.
 	 * @param		user User.
 	 * @return		ContentletRelationships.
@@ -1836,7 +1836,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		String inode;
 		Contentlet contentlet;
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();
-		List<Contentlet> records = null; 
+		List<Contentlet> records = null;
 
 		for (String key : keys) {
 			if (key.startsWith("rel_") && key.endsWith("_inodes")) {
@@ -1957,7 +1957,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						try{
 							contentlet = conAPI.find(inode, user, false);
 							contentToIndexAfterCommit.add(contentlet);
-						
+
 						}catch (DotSecurityException e) {
 							hasNoPermissionOnAllContent = true;
 						}catch (Exception ex){
@@ -2027,7 +2027,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		} catch (Exception ae) {
 			_handleException(ae, req);
 			return;
-		}		
+		}
 	}
 
 
@@ -2166,7 +2166,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		} catch (Exception ae) {
 			_handleException(ae, req);
 			return;
-		}		
+		}
 	}
 
 
@@ -2297,7 +2297,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		} catch (Exception ae) {
 			_handleException(ae, req);
 			return;
-		}		
+		}
 	}
 
 
@@ -2370,7 +2370,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							Logger.warn(this, "Unable to delete content " + e.getMessage(), e);
 						}
 					}
-				
+
 				if(hasNoPermissionOnAllContent)
 					throw new DotSecurityException("Unable to delete some content due to lack of permissions");
 				}
@@ -2405,7 +2405,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		} catch (Exception ae) {
 			_handleException(ae, req);
 			return;
-		}		
+		}
 	}
 
 	private void _batchUnArchive(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user,List<Contentlet> contentToIndexAfterCommit) {
@@ -2597,7 +2597,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				SessionMessages.add(httpReq, "message", "message.contentlets.batch.reindexing.background");
 			} catch (Exception e) {
 				SessionMessages.add(httpReq, "message", "message.contentlets.batch.reindexing.error");
-			}	
+			}
 		}
 	}
 
@@ -2614,24 +2614,24 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				Logger.error(this, e.getMessage(),e);
 			}
 		}
-		
+
 		//DOTCMS-4614
-		if (contentToIndexAfterCommit.size() <= 50 
-				&&	(cmd != null) 
-				&&	(cmd.equals(com.dotmarketing.util.Constants.FULL_ARCHIVE_LIST)	
+		if (contentToIndexAfterCommit.size() <= 50
+				&&	(cmd != null)
+				&&	(cmd.equals(com.dotmarketing.util.Constants.FULL_ARCHIVE_LIST)
 						||	cmd.equals(com.dotmarketing.util.Constants.FULL_UNARCHIVE_LIST) )){
-			
+
 			String addlQry = "";
 			if(cmd.equals(com.dotmarketing.util.Constants.FULL_ARCHIVE_LIST))
 				addlQry = " +deleted:true ";
 			if(cmd.equals(com.dotmarketing.util.Constants.FULL_UNARCHIVE_LIST))
 				addlQry = " +deleted:false ";
-			
+
 			for(Contentlet c : contentToIndexAfterCommit){
 				conAPI.isInodeIndexed(c.getInode()+addlQry);
 			}
 		}
-		
+
 	}
 
 	/* http://jira.dotmarketing.net/browse/DOTCMS-72*/
@@ -2687,7 +2687,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			return null;
 		}
 
-	} 
+	}
 
 	public void _deleteVersion(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, String webKeyEdit)
 	throws Exception {
@@ -2706,7 +2706,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		try{
 			//conAPI.delete(webAsset, user, false, false);
 			conAPI.deleteVersion(webAsset,user,false);
-			
+
 
 		}catch(Exception e){
 			resImpl.getHttpServletResponse().getWriter().println("FAILURE:" + LanguageUtil.get(user, "message.contentlet.delete.live_or_working"));
@@ -2719,7 +2719,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
         String[] uncheckedInodes = new String[0];
         String[] result;
         ArrayList<String> resultInodes = new ArrayList<String>();
-	    
+
 	    if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
 	        String luceneQuery=req.getParameter("luceneQuery");
 	        try {
@@ -2730,15 +2730,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                     allInodes[idx++]=cs.getInode();
             } catch (Exception e) {
                 throw new RuntimeException(e);
-            } 
+            }
 	    }
-		
+
 		String allUncheckedContentInodes = req.getParameter("allUncheckedContentsInodes");
-		 
-		
+
+
 		if(!allUncheckedContentInodes.equals(""))
-			uncheckedInodes = allUncheckedContentInodes.split(",");		
-		
+			uncheckedInodes = allUncheckedContentInodes.split(",");
+
 		for (String str:allInodes) {
 			boolean found = false;
 			for (String str1:uncheckedInodes) {
@@ -2748,14 +2748,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if(!found)
 				resultInodes.add(str);
 		}
-		
+
 		result = new String[resultInodes.size()];
 		result = resultInodes.toArray(result);
-		
+
 		return result;
 	}
-	
-	
+
+
 	private void _batchUnlock(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user,List<Contentlet> contentToIndexAfterCommit) {
 
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
@@ -2806,7 +2806,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 						if (perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user)) {
 							contentlets.add(contentlet);
-						} 
+						}
 					}
 					boolean securityError = false;
 					boolean notLocked = false;
@@ -2819,7 +2819,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							notLocked = true;
 							HibernateUtil.rollbackTransaction();
 						}catch (DotSecurityException e) {
-							securityError = true;	
+							securityError = true;
 							HibernateUtil.rollbackTransaction();
 						}catch(DotDataException de){
 							HibernateUtil.rollbackTransaction();
@@ -2830,7 +2830,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					}
 					if(securityError)
 						throw new DotSecurityException("Unable to unlock some content due to lack of permissions");
-					
+
 					if(notLocked)
 						throw new DotContentletStateException("Unable to unlock some content because they were not locked");
 
