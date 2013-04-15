@@ -8,8 +8,8 @@ import org.osgi.framework.ServiceReference;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
- * Created by Jonathan Gamba
- * Date: 6/18/12
+ * @author Jonathan Gamba
+ *         Date: 6/18/12
  */
 public class Activator extends GenericBundleActivator {
 
@@ -24,7 +24,7 @@ public class Activator extends GenericBundleActivator {
         if ( sRef != null ) {
 
             //Publish bundle services
-            publishBundleServices( context );
+            publishBundleServices( context );//This call will make the elements of the bundle, like our controller class available to the Spring context
 
             ExtHttpService httpService = (ExtHttpService) context.getService( sRef );
             try {

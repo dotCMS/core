@@ -11,8 +11,8 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 /**
- * Created by Jonathan Gamba
- * Date: 6/18/12
+ * @author Jonathan Gamba
+ *         Date: 4/15/13
  */
 
 @EnableWebMvc
@@ -25,7 +25,7 @@ public class ExampleController {
     public ModelAndView helloWorld () {
         Logger.info( this.getClass(), "Received request to hello" );
         String myMessage = "Hello World, Spring 3.1 and dotCMS!";
-        // This will resolve to /application/spring/helloworld.dot, and put the String myMessage in the map with key "message"
+        // This will resolve to /application/spring/helloworld.html, and put the String myMessage in the map with key "message"
         return new ModelAndView( "helloworld", "message", myMessage );
     }
 
@@ -43,7 +43,7 @@ public class ExampleController {
         // Attach message to the Model
         model.addAttribute( "message", aMessage );
 
-        // This will resolve to /application/spring/helloworld.dot
+        // This will resolve to /application/spring/helloworld.html
         return "helloworld";
     }
 

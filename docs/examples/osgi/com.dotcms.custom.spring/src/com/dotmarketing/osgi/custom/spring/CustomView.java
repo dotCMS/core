@@ -10,8 +10,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 /**
- * Created by Jonathan Gamba
- * Date: 4/15/13
+ * Copy of the dotCMS View {@link com.dotcms.spring.web.DotView} in order
+ * to use our custom spring version and not the one use it by dotCMS.
+ *
+ * @author Jonathan Gamba
+ *         Date: 4/15/13
+ * @see com.dotcms.spring.web.DotView
  */
 public class CustomView implements View {
 
@@ -38,8 +42,7 @@ public class CustomView implements View {
                 ctx.put( x, map.get( x ) );
             }
 
-            // add the context to the request.attr
-            // where it will be picked up and used by the VelocityServlet
+            // add the context to the request.attr where it will be picked up and used by the VelocityServlet
             request.setAttribute( VelocityServlet.VELOCITY_CONTEXT, ctx );
 
             request.getRequestDispatcher( pagePath ).forward( request, response );
