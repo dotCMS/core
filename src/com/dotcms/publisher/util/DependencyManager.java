@@ -263,11 +263,11 @@ public class DependencyManager {
 				// Containers dependencies
 				containerList.clear();
 
-				if(workingTemplateWP!=null)
+				if(workingTemplateWP!=null && InodeUtils.isSet(workingTemplateWP.getInode()))
 					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
-				if(liveTemplateWP!=null)
+				if(liveTemplateWP!=null && InodeUtils.isSet(liveTemplateWP.getInode()))
 					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
-				if(liveTemplateLP!=null)
+				if(liveTemplateLP!=null && InodeUtils.isSet(liveTemplateLP.getInode()))
 					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateLP, user, false));
 
 				for (Container container : containerList) {
@@ -305,7 +305,10 @@ public class DependencyManager {
 
 				containerList.clear();
 				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(wkT, user, false));
-				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(lvT, user, false));
+				
+				if(lvT!=null && InodeUtils.isSet(lvT.getInode())) {
+				    containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(lvT, user, false));
+				}
 
 				for (Container container : containerList) {
 					// Container dependencies
