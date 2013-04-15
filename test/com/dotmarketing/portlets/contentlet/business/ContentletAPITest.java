@@ -14,6 +14,8 @@ import java.util.Map;
 
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -48,6 +50,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.web.VelocityWebUtil;
 
 /**
  * Created by Jonathan Gamba.
@@ -1892,6 +1896,26 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.delete(list, user, false);
         FieldFactory.deleteField(field);
         StructureFactory.deleteStructure(testStructure);
+    }
+    
+    @Test
+    public void widgetInvalidateAllLang() throws Exception {
+        Structure sw=StructureCache.getStructureByVelocityVarName("SimpleWidget");
+        Language def=APILocator.getLanguageAPI().getDefaultLanguage();
+        Contentlet w = new Contentlet();
+        w.setStructureInode(sw.getInode());
+        w.setStringProperty("widgetTitle", "A testing widget "+UUIDGenerator.generateUuid());
+        w.setStringProperty("code", "Initial code");
+        w.setLanguageId(def.getId());
+        w = contentletAPI.checkin(w, user, false);
+        APILocator.getVersionableAPI().setLive(w);
+        APILocator.getContentletIndexAPI().addContentToIndex(w,false,true);
+        contentletAPI.isInodeIndexed(w.getInode(),true);
+        
+        
+        Context ctx = VelocityUtil.getBasicContext();
+        VelocityEngine engine = VelocityUtil.getEngine();
+        engine.getTemplate("/live/");
     }
 
 }
