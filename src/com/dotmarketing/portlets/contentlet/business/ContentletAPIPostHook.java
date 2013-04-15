@@ -1045,6 +1045,8 @@ public interface ContentletAPIPostHook {
 	 * @return
 	 */
 	public void isInodeIndexed(String inode, boolean returnValue);
+	
+	public void isInodeIndexed(String inode, boolean live, boolean returnValue);
 
 	/**
 	 * Method will time out after 30 seconds returning false

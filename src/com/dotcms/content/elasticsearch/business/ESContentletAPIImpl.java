@@ -3789,8 +3789,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return false;
     }
-
+    
     public boolean isInodeIndexed(String inode) {
+        return isInodeIndexed(inode,false);
+    }
+
+    public boolean isInodeIndexed(String inode,boolean live) {
         if(!UtilMethods.isSet(inode)){
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
@@ -3799,7 +3803,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         int counter = 0;
         while(counter < 300){
             try {
-                lc = conFac.indexSearch("+inode:" + inode, 0, 0, "modDate");
+                lc = conFac.indexSearch("+inode:" + inode+(live?" +live:true":""), 0, 0, "modDate");
             } catch (Exception e) {
                 Logger.error(this.getClass(),e.getMessage(),e);
                 return false;
