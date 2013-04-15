@@ -6,8 +6,12 @@ import org.springframework.web.servlet.ViewResolver;
 import java.util.Locale;
 
 /**
- * Created by Jonathan Gamba
- * Date: 4/15/13
+ * Copy of the dotCMS ViewResolver {@link com.dotcms.spring.web.DotViewResolver} in order
+ * to use our custom spring version and not the one use it by dotCMS.
+ *
+ * @author Jonathan Gamba
+ *         Date: 4/15/13
+ * @see com.dotcms.spring.web.DotViewResolver
  */
 public class CustomViewResolver implements ViewResolver {
 
