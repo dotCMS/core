@@ -300,14 +300,18 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	    if(template!=null && InodeUtils.isSet(template.getInode())) {
 
-
-		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
-		}
-
-
-		return templateFactory.getContainersInTemplate(template, user, respectFrontendRoles);
+    		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+    			throw new DotSecurityException("You don't have permission to read the source file.");
+    		}
+    
+    
+    		return templateFactory.getContainersInTemplate(template, user, respectFrontendRoles);
+	    }
+	    else {
+	        return null;
+	    }
 	}
 
 
