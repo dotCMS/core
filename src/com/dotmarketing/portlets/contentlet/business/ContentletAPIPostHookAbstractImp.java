@@ -439,4 +439,8 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
     public void indexCount ( String luceneQuery, User user, boolean respectFrontendRoles, long value ) {
     }
 
+    public boolean getMostViewedContent ( String structureVariableName, String startDate, String endDate, User user ) {
+        return true;
+    }
+
 }
