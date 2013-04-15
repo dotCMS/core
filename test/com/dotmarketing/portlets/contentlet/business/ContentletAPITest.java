@@ -25,7 +25,6 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -1860,6 +1859,39 @@ public class ContentletAPITest extends ContentletBaseTest {
             }
         }
         
+    }
+    
+    @Test
+    public void rangeQuery() throws Exception {
+        // https://github.com/dotCMS/dotCMS/issues/2630
+        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
+        Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
+        FieldFactory.saveField( field );
+        
+        List<Contentlet> list=new ArrayList<Contentlet>();
+        String[] letters={"a","b","c","d","e","f","g"};
+        for(String letter : letters) {
+            Contentlet conn=new Contentlet();
+            conn.setStructureInode(testStructure.getInode());
+            conn.setStringProperty(field.getVelocityVarName(), letter);
+            conn = contentletAPI.checkin(conn, user, false);
+            contentletAPI.isInodeIndexed(conn.getInode());
+            list.add(conn);
+        }
+        String query = "+structurename:"+testStructure.getVelocityVarName()+
+                " +"+testStructure.getVelocityVarName()+"."+field.getVelocityVarName()+":[b   TO f ]";
+        String sort = testStructure.getVelocityVarName()+"."+field.getVelocityVarName()+" asc";
+        List<Contentlet> search = contentletAPI.search(query, 100, 0, sort, user, false);
+        assertEquals(5,search.size());
+        assertEquals("b",search.get(0).getStringProperty(field.getVelocityVarName()));
+        assertEquals("c",search.get(1).getStringProperty(field.getVelocityVarName()));
+        assertEquals("d",search.get(2).getStringProperty(field.getVelocityVarName()));
+        assertEquals("e",search.get(3).getStringProperty(field.getVelocityVarName()));
+        assertEquals("f",search.get(4).getStringProperty(field.getVelocityVarName()));
+        
+        contentletAPI.delete(list, user, false);
+        FieldFactory.deleteField(field);
+        StructureFactory.deleteStructure(testStructure);
     }
 
 }
