@@ -1,0 +1,8 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="hello-ivy" default="resolve">
+
+    <property name="ivy.settings" value="ivysettings-custom.xml"/>
+
+    <target name="resolve">
+        <ivy:retrieve type="jar,bundle"/>
+    </target>
+</project>

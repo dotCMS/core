@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-Name: Example Custom Spring controller
+Bundle-Description: Static.Manifest
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: springControllerOSGI
+Bundle-Version: 2.5.1
+Bundle-Activator: com.dotmarketing.osgi.custom.spring.Activator
+DynamicImport-Package: *
+Import-Package: com.dotmarketing.osgi,
+ javax.servlet,
+ org.apache.felix.http.api,
+ org.springframework.web.servlet;version="[3.1.1,3.1.2)",
+ org.osgi.framework
