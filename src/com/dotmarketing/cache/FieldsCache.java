@@ -196,7 +196,7 @@ public class FieldsCache {
 	
 	public static void removeFieldVariables(Field field) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        String key = getPrimaryGroup() + field.getInode();
+        String key = getFieldsVarGroup() + field.getInode();
 
 		cache.remove(key,getFieldsVarGroup());
 

@@ -57,6 +57,24 @@ public class FieldAPITest extends TestBase {
         assertEquals(clist.get(0).getKey(),fv.getKey());
         assertEquals(clist.get(0).getValue(),fv.getValue());
         
+        // problems with second save ?
+        // https://github.com/dotCMS/dotCMS/issues/2649
+        
+        FieldVariable fg=new FieldVariable();
+        fg.setFieldId(ff.getInode());
+        fg.setName("variable");
+        fg.setKey("variable");
+        fg.setValue("value");
+        APILocator.getFieldAPI().saveFieldVariable(fg, user, false);
+        
+        list=APILocator.getFieldAPI().getFieldVariablesForField(ff.getInode(), user, false);
+        assertEquals(2,list.size());
+        assertEquals(list.get(0).getKey(),fv.getKey());
+        assertEquals(list.get(0).getValue(),fv.getValue());
+        assertEquals(list.get(1).getKey(),fg.getKey());
+        assertEquals(list.get(1).getValue(),fg.getValue());
+        
+        
         FieldFactory.deleteField(ff);
         StructureFactory.deleteStructure(st);
     }
