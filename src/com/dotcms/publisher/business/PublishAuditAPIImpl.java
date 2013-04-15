@@ -316,8 +316,16 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		status.setStatus(PublishAuditStatus.Status.RECEIVED_BUNDLE);
 		status.setStatusPojo(historyPojo);
 		
-		//Insert in Audit table
-		PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+		PublishAuditStatus existing=PublishAuditAPI.getInstance().getPublishAuditStatus(status.getBundleId());
+		if(existing!=null) {
+		    // update if there is an existing record.
+		    PublishAuditAPI.getInstance().updatePublishAuditStatus(
+		            status.getBundleId(), status.getStatus(), status.getStatusPojo());
+		}
+		else {
+    		//Insert in Audit table
+    		PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+		}
 		
 		return status;
 	}
