@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.templates.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -13,6 +12,7 @@ import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -105,5 +105,27 @@ public class TemplateAPITest extends TestBase {
         APILocator.getContainerAPI().delete(container, user, false);
         
         AssetUtil.assertDeleted(container.getInode(),container.getIdentifier(),"containers");
+    }
+    
+    @Test
+    public void findLiveTemplate() throws Exception {
+        User user=APILocator.getUserAPI().getSystemUser();
+        Host host=APILocator.getHostAPI().findDefaultHost(user, false);
+        
+        Template template=new Template();
+        template.setTitle("empty test template "+UUIDGenerator.generateUuid());
+        template.setBody("<html><body> I'm mostly empty </body></html>");
+        template=APILocator.getTemplateAPI().saveTemplate(template, host, user, false);
+        
+        Template live = APILocator.getTemplateAPI().findLiveTemplate(template.getIdentifier(), user, false);
+        assertTrue(live==null || !InodeUtils.isSet(live.getInode()));
+        
+        APILocator.getVersionableAPI().setLive(template);
+        
+        live = APILocator.getTemplateAPI().findLiveTemplate(template.getIdentifier(), user, false);
+        assertTrue(live!=null && InodeUtils.isSet(live.getInode()));
+        assertEquals(template.getInode(),live.getInode());
+        
+        APILocator.getTemplateAPI().delete(template, user, false);
     }
 }
