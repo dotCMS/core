@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: Example Custom Spring controller
 Bundle-Description: Static.Manifest
 Bundle-ManifestVersion: 2
-Bundle-SymbolicName: springControllerOSGI
+Bundle-SymbolicName: customSpring-ControllerOSGI
 Bundle-Version: 2.5.1
 Bundle-Activator: com.dotmarketing.osgi.custom.spring.Activator
 DynamicImport-Package: *

@@ -1,4 +1,4 @@
-<project xmlns:ivy="antlib:org.apache.ivy.ant" name="hello-ivy" default="resolve">
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="springDependencies" default="resolve">
 
     <property name="ivy.settings" value="ivysettings-custom.xml"/>
 
