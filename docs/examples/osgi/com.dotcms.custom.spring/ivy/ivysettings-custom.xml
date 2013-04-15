@@ -1,0 +1,27 @@
+<ivysettings>
+    <resolvers>
+        <url name="com.springsource.repository.bundles.release">
+            <ivy pattern="http://repository.springsource.com/ivy/bundles/release/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+            <artifact pattern="http://repository.springsource.com/ivy/bundles/release/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+        </url>
+        <url name="com.springsource.repository.bundles.external">
+            <ivy pattern="http://repository.springsource.com/ivy/bundles/external/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+            <artifact pattern="http://repository.springsource.com/ivy/bundles/external/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+        </url>
+        <chain name="spring">
+            <resolver ref="com.springsource.repository.bundles.release"/>
+            <resolver ref="com.springsource.repository.bundles.external"/>
+        </chain>
+        <ibiblio name="jboss" root="http://repository.jboss.org/maven2/" m2compatible="true"/>
+        <chain name="main" dual="true">
+            <resolver ref="shared"/>
+            <resolver ref="public"/>
+            <resolver ref="spring"/>
+            <resolver ref="jboss"/>
+        </chain>
+        <chain name="default" returnFirst="true">
+            <resolver ref="local"/>
+            <resolver ref="main"/>
+        </chain>
+    </resolvers>
+</ivysettings>
