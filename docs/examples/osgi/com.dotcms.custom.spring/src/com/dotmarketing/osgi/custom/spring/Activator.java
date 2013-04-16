@@ -30,6 +30,7 @@ public class Activator extends GenericBundleActivator {
             try {
                 DispatcherServlet dispatcherServlet = new DispatcherServlet();
                 dispatcherServlet.setContextConfigLocation( "spring/example-servlet.xml" );
+                //dispatcherServlet.setContextConfigLocation( "spring/example-servlet-scan.xml" );
                 httpService.registerServlet( "/spring", dispatcherServlet, null, null );
             } catch ( Exception e ) {
                 e.printStackTrace();
