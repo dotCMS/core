@@ -83,7 +83,7 @@
                 <exclude name="src/**"/>
                 <exclude name="build/**"/>
                 <exclude name="META-INF/**"/>
-                <exclude name="customLibs/**"/>
+                <exclude name="conf/**"/>
                 <exclude name="ivy/**"/>
                 <exclude name="build.xml"/>
             </zipfileset>
