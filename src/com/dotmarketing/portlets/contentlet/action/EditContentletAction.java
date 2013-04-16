@@ -750,12 +750,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			httpReq.getSession().setAttribute("selectedStructure", st.getInode());
 		}
 
-		if(!InodeUtils.isSet(contentlet.getInode()) &&
-		        contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_WIDGET) {
-		    contentlet.setStructureInode(
-		            Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
-		}
-
 		// Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 
@@ -896,9 +890,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			contentlet.setStructureInode(structure.getInode());
 		}
 
-		String langId = structure.getStructureType()==Structure.STRUCTURE_TYPE_WIDGET ?
-		                Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()) :
-		                    req.getParameter("lang");
+		String langId = req.getParameter("lang");
 		if(UtilMethods.isSet(langId)) {
 			try {
 				contentlet.setLanguageId(Integer.parseInt(langId));
@@ -1042,7 +1034,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 
 		String langId = req.getParameter("lang");
-		if(UtilMethods.isSet(langId) && contentlet.getStructure().getStructureType()!=Structure.STRUCTURE_TYPE_WIDGET) {
+		if(UtilMethods.isSet(langId)) {
 		    contentlet.setLanguageId(Long.parseLong(langId));
 		}
 		else if(!InodeUtils.isSet(contentlet.getInode())) {
