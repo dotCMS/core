@@ -3005,12 +3005,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         }
-        else if(st.getStructureType()==Structure.STRUCTURE_TYPE_WIDGET && !InodeUtils.isSet(contentlet.getIdentifier())) {
-            if(contentlet.getLanguageId()!=APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
-                throw new DotContentletValidationException("multilingual widgets aren't supported");
-            }
-        }
-
+        
         boolean hasError = false;
         DotContentletValidationException cve = new DotContentletValidationException("Contentlets' fields are not valid");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
