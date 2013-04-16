@@ -125,7 +125,7 @@ value='<%=(com.dotmarketing.util.UtilMethods.isSet(request.getParameter("orderby
 		window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/campaigns/edit_campaign" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>';		
 	}
 </script>
-
+<div class="alert-message"><strong><%=LanguageUtil.get(pageContext, "Warning")%></strong> : <%=LanguageUtil.get(pageContext, "message.communication.depricated")%></div>
 <form method="Post" id="fm" action="">
 	
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">

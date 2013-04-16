@@ -96,6 +96,7 @@ function deleteCommunication(inode) {
    		}
    }
 </script>
+<div class="alert-message"><strong><%=LanguageUtil.get(pageContext, "Warning")%></strong> : <%=LanguageUtil.get(pageContext, "message.communication.depricated")%></div>
 <form method="Post" id="fm" action="">
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%=LanguageUtil.get(pageContext, "Viewing-Communications")%>' />
