@@ -360,7 +360,7 @@ CREATE Trigger check_identifier_parent_path
  DECLARE @folderId varchar(100)
  DECLARE @id varchar(100)
  DECLARE @assetType varchar(100)
- DECLARE @parentPath varchar(100)
+ DECLARE @parentPath varchar(255)
  DECLARE @hostInode varchar(100)
  DECLARE cur_Inserted cursor LOCAL FAST_FORWARD for
  Select id,asset_type,parent_path,host_inode
@@ -452,8 +452,8 @@ FOR DELETE AS
 DECLARE @pathCount int
 DECLARE @identifier varchar(100)
 DECLARE @assetType varchar(100)
-DECLARE @assetName varchar(100)
-DECLARE @parentPath varchar(100)
+DECLARE @assetName varchar(255)
+DECLARE @parentPath varchar(255)
 DECLARE @hostInode varchar(100)
 DECLARE cur_Deleted cursor LOCAL FAST_FORWARD for
  Select id,asset_type,asset_name,parent_path,host_inode
