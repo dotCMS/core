@@ -18,6 +18,8 @@ Bundle-ClassPath: .,
  lib/org.springframework.expression-3.1.1.RELEASE.jar,
  lib/org.springframework.web-3.1.1.RELEASE.jar,
  lib/org.springframework.web.servlet-3.1.1.RELEASE.jar,
+ lib/com.springsource.net.sf.cglib-2.2.0.jar,
+ lib/com.springsource.org.codehaus.jackson-1.4.3.jar,
  lib/dotcms_log4j.jar
 DynamicImport-Package: *
 Import-Package: com.dotmarketing.osgi,
