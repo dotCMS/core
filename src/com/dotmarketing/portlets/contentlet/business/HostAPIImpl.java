@@ -2,17 +2,11 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-import net.sf.hibernate.Hibernate;
-
-import org.quartz.SimpleTrigger;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -48,9 +42,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.SimpleScheduledTask;
-import com.dotmarketing.quartz.job.UpdateContentsOnDeleteHost;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -183,12 +174,8 @@ public class HostAPIImpl implements HostAPI {
 			Logger.debug(HostAPIImpl.class, e.getMessage(), e);
 		}
 
-
-
-
 		try {
 			Structure st = StructureCache.getStructureByVelocityVarName("Host");
-			Field hostNameField = st.getFieldVar("hostName");
 			String query = "+structureInode:" + st.getInode() +
 					" +working:true +Host.hostName:" + hostName;
 
@@ -234,7 +221,6 @@ public class HostAPIImpl implements HostAPI {
 
 		try {
 			Structure st = StructureCache.getStructureByVelocityVarName("Host");
-			Field aliasesField = st.getFieldVar("aliases");
 
 			List<Contentlet> list = APILocator.getContentletAPI().search("+structureInode:" + st.getInode() +
 					" +working:true +Host.aliases:" + alias, 0, 0, null, user, respectFrontendRoles);
@@ -769,9 +755,6 @@ public class HostAPIImpl implements HostAPI {
 	public void makeDefault(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
 		Host currentDefault = findDefaultHost(user, respectFrontendRoles);
 		host.setDefault(true);
-		Structure st = StructureCache.getStructureByVelocityVarName("Host");
-
-
 
 		if(host != null){
 			hostCache.remove(host);
@@ -795,39 +778,6 @@ public class HostAPIImpl implements HostAPI {
 		}
 
 
-	}
-
-	private void removeHostFromContents(Host host) throws DotSecurityException, DotDataException {
-		Map<String, Object> parameters = new HashMap<String, Object>();
-		parameters.put("host", host);
-		if(host != null){
-			hostCache.remove(host);
-		}
-		try {
-			if(!QuartzUtils.isJobSequentiallyScheduled("setup-host-" + host.getIdentifier(), "setup-host-group")) {
-				Calendar startTime = Calendar.getInstance();
-				SimpleScheduledTask task = new SimpleScheduledTask("delete-host-" + host.getIdentifier(),
-						"delete-host-group",
-						"Update content from deleted host " + host.getIdentifier(),
-						UpdateContentsOnDeleteHost.class.getCanonicalName(),
-						false,
-						"delete-host-" + host.getIdentifier() + "-trigger",
-						"delete-host-trigger-group",
-						startTime.getTime(),
-						null,
-						SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT,
-						5,
-						true,
-						parameters,
-						0,
-						0);
-				QuartzUtils.scheduleTask(task);
-			}
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-		hostCache.clearAliasCache();
 	}
 
 	public Host DBSearch(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
