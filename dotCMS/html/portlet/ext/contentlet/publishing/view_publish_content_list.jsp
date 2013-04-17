@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="java.io.StringWriter"%>
 <%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
@@ -51,10 +52,14 @@
     if(!UtilMethods.isSet(offset)){
     	offset="0";
     }
-    String limit = request.getParameter("limit");
+    
+    // BEGIN https://github.com/dotCMS/dotCMS/issues/2671
+    String limit = Config.getStringProperty("PUSH_PUBLISHING_PAGE_LIMIT");
     if(!UtilMethods.isSet(limit)){
-    	limit="50"; //TODO Load from properties
-    }
+    	limit="50";
+    }    
+ 	// END https://github.com/dotCMS/dotCMS/issues/2671
+ 	
     String query = request.getParameter("query");
     if(!UtilMethods.isSet(query)){
     	query="*";
