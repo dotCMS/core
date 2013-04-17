@@ -1251,6 +1251,15 @@ public interface ContentletAPI {
 	 * @return
 	 */
 	public boolean isInodeIndexed(String inode);
+	
+	/**
+	 *  this version optionaly adds a +live:true to the search 
+	 *  if parameter live is true.
+	 * @param inode
+	 * @param live
+	 * @return
+	 */
+	public boolean isInodeIndexed(String inode, boolean live);
 
 	/**
 	 * Method will time out after 30 seconds returning false
