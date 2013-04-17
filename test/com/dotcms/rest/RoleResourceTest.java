@@ -4,6 +4,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -11,6 +13,7 @@ import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
@@ -22,12 +25,17 @@ public class RoleResourceTest extends TestBase  {
 
 	private Client client;
 	private WebResource webResource;
+	private HttpServletRequest request;
+	private String serverName;
+	private Integer serverPort;
 
 	@Before
 	public void init() {
 		client = Client.create();
-		// TODO get app url
-		webResource = client.resource("http://localhost:8083/api/role");
+		request = ServletTestRunner.localRequest.get();
+		serverName = request.getServerName();
+		serverPort = request.getServerPort();
+		webResource = client.resource("http://"+serverName+":"+serverPort+"/api/role");
 	}
 
 	@Test
