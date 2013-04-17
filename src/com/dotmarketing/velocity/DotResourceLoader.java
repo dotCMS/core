@@ -358,7 +358,12 @@ public class DotResourceLoader extends ResourceLoader {
             		throw new ResourceNotFoundException("Contentlet is a miss in the cache");
             	}
 	            
-                contentlet = conAPI.findContentletByIdentifier(new String(x), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
+	            try {
+	                contentlet = conAPI.findContentletByIdentifier(new String(x), !preview,new Long(language) , APILocator.getUserAPI().getSystemUser(), true);
+	            }
+	            catch(Exception ex) {
+	                contentlet = null;
+	            }
 	            
 	            if(contentlet == null || !InodeUtils.isSet(contentlet.getInode())){
                 	CacheLocator.getVeloctyResourceCache().addMiss(arg0);
