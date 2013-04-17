@@ -12,6 +12,7 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.SQLQueryFactory;
@@ -71,7 +72,7 @@ public class HostAPIImpl implements HostAPI {
 		try{
 			host  = hostCache.getDefaultHost();
 			if(host != null){
-				if(APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+				if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 					return host;
 				}
 			}
@@ -96,7 +97,7 @@ public class HostAPIImpl implements HostAPI {
 				Logger.fatal(this, "More of one host is marked as default!!");
 			}
 			host = new Host(list.get(0));
-			if(APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+			if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 				hostCache.add(host);
 				return host;
 			}
@@ -140,7 +141,7 @@ public class HostAPIImpl implements HostAPI {
 				hostCache.addHostAlias(serverName, host);
 			}
 		}
-		if(APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+		if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 			return host;
 		}
 		else{
@@ -165,7 +166,7 @@ public class HostAPIImpl implements HostAPI {
 		try{
 			host  = hostCache.get(hostName);
 			if(host != null){
-				if(APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+				if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 					return host;
 				}
 			}
@@ -277,7 +278,7 @@ public class HostAPIImpl implements HostAPI {
 		}
 
 		if(host != null){
-			if(!APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+			if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 				String u = (user != null) ? user.getUserId() : null;
 
 				String message = "User " + u + " does not have permission to host:" + host.getHostname();
