@@ -296,8 +296,7 @@
 	                var myselect = new dijit.form.FilteringSelect({
 	                         id: "langcombo",
 	                         name: "lang",
-	                         value: '<%=structure.getStructureType()==Structure.STRUCTURE_TYPE_WIDGET ? // widgets only on default lang 
-	                                 APILocator.getLanguageAPI().getDefaultLanguage().getId() : contentletForm.getLanguageId()%>',
+	                         value: '<%=contentletForm.getLanguageId()%>',
 	                         required: true,
 	                         store: langStore,
 	                         searchAttr: "lang",
@@ -312,18 +311,12 @@
 	                    },
 	                    dojo.byId("langcombo"));
 	                updateSelectBoxImage(myselect);
-	                <% if(structure.getStructureType()==Structure.STRUCTURE_TYPE_WIDGET) {%>
-	                      myselect.set('disabled','disabled');
-	                      new dijit.Tooltip({
-	                          connectId: ["combo_zone2"],
-	                          label: "<%=LanguageUtil.get(pageContext,"Widget-only-deflang")%>"
-	                      });
-	                <% } %>
+	                
 	            </script>
 			</div>
 		<%} %>
 		 	<input type="hidden" name="languageId" id="languageId" 
-				value="<%= (contentlet.getLanguageId() != 0) ? contentlet.getLanguageId() + "" : ((UtilMethods.isSet(request.getParameter("lang")) && structure.getStructureType()!=Structure.STRUCTURE_TYPE_WIDGET) ? request.getParameter("lang") : defaultLang.getId()) %>">
+				value="<%= (contentlet.getLanguageId() != 0) ? contentlet.getLanguageId() + "" : ((UtilMethods.isSet(request.getParameter("lang"))) ? request.getParameter("lang") : defaultLang.getId()) %>">
 	
 		<!-- END LANGUAGE -->
 
