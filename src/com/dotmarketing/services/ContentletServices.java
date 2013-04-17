@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -38,6 +39,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
+import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
@@ -507,12 +509,20 @@ public class ContentletServices {
 		}
 		velocityRootPath += java.io.File.separator;
 		
-		String filePath= folderPath + identifier.getInode() + "_" + asset.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
-		java.io.File f= new java.io.File(velocityRootPath + filePath);
-		f.delete();
-		DotResourceCache vc= CacheLocator.getVeloctyResourceCache();
-        vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
-	    
+		Set<Long> langs = new HashSet<Long>();
+		langs.add(asset.getLanguageId());
+		if(LanguageWebAPI.canApplyToAllLanguages(asset)) {
+		    for(Language ll : APILocator.getLanguageAPI().getLanguages()) {
+		        langs.add(ll.getId());
+		    }
+		}
+		for(Long langId : langs) {
+    		String filePath= folderPath + identifier.getInode() + "_" + langId + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
+    		java.io.File f= new java.io.File(velocityRootPath + filePath);
+    		f.delete();
+    		DotResourceCache vc= CacheLocator.getVeloctyResourceCache();
+            vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+		}
         List<Field> fields= FieldsCache.getFieldsByStructureInode(asset.getStructureInode());
         for (Field field : fields) {
 			try {

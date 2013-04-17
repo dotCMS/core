@@ -440,7 +440,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             ContentletServices.invalidate(contentlet);
             ContentletMapServices.invalidate(contentlet);
 
-            CacheLocator.getContentletCache().remove(String.valueOf(contentlet.getInode()));
+            CacheLocator.getContentletCache().remove(contentlet.getInode());
 
             // Need to refresh the live pages that reference this piece of
             // content
@@ -1324,15 +1324,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (user == null || !workingContentlet.isLocked() || workingContentlet.getModUser().equals(user.getUserId())) {
 
-            if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode()))
+            if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
                 APILocator.getVersionableAPI().removeLive(liveContentlet.getIdentifier(), liveContentlet.getLanguageId());
+                indexAPI.removeContentFromLiveIndex(liveContentlet);
+            }
 
             // sets deleted to true
             APILocator.getVersionableAPI().setDeleted(workingContentlet, true);
 
             // Updating lucene index
             indexAPI.addContentToIndex(workingContentlet);
-            indexAPI.removeContentFromLiveIndex(liveContentlet);
+            
+            ContentletServices.invalidate(contentlet);
+            ContentletMapServices.invalidate(contentlet);
+            publishRelatedHtmlPages(contentlet);
         }else{
             throw new DotContentletStateException("Contentlet is locked: Unable to archive");
         }
@@ -1497,17 +1502,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         APILocator.getVersionableAPI().removeLive(contentlet.getIdentifier(), contentlet.getLanguageId());
 
-        //remove contentlet from the live directory
-        ContentletServices.unpublishContentletFile(contentlet);
-        //writes the contentlet object to a file
-        ContentletMapServices.unpublishContentletMapFile(contentlet);
-        publishRelatedHtmlPages(contentlet);
-
         indexAPI.addContentToIndex(contentlet);
         indexAPI.removeContentFromLiveIndex(contentlet);
-
-        //Need to refresh the live pages that reference this piece of content
+        
+        
+        ContentletServices.unpublishContentletFile(contentlet);
+        ContentletMapServices.unpublishContentletMapFile(contentlet);
         publishRelatedHtmlPages(contentlet);
+        
     }
 
     public void unpublish(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,    DotSecurityException, DotContentletStateException {
@@ -1549,6 +1551,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(liveContentlet!=null && UtilMethods.isSet(liveContentlet.getInode())
                 && !liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()))
             indexAPI.addContentToIndex(liveContentlet);
+        
+        ContentletServices.invalidate(contentlet);
+        ContentletMapServices.invalidate(contentlet);
+        publishRelatedHtmlPages(contentlet);
     }
 
     public void unarchive(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {

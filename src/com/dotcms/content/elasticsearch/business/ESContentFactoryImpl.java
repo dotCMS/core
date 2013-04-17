@@ -1091,15 +1091,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
                      .append(com.dotmarketing.db.DbConnectionFactory.getDBFalse());
         }
         
-        long deflanguageId = langAPI.getDefaultLanguage().getId();
         if (languageId == 0) {
-            condition.append(" and contentletvi.lang = ").append(deflanguageId);
+            languageId = langAPI.getDefaultLanguage().getId(); 
+            condition.append(" and contentletvi.lang = ").append(languageId);
         }else if(languageId == -1){
             Logger.debug(this, "LanguageId is -1 so we will not use a language to pull contentlets");
         }else{
-            String formsStInode=StructureCache.getStructureByVelocityVarName("forms").getInode();
-            condition.append(" and (contentletvi.lang = ").append(languageId)
-                     .append(" or contentlet.structure_inode='").append(formsStInode).append("') ");
+            condition.append(" and contentletvi.lang = ").append(languageId);
         }
 
         HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);

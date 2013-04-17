@@ -1033,12 +1033,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			workingContentlet = contentlet;
 		}
 
-		String langId = req.getParameter("lang");
-		if(UtilMethods.isSet(langId)) {
-		    contentlet.setLanguageId(Long.parseLong(langId));
-		}
-		else if(!InodeUtils.isSet(contentlet.getInode())) {
-		    contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		if(!InodeUtils.isSet(contentlet.getInode())) {
+    		String langId = req.getParameter("lang");
+    		if(UtilMethods.isSet(langId)) {
+    		    contentlet.setLanguageId(Long.parseLong(langId));
+    		}
+    		else {
+    		    contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    		}
 		}
 
 		GregorianCalendar cal = new GregorianCalendar();
