@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import static org.junit.Assert.assertNotNull;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.codehaus.cargo.util.Base64;
@@ -9,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
+import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
@@ -19,12 +21,17 @@ public class WebResourceTest extends TestBase  {
 
 	private Client client;
 	private WebResource webResource;
+	private HttpServletRequest request;
+	private String serverName;
+	private Integer serverPort;
 
 	@Before
 	public void init() {
 		client = Client.create();
-		// TODO remove hard-coded app url
-		webResource = client.resource("http://localhost:8083/api/role");
+		request = ServletTestRunner.localRequest.get();
+		serverName = request.getServerName();
+		serverPort = request.getServerPort();
+		webResource = client.resource("http://"+serverName+":"+serverPort+"/api/role");
 	}
 
 	@Test(expected=UniformInterfaceException.class)
@@ -48,7 +55,7 @@ public class WebResourceTest extends TestBase  {
 		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
 		formData.add("user", "wrong@user.com");
 		formData.add("password", "123456");
-		webResource = client.resource("http://localhost:8083/api/dummy");
+		webResource = client.resource("http://"+serverName+":"+serverPort+"/api/dummy");
 		webResource.path("/postauth").type("application/x-www-form-urlencoded").post(String.class, formData);
 	}
 
@@ -57,7 +64,7 @@ public class WebResourceTest extends TestBase  {
 		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
 		formData.add("user", "admin@dotcms.com");
 		formData.add("password", "admin");
-		webResource = client.resource("http://localhost:8083/api/dummy");
+		webResource = client.resource("http://"+serverName+":"+serverPort+"/api/dummy");
 		String response = webResource.path("/postauth").type("application/x-www-form-urlencoded").post(String.class, formData);
 		assertNotNull(response);
 	}
