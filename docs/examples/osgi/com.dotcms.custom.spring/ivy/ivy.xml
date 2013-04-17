@@ -1,6 +1,0 @@
-<ivy-module version="2.0">
-    <info organisation="org.apache" module="springDependencies"/>
-    <dependencies>
-        <dependency org="org.springframework" name="org.springframework.web.servlet" rev="3.1.1.RELEASE"/>
-    </dependencies>
-</ivy-module>

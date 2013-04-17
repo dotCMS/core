@@ -29,8 +29,7 @@ public class Activator extends GenericBundleActivator {
             ExtHttpService httpService = (ExtHttpService) context.getService( sRef );
             try {
                 DispatcherServlet dispatcherServlet = new DispatcherServlet();
-                //dispatcherServlet.setContextConfigLocation( "spring/example-servlet.xml" );
-                dispatcherServlet.setContextConfigLocation( "spring/example-servlet-scan.xml" );
+                dispatcherServlet.setContextConfigLocation( "spring/example-servlet.xml" );
                 httpService.registerServlet( "/spring", dispatcherServlet, null, null );
             } catch ( Exception e ) {
                 e.printStackTrace();

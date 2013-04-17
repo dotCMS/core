@@ -26,8 +26,7 @@ import java.util.*;
  */
 public class OSGIUtil {
 
-    public static final Long BUNDLE_HTTP_BRIDGE_ID = 6L;
-
+    public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
     public String FELIX_EXTRA_PACKAGES_FILE;
 
