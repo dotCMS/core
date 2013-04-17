@@ -1,4 +1,4 @@
-<project name="Custom Spring Example Bundle Builder" default="build">
+<project name="Custom Spring Example - Bundle Builder" default="build">
 
     <basename file="${basedir}" property="plugin.name"/>
 
@@ -84,7 +84,6 @@
                 <exclude name="build/**"/>
                 <exclude name="META-INF/**"/>
                 <exclude name="conf/**"/>
-                <exclude name="ivy/**"/>
                 <exclude name="build.xml"/>
             </zipfileset>
 
