@@ -9,8 +9,10 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -71,13 +73,39 @@ public class LanguageWebAPI implements ViewTool {
 
 	/**
 	 * Return if the DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE property is activated or not
+	 * defaults to false
 	 * @return boolean
 	 */
 	public static boolean canDefaultContentToDefaultLanguage() {
-		boolean defaultContentToDefaultLanguage = false;
-		defaultContentToDefaultLanguage = Config
-				.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE");
-		return defaultContentToDefaultLanguage;
+		return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
+	}
+	
+	/**
+	 * Return if the DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE property is activated or not
+	 * deaults to true
+	 * @return
+	 */
+	public static boolean canDefaultWidgetToDefaultLanguage() {
+        return Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE",true);
+    }
+	
+	/**
+	 * Return if the content can be use as a default to all languages.
+	 * It is a conjuntion of canDefaultContentToDefaultLanguage(),
+	 * wherever it is a form widget and canDefaultWidgetToDefaultLanguage()
+	 * if the content is a widget.
+	 * This method is intended to keep this rules in one place so it can
+	 * be used by DotResourceLoader and content service cache invalidator.
+	 * Also the contentlet must live in the default language.
+	 * @param cc
+	 * @return
+	 */
+	public static boolean canApplyToAllLanguages(Contentlet cc) {
+	    return cc.getLanguageId()==APILocator.getLanguageAPI().getDefaultLanguage().getId() &&
+	            (canDefaultContentToDefaultLanguage() // content default to default language?
+                || cc.getStructure().getVelocityVarName().equalsIgnoreCase("forms") // forms? apply to all languages
+                || (cc.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_WIDGET // widgets default to all langs?
+                     && canDefaultWidgetToDefaultLanguage()));
 	}
 
 	/**
