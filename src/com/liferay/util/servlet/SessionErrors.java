@@ -78,7 +78,7 @@ public class SessionErrors {
 	}
 
 	public static boolean contains(HttpServletRequest req, String key) {
-		return contains(req.getSession(), key);
+		return contains(req.getSession(false), key);
 	}
 
 	public static boolean contains(HttpSession ses, String key) {
@@ -142,7 +142,7 @@ public class SessionErrors {
 	private static Map _getErrors(HttpSession ses) {
 		Map errors = null;
 
-		try {
+		try {			
 			errors = (Map)ses.getAttribute(KEY);
 
 			if (errors == null) {
@@ -151,7 +151,7 @@ public class SessionErrors {
 				ses.setAttribute(KEY, errors);
 			}
 		}
-		catch (IllegalStateException ise) {
+		catch (Exception ise) {
 			errors = new LinkedHashMap();
 		}
 

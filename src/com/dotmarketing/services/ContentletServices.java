@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -40,6 +39,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
+import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
@@ -508,22 +508,21 @@ public class ContentletServices {
 			velocityRootPath= Config.CONTEXT.getRealPath(velocityRootPath);
 		}
 		velocityRootPath += java.io.File.separator;
-		List<Long> langs=new ArrayList<Long>();
+		
+		Set<Long> langs = new HashSet<Long>();
 		langs.add(asset.getLanguageId());
-		if(asset.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_WIDGET) {
-		    for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
-		        if(lang.getId()!=asset.getLanguageId()) {
-		            langs.add(lang.getId());
-		        }
+		if(LanguageWebAPI.canApplyToAllLanguages(asset)) {
+		    for(Language ll : APILocator.getLanguageAPI().getLanguages()) {
+		        langs.add(ll.getId());
 		    }
 		}
-		for(Long lang : langs) {
-    		String filePath= folderPath + identifier.getInode() + "_" + lang + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
+		for(Long langId : langs) {
+    		String filePath= folderPath + identifier.getInode() + "_" + langId + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
     		java.io.File f= new java.io.File(velocityRootPath + filePath);
     		f.delete();
     		DotResourceCache vc= CacheLocator.getVeloctyResourceCache();
             vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
-	    }
+		}
         List<Field> fields= FieldsCache.getFieldsByStructureInode(asset.getStructureInode());
         for (Field field : fields) {
 			try {
