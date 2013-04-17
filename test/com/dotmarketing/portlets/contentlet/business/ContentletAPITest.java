@@ -1862,22 +1862,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
     }
     
-    @Test(expected=DotContentletValidationException.class)
-    public void widgetOnlyForDefaultLanguage() throws Exception {
-        Structure sw=StructureCache.getStructureByVelocityVarName("SimpleWidget");
-        Language def=APILocator.getLanguageAPI().getDefaultLanguage();
-        for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
-            if(lang.getId()!=def.getId()) {
-                Contentlet widget = new Contentlet();
-                widget.setStructureInode(sw.getInode());
-                widget.setLanguageId(lang.getId());
-                widget.setStringProperty("widgetTitle", "test widget "+UUIDGenerator.generateUuid());
-                widget.setStringProperty("code", "hello boy!");
-                widget=contentletAPI.checkin(widget, user, false);
-            }
-        }
-        
-    }
     
     @Test
     public void rangeQuery() throws Exception {

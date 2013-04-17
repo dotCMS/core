@@ -281,6 +281,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
 				}
 				HibernateUtil.commitTransaction();
+				APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
 			}
 			catch (DuplicateFileException e){
 				existingFileNames.add(e.getMessage());

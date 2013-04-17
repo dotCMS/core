@@ -112,7 +112,7 @@
 </script>
 <%--liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value='<%=LanguageUtil.get(pageContext, "Viewing-Mailing-Lists")%>' /--%>
-	
+<div class="alert-message"><strong><%=LanguageUtil.get(pageContext, "Warning")%></strong> : <%=LanguageUtil.get(pageContext, "message.communication.depricated")%></div>
 <form id="fm" method="post" action="" onsubmit="return false;">
 <div class="yui-gc portlet-toolbar">
 	<div class="yui-u first">

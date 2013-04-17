@@ -106,7 +106,7 @@
 
 
 		<%if(request.getParameter("fileName")!= null){%>
-			dijit.byId("fileName").setValue("<%=com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName"))%>");
+		dijit.byId("fileName").attr("displayedValue","<%=com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName")).replace(logPath + File.separator, "")%>");
 		<%}%>
 
 	});

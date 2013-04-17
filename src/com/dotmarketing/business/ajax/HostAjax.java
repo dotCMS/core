@@ -21,6 +21,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -256,7 +257,17 @@ public class HostAjax {
 		User user = userWebAPI.getLoggedInUser(req);
 		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
 		Host host = hostAPI.find(id, user, respectFrontendRoles);
-		hostAPI.makeDefault(host, user, respectFrontendRoles);
+		HibernateUtil.startTransaction();
+		try{
+			hostAPI.makeDefault(host, user, respectFrontendRoles);
+		}catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+		try{
+			HibernateUtil.commitTransaction();
+		}catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
 	}
 
 	public int getHostSetupProgress(String hostId) {
