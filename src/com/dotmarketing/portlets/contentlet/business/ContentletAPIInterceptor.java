@@ -1909,6 +1909,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
+	
+	public boolean isInodeIndexed(String inode,boolean live) {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.isInodeIndexed(inode,live);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        boolean c = conAPI.isInodeIndexed(inode,live);
+        for(ContentletAPIPostHook post : postHooks){
+            post.isInodeIndexed(inode,live,c);
+        }
+        return c;
+    }
 
 	public boolean isInodeIndexed(String inode, int secondsToWait) {
 		for(ContentletAPIPreHook pre : preHooks){

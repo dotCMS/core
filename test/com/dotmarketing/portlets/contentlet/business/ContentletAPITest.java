@@ -1,19 +1,25 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.velocity.Template;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -27,6 +33,9 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.cmis.proxy.DotInvocationHandler;
+import com.dotmarketing.cmis.proxy.DotRequestProxy;
+import com.dotmarketing.cmis.proxy.DotResponseProxy;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -47,7 +56,13 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.services.ContentletServices;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.viewtools.RequestWrapper;
+import com.liferay.portal.model.User;
 
 /**
  * Created by Jonathan Gamba.
@@ -1876,6 +1891,86 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.delete(list, user, false);
         FieldFactory.deleteField(field);
         StructureFactory.deleteStructure(testStructure);
+    }
+    
+    @Test
+    public void widgetInvalidateAllLang() throws Exception {
+        
+        Structure sw=StructureCache.getStructureByVelocityVarName("SimpleWidget");
+        Language def=APILocator.getLanguageAPI().getDefaultLanguage();
+        Contentlet w = new Contentlet();
+        w.setStructureInode(sw.getInode());
+        w.setStringProperty("widgetTitle", "A testing widget "+UUIDGenerator.generateUuid());
+        w.setStringProperty("code", "Initial code");
+        w.setLanguageId(def.getId());
+        w = contentletAPI.checkin(w, user, false);
+        APILocator.getVersionableAPI().setLive(w);
+        APILocator.getContentletIndexAPI().addContentToIndex(w,false,true);
+        contentletAPI.isInodeIndexed(w.getInode(),true);
+        
+        
+        /*
+         * For every language we should get the same content and contentMap template code
+         */
+        String contentEXT=Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
+        VelocityEngine engine = VelocityUtil.getEngine();
+        SimpleNode contentTester = engine.getRuntimeServices().parse(new StringReader("code:$code"), "tester1");
+        
+        contentTester.init(null, null);
+        
+        InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
+
+        DotRequestProxy requestProxy = (DotRequestProxy) Proxy
+                .newProxyInstance(DotRequestProxy.class.getClassLoader(),
+                        new Class[] { DotRequestProxy.class },
+                        dotInvocationHandler);
+
+        DotResponseProxy responseProxy = (DotResponseProxy) Proxy
+                .newProxyInstance(DotResponseProxy.class.getClassLoader(),
+                        new Class[] { DotResponseProxy.class },
+                        dotInvocationHandler);
+        
+        requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
+        
+        Template teng1 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
+        Template tesp1 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        
+        Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
+        StringWriter writer=new StringWriter();
+        teng1.merge(ctx, writer);
+        contentTester.render(new InternalContextAdapterImpl(ctx), writer);
+        assertEquals("code:Initial code",writer.toString());
+        ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
+        writer=new StringWriter();
+        tesp1.merge(ctx, writer);
+        contentTester.render(new InternalContextAdapterImpl(ctx), writer);
+        assertEquals("code:Initial code",writer.toString());
+        
+        Contentlet w2=contentletAPI.checkout(w.getInode(), user, false);
+        w2.setStringProperty("code", "Modified Code to make templates different");
+        w2 = contentletAPI.checkin(w2, user, false);
+        contentletAPI.publish(w2, user, false);
+        contentletAPI.isInodeIndexed(w2.getInode(),true);
+        
+        // now if everything have been cleared correctly those should match again
+        Template teng3 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
+        Template tesp3 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
+        writer=new StringWriter();
+        teng3.merge(ctx, writer);
+        contentTester.render(new InternalContextAdapterImpl(ctx), writer);
+        assertEquals("code:Modified Code to make templates different",writer.toString());
+        ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
+        writer=new StringWriter();
+        tesp3.merge(ctx, writer);
+        contentTester.render(new InternalContextAdapterImpl(ctx), writer);
+        assertEquals("code:Modified Code to make templates different",writer.toString());
+        
+        // clean up
+        APILocator.getVersionableAPI().removeLive(w2.getIdentifier(), w2.getLanguageId());
+        contentletAPI.archive(w2, user, false);
+        contentletAPI.delete(w2, user, false);
     }
 
 }
