@@ -16,9 +16,11 @@
 # limitations under the License.
 
 # -----------------------------------------------------------------------------
-#  Set CLASSPATH and Java options
+#  Set JAVA_HOME or JRE_HOME if not already set, ensure any provided settings
+#  are valid and consistent with the selected start-up options and set up the
+#  endorsed directory.
 #
-#  $Id: setclasspath.sh 795037 2009-07-17 10:52:16Z markt $
+#  $Id: setclasspath.sh 1202062 2011-11-15 06:50:02Z mturk $
 # -----------------------------------------------------------------------------
 
 # Make sure prerequisite environment variables are set
@@ -73,40 +75,11 @@ if [ "$1" = "debug" ] ; then
     fi
   fi
 fi
-if [ -z "$BASEDIR" ]; then
-  echo "The BASEDIR environment variable is not defined"
-  echo "This environment variable is needed to run this program"
-  exit 1
-fi
-if [ ! -x "$BASEDIR"/bin/setclasspath.sh ]; then
-  if $os400; then
-    # -x will Only work on the os400 if the files are:
-    # 1. owned by the user
-    # 2. owned by the PRIMARY group of the user
-    # this will not work if the user belongs in secondary groups
-    eval
-  else
-    echo "The BASEDIR environment variable is not defined correctly"
-    echo "This environment variable is needed to run this program"
-    exit 1
-  fi
-fi
 
 # Don't override the endorsed dir if the user has set it previously
 if [ -z "$JAVA_ENDORSED_DIRS" ]; then
   # Set the default -Djava.endorsed.dirs argument
-  JAVA_ENDORSED_DIRS="$BASEDIR"/endorsed
-fi
-
-# OSX hack to CLASSPATH
-JIKESPATH=
-if [ `uname -s` = "Darwin" ]; then
-  OSXHACK="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Classes"
-  if [ -d "$OSXHACK" ]; then
-    for i in "$OSXHACK"/*.jar; do
-      JIKESPATH="$JIKESPATH":"$i"
-    done
-  fi
+  JAVA_ENDORSED_DIRS="$CATALINA_HOME"/endorsed
 fi
 
 # Set standard commands for invoking Java.
