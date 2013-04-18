@@ -81,8 +81,14 @@ dojo.declare("dotcms.dojo.data.ContainerReadStoreDrawedTemplate", null, {
 		if(!keywordArgs.sort){
 			keywordArgs.sort = [""];
 		}
+
+        if (containersAdded) {
+            keywordArgs.exclude = containersAdded;
+        } else {
+            keywordArgs.exclude = [];
+        }
 		
-		ContainerAjaxDrawedTemplate.fetchContainersDesignTemplate(keywordArgs.query, keywordArgs.queryOptions, keywordArgs.start, keywordArgs.count, keywordArgs.sort, fetchCallback);
+		ContainerAjaxDrawedTemplate.fetchContainersDesignTemplate(keywordArgs.query, keywordArgs.queryOptions, keywordArgs.start, keywordArgs.count, keywordArgs.sort, keywordArgs.exclude, fetchCallback);
 		
 		this.currentRequest = keywordArgs;
 		this.currentRequest.abort = function () { };

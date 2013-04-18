@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -91,6 +90,7 @@ public interface TagAPI {
 	 * @param userId owner of the tag
 	 * @param inode object to tag
 	 * @return a list of all tags assigned to an object
+	 * @deprecated it doesn't handle host id. Call getTagsInText then addTagInode on each
 	 * @throws Exception
 	 */
 	public List addTag(String tagName, String userId, String inode) throws Exception;
@@ -259,4 +259,16 @@ public interface TagAPI {
 	 * @param newTagStorageId
 	 */
 	public void updateTagReferences (String hostIdentifier, String oldTagStorageId, String newTagStorageId);
+
+	/**
+	 * Extract tag names in the specified text and return the list 
+	 * of Tag Object found
+	 * 
+	 * @param value
+	 * @param userId
+	 * @param hostId
+	 * @return
+	 * @throws Exception 
+	 */
+    public List<Tag> getTagsInText(String text, String userId, String hostId) throws Exception;
 }

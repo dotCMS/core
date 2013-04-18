@@ -25,7 +25,7 @@ hr {color: #fff; background-color: #fff; border: 1px solid #ddd; border-style: n
 .dmundra .dijitTabListWrapper {top:5px;}
 .dmundra .dijitTabContainerTop-dijitContentPane{padding-bottom:10px;}
 
-.dmundra .dijitButtonText {display:inline-block;width:150px;text-align:left;}
+.dmundra .dijitButtonText {display:inline-block;width:160px;text-align:left;overflow: hidden;}
 
 .dijitButtonNode button{width:175px;text-align:left;}
 
@@ -36,7 +36,7 @@ hr {color: #fff; background-color: #fff; border: 1px solid #ddd; border-style: n
 
 
 #buttonRow{padding:0 0 12px 5px;border-top:1px solid #fff;border-bottom:1px solid #ccc;}
-.logout{position:absolute;bottom:15px;left:10px;}
+.logout{position:absolute;bottom:15px;left:5px;}
 
 .sideMenu{width:210px;overflow:hidden;}
 	

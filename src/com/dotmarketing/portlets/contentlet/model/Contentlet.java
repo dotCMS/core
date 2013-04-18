@@ -74,6 +74,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String WORKFLOW_ACTION_KEY = "wfActionId";
     public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
     public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
+    
+    
+    public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
+    public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
+    public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
+    public static final String WORKFLOW_EXPIRE_TIME = "wfExpireTime";
+    public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
+    
+    
+    
+    
+    
    protected Map<String, Object> map = new HashMap<String, Object>();
    private boolean lowIndexPriority = false;
 

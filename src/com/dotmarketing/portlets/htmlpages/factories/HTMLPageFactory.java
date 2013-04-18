@@ -11,8 +11,6 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierCache;
-import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.LiveCache;
@@ -24,14 +22,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
-import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.Config;
@@ -279,7 +275,7 @@ public class HTMLPageFactory {
 
         //HibernateUtil.saveOrUpdate(identifier);
         APILocator.getIdentifierAPI().save( identifier );
-
+        
         //Add to Preview and Live Cache
         if ( (liveWebAsset != null) && (InodeUtils.isSet( liveWebAsset.getInode() )) ) {
             LiveCache.removeAssetFromCache( liveWebAsset );
@@ -298,10 +294,15 @@ public class HTMLPageFactory {
         //RefreshMenus.deleteMenus();
         if ( parent != null ) {
             RefreshMenus.deleteMenu( oldParent, parent );
+            CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
         } else {
             RefreshMenus.deleteMenu( oldParent );
         }
+        CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
+        if(APILocator.getPermissionAPI().isInheritingPermissions(workingWebAsset))
+            APILocator.getPermissionAPI().removePermissions(workingWebAsset);
+        
         return true;
     }
 
@@ -437,6 +438,10 @@ public class HTMLPageFactory {
 		}
 
     	Identifier ident = APILocator.getIdentifierAPI().find(page);
+    	
+    	// removing both old and new parent
+    	CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
+    	CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 
     	HTMLPage tempPage = new HTMLPage();
     	tempPage.copy(page);

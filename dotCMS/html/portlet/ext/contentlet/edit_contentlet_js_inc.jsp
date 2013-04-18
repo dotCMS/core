@@ -75,7 +75,7 @@ dojo.require("dojox.layout.ContentPane");
 	}
 	function cancelEditCallback(callbackData){
 		<%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-		//callbackData=callbackData+"&inode=<%=contentlet.getInode()%>&structure_id=<%=structure.getInode()%>";
+			callbackData=callbackData+"&structure_id=<%=structure.getInode()%>";
 		<%}%>
 		self.location = callbackData;
 	}
@@ -513,7 +513,7 @@ dojo.require("dojox.layout.ContentPane");
 					errorList = errorList+"<li>"+error+"</li>";
 				}
 			dojo.byId('exceptionData').innerHTML = "<ul>"+errorList+"</ul>";
-
+			dojo.byId("wfActionId").value=""; // hack to let the user choose save instead of wfAction
 			errorDisplayElement.show();
 			return;
 		}
@@ -525,7 +525,7 @@ dojo.require("dojox.layout.ContentPane");
 	 	if(data["referer"] != null && data["referer"] != '' && !data["contentletLocked"] ) {
 
 			<%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-				//self.location = data["referer"]+"&structure_id=<%=structure.getInode()%>&content_inode=" + data["contentletInode"];
+				self.location = data["referer"]+"&structure_id=<%=structure.getInode()%>&content_inode=" + data["contentletInode"];
 			<%}else{%>
 				self.location = data["referer"] + "&content_inode=" + data["contentletInode"];
 			<%}%>
@@ -615,10 +615,10 @@ dojo.require("dojox.layout.ContentPane");
     	},
 
 
-    	executeWfAction: function(wfId, assignable, commentable){
+    	executeWfAction: function(wfId, popupable, showpush){
     		this.wfActionId=wfId;
 
-    		if(assignable || commentable){
+    		if(popupable){
     			
     			var myCp = dijit.byId("contentletWfCP");
     			if (myCp) {
@@ -650,9 +650,15 @@ dojo.require("dojox.layout.ContentPane");
    							:workingContentletInode;
 
 
-
     			var r = Math.floor(Math.random() * 1000000000);
-				var url = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId + "&inode=" + inode + "&r=" + r;
+				var url = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId 
+						+ "&inode=" + inode 
+						+ "&showpush=" + showpush 
+						+ "&publishDate=<%=structure.getPublishDateVar()%>"
+						+ "&expireDate=<%=structure.getExpireDateVar()%>"
+						+ "&structureInode=<%=structure.getInode()%>"
+						+ "&r=" + r;
+						console.log(url);
     			myCp.attr("href", url);
     			return;
     		}
@@ -682,14 +688,57 @@ dojo.require("dojox.layout.ContentPane");
 								: "";
 	
 						
+						
+						
+	
+						
+						
+						
+			// BEGIN: PUSH PUBLISHING ACTIONLET						
+			var publishDate = (dijit.byId("wfPublishDateAux"))			
+				? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
+					: (dojo.byId("wfPublishDateAux"))	
+						? dojo.date.locale.format(dojo.byId("wfPublishDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"})
+								: "";
 
+			var publishTime = (dijit.byId("wfPublishTimeAux"))			
+				? dojo.date.locale.format(dijit.byId("wfPublishTimeAux").getValue(),{timePattern: "H-m", selector: "time"})
+					: (dojo.byId("wfPublishTimeAux"))	
+						? dojo.date.locale.format(dojo.byId("wfPublishTimeAux").value,{timePattern: "H-m", selector: "time"})
+								: "";
+			
 						
+			var expireDate = (dijit.byId("wfExpireDateAux"))			
+				? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
+					: (dojo.byId("wfExpireDateAux"))	
+						? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
+								: "";
+			
+			var expireTime = (dijit.byId("wfExpireTimeAux"))			
+				? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireTimeAux").getValue(),{timePattern: "H-m", selector: "time"}) : ""
+					: (dojo.byId("wfExpireTimeAux"))	
+						? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireTimeAux").value,{timePattern: "H-m", selector: "time"}) : ""
+								: "";			
+			var neverExpire = (dijit.byId("wfNeverExpire"))			
+				? dijit.byId("wfNeverExpire").getValue()
+					: (dojo.byId("wfNeverExpire"))	
+						? dojo.byId("wfNeverExpire").value
+								: "";
 						
-						
+			// END: PUSH PUBLISHING ACTIONLET
 			
 			dojo.byId("wfActionAssign").value=assignRole;
 			dojo.byId("wfActionComments").value=comments;
 			dojo.byId("wfActionId").value=this.wfActionId;
+			
+			// BEGIN: PUSH PUBLISHING ACTIONLET
+			dojo.byId("wfPublishDate").value=publishDate;
+			dojo.byId("wfPublishTime").value=publishTime;
+			dojo.byId("wfExpireDate").value=expireDate;
+			dojo.byId("wfExpireTime").value=expireTime;
+			dojo.byId("wfNeverExpire").value=neverExpire;
+			// END: PUSH PUBLISHING ACTIONLET
+			
     		var dia = dijit.byId("contentletWfDialog").hide();
 
     		saveContent(false);

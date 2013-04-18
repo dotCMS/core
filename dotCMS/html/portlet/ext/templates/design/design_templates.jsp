@@ -15,10 +15,11 @@
 <%@ page import="com.dotmarketing.portlets.containers.business.ContainerAPI"%>
 
 <%@ page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
-
+<%@ include file="/html/js/template/utility-left-menu.jsp" %>
 <style type="text/css">
 	@import url(/html/css/template/draw-template.css);
 	@import url(/html/css/template/drawed-reset-fonts-grids.css);
+	.gradient2{padding-top:30px;padding-bottom:20px;}
 </style>
 
 <%
@@ -89,15 +90,8 @@
 	if(UtilMethods.isSet(hostId)) {
 		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false);
 	}
-	Folder themeFolder= APILocator.getFolderAPI().findFolderByPath("/application/themes", host, user, false);
-	List<Folder> themes = null;
-	try{
-		themes = APILocator.getFolderAPI().findSubFolders(themeFolder, user, false);
-	}
-	catch(Exception e){
-
-	}
 %>
+<script type='text/javascript' src='/dwr/interface/TemplateAjax.js'></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/MetadataContainerAjax.js"></script>
 <script language="Javascript">
@@ -128,11 +122,13 @@
 			return;
 		}
 
+        //Update the counter of the "Add Container" links
+        updateAddContainerLinksCount();
+        //Update the counter of added containers
+        parseCurrentContainers();
+
 		var addContainerLinks = window.parseInt(document.getElementById("countAddContainerLinks").value);
 		var containersAdded = window.parseInt(document.getElementById("countContainersAdded").value);
-
-		alert(addContainerLinks);
-		alert(containersAdded);
 
 		if(containersAdded==0){
 			if(!confirm('Your template does not contains Containers. In this case you can\'t add contents. Are you sure you want to save?'))
@@ -152,8 +148,23 @@
 		form.<portlet:namespace />subcmd.value = subcmd;
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
 		form.removeAttribute('onsubmit');
-		submitForm(form);
+
+        //Before to submit lets verify the title
+        verifyTitle(form);
 	}
+
+    function verifyTitle(form) {
+
+        function response(data) {
+            if (data) {
+                alert("The template title must be unique and this template title is already taken.");
+            } else {
+                submitForm(form);
+            }
+        }
+
+        TemplateAjax.duplicatedTitle(document.getElementById("titleField").value, "<%=template.getInode()%>", "<%=host.getIdentifier()%>", {callback:response});
+    }
 
 	var copyAsset = false;
 
@@ -205,6 +216,9 @@
 		fileSelector.show();
 	}
 
+
+
+
 	function previewTemplate(name, params) {
 
 		var theme = dijit.byId("themeDiv");
@@ -218,9 +232,15 @@
 		openWindowWithPost(url, name, params);
 	}
 
+	var previewWindow;
 	function openWindowWithPost(url, name, params) {
-		var newWindow = window.open(url, name, params);
-		if (!newWindow) return false;
+		if (previewWindow) {
+			previewWindow.close();
+
+		}
+
+		previewWindow = window.open(url, "previewWindow", params);
+		if (!previewWindow) return false;
 		var bodyTemplateHTML = document.getElementById('bodyTemplate').innerHTML;
 		var theme = dijit.byId("themeDiv").value;
 		var themeName = dijit.byId("themeDiv").displayedValue;
@@ -236,9 +256,51 @@
 		html += '<input type="hidden" name="footerCheck" value="'+footerCheck+'">';
 		html += '<input type="hidden" name="hostId" value="'+hostId+'">';
 		html += '<textarea style="display: none;" name="bodyTemplateHTML">'+bodyTemplateHTML+'</textarea></form><script>document.previewForm.submit();<' + '/script' + '>' + '</body></html>';
-		newWindow.document.write(html);
-		return newWindow;
+		previewWindow.document.write(html);
+		return previewWindow;
 	}
+
+
+    function refreshPreviewTab() {
+
+        var bodyTemplateHTML = document.getElementById('bodyTemplate').innerHTML;
+        var theme = dijit.byId("themeDiv").value;
+        var themeName = dijit.byId("themeDiv").displayedValue;
+
+        var headerCheck = dijit.byId("headerCheck").checked;
+        var footerCheck = dijit.byId("footerCheck").checked;
+        var hostId = dojo.byId("hostId").value;
+
+        if (null == theme || '' == theme) {
+            alert('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "template-theme-mandatory"))%>');
+            return;
+        }
+
+        dojo.byId("themePreviewRandom").value = Math.floor(Math.random() * 1123213213);
+        dojo.byId("themePreviewTheme").value = theme;
+        dojo.byId("themePreviewName").value = themeName;
+        dojo.byId("templateTitle").value = document.getElementById("titleField").value;
+        dojo.byId("themePreviewHeaderCheck").value = headerCheck;
+        dojo.byId("themePreviewFooterCheck").value = footerCheck;
+        dojo.byId("themePreviewBodyTemplateHTML").value = bodyTemplateHTML;
+        dojo.byId("themePreviewHostId").value = hostId;
+
+        dojo.byId("themePreviewForm").submit();
+    }
+
+	dojo.addOnLoad (function(){
+		var tab =dijit.byId("mainTabContainer");
+	   	dojo.connect(tab, 'selectChild',
+			function (evt) {
+			 	selectedTab = tab.selectedChildWidget;
+				  	if(selectedTab.id =="previewThemeTab"){
+				  		refreshPreviewTab();
+				  	}
+			});
+
+	});
+
+
 
 	function addFileCallback(file) {
 		if(file.extension == 'js') {
@@ -272,10 +334,10 @@
 	function getContainerMockContent(title){
 		return "<h2>Container: "+title+"</h2><p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>";
 	}
+
 </script>
 
 <script src="/html/js/cms_ui_utils.js" type="text/javascript"></script>
-<script src="/html/js/template/utility-left-menu.js" type="text/javascript"></script>
 <script src="/html/js/template/utility-add-metadata.js" type="text/javascript"></script>
 <script src="/html/js/template/utility-add-head-code.js" type="text/javascript"></script>
 <script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
@@ -338,22 +400,7 @@
 			if(null!=parameters) { // retrieve the parameters for auto-populate the fields
 		%>
 			<div class="gradient2">
-<%-- 				<%if(themes != null && themes.size() > 0){ %> --%>
-<!-- 					<div class="fieldWrapperSide"> -->
-<!-- 						<div class="leftProperties"> -->
-<!-- 							<dl> -->
-<%-- 								<dt><%=LanguageUtil.get(pageContext, "Theme") %>:</dt> --%>
-<!-- 								<dd> -->
-<!-- 									<select id="theme" dojoType="dijit.form.FilteringSelect" name="theme" onchange="javascript: setTheme(this.value)"> -->
-<%-- 										<%for(Folder f : themes){%> --%>
-<%-- 											<option value="<%=f.getName() %>"><%=f.getName() %></option> --%>
-<%-- 										<%} %> --%>
-<!-- 									</select> -->
-<!-- 								</dd> -->
-<!-- 							</dl> -->
-<!-- 						</div> -->
-<!-- 					</div> -->
-<%-- 				<%} %> --%>
+
 
 
 				<div class="fieldWrapperSide">
@@ -375,12 +422,14 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "page-width")%>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "width")%>:</dt>
 							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-									<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>
-									<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>
+									<%--<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>--%>
+									<%--<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>--%>
+                                    <option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
+                                    <option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
 									<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
-									<option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>974px</option>
+
 								</select>
 							</dd>
 						</dl>
@@ -390,15 +439,16 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "Layout")%>:</dt>
-							<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
-									<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>></option>
-									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-160-left")%></option>
-									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-180-left")%></option>
-									<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-300-left")%></option>
-									<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-180-right")%></option>
-									<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-240-right")%></option>
-									<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-300-right")%></option>
+							<dt><%=LanguageUtil.get(pageContext, "sidebar")%>:</dt>
+							<dd>
+                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
+									<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "none")%></option>
+									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-left")%></option>
+									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-left")%></option>
+									<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-left")%></option>
+									<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-right")%></option>
+									<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-right")%></option>
+									<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-right")%></option>
 								</select>
 							</dd>
 						</dl>
@@ -421,8 +471,10 @@
 							</dd>
 						</dl>
 					</div>
+					<div class="clear"></div>
 				</div>
-				<div class="clear"></div>
+
+
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows")%></div>
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
@@ -430,7 +482,7 @@
 							<dt id="tableContainer">
 								<table id="splitBodyTable" cellspacing="4" cellpadding="2">
 									<%
-										for(TemplateLayoutRow sb : parameters.getBodyRows()){
+										for(TemplateLayoutRow sb : parameters.getBody().getRows()){
 									%>
 								        <tr id="_selectRow<%=sb.getIdentifier()%>" class="spaceUnder">
 									        <td style="width: 16px;">
@@ -441,12 +493,14 @@
 									        	<% } %></td>
 									        <td>
 												<select name="<%=sb.getId()+sb.getIdentifier()%>" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)">
-													<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+													<option value="1" <%if(sb.getValue().equals("")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+													<option value="yui-g-template" <%if(sb.getValue().equals("yui-g-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
 													<option value="yui-gc-template" <%if(sb.getValue().equals("yui-gc-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
 													<option value="yui-gd-template" <%if(sb.getValue().equals("yui-gd-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
 													<option value="yui-ge-template" <%if(sb.getValue().equals("yui-ge-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
 													<option value="yui-gf-template" <%if(sb.getValue().equals("yui-gf-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
 													<option value="yui-gb-template" <%if(sb.getValue().equals("yui-gb-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
+													<option value="yui-js-template" <%if(sb.getValue().equals("yui-js-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
 												</select>
 									        </td>
 										</tr>
@@ -462,8 +516,10 @@
 							</button>
 						</div>
 					</div>
+					<div class="clear"></div>
 				</div>
-				<div class="clear"></div>
+
+
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
 				<div id="contentletActionsHanger">
 					<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
@@ -503,24 +559,6 @@
 			} else {
 		%>
 			<div class="gradient2">
-<%-- 				<%if(themes != null && themes.size() > 0){ %> --%>
-<!-- 					<div class="fieldWrapperSide"> -->
-<!-- 						<div class="leftProperties"> -->
-<!-- 							<dl> -->
-<%-- 								<dt><%=LanguageUtil.get(pageContext, "Theme") %>:</dt> --%>
-<!-- 								<dd> -->
-<!-- 									<select id="theme" dojoType="dijit.form.FilteringSelect" name="theme" onchange="javascript: setTheme(this.value)"> -->
-<!-- 										<option value=""></option> -->
-<%-- 										<%for(Folder f : themes){%> --%>
-<%-- 											<option value="<%=f.getName() %>"><%=f.getName() %></option> --%>
-<%-- 										<%} %> --%>
-<!-- 									</select> -->
-<!-- 								</dd> -->
-<!-- 							</dl> -->
-<!-- 						</div> -->
-<!-- 					</div> -->
-<%-- 				<%} %> --%>
-
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
@@ -538,36 +576,43 @@
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "page-width") %>:</dt>
+							<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
 							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-									<option value="doc-template">750px</option>
-									<option value="doc2-template">950px</option>
-									<option value="doc3-template" selected="selected">100%</option>
-									<option value="doc4-template">974px</option>
+									<%--<option value="doc-template">750px</option>--%>
+									<%--<option value="doc2-template">950px</option>--%>
+                                    <option value="resp-template" selected="selected">Responsive</option>
+                                    <option value="doc4-template">975px</option>
+                                    <option value="doc3-template">100%</option>
+
 								</select>
 							</dd>
 						</dl>
 					</div>
 				</div>
+
 				<div class="clear"></div>
+
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "Layout") %>:</dt>
-							<dd><select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
-									<option value="none" selected="selected"></option>
-									<option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-160-left") %></option>
-									<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-180-left") %></option>
-									<option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-300-left") %></option>
-									<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-180-right") %></option>
-									<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-240-right") %></option>
-									<option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-300-right") %></option>
+							<dt><%=LanguageUtil.get(pageContext, "sidebar") %>:</dt>
+							<dd>
+                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
+									<option value="none" selected="selected"><%=LanguageUtil.get(pageContext, "none")%></option>
+                                    <option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-20-left") %></option>
+									<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-30-left") %></option>
+                                    <option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-40-left") %></option>
+									<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-20-right") %></option>
+									<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-30-right") %></option>
+                                    <option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-40-right") %></option>
 								</select>
 							</dd>
 						</dl>
 					</div>
 				</div>
+
 				<div class="clear"></div>
+
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
@@ -584,8 +629,9 @@
 							</dd>
 						</dl>
 					</div>
+					<div class="clear"></div>
 				</div>
-				<div class="clear"></div>
+
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows") %></div>
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
@@ -597,11 +643,14 @@
 								        <td>
 											<select name="select_splitBody0" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody0',0)">
 												<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+												<option value="yui-g-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
 												<option value="yui-gc-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
 												<option value="yui-gd-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
 												<option value="yui-ge-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
 												<option value="yui-gf-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
 												<option value="yui-gb-template"><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
+												<option value="yui-js-template"><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
+
 											</select>
 								        </td>
 									</tr>
@@ -614,8 +663,9 @@
 							</button>
 						</div>
 					</div>
+					<div class="clear"></div>
 				</div>
-				<div class="clear"></div>
+
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
 				<div id="contentletActionsHanger">
 					<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
@@ -654,6 +704,7 @@
 		<%
 			}
 		%>
+			<div class="clear"></div>
 		</div>
 		<div class="clear"></div>
 
@@ -664,24 +715,15 @@
 		<div class="wrapperRight" style="position:relative;border:0px solid red" id="containerBodyTemplate">
 		<div style="float:left;margin:10px;">
 
-			<input tabindex="1" type="text" name="title" id="titleField" maxlength="255" style="color:black;font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;" value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
-			<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>
+			<input tabindex="1" data-dojo-type="dijit/form/TextBox" name="title" id="titleField"
+                   placeHolder="Template Title"
+                   required="true"
+                   maxlength="255" style="color:black;font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;"
+                   value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
+			<%--<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>--%>
 
 		</div>
-			<div id="addFileToTemplate">
-				<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
-				</button>
 
-				<button dojoType="dijit.form.Button" onClick="showAddMetadataContainerDialog()" type="button">
-					<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-meta"))%>
-				</button>
-				<%if(enablePreview){%>
-					<button dojoType="dijit.form.Button" onClick="previewTemplate('Preview','width=1024,height=768')" type="button" iconClass="previewIcon">
-						<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "preview"))%>
-					</button>
-				<%}%>
-			</div>
 			<div class="clear"></div>
 			<div id="bodyTemplate"></div>
 		</div>
@@ -728,22 +770,53 @@
 			</dl>
 		</div>
 	</div>
-	<!--
-	<div id="headCodeContentPane" dojoType="dijit.layout.ContentPane" style="padding:0; height: 100%; min-height: 851px;" title="<%= LanguageUtil.get(pageContext, "add-head-code") %>" >
-		<div class="wrapperRight" style="position:relative;" id="headCodeContentPaneWrapper">
-			<div id="headCode">
-				<h3><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "head-code-tab-description"))%></h3>
-				<br />
-				<div id="addHeaderCodeTextArea" style="border: 0px;  width: auto; height: 450px; padding-left: 20px;">
-					<html:textarea property="headCode" onkeydown="return catchTab(this,event)" style="width: auto; height: 450px; font-size: 12px" styleId="headerField"></html:textarea>
-				</div>
-				<br />
-		    	<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor" style="margin-left: 26px" onClick="codeMirrorColoration();"  checked="checked"  />
-		    	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
-			</div>
-		</div>
-	</div>
-	 -->
+
+    <div id="previewThemeTab"
+         style="top:40px;left:10px;right:10px;bottom:0;"
+         dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Preview") %>">
+
+        <div class="yui-g portlet-toolbar">
+            <div class="yui-u" style="text-align:right;">
+
+                <div dojoType="dijit.form.DropDownButton" data-dojo-props="iconClass:'mobileIcon', showLabel:true">
+                    <span><%=UtilMethods.escapeSingleQuotes( LanguageUtil.get( pageContext, "Mobile Preview" ) )%></span>
+
+                    <div dojoType="dijit.Menu">
+
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=340,height=480')">
+                            <span class="appleIcon"></span> <%= LanguageUtil.get( pageContext, "iPhone" ) %>
+                        </div>
+
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=1024,height=768')">
+                            <span class="appleIcon"></span> <%= LanguageUtil.get( pageContext, "iPad" ) %>
+                        </div>
+
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=640,height=920')">
+                            <span class="appleIcon"></span> <%= LanguageUtil.get( pageContext, "iPhone (Retina)" ) %>
+                        </div>
+
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=2048,height=1536')">
+                            <span class="appleIcon"></span> <%= LanguageUtil.get( pageContext, "iPad (Retina)" ) %>
+                        </div>
+
+                        <div dojoType="dijit.MenuItem" onClick="previewTemplate('Preview','width=460,height=640')">
+                            <span class="androidIcon"></span> <%= LanguageUtil.get( pageContext, "Android (Moto-Droid)" ) %>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <iframe id="previewThemeIFrame"
+                name="previewThemeIFrame"
+                style="width:99%; min-height:766px; height:90%; border:1px solid black;"
+                scrolling='auto'
+                frameborder='1'>
+        </iframe>
+
+    </div>
 
 
 	<!-- Permissions Tab -->
@@ -772,7 +845,17 @@
 </div>
 
 </html:form>
+<form id="themePreviewForm" action="/servlets/template/design/preview" method="POST" target="previewThemeIFrame" name="themePreviewForm">
+	<input type="hidden" name="theme" id="themePreviewTheme">
+	<input type="hidden" name="themeName" id="themePreviewName">
+	<input type="hidden" name="title" id="templateTitle">
+	<input type="hidden" name="headerCheck" id="themePreviewHeaderCheck">
+	<input type="hidden" name="footerCheck" id="themePreviewFooterCheck">
+	<input type="hidden" name="hostId" id="themePreviewHostId">
+	<input type="hidden" name="bodyTemplateHTML" id="themePreviewBodyTemplateHTML">
+	<input type="hidden" name="themePreviewRandom" id="themePreviewRandom">
 
+</form>
 
 
 

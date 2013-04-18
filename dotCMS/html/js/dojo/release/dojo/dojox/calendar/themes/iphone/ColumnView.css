@@ -212,7 +212,7 @@
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   background-color: #9F0000;
-  filter: formatstring("alpha(opacity={0})", 90);
+  filter: alpha(opacity=90);
   opacity: 0.9;
 }
 .dojoxCalendarColumnView .dojoxCalendarEvent.Hovered .bg {
@@ -223,7 +223,7 @@
 }
 .dojoxCalendarColumnView .dojoxCalendarEvent.Edited .bg {
   border: dashed 1px #FFFFFF;
-  filter: formatstring("alpha(opacity={0})", 70);
+  filter: alpha(opacity=70);
   opacity: 0.7;
 }
 .dojoxCalendarColumnView .dojoxCalendarEvent.Focused .bg {
@@ -250,7 +250,7 @@
 .dojoxCalendarColumnView .dojoxCalendarEvent .handle {
   z-index: 2;
   background: #00FF00;
-  filter: formatstring("alpha(opacity={0})", 0);
+  filter: alpha(opacity=0);
   opacity: 0;
   -moz-user-select: none;
   -webkit-user-select: none;
@@ -264,14 +264,14 @@
   top: 2px;
   height: 24px;
   background-color: #fff;
-  filter: formatstring("alpha(opacity={0})", 30);
+  filter: alpha(opacity=30);
   opacity: 0.3;
   border-radius: 5px;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
 }
 .dojoxCalendarEvent .resizeHandle div:active {
-  filter: formatstring("alpha(opacity={0})", 60);
+  filter: alpha(opacity=60);
   opacity: 0.6;
 }
 .dojoxCalendarColumnView .dojoxCalendarEvent .moveHandle {
@@ -399,7 +399,7 @@
   width: 30px;
   height: 100%;
   background-color: #fff;
-  filter: formatstring("alpha(opacity={0})", 0);
+  filter: alpha(opacity=0);
   opacity: 0;
   border-radius: 5px;
   -webkit-border-radius: 5px;
@@ -416,7 +416,7 @@
   top: auto;
   bottom: auto;
   background-color: none;
-  filter: formatstring("alpha(opacity={0})", 100);
+  filter: alpha(opacity=100);
   opacity: 1;
   border: none;
 }
@@ -445,7 +445,7 @@
   left: auto;
 }
 .dojoxCalendarColumnView .dojoxCalendarMatrixView .dojoxCalendarEvent.Edited .resizeHandle {
-  filter: formatstring("alpha(opacity={0})", 30);
+  filter: alpha(opacity=30);
   opacity: 0.3;
 }
 .dojoxCalendarColumnView .dojoxCalendarMatrixView .dojoxCalendarEvent .afterIcon {

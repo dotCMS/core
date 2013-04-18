@@ -1,32 +1,21 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
-import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
 import edu.emory.mathcs.backport.java.util.Collections;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 public class LanguageAPIImpl implements LanguageAPI {
 	
@@ -138,37 +127,6 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	public void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException {
-		factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
-		
-	}
-	
-	public void addLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys) throws DotDataException, LanguageException {
-		
-		List<LanguageKey> existingGeneralKeys = getLanguageKeys(lang.getLanguageCode());
-		List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
-		
-		for(LanguageKey key:existingGeneralKeys){
-			if(generalKeys.containsKey(key.getKey()))				
-				throw new DotDataException(LanguageUtil.get(UtilMethods.getDefaultCompany().getCompanyId(),UtilMethods.getDefaultCompany().getLocale(), "message.languagemanager.key.already.registered"));			
-		}
-		for(LanguageKey key:existingSpecificKeys){
-			if(specificKeys.containsKey(key.getKey()))
-				throw new DotDataException(LanguageUtil.get(UtilMethods.getDefaultCompany().getCompanyId(),UtilMethods.getDefaultCompany().getLocale(), "message.languagemanager.key.already.registered"));
-		}
-		
-		for(LanguageKey key:existingGeneralKeys){
-			generalKeys.put(key.getKey(), key.getValue());			
-		}
-		for(LanguageKey key:existingSpecificKeys){
-			specificKeys.put(key.getKey(), key.getValue());			
-		}
-		
-		factory.saveLanguageKeys(lang, generalKeys, specificKeys, null);
-		
-	}
-	
-	public void updateLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys) throws DotDataException, LanguageException {
-		
 		List<LanguageKey> existingGeneralKeys = getLanguageKeys(lang.getLanguageCode());
 		List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
 		
@@ -191,69 +149,53 @@ public class LanguageAPIImpl implements LanguageAPI {
 		for(LanguageKey key:existingSpecificKeys){
 			specificKeys.put(key.getKey(), key.getValue());			
 		}
+		factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
 		
-		factory.saveLanguageKeys(lang, generalKeys, specificKeys, null);		
-	}
-	
-	public void deleteLanguageKeys(Language lang,Set<String> toDeleteKeys) throws DotDataException, LanguageException {
-		
-		List<LanguageKey> existingGeneralKeys = getLanguageKeys(lang.getLanguageCode());
-		List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
-		Map<String, String> generalKeys = new HashMap<String, String>();
-		Map<String, String> specificKeys = new HashMap<String, String>();
-		
-		for(LanguageKey key:existingGeneralKeys){
-			generalKeys.put(key.getKey(), key.getValue());
-		}
-		for(LanguageKey key:existingSpecificKeys){
-			specificKeys.put(key.getKey(), key.getValue());
-		}
-		
-		factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);		
 	}
 
-	
-		public String getStringKey (Language lang, String key){
-			User user1=null;
-			try {
-				user1 = com.liferay.portal.util.PortalUtil.getUser(this.request);
-				
-			} catch (Exception e) {
-				Logger.debug(this, e.getMessage(), e);
-			}
-			
-			if(user1==null)
-			{ 
-				try {
-					user1=APILocator.getUserAPI().getSystemUser();
-				} catch (DotDataException e) {
-					Logger.debug(this, e.getMessage(), e);
-				}
-			}
-			String value=null;
-			List<LanguageKey> keys = getLanguageKeys(lang.getLanguageCode(), lang.getCountryCode());
-			for(LanguageKey keyEntry : keys) {
-				if(keyEntry.getKey().equals(key))
-					value= keyEntry.getValue();
-				}
-				keys = getLanguageKeys(lang.getLanguageCode());
-				for(LanguageKey keyEntry : keys) {
-				if(keyEntry.getKey().equals(key))
-					value= keyEntry.getValue();
-			}
-			if(value==null)
-			{
-			 
-				try {
-					//if(user1 != null)
-						value=LanguageUtil.get(user1, key);
-				} catch (LanguageException e) {
-					Logger.error(this, e.getMessage(), e);
-				} 
-			
-			}
-			return value;
-		}
+    /**
+     * Returns a internationalized value for a given key and language
+     *
+     * @param lang
+     * @param key
+     * @return
+     */
+    public String getStringKey ( Language lang, String key ) {
+
+        User user = null;
+        try {
+            user = com.liferay.portal.util.PortalUtil.getUser( this.request );
+        } catch ( Exception e ) {
+            Logger.debug( this, e.getMessage(), e );
+        }
+
+        if ( user == null ) {
+            try {
+                user = APILocator.getUserAPI().getSystemUser();
+            } catch ( DotDataException e ) {
+                Logger.debug( this, e.getMessage(), e );
+            }
+        }
+
+        String value = null;
+        try {
+            value = LanguageUtil.get( new Locale( lang.getLanguageCode() ), key );
+        } catch ( LanguageException e ) {
+            Logger.error( this, e.getMessage(), e );
+        }
+
+        //If we didn't find a value for the given language, lets try with the default one
+        if ( value == null ) {
+            try {
+                value = LanguageUtil.get( user, key );//Searching this key in the default language
+            } catch ( LanguageException e ) {
+                Logger.error( this, e.getMessage(), e );
+            }
+
+        }
+
+        return value;
+    }
 
 	public boolean getBooleanKey(Language lang, String key) {
 		return Boolean.parseBoolean(getStringKey(lang, key));

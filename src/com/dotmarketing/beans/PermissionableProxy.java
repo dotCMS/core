@@ -2,6 +2,7 @@ package com.dotmarketing.beans;
 
 import java.util.List;
 
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
@@ -9,13 +10,48 @@ import com.dotmarketing.exception.DotDataException;
 
 public  class PermissionableProxy implements Permissionable {
 	
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+		if(type ==null) return;
+		if(type.equals("contentlet") || type.equals("host")) {
+			this.type = PermissionableType.CONTENTLETS.getCanonicalName();
+			setPermissionByIdentifier(true);
+		} else if (type.equals("htmlpage")) {
+			this.type = PermissionableType.HTMLPAGES.getCanonicalName();
+			setPermissionByIdentifier(true);
+		} else if (type.equals("template")) {
+			this.type = PermissionableType.TEMPLATES.getCanonicalName();
+			setPermissionByIdentifier(true);
+		} else if (type.equals("containers")) {
+			this.type = PermissionableType.CONTAINERS.getCanonicalName();
+			setPermissionByIdentifier(true);
+		} else if (type.equals("folder")) {
+			this.type = PermissionableType.FOLDERS.getCanonicalName();
+			setPermissionByIdentifier(false);
+		} else if (type.equals("structure")) {
+			this.type = PermissionableType.STRUCTURES.getCanonicalName();
+			setPermissionByIdentifier(false);
+		} else if (type.equals("category")) {
+			this.type = PermissionableType.CATEGORY.getCanonicalName();
+			setPermissionByIdentifier(false);
+		} 
+	}
+
 	private static final long serialVersionUID = 1L;
 	
-	public String Inode;
+	public String Inode =null;
 	
-	public String Identifier;
+	public String Identifier =null;
 	
-	public Boolean permissionByIdentifier;
+	public Boolean permissionByIdentifier =true;
+	
+	public String type =null;
+	
+	public String owner =null;
 	
 	public Boolean getPermissionByIdentifier() {
 		return permissionByIdentifier;
@@ -57,7 +93,7 @@ public  class PermissionableProxy implements Permissionable {
 	}
 
 	public String getOwner() {
-		return null;
+		return owner;
 	}
 
 	public Permissionable getParentPermissionable() throws DotDataException {
@@ -65,7 +101,7 @@ public  class PermissionableProxy implements Permissionable {
 	}
 
 	public String getPermissionType() {
-		return null;
+		return type;
 	}
 
 	public List<RelatedPermissionableGroup> permissionDependencies(
@@ -74,6 +110,7 @@ public  class PermissionableProxy implements Permissionable {
 	}
 
 	public void setOwner(String owner) {
+		this.owner=owner;
 	}
 
 	public List<? extends Permissionable> getChildrenPermissionable() throws DotDataException {

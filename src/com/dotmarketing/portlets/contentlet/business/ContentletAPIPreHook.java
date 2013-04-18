@@ -1043,6 +1043,8 @@ public interface ContentletAPIPreHook {
 	 * @return
 	 */
 	public boolean isInodeIndexed(String inode);
+	
+	public boolean isInodeIndexed(String inode,boolean live);
 
 	/**
 	 * Method will time out after 30 seconds returning false
@@ -1200,5 +1202,16 @@ public interface ContentletAPIPreHook {
     public boolean indexCount(String luceneQuery, User user,
             boolean respectFrontendRoles);
 
+
+    /**
+     * Gets the top viewed content for a particular structure for a specified date interval
+     * 
+     * @param structureVariableName
+     * @param startDate
+     * @param endDate
+     * @param user
+     * @return
+     */
+	public boolean getMostViewedContent(String structureVariableName, String startDate, String endDate, User user);
 
 }

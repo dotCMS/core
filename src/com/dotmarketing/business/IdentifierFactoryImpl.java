@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -106,19 +107,18 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		Identifier identifier = find(webasset);
 		Identifier folderId = find(folder);
 		ic.removeFromCacheByVersionable(webasset);
-		
+		identifier.setURI(folderId.getPath() + identifier.getInode());
 		if (webasset instanceof HTMLPage) {
 			identifier.setURI(folderId.getPath() + ((HTMLPage) webasset).getPageUrl());
 		} else if (webasset instanceof File) {
 			identifier.setURI(folderId.getPath() + ((File) webasset).getFileName());
-		} else if (webasset instanceof Link) {
-			identifier.setURI(folderId.getPath() + ((Link) webasset).getProtocal() + ((Link) webasset).getUrl());
+		}else if (webasset instanceof Contentlet){
+			Contentlet c =(Contentlet) webasset;
+			if(c.getStructure().getStructureType() ==Structure.STRUCTURE_TYPE_FILEASSET){
+				FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(c);
+				identifier.setURI(folderId.getPath() + fa.getFileName());
+			}
 		}
-
-		else {
-			identifier.setURI(folderId.getPath() + identifier.getInode());
-		}
-
 		saveIdentifier(identifier);
 
 	}
@@ -189,9 +189,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	protected Identifier loadFromCache(Versionable versionable) {
-		if (versionable == null)
-			return null;
-		return loadFromCache(versionable.getVersionId());
+
+		String idStr= ic.getIdentifierFromInode(versionable);
+		if(idStr ==null) return null;
+		return ic.getIdentifier(idStr);
 	}
 
 	/**
@@ -208,15 +209,35 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		if (versionable == null) {
 			throw new DotStateException("Versionable cannot be null");
 		}
-		return find(versionable.getVersionId());
-	}
+		Identifier id = null;
+		String idStr = ic.getIdentifierFromInode(versionable);
 
+		if(UtilMethods.isSet(idStr)){
+			id= find(idStr);
+		}
+		else{
+			id= find(versionable.getVersionId());
+			if(id != null){
+				ic.addIdentifierToCache(id, versionable);
+			}
+		}
+	
+
+		return id;
+		
+		
+	}
+	
 	protected Identifier createNewIdentifier(Versionable versionable, Folder folder) throws DotDataException {
+	    return createNewIdentifier(versionable,folder,UUIDGenerator.generateUuid());
+	}
+	
+	protected Identifier createNewIdentifier(Versionable versionable, Folder folder, String existingId) throws DotDataException {
 
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		HostAPI hostAPI = APILocator.getHostAPI();
 
-		String uuid=null;
+		String uuid=existingId;
 
 		Identifier identifier = new Identifier();
 		Identifier parentId=APILocator.getIdentifierAPI().find(folder);
@@ -227,7 +248,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		else {
 			String uri = versionable.getVersionType() + "." + versionable.getInode();
-			uuid=UUIDGenerator.generateUuid();
 			identifier.setId(uuid);
 			if(versionable instanceof Contentlet){
 				Contentlet cont = (Contentlet)versionable;
@@ -237,18 +257,18 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 						if(UtilMethods.isSet(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))//DOTCMS-7093
 							uri = cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
 					} catch (IOException e) {
-						// TODO
+						Logger.debug(this, e.getMessage() + " Issue happened while assigning Binary Field");
 					}
 				}
 				identifier.setAssetType("contentlet");
 				identifier.setParentPath(parentId.getPath());
 				identifier.setAssetName(uri);
-			}else if (versionable instanceof WebAsset) {
+			} else if (versionable instanceof WebAsset) {
 				identifier.setURI(((WebAsset) versionable).getURI(folder));
 				identifier.setAssetType(versionable.getVersionType());
 				if(versionable instanceof Link)
 				    identifier.setAssetName(versionable.getInode());
-			}else{
+			} else{
 				identifier.setURI(uri);
 				identifier.setAssetType(versionable.getVersionType());
 			}
@@ -259,8 +279,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		try {
 			host = hostAPI.findParentHost(folder, systemUser, false);
 		} catch (DotSecurityException e) {
-			throw new DotStateException("I can't find the system host!");
+			throw new DotStateException("I can't find the parent host!");
 		}
+		
+		if("folder".equals(identifier.getAssetType()) && APILocator.getHostAPI().findSystemHost().getIdentifier().equals(host.getIdentifier())){
+			throw new DotStateException("You cannot save a folder on the system host");
+			
+		}
+		
 
 		identifier.setHostId(host.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
@@ -274,6 +300,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		return identifier;
 	}
+	
+	protected Identifier createNewIdentifier ( Versionable versionable, Host host ) throws DotDataException {
+	    return createNewIdentifier(versionable,host,UUIDGenerator.generateUuid());
+	}
 
     /**
      * Creates a new Identifier for a given versionable asset under a given Host
@@ -283,9 +313,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
      * @return
      * @throws DotDataException
      */
-    protected Identifier createNewIdentifier ( Versionable versionable, Host host ) throws DotDataException {
+    protected Identifier createNewIdentifier ( Versionable versionable, Host host, String existingId) throws DotDataException {
 
-        String uuid = null;
+        String uuid = existingId;
         Identifier identifier = new Identifier();
 
         if ( versionable instanceof Folder ) {
@@ -295,7 +325,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         } else {
 
             String uri = versionable.getVersionType() + "." + versionable.getInode();
-            uuid = UUIDGenerator.generateUuid();
             identifier.setId( uuid );
 
             if ( versionable instanceof Contentlet && ((Contentlet) versionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
@@ -315,7 +344,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             } else if ( versionable instanceof Link ) {
                 identifier.setAssetName( versionable.getInode() );
                 identifier.setParentPath("/");
-            } else {
+            } else if(versionable instanceof Host) {
+				identifier.setAssetName(versionable.getInode());
+				identifier.setAssetType("contentlet");
+				identifier.setParentPath("/");
+				//identifier.setURI(uri);
+			} else {
                 identifier.setURI( uri );
             }
 

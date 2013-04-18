@@ -127,7 +127,7 @@
         }
 
 %>
-    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.Textarea" style="width:450px;min-height:100px;max-height: 600px"
+    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea" style="overflow:auto;width:450px;min-height:100px;max-height: 600px"
         name="<%=field.getFieldContentlet()%>"
         id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
 <%
@@ -257,35 +257,38 @@
             || field.getFieldType().equals(
                     Field.FieldType.DATE_TIME.toString())) {
 
-
-
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         SimpleDateFormat df2 = new SimpleDateFormat("yyyy-MM-dd");
-        Date dateValue = new Date();
-        if(value instanceof String && value != null) {
+        Date dateValue = null;
+        if(value != null && value instanceof String) {
             dateValue = df.parse((String) value);
-        } else if(value != null) {
+        } else if(value != null && value instanceof Date) {
             dateValue = (Date)value;
         }
 
-
-
-        GregorianCalendar cal = new GregorianCalendar();
-        cal.setTime((Date) dateValue);
-        int dayOfMonth = cal.get(GregorianCalendar.DAY_OF_MONTH);
-        int month = cal.get(GregorianCalendar.MONTH) + 1;
-        int year = cal.get(GregorianCalendar.YEAR) ;%>
+        int dayOfMonth=0;
+        int month=0;
+        int year=0;
+        GregorianCalendar cal=null;
+        
+        if(dateValue!=null) {
+	        cal = new GregorianCalendar();
+	        cal.setTime((Date) dateValue);
+	        dayOfMonth = cal.get(GregorianCalendar.DAY_OF_MONTH);
+	        month = cal.get(GregorianCalendar.MONTH) + 1;
+	        year = cal.get(GregorianCalendar.YEAR) ;
+        }%>
 
 
         <input type="hidden" id="<%=field.getVelocityVarName()%>"
             name="<%=field.getFieldContentlet()%>"
-            value="<%= df.format(dateValue) %>" />
+            value="<%= dateValue!=null ? df.format(dateValue) : "" %>" />
 
         <%if (field.getFieldType().equals(Field.FieldType.DATE.toString())
                     || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
 
              <input type="text"
-                value="<%= df2.format(dateValue) %>"
+                value="<%= dateValue!=null ? df2.format(dateValue) : "" %>"
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
                 dojoType="dijit.form.DateTextBox"
                 name="<%=field.getFieldContentlet()%>Date"
@@ -297,12 +300,17 @@
         if (field.getFieldType().equals(Field.FieldType.TIME.toString())
             || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
 
-            String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
-            String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
+            String hour=null;
+            String min=null;
+            
+            if(cal!=null) {
+                hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
+                min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
+            }
             %>
             <input type="text" id="<%=field.getVelocityVarName()%>Time"
                 name="<%=field.getFieldContentlet()%>Time"
-                value='T<%=hour+":"+min%>:00'
+                value='<%=cal!=null ? "T"+hour+":"+min+":00" : ""%>'
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
                 dojoType="dijit.form.TimeTextBox" style="width: 100px;"
                 <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
@@ -401,7 +409,9 @@
             }%>
             <% com.dotmarketing.portlets.contentlet.model.Contentlet contentlet = (com.dotmarketing.portlets.contentlet.model.Contentlet) request.getAttribute("contentlet"); %>
             <div id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
-                onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')" dojoType="dotcms.dijit.form.FileAjaxUploader">
+               fieldName="<%=field.getVelocityVarName()%>" 
+               inode="<%= binInode%>"
+               identifier="<%=field.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')" dojoType="dotcms.dijit.form.FileAjaxUploader">
             </div>
 
 
@@ -437,7 +447,7 @@
 						 %>
 
 							<a href="<%=resourceLink %>" target="_new"><%=identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)%></a>
-								<% if (mimeType.indexOf("text")!=-1 || mimeType.indexOf("xml")!=-1) { %>
+								<% if (mimeType.indexOf("officedocument")==-1 && (mimeType.indexOf("text")!=-1 || mimeType.indexOf("xml")!=-1 || mimeType.indexOf("php")!=-1)) { %>
 									<% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
 											<button iconClass="editIcon" dojoType="dijit.form.Button" onClick="editText($('contentletInode').value)" type="button">
 												<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-text")) %>

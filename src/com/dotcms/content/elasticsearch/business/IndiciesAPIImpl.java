@@ -13,7 +13,7 @@ public class IndiciesAPIImpl implements IndiciesAPI {
     protected final IndiciesFactory ifac=FactoryLocator.getIndiciesFactory();
     
     public IndiciesInfo loadIndicies() throws DotDataException {
-        return loadIndicies(DbConnectionFactory.getConnection());
+        return loadIndicies(null);
     }
     
     public IndiciesInfo loadIndicies(Connection conn) throws DotDataException {

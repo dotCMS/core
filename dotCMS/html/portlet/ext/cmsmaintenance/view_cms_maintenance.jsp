@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
+<%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotcms.listeners.SessionMonitor"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -46,6 +48,8 @@ List<Structure> structs = StructureFactory.getStructures();
 
 <script language="Javascript">
 dojo.require("dijit.Editor");
+dojo.require("dijit.form.MultiSelect");
+
 
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
 
@@ -320,32 +324,32 @@ function doDeleteContentletsCallback(contentlets){
  	 	 	var contadded=contentlets[0].split(',')
  	 	 	contaddedsize=contadded.length;
  	 	 	}*/
- 	 	message+= contaddedsize+ ' <%= LanguageUtil.get(pageContext,"contentlets-were-succesfully-deleted") %></br>';
+ 	 	message+= contaddedsize+ ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlets-were-succesfully-deleted")) %></br>';
  	}
 	if (contentlets[1]!="")
  	{
  	 	if(contentlets[1].indexOf(",")){
  	 	 	var contnotfound=contentlets[1].split(',')
- 	 	 	message+=  '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlets-were-not-found") %>: '+ contentlets[1] +'</br>';
+ 	 	 	message+=  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + contnotfound.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlets-were-not-found")) %>: '+ contentlets[1] +'</br>';
  	 	 	}
- 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-was-not-found") %>: '+ contentlets[1] +'</br>';
+ 	 	else message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contentlet-was-not-found")) %>: '+ contentlets[1] +'</br>';
  	}
 
 	if (contentlets[2]!="")
  	{
  	 	if(contentlets[2].indexOf(",")){
  	 	 	var conthasreqrel=contentlets[2].split(',')
- 	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + conthasreqrel.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content") %>: '+ contentlets[2] +'</br>';
+ 	 	 	message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + conthasreqrel.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content")) %>: '+ contentlets[2] +'</br>';
  	 	 	}
- 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content") %>: '+ contentlets[2] +'</br>';
+ 	 	else message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content")) %>: '+ contentlets[2] +'</br>';
  	}
 	if (contentlets[3]!="")
  	{
  	 	if(contentlets[3].indexOf(",")){
  	 	 	var contnotfound=contentlets[3].split(',')
- 	 	 	message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + contnotfound.length + ' <%= LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[3] +'</br>';
+ 	 	 	message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + contnotfound.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions")) %>:'+ contentlets[3] +'</br>';
  	 	 	}
- 	 	else message+= '<%= LanguageUtil.get(pageContext,"The-following") %> ' + ' <%= LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions") %>:'+ contentlets[1] +'</br>';
+ 	 	else message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions")) %>:'+ contentlets[1] +'</br>';
  	}
 
 	document.getElementById("deleteContentletMessage").innerHTML=message;
@@ -360,8 +364,8 @@ function doDropAssets(){
      return false;
    }
 
-  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets") %>")){
-	    $("dropAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress") %></b></spanstyle>';
+  if(confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"Do-you-want-to-drop-all-old-assets")) %>")){
+	    $("dropAssetsMessage").innerHTML = '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Process-in-progress")) %></b></spanstyle>';
         dijit.byId('dropAssetsButton').attr('disabled', true);
 	 	var dateStr=dojo.date.locale.format(dijit.byId("removeassetsdate").get('value'),{selector: "date", datePattern:"MM/dd/yyyy"});
 		CMSMaintenanceAjax.removeOldVersions(dateStr, doDropAssetsCallback);
@@ -371,11 +375,11 @@ function doDropAssets(){
 function doDropAssetsCallback(removed){
 	dijit.byId('dropAssetsButton').attr('disabled', false);
     if (removed >= 0)
-        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system") %></b></spanstyle>';
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b>' + removed + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"old-asset-versions-found-and-removed-from-the-system")) %></b></spanstyle>';
     else if (removed == -2)
-        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled") %></b></spanstyle>';
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Database-inconsistencies-found.-The-process-was-cancelled")) %></b></spanstyle>';
     else
-        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log") %></b></spanstyle>';
+        document.getElementById("dropAssetsMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Remove-process-failed.-Check-the-server-log")) %></b></spanstyle>';
 }
 
 /**
@@ -384,8 +388,8 @@ function doDropAssetsCallback(removed){
  */
 var doCleanAssets = function () {
 
-    if (confirm("<%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation") %>")) {
-        $("cleanAssetsMessage").innerHTML = '<span style="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress") %></b></span>';
+    if (confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation")) %>")) {
+        $("cleanAssetsMessage").innerHTML = '<span style="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress")) %></b></span>';
         dijit.byId('cleanAssetsButton').attr('disabled', true);
         
         var files=false;
@@ -440,8 +444,10 @@ function indexStructureChanged(){
 }
 
 function cleanReindexStructure(){
-	var strInode = dojo.byId('structure').value;
-	CMSMaintenanceAjax.cleanReindexStructure(strInode,showDotCMSSystemMessage);
+	 if(confirm("<%= LanguageUtil.get(pageContext,"are-you-sure-delete-reindex") %>")){ 
+		var strInode = dojo.byId('structure').value;
+		CMSMaintenanceAjax.cleanReindexStructure(strInode,showDotCMSSystemMessage);
+	 }
 }
 
 var journalDataCellFuncs = [
@@ -475,7 +481,7 @@ function refreshCache(){
 
 function deleteIndex(indexName, live){
 
-	if(live && ! confirm("<%= LanguageUtil.get(pageContext, "Delete-Live-Index") %>")){
+	if(live && ! confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Delete-Live-Index")) %>")){
 		return;
 	}
 	CMSMaintenanceAjax.deleteIndex(indexName,deleteIndexCallback);
@@ -505,25 +511,28 @@ function doDownloadIndex(indexName){
 
 }
 
-function doFullReindex(){
-
-
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-
-	var shards = parseInt(number);
-	if(shards <1){
-		return;
-	}
-	dojo.byId("numberOfShards").value = shards;
-
-	dijit.byId('idxReindexButton').setDisabled(true);
-	dijit.byId('idxShrinkBtn').setDisabled(true);
-	submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
-	return false;
-
+function doReindex(){
+	var shards;
+    if(dojo.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
+    	
+		var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+		
+		if(!number){
+			return;
+		}
+			shards = parseInt(number);
+    	}
+    else{
+    		shards =1
+     	 }
+		if(shards <1){
+			return;
+		}
+		dojo.byId("numberOfShards").value = shards;
+		dijit.byId('idxReindexButton').setDisabled(true);
+		dijit.byId('idxShrinkBtn').setDisabled(true);
+		submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX%>');
+		return false;
 }
 
 function doCloseIndex(indexName) {
@@ -537,11 +546,11 @@ function doCloseIndex(indexName) {
                 if (dataOrError.indexOf("FAILURE") == 0) {
                     showDotCMSSystemMessage(dataOrError, true);
                 } else {
-                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Closed")%>", true);
+                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Closed"))%>", true);
                     refreshIndexStats();
                 }
             } else {
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
             }
         }
     };
@@ -559,11 +568,11 @@ function doOpenIndex(indexName) {
                 if (dataOrError.indexOf("FAILURE") == 0) {
                     showDotCMSSystemMessage(dataOrError, true);
                 } else {
-                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Opened")%>", true);
+                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Opened"))%>", true);
                     refreshIndexStats();
                 }
             } else {
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
             }
         }
     };
@@ -572,7 +581,7 @@ function doOpenIndex(indexName) {
 
 function doClearIndex(indexName){
 
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index")%>")){
+	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index"))%>")){
 		return;
 
 	}
@@ -587,11 +596,11 @@ function doClearIndex(indexName){
 				if (dataOrError.indexOf("FAILURE") == 0) {
 					showDotCMSSystemMessage(dataOrError, true);
 				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Cleared")%>", true);
+					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Cleared"))%>", true);
 					refreshIndexStats();
 				}
 			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
 			}
 		}
 	};
@@ -600,7 +609,7 @@ function doClearIndex(indexName){
 }
 function doActivateIndex(indexName){
 
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index")%>")){
+	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-activate-this-index"))%>")){
 		return;
 
 	}
@@ -615,11 +624,11 @@ function doActivateIndex(indexName){
 				if (dataOrError.indexOf("FAILURE") == 0) {
 					showDotCMSSystemMessage(dataOrError, true);
 				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Activated")%>", true);
+					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Activated"))%>", true);
 					refreshIndexStats();
 				}
 			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
 			}
 		}
 	};
@@ -627,7 +636,7 @@ function doActivateIndex(indexName){
 }
 function doDeactivateIndex(indexName){
 
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index")%>")){
+	if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-deactivate-this-index"))%>")){
 		return;
 
 	}
@@ -642,11 +651,11 @@ function doDeactivateIndex(indexName){
 				if (dataOrError.indexOf("FAILURE") == 0) {
 					showDotCMSSystemMessage(dataOrError, true);
 				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Deactivated")%>", true);
+					showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Deactivated"))%>", true);
 					refreshIndexStats();
 				}
 			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+				showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
 			}
 		}
 	};
@@ -673,7 +682,7 @@ function showRestoreIndexDialog(indexName) {
 
 function doRestoreIndex() {
 	if(dojo.byId("uploadFileName").innerHTML=='') {
-		showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, "No-File-Selected")%>");
+		showDotCMSErrorMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "No-File-Selected"))%>");
 	}
 	else {
 		dijit.byId('uploadSubmit').set('disabled',true);
@@ -724,7 +733,7 @@ function connectUploadEvents() {
 function doCreateWorking() {
 
 
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 	if(!number){
 		return;
 	}
@@ -743,12 +752,12 @@ function doCreateWorking() {
                if (dataOrError.indexOf("FAILURE") == 0) {
                    showDotCMSSystemMessage(dataOrError, true);
                } else {
-                   showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Created")%>", true);
+                   showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
                    refreshIndexStats();
 
                }
            } else {
-               showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+               showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
            }
        }
     };
@@ -758,7 +767,7 @@ function doCreateWorking() {
 function doCreateLive() {
 
 
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Number-of-Shards")%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 	if(!number){
 		return;
 	}
@@ -778,11 +787,11 @@ function doCreateLive() {
                if (dataOrError.indexOf("FAILURE") == 0) {
                    showDotCMSSystemMessage(dataOrError, true);
                } else {
-                   showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Created")%>", true);
+                   showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
                    refreshIndexStats();
                }
            } else {
-               showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+               showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
            }
        }
     };
@@ -791,7 +800,7 @@ function doCreateLive() {
 
 function updateReplicas(indexName,currentNum){
 
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Update-Replicas-Index")%> for index:\n\n" + indexName, currentNum);
+	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Update-Replicas-Index"))%> for index:\n\n" + indexName, currentNum);
 
 	if(!number){
 		return;
@@ -811,11 +820,11 @@ function updateReplicas(indexName,currentNum){
 						if (dataOrError.indexOf("FAILURE") == 0) {
 							showDotCMSSystemMessage(dataOrError, true);
 						} else {
-							showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Replicas-Updated")%>", true);
+							showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Replicas-Updated"))%>", true);
 							refreshIndexStats();
 						}
 					} else {
-						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
+						showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
 					}
 				}
 			};
@@ -943,13 +952,13 @@ function killSession(sessionId) {
 			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
 			    dijit.byId('invalidateButton-'+sessionId).set('disabled',true);
 
-			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-killed")%>');
+			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
 			},
 			errorHandler:function(message) {
 				dojo.style(dijit.byId('invalidateButton-'+sessionId).domNode,{display:"block",visibility:"visible"});
 			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
 
-			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-notkilled")%>');
+			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
 	});
 }
@@ -957,11 +966,11 @@ function killSession(sessionId) {
 function killAllSessions() {
 	UserSessionAjax.invalidateAllSessions({
 			callback:function() {
-			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-killed")%>');
+			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
 			    loadUsers();
 			},
 			errorHandler:function(message) {
-			    showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-tab-notkilled")%>');
+			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
 	});
 }
@@ -1018,7 +1027,7 @@ function loadUsers() {
 
                     new dijit.form.Button({
                     	id: id,
-                        label: "<%= LanguageUtil.get(pageContext,"logged-users-tab-killsession") %>",
+                        label: "<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killsession")) %>",
                         iconClass: "deleteIcon",
                         "class": "killsessionButton",
                         sid : session.sessionId,
@@ -1030,7 +1039,7 @@ function loadUsers() {
 			}
 		},
 		errorHandler: function(message) {
-			showDotCMSSystemMessage('<%=LanguageUtil.get(pageContext,"logged-users-reload-error")%>');
+			showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-reload-error"))%>');
 		}
 	});
 
@@ -1066,7 +1075,158 @@ function showIndexClusterStatus(indexName) {
 	dialog.show();
 }
 
+var user = "<%=user.getUserId()%>";
 
+function enableDisableRadio(elem){
+	if(elem.checked && elem.value=='assetType'){
+		dijit.byId('assetType').setDisabled(false);
+		dijit.byId('assetIdentifier').setDisabled(true);
+		dijit.byId('assetIdentifier').set('value','');
+		dijit.byId('selectAssetHostInode').setDisabled(false);
+	}else if(elem.checked && elem.value=='assetIdentifier'){
+		dijit.byId('assetIdentifier').setDisabled(false);
+		dijit.byId('assetType').setDisabled(true);
+		dijit.byId('assetType').set('value','');
+		dijit.byId('selectAssetHostInode').setDisabled(true);
+	}
+}    
+
+function enableDisableCheckbox(elem){
+	if(elem.checked){
+		dijit.byId('autoPublish').setDisabled(false);
+	}else{
+		dijit.byId('autoPublish').setDisabled(true);
+		dijit.byId('autoPublish').set('checked',false);
+	}
+}
+function validateSearchAndReplace(){
+	var assetSearchType = dijit.byId('assetType').attr('value');
+	var assetIdentifier = dijit.byId('assetIdentifier').get('value');
+	var assetHost = dojo.byId('assetHost').value;
+	var searchString = dijit.byId('assetSearchString').get('value');
+	var replaceString = dijit.byId('assetReplaceString').get('value');
+	var newAssetVersion = dijit.byId('newAssetVersion').checked;
+	var autoPublish = dijit.byId('autoPublish').checked;
+	if( (assetSearchType != '' || assetIdentifier != '') && assetHost != '' && searchString != '' && replaceString != ''){
+		//alert("is Here:"+assetSearchType+" - "+assetIdentifier+" - "+assetHost+" - "+searchString+" - "+replaceString+" - "+newAssetVersion+autoPublish);
+		if(dijit.byId('assetSearchIdentifier').checked){
+			var fileAssetsIds = assetIdentifier.split(',');
+			assetsSearchAndReplace(fileAssetsIds.length);
+		}else{
+	    	var urlPath = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.AssetsSearchAndReplaceAjax/assetCountByFiles/true";
+	    	if(dijit.byId('assetSearchType').checked){
+	    		urlPath = urlPath+"/replaceByFiles/"+assetSearchType;
+	    	}else{
+	    		urlPath = urlPath+"/replaceByIds/"+assetIdentifier;
+	    	}
+	    	urlPath = urlPath+"/hosts/"+assetHost+"/user/"+user+"/generateNewAssetVersion/"+newAssetVersion+"/publish/"+autoPublish;
+	    	
+	    	var xhrArgs = {	    		
+	    	    url: urlPath, 
+	    	    handleAs: "text",
+	    	    load: function(response, ioArgs) { 
+	    	    	var results = response;
+	    	    	assetsSearchAndReplace(response); 
+	    	    },
+	    	    error: function(response, ioArgs) {  
+	    	          console.error("HTTP status code: ", ioArgs.xhr.status); 
+	    	          document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error")) %>'+response; //  
+	    	    }
+	    	};
+    		dojo.xhrPost( xhrArgs );
+		}
+	}else{
+		alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Required")) %>');
+	}
+}
+function assetsSearchAndReplace(assetsToProcess){
+	if(confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_JS_Confirmation1"))%> '+assetsToProcess+' <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_JS_Confirmation2"))%>')){
+		var assetSearchType = dijit.byId('assetType').attr('value');
+    	var assetIdentifier = dijit.byId('assetIdentifier').get('value');
+    	var assetHost = dojo.byId('assetHost').value;
+    	var searchString = dijit.byId('assetSearchString').get('value');
+    	var replaceString = dijit.byId('assetReplaceString').get('value');
+    	var newAssetVersion = dijit.byId('newAssetVersion').checked;
+    	var autoPublish = dijit.byId('autoPublish').checked;
+    	if( (assetSearchType != '' || assetIdentifier != '') && assetHost != '' && searchString != '' && replaceString != ''){
+    		
+	    	//alert("is Here:"+assetSearchType+" - "+assetIdentifier+" - "+assetHost+" - "+searchString+" - "+replaceString+" - "+newAssetVersion+autoPublish);
+	    	var urlPath = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.AssetsSearchAndReplaceAjax/searchText/"+searchString+"/replaceText/"+replaceString;
+	    	if(dijit.byId('assetSearchType').checked){
+	    		urlPath = urlPath+"/replaceByFiles/"+assetSearchType;
+	    	}else{
+	    		urlPath = urlPath+"/replaceByIds/"+assetIdentifier;
+	    	}
+	    	urlPath = urlPath+"/hosts/"+assetHost+"/user/"+user+"/generateNewAssetVersion/"+newAssetVersion+"/publish/"+autoPublish;
+	    	var xhrArgs = {	    		
+	    	    url: urlPath, 
+	    	    handleAs: "text",
+	    	    load: function(response, ioArgs) { 
+	    	    	var results = response.split('|');
+	    	    	document.getElementById("asar_message").innerHTML = '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_to_process"))%> '+results[0]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_processed"))%> '+results[1]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Assets_modified"))%> '+results[2]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_not_processed"))%> '+results[3]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_error_messages"))%> '+results[4]; 
+	    	    },
+	    	    error: function(response, ioArgs) {  
+	    	          console.error("HTTP status code: ", ioArgs.xhr.status); 
+	    	          document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error")) %>'+response; //  
+	    	    }
+	    	};
+    		dojo.xhrPost( xhrArgs );
+    		document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Wait")) %>';
+    	}else{
+    		alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Required")) %>');
+    	}
+	}
+}
+function updateHostList(inode, name, selectval){	
+	var f=dijit.byId(selectval).attr('value');
+	var c=dojo.byId(name).value.indexOf(dojo.byId(selectval).value);
+
+	if (c == -1){
+	    var hostlisting  = f.split(',');
+	    if(hostlisting == "all"){
+	      	dojo.byId(name).value='all';
+			dojo.byId(inode).value='all';
+			dojo.byId(inode+'list').innerHTML = '';
+	    }else if(dojo.byId(inode).value == "all"){
+			dojo.byId(name).value=hostlisting[0];
+			dojo.byId(inode).value=hostlisting[1];
+		} else {
+			dojo.byId(name).value= dojo.byId(name).value + "," + hostlisting[0];
+			dojo.byId(inode).value= dojo.byId(inode).value + "," + hostlisting[1];
+		}
+		dojo.byId(inode+'list').innerHTML = '';
+		var hostnames=dojo.byId(name).value.split(",");
+		var hostids=dojo.byId(inode).value.split(",");
+		var buffer='';
+		for(i = 0; i < hostnames.length; i++){
+			buffer+="<div id='entry-"+hostids[i]+"'>"+hostnames[i] + " <a href='#' onclick='removeHost(\""+hostids[i]+"\",\""+inode+"\",\""+name+"\")'><img src='/html/images/icons/cross.png'/></a></div>";
+		}
+		buffer+="";
+		dojo.byId(inode+'list').innerHTML = buffer;
+	}else{
+		alert("Host already selected");
+	}
+}
+function removeHost(id, inode, name){
+	var hostnames=dojo.byId(name).value.split(",");
+	var hostids=dojo.byId(inode).value.split(",");
+	var names="";
+	var ids="";
+	for(i = 0; i < hostids.length; i++){
+		if(hostids[i] != id){
+			if(names==""){
+				names=hostnames[i];
+				ids=hostids[i];
+			}else{
+				names=names + "," +hostnames[i];
+				ids=ids + "," +hostids[i];
+			}
+		}
+	}
+	dojo.byId(name).value=names;
+	dojo.byId(inode).value=ids;
+	dojo.destroy("entry-"+id);
+}
 </script>
 
 <style>
@@ -1081,6 +1241,23 @@ function showIndexClusterStatus(indexName) {
     background-color:#ECECEC;
 }
 
+dt.rightdl {
+   	width:300px;
+   	margin:0px 10px 10px;
+}
+dd.leftdl {
+  	width:400px;
+}
+.asarTextarea{
+  	width:300px;
+   	min-height:100px;
+   	max-height: 600px;
+}
+.asarMultiSelect{
+   	width: 300px;
+   	min-height:100px;
+   	max-height: 600px;
+}
 </style>
 
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
@@ -1096,7 +1273,7 @@ function showIndexClusterStatus(indexName) {
         <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
         <!-- START Cache TAB -->
         <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-        <div id="cache" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Cache") %>" >
+        <div id="cache" dojoType="dijit.layout.ContentPane" title="<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Cache")) %>" >
 
             <table class="listingTable shadowBox">
                 <tr>
@@ -1216,7 +1393,7 @@ function showIndexClusterStatus(indexName) {
 
                         </td>
                         <td style="text-align:center;white-space:nowrap;" width="350">
-                            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doFullReindex()">
+                            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doReindex()">
                                 <%= LanguageUtil.get(pageContext,"Reindex") %>
                             </button>
                             <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="cleanReindexStructure();return false;" id="cleanReindexButton" disabled="disabled">
@@ -1428,6 +1605,95 @@ function showIndexClusterStatus(indexName) {
                 </tr>
 
             </table>
+            
+            <div style="height:20px">&nbsp;</div>
+            <%
+            	  List<Host> hosts = new ArrayList<Host>();
+            	try{
+            		hosts = APILocator.getHostAPI().getHostsWithPermission(PermissionAPI.PERMISSION_READ,user,false);
+            	}
+            	catch(Exception e){
+            		Logger.error(this.getClass(), "Unable to list Hosts: " + e.getMessage());	
+            	}
+                  String validFileExtensions = Config.getStringProperty("ASSETS_SEARCH_AND_REPLACE_ALLOWED_FILE_TYPES");
+            %>
+           <table class="listingTable shadowBox">
+	        	<tr>
+	            	<th colspan="2"><%= LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Manager") %></th>
+	               	<th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+	            </tr>
+	            <tr>
+	               	<td colspan="2">
+	               		<p><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_description") %></p>
+		               	<table class="listingTable">
+			               	<tr>
+			               		<td>
+			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Host") %> 
+		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid host name"  onChange='updateHostList("assetHost","assetHostNames","selectAssetHostInode")'>   
+										<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_All") %></option>
+										<%	String hostNames="";
+											String hostIdentifier="";
+											for(Host h : hosts){ 
+	                            			if(!h.isSystemHost()){
+	                            				hostNames=hostNames+","+h.getHostname();
+	                            				hostIdentifier=hostIdentifier+","+h.getIdentifier();
+	                            		%>
+	                                			<option value="<%=h.getHostname()+","+h.getIdentifier()%>"><%= h.getHostname() %></option>
+	                            		<%  }  
+	                            	  	} 
+										%>
+									</select>
+									<input type="hidden" name="assetHost" id="assetHost" value="all"/>
+                        			<input type="hidden" name="assetHostNames" id="assetHostNames" value=""/>
+									<br/><br/>
+                        			<div name="assetHostlist" id="assetHostlist"></div>
+                  			    </td>
+			               		<td>
+			               			<input type="radio" onclick="enableDisableRadio(this)" checked="checked" value="assetType" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchType" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset") %>:<br/>
+	                                <select name="assetType" id="assetType" dojoType="dijit.form.MultiSelect" multiple="multiple" size="scrollable" class="asarMultiSelect">
+	                                <% for(String fileType : validFileExtensions.split(",")){%>
+	                                	<option value="<%=fileType%>"><%=fileType%></option>
+	                               <% }%>
+	                               </select></br/>
+	                                <em><%=LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset_hint") %></em>
+	                           </td>
+			               	</tr>
+			               	<tr>
+			               		<td>&nbsp;</td>
+			               		<td>
+			               		<input type="radio" onclick="enableDisableRadio(this)" value="assetIdentifier" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchIdentifier" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier") %>:<br/>
+	                                <input type="text" disabled="disabled" dojoType="dijit.form.Textarea" class="asarTextarea" rows="3" name="assetIdentifier" id="assetIdentifier"></br/>
+	                                <em><%=LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier_hint") %></em>
+	                            </td>
+			               	</tr>
+			               	<tr>
+			               		<td>
+			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_String_to_find") %> <input type="text" dojoType="dijit.form.TextBox" name="assetSearchString" id="assetSearchString" size="50">
+			               		</td>
+			               		<td>
+			               			<input type="checkbox" onclick="enableDisableCheckbox(this)" value="true" dojoType="dijit.form.CheckBox" name="newAssetVersion" id="newAssetVersion" /> <%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Generate_new_asset_version") %>
+			               		</td>
+			               	</tr>
+			               	<tr>
+			               		<td>
+			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Replace_with") %> <input type="text" dojoType="dijit.form.TextBox" name="assetReplaceString" id="assetReplaceString" size="50">
+			               		</td>
+			               		<td>
+			               			<input type="checkbox" disabled="true" dojoType="dijit.form.CheckBox" name="autoPublish" id="autoPublish" /> <%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Automatically_publish_new_asset_version") %>
+			               		</td>
+			               	</tr>
+		               	</table>
+	               	</td>
+	               	<td style="text-align:center;white-space:nowrap;">
+	               		<button dojoType="dijit.form.Button" onclick="validateSearchAndReplace();" iconClass="reorderIcon">
+	               		     <%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Execute") %>
+	                    </button>   
+					</td>
+	            </tr>
+	            <tr>
+	               	<td colspan="3"><span id="asar_message"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Warning") %></span></td>
+	            </tr>   	    
+	        </table>            
         </div>
 
     </html:form>

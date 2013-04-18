@@ -147,7 +147,7 @@ if(errorMessage != null){
 
  -->
 
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+<script type="text/javascript" src="/html/js/chrome_frame/CFInstall.min.js"></script>
 
 <style>
 	body{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:bottom top;background-size:100% 100%;}
@@ -167,7 +167,7 @@ if(errorMessage != null){
 <script type="text/javascript">
 	
 	dojo.addOnLoad(function(){
-		if (dojo.isIE <= 7) {
+		if (dojo.isIE <= 8) {
 			CFInstall.check({
 				mode: "overlay"
 			});
@@ -277,7 +277,8 @@ function showLanguageSelector(){
 </script>
 
 
-	<% if(editPassword){ %>
+	<% boolean salesforceFilterOn = Boolean.valueOf(Config.getStringProperty("SALESFORCE_LOGIN_FILTER_ON"));
+	if(editPassword || salesforceFilterOn){ %>
 		<div id="forgotPassword" style="display:none" draggable="false" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "forgot-password") %>">
 			<dl>
 				<dt><label for="forgotPasswordEmailBox" class="formLabel"><%if(company.getAuthType().equals(Company.AUTH_TYPE_EA)){%>
@@ -365,11 +366,10 @@ function showLanguageSelector(){
 			   </div>
 			<%--  Language Selector --%>
 			
-			
-			
 			<div class="inputCaption" style="float:right;">
-				<a href="javascript:showForgot()"><%= LanguageUtil.get(pageContext, "forgot-password") %></a>
-			</div>
+            	<a href="javascript:showForgot()"><%= LanguageUtil.get(pageContext, "forgot-password") %></a>
+            </div>
+			
 		<!-- /Button Row --->
 	</div>
 

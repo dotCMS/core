@@ -390,6 +390,10 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 	public boolean isInodeIndexed(String inode) {
 		return true;
 	}
+	
+	public boolean isInodeIndexed(String inode,boolean live) {
+        return true;
+    }
 
 	public boolean isInodeIndexed(String inode, int secondsToWait) {
 		return true;
@@ -559,5 +563,11 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 	public boolean deleteOldContent(Date deleteFrom) {
 		return true;
 	}
+	
+	public boolean getMostViewedContent(String structureVariableName,
+			String startDate, String endDate, User user) {
+		return true;
+	}
+
 	
 }

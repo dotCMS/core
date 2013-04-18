@@ -28,6 +28,14 @@ public abstract class VersionableFactory {
 
 	protected abstract ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException;
 
+	/**
+	 * The method will load from Hibernate and NOT use cache
+	 * @param cvInfo
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	protected abstract ContentletVersionInfo findContentletVersionInfoInDB(String identifier, long lang) throws DotDataException, DotStateException;
+	
 	protected abstract void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException;
 
 	protected abstract VersionInfo createVersionInfo(Identifier identifier, String workingInode) throws DotStateException, DotDataException;
@@ -37,5 +45,7 @@ public abstract class VersionableFactory {
 	protected abstract void deleteVersionInfo(String identifier) throws DotDataException;
 
     protected abstract void deleteContentletVersionInfo(String id, long lang) throws DotDataException;
+
+    protected abstract  VersionInfo findVersionInfoFromDb(Identifier identifier) throws DotDataException, DotStateException ;
 
 }

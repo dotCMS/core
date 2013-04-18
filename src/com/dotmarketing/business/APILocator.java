@@ -7,9 +7,14 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
+import com.dotcms.timemachine.business.TimeMachineAPI;
+import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
@@ -49,10 +54,13 @@ import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPIImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
+import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPIImpl;
+import com.dotmarketing.portlets.structure.business.StructureAPI;
+import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
 import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
@@ -62,6 +70,8 @@ import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
+import com.dotmarketing.sitesearch.business.SiteSearchAuditAPIImpl;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Logger;
@@ -270,6 +280,18 @@ public class APILocator extends Locator<APIIndex>{
 	public static PublisherAPI getPublisherAPI() {
 	    return (PublisherAPI) getInstance(APIIndex.PUBLISHER_API);
 	}
+	public static LinkCheckerAPI getLinkCheckerAPI() {
+	    return (LinkCheckerAPI) getInstance(APIIndex.LINKCHECKER_API);
+	}
+	public static PublishingEndPointAPI getPublisherEndPointAPI() {
+		return (PublishingEndPointAPI) getInstance(APIIndex.PUBLISHER_ENDPOINT_API);
+	}
+	public static StructureAPI getStructureAPI() {
+	    return (StructureAPI)getInstance(APIIndex.STRUCTURE_API);
+	}
+	public static SiteSearchAuditAPI getSiteSearchAuditAPI() {
+	    return (SiteSearchAuditAPI)getInstance(APIIndex.SITE_SEARCH_AUDIT_API);
+	}
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){
@@ -345,7 +367,12 @@ enum APIIndex
 	CONTENLET_INDEX_API,
 	PUBLISHER_API,
 	ES_INDEX_API,
-	TIME_MACHINE_API;
+	LINKCHECKER_API,
+	TIME_MACHINE_API,
+	PUBLISHER_ENDPOINT_API,
+	STRUCTURE_API,
+	SITE_SEARCH_AUDIT_API;
+	
 	Object create() {
 		switch(this) {
 		case PERMISSION_API: return new PermissionBitAPIImpl(FactoryLocator.getPermissionFactory());
@@ -389,6 +416,10 @@ enum APIIndex
 		case ES_INDEX_API: return new ESIndexAPI();
 		case PUBLISHER_API: return new PublisherAPIImpl();
 		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
+		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
+		case PUBLISHER_ENDPOINT_API: return new PublishingEndPointAPIImpl(FactoryLocator.getPublisherEndPointFactory());
+		case STRUCTURE_API: return new StructureAPIImpl();
+		case SITE_SEARCH_AUDIT_API: return new SiteSearchAuditAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

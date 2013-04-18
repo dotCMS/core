@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -19,8 +18,6 @@ import com.dotmarketing.portlets.dashboard.model.DashboardSummaryVisits;
 import com.dotmarketing.portlets.dashboard.model.DashboardWorkStream;
 import com.dotmarketing.portlets.dashboard.model.TopAsset;
 import com.dotmarketing.portlets.dashboard.model.ViewType;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -72,28 +69,29 @@ public abstract class DashboardFactory {
 	
 	protected String getWorkstreamQuery(String hostId){  
 		return  " inode, asset_type, mod_user_id, host_id, mod_date,case when deleted = 1 then 'Deleted' else case when live_inode IS NOT NULL then 'Published' else 'Saved' end end as action, name from( "+ 
-		" select contentlet.inode as inode, 'contentlet' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date,lang_info.live_inode,lang_info.working_inode,lang_info.deleted, coalesce(contentlet.title,contentlet.identifier) as name "+ 
-		" from contentlet_version_info lang_info,contentlet join identifier identifier on identifier.id = contentlet.identifier where " +
-		" contentlet.identifier = lang_info.identifier "+ 
+		" select contentlet.inode as inode, case when st.structuretype="+Structure.STRUCTURE_TYPE_FILEASSET+" then 'contentlet' else 'file_asset' end as asset_type, " +
+		" mod_user as mod_user_id, identifier.host_inode as host_id, mod_date,lang_info.live_inode,lang_info.working_inode,lang_info.deleted, coalesce(contentlet.title,contentlet.identifier) as name "+ 
+		" from contentlet_version_info lang_info join contentlet on (contentlet.identifier = lang_info.identifier) join identifier identifier on (identifier.id = contentlet.identifier) "+
+		" join structure st on (contentlet.structure_inode=st.inode) "+
 		" UNION ALL "+ 
 		" select htmlpage.inode as inode, 'htmlpage' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, page_info.live_inode, page_info.working_inode, page_info.deleted, " +
 		((DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)||(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)))?"identifier.parent_path || identifier.asset_name ":
 			(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))?" CONCAT(identifier.parent_path,identifier.asset_name) ": " identifier.parent_path + identifier.asset_name ")+" as name "+  
-			" from htmlpage_version_info page_info,htmlpage join identifier identifier on identifier.id = htmlpage.identifier where htmlpage.identifier = page_info.identifier "+ 
+			" from htmlpage_version_info page_info join htmlpage on(htmlpage.identifier = page_info.identifier) join identifier identifier on (identifier.id = htmlpage.identifier) "+ 
 			" UNION ALL "+ 
 			" select template.inode as inode, 'template' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, temp_info.live_inode,temp_info.working_inode,temp_info.deleted, coalesce(template.title,template.identifier) as name "+ 
-			" from template_version_info temp_info,template join identifier identifier on identifier.id = template.identifier where template.identifier = temp_info.identifier "+ 
+			" from template_version_info temp_info join template on(template.identifier = temp_info.identifier) join identifier identifier on identifier.id = template.identifier "+ 
 			" UNION ALL "+ 
 			" select file_asset.inode as inode, 'file_asset' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, file_info.live_inode,file_info.working_inode,file_info.deleted, "+
 			((DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)||(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)))?"identifier.parent_path || identifier.asset_name ":
 				(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))?" CONCAT(identifier.parent_path,identifier.asset_name) ": " identifier.parent_path + identifier.asset_name ")+" as name "+ 
-				" from fileasset_version_info file_info,file_asset join identifier identifier on identifier.id = file_asset.identifier where file_asset.identifier = file_info.identifier"+ 
+				" from fileasset_version_info file_info join file_asset on(file_asset.identifier = file_info.identifier) join identifier identifier on identifier.id = file_asset.identifier "+ 
 				" UNION ALL "+ 
 				" select containers.inode as inode, 'container' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, con_info.live_inode,con_info.working_inode,con_info.deleted, coalesce(containers.title,containers.identifier) as name "+ 
-				" from container_version_info con_info,containers join identifier identifier on identifier.id = containers.identifier where containers.identifier = con_info.identifier "+ 
+				" from container_version_info con_info join containers on(containers.identifier = con_info.identifier) join identifier identifier on (identifier.id = containers.identifier) "+ 
 				" UNION ALL "+ 
 				" select links.inode as inode, 'link' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, links_info.live_inode,links_info.working_inode,links_info.deleted, coalesce(links.title,links.identifier) as name "+ 
-				" from link_version_info links_info,links join identifier identifier on identifier.id = links.identifier where links_info.identifier= links.identifier "+ 
+				" from link_version_info links_info join links on(links_info.identifier= links.identifier) join identifier identifier on (identifier.id = links.identifier) "+ 
 				" )assets where mod_date>(select coalesce(max(mod_date),"
 				+(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)?"'1970-01-01 00:00:00')"
 						:(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))?"TO_TIMESTAMP('1970-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))"
@@ -104,24 +102,26 @@ public abstract class DashboardFactory {
 
 	
 	protected String getTopAssetsQuery() {
-		return "select identifier.host_inode as host_inode,count(htmlpage.inode) as count, 'htmlpage' as asset_type " 
-		    + "from htmlpage_version_info pageinfo,identifier "
-			+ "join htmlpage on htmlpage.identifier = identifier.id  "
-			+ "where htmlpage.identifier = pageinfo.identifier and identifier.host_inode = ? "
+		return "select identifier.host_inode as host_inode,count(*) as count, 'htmlpage' as asset_type " 
+		    + "from htmlpage_version_info pageinfo join identifier on (identifier.id = pageinfo.identifier) "
+			+ "where identifier.host_inode = ? "
 			+ "and pageinfo.live_inode is not null "
 			+ "group by identifier.host_inode "
 			+ "UNION ALL "
-			+ "select identifier.host_inode as host_inode,count(file_asset.inode) as count, 'file_asset' as asset_type " 
-			+ "from fileasset_version_info fileinfo,identifier "
-			+ "join file_asset on file_asset.identifier = identifier.id  "
-			+ "where file_asset.identifier = fileinfo.identifier and identifier.host_inode = ? "
-			+ "and fileinfo.live_inode is not null "
+			+ "select identifier.host_inode as host_inode,count(*) as count, 'file_asset' as asset_type " 
+			+ "from ((select identifier,live_inode from fileasset_version_info) union all " +
+			"        (select identifier,live_inode from contentlet_version_info where EXISTS " +
+			"         (select * from contentlet cc join structure st on (cc.structure_inode=st.inode) " +
+			"           where contentlet_version_info.identifier=cc.identifier and st.structuretype="+Structure.STRUCTURE_TYPE_FILEASSET+" ))) ainfo " +
+			"   join identifier on(identifier.id = ainfo.identifier) "
+			+ "where identifier.host_inode = ? "
+			+ "and ainfo.live_inode is not null "
 			+ "group by identifier.host_inode "
 			+ "UNION ALL  "
 			+ "select identifier.host_inode as host_inode,count(contentlet.inode) as count, 'contentlet' as asset_type " 
-			+ "from contentlet_version_info contentinfo,identifier "
-			+ "join contentlet on contentlet.identifier = identifier.id "
-			+ "where contentlet.identifier = contentinfo.identifier and identifier.host_inode = ? "
+			+ "from contentlet_version_info contentinfo join identifier on(identifier.id = contentinfo.identifier ) "
+			+ "join contentlet on (contentlet.identifier = identifier.id) join structure on (contentlet.structure_inode=structure.inode) "
+			+ "where identifier.host_inode = ? and structure.structuretype<>"+Structure.STRUCTURE_TYPE_FILEASSET+" "
 			+ "and contentinfo.live_inode is not null "
 			+ "group by identifier.host_inode";
 	}
@@ -146,7 +146,7 @@ public abstract class DashboardFactory {
 	
 	protected StringBuffer getHostListQuery(boolean hasCategory, String selectedCategories,  String runDashboardFieldContentlet){
 		StringBuffer query = new StringBuffer();
-		query.append("select "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"":" distinct ")+" {contentlet.*}, " +
+		query.append("select "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"":" distinct ")+ (" {contentlet.*}, ")    + 
 				"coalesce(d.page_views,0) as totalpageviews,  " +
 				"CASE WHEN contentinfo.live_inode is not null THEN 'Live' "+
                 " ELSE 'Stopped' "+
@@ -158,7 +158,7 @@ public abstract class DashboardFactory {
 				  "analytic_summary_period on analytic_summary.summary_period_id = analytic_summary_period.id "+
 				  "and analytic_summary_period.full_date > ? and analytic_summary_period.full_date < ? "+
 				  "group by host_id" +
-				") "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"":" as d") +" on d.host_id = contentlet.identifier " +
+				") "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?" as d": DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)? " d " : " as d") +" on d.host_id = contentlet.identifier " +
 				(hasCategory?" join tree on tree.child = contentlet.inode and tree.parent in("+selectedCategories+") ":"") +
 				"join structure s on contentlet.structure_inode = s.inode " +
 				"where contentlet_1_.type = 'contentlet' and contentlet.inode = contentlet_1_.inode and s.name ='Host' and contentlet.identifier = contentinfo.identifier "+ 

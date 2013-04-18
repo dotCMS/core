@@ -6,6 +6,10 @@
         "max_gram": 10,
         "min_gram": 1,
         "type": "edgeNGram"
+      },
+      "content_stemmer": {
+        "type" : "stemmer",
+        "name" : "english"
       }
     },
     "analyzer": {
@@ -14,7 +18,7 @@
           "standard",
           "lowercase",
           "asciifolding",
-         {"type":"stemmer", "name":"english"}
+          "content_stemmer"
         ],
         "type": "custom",
         "tokenizer": "standard"

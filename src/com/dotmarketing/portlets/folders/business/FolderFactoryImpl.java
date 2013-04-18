@@ -15,8 +15,6 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 
-import net.sf.hibernate.HibernateException;
-
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
@@ -37,6 +35,7 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.LiveCache;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -511,12 +510,15 @@ public class FolderFactoryImpl extends FolderFactory {
 				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
 			}
 		}
+		
+		// issues/1736
+		APILocator.getContentletAPI().refreshContentUnderFolder(newFolder);
 
 		// Copying links
 		Map<String, Link[]> linksCopied;
 		if (copiedObjects.get("Links") == null) {
 			linksCopied = new HashMap<String, Link[]>();
-			copiedObjects.put("Links", linksCopied);
+			copiedObjects.put("Links", linksCopied); 
 		} else {
 			linksCopied = (Map<String, Link[]>) copiedObjects.get("Links");
 		}
@@ -561,6 +563,12 @@ public class FolderFactoryImpl extends FolderFactory {
 	private boolean move(Folder folder, Object destination) throws DotDataException, DotStateException, DotSecurityException {
 
 		IdentifierAPI identAPI = APILocator.getIdentifierAPI();
+		Identifier folderId = identAPI.find(folder.getIdentifier());
+		
+		if(folder.isShowOnMenu())
+		    CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+		CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
+		
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		boolean contains = false;
 		String newParentPath;
@@ -570,10 +578,14 @@ public class FolderFactoryImpl extends FolderFactory {
 			Identifier destinationId = identAPI.find(((Folder) destination).getIdentifier());
 			newParentPath = destinationId.getPath();
 			newParentHostId = destinationId.getHostId();
+			if(!contains)
+			    CacheLocator.getNavToolCache().removeNavByPath(destinationId.getHostId(), destinationId.getPath());
 		} else {
 			contains = APILocator.getHostAPI().doesHostContainsFolder((Host) destination, folder.getName());
 			newParentPath = "/";
 			newParentHostId = ((Host)destination).getIdentifier();
+			if(!contains)
+			    CacheLocator.getNavToolCache().removeNav(newParentHostId, FolderAPI.SYSTEM_FOLDER);
 		}
 		if (contains)
 			return false;
@@ -584,7 +596,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		List links = getChildrenClass(folder, Link.class);
 		List<Contentlet> contentlets = APILocator.getContentletAPI().findContentletsByFolder(folder, systemUser, false);
 
-		Identifier folderId = identAPI.find(folder.getIdentifier());
+		
 		folderId.setParentPath(newParentPath);
 		folderId.setHostId(newParentHostId);
 		identAPI.save(folderId);
@@ -1270,10 +1282,9 @@ public class FolderFactoryImpl extends FolderFactory {
 				title = tempTitle;
 			}
 		} catch (Exception ex) {
-			String message = ex.getMessage();
-		} finally {
-			return title;
+			Logger.warn(FolderFactoryImpl.class, "retrieveTitle failed:" + ex);
 		}
+		return title;
 	}
 
 	private boolean isOpenNode(String[] openNodes, String node) {
@@ -1524,4 +1535,16 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected void save(Folder folderInode) throws DotDataException {
 		HibernateUtil.saveOrUpdate(folderInode);
 	}
+	
+	@Override
+	protected void save(Folder folderInode, String existingId) throws DotDataException {
+		if(existingId==null){
+			HibernateUtil.saveOrUpdate(folderInode);
+		}else{
+			folderInode.setInode(existingId);
+			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
+		}
+		
+	}
+	
 }

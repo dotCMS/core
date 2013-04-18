@@ -1,6 +1,2 @@
-define(
-"dojox/editor/plugins/nls/sk/TextColor", ({
-	"setButtonText": "Nastaviť",
-	"cancelButtonText": "Zrušiť"
-})
-);
+//>>built
+define("dojox/editor/plugins/nls/sk/TextColor",({"setButtonText":"Nastaviť","cancelButtonText":"Zrušiť"}));

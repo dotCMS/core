@@ -47,15 +47,14 @@ public class StructureServices {
 		StringBuilder sb = new StringBuilder();
 		
 		// CONTENTLET CONTROLS BEGIN
-		sb.append("#set( $EDIT_CONTENT_PERMISSION =$EDIT_CONTENT_PERMISSION" ).append( fakeInode ).append( " )\n");
-		sb.append("#set( $CONTENT_INODE ='" ).append( fakeInode ).append( "' )\n");
-		sb.append("#set( $IDENTIFIER_INODE ='" ).append( fakeIdentifier ).append( "' )\n");
+		sb.append("#set( $EDIT_CONTENT_PERMISSION =$EDIT_CONTENT_PERMISSION" ).append( fakeInode ).append( " )");
+		sb.append("#set( $CONTENT_INODE ='" ).append( fakeInode ).append( "' )");
+		sb.append("#set( $IDENTIFIER_INODE ='" ).append( fakeIdentifier ).append( "' )");
 
 		//set all properties from the contentlet
-		sb.append("##Set Content properties\n");
-		sb.append("#set( $ContentInode ='" ).append( fakeInode ).append( "' )\n");
-		sb.append("#set( $ContentIdentifier ='" ).append( fakeIdentifier ).append( "' )\n");
-		sb.append("#set( $ContentletTitle =\"" ).append( UtilMethods.espaceForVelocity(fakeTitle) ).append( "\" )\n");
+		sb.append("#set( $ContentInode ='" ).append( fakeInode ).append( "' )");
+		sb.append("#set( $ContentIdentifier ='" ).append( fakeIdentifier ).append( "' )");
+		sb.append("#set( $ContentletTitle =\"" ).append( UtilMethods.espaceForVelocity(fakeTitle) ).append( "\" )");
 		
 		//Structure fields
 		List<Field> fields = structure.getFields();
@@ -63,8 +62,6 @@ public class StructureServices {
 
 		while (fieldsIt.hasNext()) {
 			Field field = (Field) fieldsIt.next();
-
-			sb.append("\n\n##Set Field " ).append( field.getFieldName() ).append( " properties\n");
 
 			String contField = field.getFieldContentlet();
 			String contFieldValue = null;
@@ -80,68 +77,68 @@ public class StructureServices {
 				if (!field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) && 
 						!field.getFieldType().equals(Field.FieldType.DATE.toString()) && 
 						!field.getFieldType().equals(Field.FieldType.TIME.toString())) 
-					sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"" ).append( UtilMethods.espaceForVelocity(contFieldValue).trim() ).append( "\" )\n");
+					sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"" ).append( UtilMethods.espaceForVelocity(contFieldValue).trim() ).append( "\" )");
 			}
 
 			if (field.getFieldType().equals(Field.FieldType.TEXT.toString()) || field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ #fixBreaks($" ).append( field.getVelocityVarName() ).append( ") ]\")\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ #fixBreaks($" ).append( field.getVelocityVarName() ).append( ") ]\")");
 			} else if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())) {
 				//Identifier id = (Identifier) InodeFactory.getChildOfClassByRelationType(content, Identifier.class, field.getFieldRelationType());				
 				String uri = "/html/images/shim.gif";				       		
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageInode =\"" ).append( Long.MAX_VALUE ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageWidth =\"" ).append( 150 ).append( "\" )\n"); //Original value was 165
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageHeight =\"" ).append( 150 ).append( "\" )\n"); //Originak value was 65
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageExtension =\"gif\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageURI =\"" ).append( uri ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageTitle =\"[ Test Image Structure ]\" )\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageInode =\"" ).append( Long.MAX_VALUE ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageWidth =\"" ).append( 150 ).append( "\" )"); //Original value was 165
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageHeight =\"" ).append( 150 ).append( "\" )"); //Originak value was 65
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageExtension =\"gif\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageURI =\"" ).append( uri ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ImageTitle =\"[ Test Image Structure ]\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 				//Identifier id = (Identifier) InodeFactory.getChildOfClassByRelationType(content, Identifier.class, field.getFieldRelationType());
 				String uri = "/html/images/shim.gif";				       		
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileInode =\"" ).append( Long.MAX_VALUE ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileExtension =\"gif\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileURI =\"" ).append( uri ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileTitle =\"[ Test File Structure ]\" )\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileInode =\"" ).append( Long.MAX_VALUE ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileExtension =\"gif\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileURI =\"" ).append( uri ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileTitle =\"[ Test File Structure ]\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "SelectLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\")\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "SelectLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\")");
 			} else if (field.getFieldType().equals(Field.FieldType.RADIO.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "RadioLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "RadioLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CheckboxLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CheckboxLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {				
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "DBFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "DBFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
 			} else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {				
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ " ).append( field.getVelocityVarName() ).append( "\" ])\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ " ).append( field.getVelocityVarName() ).append( "\" ])");
 			} else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ " ).append( field.getVelocityVarName() ).append( " ] \")\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "LongFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "DBFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ " ).append( field.getVelocityVarName() ).append( " ] \")");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "LongFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "DBFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
 			} else if (field.getFieldType().equals(Field.FieldType.BUTTON.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonValue =\"" ).append( (field.getFieldName() == null?"":field.getFieldName()) ).append( "\" )\n");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonCode =\"" ).append( (field.getValues() == null?"":field.getValues()) ).append( "\" )\n");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonValue =\"" ).append( (field.getFieldName() == null?"":field.getFieldName()) ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonCode =\"" ).append( (field.getValues() == null?"":field.getValues()) ).append( "\" )");
 			}
 		}
 
 		//sets the categories as a list on velocity
-		sb.append("#set( $ContentletCategories =[] )\n");
-		sb.append("#set( $ContentletCategoryNames =[] )\n");
+		sb.append("#set( $ContentletCategories =[] )");
+		sb.append("#set( $ContentletCategoryNames =[] )");
 
 
 		// This is code is repeated becuase the bug  GETTYS-268, the content variables were been overwritten 
 		// by the parse inside the some of the content fields  
 		// To edit the look, see WEB-INF/velocity/static/preview/content_controls.vtl
 
-		sb.append("#set( $EDIT_CONTENT_PERMISSION =$EDIT_CONTENT_PERMISSION" ).append( fakeIdentifier ).append( " )\n");
-		sb.append("#set( $CONTENT_INODE ='" ).append(fakeInode ).append( "' )\n");
-		sb.append("#set( $IDENTIFIER_INODE ='" ).append( fakeIdentifier ).append( "' )\n");
-		sb.append("##Set Content properties\n");
-		sb.append("#set( $ContentInode ='" ).append( fakeInode ).append( "' )\n");
-		sb.append("#set( $ContentIdentifier ='" ).append( fakeIdentifier ).append( "' )\n");
-		sb.append("#set( $ContentletTitle =\"" ).append( UtilMethods.espaceForVelocity(fakeTitle) ).append( "\" )\n");
-		sb.append("#set( $isWidget = false)\n");
+		sb.append("#set( $EDIT_CONTENT_PERMISSION =$EDIT_CONTENT_PERMISSION" ).append( fakeIdentifier ).append( " )");
+		sb.append("#set( $CONTENT_INODE ='" ).append(fakeInode ).append( "' )");
+		sb.append("#set( $IDENTIFIER_INODE ='" ).append( fakeIdentifier ).append( "' )");
+		
+		sb.append("#set( $ContentInode ='" ).append( fakeInode ).append( "' )");
+		sb.append("#set( $ContentIdentifier ='" ).append( fakeIdentifier ).append( "' )");
+		sb.append("#set( $ContentletTitle =\"" ).append( UtilMethods.espaceForVelocity(fakeTitle) ).append( "\" )");
+		sb.append("#set( $isWidget = false)");
 
 		InputStream result;
 		try {

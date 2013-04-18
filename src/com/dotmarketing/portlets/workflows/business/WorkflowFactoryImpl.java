@@ -332,6 +332,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.setSQL(sql.DELETE_ACTION);
 		db.addParam(action.getId());
 		db.loadResult();
+		WorkflowStep proxy = new WorkflowStep();
+		proxy.setId(action.getStepId());
+		cache.removeActions(proxy);
 	}
 
 	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException {
@@ -387,8 +390,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		Contentlet c = new Contentlet();
 		c.setIdentifier(task.getWebasset());
 
-		HibernateUtil.startTransaction();
+		boolean localTransaction = false;
 		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
 			/* Clean the comments */
 			db.setSQL("delete from workflow_comment where workflowtask_id = ?");
 			db.addParam(task.getId());
@@ -409,12 +414,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(task.getId());
 			db.loadResult();
 
-			HibernateUtil.commitTransaction();
-			cache.remove(c);
 		} catch (final Exception e) {
-			HibernateUtil.rollbackTransaction();
+			if(localTransaction){
+				HibernateUtil.rollbackTransaction();
+			}
 			Logger.error(this, "deleteWorkflowTask failed:" + e, e);
 			throw new DotDataException(e.toString());
+		}
+		finally{
+			if(localTransaction){
+				HibernateUtil.commitTransaction();
+			}
+			cache.remove(c);	
 		}
 	}
 
@@ -451,10 +462,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public List<WorkflowAction> findActions(WorkflowStep step) throws DotDataException {
-		final DotConnect db = new DotConnect();
-		db.setSQL(sql.SELECT_ACTIONS_BY_STEP);
-		db.addParam(step.getId());
-		return this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class);
+		
+		List<WorkflowAction> actions = cache.getActions(step);
+		if(actions ==null){
+			final DotConnect db = new DotConnect();
+			db.setSQL(sql.SELECT_ACTIONS_BY_STEP);
+			db.addParam(step.getId());
+			actions =  this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class);
+			if(actions == null) actions= new ArrayList<WorkflowAction>();
+			
+			cache.addActions(step, actions);
+		}
+		return actions;
 	}
 
 	public WorkflowScheme findDefaultScheme() throws DotDataException {
@@ -828,7 +847,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getId());
 			db.loadResult();
 		}
-
+		WorkflowStep proxy = new WorkflowStep();
+		proxy.setId(action.getStepId());
+		cache.removeActions(proxy);
 	}
 
 	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException {

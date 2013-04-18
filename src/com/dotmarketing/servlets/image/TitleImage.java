@@ -35,6 +35,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+@Deprecated
 public class TitleImage extends HttpServlet {
 
     /**
@@ -217,14 +218,16 @@ public class TitleImage extends HttpServlet {
         hm.put("&thorn;", "%FE");
         hm.put("&yuml;", "%FF");
 
-        File file = new File(config.getServletContext().getRealPath(Config.getStringProperty("PATH_TO_TITLE_IMAGES")));
+        String assetPath = Config.getStringProperty("ASSET_PATH");
+        File file = new File(Config.CONTEXT.getRealPath(assetPath + "/titleservlet"));
+       // File file = new File(config.getServletContext().getRealPath(Config.getStringProperty("PATH_TO_TITLE_IMAGES")));
         file.mkdirs();
 
         //delete our old crap at startup
-        String[] filenames = file.list();
+        File[] filenames = file.listFiles();
 
         for (int i = 0; i < filenames.length; i++) {
-            new File(config.getServletContext().getRealPath(Config.getStringProperty("PATH_TO_TITLE_IMAGES") + filenames[i])).delete();
+            filenames[i].delete();
         }
     }
 
@@ -293,8 +296,17 @@ public class TitleImage extends HttpServlet {
         String myFile = (request.getQueryString() == null) ? "empty" : PublicEncryptionFactory.digestString(
                 parsedQueryString).replace('\\', '_').replace('/', '_');
             
-        myFile = Config.getStringProperty("PATH_TO_TITLE_IMAGES") + myFile + ".png";
-        File file = new File(ctx.getRealPath(myFile));
+        //myFile = Config.getStringProperty("PATH_TO_TITLE_IMAGES") + myFile + ".png";
+        
+        String ret="";
+        String assetPath = Config.getStringProperty("ASSET_PATH");
+        File file = new File(Config.CONTEXT.getRealPath(assetPath + "/titleservlet"));
+        if (!file.exists())
+        	file.mkdirs();
+        ret=Config.CONTEXT.getRealPath(assetPath + "/titleservlet/"+myFile + ".png");
+        
+        file = new File(ret);
+        
 
         //if we don't have the file, make it
         if (!file.exists() || (request.getParameter("nocache") != null)) {

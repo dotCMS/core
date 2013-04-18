@@ -66,9 +66,13 @@ td {font-size: 100%;}
 	dojo.require('dotcms.dojo.data.UsersReadStore');
 	dojo.require("dojox.timing._base");
 	dojo.require("dojo.hash");
+	dojo.require("dotcms.dojo.push.PushHandler");	
 
+	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Syncronization")%>');
+	
 	dojo.connect(dojo.global, "onhashchange", refresh);
 
+	
     function refresh() {
 
     	var hashValue = decodeURIComponent(dojo.hash());
@@ -97,7 +101,20 @@ td {font-size: 100%;}
 		CategoryAjax.sortCategory(this.name, this.value);
 	};
 
+	var sortSelectable = function() {
+		dojo.forEach(
+			      dojo.query('[unselectable]'),
+			      function(selectTag){
+			        selectTag.unselectable = 'off';
+			      }
+			    );
+			 
+	};
+
+	
 	var fixFocus = function() {
+		
+		
 		var toBlur = document.activeElement;
 
 		if(toBlur.id!="addCatName" &&
@@ -122,6 +139,7 @@ td {font-size: 100%;}
 			maxLength: 15,
 			type : "text",
 			onChange : sortCat,
+			onClick : sortSelectable,
 			onBlur: fixFocus
 		});
 
@@ -133,6 +151,7 @@ td {font-size: 100%;}
 		myStore = new dojox.data.QueryReadStore({
 			url : '/categoriesServlet'+params
 		});
+		
 
 	}
 
@@ -229,6 +248,10 @@ td {font-size: 100%;}
 				dojo.byId("warningDiv").innerHTML = '<br><br>';
 			}
 		});
+		
+		 
+		
+		 
 
 	});
 
@@ -674,6 +697,10 @@ td {font-size: 100%;}
 			toFocus.focus();
 		}
 	}
+	
+	function remoteSyncronization () {
+		pushHandler.showCategoryDialog();
+	}
 
 </script>
 
@@ -694,6 +721,17 @@ td {font-size: 100%;}
 			<button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" ><%= LanguageUtil.get(pageContext, "import") %></button>
 		</div>
 </div>
+
+<form id="remotePublishForm">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="iWantTo" id=iWantTo type="hidden" value="">
+</form>
+
+
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp" >
 	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext,\"view-categories\") %>" />
 		<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false" style="width: 99%; margin-left: auto; margin-right:auto;"  >
@@ -715,6 +753,8 @@ td {font-size: 100%;}
 				<br/>
 				<div id="catHolder" style="text-align: center; " class="claro"></div>
 				<div style="height: 15px; text-align: right; margin-top: 5px">
+					<button dojoType="dijit.form.Button" type="button" onClick="remoteSyncronization();" iconClass="pushIcon"><%= LanguageUtil.get(pageContext,"Remote-Syncronization") %></button>
+					&nbsp;
 					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
 				</div>
 				<input type="hidden" name="fullCommand" id="fullCommand" value="">

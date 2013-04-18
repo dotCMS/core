@@ -32,7 +32,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
-import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.struts.TemplateForm;
 import com.dotmarketing.services.TemplateServices;
@@ -308,7 +307,7 @@ public class EditTemplateAction extends DotPortletAction implements
 				Logger.debug(this,"Calling Full Delete Method");
 				String [] inodes = req.getParameterValues("publishInode");
 				StringBuilder dependencies = new StringBuilder();
-//				boolean returnValue = true;
+				boolean returnValue = false;
 
 				for(String inode  : inodes)	{
 					String result = APILocator.getTemplateAPI().checkDependencies(inode, user, false);
@@ -319,23 +318,21 @@ public class EditTemplateAction extends DotPortletAction implements
 						dependencies.append(LanguageUtil.get(user, "template-name")).append(": ").append(webAsset.getFriendlyName()).append("\n");
 						dependencies.append(LanguageUtil.get(user, "Pages-URLs")).append(": ").append(result);
 					} else {
-//						returnValue &= WebAssetFactory.deleteAsset(webAsset,user);
-						WebAssetFactory.deleteAsset(webAsset,user);
+						returnValue = WebAssetFactory.deleteAsset(webAsset,user);
 					}
 
 					dependencies.append("\n");
 				}
 
-				SessionMessages.add(httpReq,"error","message.template.full_delete.error");
-//				if(returnValue)
-//				{
-//					SessionMessages.add(httpReq,"message","message.template.full_delete");
-//				}
-//				else
-//				{
-//					SessionMessages.add(httpReq,"error","message.template.full_delete.error");
-//					Logger.debug(this," Template cannot be deleted if it has existing relationships");
-//				}
+				if(returnValue)
+				{
+					SessionMessages.add(httpReq,"message","message.template.full_delete");
+				}
+				else
+				{
+					SessionMessages.add(httpReq,"error","message.template.full_delete.error");
+					Logger.debug(this," Template cannot be deleted if it has existing relationships");
+				}
 			}
 			catch(Exception ae)
 			{
@@ -662,7 +659,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		//copies the information back into the form bean
 		BeanUtils.copyProperties(form, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
-		BeanUtils.copyProperties(currentTemplate, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
+		BeanUtils.copyProperties(newTemplate, req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT));
 
 
 
@@ -685,7 +682,10 @@ public class EditTemplateAction extends DotPortletAction implements
 		_checkCopyAndMovePermissions(currentTemplate, user, httpReq,"copy");
 
 		//Calling the copy method from the factory
-		TemplateFactory.copyTemplate(currentTemplate);
+		APILocator.getTemplateAPI().copy(currentTemplate, user);
+
+		//super._editWebAsset(req, res, config, form, user,
+		//		WebKeys.TEMPLATE_EDIT);
 
 		SessionMessages.add(httpReq, "message", "message.template.copy");
 	}

@@ -14,14 +14,14 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Versionable;
-import com.dotmarketing.business.query.QueryUtil;
-import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.business.query.GenericQueryFactory.BuilderType;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
+import com.dotmarketing.business.query.QueryUtil;
+import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.db.HibernateUtil;
@@ -29,7 +29,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -472,13 +471,19 @@ public class LinkFactory {
 
         //HibernateUtil.saveOrUpdate(identifier);
         APILocator.getIdentifierAPI().save( identifier );
+        
+        if(APILocator.getPermissionAPI().isInheritingPermissions(currentLink)) {
+            APILocator.getPermissionAPI().removePermissions(currentLink);
+        }
 
         //Refresh the menus
         if ( parent != null ) {
             RefreshMenus.deleteMenu( oldParent, parent );
+            CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
         } else {
             RefreshMenus.deleteMenu( oldParent );
         }
+        CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
         return true;
     }
@@ -513,6 +518,7 @@ public class LinkFactory {
 
     	//getting old file properties
     	Folder folder = APILocator.getFolderAPI().findParentFolder(link, user,false);
+    	CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
     	
     	Identifier ident = APILocator.getIdentifierAPI().find(link);
 
@@ -553,6 +559,7 @@ public class LinkFactory {
     	
     	//RefreshMenus.deleteMenus();
     	RefreshMenus.deleteMenu(link);
+    	CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 
     	return true;
 

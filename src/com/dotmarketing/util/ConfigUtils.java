@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.util.Enumeration;
 
 import com.dotcms.enterprise.ClusterThreadProxy;
+import com.dotmarketing.business.APILocator;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
@@ -50,8 +51,30 @@ public class ConfigUtils {
 	}
 	
 	public static String getBundlePath() {
-		return getDynamicContentPath() + File.separator + "bundles";
+		String path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "bundles";
+		File pathDir=new File(path);
+		if(!pathDir.exists())
+		    pathDir.mkdirs();
+		return path;
 	}
+	
+	
+	public static String getTimeMachinePath(){
+		
+		String path = Config.getStringProperty("TIMEMACHINE_PATH", null);
+		
+		if(path ==null){
+			path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "timemachine";
+			File pathDir=new File(path);
+			if(!pathDir.exists())
+			    pathDir.mkdirs();
+		}
+		
+		return path;
+	}
+	
+	
+	
 	
 	public static String getServerId(){
 		String serverId;

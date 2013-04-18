@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -146,6 +147,10 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(ver.getVersionId()))
         	return false;
         Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
+        
+        if(!UtilMethods.isSet(ident.getId()))
+        	return false;
+        
         if(ident.getAssetType().equals("contentlet")) {
             Contentlet cont=(Contentlet)ver;
             ContentletVersionInfo cinfo=vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
@@ -237,6 +242,9 @@ public class VersionableAPIImpl implements VersionableAPI {
     public void removeLive(String identifier, long lang) throws DotDataException, DotStateException, DotSecurityException {
         if(!UtilMethods.isSet(identifier))
             throw new DotStateException("invalid identifier");
+        Identifier ident=APILocator.getIdentifierAPI().find(identifier);
+        if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().after(new Date()))
+            throw new PublishStateException("Can't unpublish content that is scheduled to expire on a future date");
         ContentletVersionInfo ver = vfac.getContentletVersionInfo(identifier, lang);
         if(ver ==null || !UtilMethods.isSet(ver.getIdentifier()))
             throw new DotStateException("No version info. Call setWorking first");
@@ -274,6 +282,12 @@ public class VersionableAPIImpl implements VersionableAPI {
             ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
             if(info ==null ||!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
+            
+            if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().after(new Date()))
+                throw new PublishStateException("Can't publish content that is scheduled to be published on future date");
+            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
+                throw new PublishStateException("Can't publish content that is expired");
+            
             info.setLiveInode(versionable.getInode());
             vfac.saveContentletVersionInfo(info);
         }
@@ -329,7 +343,8 @@ public class VersionableAPIImpl implements VersionableAPI {
             }
         }
         else {
-            VersionInfo info = vfac.getVersionInfo(versionable.getVersionId());
+            VersionInfo info = vfac.findVersionInfoFromDb(ident);
+
             if(info ==null || !UtilMethods.isSet(info.getIdentifier())) {
                 // Not yet created
                 vfac.createVersionInfo(ident, versionable.getInode());
@@ -386,6 +401,26 @@ public class VersionableAPIImpl implements VersionableAPI {
 	public ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
 	    return vfac.getContentletVersionInfo(identifier, lang);
 	}
+	
+	@Override
+	public void saveVersionInfo(VersionInfo vInfo) throws DotDataException, DotStateException {
+		vfac.saveVersionInfo(vInfo);
+	}
+	
+	@Override
+	public void saveContentletVersionInfo( ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
+		ContentletVersionInfo info = vfac.findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
+		if(info == null){
+			vfac.saveContentletVersionInfo(cvInfo);
+		}else{
+			info.setDeleted(cvInfo.isDeleted());
+			info.setLiveInode(cvInfo.getLiveInode());
+			info.setLockedBy(cvInfo.getLockedBy());
+			info.setLockedOn(cvInfo.getLockedOn());
+			info.setWorkingInode(cvInfo.getWorkingInode());
+			vfac.saveContentletVersionInfo(info);
+		}
+	}
 
 	public void deleteVersionInfo(String identifier)throws DotDataException {
 		vfac.deleteVersionInfo(identifier);
@@ -405,4 +440,15 @@ public class VersionableAPIImpl implements VersionableAPI {
 			return (vi != null && UtilMethods.isSet(vi.getLiveInode()));
 		}
 	}
+	
+	@Override
+	public void removeContentletVersionInfoFromCache(String identifier, long lang) {
+		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(identifier, lang);
+	}
+
+	@Override
+	public void removeVersionInfoFromCache(String identifier) {
+		CacheLocator.getIdentifierCache().removeVersionInfoFromCache(identifier);
+	}
+	
 }

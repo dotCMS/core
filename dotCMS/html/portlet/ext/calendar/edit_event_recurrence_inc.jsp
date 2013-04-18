@@ -373,7 +373,7 @@
 			year = x.getFullYear();
 			dateValue= year + "-" + month + "-" + day + " ";
 
-			if (dijit.byId(varName + 'Time') != null) {
+			if (dijit.byId(varName + 'Time') != null && dijit.byId(varName + 'Time').value != null) {
 				var time = dijit.byId(varName + 'Time').value;
 				var hour = time.getHours();
 				if(hour < 10) hour = "0" + hour;

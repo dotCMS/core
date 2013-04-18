@@ -1,22 +1,22 @@
+<%@page import="java.io.File"%>
 <%
 
 	String regex = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_FILE_REGEX");
 	if(!com.dotmarketing.util.UtilMethods.isSet(regex)){
 		regex=".*";
 	}
-	String[] files = com.liferay.util.FileUtil.listFiles(
-	        com.dotmarketing.util.Config.CONTEXT.getRealPath(
-	                com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER")), true);
+	String logPath = com.dotmarketing.util.FileUtil.getAbsolutlePath(com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER"));
+	File[] files = com.liferay.util.FileUtil.listFileHandles(logPath, true);
 	java.util.regex.Pattern pp = java.util.regex.Pattern.compile(regex);
-	java.util.List<String> l = new java.util.ArrayList<String>();
-	for(String x : files){
-		if(pp.matcher(x).matches()){
+	java.util.List<File> l = new java.util.ArrayList<File>();
+	for(File x : files){
+		if(pp.matcher(x.getName()).matches()){
 			l.add(x);
 		}
 	}
 	// http://jira.dotmarketing.net/browse/DOTCMS-6271
 	// put matched files set to an array with exact size and then sort them
-	files = l.toArray(new String[l.size()]);
+	files = l.toArray(new File[l.size()]);
 	java.util.Arrays.sort(files);
 
 
@@ -45,10 +45,12 @@
 
 
 <style type="text/css">
+	
+	body,html{ height: 100%; }
+	
 	#tailingFrame{
 		border:1px solid silver;
 		overflow: auto;
-		height:100%;
 		height:100%;
 		width:100%;
 
@@ -104,7 +106,7 @@
 
 
 		<%if(request.getParameter("fileName")!= null){%>
-			dijit.byId("fileName").setValue("<%=com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName"))%>");
+		dijit.byId("fileName").attr("displayedValue","<%=com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName")).replace(logPath + File.separator, "")%>");
 		<%}%>
 
 	});
@@ -123,11 +125,12 @@
         } );
 
     }
+   
 
     /**
      * Will search for all the current logs and it will populate the table with those logs details
      */
-    function getCurrentLogs () {
+    function getCurrentLogs () {  	 
 
         var xhrArgs = {
 
@@ -145,6 +148,7 @@
             }
         };
         dojo.xhrPost( xhrArgs );
+        dijit.byId( "checkAllCkBx" ).set('checked',false);        
     }
 
     /**
@@ -236,9 +240,9 @@
 		<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Tail")%>:
 		<select name="fileName" dojoType="dijit.form.FilteringSelect" ignoreCase="true" id="fileName" style="width:250px;" onchange="reloadTail();">
 			<option value=""></option>
-			<%for(String f: files){ %>
+			<%for(File f: files){ %>
 
-					<option value="<%= f%>"><%= f%></option>
+					<option value="<%= f.getPath()%>"><%= f.getPath().replace(logPath + File.separator, "")%></option>
 
 			<%} %>
 		</select>
@@ -266,18 +270,17 @@
 		<div style="width:620px;height:300px;">
 		    <table class="listingTable" id="logsTable" align="center">
 		        <tr id="logsTableHeader">
-		            <th><input width="5%" type="checkbox" dojoType="dijit.form.CheckBox" id="checkAllCkBx" value="true" onClick="checkUncheck()" /></th>
+		            <th width="5%"><input type="checkbox" dojotype="dijit.form.CheckBox" id="checkAllCkBx" onclick="checkUncheck()"></input></th>
 		            <th nowrap="nowrap" width="5%" style="text-align:center;">Status</th>
 		            <th nowrap="nowrap" width="32%" style="text-align:center;">Log Name</th>
 		            <th nowrap="nowrap" width="58%" style="text-align:center;">Log Description</th>
 		        </tr>
 		    </table>
 		</div>
-		<div>&nbsp;</div>
-
+		<div>&nbsp;</div>		
 		<div class="buttonRow">
-		    <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="enableDisableLogs()"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %> </button>
-		    <button dojoType="dijit.form.Button" iconClass="resetIcon" name="refreshButton" onclick="getCurrentLogs()"> Refresh </button>
+		    <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onClick="enableDisableLogs()"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %> </button>
+		    <button dojoType="dijit.form.Button" iconClass="resetIcon" name="refreshButton" onClick="getCurrentLogs ()"> Refresh </button>
 		</div>
 
    </div>

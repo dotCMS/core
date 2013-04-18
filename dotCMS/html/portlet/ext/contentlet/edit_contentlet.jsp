@@ -160,8 +160,15 @@ var editButtonRow="editContentletButtonRow";
 
 <html:form action="<%= formAction %>" styleId="fm" onsubmit="return false;">
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
-	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
+	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">	
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
+	
+	<!-- PUSH PUBLISHING ACTIONLET -->
+	<input name="wfPublishDate" id="wfPublishDate" type="hidden" value="">
+	<input name="wfPublishTime" id="wfPublishTime" type="hidden" value="">
+	<input name="wfExpireDate" id="wfExpireDate" type="hidden" value="">
+	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
+	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 
 	<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image"  dojoType="dotcms.dijit.FileBrowserDialog"></div>

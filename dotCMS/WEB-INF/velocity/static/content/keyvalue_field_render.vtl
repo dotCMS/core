@@ -1,0 +1,14 @@
+#*
+<input type="text" class="text" name="$fieldAux.velocityVarName" id="$fieldAux.velocityVarName" maxlength="255" class="textField" value="$!fieldDefaultValue" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+*#
+ 
+<input dojoType="dijit.form.TextBox" class="text" name="${fieldAux.velocityVarName}_key" id="${fieldAux.velocityVarName}_key" maxlength="255" class="textField" value="$!fieldDefaultValue" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+<label for="${fieldAux.velocityVarName}FieldLabe2"> $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.keyval.value')  </label>
+<input dojoType="dijit.form.TextBox" class="text" name="${fieldAux.velocityVarName}_value" id="${fieldAux.velocityVarName}_value" maxlength="255" class="textField" value="$!fieldDefaultValue" /><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+<button dojoType="dijit.form.Button" onClick="addKVPair('${fieldAux.velocityVarName}' , '${fieldAux.velocityVarName}_key', '${fieldAux.velocityVarName}_value' , '$fieldDefaultValue')" >$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.keyval.add')</button>
+<br/><br/>
+<textarea dojoType="dijit.form.Textarea" name="${fieldAux.velocityVarName}list" id="${fieldAux.velocityVarName}list" readonly="true" style= "min-height: 75px; width:250px;" class="textAreaField">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.keyval.empty')</textarea><span id="alert${fieldAux.velocityVarName}" class="errorMessages"></span>
+
+<button dojoType="dijit.form.Button" onClick='clearKeyList("${fieldAux.velocityVarName}")' iconClass="plusIcon">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.clear')</button>
+
+<input type="hidden" name="${fieldAux.velocityVarName}" id="${fieldAux.velocityVarName}" value=''/>

@@ -195,6 +195,10 @@ public class ESIndexAPI {
 	}
 
 	public boolean delete(String indexName) {
+		if(indexName==null) {
+			Logger.error(this.getClass(), "Failed to delete a null ES index");
+			return true;
+		}
 		try {
 			IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 			DeleteIndexRequest req = new DeleteIndexRequest(indexName);
@@ -587,7 +591,7 @@ public class ESIndexAPI {
 	   try{
 		   Client client=new ESClient().getClient();
 
-		   IndexResponse response = client.prepareIndex(idx, "dot_site_search", id)
+		   IndexResponse response = client.prepareIndex(idx, SiteSearchAPI.ES_SITE_SEARCH_MAPPING, id)
 			        .setSource(json)
 			        .execute()
 			        .actionGet();

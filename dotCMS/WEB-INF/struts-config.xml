@@ -1090,6 +1090,10 @@
 	<action path="/ext/escalation/RunJobEsc" type="com.dotcms.escalation.business.ManualExpiryJobLaunchAction" name="EscalationForm">
 		<forward name="portlet.ext.plugins.expCont.struts" path="portlet.ext.plugins.expCont.struts" />
 	</action>
+	
+	<action path="/ext/brokenlinks/view_broken_links" type="com.dotmarketing.portlets.checkurl.util.DispatcherService">
+		<forward name="portlet.ext.plugins.it.eng.dotcms.checkURL.struts" path="portlet.ext.checkURL.struts" />
+	</action>
 
 	</action-mappings>
 
@@ -1099,7 +1103,7 @@
 
 	<!-- Message Resources -->
 	<!--  DOTMARKETING add content.cms_language -->
-	<message-resources parameter="messages.cms_language,messages.Language,messages.Language-ext" factory="com.liferay.portal.struts.MultiMessageResourcesFactory" />
+	<message-resources parameter="messages.Language,messages.Language-ext,messages.cms_language" factory="com.liferay.portal.struts.MultiMessageResourcesFactory" />
 	<!--  DOTMARKETING add content.cms_language -->
 	<!-- Stxx Plugin -->
 

@@ -31,6 +31,8 @@ import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -115,15 +117,44 @@ public class InitServlet extends HttpServlet {
         Logger.info(this, "   Using database: " + _dbType);
         Logger.info(this, "   Using dialect : " + _dailect);
         Logger.info(this, "   Company Name  : " + _companyId);
+		if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
+				
+		Logger.info(this, "   Clustering    : Enabled");
+		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
+				try{
+					((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();	
+		Logger.info(this, "     Ping Sent");
+				}
+				catch(Exception e){
+					Logger.error(this, "   Ping Error: " + e.getMessage());
+					
+				}
+			}
+			else{
+				Logger.info(this, "   Clustering    : Disabled");
+			}
+        
+        
+        
         Logger.info(this, "");
-        
-        String classPath = null;
-        	classPath = config.getServletContext().getRealPath("WEB-INF/lib");
-        
-        new PluginLoader().loadPlugins(config.getServletContext().getRealPath("."),classPath);        
         
         //Check and start the ES Content Store
         APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
+        Logger.info(this, "");
+	
+		Logger.info(this, "");
+			
+        String classPath = config.getServletContext().getRealPath("WEB-INF/lib");
+    
+    	new PluginLoader().loadPlugins(config.getServletContext().getRealPath("."),classPath);        
+    
+        
+        
+        
+        
+        
+        
+        
         
         int mc = Config.getIntProperty("lucene_max_clause_count", 4096);
         BooleanQuery.setMaxClauseCount(mc); 
@@ -149,6 +180,7 @@ public class InitServlet extends HttpServlet {
 
         // deletes all menues that have been generated
         RefreshMenus.deleteMenus();
+        CacheLocator.getNavToolCache().clearCache();
 
 
         // maps all virtual links in memory
@@ -246,6 +278,9 @@ public class InitServlet extends HttpServlet {
 			VelocityUtil.getEngine();
 
 
+
+			
+			
 
     }
 

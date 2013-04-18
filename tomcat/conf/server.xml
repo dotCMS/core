@@ -67,9 +67,13 @@
          APR (HTTP/AJP) Connector: /docs/apr.html
          Define a non-SSL HTTP/1.1 Connector on port 8080
     -->
+<<<<<<< HEAD
     <Connector port="8080" protocol="HTTP/1.1"
                connectionTimeout="20000"
                redirectPort="8443" />
+=======
+    <Connector maxThreads="75" connectionTimeout="3000" port="80" protocol="HTTP/1.1" redirectPort="8443"/>
+>>>>>>> master
     <!-- A "Connector" using the shared thread pool-->
     <!--
     <Connector executor="tomcatThreadPool"
@@ -120,6 +124,7 @@
                resourceName="UserDatabase"/>
       </Realm>
 
+
       <Host name="localhost"  appBase="webapps"
             unpackWARs="true" autoDeploy="true" 
             xmlNamespaceAware="false" xmlValidation="false">
@@ -133,9 +138,9 @@
         <!-- Access log processes all example.
              Documentation at: /docs/config/valve.html
              Note: The pattern used is equivalent to using pattern="common" -->
-        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
-               prefix="dotcms_access." suffix=".log"
-               pattern="combined" />
+        <Valve className="org.apache.catalina.valves.AccessLogValve"
+		 directory="logs"  prefix="dotcms_access." suffix=".log"
+		 pattern="%h %l %u %t %r %H %v%U%q %s %b %{Referer}i %{User-Agent}i" resolveHosts="false "/>
 
       </Host>
     </Engine>

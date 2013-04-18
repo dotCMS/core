@@ -37,8 +37,16 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 	
 	public Identifier findFromInode(String inodeOrIdentifier) throws DotDataException {
-		Identifier ident = null;
-		ident = ifac.loadFromCache(inodeOrIdentifier);
+		Identifier ident = ifac.loadFromCache(inodeOrIdentifier);
+
+		
+		if(ident ==null){
+			// try to load it from a id first, then by a proxy Inode
+			Contentlet proxy = new Contentlet();
+			proxy.setInode(inodeOrIdentifier);
+			ident = ifac.loadFromCache(proxy);
+		}
+		
 		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
 			try {
 				Contentlet con = conAPI.find(inodeOrIdentifier, APILocator.getUserAPI().getSystemUser(), false);
@@ -59,11 +67,13 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 			Logger.debug(this, "Unable to find inodeOrIdentifier as identifier : ", e);
 		}
 
+		
 		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
-			return ident = ifac.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
-		} else {
-			return ident;
-		}
+			 ident = ifac.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
+		} 
+		
+		return ident;
+		
 	}
 
 	public Identifier find(String identifier) throws DotDataException {
@@ -72,7 +82,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 
 	public Identifier find(Versionable versionable) throws DotDataException {
-		if (versionable == null || !InodeUtils.isSet(versionable.getVersionId())) {
+		if (versionable == null || (!InodeUtils.isSet(versionable.getVersionId()) && !InodeUtils.isSet(versionable.getInode()))) {
 			throw new DotStateException("Versionable is null");
 		}
 		return ifac.find(versionable);
@@ -116,10 +126,19 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		ifac.deleteIdentifier(id);
 	}
 	public Identifier createNew(Versionable asset, Treeable parent) throws DotDataException{
+	    return createNew(asset,parent,null);
+	}
+	public Identifier createNew(Versionable asset, Treeable parent, String existingId) throws DotDataException{
 		if(parent instanceof Folder){
-			return ifac.createNewIdentifier(asset, (Folder) parent);
+		    if(UtilMethods.isSet(existingId))
+		        return ifac.createNewIdentifier(asset, (Folder) parent, existingId);
+		    else
+		        return ifac.createNewIdentifier(asset, (Folder) parent);
 		}else if(parent instanceof Host){
-			return ifac.createNewIdentifier(asset, (Host) parent);
+		    if(UtilMethods.isSet(existingId))
+		        return ifac.createNewIdentifier(asset, (Host) parent, existingId);
+		    else
+		        return ifac.createNewIdentifier(asset, (Host) parent);
 		}
 		else{
 			throw new DotStateException("You can only create an identifier on a host of folder.  Trying: " + parent);

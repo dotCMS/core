@@ -1,6 +1,2 @@
-// wrapped by build app
-define("dojox/layout/BorderContainer", ["dijit","dojo","dojox"], function(dijit,dojo,dojox){
-dojo.provide("dojox.layout.BorderContainer");
-
-console.error("dojox.layout.BorderContainer moved to dijit.layout.BorderContainer");
-});
+//>>built
+define("dojox/layout/BorderContainer",["dijit","dojo","dojox"],function(_1,_2,_3){_2.provide("dojox.layout.BorderContainer");console.error("dojox.layout.BorderContainer moved to dijit.layout.BorderContainer");});

@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -41,6 +42,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
@@ -117,6 +119,7 @@ public class IndexAjaxAction extends AjaxAction {
             boolean clearBeforeRestore=false;
             String aliasToRestore=null;
             File ufile=null;
+            boolean isFlash=false;
             for(FileItem it : items) {
                if(it.getFieldName().equalsIgnoreCase("indexToRestore")) {
                    indexToRestore=it.getString().trim();
@@ -124,7 +127,9 @@ public class IndexAjaxAction extends AjaxAction {
                else if(it.getFieldName().equalsIgnoreCase("aliasToRestore")) {
                    aliasToRestore=it.getString().trim();
                }
-               else if(it.getFieldName().equalsIgnoreCase("uploadedfiles[]")) {
+               else if(it.getFieldName().equalsIgnoreCase("uploadedfiles[]") || it.getFieldName().equals("uploadedfile")
+                       || it.getFieldName().equalsIgnoreCase("uploadedfileFlash")) {
+                   isFlash=it.getFieldName().equalsIgnoreCase("uploadedfileFlash");
                    ufile=File.createTempFile("indexToRestore", "idx");
                    InputStream in=it.getInputStream();
                    FileOutputStream out = new FileOutputStream(ufile);
@@ -150,6 +155,7 @@ public class IndexAjaxAction extends AjaxAction {
                 }
             }
 
+            
             if(ufile!=null) {
                 final boolean clear=clearBeforeRestore;
                 final String index=indexToRestore;
@@ -167,7 +173,18 @@ public class IndexAjaxAction extends AjaxAction {
                         }
                     }
                 }.start();
+                
             }
+            
+            PrintWriter out=response.getWriter();
+            if(isFlash) {
+                out.println("response=ok");
+            }
+            else {
+                response.setContentType("application/json");
+                out.println("{\"response\":1}");
+            }
+            
 	    }
 	    catch(FileUploadException fue) {
 	        Logger.error(this, "Error uploading file", fue);

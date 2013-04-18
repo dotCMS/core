@@ -43,6 +43,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -72,7 +73,6 @@ import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -85,9 +85,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	private ESMappingAPIImpl mapping = new ESMappingAPIImpl();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
+	private static final Contentlet cache404Content= new Contentlet();
+	private static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
 	public ESContentFactoryImpl() {
 		client = new ESClient();
-
+		cache404Content.setInode(CACHE_404_CONTENTLET);
 	}
 
 	@Override
@@ -322,6 +324,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        con.setHost(identifier.getHostId());
 	        con.setFolder(folder.getInode());
 	        
+	        // lets check if we have publish/expire fields to set
+	        Structure st=con.getStructure();
+	        if(UtilMethods.isSet(st.getPublishDateVar()))
+	            con.setDateProperty(st.getPublishDateVar(), identifier.getSysPublishDate());
+	        if(UtilMethods.isSet(st.getExpireDateVar()))
+	            con.setDateProperty(st.getExpireDateVar(), identifier.getSysExpireDate());
 		}
 	     else{
 	         con.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
@@ -694,6 +702,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected Contentlet find(String inode) throws ElasticSearchException, DotStateException, DotDataException, DotSecurityException {
 		Contentlet con = cc.get(inode);
 		if (con != null && InodeUtils.isSet(con.getInode())) {
+			if(CACHE_404_CONTENTLET.equals(con.getInode())){
+				return null;
+			}
 			return con;
 		}
 
@@ -718,6 +729,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 throw e;
         }
         if(fatty == null){
+        	cc.add(inode, cache404Content);
             return null;
         }else{
             Contentlet c = convertFatContentletToContentlet(fatty);
@@ -736,13 +748,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         QueryBuilder builder = QueryBuilders.matchAllQuery();
 
-        SearchResponse response = client.getClient().prepareSearch().setQuery( builder ).setSize( limit ).setFrom( offset ).execute().actionGet();
+        SearchResponse response = client.getClient().prepareSearch()
+                .setQuery( builder ).addFields("inode","identifier")
+                .setSize( limit ).setFrom( offset ).execute().actionGet();
         SearchHits hits = response.hits();
         List<Contentlet> cons = new ArrayList<Contentlet>();
 
         for ( SearchHit hit : hits ) {
             try {
-                cons.add( find( hit.getSource().get( "inode" ).toString() ) );
+                cons.add( find( hit.field("inode").getValue().toString() ) );
             } catch ( Exception e ) {
                 throw new ElasticSearchException( e.getMessage(), e );
             }
@@ -828,9 +842,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 			SearchResponse response = client.prepareSearch((live ? info.live : info.working)).setQuery(builder)
-			        .execute().actionGet();
+			        .addFields("inode","identifier").execute().actionGet();
 			SearchHits hits = response.hits();
-			Contentlet contentlet = find(hits.getAt(0).getSource().get("inode").toString());
+			Contentlet contentlet = find(hits.getAt(0).field("inode").getValue().toString());
 			return contentlet;
 		}
 		// if we don't have the con in this language
@@ -961,7 +975,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			BoolQueryBuilder builder = QueryBuilders.boolQuery().must(QueryBuilders.fieldQuery("conhost", hostId));
 
 			SearchResponse response = client.getClient().prepareSearch().setQuery(builder).
-			        setSize(limit).setFrom(offset).execute()
+			        setSize(limit).setFrom(offset).addFields("inode","identifier").execute()
 					.actionGet();
 
 			SearchHits hits = response.hits();
@@ -969,7 +983,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			List<Contentlet> cons = new ArrayList<Contentlet>();
 			for (int i = 0; i < hits.getHits().length; i++) {
 				try {
-					cons.add(find(hits.getAt(i).getSource().get("inode").toString()));
+					cons.add(find(hits.getAt(i).field("inode").getValue().toString()));
 				} catch (Exception e) {
 					throw new ElasticSearchException(e.getMessage(),e);
 				}
@@ -1055,10 +1069,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     result.add(convertFatContentletToContentlet(fatty));
                 }
             }
-            HibernateUtil.closeSession();
         } catch (Exception e) {
-            Logger.debug(this, e.toString());
-            HibernateUtil.closeSession();
+            throw new DotDataException(e.getMessage(),e);
         }
 
         return result;
@@ -1078,8 +1090,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                      .append(" and contentletvi.deleted = ")
                      .append(com.dotmarketing.db.DbConnectionFactory.getDBFalse());
         }
+        
         if (languageId == 0) {
-            languageId = langAPI.getDefaultLanguage().getId();
+            languageId = langAPI.getDefaultLanguage().getId(); 
             condition.append(" and contentletvi.lang = ").append(languageId);
         }else if(languageId == -1){
             Logger.debug(this, "LanguageId is -1 so we will not use a language to pull contentlets");
@@ -1271,6 +1284,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         	}
 
         	srb.setIndices(indexToHit);
+        	srb.addFields("inode","identifier");
 
             if(limit>0)
                 srb.setSize(limit);
@@ -1332,15 +1346,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
             throw new DotDataException(e.getMessage(), e);
         }
 	}
+	
+	@Override
+    protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+	    return save(contentlet,null);
+	}
 
 	@Override
-	protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+	protected Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
 	    com.dotmarketing.portlets.contentlet.business.Contentlet fatty = new com.dotmarketing.portlets.contentlet.business.Contentlet();
         if(InodeUtils.isSet(contentlet.getInode())){
             fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, contentlet.getInode());
         }
         fatty = convertContentletToFatContentlet(contentlet, fatty);
-        HibernateUtil.saveOrUpdate(fatty);
+        
+        if(UtilMethods.isSet(existingInode))
+            HibernateUtil.saveWithPrimaryKey(fatty, existingInode);
+        else
+            HibernateUtil.saveOrUpdate(fatty);
+        
         final Contentlet content = convertFatContentletToContentlet(fatty);
 
         if (InodeUtils.isSet(contentlet.getHost())) {
@@ -1368,7 +1392,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    SearchHits hits = indexSearch(query, limit, offset, sortBy);
 	    List<String> inodes=new ArrayList<String>();
 	    for(SearchHit h : hits)
-	        inodes.add(h.getSource().get("inode").toString());
+	        inodes.add(h.field("inode").getValue().toString());
 	    return findContentlets(inodes);
 	}
 
@@ -1825,6 +1849,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
 
             matches = RegEX.find(query, "\\[([0-9]*) (to) ([0-9]*)\\]");
+            if(matches.isEmpty()){
+            	matches = RegEX.find(query, "\\[([a-z0-9]*) (to) ([a-z0-9]*)\\]");
+            }
             for (RegExMatch regExMatch : matches) {
                 query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + " to "
                         + regExMatch.getGroups().get(2).getMatch() + "]", "["
@@ -1978,4 +2005,58 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 return ERROR_DATE;
             }
         }
+        
+		public List<Map<String, String>> getMostViewedContent(String structureInode, Date startDate, Date endDate, User user) throws DotDataException {
+
+			List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+			
+			String sql = " select content_ident, sum(num_views) " +
+					" from " +
+					" ( select clickstream_request.associated_identifier as content_ident, count(clickstream_request.associated_identifier) as num_views " +
+					" from contentlet, clickstream_request, contentlet_version_info " +
+					" where contentlet.structure_inode = ? " +  
+					" and contentlet.inode=contentlet_version_info.live_inode " +
+					" and contentlet_version_info.deleted = " + DbConnectionFactory.getDBFalse() +
+					" and clickstream_request.associated_identifier = contentlet.identifier " +
+					" and clickstream_request.timestampper between ? and ? " + // startDate and endDate
+					" group by clickstream_request.associated_identifier " +
+					" UNION ALL " +
+					" select analytic_summary_content.inode as content_ident, sum(analytic_summary_content.hits) as num_views " +
+					" from analytic_summary_content, analytic_summary , analytic_summary_period, contentlet,  contentlet_version_info " +
+					" where analytic_summary_content.summary_id = analytic_summary.id " +
+					" and analytic_summary.summary_period_id = analytic_summary_period.id " +
+					" and analytic_summary_period.full_date between ? and ? " + // startDate and endDate 
+					" and contentlet.structure_inode = ? " +  
+					" and contentlet.inode= contentlet_version_info.live_inode " +
+					" and contentlet_version_info.deleted = " + DbConnectionFactory.getDBFalse() + 
+					" and analytic_summary_content.inode = contentlet.identifier " +
+					" group by content_ident  ) consolidated_tab " +
+					" group by content_ident order by sum desc; ";
+		
+			DotConnect dc = new DotConnect();
+	        dc.setSQL(sql);      
+	        dc.addParam(structureInode);
+	        dc.addParam(startDate);
+	        dc.addParam(endDate);
+	        dc.addParam(startDate);
+	        dc.addParam(endDate);
+	        dc.addParam(structureInode);
+	        
+	        List<Map<String, String>> contentIdentifiers = dc.loadResults();
+	        
+	        PermissionAPI perAPI = APILocator.getPermissionAPI();
+	        IdentifierAPI identAPI = APILocator.getIdentifierAPI();
+	        
+	        for(Map<String, String> ident:contentIdentifiers){
+	        	Identifier identifier = identAPI.find(ident.get("content_ident"));
+	        	if(perAPI.doesUserHavePermission(identifier, PermissionAPI.PERMISSION_READ, user)){
+	        		Map<String, String> h = new HashMap<String, String>();
+	        		h.put("identifier", ident.get("content_ident"));
+	        		h.put("numberOfViews", ident.get("numberOfViews"));
+	        		result.add(h);
+	        	}
+	        }
+	        
+			return result;
+		}        
 }

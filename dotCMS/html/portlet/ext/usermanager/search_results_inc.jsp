@@ -283,7 +283,7 @@ catch(Exception e){
 		   	<div id="message" class="yui-u first" style="font-size:85%;padding-top:5px;">
 		   		<a href="javascript: void(0);" onclick="messageCheckUncheckAll();"><%= LanguageUtil.get(pageContext, "Check-all") %> <%=totalUsers%> <%= LanguageUtil.get(pageContext, "matches") %></a>
 			</div>
-		    <div class="yui-u" style="text-align:right;"">
+		    <div class="yui-u" style="text-align:right;">
 				<button dojoType="dijit.form.ToggleButton" id="downLoadButton" iconClass="excelIcon" onclick="downloadUsers();return false;">
 					<%= LanguageUtil.get(pageContext, "Download-to-Excel") %>
 				</button>
@@ -368,7 +368,7 @@ catch(Exception e){
 					<div class="yui-u">
 						<div id="matchingResultsBottomDiv"></div>
 					</div>
-					<div class="yui-u" style="text-align:right;">
+					<div class="yui-u" style="text-align:right;float: right;" >
 						<div id="nextDiv" style="<%=(pageNumber < ((totalUsers/perPage) + (totalUsers%perPage*0.001)))?"":"display: none;"%>">
 							<button dojoType="dijit.form.Button" name="next" id="next" iconClass="nextIcon" onClick="doNextSubmit()">
 			                  <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Next")) %>

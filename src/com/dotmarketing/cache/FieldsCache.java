@@ -142,6 +142,10 @@ public class FieldsCache {
     	return "FieldsCache";
     }
     
+    public static String getFieldsVarGroup() {
+    	return "FieldsVarCache";
+    }
+    
     public static void addField(Field f){
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();		
 		String inode = f.getInode();
@@ -167,32 +171,36 @@ public class FieldsCache {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         String id = field.getInode();
         cache.remove(getPrimaryGroup() + id,getPrimaryGroup());
+        removeFieldVariables(field);
+    } 
+    
+	public static List<FieldVariable> getFieldVariables(Field field) {
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+        String key = getFieldsVarGroup() + field.getInode();
+        
+        
+        try {
+			return (List<FieldVariable>) cache.get(key,getFieldsVarGroup());
+		} catch (DotCacheException e) {
+			return null;
+		}
+    }
+    
+	public static void addFieldVariables(Field field, List<FieldVariable> vars) {
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+        String key = getFieldsVarGroup() + field.getInode();
+        cache.put(key, vars, getFieldsVarGroup());
+
     }
 	
-    public static void addFieldVariable(FieldVariable fVar){
+	
+	public static void removeFieldVariables(Field field) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-		String id = fVar.getId();
-		cache.put(getPrimaryGroup() + id, fVar, getPrimaryGroup());
-	}
-    
-	public static FieldVariable getFieldVariable(String id) {
-		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-    	FieldVariable fieldVar = null;
-    	try{
-    		fieldVar = (FieldVariable) cache.get(getPrimaryGroup() + id, getPrimaryGroup());
-	    }catch (DotCacheException e) {
-			Logger.debug(FieldsCache.class, "Cache Entry not found", e);
-		}
-        if (fieldVar == null) {
-            fieldVar = FieldFactory.getFieldVariable(id);
-            addFieldVariable(fieldVar);
-        }
-        return fieldVar;
-	}
+        String key = getFieldsVarGroup() + field.getInode();
 
-    public static void removeFieldVariable(FieldVariable fieldVar) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        String id = fieldVar.getId();
-        cache.remove(getPrimaryGroup() + id,getPrimaryGroup());
+		cache.remove(key,getFieldsVarGroup());
+
     }
+    
+    
 }

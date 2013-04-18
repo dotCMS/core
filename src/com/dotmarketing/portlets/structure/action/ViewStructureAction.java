@@ -54,7 +54,7 @@ public class ViewStructureAction extends DotPortletAction {
 		if (req.getParameter("structureType") != null)
 			structureType = Integer.parseInt(req.getParameter("structureType"));
 		if (structureType == null){
-			structureType=1;
+			structureType=0;
 		}
 		else{
 			session.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE, structureType);

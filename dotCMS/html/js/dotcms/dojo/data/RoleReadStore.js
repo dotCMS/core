@@ -16,7 +16,7 @@ dojo.declare("dotcms.dojo.data.RoleReadStore", dojox.data.QueryReadStore, {
 	
 	
     fetch:function(request) {
-    	var searchName = dijit.byId(this.nodeId).displayedValue;
+    	var searchName = dijit.byId(this.nodeId).get("displayedValue");
         request.serverQuery = {
         	"getRoles":request.cmd,
         	"q":request.query,

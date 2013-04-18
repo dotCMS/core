@@ -46,12 +46,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.FixTasksExecutor;
-import com.dotmarketing.logConsole.model.LogMapper;
-import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.plugin.model.Plugin;
 import com.dotmarketing.plugin.model.PluginProperty;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
+import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
 import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread;
 import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread.BasicProcessStatus;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
@@ -333,7 +332,7 @@ public class CMSMaintenanceAjax {
 			}else{
 				assetDir = assetRealPath;
 			}
-			FileUtil.copyDirectory(assetDir, backupTempFilePath + File.separator + "asset");
+			FileUtil.copyDirectory(assetDir, backupTempFilePath + File.separator + "asset", new AssetFileNameFilter());
 
 			//do not ship the license.
 			String f = backupTempFilePath + File.separator + "asset" + File.separator + "license";
@@ -388,7 +387,7 @@ public class CMSMaintenanceAjax {
 	                	continue;
 	                }
 
-	                if(Contentlet.class.equals(clazz)){
+	                if(com.dotmarketing.portlets.contentlet.business.Contentlet.class.equals(clazz)){
 	                	Logger.debug(this, "Processing contentlets. This will take a little bit longer...");
 	                }
 

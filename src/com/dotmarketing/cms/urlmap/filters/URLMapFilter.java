@@ -82,6 +82,7 @@ public class URLMapFilter implements Filter {
 		HttpSession session = request.getSession();
 		String uri = request.getRequestURI();
 		uri = URLDecoder.decode(uri, "UTF-8");
+		String lId = request.getParameter("language_id");
 		if(CMSFilter.excludeURI(uri)){
 			chain.doFilter(req, res);
 			return;
@@ -230,10 +231,15 @@ public class URLMapFilter implements Filter {
 								+ value + " ");
 						counter++;
 					}
+					if(lId!=null && lId != "")
+                    {
+						query.append("+languageId:"+ lId + " ");
+                    }
 					
 					try {
 						cons = conAPI.searchIndex(query.toString(), 1, 0, (hostIsRequired?"conhost, modDate": "modDate"), user, true);
 						ContentletSearch c = cons.get(0);
+						session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,String.valueOf(conAPI.find(c.getInode(), user, true).getLanguageId()));
 						request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
 						request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
 						request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, c.getIdentifier());

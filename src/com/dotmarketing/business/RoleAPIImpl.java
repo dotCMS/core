@@ -325,6 +325,9 @@ public class RoleAPIImpl implements RoleAPI {
 			role.setName(user.getFullName());
 			rf.save(role);
 		}
+		if(!APILocator.getRoleAPI().doesUserHaveRole(user, role)){
+			rf.addRoleToUser(role, user);
+		}
 		return role;
 	}
 

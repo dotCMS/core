@@ -360,6 +360,20 @@ import com.liferay.portal.model.User;
 	public abstract void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
 			DotSecurityException, DotDataException;
 
+	/**
+	 * Saves a folder. The folder needs to have been created from the
+	 * createFolder method, which will give it a valid identifier identifier
+	 * @param folder
+	 * @param existingId
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @throws DotHibernateException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public abstract void save(Folder folder,String existingId, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
+	DotSecurityException, DotDataException;
+
 	// http://jira.dotmarketing.net/browse/DOTCMS-3232
 	public abstract Folder findSystemFolder() throws DotDataException;
 

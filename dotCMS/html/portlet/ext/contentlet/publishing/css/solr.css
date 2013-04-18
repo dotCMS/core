@@ -1,0 +1,27 @@
+.solr_red {
+ background-color: #CC9999;  
+}
+.solr_box { 
+	color: white; 
+	background-color: #ba2929; 
+	width: 200px; 
+	height: 50px; 
+	padding: 10px; 
+}
+.solr_tcenter{
+ 	text-align: center;
+ }
+ .solr_listingTableNoBorder {
+    border: 0;
+    font-size: 88%;
+    padding: 5px;
+    margin: 10px auto;
+    width: 99%;
+}
+ .solr_right{
+ 	float:right;
+ }
+ 
+ #menu ul.dropdown li.dotCMS_EXT_SOLR_TOOL a span {
+ background: url(/html/plugins/com.dotcms.solr/solr_tool/images/solr.gif) no-repeat 0 0
+ }

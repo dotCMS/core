@@ -20,6 +20,10 @@ if (request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT)!=null) {
 	htmlpage = (HTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
 }
 
+if(UtilMethods.isSet(htmlpage) && !UtilMethods.isSet(htmlpage.getIdentifier())) {
+	htmlpage.setCacheTTL(Config.getIntProperty("DEFAULT_PAGE_CACHE_SECONDS", 0));
+}
+
 Identifier identifier=null;
 Template htmlTemplate=null;
 File templateImgPreviewFile = null;
@@ -90,7 +94,7 @@ if(!UtilMethods.isSet(htmlpage.getInode())){
 Host host = null;
 
 try {
-	 APILocator.getHostAPI().findParentHost(folder, APILocator.getUserAPI().getSystemUser(), false);
+	 host=APILocator.getHostAPI().findParentHost(folder, APILocator.getUserAPI().getSystemUser(), false);
 	 
 } catch (Exception e) {
 
@@ -142,6 +146,15 @@ if( !InodeUtils.isSet(htmlpage.getInode()) && folder != null && InodeUtils.isSet
 	        canUserPublishHTMLPage = perAPI.doesUserHaveInheriablePermissions(folder, htmlpage.getPermissionType(), PermissionAPI.PERMISSION_PUBLISH, user);
 	    }
 	}
+}
+else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.getInode()))) {
+    // in this case we don't even selected a folder
+    // we need to show save and publish buttons
+    // the permissions check will happend later as 
+    // the folder dropdown might show folders where it does
+    // have permissions
+    canUserWriteToHTMLPage=true;
+    canUserPublishHTMLPage=true;
 }
 %>
 

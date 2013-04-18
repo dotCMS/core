@@ -271,6 +271,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		    	WorkingCache.removeAssetFromCache(fileAssetCont);
 		   		WorkingCache.addToWorkingAssetToCache(fileAssetCont);
 		   		RefreshMenus.deleteMenu(folder);
+		   		CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 		   		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(fileAssetCont);
 				return true;
 			}
@@ -328,9 +329,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 WorkingCache.addToWorkingAssetToCache( fileAssetCont );
                 if ( parent != null ) {
                     RefreshMenus.deleteMenu( oldParent, parent );
+                    CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
                 } else {
                     RefreshMenus.deleteMenu( oldParent );
                 }
+                CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
+                
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
 
                 return true;

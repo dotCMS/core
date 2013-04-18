@@ -1,8 +1,50 @@
 package com.dotmarketing.webdav;
 
-import com.bradmcevoy.http.*;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.oro.text.regex.MalformedPatternException;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
+import org.apache.velocity.runtime.resource.ResourceManager;
+
+import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.LockInfo;
+import com.bradmcevoy.http.LockResult;
+import com.bradmcevoy.http.LockTimeout;
+import com.bradmcevoy.http.LockToken;
+import com.bradmcevoy.http.Resource;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.StructureCache;
@@ -28,7 +70,10 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
@@ -36,22 +81,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
-import org.apache.velocity.runtime.resource.ResourceManager;
-
-import java.awt.image.BufferedImage;
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.Calendar;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 public class DotWebdavHelper {
 
@@ -239,19 +268,21 @@ public class DotWebdavHelper {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage());
 		} 
-		// FileName
-		String fileName = getFileName(path);
-		fileName = deleteSpecialCharacter(fileName);
-
-		if (InodeUtils.isSet(host.getInode())) {
-			try {
-				returnValue = fileAPI.fileNameExists(folder, fileName);
-				if(!returnValue){
-					returnValue = APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "");
-				}
-			} catch (Exception ex) {
-				Logger.debug(this, "Error verifying if file already exists",ex);
-			}
+		if(folder!=null && InodeUtils.isSet(folder.getInode())) {
+    		// FileName
+    		String fileName = getFileName(path);
+    		fileName = deleteSpecialCharacter(fileName);
+    
+    		if (InodeUtils.isSet(host.getInode())) {
+    			try {
+    				returnValue = fileAPI.fileNameExists(folder, fileName);
+    				if(!returnValue){
+    					returnValue = APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "");
+    				}
+    			} catch (Exception ex) {
+    				Logger.debug(this, "Error verifying if file already exists",ex);
+    			}
+    		}
 		}
 		return returnValue;
 	}
@@ -297,6 +328,7 @@ public class DotWebdavHelper {
 		try {
 			host = hostAPI.findByName(hostName, user, false);
 			folder = folderAPI.findFolderByPath(url, host,user, false);
+			APILocator.getContentletAPI().refreshContentUnderFolder(folder);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage());
@@ -1216,6 +1248,11 @@ public class DotWebdavHelper {
 			if (folder.isShowOnMenu()) {
 				// RefreshMenus.deleteMenus();
 				RefreshMenus.deleteMenu(folder);
+				CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+				if(!path.equals("/")) {
+				    Identifier ii=APILocator.getIdentifierAPI().find(folder);
+				    CacheLocator.getNavToolCache().removeNavByPath(ii.getHostId(), ii.getParentPath());
+				}
 			}
 			
 			folderAPI.delete(folder, user,false);
@@ -1526,11 +1563,9 @@ public class DotWebdavHelper {
 				}
 			}
 		} catch (Exception ex) {
-			String exception = ex.getMessage();
 			Logger.debug(this, ex.toString());
-		} finally {
-			return returnValue.toArray(new Summary[returnValue.size()]);
 		}
+		return returnValue.toArray(new Summary[returnValue.size()]);
 	}
 	private InputStream getResourceContent(String resourceUri, User user) throws Exception {
 		resourceUri=stripMapping(resourceUri);

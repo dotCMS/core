@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
@@ -16,8 +15,6 @@ import javax.servlet.http.Cookie;
 
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.dotcms.enterprise.cmis.QueryResult;
@@ -37,6 +34,8 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.business.web.LanguageWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cmis.proxy.DotInvocationHandler;
@@ -67,8 +66,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.VelocityServlet;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
@@ -266,13 +263,24 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 	@SuppressWarnings("unchecked")
 	public HTMLPage getWorkingHTMLPageByPageURL(String htmlPageURL, Folder folder) throws DotStateException, DotDataException, DotSecurityException {
-		List<HTMLPage> htmlPages = APILocator.getFolderAPI().getWorkingHTMLPages(folder, APILocator.getUserAPI().getSystemUser(),false);
-		for(HTMLPage page:htmlPages){
-			if(htmlPageURL.equalsIgnoreCase(page.getPageUrl())){
-				return page;
+		HTMLPage ret = null;
+		if(folder != null && InodeUtils.isSet(folder.getInode())){
+			Host h = APILocator.getHostAPI().find(folder.getHostId(), APILocator.getUserAPI().getSystemUser(), true);
+			String p = folder.getPath();
+			if(UtilMethods.isSet(p)){
+				if(!p.startsWith("/")){
+					p = "/" + p;
+				}
+				if(!p.endsWith("/")){
+					p = p + "/";
+				}
+				Identifier i = APILocator.getIdentifierAPI().find(h, folder.getPath() + htmlPageURL);
+				if(i != null && InodeUtils.isSet(i.getId())){
+					ret = (HTMLPage)APILocator.getVersionableAPI().findWorkingVersion(i, APILocator.getUserAPI().getSystemUser(), true);
+				}
 			}
 		}
-		return null;
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -309,6 +317,10 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	private void save(HTMLPage htmlPage) throws DotDataException, DotStateException, DotSecurityException {
 		htmlPageFactory.save(htmlPage);
 	}
+	
+	private void save(HTMLPage htmlPage, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
+        htmlPageFactory.save(htmlPage, existingInode);
+    }
 
 	protected void save(WebAsset webAsset) throws DotDataException, DotStateException, DotSecurityException {
 		save((HTMLPage) webAsset);
@@ -340,6 +352,9 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		}
 
 		try {
+		    newHtmlPage.setModUser(user.getUserId());
+		    newHtmlPage.setModDate(new Date());
+		    
 			boolean previousShowMenu = false;
 
 			// parent identifier for this file
@@ -357,7 +372,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 			// get an identifier based on this new uri
 			Identifier testIdentifier = (Identifier) APILocator.getIdentifierAPI().find(host, newHtmlPage.getURI(parentFolder));
-
+			
 			// if this is a new htmlpage and there is already an identifier with
 			// this uri, return
 			if ((existingHTMLPage != null) && !InodeUtils.isSet(existingHTMLPage.getInode()) && InodeUtils.isSet(testIdentifier.getInode())) {
@@ -380,14 +395,41 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 				newHtmlPage.setTemplateId(templateIdentifier.getInode());
 			}
+			
+			boolean existingIdentifier=false;
+			Identifier currentIdentifier=null;
+			if(UtilMethods.isSet(newHtmlPage.getIdentifier())) {
+			    currentIdentifier=APILocator.getIdentifierAPI().find(newHtmlPage.getIdentifier());
+			    existingIdentifier = currentIdentifier==null || !UtilMethods.isSet(currentIdentifier.getId());
+			}
+			
+			boolean existingInode=false;
+            if(InodeUtils.isSet(newHtmlPage.getInode())) {
+                try {
+                    HTMLPage existing=(HTMLPage) HibernateUtil.load(HTMLPage.class, newHtmlPage.getInode());
+                    existingInode= existing==null || !UtilMethods.isSet(existing.getInode());
+                } catch (Exception ex) {
+                    existingInode=true;
+                }
+            }
+			
 			// Versioning
 			if (pageExists) {
 				// Creation the version asset
+			    
+			    newHtmlPage.setIdentifier(identifier.getId());
+			    
+			    if(existingInode)
+			        save(newHtmlPage,newHtmlPage.getInode());
+			    else
+			        save(newHtmlPage);
+			    APILocator.getVersionableAPI().setWorking(newHtmlPage);
+			    
 				createAsset(newHtmlPage, user.getUserId(), parentFolder, identifier, false);
 				HibernateUtil.flush();
 
 				LiveCache.removeAssetFromCache(existingHTMLPage);
-				newHtmlPage = (HTMLPage) saveAsset(newHtmlPage, identifier, user, false);
+				APILocator.getVersionableAPI().setWorking(newHtmlPage);
 
 				// if we need to update the identifier
 				if (InodeUtils.isSet(parentFolder.getInode())
@@ -410,7 +452,19 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 			} // Creating the new page
 			else {
-				createAsset(newHtmlPage, user.getUserId(), parentFolder);
+			    Identifier ident= (currentIdentifier!=null && UtilMethods.isSet(currentIdentifier.getId())) ?
+			                           currentIdentifier : 
+			                 (existingIdentifier ? 
+			                        APILocator.getIdentifierAPI().createNew(newHtmlPage, parentFolder, newHtmlPage.getIdentifier()) :
+			                        APILocator.getIdentifierAPI().createNew(newHtmlPage, parentFolder));
+			    ident=APILocator.getIdentifierAPI().save(ident);
+			    
+			    newHtmlPage.setIdentifier(ident.getId());
+			    if(existingInode)
+			        save(newHtmlPage, newHtmlPage.getInode());
+			    else
+			        save(newHtmlPage);
+				
 			}
 
 
@@ -424,6 +478,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 				// regenerate menu
 				//RefreshMenus.deleteMenus();
 				RefreshMenus.deleteMenu(newHtmlPage);
+				CacheLocator.getNavToolCache().removeNav(parentFolder.getHostId(), parentFolder.getInode());
 			}
 		} catch (Exception e) {
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -701,10 +756,14 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			
 			if(UtilMethods.isSet(langId)) {
 			    requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, langId);
-			    requestProxy.getSession().setAttribute(WebKeys.HTMLPAGE_LANGUAGE, langId);
 			}
+			LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
+            langWebAPI.checkSessionLocale(requestProxy);
 			
 			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
+			if(UtilMethods.isSet(langId)) 
+                context.put("language", langId);
+			
 			if(! liveMode ){
 				context.put("PREVIEW_MODE", new Boolean(true));
 			}else{
@@ -712,7 +771,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			}
 			
 			if(UtilMethods.isSet(langId)) {
-                context.put("language", langId);
+                
             }
 
 			context.put("host", host);
@@ -826,5 +885,18 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
     @Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan,"htmlpage");
+    }
+
+
+    @Override
+    public List<String> findUpdatedHTMLPageIds(Host host, Date startDate, Date endDate) {
+        return findUpdatedHTMLPageIdsByURI(host, "/*", true, startDate, endDate);
+    }
+
+
+    @Override
+    public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,
+            boolean include, Date startDate, Date endDate) {
+        return htmlPageFactory.findUpdatedHTMLPageIdsByURI(host, pattern, include, startDate, endDate);
     }
 }
