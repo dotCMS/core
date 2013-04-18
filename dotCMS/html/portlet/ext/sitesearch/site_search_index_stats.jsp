@@ -189,7 +189,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 
 
-		<%---   RIGHT CLICK MENUS --%>
+		<%--   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
 			<%boolean active =x.equals(info.site_search);%>
