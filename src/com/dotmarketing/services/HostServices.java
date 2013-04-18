@@ -58,11 +58,11 @@ public class HostServices {
 		if( hvars.size()>0 ){
 	     Iterator hostvars = hvars.iterator();
 		
-	 	sb.append("#set ($host_variable = $contents.getEmptyMap())\n");
+	 	sb.append("#set ($host_variable = $contents.getEmptyMap())");
 	 	int counter=1;
 		while (hostvars.hasNext()) {
 			HostVariable next = (HostVariable) hostvars.next();
-			sb.append("#set ($_dummy  = $host_variable.put(\"" ).append( String.valueOf(next.getKey())).append( "\", \"" ).append( String.valueOf(UtilMethods.espaceForVelocity(next.getValue()))).append( "\"))\n"); 
+			sb.append("#set ($_dummy  = $host_variable.put(\"" ).append( String.valueOf(next.getKey())).append( "\", \"" ).append( String.valueOf(UtilMethods.espaceForVelocity(next.getValue()))).append( "\"))"); 
 			
 			counter++;  			
 			

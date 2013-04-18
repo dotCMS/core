@@ -194,4 +194,8 @@ public interface TemplateAPI {
 
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 
+    public Template find(String inode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
+
+    public Template copy(Template sourceTemplate, User user)throws DotDataException, DotSecurityException ;
+
 }

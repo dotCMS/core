@@ -21,7 +21,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
@@ -399,20 +398,20 @@ public class NavigationWebAPI implements ViewTool {
 
 				if (itemsList.size() > 0) {
 
-					stringbuf.append("#if($EDIT_MODE)\n");
-					stringbuf.append("<form action=\"${directorURL}\" method=\"post\" name=\"form_menu_" + menuId + "\" id=\"form_menu_" + menuId
-							+ "\">\n");
-					stringbuf.append("<input type=\"hidden\" name=\"cmd\" value=\"orderMenu\">\n");
-					stringbuf.append("<input type=\"hidden\" name=\"path\" value=\"" + startFromPath + "\">\n");
-					stringbuf.append("<input type=\"hidden\" name=\"hostId\" value=\"" + hostId + "\">\n");
-					stringbuf.append("<input type=\"hidden\" name=\"pagePath\" value=\"$VTLSERVLET_URI\">\n");
-					stringbuf.append("<input type=\"hidden\" name=\"referer\" value=\"$VTLSERVLET_URI\">\n");
+					stringbuf.append("#if($EDIT_MODE)");
+					stringbuf.append("<form action=\"${directorURL}\" method=\"post\" name=\"form_menu_")
+					                 .append(menuId).append("\" id=\"form_menu_").append(menuId).append("\">");
+					stringbuf.append("<input type=\"hidden\" name=\"cmd\" value=\"orderMenu\">");
+					stringbuf.append("<input type=\"hidden\" name=\"path\" value=\"").append(startFromPath).append("\">");
+					stringbuf.append("<input type=\"hidden\" name=\"hostId\" value=\"").append(hostId).append("\">");
+					stringbuf.append("<input type=\"hidden\" name=\"pagePath\" value=\"$VTLSERVLET_URI\">");
+					stringbuf.append("<input type=\"hidden\" name=\"referer\" value=\"$VTLSERVLET_URI\">");
 
-					stringbuf.append("<div class=\"dotMenuReorder\"><a href=\"javascript:parent.submitMenu('form_menu_" + menuId + "');\">Reorder Menu</a></div>");
+					stringbuf.append("<div class=\"dotMenuReorder\"><a href=\"javascript:parent.submitMenu('form_menu_").append(menuId).append("');\">Reorder Menu</a></div>");
 					stringbuf.append("</form>");
-					stringbuf.append("#end \n");
+					stringbuf.append("#end ");
 
-					stringbuf.append("<ul>\n");
+					stringbuf.append("<ul>");
 
 					// gets menu items for this folder
 					Logger.debug(NavigationWebAPI.class, "NavigationWebAPI :: StaticMenuBuilder number of items=" + itemsList.size());
@@ -448,43 +447,41 @@ public class NavigationWebAPI implements ViewTool {
 						} else if (itemChild instanceof Link) {
 							Link link = (Link) itemChild;
 							if(link.getLinkType().equals(LinkType.CODE.toString())) {
-								stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('" + UtilMethods.espaceVariableForVelocity(link.getLinkCode()) + "'), $velocityContext)\n");
+								stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('").append(UtilMethods.espaceVariableForVelocity(link.getLinkCode())).append("'), $velocityContext)");
 							} else {
-								stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")\n");
-								stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"" + ((Link) itemChild).getProtocal()
-										+ ((Link) itemChild).getUrl() + "\"))\n");
-								stringbuf.append("<li class=\"active\"><a "+styleClass+" href=\"" + ((Link) itemChild).getProtocal() + ((Link) itemChild).getUrl()
-										+ "\" target=\"" + ((Link) itemChild).getTarget() + "\">\n");
-								stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((Link) itemChild).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-								stringbuf.append("#else\n");
-								stringbuf.append("<li><a "+styleClass+" href=\"" + ((Link) itemChild).getProtocal() + ((Link) itemChild).getUrl() + "\" target=\""
-										+ ((Link) itemChild).getTarget() + "\">\n");
-								stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((Link) itemChild).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-								stringbuf.append("#end \n");
+								stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")");
+								stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"").append(((Link) itemChild).getProtocal()).append(((Link) itemChild).getUrl()).append("\"))");
+								stringbuf.append("<li class=\"active\"><a ").append(styleClass).append(" href=\"").append(((Link) itemChild).getProtocal())
+								    .append(((Link) itemChild).getUrl()).append("\" target=\"").append(((Link) itemChild).getTarget()).append("\">");
+								stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((Link) itemChild).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+								stringbuf.append(" #else ");
+								stringbuf.append("<li><a ").append(styleClass).append(" href=\"").append(((Link) itemChild).getProtocal()).append(((Link) itemChild)
+								    .getUrl()).append("\" target=\"").append(((Link) itemChild).getTarget()).append("\">");
+								stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((Link) itemChild).getTitle()))
+								    .append((addSpans?"</span>":"")).append("</a></li>");
+								stringbuf.append("#end ");
 							}
 						} else if (itemChild instanceof HTMLPage) {
 							/*if (((HTMLPage) itemChild).isWorking() && !((HTMLPage) itemChild).isDeleted()) {*/
-							stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")\n");
-							stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"" + startFromPath
-									+ ((HTMLPage) itemChild).getPageUrl() + "\"))\n");
-							stringbuf.append("<li class=\"active\"><a "+styleClass+" href=\"" + UtilMethods.encodeURIComponent(folderPath + ((HTMLPage) itemChild).getPageUrl()) + "\">");
-							stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((HTMLPage) itemChild).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-							stringbuf.append("#else\n");
-							stringbuf.append("<li><a "+styleClass+" href=\"" + UtilMethods.encodeURIComponent(folderPath + ((HTMLPage) itemChild).getPageUrl()) + "\">\n");
-							stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((HTMLPage) itemChild).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-							stringbuf.append("#end \n");
+							stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")");
+							stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"").append(startFromPath).append(((HTMLPage) itemChild).getPageUrl()).append("\"))");
+							stringbuf.append("<li class=\"active\"><a ").append(styleClass).append(" href=\"").append(UtilMethods.encodeURIComponent(folderPath + ((HTMLPage) itemChild).getPageUrl())).append("\">");
+							stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((HTMLPage) itemChild).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+							stringbuf.append(" #else ");
+							stringbuf.append("<li><a ").append(styleClass).append(" href=\"").append(UtilMethods.encodeURIComponent(folderPath + ((HTMLPage) itemChild).getPageUrl())).append("\"> ");
+							stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((HTMLPage) itemChild).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+							stringbuf.append("#end ");
 							/*}*/
 						} else if (itemChild instanceof IFileAsset) {
 							if (((IFileAsset) itemChild).isWorking() && !((IFileAsset) itemChild).isDeleted()) {
-								stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")\n");
-								stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"" + startFromPath + ((IFileAsset) itemChild).getFileName()
-										+ "\"))\n");
-								stringbuf.append("<li class=\"active\"><a "+styleClass+" href=\"" + UtilMethods.encodeURIComponent(folderPath + ((IFileAsset) itemChild).getFileName()) + "\">");
-								stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((IFileAsset) itemChild).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-								stringbuf.append("#else\n");
-								stringbuf.append("<li><a "+styleClass+" href=\"" + UtilMethods.encodeURIComponent(folderPath + ((IFileAsset) itemChild).getFileName()) + "\">");
-								stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((IFileAsset) itemChild).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-								stringbuf.append("#end \n");
+								stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")");
+								stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"").append(startFromPath).append(((IFileAsset) itemChild).getFileName()).append("\"))");
+								stringbuf.append("<li class=\"active\"><a ").append(styleClass).append(" href=\"").append(UtilMethods.encodeURIComponent(folderPath + ((IFileAsset) itemChild).getFileName())).append("\">");
+								stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((IFileAsset) itemChild).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+								stringbuf.append(" #else ");
+								stringbuf.append("<li><a ").append(styleClass).append(" href=\"").append(UtilMethods.encodeURIComponent(folderPath + ((IFileAsset) itemChild).getFileName())).append("\">");
+								stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((IFileAsset) itemChild).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+								stringbuf.append(" #end ");
 							}
 						}
 					}
@@ -563,12 +560,12 @@ public class NavigationWebAPI implements ViewTool {
 		} catch (Exception e1) {
 			Logger.error(NavigationWebAPI.class,e1.getMessage(),e1);
 		} 
-		stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")\n");
-		stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"" + thisFolderPath + "\") || ($UtilMethods.isSet($openAllLevels) && $openAllLevels == true))\n");
-		stringbuf.append("\t<li class=\"active\" id=\""+ menuIdPrefix+ thisFolder.getName() + "\">\n");
-		stringbuf.append("#else\n");
-		stringbuf.append("\t<li id=\"" + menuIdPrefix+thisFolder.getName() + "\">\n");
-		stringbuf.append("#end\n");
+		stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")");
+		stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"").append(thisFolderPath).append("\") || ($UtilMethods.isSet($openAllLevels) && $openAllLevels == true))");
+		stringbuf.append("<li class=\"active\" id=\"").append(menuIdPrefix+ thisFolder.getName()).append("\">");
+		stringbuf.append(" #else ");
+		stringbuf.append("<li id=\"").append(menuIdPrefix).append(thisFolder.getName()).append("\">");
+		stringbuf.append(" #end ");
 		// gets menu items for this folder
 		java.util.List<Inode> itemsChildrenList2 = new ArrayList();
 		try {
@@ -585,20 +582,20 @@ public class NavigationWebAPI implements ViewTool {
 
 		stringbuf.append("<a ");
 		if(isFirstItem && !firstItemClass.equals("")){
-			stringbuf.append(firstItemClass+currentLevel+"\"");
+			stringbuf.append(firstItemClass).append(currentLevel).append("\"");
 		}else if(isLastItem && !lastItemClass.equals("")){
-			stringbuf.append((isLastItem ?lastItemClass+currentLevel+"\"":""));
+		    stringbuf.append(lastItemClass).append(currentLevel).append("\"");
 		}
-		stringbuf.append(" href=\"" + UtilMethods.encodeURIComponent(thisFolderPath) + "\">");
-		stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(thisFolder.getTitle()) + (addSpans?"</span>":""));
-		stringbuf.append("</a>\n");
+		stringbuf.append(" href=\"").append(UtilMethods.encodeURIComponent(thisFolderPath)).append("\">");
+		stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(thisFolder.getTitle())).append((addSpans?"</span>":""));
+		stringbuf.append("</a>");
 
 		if (currentLevel < numberOfLevels) {
 
 			if (nextLevelItems) {
-				stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")\n");
-				stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"" + thisFolderPath + "\") || ($UtilMethods.isSet($openAllLevels) && $openAllLevels == true))\n");
-				stringbuf.append("<ul>\n");
+				stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")");
+				stringbuf.append("#if ($UtilMethods.inString($VTLSERVLET_DECODED_URI,\"").append(thisFolderPath).append("\") || ($UtilMethods.isSet($openAllLevels) && $openAllLevels == true))");
+				stringbuf.append("<ul>");
 			}
 
 			isLastItem = false;
@@ -637,9 +634,8 @@ public class NavigationWebAPI implements ViewTool {
 						stringbuf = buildSubFolderMenu(stringbuf, folderChildChild2, numberOfLevels, currentLevel + 1, addSpans,isFirstItem, firstItemClass, isLastItem, lastItemClass, menuIdPrefix);
 					} else {
 
-						stringbuf.append("<li><a href=\"" + UtilMethods.encodeURIComponent(path) + "index."
-								+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION") + "\">");
-						stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
+						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(path)).append("index.").append(Config.getStringProperty("VELOCITY_PAGE_EXTENSION")).append("\">");
+						stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
 
 					}
 				} else if (childChild2 instanceof Link) {
@@ -647,51 +643,51 @@ public class NavigationWebAPI implements ViewTool {
 
 						Link link = (Link) childChild2;
 	                	if(link.getLinkType().equals(LinkType.CODE.toString())) {
-		                    stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('" + UtilMethods.espaceVariableForVelocity(link.getLinkCode()) + "'), $velocityContext)\n");
+		                    stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('").append(UtilMethods.espaceVariableForVelocity(link.getLinkCode())).append("'), $velocityContext) ");
 	                	} else {
-	        				stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")\n");
-							stringbuf.append("#if ($VTLSERVLET_DECODED_URI != '" + ((Link) childChild2).getProtocal() + ((Link) childChild2).getUrl() + "')\n");
-							stringbuf.append("<li><a "+styleClass+" href=\"" + ((Link) childChild2).getProtocal() + ((Link) childChild2).getUrl() + "\" target=\""
-									+ ((Link) childChild2).getTarget() + "\">");
-							stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((Link) childChild2).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-							stringbuf.append("#else\n");
-							stringbuf.append("<li class=\"active\"><a "+styleClass+" href=\"" + ((Link) childChild2).getProtocal() + ((Link) childChild2).getUrl()
-									+ "\" target=\"" + ((Link) childChild2).getTarget() + "\">");
-							stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((Link) childChild2).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-							stringbuf.append("#end \n");
+	        				stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")");
+							stringbuf.append("#if ($VTLSERVLET_DECODED_URI != '").append(((Link) childChild2).getProtocal()).append(((Link) childChild2).getUrl()).append("')");
+							stringbuf.append("<li><a ").append(styleClass).append(" href=\"").append(((Link) childChild2).getProtocal()).append(((Link) childChild2).getUrl()).append("\" target=\"")
+									.append(((Link) childChild2).getTarget()).append("\">");
+							stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((Link) childChild2).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+							stringbuf.append(" #else ");
+							stringbuf.append("<li class=\"active\"><a ").append(styleClass).append(" href=\"").append(((Link) childChild2).getProtocal()).append(((Link) childChild2).getUrl())
+									.append("\" target=\"").append(((Link) childChild2).getTarget()).append("\">");
+							stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((Link) childChild2).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+							stringbuf.append(" #end ");
 	                	}
 
 					}
 				} else if (childChild2 instanceof HTMLPage) {
 					if (((HTMLPage) childChild2).isWorking() && !((HTMLPage) childChild2).isDeleted()) {
-        				stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")\n");
-						stringbuf.append("#if ($VTLSERVLET_DECODED_URI != '" + thisFolderPath + ((HTMLPage) childChild2).getPageUrl() + "')\n");
-						stringbuf.append("<li><a "+styleClass+" href=\"" + UtilMethods.encodeURIComponent(thisFolderPath + ((HTMLPage) childChild2).getPageUrl()) + "\">");
-						stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((HTMLPage) childChild2).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-						stringbuf.append("#else\n");
-						stringbuf.append("<li class=\"active\"><a "+styleClass+" href=\"" + UtilMethods.encodeURIComponent(thisFolderPath + ((HTMLPage) childChild2).getPageUrl()) + "\">");
-						stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((HTMLPage) childChild2).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-						stringbuf.append("#end \n");
+        				stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")");
+						stringbuf.append("#if ($VTLSERVLET_DECODED_URI != '" + thisFolderPath + ((HTMLPage) childChild2).getPageUrl() + "')");
+						stringbuf.append("<li><a ").append(styleClass).append(" href=\"").append(UtilMethods.encodeURIComponent(thisFolderPath + ((HTMLPage) childChild2).getPageUrl())).append("\">");
+						stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((HTMLPage) childChild2).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+						stringbuf.append(" #else ");
+						stringbuf.append("<li class=\"active\"><a ").append(styleClass).append(" href=\"").append(UtilMethods.encodeURIComponent(thisFolderPath + ((HTMLPage) childChild2).getPageUrl())).append("\">");
+						stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((HTMLPage) childChild2).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+						stringbuf.append(" #end ");
 					}
 				} else if (childChild2 instanceof IFileAsset) {
 					if (((IFileAsset) childChild2).isWorking() && !((IFileAsset) childChild2).isDeleted()) {
-        				stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")\n");
-						stringbuf.append("#if ($VTLSERVLET_DECODED_URI != '" + thisFolderPath + ((IFileAsset) childChild2).getFileName() + "')\n");
-						stringbuf.append("<li><a "+styleClass+" href=\"" + UtilMethods.encodeURIComponent(thisFolderPath + ((IFileAsset) childChild2).getFileName()) + "\">");
-						stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((IFileAsset) childChild2).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-						stringbuf.append("#else\n");
-						stringbuf.append("<li class=\"active\"><a "+styleClass+" href=\"" + UtilMethods.encodeURIComponent(thisFolderPath + ((IFileAsset) childChild2).getFileName()) + "\">");
-						stringbuf.append((addSpans?"<span>":"") + UtilHTML.escapeHTMLSpecialChars(((IFileAsset) childChild2).getTitle()) + (addSpans?"</span>":"") + "</a></li>\n");
-						stringbuf.append("#end \n");
+        				stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")");
+						stringbuf.append("#if ($VTLSERVLET_DECODED_URI != '").append(thisFolderPath).append(((IFileAsset) childChild2).getFileName()).append("')");
+						stringbuf.append("<li><a ").append(styleClass).append(" href=\"").append(UtilMethods.encodeURIComponent(thisFolderPath + ((IFileAsset) childChild2).getFileName())).append("\">");
+						stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((IFileAsset) childChild2).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+						stringbuf.append(" #else ");
+						stringbuf.append("<li class=\"active\"><a ").append(styleClass).append(" href=\"").append(UtilMethods.encodeURIComponent(thisFolderPath + ((IFileAsset) childChild2).getFileName())).append("\">");
+						stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(((IFileAsset) childChild2).getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
+						stringbuf.append(" #end ");
 					}
 				}
 			}
 		}
 		if (nextLevelItems) {
-			stringbuf.append("</ul>\n");
-			stringbuf.append("#end\n");
+			stringbuf.append("</ul>");
+			stringbuf.append(" #end ");
 		}
-		stringbuf.append("</li>\n");
+		stringbuf.append("</li>");
 		return stringbuf;
 	}
 
@@ -883,42 +879,42 @@ public class NavigationWebAPI implements ViewTool {
 
 				if (itemsList.size() > 0) {
 
-					stringbuf.append("#if($EDIT_MODE)\n");
-					stringbuf.append("<form action=\"${directorURL}\" method=\"post\" name=\"form_menu_" + menuId + "\" id=\"form_menu_" + menuId
-							+ "\">\n");
+					stringbuf.append("#if($EDIT_MODE) ");
+					stringbuf.append("<form action=\"${directorURL}\" method=\"post\" name=\"form_menu_").append(menuId).append("\" id=\"form_menu_").append(menuId)
+					        .append("\">\n");
 					stringbuf.append("<input type=\"hidden\" name=\"cmd\" value=\"orderMenu\">\n");
-					stringbuf.append("<input type=\"hidden\" name=\"path\" value=\"" + startFromPath + "\">\n");
-					stringbuf.append("<input type=\"hidden\" name=\"hostId\" value=\"" + hostId + "\">\n");
+					stringbuf.append("<input type=\"hidden\" name=\"path\" value=\"").append(startFromPath).append("\">\n");
+					stringbuf.append("<input type=\"hidden\" name=\"hostId\" value=\"").append(hostId).append("\">\n");
 					stringbuf.append("<input type=\"hidden\" name=\"pagePath\" value=\"$VTLSERVLET_URI\">\n");
 					stringbuf.append("<input type=\"hidden\" name=\"referer\" value=\"$VTLSERVLET_URI\">\n");
 					stringbuf.append("<input type=\"hidden\" name=\"startLevel\" value=\"1\">\n");
 					stringbuf.append("<input type=\"hidden\" name=\"depth\" value=\"1\">\n");
 					stringbuf.append("<div class=\"dotMenuReorder\">\n");
-					stringbuf.append("<a href=\"javascript:document.getElementById('form_menu_" + menuId + "').submit();\">");
+					stringbuf.append("<a href=\"javascript:document.getElementById('form_menu_").append(menuId).append("').submit();\">");
 					stringbuf.append("</a></div>\n");
 					stringbuf.append("</form>");
-					stringbuf.append("#end \n");
+					stringbuf.append("#end ");
 
 					    stringbuf.append("#if($addParent && $addParent == true)");
 						Folder parent = APILocator.getFolderAPI().findFolderByPath(currentPath, hostId,user,true);
 						if(InodeUtils.isSet(parent.getInode())) {
 							String encodedPath = UtilMethods.encodeURIComponent(APILocator.getIdentifierAPI().find(parent).getPath());
-							stringbuf.append("#set($parentLink = '" + encodedPath + "')");
-							stringbuf.append("#set($parentName = '" + UtilMethods.encodeURIComponent(UtilHTML.escapeHTMLSpecialChars(parent.getTitle())) + "')");
-							stringbuf.append("<h2><a href=\"" + encodedPath + "\" class=\"parentFolder\">");
-							stringbuf.append(UtilHTML.escapeHTMLSpecialChars(parent.getTitle()) + "</a></h2>\n");
+							stringbuf.append("#set($parentLink = '").append(encodedPath).append("')");
+							stringbuf.append("#set($parentName = '").append(UtilMethods.encodeURIComponent(UtilHTML.escapeHTMLSpecialChars(parent.getTitle()))).append("')");
+							stringbuf.append("<h2><a href=\"").append(encodedPath).append("\" class=\"parentFolder\">");
+							stringbuf.append(UtilHTML.escapeHTMLSpecialChars(parent.getTitle())).append("</a></h2>\n");
 						}
 						stringbuf.append("#end");
 
 
 
-					stringbuf.append("<ul>\n");
+					stringbuf.append("<ul>");
 
 					//adding home folder
 					if(addHome)
 					{
 						String homeTitle = loadHomeTitle(request);
-						stringbuf.append("<li id=\"" + siteMapIdPrefix + "home\"><a href=\"/\">" + homeTitle + "</a></li>");
+						stringbuf.append("<li id=\"").append(siteMapIdPrefix).append("home\"><a href=\"/\">").append(homeTitle).append("</a></li>");
 					}
 
 
@@ -942,22 +938,22 @@ public class NavigationWebAPI implements ViewTool {
 							if (((Link) itemChild).isWorking() && !((Link) itemChild).isDeleted()) {
 								Link link = (Link) itemChild;
 								if(link.getLinkType().equals(LinkType.CODE.toString())) {
-									stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('" + UtilMethods.espaceVariableForVelocity(link.getLinkCode()) + "'), $velocityContext)\n");
+									stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('").append(UtilMethods.espaceVariableForVelocity(link.getLinkCode())).append("'), $velocityContext) ");
 								} else {
-									stringbuf.append("<li><a href=\"" + ((Link) itemChild).getProtocal() + ((Link) itemChild).getUrl() + "\" target=\""
-											+ ((Link) itemChild).getTarget() + "\">\n");
-									stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((Link) itemChild).getTitle()) + "</a></li>\n");
+									stringbuf.append("<li><a href=\"").append(((Link) itemChild).getProtocal()).append(((Link) itemChild).getUrl()).append("\" target=\"")
+									        .append(((Link) itemChild).getTarget()).append("\">\n");
+									stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((Link) itemChild).getTitle())).append("</a></li>");
 								}
 							}
 						} else if (itemChild instanceof HTMLPage) {
 							if (((HTMLPage) itemChild).isWorking() && !((HTMLPage) itemChild).isDeleted()) {
-								stringbuf.append("<li><a href=\"" + UtilMethods.encodeURIComponent(folderPath + ((HTMLPage) itemChild).getPageUrl()) + "\">\n");
-								stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((HTMLPage) itemChild).getTitle()) + "</a></li>\n");
+								stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(folderPath + ((HTMLPage) itemChild).getPageUrl())).append("\">");
+								stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((HTMLPage) itemChild).getTitle())).append("</a></li>\n");
 							}
 						} else if (itemChild instanceof IFileAsset) {
 							if (((IFileAsset) itemChild).isWorking() && !((IFileAsset) itemChild).isDeleted()) {
-								stringbuf.append("<li><a href=\"" + UtilMethods.encodeURIComponent(folderPath + ((IFileAsset) itemChild).getFileName()) + "\">");
-								stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((IFileAsset) itemChild).getTitle()) + "</a></li>\n");
+								stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(folderPath + ((IFileAsset) itemChild).getFileName())).append("\">");
+								stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((IFileAsset) itemChild).getTitle())).append("</a></li>\n");
 
 							}
 						}
@@ -1017,7 +1013,7 @@ public class NavigationWebAPI implements ViewTool {
 	private StringBuffer buildSubFolderSiteMapMenu(StringBuffer stringbuf, Folder thisFolder, int numberOfLevels, int currentLevel, int orderDirection, String menuIdPrefix) throws DotDataException, DotSecurityException {
 
         String thisFolderPath = APILocator.getIdentifierAPI().find(thisFolder).getPath();
-		stringbuf.append("\t<li id=\"" + menuIdPrefix +  thisFolder.getName() + "\">\n");
+		stringbuf.append("<li id=\"" + menuIdPrefix +  thisFolder.getName() + "\">");
 		// gets menu items for this folder
 		java.util.List itemsChildrenList2 = APILocator.getFolderAPI().findMenuItems(thisFolder,orderDirection);
 
@@ -1033,12 +1029,12 @@ public class NavigationWebAPI implements ViewTool {
 			stringbuf.append("<a href=\"" + UtilMethods.encodeURIComponent(thisFolderPath) + "\">");
 		stringbuf.append(UtilHTML.escapeHTMLSpecialChars(thisFolder.getTitle()));
 		if(id != null && InodeUtils.isSet(id.getInode()))
-			stringbuf.append("</a>\n");
+			stringbuf.append("</a>");
 
 		if (currentLevel < numberOfLevels) {
 
 			if (nextLevelItems) {
-				stringbuf.append("<ul>\n");
+				stringbuf.append("<ul>");
 			}
 
 			for (Object childChild2 : itemsChildrenList2) {
@@ -1051,42 +1047,42 @@ public class NavigationWebAPI implements ViewTool {
 						stringbuf = buildSubFolderSiteMapMenu(stringbuf, folderChildChild2, numberOfLevels, currentLevel + 1,orderDirection,menuIdPrefix);
 					} else {
 
-						stringbuf.append("<li><a href=\"" + UtilMethods.encodeURIComponent(APILocator.getIdentifierAPI().find(folderChildChild2).getPath()) + "index."
-								+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION") + "\">");
-						stringbuf.append(UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle()) + "</a></li>\n");
+						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(APILocator.getIdentifierAPI().find(folderChildChild2).getPath())).append("index.")
+						        .append(Config.getStringProperty("VELOCITY_PAGE_EXTENSION")).append("\">");
+						stringbuf.append(UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle())).append("</a></li>");
 
 					}
 				} else if (childChild2 instanceof Link) {
 					if (((Link) childChild2).isWorking() && !((Link) childChild2).isDeleted()) {
 	                	Link link = (Link) childChild2;
 	                	if(link.getLinkType().equals(LinkType.CODE.toString())) {
-		                    stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('" + UtilMethods.espaceVariableForVelocity(link.getLinkCode()) + "'), $velocityContext)\n");
+		                    stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('").append(UtilMethods.espaceVariableForVelocity(link.getLinkCode())).append("'), $velocityContext) ");
 	                	} else {
-							stringbuf.append("<li><a href=\"" + ((Link) childChild2).getProtocal() + ((Link) childChild2).getUrl() + "\" target=\""
-									+ ((Link) childChild2).getTarget() + "\">");
-							stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((Link) childChild2).getTitle()) + "</a></li>\n");
+							stringbuf.append("<li><a href=\"").append(((Link) childChild2).getProtocal()).append(((Link) childChild2).getUrl()).append("\" target=\"")
+									.append(((Link) childChild2).getTarget()).append("\">");
+							stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((Link) childChild2).getTitle())).append("</a></li>");
 	                	}
 					}
 				} else if (childChild2 instanceof HTMLPage) {
 					if (((HTMLPage) childChild2).isWorking() && !((HTMLPage) childChild2).isDeleted()) {
-						stringbuf.append("<li><a href=\"" + UtilMethods.encodeURIComponent(thisFolderPath + ((HTMLPage) childChild2).getPageUrl()) + "\">");
-						stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((HTMLPage) childChild2).getTitle()) + "</a></li>\n");
+						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(thisFolderPath+((HTMLPage) childChild2).getPageUrl())).append("\">");
+						stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((HTMLPage) childChild2).getTitle())).append("</a></li>");
 
 					}
 				} else if (childChild2 instanceof IFileAsset) {
 					if (((IFileAsset) childChild2).isWorking() && !((IFileAsset) childChild2).isDeleted()) {
-						stringbuf.append("<li><a href=\"" + UtilMethods.encodeURIComponent(thisFolderPath + ((IFileAsset) childChild2).getFileName()) + "\">");
-						stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((IFileAsset) childChild2).getTitle()) + "</a></li>\n");
+						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(thisFolderPath+((IFileAsset) childChild2).getFileName())).append("\">");
+						stringbuf.append(UtilHTML.escapeHTMLSpecialChars(((IFileAsset) childChild2).getTitle())).append("</a></li>\n");
 
 					}
 				}
 			}
 		}
 		if (nextLevelItems) {
-			stringbuf.append("</ul>\n");
+			stringbuf.append("</ul>");
 
 		}
-		stringbuf.append("</li>\n");
+		stringbuf.append("</li>");
 		return stringbuf;
 	}
 
@@ -1439,7 +1435,7 @@ public class NavigationWebAPI implements ViewTool {
 
 				if (itemsList.size() > 0) {
 
-					stringbuf.append("#set ($navigationItems = $contents.getEmptyList())\n\n");
+					stringbuf.append("#set ($navigationItems = $contents.getEmptyList())");
 
 					// gets menu items for this folder
 					Logger.debug(NavigationWebAPI.class, "NavigationWebAPI :: StaticMenuBuilder number of items=" + itemsList.size());
@@ -1468,68 +1464,68 @@ public class NavigationWebAPI implements ViewTool {
 							// recursive method here
 							submenu = getSubFolderMenuItems(folderChild, submenuName, numberOfLevels, 1, isFirstItem, isLastItem);
 
-							stringbuf.append("#set ($menuItem = $contents.getEmptyMap())\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"FOLDER\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"title\", \"" + UtilHTML.escapeHTMLSpecialChars(folderChild.getTitle()) + "\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"name\", \"" + folderChild.getName() + "\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"path\", \"" + APILocator.getIdentifierAPI().find(folderChild).getPath() + "\"))\n\n");
-							stringbuf.append(submenu + "\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"submenu\", $" + "_" + submenuName + "))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", " + isFirstItem + "))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", " + isLastItem + "))\n");
-							stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))\n\n");
+							stringbuf.append("#set ($menuItem = $contents.getEmptyMap())");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"FOLDER\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"title\", \"").append(UtilHTML.escapeHTMLSpecialChars(folderChild.getTitle())).append("\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"name\", \"").append(folderChild.getName()).append("\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"path\", \"").append(APILocator.getIdentifierAPI().find(folderChild).getPath()).append("\"))");
+							stringbuf.append(submenu);
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"submenu\", $_").append(submenuName).append("))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", ").append(isFirstItem).append("))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", ").append(isLastItem).append("))");
+							stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))");
 
-							stringbuf.append("#set ($" + "_" + submenuName + " = $contents.getEmptyList())\n");
+							stringbuf.append("#set ($_").append(submenuName).append(" = $contents.getEmptyList()) ");
 
 						} else if (itemChild instanceof Link) {
 							Link link = (Link) itemChild;
 							if(link.getLinkType().equals(LinkType.CODE.toString())) {
-								stringbuf.append("#set ($menuItem = $contents.getEmptyMap())\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"LINK\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"path\", $UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('" + UtilMethods.espaceVariableForVelocity(link.getLinkCode()) + "'), $velocityContext)))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"linkType\", \"CODE\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", " + isFirstItem + "))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", " + isLastItem + "))\n");
-								stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))\n\n");
+								stringbuf.append("#set ($menuItem = $contents.getEmptyMap())");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"LINK\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"path\", $UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('").append(UtilMethods.espaceVariableForVelocity(link.getLinkCode())).append("'), $velocityContext)))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"linkType\", \"CODE\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", ").append(isFirstItem).append("))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", ").append(isLastItem).append("))");
+								stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))");
 							} else {
-								stringbuf.append("#set ($menuItem = $contents.getEmptyMap())\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"LINK\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"name\", \"" + link.getUrl() + "\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"protocal\", \"" + link.getProtocal() + "\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"target\", \"" + link.getTarget() + "\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"title\", \"" + UtilHTML.escapeHTMLSpecialChars(link.getTitle()) + "\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", " + isFirstItem + "))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", " + isLastItem + "))\n");
-								stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))\n\n");
+								stringbuf.append("#set ($menuItem = $contents.getEmptyMap())");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"LINK\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"name\", \"").append(link.getUrl()).append("\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"protocal\", \"").append(link.getProtocal()).append("\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"target\", \"").append(link.getTarget()).append("\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"title\", \"").append(UtilHTML.escapeHTMLSpecialChars(link.getTitle())).append("\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", ").append(isFirstItem).append("))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", ").append(isLastItem).append("))");
+								stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))");
 							}
 						} else if (itemChild instanceof HTMLPage) {
 							HTMLPage htmlpage = (HTMLPage) itemChild;
 
-							stringbuf.append("#set ($menuItem = $contents.getEmptyMap())\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"HTMLPAGE\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"name\", \"" + htmlpage.getPageUrl() + "\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"path\", \"" + folderPath + "\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"title\", \"" + UtilHTML.escapeHTMLSpecialChars(htmlpage.getTitle()) + "\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", " + isFirstItem + "))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", " + isLastItem + "))\n");
-							stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))\n\n");
+							stringbuf.append("#set ($menuItem = $contents.getEmptyMap())");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"HTMLPAGE\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"name\", \"").append(htmlpage.getPageUrl()).append("\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"path\", \"").append(folderPath).append("\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"title\", \"").append(UtilHTML.escapeHTMLSpecialChars(htmlpage.getTitle())).append("\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", ").append(isFirstItem).append("))");
+							stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", ").append(isLastItem).append("))");
+							stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))");
 						} else if (itemChild instanceof IFileAsset) {
 							IFileAsset fileItem = (IFileAsset) itemChild;
 							if (fileItem.isWorking() && !fileItem.isDeleted()) {
-								stringbuf.append("#set ($menuItem = $contents.getEmptyMap())\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"FILE\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"name\", \"" + fileItem.getFileName() + "\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"path\", \"" + folderPath + "\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"title\", \"" + UtilHTML.escapeHTMLSpecialChars(fileItem.getTitle()) + "\"))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", " + isFirstItem + "))\n");
-								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", " + isLastItem + "))\n");
-								stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))\n\n");
+								stringbuf.append("#set ($menuItem = $contents.getEmptyMap())");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"type\", \"FILE\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"name\", \"").append(fileItem.getFileName()).append("\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"path\", \"").append(folderPath).append("\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"title\", \"").append(UtilHTML.escapeHTMLSpecialChars(fileItem.getTitle())).append("\"))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isFirstItem\", ").append(isFirstItem).append("))");
+								stringbuf.append("#set ($_dummy  = $menuItem.put(\"isLastItem\", ").append(isLastItem).append("))");
+								stringbuf.append("#set ($_dummy = $navigationItems.add($menuItem))");
 							}
 						}
 					}
-					stringbuf.append("#set ($menuItem = $contents.getEmptyMap())\n");
+					stringbuf.append("#set ($menuItem = $contents.getEmptyMap())");
 				}else{
-					stringbuf.append("#set ($navigationItems = $contents.getEmptyList())\n\n");
+					stringbuf.append("#set ($navigationItems = $contents.getEmptyList())");
 				}
 
 				if (stringbuf.toString().getBytes().length > 0) {
@@ -1618,7 +1614,7 @@ public class NavigationWebAPI implements ViewTool {
 	@SuppressWarnings("unchecked")
 	private String getSubFolderMenuItems(Folder thisFolder, String submenuName, int numberOfLevels, int currentLevel, boolean isFirstItem, boolean isLastItem) throws DotStateException, DotDataException, DotSecurityException {
 		StringBuffer stringbuf = new StringBuffer();
-		stringbuf.append("#set ($" + "_" + submenuName + " = $contents.getEmptyList())\n\n");
+		stringbuf.append("#set ($" + "_" + submenuName + " = $contents.getEmptyList()) ");
 
 		// gets menu items for this folder
 		java.util.List itemsChildrenList2 = new ArrayList();
@@ -1671,76 +1667,76 @@ public class NavigationWebAPI implements ViewTool {
 
 						submenu = getSubFolderMenuItems(folderChildChild2, subSubmenuName, numberOfLevels, currentLevel + 1, isFirstItem, isLastItem);
 
-						stringbuf.append("#set ($menuItem" + submenuName + " = $contents.getEmptyMap())\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"type\", \"FOLDER\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"title\", \"" + UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle()) + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"name\", \"" + folderChildChild2.getName() + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"path\", \"" + folderChildPath2 + "\"))\n\n");
-						stringbuf.append(submenu + "\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"submenu\", $" + "_" + subSubmenuName + "))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isFirstItem\", " + isFirstItem + "))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isLastItem\", " + isLastItem + "))\n");
-						stringbuf.append("#set ($_dummy = $" + "_" + submenuName + ".add($menuItem" + submenuName + "))\n\n");
-						stringbuf.append("#set ($" + "_" + subSubmenuName + " = $contents.getEmptyList())\n");
+						stringbuf.append("#set ($menuItem").append(submenuName).append(" = $contents.getEmptyMap())");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"type\", \"FOLDER\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"title\", \"").append(UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle())).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"name\", \"").append(folderChildChild2.getName()).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"path\", \"").append(folderChildPath2).append("\"))");
+						stringbuf.append(submenu);
+						stringbuf.append(" #set ($_dummy  = $menuItem").append(submenuName).append(".put(\"submenu\", $_").append(subSubmenuName).append("))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isFirstItem\", ").append(isFirstItem).append("))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isLastItem\", ").append(isLastItem).append("))");
+						stringbuf.append("#set ($_dummy = $_").append(submenuName).append(".add($menuItem").append(submenuName).append("))");
+						stringbuf.append("#set ($_").append(subSubmenuName).append(" = $contents.getEmptyList())");
 					} else {
-						stringbuf.append("#set ($menuItem" + submenuName + " = $contents.getEmptyMap())\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"type\", \"HTMLPAGE\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"path\", \"" + folderChildPath2 + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"title\", \"" + UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle()) + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isFirstItem\", " + isFirstItem + "))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isLastItem\", " + isLastItem + "))\n");
-						stringbuf.append("#set ($_dummy = $" + "_" + submenuName + ".add($menuItem" + submenuName + "))\n\n");
+						stringbuf.append("#set ($menuItem").append(submenuName).append(" = $contents.getEmptyMap())");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"type\", \"HTMLPAGE\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"path\", \"").append(folderChildPath2).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"title\", \"").append(UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle())).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isFirstItem\", ").append(isFirstItem).append("))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isLastItem\", ").append(isLastItem).append("))");
+						stringbuf.append("#set ($_dummy = $_").append(submenuName).append(".add($menuItem").append(submenuName).append("))");
 					}
 				} else if (childChild2 instanceof Link) {
 					if (((Link) childChild2).isWorking() && !((Link) childChild2).isDeleted()) {
 						Link link = (Link) childChild2;
 	                	if(link.getLinkType().equals(LinkType.CODE.toString())) {
-		                    stringbuf.append("#set ($menuItem" + submenuName + " = $contents.getEmptyMap())\n");
-		                    stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"type\", \"LINK\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"path\", $UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('" + UtilMethods.espaceVariableForVelocity(link.getLinkCode()) + "'), $velocityContext)))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"linkType\", \"CODE\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isFirstItem\", " + isFirstItem + "))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isLastItem\", " + isLastItem + "))\n");
-							stringbuf.append("#set ($_dummy = $" + "_" + submenuName + ".add($menuItem" + submenuName + "))\n\n");
+		                    stringbuf.append("#set ($menuItem").append(submenuName).append(" = $contents.getEmptyMap())");
+		                    stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"type\", \"LINK\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"path\", $UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('").append(UtilMethods.espaceVariableForVelocity(link.getLinkCode()) ).append("'), $velocityContext)))");
+							stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"linkType\", \"CODE\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isFirstItem\", ").append(isFirstItem).append("))");
+							stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isLastItem\", ").append(isLastItem).append("))");
+							stringbuf.append("#set ($_dummy = $_").append(submenuName).append(".add($menuItem").append(submenuName).append("))");
 	                	} else {
-	        				stringbuf.append("#set ($menuItem" + submenuName + " = $contents.getEmptyMap())\n");
-	        				stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"type\", \"LINK\"))\n");
-	        				stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"name\", \"" + link.getUrl() + "\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"protocal\", \"" + link.getProtocal() + "\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"target\", \"" + link.getTarget() + "\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"title\", \"" + UtilHTML.escapeHTMLSpecialChars(link.getTitle()) + "\"))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isFirstItem\", " + isFirstItem + "))\n");
-							stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isLastItem\", " + isLastItem + "))\n");
-							stringbuf.append("#set ($_dummy = $" + "_" + submenuName + ".add($menuItem" + submenuName + "))\n\n");
+	        				stringbuf.append("#set ($menuItem").append(submenuName).append(" = $contents.getEmptyMap())");
+	        				stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"type\", \"LINK\"))");
+	        				stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"name\", \"").append(link.getUrl()).append("\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"protocal\", \"").append(link.getProtocal()).append("\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"target\", \"").append(link.getTarget()).append("\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"title\", \"").append(UtilHTML.escapeHTMLSpecialChars(link.getTitle())).append("\"))");
+							stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isFirstItem\", ").append(isFirstItem).append("))");
+							stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isLastItem\", ").append(isLastItem).append("))");
+							stringbuf.append("#set ($_dummy = $_").append(submenuName).append(".add($menuItem").append(submenuName).append("))");
 	                	}
 					}
 				} else if (childChild2 instanceof HTMLPage) {
 					HTMLPage htmlpage = (HTMLPage) childChild2;
 					if (htmlpage.isWorking() && !htmlpage.isDeleted()) {
-        				stringbuf.append("#set ($menuItem" + submenuName + " = $contents.getEmptyMap())\n");
-        				stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"type\", \"HTMLPAGE\"))\n");
-        				stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"name\", \"" + htmlpage.getPageUrl() + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"path\", \"" + folderPath + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"title\", \"" + UtilHTML.escapeHTMLSpecialChars(htmlpage.getTitle()) + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isFirstItem\", " + isFirstItem + "))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isLastItem\", " + isLastItem + "))\n");
-						stringbuf.append("#set ($_dummy = $" + "_" + submenuName + ".add($menuItem" + submenuName + "))\n\n");
+        				stringbuf.append("#set ($menuItem").append(submenuName).append(" = $contents.getEmptyMap())");
+        				stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"type\", \"HTMLPAGE\"))");
+        				stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"name\", \"").append(htmlpage.getPageUrl()).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"path\", \"").append(folderPath).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"title\", \"").append(UtilHTML.escapeHTMLSpecialChars(htmlpage.getTitle())).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isFirstItem\", ").append(isFirstItem).append("))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isLastItem\", ").append(isLastItem).append("))");
+						stringbuf.append("#set ($_dummy = $_").append(submenuName).append(".add($menuItem").append(submenuName).append("))");
 					}
 				} else if (childChild2 instanceof IFileAsset) {
 					IFileAsset fileItem = (IFileAsset) childChild2;
 					if (fileItem.isWorking() && !fileItem.isDeleted()) {
-        				stringbuf.append("#set ($menuItem" + submenuName + " = $contents.getEmptyMap())\n");
-        				stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"type\", \"FILE\"))\n");
-        				stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"name\", \"" + fileItem.getFileName() + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"path\", \"" + folderPath + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"title\", \"" + UtilHTML.escapeHTMLSpecialChars(fileItem.getTitle()) + "\"))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isFirstItem\", " + isFirstItem + "))\n");
-						stringbuf.append("#set ($_dummy  = $menuItem" + submenuName + ".put(\"isLastItem\", " + isLastItem + "))\n");
-						stringbuf.append("#set ($_dummy = $" + "_" +submenuName + ".add($menuItem" + submenuName + "))\n\n");
+        				stringbuf.append("#set ($menuItem").append(submenuName).append(" = $contents.getEmptyMap())");
+        				stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"type\", \"FILE\"))");
+        				stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"name\", \"").append(fileItem.getFileName()).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"path\", \"").append(folderPath).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"title\", \"").append(UtilHTML.escapeHTMLSpecialChars(fileItem.getTitle())).append("\"))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isFirstItem\", ").append(isFirstItem).append("))");
+						stringbuf.append("#set ($_dummy  = $menuItem").append(submenuName).append(".put(\"isLastItem\", ").append(isLastItem).append("))");
+						stringbuf.append("#set ($_dummy = $_").append(submenuName).append(".add($menuItem").append(submenuName).append("))");
 					}
 				}
 			}
-			stringbuf.append("#set ($menuItem" + submenuName + " = $contents.getEmptyMap())\n");
+			stringbuf.append("#set ($menuItem").append(submenuName).append(" = $contents.getEmptyMap())");
 		}
 		return stringbuf.toString();
 	}

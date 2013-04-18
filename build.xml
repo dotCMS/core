@@ -39,11 +39,13 @@
 	<property name="build.lib" value="${build.dir}/lib" />
 	<property name="lib.app" value="${basedir}/dotCMS/WEB-INF/lib" />
 	<property name="classes.app" value="${basedir}/dotCMS/WEB-INF/classes" />
+	<property name="osgi.velocity.dir" value="${basedir}/dotCMS/WEB-INF/velocity/osgi" />
+	<property name="osgi.html.dir" value="${basedir}/dotCMS/html/osgi" />
 	<property name="build.war" value="${build.dir}/war" />
 	<property name="build.compiler.fulldepend" value="true" />
 	<property name="deploy.dir" value="${basedir}/dotCMS/WEB-INF/lib" />
 	<property name="distribution.output" value="../dist" />
-	<property name="ant.build.javac.target" value="1.5"/>
+	<property name="ant.build.javac.target" value="1.6"/>
 	<property name="war.name" value="dotcms"/>
 	<property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
 	<property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
@@ -120,6 +122,8 @@
 		<delete failonerror="false" includeemptydirs="true">
 			<fileset dir="${classes.app}" includes="**/*" />
 		</delete>
+        <delete dir="${osgi.html.dir}" />
+        <delete dir="${osgi.velocity.dir}" />
 	</target>
 
 
@@ -128,7 +132,7 @@
 	</target>
 
 	<target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+		<javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
 			<classpath refid="files-classpath" />
 		</javac>
 		<copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
@@ -143,8 +147,8 @@
 
 	<target name="compile-anttasks" depends="prepare" description="Compiles source code need for clean and deploy plugins.">
 		<mkdir dir="${build.ant}" />
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.ant}"
-			source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true"
+		<javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.ant}"
+			source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
 			memoryinitialsize="256m" memorymaximumsize="512m" >
 			<classpath refid="files-classpath" />
 			<include name="com/dotmarketing/plugin/ant/**"/>
@@ -155,8 +159,8 @@
 
 	<target name="compile-log4jappends" depends="prepare" description="Compiles source code need for our async appender.">
 		<mkdir dir="${build.log4j}" />
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}"
-			source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true"
+		<javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}"
+			source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
 			memoryinitialsize="256m" memorymaximumsize="512m" >
 			<classpath refid="files-classpath" />
 			<include name="org/apache/log4j/appender/**"/>
@@ -304,9 +308,9 @@
              outputDir="${src.jsp}/">
 
 		</jasper2>
-		<javac debug="true" debuglevel="lines,vars,source"
-		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.5"
-		target="1.5" compiler="javac1.5" nowarn="true" optimize="true"
+		<javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8" 
+		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.6"
+		target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
 		memoryinitialsize="256m" memorymaximumsize="512m">
 			<classpath refid="files-classpath" />
 		</javac>
@@ -721,7 +725,7 @@
 </target>
 
 <target name="compile-tests" depends="prepare,compile,deploy-config" description="Compiles all test source code.">
-	<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+	<javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
 		<classpath refid="files-classpath" />
 	</javac>
 	<copy todir="${build.classes}">
@@ -938,8 +942,8 @@
 
 <target name="compile-autoupdater" depends="prepare" description="Compiles autoupdater source.">
 	<mkdir dir="${build.autoupdater}" />
-	<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}"
-				source="1.5" target="1.5" compiler="javac1.5" nowarn="true" optimize="true"
+	<javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}"
+				source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
 				memoryinitialsize="256m" memorymaximumsize="512m" >
 				<classpath refid="files-classpath" />
 				<include name="com/dotcms/autoupdater/**"/>

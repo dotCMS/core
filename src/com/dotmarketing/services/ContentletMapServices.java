@@ -117,7 +117,7 @@ public class ContentletMapServices {
 					continue;
 				}
 				if(field.getVelocityVarName().equals("widgetCode")) {
-					widgetCode="#set($_dummy=$!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $velutil.mergeTemplate(\"" + velPath + content.getInode() + "_" + field.getInode()  + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\")))\n";
+					widgetCode="#set($_dummy=$!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $velutil.mergeTemplate(\"" + velPath + content.getInode() + "_" + field.getInode()  + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\")))";
 					continue;
 				}else{
 					if(field.getValues().contains("$") || field.getValues().contains("#")){
@@ -461,11 +461,13 @@ public class ContentletMapServices {
 	public static void removeContentletMapFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath=(!EDIT_MODE) ? "live/" : "working/";
 		String velocityRoot=Config.CONTEXT.getRealPath("/WEB-INF/velocity/") + folderPath;
+	
 		String filePath=  folderPath + identifier.getInode() + "_" + asset.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION");
 		java.io.File f=new java.io.File (velocityRoot + filePath);
 		f.delete();
 		DotResourceCache vc=CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
+		
         List<Field> fields=FieldsCache.getFieldsByStructureInode(asset.getStructureInode());
         for (Field field : fields) {
 			try {

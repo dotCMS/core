@@ -59,6 +59,8 @@
 	if(!searcher.isOpen() && ! searcher.isClosed()){
 		searcher.setOpen(true);
 	}
+	
+	Structure structure = null;
 
 
     boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())
@@ -66,10 +68,12 @@
 	List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 
     Role assignedTo  = APILocator.getRoleAPI().loadRoleById(searcher.getAssignedTo());
-    if(assignedTo ==null){
-    	assignedTo =new Role();
-    }
     Role myRole  = APILocator.getRoleAPI().getUserRole(user);
+    
+    if(assignedTo ==null){
+    	assignedTo = myRole;
+    }
+    
     List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemes(false);  
     
 
@@ -259,6 +263,7 @@
 		var assignedTo = dijit.byId("assignedTo");
 		assignedTo.displayedValue="";
 		assignedTo.setValue("<%=myRole.getId()%>");
+		doFilter();
 	}
 	<%if(isAdministrator){%>
 	    var show4All=false;

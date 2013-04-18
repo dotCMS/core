@@ -61,14 +61,24 @@
                 }
             fieldsSearch = (Map<String, String>) lastSearch.get("fieldsSearch");
             categories = (List<String>) lastSearch.get("categories");
-            showDeleted = (Boolean) lastSearch.get("showDeleted");
-            filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
-            filterLocked = (Boolean) lastSearch.get("filterLocked");
+            if(UtilMethods.isSet(lastSearch.get("showDeleted"))){
+            	showDeleted = (Boolean) lastSearch.get("showDeleted");
+            }
+            if(UtilMethods.isSet(lastSearch.get("filterSystemHost"))){
+            	filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
+            }
+            if(UtilMethods.isSet(lastSearch.get("filterLocked"))){
+            	filterLocked = (Boolean) lastSearch.get("filterLocked");
+            }
             if(lastSearch.get("filterUnpublish")!=null)
                 filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
-            currpage = (Integer) lastSearch.get("page");
-            orderBy = (String) lastSearch.get("orderBy");
-        if (fieldsSearch.containsKey("languageId")) {
+            if(UtilMethods.isSet(lastSearch.get("page"))){
+            	currpage = (Integer) lastSearch.get("page");
+            }
+            if(UtilMethods.isSet(lastSearch.get("orderBy"))){
+            	orderBy = (String) lastSearch.get("orderBy");
+            }
+        if (UtilMethods.isSet(lastSearch.get("languageId")) && fieldsSearch.containsKey("languageId")) {
             languageId = ((String) fieldsSearch.get("languageId")).trim();
         }
         }
@@ -315,6 +325,8 @@
 <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
 
 <input type="hidden" name="fullCommand" id="fullCommand" value="">
+<input type="hidden" name="expiredInodes" id="expiredInodes" value=""/>
+<input type="hidden" name="expireDateReset" id="expireDateReset" value=""/> 
 <input type="hidden" name="luceneQuery" id="luceneQuery" value="">
 <input type="hidden" name="structureInode" id="structureInode" value="">
 <input type="hidden" name="fieldsValues" id="fieldsValues" value="">
@@ -590,7 +602,7 @@
 
 
 <!-- START Show Query -->
-        <div id="queryDiv" dojoType="dijit.Dialog" style="display: none;">
+        <div id="queryDiv" dojoType="dijit.Dialog" style="display: none;padding-top:15px\9;">
                 <div id="queryResults"></div>
         </div>
 <!-- END Show Query -->
@@ -617,6 +629,7 @@
 </form>
 
 <div class="messageZone" id="messageZone" style="display: none;">
+  <i class="loadingIcon"></i>
   <%= LanguageUtil.get(pageContext, "Loading")%>...
 </div>
 

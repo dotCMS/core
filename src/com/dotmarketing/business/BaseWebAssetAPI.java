@@ -167,13 +167,11 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	}
 	
 	protected void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier, boolean working) throws DotDataException, DotStateException, DotSecurityException {
-		webasset.setInode(UUID.randomUUID().toString());
+		if(!UtilMethods.isSet(webasset.getInode()))
+		    webasset.setInode(UUID.randomUUID().toString());
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
-		// persists the webasset
-		if(!UtilMethods.isSet(webasset.getInode()))
-            HibernateUtil.save(webasset);
-
+		
 		// adds the webasset as child of the folder or parent inode
 		if(!parent.getType().equalsIgnoreCase("folder"))
 		   parent.addChild(webasset);
@@ -260,7 +258,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	 * @return true if the asset was sucessfully removed
 	 * @exception Exception
 	 */
-	public static boolean deleteAsset(WebAsset currWebAsset) {
+	public static boolean deleteAsset(WebAsset currWebAsset) throws DotSecurityException, DotHibernateException, DotDataException{
 		boolean returnValue = false;
 		try
 		{
@@ -295,6 +293,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 				PageServices.unpublishPageFile((HTMLPage)currWebAsset);
 				if(RefreshMenus.shouldRefreshMenus((HTMLPage)currWebAsset)){
 					RefreshMenus.deleteMenu(currWebAsset);
+					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
+					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 				}
 				
 				CacheLocator.getHTMLPageCache().remove((HTMLPage)currWebAsset);
@@ -302,7 +302,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			else if(currWebAsset instanceof Template)
 			{
 				TemplateServices.unpublishTemplateFile((Template)currWebAsset);
-
+				APILocator.getTemplateAPI().associateContainers(new ArrayList<Container>(), (Template)currWebAsset);
 				CacheLocator.getTemplateCache().remove(currWebAsset.getInode());
 			}
 			else if(currWebAsset instanceof Link)
@@ -316,6 +316,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 				APILocator.getFileAPI().invalidateCache((File)currWebAsset);
 				if(RefreshMenus.shouldRefreshMenus((File)currWebAsset)){
 					RefreshMenus.deleteMenu(currWebAsset);
+					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
+					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 				}
 			}
 			APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
@@ -361,15 +363,19 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			//### Delete the Identifier ###
 			returnValue = true;
 		}
-		catch(Exception ex)
-		{
+		catch(DotHibernateException ex){
 			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
 			throw ex;
 		}
-		finally
-		{
-			return returnValue;
+		catch(DotDataException ex){
+			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
+			throw ex;
 		}
+		catch(DotSecurityException ex){
+			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
+			throw ex;
+		}
+		return returnValue;
 	}
 	
 	@SuppressWarnings("unchecked")

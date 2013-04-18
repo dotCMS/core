@@ -229,13 +229,11 @@ public class UtilMethods {
     }
 
     public static String escapeSingleQuotes(String fixme) {
-        fixme = fixme.replaceAll("'", "\\\\'");
-        return fixme;
+        return RegEX.replaceAll(fixme, "\\\\'", "'");
     }
 
     public static String escapeDoubleQuotes(String fixme) {
-        fixme = fixme.replaceAll("\"", "'");
-        return fixme;
+        return RegEX.replaceAll(fixme, "\\\\\"", "\\\"");
     }
 
     public static final String getMonthName(int x) {
@@ -1874,25 +1872,6 @@ public class UtilMethods {
         	Logger.error(UtilMethods.class, "encodeURIComponent failed for URI: " + uri);
         }
         return uri;
-    }
-
-    public static boolean revomeDir(String path) {
-        File dir = new File(path);
-        if (!dir.isDirectory()) {
-            return false;
-        }
-        File[] children = dir.listFiles();
-        for (File child : children) {
-            boolean ok = true;
-            if (child.isDirectory())
-                ok = revomeDir(child.getAbsolutePath());
-            if (ok)
-                ok = child.delete();
-            if (!ok)
-                return ok;
-        }
-
-        return dir.delete();
     }
 
     // Liferay users utility methods

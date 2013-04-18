@@ -33,19 +33,38 @@
 .account-flyout .service-links{margin:7px 0 0 0;border-top:1px solid #dfdfdf;}
 .copyright{font-size:10px;color:#555;text-align:center;}
 .serverID{position:absolute;top:35px;right:10px;}
-.helpId{position:fixed;left:50px;bottom:-1px;color:#ddd;z-index:9999;}
+.helpId{background: transparent;bottom: -1px;left: 50px;position: fixed;z-index: 9999;padding:3px;}
+#helpcontent{border: 1px solid #ddd;-moz-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.1);-webkit-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.1);box-shadow:3px 3px 5px rgba(0, 0, 0, 0.1);color: #DDDDDD;background:#fff;margin-bottom:-10px;}
 .dotcmsHelpButton{
 	display:block;
-	padding:6px 25px;
-	border:1px solid #fff;
+	padding:10px 25px;
 	font-size:12px;font-weight:bold;text-decoration:none;
-	background:rgba(0, 0, 0, 0.7);color:#ddd;line-height:14px;font-size: 11px;
+	background:#000;
+	margin-bottom:-1px;
+	opacity: 0.7;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=70)"; /* IE 8 */
+    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=70); /* IE 7 and olders */
+	-khtml-opacity: 0.7;
+    -moz-opacity: 0.7;
+	-webkit-opcity: 0.7;
+	color:#ddd;line-height:14px;font-size: 11px;
 	text-decoration:none;
 	-moz-box-shadow:0px 0px 5px rgba(0, 0, 0, 0.5);-webkit-box-shadow:0px 0px 5px rgba(0, 0, 0, 0.5);box-shadow:0px 0px 5px rgba(0, 0, 0, 0.5);
 	-webkit-border-top-left-radius: 8px;-khtml-border-radius-topleft: 8px;	-moz-border-radius-topleft: 8px; border-top-left-radius: 8px;
 	-webkit-border-top-right-radius: 8px; -khtml-border-radius-topright: 8px; -moz-border-radius-topright: 8px; border-top-right-radius: 8px;
-	}
-.dotcmsHelpButton:hover{background: rgba(0, 0, 0, 0.9);color:#fff;}
+	display:inline-block;
+	outline:none;
+}
+.dotcmsHelpButton:hover{
+	background:#000;
+	opacity: 0.9;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=90)"; /* IE 8 */
+    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=90); /* IE 7 and olders */
+	-khtml-opacity: 0.9;
+    -moz-opacity: 0.9;
+	-webkit-opcity: 0.9;
+	color:#fff;
+}
 
 /* NAV MENU STYLES 2.0 */
 #menu {width:100%;white-space: nowrap;}
@@ -231,6 +250,7 @@ table.workflowInfo td{vertical-align:top;width:100%;}
 .warningHeader{background-color:#f0f0f0;color:yellow;border:1px solid #ccc;margin-bottom:10px;padding:3px 10px 3px 10px;vertical-align:middle;-moz-border-radius: 5px;-webkit-border-radius: 5px;}
 .nameText{font-weight:bold;padding:3px 0 5px 0;width:200px;overflow:hidden;}
 .warningText{font-weight:bold;color:red;padding-top:3px;width:100%; overflow:hidden;text-align:center;white-space: normal;}
+.alert-message{color:red;padding:10px;width:100%; overflow:hidden;text-align:center;white-space: normal;}
 
 .tagsTextbox{width:200px;}
 .tagsBox{height:50px;width:180px;margin-top:10px;padding:5px;border:1px solid #ccc;overflow:auto;}
@@ -295,8 +315,13 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 #menu ul.dropdown li.dotCMS_EXT_CONTENTRATINGS a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1340px;}
 #menu ul.dropdown li.dotCMS_WORKFLOW_SCHEMES a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -520px;}
 #menu ul.dropdown li.dotCMS_EXT_TAG_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1300px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}
+/*#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}*/
+#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1860px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
+
+#menu ul.dropdown li.dotCMS_TIMEMACHINE a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_EXT_BROKEN_LINKS a span, .linkCheckIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span, .pushIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1780px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 
 /* BUTTON ICONS 2.0 */
@@ -440,9 +465,16 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .shimIcon {background: url(/html/images/shim.gif) ;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .formIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .fileIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -840px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.rServerIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.sServerIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.mobileIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1860px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.androidIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1900px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.appleIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1900px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.windowsIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1920px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.encryptIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -80px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 /* BEGIN GRAZIANO issue-12-dnd-template */
-.designTemplateIcon {background: url(/html/images/icons/layout-design.png); width:18px;height:18px;display:inline-block;vertical-align:top;}
+.designTemplateIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -40px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 /* END GRAZIANO issue-12-dnd-template */
 
 /* Disabled Styles */
@@ -491,7 +523,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .accdbIcon, .dbIcon, .mdbIcon, .pdbIcon, .sqlIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1620px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .pptIcon, .pptxIcon, .keynote {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1640px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .wmvIcon, .asxIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1640px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-.3g2Icon, .3gpIcon, .asfIcon, .aviIcon, .movIcon, .mpgIcon, .mp4Icon, .rmIcon, .vobIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1660px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.oggIcon, .asfIcon, .aviIcon, .movIcon, .mpgIcon, .mp4Icon, .rmIcon, .vobIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1660px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .mp3Icon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1660px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .cssIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1680px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .vtlIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1680px;width:18px;height:18px;display:inline-block;vertical-align:top;}
@@ -501,6 +533,8 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .zipIcon, .debIcon, .gzIcon, .pkgIcon, .rarIcon, .sitIcon, .sitxIcon, .zipxIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1720px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .ttfIcon, .woffIcon, .eotIcon, .svgIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1840px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .twitterIcon{background: url(/html/images/icons/twitter.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.icoIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1920px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.epubIcon, .ibooksIcon, .azwIcon, .kf8Icon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -100px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 .worldOn {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -0px -1940px;width:22px;height:22px;margin:0 1px 0 7px;display:inline-block;vertical-align:top;}
 
@@ -526,13 +560,15 @@ div.contextPopupMenuBox span{margin:0 8px 0 8px;}
 #messagesTable, #errorsTable{position:absolute;left:50%;margin-left:-250px;top:100px;z-index:999;width:500px;height:50px;text-align:center;font-weight:bold;}
 
 .systemMessagesHolder{position:fixed;left:50%;margin-left:-170px;width:300px;z-index:9999 !important;}
-.systemMessages{position:relative;padding: 20px 20px 30px 40px;color: #fff;opacity:.85;background:#333;-moz-border-radius: 15px;-webkit-border-radius: 15px;-moz-box-shadow:0px 0px 15px #666;-webkit-box-shadow:0px 0px 15px #666; cursor:pointer;}
+.systemMessages{position:relative;padding: 20px 20px 30px 40px;color: #fff;background:rgba(0,0,0,0.8);-moz-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-border-radius: 8px;-khtml-border-radius: 8px;-moz-border-radius: 8px; border-radius: 8px;cursor:pointer;}
+
 .messageIcon{position:absolute;top:20px;left:15px;}
-.errorMessages{position:relative;padding: 20px 20px 30px 40px;color: #fff;opacity:.85;background:#333;-moz-border-radius: 15px;-webkit-border-radius: 15px;-moz-box-shadow:0px 0px 15px #666;-webkit-box-shadow:0px 0px 15px #666; cursor:pointer;}
+.errorMessages{position:relative;padding: 20px 20px 30px 40px;color: #fff;background:rgba(0,0,0,0.8);-moz-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-border-radius: 8px;-khtml-border-radius: 8px;-moz-border-radius: 8px; border-radius: 8px;cursor:pointer;}
 .errorMessages ul, .errorMessages ul li{list-style:disc; list-style-position:outside;margin:0 0 3px 0;}
+
 /* loading message for content search */
-.messageZone{position:fixed;z-index:9999 !important;left:50%;top:40%;opacity:.85;margin-left:-75px;width:150px;padding: 20px;color:#fff;background:#333;-moz-border-radius: 15px;-webkit-border-radius: 15px;-moz-box-shadow:0px 0px 15px #666;-webkit-box-shadow:0px 0px 15px #666;}
-.loadingIcon{background: url(/html/images/icons/ajax-loader.gif) no-repeat left center;padding:0 0 0 28px;height:20px; vertical-align:middle;}
+.messageZone{position:fixed;z-index:9999 !important;left:50%;top:40%;margin-left:-75px;width:150px;padding: 20px;color:#fff;background:rgba(0,0,0,0.8);-moz-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-border-radius: 8px;-khtml-border-radius: 8px;-moz-border-radius: 8px; border-radius: 8px;}
+.loadingIcon{background: url(/html/images/icons/ajax-loader.gif) no-repeat left center;padding:0 5px 0 3px;height:20px; vertical-align:middle;display:inline-block;width:16px;height:16px;}
 
 
 .error-message{color:maroon;text-align:center;}

@@ -115,8 +115,15 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	public String getMimeType() {
 		String mimeType = APILocator.getFileAPI().getMimeType(getFileName());
-		if (mimeType == null)
+		if (mimeType == null){
 			mimeType = "application/octet-stream";
+		}
+		String f = getFileName();
+		f = f.toLowerCase();
+		if(f.endsWith("php")){
+			mimeType = "application/php";
+		}
+		
 		return mimeType;
 	}
 

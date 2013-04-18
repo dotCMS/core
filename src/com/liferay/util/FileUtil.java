@@ -46,6 +46,7 @@ import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.jna.JNALibrary;
 
@@ -75,20 +76,38 @@ public class FileUtil {
 		copyDirectory(new File(sourceDirName), new File(destinationDirName));
 	}
 
+	public static void copyDirectory(
+			String sourceDirName, String destinationDirName, FileFilter filter) {
+
+			copyDirectory(new File(sourceDirName), new File(destinationDirName), true, filter);
+		}
+	
+	
+	
+	
 	public static void copyDirectory(File source, File destination, boolean hardLinks) {
+	    copyDirectory(source,destination,hardLinks,null);
+	}
+	
+	public static void copyDirectory(File source, File destination, boolean hardLinks, FileFilter filter) {
 		if (source.exists() && source.isDirectory()) {
 			if (!destination.exists()) {
 				destination.mkdirs();
 			}
 
-			File[] fileArray = source.listFiles();
+			File[] fileArray = filter!=null ? source.listFiles(filter) : source.listFiles();
 
 			for (int i = 0; i < fileArray.length; i++) {
+			    if(fileArray[i].getName().endsWith("xml")) {
+			        String name=fileArray[i].getName();
+			        Logger.info(FileUtil.class, "copy "+name);
+			    }
+			    
 				if (fileArray[i].isDirectory()) {
 					copyDirectory(
 						fileArray[i],
 						new File(destination.getPath() + File.separator
-							+ fileArray[i].getName()), hardLinks);
+							+ fileArray[i].getName()), hardLinks, filter);
 				}
 				else {
 					copyFile(
@@ -101,7 +120,7 @@ public class FileUtil {
 	}
 
 	public static void copyDirectory(File source, File destination) {
-		copyDirectory(source, destination, false);
+		copyDirectory(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 
 	public static void copyFile(
@@ -111,7 +130,7 @@ public class FileUtil {
 	}
 
 	public static void copyFile(File source, File destination) {
-		copyFile(source, destination, false);
+		copyFile(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 
 	public static void copyFile(File source, File destination, boolean hardLinks) {
@@ -119,6 +138,12 @@ public class FileUtil {
 			return;
 		}
 
+		
+		if(hardLinks && !Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)){
+			hardLinks = false;
+		}
+		
+		
 		if ((destination.getParentFile() != null) &&
 			(!destination.getParentFile().exists())) {
 
@@ -130,16 +155,22 @@ public class FileUtil {
 			if(destination.exists()){
 				JNALibrary.unlink(destination.getAbsolutePath());
 			}
-			else  {
-				try {
-					JNALibrary.link(source.getAbsolutePath(), destination.getAbsolutePath());
-				} catch (IOException e) {
-					Logger.error(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
-							+ ", destination: " + destination.getAbsolutePath());
+			
+			try {
+				JNALibrary.link(source.getAbsolutePath(), destination.getAbsolutePath());
+				// setting this means we will try again if we cannot hard link
+				if( !destination.exists() ){
+					hardLinks = false;
 				}
+			} catch (IOException e) {
+				Logger.error(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
+						+ ", destination: " + destination.getAbsolutePath());
+				// setting this means we will try again if we cannot hard link
+				hardLinks = false;
 			}
+		
 		}
-		else {
+		if(!hardLinks) {
 			try {
 				FileChannel srcChannel = new FileInputStream(source).getChannel();
 				FileChannel dstChannel = new FileOutputStream(
@@ -306,6 +337,35 @@ public class FileUtil {
 		return listFiles(dir, false);
 	}
 
+	public static File[] listFileHandles(String fileName, Boolean includeSubDirs) throws IOException {
+		return listFileHandles(new File(fileName), includeSubDirs);
+	}
+	
+	public static File[] listFileHandles(File dir, Boolean includeSubDirs) throws IOException {
+		FileFilter fileFilter = new FileFilter() {
+	        public boolean accept(File file) {
+	            return file.isDirectory();
+	        }
+	    };
+	File[] subFolders = dir.listFiles(fileFilter);
+
+	List<File> files = new ArrayList<File>();
+
+	List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
+
+	for (File file : fileArray) {
+		if(file.isFile()) {
+			if(includeSubDirs && containsParentFolder(file, subFolders)) {
+				files.add(file);
+			} else {
+				files.add(file);
+			}
+		}
+	}
+
+	return (File[])files.toArray(new File[0]);
+	}
+	
 	public static String[] listFiles(File dir, Boolean includeSubDirs) throws IOException {
 		 FileFilter fileFilter = new FileFilter() {
 		        public boolean accept(File file) {
@@ -316,7 +376,7 @@ public class FileUtil {
 
 		List<String> files = new ArrayList<String>();
 
-		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE));
+		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
 
 		for (File file : fileArray) {
 			if(file.isFile()) {
@@ -349,7 +409,15 @@ public class FileUtil {
 
 		destination.delete();
 
-		return source.renameTo(destination);
+		boolean success = source.renameTo(destination);
+		
+		// if the rename fails, copy
+
+		if (!success) {
+			copyFile(source, destination);
+			success = source.delete();
+		}
+		return success;
 	}
 
 	public static String read(String fileName) throws IOException {

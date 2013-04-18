@@ -1251,6 +1251,15 @@ public interface ContentletAPI {
 	 * @return
 	 */
 	public boolean isInodeIndexed(String inode);
+	
+	/**
+	 *  this version optionaly adds a +live:true to the search 
+	 *  if parameter live is true.
+	 * @param inode
+	 * @param live
+	 * @return
+	 */
+	public boolean isInodeIndexed(String inode, boolean live);
 
 	/**
 	 * Method will time out after 30 seconds returning false
@@ -1414,4 +1423,15 @@ public interface ContentletAPI {
      * @return
      */
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     * Gets the top viewed contents identifiers and numberOfViews  for a particular structure for a specified date interval
+     * 
+     * @param structureVariableName
+     * @param startDate
+     * @param endDate
+     * @param user
+     * @return
+     */
+	public List<Map<String, String>> getMostViewedContent(String structureVariableName,String startDate, String endDate, User user);
 }

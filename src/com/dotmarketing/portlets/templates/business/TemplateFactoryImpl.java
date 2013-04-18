@@ -1,9 +1,15 @@
 package com.dotmarketing.portlets.templates.business;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -27,9 +33,11 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -75,6 +83,27 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		return new ArrayList<Template>(new HashSet<Template>(hu.list()));
 	}
 
+	
+	@SuppressWarnings("unchecked")
+
+	public Template find(String inode) throws DotStateException, DotDataException {
+		
+		Template template = templateCache.get(inode);
+		
+		if(template==null){
+		
+		
+			HibernateUtil hu = new HibernateUtil(Template.class);
+			template = (Template) hu.load(inode);
+			if(template != null && template.getInode() != null)
+				templateCache.add(inode, template);
+		}
+		return template;
+	}
+
+	
+	
+	
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesAssignedTo(Host parentHost, boolean includeArchived) throws DotHibernateException {
 		HibernateUtil hu = new HibernateUtil(Template.class);
@@ -91,18 +120,30 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	public void delete(Template template) throws DotDataException {
+		templateCache.remove(template.getInode());
 		HibernateUtil.delete(template);
+		
 	}
 
 	public void save(Template template) throws DotDataException {
 		if(!UtilMethods.isSet(template.getIdentifier())){
-			throw new DotStateException("Cannot save a tempalte without an Identifier");
+			throw new DotStateException("Cannot save a template without an Identifier");
 		}
 		HibernateUtil.save(template);
-		templateCache.add(template.getInode(), template);
+		
 		TemplateServices.invalidate(template, true);
 
 	}
+	
+	public void save(Template template, String existingId) throws DotDataException {
+        if(!UtilMethods.isSet(template.getIdentifier())){
+            throw new DotStateException("Cannot save a tempalte without an Identifier");
+        }
+        HibernateUtil.saveWithPrimaryKey(template, existingId);
+        templateCache.add(template.getInode(), template);
+        TemplateServices.invalidate(template, true);
+
+    }
 
 	public void deleteFromCache(Template template) throws DotDataException {
 		templateCache.remove(template.getInode());
@@ -123,7 +164,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	}
 
-
+	@Override
 	public List<Template> findTemplates(User user, boolean includeArchived,
 			Map<String, Object> params, String hostId, String inode, String identifier, String parent,
 			int offset, int limit, String orderBy) throws DotSecurityException,
@@ -266,7 +307,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 
 	}
-
+	@Override
 	public List<HTMLPage> getPagesUsingTemplate(Template template) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(HTMLPage.class);
 		hu.setSQLQuery(pagesUsingTemplateSQL);
@@ -274,21 +315,124 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		return new ArrayList<HTMLPage>(new HashSet<HTMLPage>(hu.list()));
 
 	}
-
+	@Override
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException{
-		HibernateUtil.startTransaction();
+		boolean local = false;
+		try{
 			try {
-				HibernateUtil.delete("from template_containers in class com.dotmarketing.beans.TemplateContainers where template_id = '" + template.getIdentifier() + "'");
-				for(Container container:containerIdentifiers){
-					TemplateContainers templateContainer = new  TemplateContainers();
-					templateContainer.setTemplateId(template.getIdentifier());
-					templateContainer.setContainerId(container.getIdentifier());
-					HibernateUtil.save(templateContainer);
-				}
-			} catch (DotHibernateException e) {
+				local = HibernateUtil.startLocalTransactionIfNeeded();
+			} catch (DotDataException e1) {
+				Logger.error(TemplateFactoryImpl.class,e1.getMessage(),e1);
+				throw new DotHibernateException("Unable to start a local transaction " + e1.getMessage(), e1);
+			}
+			HibernateUtil.delete("from template_containers in class com.dotmarketing.beans.TemplateContainers where template_id = '" + template.getIdentifier() + "'");
+			for(Container container:containerIdentifiers){
+				TemplateContainers templateContainer = new  TemplateContainers();
+				templateContainer.setTemplateId(template.getIdentifier());
+				templateContainer.setContainerId(container.getIdentifier());
+				HibernateUtil.save(templateContainer);
+			}
+		}catch(DotHibernateException e){
+			if(local){
 				HibernateUtil.rollbackTransaction();
 			}
-		HibernateUtil.commitTransaction();
+			throw new DotWorkflowException(e.getMessage());
+	
+		}finally{
+			if(local){
+				HibernateUtil.commitTransaction();
+			}
+		}
 	}
+	
+	@Override
+	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		
+		List<Container> result = new ArrayList<Container>();
+		List<String> ids = getContainerIds(template.getBody());
+		for(String containerId : ids) {
+			Container container = APILocator.getContainerAPI().getWorkingContainerById(containerId, user, respectFrontendRoles);
+			if(container != null) {
+				result.add(container);
+			} else {
+				Logger.warn(this,"ERROR The Container Id: '" + containerId + "' doesn't exist and its reference by template " + template.getIdentifier());
+			}
+		}
+		return result;
+	}
+	
+	private List<String> getContainerIds(String templateBody) {
+		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s)]+)\\s*\\)");
+		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
+		Matcher matcher = oldContainerReferencesRegex.matcher(templateBody);
+		List<String> ids = new LinkedList<String>();
+		while(matcher.find()) {
+			String containerId = matcher.group(1).trim();
+			if(!ids.contains(containerId))
+			ids.add(containerId);
+		}
+		matcher = newContainerReferencesRegex.matcher(templateBody);
+		while(matcher.find()) {
+			String containerId = matcher.group(1).trim();
+			if(!ids.contains(containerId))
+			ids.add(containerId);
+		}
+		return ids;
+	}
+	
+	
+	@Override
+	public Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException {
+		if(currentTemplate ==null){
+			throw new DotDataException("Template is null");
+		}
+		Template newTemplate = new Template();
 
+		try {
+			BeanUtils.copyProperties(newTemplate, currentTemplate);
+		} catch (Exception e1) {
+			Logger.error(TemplateFactoryImpl.class,e1.getMessage(),e1);
+			throw new DotDataException(e1.getMessage());
+		}
+		newTemplate.setInode(null);
+		newTemplate.setModDate(new Date());
+		newTemplate.setDrawed(currentTemplate.isDrawed());
+		newTemplate.setDrawedBody(currentTemplate.getDrawedBody());
+		newTemplate.setImage(currentTemplate.getImage());
+		newTemplate.setIdentifier(null);
+		String newTemplateName = currentTemplate.getTitle();
+		String testName = currentTemplate.getTitle();
+
+		if(RegEX.contains(newTemplateName, " - [0-9]+$")){
+			newTemplateName = newTemplateName.substring(0,newTemplateName.lastIndexOf("-")).trim();
+		}
+		
+		
+		
+		Template test = null;
+		for(int iter=1;iter<100000;iter++){		
+			try{
+				test = findWorkingTemplateByName(testName, host);
+			}
+			catch(Exception e){
+				Logger.debug(this.getClass(), e.getMessage());
+				break;
+			}
+			if(test != null && UtilMethods.isSet(test.getInode())){
+				testName = newTemplateName + " - " + iter ;
+			}
+			else{
+				newTemplateName = testName;
+				break;
+			}
+		}
+		
+		newTemplate.setFriendlyName(newTemplateName);
+		newTemplate.setTitle(newTemplateName);
+
+
+
+
+		return newTemplate;
+	}
 }

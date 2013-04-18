@@ -5,7 +5,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -18,19 +17,20 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.lucene.queryParser.ParseException;
 import org.directwebremoting.WebContextFactory;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
@@ -60,6 +60,7 @@ import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -73,12 +74,15 @@ import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
@@ -120,7 +124,7 @@ public class ContentletAjax {
 			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
 			Contentlet contentlet = null;
-			
+
 			try{// This is to avoid non-inode strings from throwing exception
 				contentlet = conAPI.find(inode, currentUser, true);
 			}catch(Exception e){
@@ -128,16 +132,16 @@ public class ContentletAjax {
 			}
 			if(contentlet == null || !UtilMethods.isSet(contentlet.getInode()))
 				return null;
-			
+
 			Structure targetStructure = contentlet.getStructure();
 			List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
 
-			String identifier = String.valueOf(contentlet.getIdentifier());				
+			String identifier = String.valueOf(contentlet.getIdentifier());
 
 			boolean hasListedFields = false;
 
 			for (Field f : targetFields) {
-				
+
 				if (f.isIndexed() || f.isListed()) {
 					hasListedFields = true;
 					String fieldName = f.getFieldName();
@@ -194,30 +198,30 @@ public class ContentletAjax {
 
 		return result;
 	}
-	
+
 	private List<Map<String, String>> getContentSiblingsData(String inode) {//GIT-1057
 
 		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
-		
+
 		try {
 
 			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-			
+
 			Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
-			
+
 			List<Map<String,String>> contentletList = new ArrayList<Map<String,String>>();
-			
+
 			LanguageAPI langAPI = APILocator.getLanguageAPI();
 			ContentletAPI contentletAPI = APILocator.getContentletAPI();
-			List<Language> langs = langAPI.getLanguages();			
+			List<Language> langs = langAPI.getLanguages();
 			Contentlet languageContentlet = null;
-			
+
 			String identifier = String.valueOf(firstContentlet.getIdentifier());
-			
+
 			Structure targetStructure = firstContentlet.getStructure();
 			List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
-			
+
 			boolean parent = false;
 			try{
 		        parent = firstContentlet.getBoolProperty("dotCMSParentOnTree") ;
@@ -225,9 +229,9 @@ public class ContentletAjax {
 		    catch(Exception e){
 
 		    }
-			
+
 			for(Language lang : langs){
-				
+
 				Map<String, String> contentDetails = new HashMap<String, String>();
 				try{
 					languageContentlet = null;
@@ -237,11 +241,11 @@ public class ContentletAjax {
 					languageContentlet = contentletAPI.findContentletByIdentifier(firstContentlet.getIdentifier(), false, lang.getId(), currentUser, false);
 					}catch (Exception e1) {	}
 				}
-				
+
 				boolean hasListedFields = false;
-				
+
 				if((languageContentlet == null) || (!UtilMethods.isSet(languageContentlet.getInode()))){
-					
+
 					contentDetails.put( "langCode" , langAPI.getLanguageCodeAndCountry(lang.getId(),null));
 					contentDetails.put("langName", lang.getLanguage());
 					contentDetails.put("langId", lang.getId()+"");
@@ -252,7 +256,7 @@ public class ContentletAjax {
 					contentDetails.put("deleted", "true");
 					contentDetails.put("locked", "false");
 					contentDetails.put("siblingInode", firstContentlet.getInode());
-					
+
 					for (Field f : targetFields) {
 						if (f.isIndexed() || f.isListed()) {
 							hasListedFields = true;
@@ -264,10 +268,10 @@ public class ContentletAjax {
 					if( !hasListedFields ) {
 						contentDetails.put("identifier", identifier);
 					}
-					
-					
+
+
 				}else{
-					
+
 					contentDetails.put( "langCode" , langAPI.getLanguageCodeAndCountry(lang.getId(),null));
 					contentDetails.put("langName", lang.getLanguage());
 					contentDetails.put("langId", lang.getId()+"");
@@ -278,7 +282,7 @@ public class ContentletAjax {
 					contentDetails.put("deleted", languageContentlet.isArchived()+"");
 					contentDetails.put("locked", languageContentlet.isLocked()+"");
 					contentDetails.put("siblingInode", firstContentlet.getInode());
-					
+
 					for (Field f : targetFields) {
 						if (f.isIndexed() || f.isListed()) {
 							hasListedFields = true;
@@ -311,10 +315,10 @@ public class ContentletAjax {
 				}
 				contentletList.add(contentDetails);
 			}
-			
+
 			result = contentletList;
-			
-					
+
+
 
 		} catch (DotDataException e) {
 			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
@@ -327,7 +331,7 @@ public class ContentletAjax {
 		}
 
 		return result;
-	}	
+	}
 
 
 	/**
@@ -401,7 +405,15 @@ public class ContentletAjax {
 		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
 	}
 
-	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
+	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, String orderBy, String modDateFrom,
+	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	    return searchContentlets(structureInode,fields,categories,showDeleted,filterSystemHost,filterUnpublish,filterLocked,page,0,orderBy,modDateFrom,modDateTo);
+	}
+
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
+	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		HttpSession sess = WebContextFactory.get().getSession();
@@ -417,7 +429,8 @@ public class ContentletAjax {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
 
-		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
+		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
+		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo);
 	}
 
 	/**
@@ -791,10 +804,18 @@ public class ContentletAjax {
 		// we add the total hists for the query
 		results.add(totalHits);
 
+		List<String> expiredInodes=new ArrayList<String>();
+
 		//Adding the query results
 		Contentlet con;
 		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
 			con = hits.get(i);
+
+			if(!con.isLive()) {
+    			Identifier ident=APILocator.getIdentifierAPI().find(con);
+    			if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
+    			    expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
+			}
 
 			Map<String, String> searchResult = new HashMap<String, String>();
 
@@ -895,6 +916,52 @@ public class ContentletAjax {
 			searchResult.put("locked", locked.toString());
 			searchResult.put("structureInode", con.getStructureInode());
 			searchResult.put("workflowMandatory", String.valueOf(APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()));
+
+			// Workflow Actions
+
+			List<WorkflowAction> wfActions = new ArrayList<WorkflowAction>();
+
+			try {
+				wfActions = APILocator.getWorkflowAPI().findAvailableActions( con, currentUser );
+			} catch ( Exception e ) {
+                Logger.error( this, "Could not load workflow actions : ", e );
+            }
+
+//			List<Map<String, Object>> wfActionMapList = new ArrayList<Map<String, Object>>();
+			JSONArray wfActionMapList = new JSONArray();
+
+			for ( WorkflowAction action : wfActions ) {
+
+                if ( action.requiresCheckout() )
+                    continue;
+
+                JSONObject wfActionMap = new JSONObject();
+//                Map<String, Object> wfActionMap = new HashMap<String, Object>();
+                try {
+					wfActionMap.put( "name", action.getName() );
+	                wfActionMap.put( "id", action.getId() );
+	                wfActionMap.put( "icon", action.getIcon() );
+	                wfActionMap.put( "assignable", action.isAssignable() );
+	                wfActionMap.put( "commentable", action.isCommentable() || UtilMethods.isSet( action.getCondition() ) );
+	                wfActionMap.put( "requiresCheckout", action.requiresCheckout() );
+
+	                try {
+						wfActionMap.put( "wfActionNameStr", LanguageUtil.get( currentUser, action.getName() ) );
+					} catch (LanguageException e) {
+						Logger.error( this, "Could not load language key : " + action.getName() );
+					}
+	                wfActionMapList.add( wfActionMap );
+
+                } catch (JSONException e1) {
+					Logger.error(this,  "Could not put property in JSONObject");
+				}
+            }
+
+
+			searchResult.put( "wfActionMapList", wfActionMapList.toString() );
+
+            // End Workflow Actions
+
 			//searchResult.put("structureName", st.getVelocityVarName());
 			Long LanguageId=con.getLanguageId();
 			searchResult.put("languageId", LanguageId.toString());
@@ -924,6 +991,7 @@ public class ContentletAjax {
 		counters.put("luceneQueryRaw", luceneQueryToShow);
 		counters.put("luceneQueryFrontend", luceneQueryToShow2);
 		counters.put("sortByUF", orderBy);
+		counters.put("expiredInodes", expiredInodes);
 
 		long end = total;
 		if (page != 0)
@@ -1068,7 +1136,7 @@ public class ContentletAjax {
         } catch (DotHibernateException e1) {
             Logger.warn(this, e1.getMessage(),e1);
         }
-	    
+
 
 		int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
 		String newInode = "";
@@ -1153,7 +1221,7 @@ public class ContentletAjax {
 				File binaryFile = null;
 				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
 					binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
-					binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()  
+					binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
 							+ File.separator + user.getUserId() + File.separator + elementName
 							+ File.separator + binaryFileValue);
 					if(binaryFile.exists()) {
@@ -1167,10 +1235,10 @@ public class ContentletAjax {
                             if(!acopyFolder.exists())
                                 acopyFolder.mkdir();
                             File acopy=new File(acopyFolder, binaryFileValue);
-                            FileUtils.copyFile(binaryFile, acopy);
+                            FileUtil.copyFile(binaryFile, acopy);
                             elementValue = acopy;
-                        } catch (IOException e) {
-                            Logger.warn(this, "can't make a copy of the uploaded file");
+                        } catch (Exception e) {
+                            Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
                             throw new SystemException(e);
                         }
 					}
@@ -1178,7 +1246,7 @@ public class ContentletAjax {
 					elementValue = null;
 				}
 				//http://jira.dotmarketing.net/browse/DOTCMS-5802
-				boolean populate = req.getSession().getAttribute("populateAccept")!=null?
+				/*boolean populate = req.getSession().getAttribute("populateAccept")!=null?
 						((Boolean)req.getSession().getAttribute("populateAccept")).booleanValue():false;
 						if(populate && elementValue!=null){
 							String siblingData = req.getSession().getAttribute(elementName+"-sibling")!=null?
@@ -1192,20 +1260,22 @@ public class ContentletAjax {
 													String fieldValue = binFile.getName();
 													File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
 															+ java.io.File.separator + user.getUserId()
-															+ java.io.File.separator + fieldValue);
+															+ java.io.File.separator + elementName +
+															java.io.File.separator + fieldValue);
 
 														if(!destFile.exists()){
 															destFile.createNewFile();
 														}
-														FileUtils.copyFile(binFile, destFile);
+														FileUtil.copyFile(binFile, destFile);
 														elementValue = destFile;
 
 												}
 											}
 										}
 									}catch(Exception e){
+										Logger.error(this.getClass(), e.getMessage(), e);
 									}
-						}
+						}*/
 
 			}
 			contentletFormData.put(elementName, elementValue);
@@ -1435,12 +1505,22 @@ public class ContentletAjax {
 
 		}
 		catch(DotSecurityException dse){
-			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");
+			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
 			saveContentErrors.add(errorString);
 		}
-
+		catch(PublishStateException pe) {
+		    String errorString = LanguageUtil.get(user,"message.contentlet.pubfuturedate");
+		    saveContentErrors.add(errorString);
+		}
 		catch (Exception e) {
 			saveContentErrors.add(e.toString());
+			callbackData.put("saveContentErrors", saveContentErrors);
+			callbackData.put("referer", referer);
+			return callbackData;
+		}
+		catch (Throwable t) {
+			Logger.error(this, t.toString());
+			saveContentErrors.add(t.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);
 			callbackData.put("referer", referer);
 			return callbackData;

@@ -16,7 +16,6 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -217,7 +216,7 @@ public class TagAPIImpl implements TagAPI{
 	 * @return tag
 	 */
 	public Tag getTag(String name, String userId, String hostId) throws Exception {
-
+		String existHostId;
 		// validating if exists a tag with the name provided
         HibernateUtil dh = new HibernateUtil(List.class);
     	dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where lower(tagName) = ?");
@@ -238,14 +237,19 @@ public class TagAPIImpl implements TagAPI{
         	boolean tagExists = false;
 
         	Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), true);
-
+        	if(host.getMap().get("tagStorage") == null){
+        		existHostId = host.getMap().get("identifier").toString();
+        	}
+        	else {
+        		existHostId = host.getMap().get("tagStorage").toString();
+        	}
         	for(Tag tag : tags){
 
         		if(isGlobalTag(tag)){
         			newTag = tag;
         			globalTagExists = true;
         		}
-        		if(tag.getHostId().equals(host.getIdentifier())){
+        		if(tag.getHostId().equals(existHostId)){
         			newTag = tag;
             		tagExists = true;
         		}
@@ -382,6 +386,7 @@ public class TagAPIImpl implements TagAPI{
 	 * @param tagName tag(s) to create
 	 * @param userId owner of the tag
 	 * @param inode object to tag
+	 * @deprecated it doesn't handle host id. Call getTagsInText then addTagInode on each
 	 * @return a list of all tags assigned to an object
 	 */
 	public List addTag(String tagName, String userId, String inode) throws Exception {
@@ -860,5 +865,15 @@ public class TagAPIImpl implements TagAPI{
         }
     }
 
-
+    @Override
+    public List<Tag> getTagsInText(String text, String userId, String hostId) throws Exception {
+        List<Tag> tags=new ArrayList<Tag>();
+        String[] tagNames = text.split("[,\\n\\t\\r]");
+        for(String tagname : tagNames) {
+            tagname=tagname.trim();
+            if(tagname.length()>0)
+                tags.add(getTag(tagname,userId,hostId));
+        }
+        return tags;
+    }
 }

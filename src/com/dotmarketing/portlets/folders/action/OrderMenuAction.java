@@ -19,6 +19,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -95,6 +96,7 @@ public class OrderMenuAction extends DotPortletAction {
 					return;
 				}
 				RefreshMenus.deleteMenus();
+				CacheLocator.getNavToolCache().clearCache();
 				HibernateUtil.commitTransaction();
 				_sendToReferral(req,res,req.getParameter("referer"));
 				return;

@@ -126,7 +126,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             dh.setQuery("from "+clazz.getName()+" where identifier=?");
             dh.setParam(identifier);
             Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
-            vi=(VersionInfo)dh.load();
+            vi=(VersionInfo)dh.load(); 
             if(!UtilMethods.isSet(vi.getIdentifier())) {
             	vi.setIdentifier(identifier);
             	vi.setWorkingInode("NOTFOUND");
@@ -146,16 +146,18 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-    private VersionInfo refreshVersionInfoFromDb(VersionInfo info) throws DotDataException,
+    @Override
+    protected VersionInfo findVersionInfoFromDb(Identifier identifer) throws DotDataException,
             DotStateException {
-
-            Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
-            Class clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
-            HibernateUtil dh = new HibernateUtil(clazz);
-            dh.setQuery("from "+clazz.getName()+" where identifier=?");
-            dh.setParam(info.getIdentifier());
-            Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
-            VersionInfo vi=(VersionInfo)dh.load();
+            Class clazz = UtilMethods.getVersionInfoType(identifer.getAssetType());
+            VersionInfo vi= null;
+            if(clazz != null) {
+	            HibernateUtil dh = new HibernateUtil(clazz);
+	            dh.setQuery("from "+clazz.getName()+" where identifier=?");
+	            dh.setParam(identifer.getId());
+	            Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
+	            vi=(VersionInfo)dh.load();
+            }
             if(vi ==null || !UtilMethods.isSet(vi.getIdentifier())) {
             	try {
                     vi = (VersionInfo) clazz.newInstance();
@@ -174,7 +176,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
     protected void saveVersionInfo(VersionInfo info) throws DotDataException, DotStateException {
 
     	//reload versionInfo from db (JIRA-7203)
-        VersionInfo vi=(VersionInfo) refreshVersionInfoFromDb(info);
+        Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
+        VersionInfo vi=(VersionInfo) findVersionInfoFromDb(ident);
+        boolean isNew = vi==null || !InodeUtils.isSet(vi.getIdentifier());
         try {
 			BeanUtils.copyProperties(vi, info);
 		} catch (Exception e) {
@@ -183,9 +187,15 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
         vi.setVersionTs(new Date());
         
-        HibernateUtil.saveOrUpdate(vi);
+        if(isNew) {
+            HibernateUtil.save(vi);
+        }
+        else {
+            HibernateUtil.saveOrUpdate(vi);
+        }
+        HibernateUtil.flush();
         icache.removeVersionInfoFromCache(vi.getIdentifier());
-        icache.addVersionInfoToCache(vi);
+
     }
 
     @Override
@@ -205,9 +215,38 @@ public class VersionableFactoryImpl extends VersionableFactory {
     }
 
     @Override
+    protected ContentletVersionInfo findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
+    	ContentletVersionInfo contv = null;
+    	 HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
+         dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? and lang=?");
+         dh.setParam(identifier);
+         dh.setParam(lang);
+         Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
+         contv = (ContentletVersionInfo)dh.load();
+         return contv;
+    }
+    
+    @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
-    	cvInfo.setVersionTs(new Date());
-    	HibernateUtil.saveOrUpdate(cvInfo);
+    	Identifier ident = APILocator.getIdentifierAPI().find(cvInfo.getIdentifier());
+    	ContentletVersionInfo vi= null;
+    	if(ident!=null && InodeUtils.isSet(ident.getId())){
+    		vi= findContentletVersionInfoInDB(ident.getId(), cvInfo.getLang());
+    	}
+    	boolean isNew = vi==null || !InodeUtils.isSet(vi.getIdentifier());
+        try {
+			BeanUtils.copyProperties(vi, cvInfo);
+		} catch (Exception e) {
+			throw new DotDataException(e.getMessage());
+		}
+    	vi.setVersionTs(new Date());
+    	if(isNew) {
+            HibernateUtil.save(vi);
+        }
+        else {
+            HibernateUtil.saveOrUpdate(vi);
+        }
+    	HibernateUtil.saveOrUpdate(vi);
         icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
 
     }
@@ -224,7 +263,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
         cVer.setVersionTs(new Date());
         
         HibernateUtil.save(cVer);
-        icache.addContentletVersionInfoToCache(cVer);
         return cVer;
     }
 
@@ -244,7 +282,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
         ver.setWorkingInode(workingInode);
         ver.setVersionTs(new Date());
         HibernateUtil.save(ver);
-        icache.addVersionInfoToCache(ver);
         return ver;
     }
 
@@ -253,16 +290,25 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		icache.removeVersionInfoFromCache(id);
 	    VersionInfo info = getVersionInfo(id);
 		if(info!=null && UtilMethods.isSet(info.getIdentifier())) {
+			String ident = info.getIdentifier();
 			HibernateUtil.delete(info);
+			icache.removeFromCacheByIdentifier(ident);
 		}
+
 	}
 
 	@Override
 	protected void deleteContentletVersionInfo(String id, long lang) throws DotDataException {
-	    ContentletVersionInfo vinfo=getContentletVersionInfo(id, lang);
-	    if(UtilMethods.isSet(vinfo.getIdentifier())) {
-	        HibernateUtil.delete(vinfo);
-	        icache.removeContentletVersionInfoToCache(id, lang);
-	    }
+		HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
+        dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? and lang=?");
+        dh.setParam(id);
+        dh.setParam(lang);
+        Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
+        ContentletVersionInfo contv = (ContentletVersionInfo)dh.load();
+     
+        if(UtilMethods.isSet(contv.getIdentifier())) {
+        	HibernateUtil.delete(contv);
+        	icache.removeContentletVersionInfoToCache(id, lang);
+        }
 	}
 }

@@ -243,7 +243,19 @@ public class ResizeImageServlet extends HttpServlet {
             			inode = id;
             		} else {
 	            		try {
-	            			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
+	            		    boolean live=true;
+	                        if(request.getSession().getAttribute("tm_date")!=null) {
+	                            live=true;
+	                            Identifier ident=APILocator.getIdentifierAPI().find(id);
+	                            if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
+	                                Date fdate=new Date(Long.parseLong((String)request.getSession().getAttribute("tm_date")));
+	                                if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().before(fdate))
+	                                    live=false;
+	                                if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(fdate))
+	                                    return; // expired!
+	                            }
+	                        }
+	            			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, live, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
 	            		}
 	            		catch(DotContentletStateException e) {
 	            			cont = APILocator.getContentletAPI().findContentletByIdentifier(id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);

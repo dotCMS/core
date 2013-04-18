@@ -77,7 +77,7 @@ public class BinaryMap {
 	 * @return the rawUri
 	 */
 	public String getRawUri() {
-		rawUri = getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode()):"";
+		rawUri = getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.getVelocityVarName()):"";
 		return rawUri;
 	}
 
@@ -90,7 +90,8 @@ public class BinaryMap {
 	 * @return the resizeUri
 	 */
 	public String getResizeUri() {
-		resizeUri = getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/resize-image/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode()):""; 
+	    if(getName().length()==0) return "";
+		resizeUri = "/contentAsset/image/"+content.getInode()+"/"+field.getVelocityVarName()+"/byInode/1/filter/Resize"; 
 		return resizeUri;
 	}
 	
@@ -102,12 +103,14 @@ public class BinaryMap {
 	 * @param height Height to resize to
 	 */
 	public String getResizeUri(Integer width, Integer height){
-		String parameters = "";
-		boolean first = true;
-		if(height != null && height != 0){parameters += "?h=" + height.toString();first=false;}
-		if(width != null && width != 0){if(first){parameters+="?";}else{parameters+="&";}parameters += "w=" + width.toString();}
-		if(parameters.equals("")){parameters = "?w=100";};
-		return getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/resize-image/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode() + parameters ):"";
+	    if(getName().length()==0) return "";
+	    StringBuilder uri=new StringBuilder();
+	    uri.append(getResizeUri());
+	    if(width!=null && width>0)
+	        uri.append("/resize_w/").append(width);
+	    if(height!=null && height>0)
+	        uri.append("/resize_h/").append(height);
+	    return uri.toString();
 	}
 	
 	/**
@@ -117,7 +120,9 @@ public class BinaryMap {
 	 * the passed width and height, if no background color is passed then white will be used by default.
 	 */
 	public String getThumbnailUri() {
-		return getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/image-thumbnail/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode()):"";
+	    if(getName().length()==0) return "";
+        resizeUri = "/contentAsset/image/"+content.getInode()+"/"+field.getVelocityVarName()+"/byInode/1/filter/Thumbnail"; 
+        return resizeUri;
 	}
 
 	/**
@@ -135,13 +140,16 @@ public class BinaryMap {
 	 * @return
 	 */
 	public String getThumbnailUri(Integer width, Integer height, String background){
-		String parameters = "";
-		boolean first = true;
-		if(height != null && height != 0){parameters += "h=" + height.toString();first=false;}
-		if(width != null && width != 0){if(first){parameters+="?";}else{parameters+="&";}parameters += "w=" + width.toString();first=false;}
-		if(parameters.equals("")){parameters = "?w=100";first=false;};
-		if(UtilMethods.isSet(background)){if(first){parameters+="?";}else{parameters+="&";}parameters += "bg=" + background;}
-		return getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/image-thumbnail/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode() + "?" + parameters ):"";
+	    if(getName().length()==0) return "";
+        StringBuilder uri=new StringBuilder();
+        uri.append(getThumbnailUri());
+        if(width!=null && width>0)
+            uri.append("/thumbnail_w/").append(width);
+        if(height!=null && height>0)
+            uri.append("/thumbnail_h/").append(height);
+        if(background!=null)
+            uri.append("/thumbnail_bg/").append(background);
+        return uri.toString();
 	}
 	
 	/**

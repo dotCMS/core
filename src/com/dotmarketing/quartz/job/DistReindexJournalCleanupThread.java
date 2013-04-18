@@ -6,6 +6,7 @@ import java.util.Date;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
@@ -15,7 +16,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
-public class DistReindexJournalCleanupThread implements Runnable, Job {
+public class DistReindexJournalCleanupThread implements Runnable, Job, StatefulJob {
 	
     public DistReindexJournalCleanupThread() {
     }

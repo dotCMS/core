@@ -27,6 +27,10 @@ public class ServletTestRunner extends HttpServlet {
     public static final String ALL_TESTS_SUITE = "com.AllTestsSuite";
     public static final String RESULT_TYPE_PLAIN = "plain";
     public static final String RESULT_TYPE_FILE = "file";
+    
+    public static ThreadLocal<HttpServletRequest> localRequest=new ThreadLocal<HttpServletRequest>();
+    public static ThreadLocal<HttpServletResponse> localResponse=new ThreadLocal<HttpServletResponse>();
+    
 
     /**
      * Servlet that will respond to an url pattern "/servlet/test".<br>
@@ -42,6 +46,10 @@ public class ServletTestRunner extends HttpServlet {
      */
     public void doGet ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
+        // exposing request/response
+        localRequest.set(request);
+        localResponse.set(response);
+        
         //Getting the junit test class to run
         String className = request.getParameter( "class" );
         String resultType = request.getParameter( "resultType" ); //plain/file

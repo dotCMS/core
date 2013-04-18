@@ -30,9 +30,10 @@ if (typeof dwr == 'undefined' || dwr.engine == undefined) throw new Error('You m
      * @param {int} p3 a param
      * @param {interface java.util.List} p4 a param
      * @param {boolean} p5 a param
+     * @param {string[]} p6 a param
      * @param {function|Object} callback callback function or options object
      */
-    p.fetchContainersDesignTemplate = function(p0, p1, p2, p3, p4, p5, callback) {
+    p.fetchContainersDesignTemplate = function(p0, p1, p2, p3, p4, p5, p6, callback) {
       return dwr.engine._execute(p._path, 'ContainerAjaxDrawedTemplate', 'fetchContainersDesignTemplate', arguments);
     };
 

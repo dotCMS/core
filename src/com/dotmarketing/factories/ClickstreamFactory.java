@@ -80,7 +80,7 @@ public class ClickstreamFactory {
 		}
 
 		// if this is the first request in the click stream
-		if (clickstream.getClickstreamRequests().size() == 0) {
+		if (clickstream.getClickstreamRequests().size() == Config.getIntProperty("MIN_CLICKSTREAM_REQUESTS_TO_SAVE", 2)) {
 			// setup initial referrer
 			if (request.getHeader("Referer") != null) {
 				clickstream.setInitialReferrer(request.getHeader("Referer"));

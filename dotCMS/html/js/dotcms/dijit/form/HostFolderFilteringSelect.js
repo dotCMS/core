@@ -204,7 +204,7 @@ dojo.declare("dotcms.dijit.form.HostFolderFilteringSelect", [dijit._Widget, diji
 
 	_repositionTreeWrapper: function() {
 		var selectCoords = dojo.coords(this.hostFileFilteringSelectWrapper, true)
-		dojo.style(this.hostFoldersTreeWrapper, { left: selectCoords.x + "px", top: (selectCoords.y + selectCoords.h) + "px"})
+		dojo.style(this.hostFoldersTreeWrapper, { left: selectCoords.x + "px", top: (selectCoords.y + selectCoords.h) + "px", position:"absolute"})
 	},
 
 	onChange: function(newValue) { },

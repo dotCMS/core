@@ -1,17 +1,21 @@
 package com.dotcms.publishing;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
+
+import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -21,8 +25,8 @@ public class PublisherConfig implements Map<String, Object> {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
-		UPDATED_HTML_PAGE_IDS;
-	};
+		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS;
+	}
 	
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
@@ -32,16 +36,38 @@ public class PublisherConfig implements Map<String, Object> {
 	private boolean liveOnly = true;
 
 	@SuppressWarnings("unchecked")
-	public List<Folder> getFolders() {
-		return (List<Folder>) params.get(Config.FOLDERS.name());
+	public Set<String> getFolders() {
+		if(get(Config.FOLDERS.name()) == null){
+			Set<String> foldersToBuild =   new HashSet<String>();
+			params.put(Config.FOLDERS.name(), foldersToBuild);
+		}
+		return (Set<String>) params.get(Config.FOLDERS.name());
 	}
 
-	public void setFolders(List<Folder> folders) {
+	public void setFolders(Set<String> folders) {
 		params.put(Config.FOLDERS.name(), folders);
 	}
+	
+	@SuppressWarnings("unchecked")
+	public Set<String> getHostSet() {
+		if(get(Config.HOSTS.name()) == null){
+			Set<String> hostsToBuild =   new HashSet<String>();
+			params.put(Config.HOSTS.name(), hostsToBuild);
+		}
+		return (Set<String>) params.get(Config.HOSTS.name());
+	}
 
-	public List<Structure> getStructures() {
-		return (List<Structure>) params.get(Config.STRUCTURES.name());
+	public void setHostSet(Set<String> hosts) {
+		params.put(Config.HOSTS.name(), hosts);
+	}
+
+	@SuppressWarnings("unchecked")
+	public Set<String> getStructures() {
+		if(get(Config.STRUCTURES.name()) == null){
+			Set<String> structsToBuild =   new HashSet<String>();
+			params.put(Config.STRUCTURES.name(), structsToBuild);
+		}
+		return (Set<String>) params.get(Config.STRUCTURES.name());
 	}
 	public boolean makeBundle() {
 		return (Boolean) params.get(Config.MAKE_BUNDLE.name());
@@ -63,16 +89,41 @@ public class PublisherConfig implements Map<String, Object> {
 		this.liveOnly = liveOnly;
 	}
 	
-	public void setStructures(List<Structure> structures) {
+	public void setStructures(Set<String> structures) {
 		params.put(Config.STRUCTURES.name(), structures);
 	}
-
+	
 	public String getLuceneQuery() {
 		return (String) params.get(Config.LUCENE_QUERY.name());
 	}
 
 	public void setLuceneQuery(String luceneQuery) {
 		params.put(Config.LUCENE_QUERY.name(), luceneQuery);
+	}
+	
+	public String getEndpoint() {
+		return (String) params.get(Config.ENDPOINT.name());
+	}
+
+	public void setEndpoint(String endpoint) {
+		params.put(Config.ENDPOINT.name(), endpoint);
+	}
+	
+	public String getGroupId() {
+		return (String) params.get(Config.GROUP_ID.name());
+	}
+
+	public void setGroupId(String groupId) {
+		params.put(Config.GROUP_ID.name(), groupId);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<String> getLuceneQueries() {
+		return (List<String>) params.get(Config.LUCENE_QUERIES.name());
+	}
+
+	public void setLuceneQueries(List<String> luceneQueries) {
+		params.put(Config.LUCENE_QUERIES.name(), luceneQueries);
 	}
 
 	public void clear() {
@@ -164,13 +215,13 @@ public class PublisherConfig implements Map<String, Object> {
 		
 		// lazy load
 		if(params.get(Config.UPDATED_HTML_PAGE_IDS.name()) ==null){
-			List<String> ids = BundlerUtil.getUpdatedHTMLPageIds(getStartDate(), getEndDate());
+			List<String> ids = new ArrayList<String>();
+			for(Host h : getHosts())
+			    ids.addAll(
+			        APILocator.getHTMLPageAPI().findUpdatedHTMLPageIds(h, getStartDate(), getEndDate()));
 			params.put(Config.UPDATED_HTML_PAGE_IDS.name(), ids);
 		}
-		
-		
-		
-		
+
 		return (List<String>) params.get(Config.UPDATED_HTML_PAGE_IDS.name());
 	}
 	
@@ -192,19 +243,12 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 
 	public PublisherConfig() {
-		params = new HashMap<String, Object>();
+		params = java.util.Collections.synchronizedMap(new LinkedHashMap<String, Object>());
 		setId(UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_'));
-
-		Date startDate = new java.util.Date();
-		startDate.setTime(0);
-		setStartDate(startDate);
-		setEndDate(new java.util.Date());
 
 		setLanguage(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
 		setTimeStamp(new Date());
-
-		params = new LinkedHashMap<String, Object>();
 
 	}
 
@@ -280,13 +324,33 @@ public class PublisherConfig implements Map<String, Object> {
 	}
 	public void setBundlers(List<IBundler> bundlers) {
 
-		params.put(Config.BUNDLERS.name(), bundlers);
+		List<String> bs = new ArrayList<String>();
+		for(IBundler clazz : bundlers){
+			bs.add(clazz.getClass().getName());
+		}
+
+		params.put(Config.BUNDLERS.name(), bs);
+		
+		
+		
+		
+		
 	}
 	
 	
 	public List<IBundler> getBundlers() {
 
-		return (List<IBundler>) params.get(Config.BUNDLERS.name());
+		 List<String> x = (List<String>) params.get(Config.BUNDLERS.name());
+		 List<IBundler> bs = new ArrayList<IBundler>();
+		 for(String name : x){
+			 try {
+				bs.add((IBundler) Class.forName(name).newInstance());
+			} catch (Exception e) {
+				Logger.error(this.getClass(), "Cannont get bundler:" + e.getMessage(), e);
+			}
+			 
+		 }
+		 return bs;
 	}
 	public boolean isIncremental(){
 		return (params.get(Config.INCREMENTAL.name()) !=null);
@@ -299,5 +363,15 @@ public class PublisherConfig implements Map<String, Object> {
 		else{
 			params.remove(Config.INCREMENTAL.name());
 		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<PublishQueueElement> getAssets() {
+		
+		return (List<PublishQueueElement>) params.get(Config.ASSETS.name());
+	}
+	
+	public void setAssets(List<PublishQueueElement> pageIds) {
+		params.put(Config.ASSETS.name(), pageIds);
 	}
 }

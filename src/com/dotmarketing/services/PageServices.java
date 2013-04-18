@@ -1,21 +1,6 @@
 package com.dotmarketing.services;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import bsh.This;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -23,7 +8,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -33,12 +17,17 @@ import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.*;
 import com.dotmarketing.velocity.DotResourceCache;
+import org.apache.velocity.runtime.resource.ResourceManager;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.util.*;
 
 /**
  * @author will
@@ -86,7 +75,7 @@ public class PageServices {
 		StringBuilder sb = new StringBuilder();
 
 		ContentletAPI conAPI = APILocator.getContentletAPI();
-		com.dotmarketing.portlets.templates.model.Template cmsTemplate = com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory.getHTMLPageTemplate(htmlPage, EDIT_MODE);
+		Template cmsTemplate = com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory.getHTMLPageTemplate(htmlPage, EDIT_MODE);
 		if(cmsTemplate == null || ! InodeUtils.isSet(cmsTemplate.getInode())){
 			Logger.error(This.class, "PAGE DOES NOT HAVE A VALID TEMPLATE (template unpublished?) : page id " + htmlPage.getIdentifier() + ":" + identifier.getURI()   );
 		}
@@ -113,9 +102,9 @@ public class PageServices {
 		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 
 		Host host = htmlPageAPI.getParentHost(htmlPage);
-		sb.append("#if(!$doNotParseTemplate)\n");
+		sb.append("#if(!$doNotParseTemplate)");
 			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( host.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_HOST_EXTENSION") ).append( "')");
-		sb.append("#end\n");
+		sb.append(" #end ");
 		
 		
 		
@@ -143,7 +132,7 @@ public class PageServices {
 		sb.append("#set ($HTMLPAGE_REDIRECT = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getRedirect()) ).append( "\" )");
 		
 		sb.append("#set ($pageTitle = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getTitle()) ).append( "\" )");
-		sb.append("#set ($pageChannel = \"" ).append( pageChannel ).append( "\" )\n");
+		sb.append("#set ($pageChannel = \"" ).append( pageChannel ).append( "\" )");
 		sb.append("#set ($friendlyName = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()) ).append( "\" )");
 
 		Date moddate = null;
@@ -157,7 +146,7 @@ public class PageServices {
 
 		sb.append("#set ($HTML_PAGE_LAST_MOD_DATE= $date.toDate(\"yyyy-MM-dd HH:mm:ss.SSS\", \"" ).append( moddate ).append( "\"))");
 		sb.append("#set ($HTMLPAGE_MOD_DATE= $date.toDate(\"yyyy-MM-dd HH:mm:ss.SSS\", \"" ).append( moddate ).append( "\"))");
-		sb.append("#end\n");
+		sb.append(" #end ");
 						
 		//get the containers for the page and stick them in context
 		//List identifiers = InodeFactory.getChildrenClass(cmsTemplate, Identifier.class);
@@ -186,12 +175,17 @@ public class PageServices {
 
 
 			List<Contentlet> contentlets = new ArrayList<Contentlet>();
+			List<Contentlet> contentletsFull = new ArrayList<Contentlet>();
 			if (!dynamicContainer) {
 				Identifier idenHtmlPage = APILocator.getIdentifierAPI().find(htmlPage);
 				Identifier idenContainer = APILocator.getIdentifierAPI().find(c);
 				//The container doesn't have categories
 				try{
 					contentlets = conAPI.findPageContentlets(idenHtmlPage.getId(), idenContainer.getId(), sort, EDIT_MODE, -1,APILocator.getUserAPI().getSystemUser() ,false);
+					if(EDIT_MODE)
+					    contentletsFull=contentlets;
+					else
+					    contentletsFull = conAPI.findPageContentlets(idenHtmlPage.getId(), idenContainer.getId(), sort, true, -1,APILocator.getUserAPI().getSystemUser() ,false);
 				}catch(Exception e){
 					Logger.error(PageServices.class,"Unable to retrive contentlets on page", e);
 				}
@@ -209,51 +203,73 @@ public class PageServices {
 				}
 				contentlets = contentletsFilter;
 			}
-
+			if(contentletsFull.size() > 0){
+                Set<String> contentletIdentList = new HashSet<String>();
+                List<Contentlet> contentletsFilter = new ArrayList<Contentlet>();
+                for(Contentlet cont : contentletsFull){
+                    if(!contentletIdentList.contains(cont.getIdentifier())){
+                        contentletIdentList.add(cont.getIdentifier());
+                        contentletsFilter.add(cont);
+                    }
+                }
+                contentletsFull = contentletsFilter;
+            }
+			
+			StringBuilder widgetpree=new StringBuilder();
+			StringBuilder widgetpreeFull=new StringBuilder();
+			
 			StringBuilder contentletList = new StringBuilder();
-			Iterator iter = contentlets.iterator();
-			int count = 0;
-			while (iter.hasNext() && count < c.getMaxContentlets()) {
-				Contentlet contentlet = (Contentlet) iter.next();
-				Identifier contentletIdentifier;
-				try {
-					contentletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
-				} catch (DotHibernateException dhe) {
-					contentletIdentifier = new Identifier();
-					Logger.error(PageServices.class,"Unable to rertive identifier for contentlet",dhe);
-				}
-
-					contentletList.append("\"").append(contentletIdentifier.getInode()).append("\"");
-					if (iter.hasNext() && count < c.getMaxContentlets()) {
-						contentletList.append(",");	
-					}
-				count++;
-				Structure contStructure =contentlet.getStructure();
-				if(contStructure.getStructureType()== Structure.STRUCTURE_TYPE_WIDGET){
-					Field field=contStructure.getFieldVar("widgetPreexecute");
-					if (field!= null && UtilMethods.isSet(field.getValues())) {
-						sb.append(field.getValues().trim());
-					}
-				}
-				
-				
+			int count=0;
+			for(Contentlet contentlet : contentlets) {
+			    contentletList.append(count==0 ? "" : ",")
+			        .append('"').append(contentlet.getIdentifier()).append('"');
+			    if(contentlet.getStructure().getStructureType()== Structure.STRUCTURE_TYPE_WIDGET) {
+                    Field field=contentlet.getStructure().getFieldVar("widgetPreexecute");
+                    if (field!= null && UtilMethods.isSet(field.getValues()))
+                        widgetpree.append(field.getValues().trim());
+                }
+			    if(++count>=c.getMaxContentlets()) break;
 			}
-			sb.append("#set ($contentletList" ).append( ident.getIdentifier() ).append( " = [" ).append( contentletList.toString() ).append( "] )");
-			sb.append("\n#set ($totalSize" ).append( ident.getIdentifier() ).append( "=" ).append( count ).append( ")");
+			
+			StringBuilder contentletListFull = new StringBuilder();
+            int countFull=0;
+            for(Contentlet contentlet : contentletsFull) {
+                contentletListFull.append(countFull==0 ? "" : ",")
+                    .append('"').append(contentlet.getIdentifier()).append('"');
+                if(contentlet.getStructure().getStructureType()== Structure.STRUCTURE_TYPE_WIDGET) {
+                    Field field=contentlet.getStructure().getFieldVar("widgetPreexecute");
+                    if (field!= null && UtilMethods.isSet(field.getValues()))
+                        widgetpreeFull.append(field.getValues().trim());
+                }
+                if(++countFull>=c.getMaxContentlets()) break;
+            }
+			
+			sb.append("#if($request.session.getAttribute(\"tm_date\"))");
+			   sb.append(widgetpreeFull);
+			   sb.append("#set ($contentletList" ).append( ident.getIdentifier() )
+                 .append( " = [" ).append( contentletListFull.toString() ).append( "] )");
+               sb.append("#set ($totalSize" ).append( ident.getIdentifier() )
+                 .append( "=" ).append( countFull ).append( ")");
+			sb.append("#else ");
+			   sb.append(widgetpree);
+			   sb.append("#set ($contentletList" ).append( ident.getIdentifier() )
+			     .append( " = [" ).append( contentletList.toString() ).append( "] )");
+			   sb.append("#set ($totalSize" ).append( ident.getIdentifier() )
+			     .append( "=" ).append( count ).append( ")");
+			sb.append("#end ");
 			langCounter++;
-
 
 		}
 
 		if(htmlPage.isHttpsRequired()){		
-			sb.append("#if(!$ADMIN_MODE  && !$request.isSecure())\n");
-			sb.append("    #if($request.getQueryString())\n");
+			sb.append(" #if(!$ADMIN_MODE  && !$request.isSecure())");
+			sb.append("    #if($request.getQueryString())");
 			sb.append("        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')?$request.getQueryString()\")");
-			sb.append("    #else\n");
+			sb.append("    #else ");
 			sb.append("        #set ($REDIRECT_URL = \"https://${request.getServerName()}$request.getAttribute('javax.servlet.forward.request_uri')\")");
-			sb.append("    #end\n");
+			sb.append("    #end ");
 			sb.append("    $response.sendRedirect(\"$REDIRECT_URL\")"); 
-			sb.append("#end\n");
+			sb.append(" #end ");
 		}
 		
 		sb.append("#if($HTMLPAGE_REDIRECT != \"\")");
@@ -264,7 +280,15 @@ public class PageServices {
 
 		
 		sb.append("#if(!$doNotParseTemplate)");
-			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION") ).append( "')");
+            if ( cmsTemplate.isDrawed() ) {//We have a designed template
+                //Setting some theme variables
+                sb.append( "#set ($dotTheme = $templatetool.theme(\"" ).append( cmsTemplate.getTheme() ).append( "\",\"" ).append( host.getIdentifier() ).append( "\"))" );
+                sb.append( "#set ($dotThemeLayout = $templatetool.themeLayout(\"" ).append( cmsTemplate.getInode() ).append( "\" ))" );
+                //Merging our template
+                sb.append( "$velutil.mergeTemplate(\"$dotTheme.templatePath\")" );
+            } else {
+                sb.append( "$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION" ) ).append( "')" );
+            }
 		sb.append("#end");
 		
 		

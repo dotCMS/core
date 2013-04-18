@@ -15,10 +15,7 @@ import org.osgi.framework.BundleException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 public class OSGIAJAX extends OSGIBaseAJAX {
 
@@ -103,6 +100,46 @@ public class OSGIAJAX extends OSGIBaseAJAX {
             Logger.error( OSGIBaseAJAX.class, e.getMessage(), e );
             throw new IOException( e.getMessage(), e );
         }
+    }
+
+    /**
+     * Returns the packages inside the <strong>osgi-extra.conf</strong> file, those packages are the value
+     * for the OSGI configuration property <strong>org.osgi.framework.system.packages.extra</strong>.
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void getExtraPackages ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+
+        //Read the list of the dotCMS exposed packages to the OSGI context
+        String extraPackages = OSGIUtil.getInstance().getExtraOSGIPackages();
+
+        //Send a respose
+        writeSuccess( response, extraPackages );
+    }
+
+    /**
+     * Overrides the content of the <strong>osgi-extra.conf</strong> file
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void modifyExtraPackages ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+
+        //Get the packages from the form
+        String extraPackages = request.getParameter( "packages" );
+
+        //Override the file with the values we just read
+        BufferedWriter writer = new BufferedWriter( new FileWriter( OSGIUtil.getInstance().FELIX_EXTRA_PACKAGES_FILE ) );
+        writer.write( extraPackages );
+        writer.close();
+
+        //Send a response
+        writeSuccess( response, "OSGI Extra Packages Saved" );
     }
 
     public void restart ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {

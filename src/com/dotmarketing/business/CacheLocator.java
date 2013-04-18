@@ -1,7 +1,15 @@
 package com.dotmarketing.business;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.jgroups.JChannel;
+
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
 import com.dotmarketing.db.HibernateUtil;
@@ -41,11 +49,8 @@ import com.dotmarketing.portlets.workflows.business.WorkflowCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.velocity.DotResourceCache;
-import org.jgroups.JChannel;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.dotmarketing.viewtools.navigation.NavToolCache;
+import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
 
 
 /**
@@ -221,6 +226,14 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static IndiciesCache getIndiciesCache() {
 	    return (IndiciesCache)getInstance(CacheIndex.Indicies);
 	}
+	
+	public static NavToolCache getNavToolCache() {
+	    return (NavToolCache)getInstance(CacheIndex.NavTool);
+	}
+	
+	public static PublishingEndPointCache getPublishingEndPointCache() {
+		return (PublishingEndPointCache)getInstance(CacheIndex.PublishingEndPoint);
+	}
 
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
@@ -300,7 +313,9 @@ enum CacheIndex
 	VirtualLinkCache("Virtual Link Cache"),
 	HostVariables("Host Variables"),
 	Block_Directive("Block Directive"),
-	Indicies("Indicies");
+	Indicies("Indicies"),
+	NavTool("Navigation Tool"),
+	PublishingEndPoint("PublishingEndPoint Cache");
 	
 	Cachable create() {
 		switch(this) {
@@ -332,6 +347,8 @@ enum CacheIndex
       	case WorkflowCache : return new WorkflowCacheImpl();
       	case VirtualLinkCache : return new VirtualLinkCacheImpl();
       	case Indicies: return new IndiciesCacheImpl();
+      	case NavTool: return new NavToolCacheImpl();
+      	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

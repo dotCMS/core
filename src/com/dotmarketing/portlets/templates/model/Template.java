@@ -53,6 +53,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	public static final String THEME_HTML_HEAD = "html_head.vtl";
 	public static final String THEME_HEADER = "header.vtl";
 	public static final String THEME_FOOTER = "footer.vtl";
+	public static final String THEME_TEMPLATE = "template.vtl";
 	public static final List<String> THEME_FILES = new ArrayList<String>();
 	public static final String THEMES_PATH = "/application/themes/";
 
@@ -140,12 +141,6 @@ public class Template extends WebAsset implements Serializable, Comparable {
 		this.body = body;
 	}
 
-	public void copy(Template currentTemplate) {
-		this.body = currentTemplate.getBody();
-		this.header = currentTemplate.getHeader();
-		this.footer = currentTemplate.getFooter();
-		super.copy(currentTemplate);
-	}
 
 	/**
 	 * Returns the footer.

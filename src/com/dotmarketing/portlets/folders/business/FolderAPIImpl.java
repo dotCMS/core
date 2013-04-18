@@ -15,6 +15,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
@@ -69,7 +70,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		Folder f = ffac.findFolderByPath(path, host);
 
 
-		if (InodeUtils.isSet(f.getInode()) && !papi.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+		if (f != null && InodeUtils.isSet(f.getInode()) && !papi.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 
 			// SYSTEM_FOLDER means if the user has permissions to the host, then they can see host.com/
 			if(FolderAPI.SYSTEM_FOLDER.equals(f.getInode())) {
@@ -105,11 +106,8 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		boolean localTransaction = false;
 		try {
-			localTransaction = HibernateUtil.getSession().connection().getAutoCommit();
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-			if (localTransaction) {
-				HibernateUtil.startTransaction();
-			}
 
 			return ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
 
@@ -313,8 +311,11 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user + " does not have permission to edit " + folder.getName());
 		}
-
-
+		
+		
+		if(folder != null && FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
+			throw new DotSecurityException("YOU CANNOT DELETE THE SYSTEM FOLDER");
+		}
 		boolean localTransaction = false;
 
 		// start transactional delete
@@ -334,6 +335,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			faker.setShowOnMenu(folder.isShowOnMenu());
 			faker.setInode(folder.getInode());
 			faker.setIdentifier(folder.getIdentifier());
+			faker.setHostId(folder.getHostId());
 
 			List<Folder> folderChildren = findSubFolders(folder, user, respectFrontEndPermissions);
 
@@ -358,6 +360,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			if (folder.isShowOnMenu()) {
 				// RefreshMenus.deleteMenus();
 				RefreshMenus.deleteMenu(faker);
+				CacheLocator.getNavToolCache().removeNav(faker.getHostId(), faker.getInode());
+				Identifier ident=APILocator.getIdentifierAPI().find(faker);
+				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 			}
 
 			if(localTransaction){
@@ -412,10 +417,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
 			for (Link linker : links) {
 				Link link = (Link) linker;
-				if (link.isWorking()) {
 
 					Identifier identifier = APILocator.getIdentifierAPI().find(link);
-
 					if (!InodeUtils.isSet(identifier.getInode())) {
 						Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: link inode = " + link.getInode()
 								+ " doesn't have a valid identifier associated.");
@@ -423,9 +426,9 @@ public class FolderAPIImpl implements FolderAPI  {
 					}
 
 					papi.removePermissions(link);
+					APILocator.getMenuLinkAPI().delete(link, user, false);
 
-					APILocator.getIdentifierAPI().delete(identifier);
-				}
+				
 			}
 
 			/******** delete possible orphaned identifiers under the folder *********/
@@ -482,7 +485,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws DotStateException
 	 */
 
-	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
+	public void save(Folder folder, String existingId, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
 		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(id ==null || !UtilMethods.isSet(id.getId())){
@@ -502,9 +505,17 @@ public class FolderAPIImpl implements FolderAPI  {
 				|| !papi.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
 			throw new DotSecurityException("User " + user + " does not have permission to add to " + name);
 		}
+		
+		
+		ffac.save(folder, existingId);
 
-		ffac.save(folder);
+	}
+	
+	
+	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
+		save( folder, null,  user,  respectFrontEndPermissions);
+		
 	}
 
 
@@ -901,7 +912,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		ChildrenCondition cond = new ChildrenCondition();
         cond.working=true;
-        cond.deleted=false;
+        //cond.deleted=false;
 		List list = ffac.getChildrenClass(parent, Link.class, cond);
 
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);

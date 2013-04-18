@@ -247,7 +247,12 @@ dojo.require("dojo.cookie");
 
     });
 
-
+    function clearErrorMsg()
+    {
+    	 <%request.getSession().removeAttribute("portal_login_as_error");%>
+         dojo.byId('portal_loginas_errors').innerHTML = '';
+    }
+    
     function portal_loginAs_checkAdminRole(isAdmin) {
         var wrapper = dojo.byId('portal_login_as_password_wrapper');
         if(isAdmin) {
@@ -371,7 +376,7 @@ dojo.require("dojo.cookie");
         var callbackOptions = {
             callback: saveUserCallbackMyAccount,
             exceptionHandler: saveUserExceptionMyAccount
-        }
+        };
         UserAjax.updateUser(currentUserMyAccount.id, currentUserMyAccount.id, dijit.byId('firstNameMyAccount').attr('value'),
                 dijit.byId('lastNameMyAccount').attr('value'),
                 dijit.byId('emailAddressMyAccount').attr('value'), myAccountpassswordValue, callbackOptions);
@@ -569,13 +574,13 @@ dojo.require("dojo.cookie");
             && request.getSession().getAttribute(
                 WebKeys.PRINCIPAL_USER_ID) == null) {
     %>
-        <div id="portal_login_as_users_wrapper" dojoType="dijit.Dialog" style="display:none;height:180px;vertical-align: middle;" draggable="false" >
+        <div id="portal_login_as_users_wrapper" dojoType="dijit.Dialog"  style="display:none;height:180px;vertical-align: middle;padding-top:15px\9;" draggable="false" >
             <div id="portal_loginas_errors"></div>
             <form id="portal_login_as_users_form" action="<%=CTX_PATH%>/portal<%=PortalUtil.getAuthorizedPath(request)%>/login_as?referer=<%=CTX_PATH%>" method="post">
                 <div id="portal_login_as_users_select" class="formRow" style="text-align:center;">
                     <div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></div>
                     <bean:message key="Select-User" /> : &nbsp;
-                        <select id="portal_login_as_user" name="portal_login_as_user" dojoType="dijit.form.FilteringSelect"
+                        <select id="portal_login_as_user" name="portal_login_as_user" dojoType="dijit.form.FilteringSelect" onchange="clearErrorMsg()"
                         store="usersStore" searchDelay="300" pageSize="30" labelAttr="name"
                         invalidMessage="<%=LanguageUtil.get(pageContext,
                             "Invalid-option-selected")%>"
@@ -691,6 +696,7 @@ dojo.require("dojo.cookie");
 					<button dojoType="dijit.form.Button" iconClass="bugIcon" onclick="window.open('https://github.com/dotCMS');">
 						<%=LanguageUtil.get(pageContext, "Report-a-Bug") %>
 					</button>
+                </div>
 			</td>
 			<td valign="top" width="50%" style="padding:10px 10px 10px 20px;">
 				<h2><%=LanguageUtil.get(pageContext, "Professional-Support") %></h2>

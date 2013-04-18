@@ -14,6 +14,7 @@ Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAsse
 <script language="JavaScript">
 
 dojo.require("dotcms.dojo.data.StructureReadStore");
+dojo.require("dotcms.dojo.push.PushHandler");
 	 //Global Variables
      var openFolders = new Array ();
 
@@ -111,7 +112,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		 element.style.cursor='default';
 		 setTimeout('disablingDragging()', 500);
        }
-     }
+     };
 
 	 function disablingDragging () {
      	 dragging = false;
@@ -1482,6 +1483,12 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		}
 	}
 
+	function remotePublish (objId) {
+
+		pushHandler.showDialog(objId);
+
+	}
+
 	function unpublishHTMLPage (objId, referer) {
 		BrowserAjax.unPublishAsset(objId, unpublishHTMLPageCallback);
 		//top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
@@ -1672,6 +1679,69 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
         	hidePopUp('context_menu_popup_'+parentId);
         }
 	}
+
+    /**
+     * Uploads multiple files
+     *
+     * @param uploader
+     * @param referer
+     * @param operation
+     * @return {boolean}
+     */
+    function uploadFiles(uploader, referer, operation) {
+
+        /**
+        * Registers and manage the onComplete event for uploaded files
+         *
+        * @param uploader
+        * @param referer
+         */
+        var uploaderHandler = function (uploader, referer) {
+
+            /*dojo.connect(uploader, "onProgress", function(dataArray){
+             //...
+             });*/
+            dojo.connect(uploader, "onComplete", function(dataArray){
+                window.location = referer;
+            });
+        };
+
+        var form = document.getElementById("fm");
+        var nameValueSeparator = "<%=com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR%>";
+        var uploadFiles = uploader.getFileList();
+
+        if (uploadFiles.length == 0) {
+            alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.alert.please.upload")) %>');
+            return false;
+        }
+        for (var temp = 0; temp < uploadFiles.length; temp++) {
+            var fileName = uploadFiles[temp].name;
+            if (temp == 0)
+                document.getElementById("fileNames").value = fileName;
+            else
+                document.getElementById("fileNames").value = document.getElementById("fileNames").value + nameValueSeparator + fileName;
+        }
+
+        document.getElementById("tableDiv").style.display = "none";
+        document.getElementById("messageDiv").style.display = "";
+
+        form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>';
+        form.<portlet:namespace />subcmd.value = operation;
+        form.<portlet:namespace />cmd.value = "<%= Constants.ADD %>";
+        dijit.byId('saveButton').setAttribute('disabled', true);
+        if (dijit.byId('savePublishButton') != null) {
+            dijit.byId('savePublishButton').setAttribute('disabled', true);
+        }
+
+        if (dojo.isIE) {
+            uploaderHandler(uploader, referer);
+            uploader.submit(form);
+        } else {
+            submitForm(form);
+        }
+
+        return true;
+    }
 
 	function removeAddlStyleRef(){//DOTCMS-6856
 		dijit.byId('addFileDialog').containerNode.getElementsByTagName("style")[0].remove(dijit.byId('addFileDialog').containerNode.getElementsByTagName("style")[0].childNodes[0]);
@@ -2153,6 +2223,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 	    }
     }
 
+    var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 
 </script>

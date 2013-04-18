@@ -7,10 +7,8 @@
 ## 
 ## 
 ##
-
 #if($EDIT_MODE)
-	##Including css stylesheet for preview mode controls included in the page
-	<script type="text/javascript">
-		document.write('<style type="text/css"> @import "/html/css/preview.css"; </style>');
-	</script>
+<script type="text/javascript">
+  document.write('<style type="text/css"> @import "/html/css/preview.css"; </style>');
+</script>
 #end

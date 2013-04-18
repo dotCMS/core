@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Map;
 
 import org.apache.commons.collections.map.LRUMap;
 
+import com.caucho.quercus.lib.db.Oracle;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -259,15 +261,18 @@ public class DotConnect {
         SQL = x;
         startRow = 0;
         maxRows = -1;
+        
         Logger.debug(this, "setSQL: " + x);
     }
     
     public void setSQL(String x, int limit) {
-        if(DbConnectionFactory.isMsSql())
+        if(DbConnectionFactory.isMsSql()){
+        	x = x.trim();
             if(x.startsWith("select distinct"))
                 setSQL(x.replaceFirst("select distinct", "select distinct top "+limit+" "));
             else
                 setSQL(x.replaceFirst("select", "select top "+limit+" "));
+        }
         else if(DbConnectionFactory.isOracle()) {
             setSQL("select * from ("+x+") where rownum<="+limit);
         }
@@ -472,7 +477,7 @@ public class DotConnect {
      */
     public void addParam(java.util.Date x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (date): " + x);
-        paramList.add(paramList.size(), new Timestamp(x.getTime()));
+        paramList.add(paramList.size(), x!=null ? new Timestamp(x.getTime()) : x);
     }
     
     
@@ -630,6 +635,8 @@ public class DotConnect {
 		                    	
 		                    	if(rs.getObject(x) instanceof java.sql.Clob){
 		                    		objvars.put(x, rs.getString(x));
+		                    	}else if(rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
+		                    		objvars.put(x,new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timeValue().getTime()));
 		                    	}
 		                    	else{
 		                    		objvars.put(x, rs.getObject(x));
@@ -640,6 +647,8 @@ public class DotConnect {
 		                        
 		                    	if(rs.getObject(x) instanceof java.sql.Clob){
 		                    		objvars.put(x, rs.getString(x));
+		                    	}else if(rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
+		                    		objvars.put(x,new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timestampValue().getTime()));
 		                    	}
 		                    	else{
 		                    		objvars.put(x, rs.getObject(x));

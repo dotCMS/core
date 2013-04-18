@@ -51,7 +51,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         }
 
         this.currentUrl = this.baseFilterUrl;
-        console.log("baseFilterUrl: " + this.baseFilterUrl);
     },
 
 

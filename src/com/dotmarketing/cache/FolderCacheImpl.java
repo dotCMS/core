@@ -17,20 +17,21 @@ public class FolderCacheImpl extends FolderCache {
 
 	public void addFolder(Folder f, Identifier id) {
 
-		if(f ==null || id ==null || ! UtilMethods.isSet(id.getId())){
+		if(f ==null || id ==null || ! UtilMethods.isSet(id.getId()) || ! UtilMethods.isSet(id.getPath())){
 			return;
 		}
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-		// we use the identifier uri for our mappings.
+		
+		// Folder by Inode
 		String inode = f.getInode();
-
-		String folderPath = f.getHostId() + ":" + id.getPath() ;
 		cache.put(getPrimaryGroup() + inode, f, getPrimaryGroup());
 
+		// Folder by Path
+		String folderPath = f.getHostId() + ":" + cleanPath(id.getPath()) ;
 		cache.put(getPrimaryGroup() + folderPath, f, getPrimaryGroup());
 
 	}
-
+	// Folder by Inode
 	public Folder getFolder(String inode) {
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 		Folder f = null;
@@ -43,13 +44,13 @@ public class FolderCacheImpl extends FolderCache {
 		return f;
 	}
 
-
+	// Folder by Path
 	public Folder getFolderByPathAndHost(String path, Host host) {
 
 		if(host==null) return null;
 
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-		String folderPath = host.getIdentifier() + ":" + path;
+		String folderPath = host.getIdentifier() + ":" + cleanPath(path) ;
 		Folder f = null;
 		try {
 			f = (Folder) cache.get(getPrimaryGroup() + folderPath, getPrimaryGroup());
@@ -65,15 +66,33 @@ public class FolderCacheImpl extends FolderCache {
 
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 		String inode = f.getInode();
-
+		
+		// Folder by Inode
 		cache.remove(getPrimaryGroup() + inode, getPrimaryGroup());
+		
 		try{
-			String folderPath = f.getHostId() + ":" + id.getPath() ;
+			// Folder by Path
+			String folderPath = f.getHostId() + ":" + cleanPath(id.getPath()) ;
 			cache.remove(getPrimaryGroup() + folderPath, getPrimaryGroup());
 		}
 		catch(NullPointerException npe){
 			Logger.debug(FolderCache.class, "Cache Entry not found", npe);
 		}
 	}
+	
+	
+	private String cleanPath(String path){
+		return (path != null && path.length() >1) ? 
+				(path.endsWith("/"))
+					? path.substring(0,path.length()-1)
+							: path
+								: path;
+								
+		
+	}
+	
+	
+	
+	
 
 }

@@ -53,7 +53,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Date") %>',
 			label: '<span class="calDayIcon"></span> <%= LanguageUtil.get(pageContext, "Date") %>',
 			imageurl: '/html/images/icons/calendar-day.png',
-			show:['elementSelect','required','labelRow','hintText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
+			show:['elementSelect','required','labelRow','hintText','defaultText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
 			dataType:'date',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.date")) %>'
 		},{
@@ -61,7 +61,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Date-and-Time") %>',
 			label: '<span class="calClockIcon"></span> <%= LanguageUtil.get(pageContext, "Date-and-Time") %>',
 			imageurl: '/html/images/icons/calendar-clock.png',
-			show:['elementSelect','required','labelRow','hintText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
+			show:['elementSelect','required','labelRow','hintText','defaultText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
 			dataType:'date',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.date_time")) %>'
 		},{
@@ -112,7 +112,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Multi-Select") %>',
 			label: '<span class="multiSelectIcon"></span> <%= LanguageUtil.get(pageContext, "Multi-Select") %>',
 			imageurl: '/html/images/icons/ui-list-box.png',
-			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','validationRow','defaultText','hintText','userSearchable','indexed','dataTypeRow','unique','radioBlockText'],
+			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','defaultText','hintText','userSearchable','indexed','dataTypeRow','unique','radioBlockText'],
 			dataType:'text_area',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.multi_select")) %>'
 		},{
@@ -144,7 +144,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Select") %>',
 			label: '<span class="selectIcon"></span> <%= LanguageUtil.get(pageContext, "Select") %>',
 			imageurl: '/html/images/icons/ui-combo-box.png',
-			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','validationRow','defaultText','hintText','userSearchable','indexed','listed','dataTypeRow','unique','radioText','radioBool','radioDecimal','radioNumber'],
+			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','defaultText','hintText','userSearchable','indexed','listed','dataTypeRow','unique','radioText','radioBool','radioDecimal','radioNumber'],
 			dataType:'text',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.select")) %>'
 		},{
@@ -184,7 +184,7 @@
 			displayName: '<%= LanguageUtil.get(pageContext, "Time") %>',
 			label: '<span class="clockIcon"></span> <%= LanguageUtil.get(pageContext, "Time") %>',
 			imageurl: '/html/images/icons/clock.png',
-			show:['elementSelect','required','labelRow','hintText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
+			show:['elementSelect','required','labelRow','hintText','defaultText','userSearchable','indexed','listed','dataTypeRow','radioDate','hintText'],
 			dataType:'date',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.time")) %>'
 		},{

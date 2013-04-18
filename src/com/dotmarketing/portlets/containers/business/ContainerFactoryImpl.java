@@ -34,6 +34,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		HibernateUtil.save(container);
 		containerCache.add(container.getInode(), container);
 	}
+	
+	public void save(Container container, String existingId) throws DotDataException {
+		HibernateUtil.saveWithPrimaryKey(container, existingId);
+		containerCache.add(container.getInode(), container);
+	}
 
 	@SuppressWarnings("unchecked")
 	public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException {

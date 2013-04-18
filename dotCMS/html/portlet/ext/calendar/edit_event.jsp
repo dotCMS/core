@@ -116,7 +116,6 @@ var editButtonRow="editEventButtonRow";
 
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
-
 <style media="all" type="text/css">
 	/* @import url(/html/portlet/ext/contentlet/edit_contentlet.css);
 	@import url(/html/css/widget.css);
@@ -128,6 +127,13 @@ var editButtonRow="editEventButtonRow";
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
 	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
+
+	<!-- PUSH PUBLISHING ACTIONLET -->
+	<input name="wfPublishDate" id="wfPublishDate" type="hidden" value="">
+	<input name="wfPublishTime" id="wfPublishTime" type="hidden" value="">
+	<input name="wfExpireDate" id="wfExpireDate" type="hidden" value="">
+	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
+	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 
 	<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-event\") %>" />
@@ -143,11 +149,11 @@ var editButtonRow="editEventButtonRow";
 	%>
 		<div id="<%=f0.getFieldContentlet()%>" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>" onShow="showEditButtonsRow()" >
 	<% } else { %>
-		<div id="properties" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()" >
+		<div id="properties" style="padding:0;"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()" >
 	<% } %>
 
 		<!-- START Right Column -->
-		<div class="wrapperRight" style="height:400px;">
+		<div class="wrapperRight" >
 			<div style="height:20px;"></div>
 		<%
 		/*### DRAW THE DYNAMIC FIELDS ###*/

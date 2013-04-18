@@ -20,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -98,18 +97,9 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 			throw new DotSecurityException("You don't have permission to write on the given folder.");
 		}
 			
-		Link workingLink = null;
+		menuLink.setModUser(user.getUserId());
 		
-		if (InodeUtils.isSet(menuLink.getIdentifier())) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(menuLink);
-			createAsset(menuLink, user.getUserId(), destination, identifier, false);
-			workingLink = (Link) saveAsset(menuLink, identifier, user, false);
-		} else {
-			createAsset(menuLink, user.getUserId(), destination);
-			workingLink = menuLink;
-		}
-		
-		APILocator.getIdentifierAPI().updateIdentifierURI(workingLink, destination);
+		menuLinkFactory.save(menuLink, destination);
 		
 	}
 	
@@ -159,6 +149,18 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
     @Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException {
         return deleteOldVersions(assetsOlderThan,"links");
+    }
+    
+    
+    @Override
+    public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException{
+    	
+    	Link link = menuLinkFactory.load(inode);
+    	
+    	if(!APILocator.getPermissionAPI().doesUserHavePermission(link, PermissionAPI.PERMISSION_READ, user,respectFrontEndRoles)){
+    		throw new DotSecurityException("User "+ user + " does not have permission to link " + inode);
+    	}
+    	return link;
     }
 
 }

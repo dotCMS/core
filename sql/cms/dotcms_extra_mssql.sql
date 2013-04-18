@@ -360,7 +360,7 @@ CREATE Trigger check_identifier_parent_path
  DECLARE @folderId varchar(100)
  DECLARE @id varchar(100)
  DECLARE @assetType varchar(100)
- DECLARE @parentPath varchar(100)
+ DECLARE @parentPath varchar(255)
  DECLARE @hostInode varchar(100)
  DECLARE cur_Inserted cursor LOCAL FAST_FORWARD for
  Select id,asset_type,parent_path,host_inode
@@ -452,8 +452,8 @@ FOR DELETE AS
 DECLARE @pathCount int
 DECLARE @identifier varchar(100)
 DECLARE @assetType varchar(100)
-DECLARE @assetName varchar(100)
-DECLARE @parentPath varchar(100)
+DECLARE @assetName varchar(255)
+DECLARE @parentPath varchar(255)
 DECLARE @hostInode varchar(100)
 DECLARE cur_Deleted cursor LOCAL FAST_FORWARD for
  Select id,asset_type,asset_name,parent_path,host_inode
@@ -667,3 +667,67 @@ create table indicies (
 
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
+
+CREATE TABLE broken_link (
+   id VARCHAR(36) PRIMARY KEY,
+   inode VARCHAR(36) NOT NULL, 
+   field VARCHAR(36) NOT NULL,
+   link VARCHAR(255) NOT NULL,
+   title VARCHAR(255) NOT NULL,
+   status_code bigint NOT NULL
+);
+
+alter table broken_link add CONSTRAINT fk_brokenl_content
+    FOREIGN KEY (inode) REFERENCES contentlet(inode) ON DELETE CASCADE;
+
+alter table broken_link add CONSTRAINT fk_brokenl_field
+    FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
+    
+-- ****** Content Publishing Framework *******
+CREATE TABLE publishing_queue
+(id bigint IDENTITY (1, 1)PRIMARY KEY NOT NULL,
+operation numeric(19,0), asset VARCHAR(2000) NOT NULL,
+language_id numeric(19,0) NOT NULL, entered_date DATETIME,
+last_try DATETIME, num_of_tries numeric(19,0) NOT NULL DEFAULT 0,
+in_error tinyint DEFAULT 0, last_results TEXT, 
+publish_date DATETIME, server_id VARCHAR(256), 
+type VARCHAR(256), bundle_id VARCHAR(256), target text);
+
+CREATE TABLE publishing_queue_audit
+(bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, 
+status INTEGER, 
+status_pojo text, 
+status_updated DATETIME, 
+create_date DATETIME);
+
+-- ****** Content Publishing Framework - End Point Management *******
+CREATE TABLE publishing_end_point (
+	id varchar(36) PRIMARY KEY, 
+	group_id varchar(700), 
+	server_name varchar(700) unique,
+	address varchar(250),
+	port varchar(10),
+	protocol varchar(10),	
+	enabled tinyint DEFAULT 0,
+	auth_key text,
+	sending tinyint DEFAULT 0);
+
+
+create table sitesearch_audit (
+    job_id varchar(36),
+    job_name varchar(255) not null,
+    fire_date DATETIME not null,
+    incremental tinyint not null,
+    start_date DATETIME,
+    end_date DATETIME,
+    host_list varchar(500) not null,
+    all_hosts tinyint not null,
+    lang_list varchar(500) not null,
+    path varchar(500) not null,
+    path_include tinyint not null,
+    files_count numeric(19,0) not null,
+    pages_count numeric(19,0) not null,
+    urlmaps_count numeric(19,0) not null,
+    index_name varchar(100) not null,
+    primary key(job_id,fire_date)
+);

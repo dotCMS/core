@@ -213,7 +213,7 @@ dt{font-size:12px;padding-top:12px;}
 			<%
 					User defuser=APILocator.getUserAPI().getDefaultUser();
 			%>
-				<select dojoType="dijit.form.Select"  value="<%=defuser.getLocale().getLanguage()+ "_" + defuser.getLocale().getCountry()%>" name="<portlet:namespace />company_language_id">                         
+				<select dojoType="dijit.form.FilteringSelect"  value="<%=defuser.getLocale().getLanguage()+ "_" + defuser.getLocale().getCountry()%>" name="<portlet:namespace />company_language_id">                         
 					<%
 					Locale[] locales = LanguageUtil.getAvailableLocales();
 					for (int i = 0; i < locales.length; i++) {
@@ -225,16 +225,14 @@ dt{font-size:12px;padding-top:12px;}
 			
 			<dt><%= LanguageUtil.get(pageContext, "time-zone") %></dt>
 			<dd>
-			    <span id="userTimezoneWrapper">
-			    <select name="<%= renderResponse.getNamespace() + "company_tz_id" %>">
+			    <span id="userTimezoneWrapper">  
+			    <select name="<%= renderResponse.getNamespace() + "company_tz_id" %>" dojoType="dijit.form.FilteringSelect" style="width:400px;">
+			    	<option selected="true"  value="<%=company.getTimeZone().getID() %>"><%=company.getTimeZone().getDisplayName() %> </option>
 			       <% String[] ids = TimeZone.getAvailableIDs();
 			          Arrays.sort(ids);
 			          for(String id : ids) { 
 			            TimeZone tmz=TimeZone.getTimeZone(id);%>
-			            <option value="<%= id %>" >			                
-			                (<%= tmz.getID() %>)
-			                <%= tmz.getDisplayName(locale) %>
-			            </option>
+			            <option value="<%= id %>"><%= tmz.getDisplayName(locale) %> (<%= tmz.getID() %>) </option>
 			       <% }%>
 			    </select>
 				</span>

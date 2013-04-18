@@ -378,5 +378,27 @@ public interface HTMLPageAPI {
 	
 	public boolean movePage(HTMLPage page, Folder parent, User user,boolean respectFrontendRoles) throws DotStateException,	DotDataException, DotSecurityException;
 
-    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;	
+    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
+    
+    /**
+     * Returns the PageIds for Pages whose Templates, Containers, or Content 
+     * have been modified between 2 dates even if the page hasn't been modified
+     * @param host Must be set
+     * @param startDate Must be set
+     * @param endDate Must be Set
+     * @return
+     */
+    public List<String> findUpdatedHTMLPageIds(Host host, Date startDate, Date endDate);
+    
+    /**
+     * Returns the PageIds for Pages whose Templates, Containers, or Content 
+     * have been modified between 2 dates even if the page hasn't been modified
+     * @param host Must be set
+     * @param pattern url pattern e.g., /some/path/*
+     * @param include the pattern is to include or exclude
+     * @param startDate Must be set
+     * @param endDate Must be Set
+     * @return
+     */
+    public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,boolean include,Date startDate, Date endDate);
 }

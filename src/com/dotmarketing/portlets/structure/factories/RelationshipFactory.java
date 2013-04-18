@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.structure.factories;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -125,20 +126,34 @@ public class RelationshipFactory {
 
     @SuppressWarnings("unchecked")
     public static List<Relationship> getAllRelationshipsByStructure(Structure st) {
-        List<Relationship> list = new ArrayList<Relationship>();
-        String query = "select {relationship.*} from relationship, inode relationship_1_ "
-                + "where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
-			+ "(relationship.parent_structure_inode = ? or relationship.child_structure_inode = ?)";
+    	
+        List<Relationship> list = null;
+        
         try {
-			HibernateUtil dh = new HibernateUtil(Relationship.class);
-			dh.setSQLQuery(query);
-			dh.setParam(st.getInode());
-			dh.setParam(st.getInode());
-			list = dh.list();
-		} catch (DotHibernateException e) {
-			Logger.error(RelationshipFactory.class, e.getMessage(), e);
+			list = cache.getRelationshipsByStruct(st);
+		} catch (DotCacheException e1) {
+			//Logger.debug(RelationshipFactory.class,e1.getMessage(),e1);
 		}
+        if(list ==null){
+	        String query = "select {relationship.*} from relationship, inode relationship_1_ "
+	                + "where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
+				+ "(relationship.parent_structure_inode = ? or relationship.child_structure_inode = ?)";
+	        try {
+				HibernateUtil dh = new HibernateUtil(Relationship.class);
+				dh.setSQLQuery(query);
+				dh.setParam(st.getInode());
+				dh.setParam(st.getInode());
+				list = dh.list();
+				cache.putRelationshipsByStruct(st, list);
+				
+			} catch (DotHibernateException e) {
+				Logger.error(RelationshipFactory.class, e.getMessage(), e);
+			}catch (DotCacheException e) {
+				Logger.error(RelationshipFactory.class,e.getMessage(),e);
+			}
+        }
         return list;
+        
     }
 
     @SuppressWarnings("unchecked")
@@ -271,7 +286,30 @@ public class RelationshipFactory {
     public static void saveRelationship(Relationship relationship) throws DotHibernateException {
     	HibernateUtil.saveOrUpdate(relationship);
     	CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
+    	try{
+    		CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
+    		CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
+    	}
+    	catch(Exception e){
+    		Logger.error(RelationshipFactory.class, e.getMessage());
+    	}
+
+    	
+    	
+    	
     }
+    
+    /**
+     * ISSUE 2222: https://github.com/dotCMS/dotCMS/issues/2222
+     * 
+     * @author Graziano Aliberti
+     * Mar 4, 2013 - 4:54:16 PM
+     */
+	public static void saveRelationship(Relationship relationship, String inode) throws DotHibernateException {
+		Date now = new Date();
+		relationship.setiDate(now);
+		HibernateUtil.saveWithPrimaryKey(relationship, inode);
+	}    
 
     // ### DELETE ###
     public static void deleteRelationship(String inode) throws DotHibernateException {

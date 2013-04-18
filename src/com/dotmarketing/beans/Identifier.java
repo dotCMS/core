@@ -1,6 +1,7 @@
 package com.dotmarketing.beans;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,6 +47,9 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
     private String parentPath;
 
     private String hostId;
+    
+    private Date sysPublishDate;
+    private Date sysExpireDate;
     
     //private String inode;
     
@@ -305,10 +309,21 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 			return false;
 		return true;
 	}
-	
-	
-	
-	
-	
+
+    public Date getSysPublishDate() {
+        return sysPublishDate;
+    }
+
+    public void setSysPublishDate(Date sysPublishDate) {
+        this.sysPublishDate = sysPublishDate;
+    }
+
+    public Date getSysExpireDate() {
+        return sysExpireDate;
+    }
+
+    public void setSysExpireDate(Date sysExpireDate) {
+        this.sysExpireDate = sysExpireDate;
+    }
 
 }

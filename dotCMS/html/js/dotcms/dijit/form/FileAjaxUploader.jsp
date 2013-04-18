@@ -14,10 +14,17 @@
 		 <div dojoType="dijit.ProgressBar" style="width: 100px;" dojoAttachPoint="progressBar"></div><div class="fileAjaxUploaderStatusMsg"><%= LanguageUtil.get(pageContext, "Uploading")%>...</div>
 	</div>
 	<div dojoAttachPoint="fileUploadRemoveButton" style="display: none;">
-		<button dojoType="dijit.form.Button" dojoAttachEvent="onClick:_remove">
+		<button dojoType="dijit.form.Button" dojoAttachEvent="onClick:_remove" iconClass="deleteIcon">
 			<%= LanguageUtil.get(pageContext, "remove")%>
 		</button>
 	</div>
+	<div dojoAttachPoint="fileUploadInfoButton" style="display: none;">
+		<button dojoType="dijit.form.Button" dojoAttachEvent="onClick:_info" iconClass="infoIcon">
+			<%= LanguageUtil.get(pageContext, "info")%>
+		</button>
+	</div>
+	
+	<div dojoType="dijit.Dialog" dojoAttachPoint="fileInfoDialog" style="width: 500px;"></div>
 	
 </div>
 

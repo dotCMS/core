@@ -79,7 +79,7 @@
 	</tool>
 	<tool>
 		<key>date</key>
-		<scope>application</scope>
+		<scope>request</scope>
 		<class>org.apache.velocity.tools.generic.DateTool</class>
 	</tool>
 	<tool>
@@ -99,6 +99,7 @@
 	</tool>
 	<tool>
 	   <key>parser</key>
+	   <scope>request</scope>
 	   <class>org.apache.velocity.tools.generic.ValueParser</class>
  	</tool>
 	<!-- Velocity View Tools End -->
@@ -311,6 +312,12 @@
 		<class>com.dotmarketing.viewtools.PluginWebAPI</class>
 	</tool>
 	
+	<tool>
+		<key>dotwiki</key>
+		<scope>application</scope>
+		<class>com.dotmarketing.viewtools.WikiTool</class>
+	</tool>
+	
 		<!-- this tool is used in the backend to pull language keys based on the back-end language -->		
 	<tool>
 		<key>langbackendwebapi</key>
@@ -415,6 +422,16 @@
 		<key>submitcontenttool</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.SubmitContentWebAPI</class>
+	</tool>
+    <tool>
+		<key>templatetool</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.DotTemplateTool</class>
+	</tool>
+	<tool>
+	    <key>navtool</key>
+	    <scope>request</scope>
+	    <class>com.dotmarketing.viewtools.navigation.NavTool</class>
 	</tool>
 	
 	<!-- Dotmarketing View Tools End -->

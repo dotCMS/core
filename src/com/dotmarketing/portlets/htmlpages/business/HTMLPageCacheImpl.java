@@ -58,6 +58,12 @@ public class HTMLPageCacheImpl extends HTMLPageCache {
         cache.flushGroup(primaryGroup);
     }
 
+    public void remove(String pageIdentifier){
+    	HTMLPage page = new HTMLPage();
+    	page.setIdentifier(pageIdentifier);
+    	remove(page);
+    }
+    
     /* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
 	 */

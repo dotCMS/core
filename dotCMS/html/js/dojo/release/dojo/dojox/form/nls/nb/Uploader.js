@@ -1,5 +1,2 @@
-define(
-"dojox/form/nls/nb/Uploader", ({
-	label: "Velg filer..."
-})
-);
+//>>built
+define("dojox/form/nls/nb/Uploader",({label:"Velg filer..."}));

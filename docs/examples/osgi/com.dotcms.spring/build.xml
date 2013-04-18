@@ -1,4 +1,4 @@
-<project name="Bundle Builder" default="build">
+<project name="Spring Example Bundle Builder" default="build">
 
     <basename file="${basedir}" property="plugin.name"/>
 

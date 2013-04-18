@@ -62,7 +62,7 @@
 			</td>
 	
 			<td align="right">
-				<%if(trig !=null){ %>
+				<%if(trig !=null && trig.getNextFireTime()!=null){ %>
 					<%=new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss  z").format( trig.getNextFireTime()) %>
 				<%} %>
 			</td>

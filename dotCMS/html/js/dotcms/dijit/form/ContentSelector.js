@@ -580,7 +580,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			this.currentSortBy = sortBy;
 		}
 
-		ContentletAjax.searchContentlets (this.structureInode, fieldsValues, categoriesValues, false, false, this.currentPage, this.currentSortBy, null, null, false, dojo.hitch(this, this._fillResults));
+		//ContentletAjax.searchContentlets (this.structureInode, fieldsValues, categoriesValues, false, false, this.currentPage, this.currentSortBy, null, null, false, dojo.hitch(this, this._fillResults));
+		ContentletAjax.searchContentlets(this.structureInode, fieldsValues, categoriesValues, false, 
+		        false,  false, false, this.currentPage, 10,this.currentSortBy, null, 
+		        null,dojo.hitch(this, this._fillResults));
 
 		this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.
 	},
@@ -614,7 +617,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		this._fillResultsTable (this.headers, data);
 		this._showMatchingResults (total);
-
+		
 		if (hasNext) {
 			this.nextDiv.style.display = "";
 		} else {
@@ -686,11 +689,14 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			scope._onContentSelected(content);
 
 		};
-		for (var i = 0; i < data.length; i++) {
-			var asset = data[i];
-			var selectButton = dojo.byId(this.searchCounter+asset.inode);
-			if(selectButton.onclick==undefined){
-				selectButton.onclick = dojo.hitch(this, selected, this, asset);
+		
+		if(this.multiple=='false') {
+			for (var i = 0; i < data.length; i++) {
+				var asset = data[i];
+				var selectButton = dojo.byId(this.searchCounter+asset.inode);
+				if(selectButton.onclick==undefined){
+					selectButton.onclick = dojo.hitch(this, selected, this, asset);
+				}
 			}
 		}
 

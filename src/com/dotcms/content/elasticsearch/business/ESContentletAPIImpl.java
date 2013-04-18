@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -51,6 +52,7 @@ import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
@@ -68,11 +70,13 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.HostCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletAndBinary;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -99,6 +103,7 @@ import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -254,7 +259,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         try {
-            return perAPI.filterCollection(search("+live:false +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return perAPI.filterCollection(search("+conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
@@ -381,9 +386,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
                     	Contentlet fileAssetCont = null;
                     	try {
-                    		fileAssetCont = findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                    		fileAssetCont = findContentletByIdentifier(id.getId(), true, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
                         } catch(DotContentletStateException se) {
-                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
                         }
                         publish(fileAssetCont, APILocator.getUserAPI().getSystemUser(), false);
                     }else if(InodeUtils.isSet(id.getInode())){
@@ -435,7 +440,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             ContentletServices.invalidate(contentlet);
             ContentletMapServices.invalidate(contentlet);
 
-            CacheLocator.getContentletCache().remove(String.valueOf(contentlet.getInode()));
+            CacheLocator.getContentletCache().remove(contentlet.getInode());
 
             // Need to refresh the live pages that reference this piece of
             // content
@@ -503,7 +508,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	for(String identifier : identifiers){
         		for(Language lang : APILocator.getLanguageAPI().getLanguages()){
                 	try{
-                		Contentlet languageContentlet = null; 
+                		Contentlet languageContentlet = null;
                 		try{
                 			languageContentlet = findContentletByIdentifier(identifier, false, lang.getId(), user, respectFrontendRoles);
                 		}catch (DotContentletStateException e) {
@@ -589,8 +594,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try{
                 Map<String, Object> hm = new HashMap<String, Object>();
                 ContentletSearch conwrapper= new ContentletSearch();
-                conwrapper.setIdentifier(sh.getSource().get("identifier").toString());
-                conwrapper.setInode(sh.getSource().get("inode").toString());
+                conwrapper.setIdentifier(sh.field("identifier").getValue().toString());
+                conwrapper.setInode(sh.field("inode").getValue().toString());
+
                 list.add(conwrapper);
             }
             catch(Exception e){
@@ -1050,7 +1056,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (MultiTree mt : mts) {
                 Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
                 if(pageIdent != null && UtilMethods.isSet(pageIdent.getInode())){
-                    PageServices.invalidate(APILocator.getHTMLPageAPI().loadPageByPath(pageIdent.getURI(), pageIdent.getHostId()));
+                    HTMLPage page=APILocator.getHTMLPageAPI().loadPageByPath(pageIdent.getURI(), pageIdent.getHostId());
+                    if(page!=null && UtilMethods.isSet(page.getIdentifier()))
+                        PageServices.invalidate(page);
                 }
                 MultiTreeFactory.deleteMultiTree(mt);
             }
@@ -1268,7 +1276,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentlets.add(contentlet);
         conFac.deleteVersion(contentlet);
 
-        indexAPI.removeContentFromIndex(contentlet);
+        ContentletVersionInfo cinfo=APILocator.getVersionableAPI().getContentletVersionInfo(
+                contentlet.getIdentifier(), contentlet.getLanguageId());
+        
+        if(cinfo.getWorkingInode().equals(contentlet.getInode()) || 
+                (InodeUtils.isSet(cinfo.getLiveInode()) && cinfo.getLiveInode().equals(contentlet.getInode())))
+            // we remove from index if it is the working or live version
+            indexAPI.removeContentFromIndex(contentlet);
+        
         CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
         // jira.dotmarketing.net/browse/DOTCMS-1073
@@ -1309,15 +1324,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (user == null || !workingContentlet.isLocked() || workingContentlet.getModUser().equals(user.getUserId())) {
 
-            if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode()))
+            if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
                 APILocator.getVersionableAPI().removeLive(liveContentlet.getIdentifier(), liveContentlet.getLanguageId());
+                indexAPI.removeContentFromLiveIndex(liveContentlet);
+            }
 
             // sets deleted to true
             APILocator.getVersionableAPI().setDeleted(workingContentlet, true);
 
             // Updating lucene index
             indexAPI.addContentToIndex(workingContentlet);
-            indexAPI.removeContentFromLiveIndex(liveContentlet);
+            
+            ContentletServices.invalidate(contentlet);
+            ContentletMapServices.invalidate(contentlet);
+            publishRelatedHtmlPages(contentlet);
         }else{
             throw new DotContentletStateException("Contentlet is locked: Unable to archive");
         }
@@ -1446,7 +1466,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void refreshContentUnderHost(Host host) throws DotReindexStateException {
         try {
             distAPI.refreshContentUnderHost(host);
-            CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
@@ -1457,7 +1476,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void refreshContentUnderFolder(Folder folder) throws DotReindexStateException {
         try {
             distAPI.refreshContentUnderFolder(folder);
-            CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
@@ -1484,17 +1502,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         APILocator.getVersionableAPI().removeLive(contentlet.getIdentifier(), contentlet.getLanguageId());
 
-        //remove contentlet from the live directory
-        ContentletServices.unpublishContentletFile(contentlet);
-        //writes the contentlet object to a file
-        ContentletMapServices.unpublishContentletMapFile(contentlet);
-        publishRelatedHtmlPages(contentlet);
-
         indexAPI.addContentToIndex(contentlet);
         indexAPI.removeContentFromLiveIndex(contentlet);
-
-        //Need to refresh the live pages that reference this piece of content
+        
+        
+        ContentletServices.unpublishContentletFile(contentlet);
+        ContentletMapServices.unpublishContentletMapFile(contentlet);
         publishRelatedHtmlPages(contentlet);
+        
     }
 
     public void unpublish(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,    DotSecurityException, DotContentletStateException {
@@ -1536,6 +1551,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(liveContentlet!=null && UtilMethods.isSet(liveContentlet.getInode())
                 && !liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()))
             indexAPI.addContentToIndex(liveContentlet);
+        
+        ContentletServices.invalidate(contentlet);
+        ContentletMapServices.invalidate(contentlet);
+        publishRelatedHtmlPages(contentlet);
     }
 
     public void unarchive(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
@@ -1688,23 +1707,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 else
                     newTree.setTreeOrder(treePosition);
             }
-            
+
             //newTree.setTreeOrder(treePosition);
             if( uniqueRelationshipSet.add(newTree) ) {
-            	
-            	int newTreePosistion = newTree.getTreeOrder();            	
+
+            	int newTreePosistion = newTree.getTreeOrder();
             	Tree treeToUpdate = TreeFactory.getTree(newTree);
             	treeToUpdate.setTreeOrder(newTreePosistion);
-          	
+
             	if(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType()))
             		TreeFactory.saveTree(treeToUpdate);
             	else
             		TreeFactory.saveTree(newTree);
-                
+
             	treePosition++;
-                
+
             }
-            
+
             if(!child){// when we change the order we need to index all the sibling content
             	for(Contentlet con : getSiblings(c.getIdentifier())){
             		refresh(con);
@@ -1855,12 +1874,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Map<Relationship, List<Contentlet>> contentRelationships = null;
         Contentlet workingCon = null;
 
+        Identifier ident=null;
+        if(InodeUtils.isSet(contentlet.getIdentifier()))
+            ident = APILocator.getIdentifierAPI().find(contentlet);
+
         //If contentlet is not new
-        if(InodeUtils.isSet(contentlet.getIdentifier())) {
+        if(ident!=null && InodeUtils.isSet(ident.getId()) && contentlet.getMap().get("_dont_validate_me") != null) {
             workingCon = findWorkingContentlet(contentlet);
-            permissions = perAPI.getPermissions(workingCon);
-            cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-            contentRelationships = findContentRelationships(workingCon);
+            if(workingCon != null) {
+	            permissions = perAPI.getPermissions(workingCon);
+	            cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+	            contentRelationships = findContentRelationships(workingCon);
+            } else {
+            	contentRelationships = findContentRelationships(contentlet);
+            }
         }
         else
         {
@@ -1948,14 +1975,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String syncMe = (UtilMethods.isSet(contentlet.getIdentifier())) ? contentlet.getIdentifier() : UUIDGenerator.generateUuid();
 
         synchronized (syncMe) {
+            boolean saveWithExistingID=false;
+            String existingInode=null, existingIdentifier=null;
 
         	Contentlet workingContentlet = contentlet;
             try {
-				if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode()))
-				    throw new DotContentletStateException("Contentlet must not exist already");
+				if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
+				    // maybe the user want to save new content with existing inode & identifier comming from somewhere
+				    // we need to check that the inode doesn't exists
+				    DotConnect dc=new DotConnect();
+				    dc.setSQL("select inode from contentlet where inode=?");
+				    dc.addParam(contentlet.getInode());
+				    if(dc.loadResults().size()>0){
+				    	if(contentlet.getMap().get("_dont_validate_me") != null){
+				    		Logger.debug(this, "forcing checking with no version as the _dont_validate_me is set and inode exists");
+				    		createNewVersion = false;
+				    	}else{
+				    		throw new DotContentletStateException("Contentlet must not exist already");
+				    	}
+				    } else {
+				        saveWithExistingID=true;
+				        existingInode=contentlet.getInode();
+				        contentlet.setInode(null);
+
+				        Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+				        if(ident==null || !UtilMethods.isSet(ident.getId())) {
+				            existingIdentifier=contentlet.getIdentifier();
+				            contentlet.setIdentifier(null);
+				        }
+				    }
+				}
 				if (!createNewVersion && contentlet != null && !InodeUtils.isSet(contentlet.getInode()))
 				    throw new DotContentletStateException("Contentlet must exist already");
-				if (contentlet != null && contentlet.isArchived())
+				if (contentlet != null && contentlet.isArchived() && contentlet.getMap().get("_dont_validate_me") == null)
 				    throw new DotContentletStateException("Unable to checkin an archived piece of content, please un-archive first");
 				if (!perAPI.doesUserHavePermission(InodeUtils.isSet(contentlet.getIdentifier()) ? contentlet : contentlet.getStructure(),
 				        PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
@@ -2025,8 +2077,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				}
 
 				// check contentlet Host
-				if (!UtilMethods.isSet(contentlet.getHost())) {
-				    contentlet.setHost(APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
+				User sysuser = APILocator.getUserAPI().getSystemUser();
+                if (!UtilMethods.isSet(contentlet.getHost())) {
+				    contentlet.setHost(APILocator.getHostAPI().findSystemHost(sysuser, true).getIdentifier());
 				}
 				if (!UtilMethods.isSet(contentlet.getFolder())) {
 				    contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
@@ -2034,17 +2087,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				Contentlet contentletRaw=contentlet;
 				contentlet.setModDate(new Date());
-				contentlet = conFac.save(contentlet);
+
+				// Keep the 5 properties BEFORE store the contentlet on DB.
+				String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+				String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+				String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+				String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+				String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
+
+				if(saveWithExistingID)
+				    contentlet = conFac.save(contentlet, existingInode);
+				else
+				    contentlet = conFac.save(contentlet);
 
 				if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 				    Treeable parent = null;
 				    if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-				        parent = APILocator.getFolderAPI().find(contentletRaw.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+				        parent = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
 				    }else{
-				        parent = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
+				        parent = APILocator.getHostAPI().find(contentlet.getHost(), sysuser, false);
 				    }
-				    Identifier ident = APILocator.getIdentifierAPI().createNew(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet, parent);
-				    contentlet.setIdentifier(ident.getInode());
+				    Identifier ident;
+				    final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
+				    if(existingIdentifier!=null)
+				        ident = APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier);
+				    else
+				        ident = APILocator.getIdentifierAPI().createNew(contPar, parent);
+				    contentlet.setIdentifier(ident.getId());
 				    contentlet = conFac.save(contentlet);
 				} else {
 				    Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
@@ -2063,7 +2132,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        }
 				    }
 				    if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-				        Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+				        Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
 				        Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
 				        ident.setParentPath(folderIdent.getPath());
 				    }
@@ -2074,54 +2143,43 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				}
 
 
+
+
 				APILocator.getVersionableAPI().setWorking(contentlet);
 
 				boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
 
 				List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 				for (Field field : fields) {
-				    if (isFieldTypeString(field)) {
-				        String value = contentlet.getStringProperty(field.getVelocityVarName());
-				        if (field.getFieldType().equals(Field.FieldType.TAG.toString()) && UtilMethods.isSet(value)) {
-				            String[] tagNames = ((String) value).split(",");
+				    if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
+				    	String value= null;
+				    	if(contentlet.getStringProperty(field.getVelocityVarName()) != null)
+				    		value=contentlet.getStringProperty(field.getVelocityVarName()).trim();
 
+				        if(UtilMethods.isSet(value)) {
+    				        String hostId = Host.SYSTEM_HOST;
+    				        if(structureHasAHostField){
+    				            Host host = null;
+    				            try{
+    				                host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
+    				            }catch(Exception e){
+    				                Logger.error(this, "Unable to get contentlet host");
+    				            }
+    				            if(host.getIdentifier().equals(Host.SYSTEM_HOST))
+    				                hostId = Host.SYSTEM_HOST;
+    				            else
+    				                hostId = host.getIdentifier();
 
-				            if(structureHasAHostField){
-								Host host = null;
-								String hostId = "";
-								try{
-									host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
-								}catch(Exception e){
-									Logger.error(this, "Unable to get default host");
-								}
-								if(host.getIdentifier().equals(Host.SYSTEM_HOST))
-									hostId = Host.SYSTEM_HOST;
-								else
-									hostId = host.getIdentifier();
-								for (String tagName : tagNames)
-									try {
-										tagAPI.addTagInode(tagName.trim(), contentlet.getInode(), hostId);
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-							}
-							else {
-								for (String tagName : tagNames)
-									try {
-										tagAPI.addTagInode(tagName.trim(), contentlet.getInode(), Host.SYSTEM_HOST);
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-							}
+    				        }
+    				        List<Tag> list=tagAPI.getTagsInText(value, user.getUserId(), hostId);
+    				        for(Tag tag : list)
+    				            tagAPI.addTagInode(tag.getTagName(), contentlet.getInode(), hostId);
 				        }
 				    }
+
 				}
 
-				// save temporally live state
 
-				if(contentlet.isLive()){
-				    APILocator.getVersionableAPI().setLive(contentlet);
-				}
 				if (workingContentlet == null) {
 				    workingContentlet = contentlet;
 				}
@@ -2249,7 +2307,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	}
 			                	else if (oldFile.exists()) {
 			                		// otherwise, we copy the files as hardlinks
-			                		FileUtil.copyFile(oldFile, newFile, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
+			                		FileUtil.copyFile(oldFile, newFile);
 			                	}
 			                	contentlet.setBinary(velocityVarNm, newFile);
 			                }
@@ -2264,16 +2322,71 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			    }
 
 
+			    // lets update identifier's syspubdate & sysexpiredate
+			    if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier())) {
+			        Structure st=contentlet.getStructure();
+			        if(UtilMethods.isSet(st.getPublishDateVar()) || UtilMethods.isSet(st.getPublishDateVar())) {
+    			        Identifier ident=APILocator.getIdentifierAPI().find(contentlet);
+    			        boolean save=false;
+    			        if(UtilMethods.isSet(st.getPublishDateVar())) {
+    			            Date pdate=contentletRaw.getDateProperty(st.getPublishDateVar());
+    			            contentlet.setDateProperty(st.getPublishDateVar(), pdate);
+    			            if((ident.getSysPublishDate()==null && pdate!=null) || // was null and now we have a value
+    			                (ident.getSysPublishDate()!=null && //wasn't null and now is null or different
+    			                   (pdate==null || !pdate.equals(ident.getSysPublishDate())))) {
+    			                ident.setSysPublishDate(pdate);
+    			                save=true;
+    			            }
+    			        }
+    			        if(UtilMethods.isSet(st.getExpireDateVar())) {
+                            Date edate=contentletRaw.getDateProperty(st.getExpireDateVar());
+                            contentlet.setDateProperty(st.getExpireDateVar(), edate);
+                            if((ident.getSysExpireDate()==null && edate!=null) || // was null and now we have a value
+                                (ident.getSysExpireDate()!=null && //wasn't null and now is null or different
+                                   (edate==null || !edate.equals(ident.getSysExpireDate())))) {
+                                ident.setSysExpireDate(edate);
+                                save=true;
+                            }
+                        }
+    			        if(save) {
+    			            // publish/expire dates changed
+    			            APILocator.getIdentifierAPI().save(ident);
 
-
-
-
-
+    			            // we take all inodes associated with that identifier
+    			            // remove them from cache and then reindex them
+    			            HibernateUtil hu=new HibernateUtil(ContentletVersionInfo.class);
+    			            hu.setQuery("from "+ContentletVersionInfo.class.getCanonicalName()+" where identifier=?");
+    			            hu.setParam(ident.getId());
+    			            List<ContentletVersionInfo> list=hu.list();
+    			            List<String> inodes=new ArrayList<String>();
+    			            for(ContentletVersionInfo cvi : list) {
+    			                inodes.add(cvi.getWorkingInode());
+    			                if(UtilMethods.isSet(cvi.getLiveInode()) && !cvi.getWorkingInode().equals(cvi.getLiveInode()))
+    			                    inodes.add(cvi.getLiveInode());
+    			            }
+    			            for(String inode : inodes) {
+    			                CacheLocator.getContentletCache().remove(inode);
+    			                Contentlet ct=APILocator.getContentletAPI().find(inode, sysuser, false);
+    			                APILocator.getContentletIndexAPI().addContentToIndex(ct,false);
+    			            }
+    			        }
+			        }
+			    }
 
 				Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
 				if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier()) && contentlet.getStructureInode().equals(hostStructure.getInode())) {
 				    HostAPI hostAPI = APILocator.getHostAPI();
 				    hostAPI.updateCache(new Host(contentlet));
+
+				    ContentletCache cc = CacheLocator.getContentletCache();
+				    Identifier ident=APILocator.getIdentifierAPI().find(contentlet);
+				    List<Contentlet> contentlets = findAllVersions(ident, sysuser, respectFrontendRoles);
+				    for (Contentlet c : contentlets) {
+						Host h = new Host(c);
+						cc.remove(h.getHostname());
+						cc.remove(h.getIdentifier());
+					}
+
 				    hostAPI.updateVirtualLinks(new Host(workingContentlet), new Host(contentlet));//DOTCMS-5025
 				    hostAPI.updateMenuLinks(new Host(workingContentlet), new Host(contentlet));
 
@@ -2314,6 +2427,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				                Folder folder = APILocator.getFolderAPI().findFolderByPath(contIdent.getParentPath(), host , user, respectFrontendRoles);
 				                if(RefreshMenus.shouldRefreshMenus(APILocator.getFileAssetAPI().fromContentlet(workingContentlet),APILocator.getFileAssetAPI().fromContentlet(contentlet))){
 				                	RefreshMenus.deleteMenu(folder);
+				                	CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), folder.getInode());
 				                }
 				            }
 				        }
@@ -2332,6 +2446,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    indexAPI.addContentToIndex(contentlet);
 				}
 
+				// Set the properties again after the store on DB and before the fire on an Actionlet.
+				contentlet.setStringProperty("wfPublishDate", contentPushPublishDate);
+				contentlet.setStringProperty("wfPublishTime", contentPushPublishTime);
+				contentlet.setStringProperty("wfExpireDate", contentPushExpireDate);
+				contentlet.setStringProperty("wfExpireTime", contentPushExpireTime);
+				contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
 
 				//wapi.
 				workflow.setContentlet(contentlet);
@@ -2696,6 +2816,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, (String) properties.get(Contentlet.WORKFLOW_ACTION_KEY));
             contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, (String) properties.get(Contentlet.WORKFLOW_COMMENTS_KEY));
             contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, (String) properties.get(Contentlet.WORKFLOW_ASSIGN_KEY));
+
+
+            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, (String) properties.get(Contentlet.WORKFLOW_PUBLISH_DATE));
+            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, (String) properties.get(Contentlet.WORKFLOW_PUBLISH_TIME));
+            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, (String) properties.get(Contentlet.WORKFLOW_EXPIRE_DATE));
+            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, (String) properties.get(Contentlet.WORKFLOW_EXPIRE_TIME));
+            contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, (String) properties.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
+
+
+
+
+
+
         }
     }
 
@@ -2757,10 +2890,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(value instanceof Date){
                 contentlet.setDateProperty(field.getVelocityVarName(), (Date)value);
             }else if(value instanceof String){
-                try{
-                    contentlet.setDateProperty(field.getVelocityVarName(),DateUtil.convertDate((String)value, dateFormats));
-                }catch (Exception e) {
-                    throw new DotContentletStateException("Unable to convert string to date " + value);
+                if(((String) value).trim().length()>0) {
+                    try {
+                        contentlet.setDateProperty(field.getVelocityVarName(),
+                                DateUtil.convertDate((String)value, dateFormats));
+                    }catch (Exception e) {
+                        throw new DotContentletStateException("Unable to convert string to date " + value);
+                    }
+                }
+                else {
+                    contentlet.setDateProperty(field.getVelocityVarName(), null);
                 }
             }else{
                 throw new DotContentletStateException("Date fields must either be of type String or Date");
@@ -2872,7 +3011,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         }
-
+        
         boolean hasError = false;
         DotContentletValidationException cve = new DotContentletValidationException("Contentlets' fields are not valid");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
@@ -3120,6 +3259,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats)throws DotContentletValidationException {
+        if(contentlet.getMap().get("_dont_validate_me") != null)
+            return;
+
         DotContentletValidationException cve = new DotContentletValidationException("Contentlet's fields are not valid");
         boolean hasError = false;
         String stInode = contentlet.getStructureInode();
@@ -3253,8 +3395,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private Contentlet findWorkingContentlet(Contentlet content)throws DotSecurityException, DotDataException, DotContentletStateException{
-        if(content != null && InodeUtils.isSet(content.getInode()))
-            throw new DotContentletStateException("Contentlet must not exist already");
         Contentlet con = null;
         List<Contentlet> workingCons = new ArrayList<Contentlet>();
         if(InodeUtils.isSet(content.getIdentifier())){
@@ -3650,8 +3790,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return false;
     }
-
+    
     public boolean isInodeIndexed(String inode) {
+        return isInodeIndexed(inode,false);
+    }
+
+    public boolean isInodeIndexed(String inode,boolean live) {
         if(!UtilMethods.isSet(inode)){
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
@@ -3660,7 +3804,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         int counter = 0;
         while(counter < 300){
             try {
-                lc = conFac.indexSearch("+inode:" + inode, 0, 0, "modDate");
+                lc = conFac.indexSearch("+inode:" + inode+(live?" +live:true":""), 0, 0, "modDate");
             } catch (Exception e) {
                 Logger.error(this.getClass(),e.getMessage(),e);
                 return false;
@@ -3713,13 +3857,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public String getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-       
-    	
+
+
     	// no structure, no inode, no workee
         if (!InodeUtils.isSet(contentlet.getInode()) || !InodeUtils.isSet(contentlet.getStructureInode())) {
         	return null;
         }
-    	
+
     	final String CONTENTLET_URL_MAP_FOR_CONTENT = "URL_MAP_FOR_CONTENT";
     	final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
     	String result = (String) contentlet.getMap().get(CONTENTLET_URL_MAP_FOR_CONTENT);
@@ -3730,26 +3874,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
     		return result;
     	}
 
-    	
 
-        
+
+
         // if there is no detail page, return
         Structure structure = StructureCache.getStructureByInode(contentlet.getStructureInode());
         if(!UtilMethods.isSet(structure.getDetailPage())) {
-        	return null;	
+        	return null;
         }
-        
-        
-      
+
+
+
 
         Identifier id = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-        Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles); 
-        
+        Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles);
+
         // File assets send their path
         // if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
         // 	result = id.getPath();
         // }
-        
+
         // URL MAPPed
        if (UtilMethods.isSet(structure.getUrlMapPattern())) {
             List<RegExMatch> matches = RegEX.find(structure.getUrlMapPattern(), "({[^{}]+})");
@@ -3769,7 +3913,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
         }
-        
+
         // or Detail page with id=uuid
         else{
             HTMLPage p = APILocator.getHTMLPageAPI().loadLivePageById(structure.getDetailPage(), user, respectFrontendRoles);
@@ -3777,7 +3921,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         		result = p.getURI() + "?id=" + contentlet.getInode();
         	}
         }
-        
+
         // we send the host of the content, not the detail page (is this right?)
         if ((host != null) && !host.isSystemHost() && ! respectFrontendRoles && result !=null) {
         	if(result.indexOf("?") <0){
@@ -3787,11 +3931,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         		result = result + "&host_id=" + host.getIdentifier();
         	}
         }
-        
 
 
 
-        
+
+
     	if(result == null){
     		result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
     	}
@@ -3867,7 +4011,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
                 return true;
             }
-            else if(!APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user)){
+            else if(!APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, false)){
                 throw new DotLockException("User does not have Edit Permissions to lock content");
             }
         }catch(DotDataException dde){
@@ -3922,4 +4066,66 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         return conFac.indexCount(buffy.toString());
     }
+    
+	@Override
+	public List<Map<String, String>> getMostViewedContent(String structureVariableName, String startDateStr, String endDateStr, User user) {
+		
+		String[] dateFormats = new String[] { "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm",
+                "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
+                "hh:mm:ss aa", "HH:mm:ss", "yyyy-MM-dd"};
+
+		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+		
+		String structureInode = StructureCache.getStructureByVelocityVarName(structureVariableName).getInode();
+		if(!UtilMethods.isSet(structureInode))
+			return result;
+		
+		GregorianCalendar gCal = new GregorianCalendar();
+		Date endDate = gCal.getTime();
+		gCal.add(2, -3);
+		Date startDate = gCal.getTime();// Default interval
+		
+		if(!UtilMethods.isSet(startDateStr) && !UtilMethods.isSet(endDateStr)){
+			GregorianCalendar gc = new GregorianCalendar();
+			endDate = gc.getTime();
+			gc.add(2, -3);
+			startDate = gc.getTime();
+		}else if(!UtilMethods.isSet(startDateStr)){
+			try {
+				endDate = DateUtil.convertDate(endDateStr, dateFormats);
+				Calendar gc = new GregorianCalendar();
+				gc.setTime(endDate);
+				gc.add(2, -3);
+				startDate = gc.getTime();
+			} catch (java.text.ParseException e) {
+				GregorianCalendar gc = new GregorianCalendar();
+				endDate = gc.getTime();
+				gc.add(2, -3);
+				startDate = gc.getTime();
+			}
+		}else if(!UtilMethods.isSet(endDateStr)){
+			try {
+				startDate = DateUtil.convertDate(endDateStr, dateFormats);
+				Calendar gc = new GregorianCalendar();
+				gc.setTime(startDate);
+				gc.add(2, +3);
+				endDate = gc.getTime();
+			} catch (java.text.ParseException e) {
+				GregorianCalendar gc = new GregorianCalendar();
+				endDate = gc.getTime();
+				gc.add(2, -3);
+				startDate = gc.getTime();
+			}
+		}else{
+			try {
+				startDate = DateUtil.convertDate(startDateStr, dateFormats);
+				endDate = DateUtil.convertDate(endDateStr, dateFormats);
+			} catch (java.text.ParseException e) {}
+		}
+		
+		try {
+			result = conFac.getMostViewedContent(structureInode, startDate, endDate , user);
+		} catch (Exception e) {}
+		return result;
+	}    
 }

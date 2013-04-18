@@ -455,14 +455,17 @@ function restoreUploadCompleted() {
 	hideRestoreIndex();
 }
 
+
 dojo.ready(function() {
-	dojo.require("dojox.form.Uploader");
+	/*dojo.require("dojox.form.Uploader");
     dojo.require("dojox.embed.Flash");
     if(dojox.embed.Flash.available){
       dojo.require("dojox.form.uploader.plugins.Flash");
     }else{
       dojo.require("dojox.form.uploader.plugins.IFrame");
-    }
+    }*/
+	if(dojo.isIE && dojo.isIE<10) dojo.require("dojox.form.uploader.plugins.Flash");
+	else dojo.require("dojox.form.uploader.plugins.HTML5");
 });
 
 function connectUploadEvents() {
@@ -804,6 +807,18 @@ function showNewIndexDialog() {
 	dijit.byId('createIndexDialog').show()
 } 
 
+function refreshAuditData(jobId,offset,limit) {
+	var url="/html/portlet/ext/sitesearch/site_search_audit.jsp";
+	if(jobId) {
+		url+="?jobId="+jobId;
+		if(offset)
+			url+="&offset="+offset;
+		if(limit)
+			url+="&limit="+limit;
+	}
+	dijit.byId("auditCp").attr("href",url);
+}
+
 dojo.addOnLoad (function(){
 	var tab =dijit.byId("mainTabContainer");
    	dojo.connect(tab, 'selectChild',
@@ -820,6 +835,9 @@ dojo.addOnLoad (function(){
 			  	}
 			  	if(selectedTab.id =="scheduleTabCp"){
 			  		refreshJobSchedule();
+			  	}
+			  	if(selectedTab.id=="auditTabCp") {
+			  		refreshAuditData();
 			  	}
 		});
    	refreshIndexStats();
@@ -899,6 +917,9 @@ function  resizeBrowser(){
         var  e =  dojo.byId("indexStatsCp");
         dojo.style(e, "height", viewport_height -250+ "px")
         
+        var  e =  dojo.byId("auditTabCp");
+        dojo.style(e, "height", viewport_height -210+ "px")
+        
 }
 
 
@@ -959,6 +980,10 @@ function  resizeBrowser(){
 		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_SCHEDULER") %>">
 			<div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
 		</div>
+		
+		<div id="auditTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "sitesearch-audit-tab") %>">
+            <div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="auditCp"></div>
+        </div>
 		
 	</div>
 

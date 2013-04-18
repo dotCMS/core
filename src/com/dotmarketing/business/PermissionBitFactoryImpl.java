@@ -53,6 +53,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.viewtools.navigation.NavResult;
 import com.liferay.portal.model.User;
 
 /**
@@ -499,7 +500,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private final String selectChildrenFileSQL =
 		"select distinct identifier.id from identifier where " +
-		"asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ?";
+		"asset_type='contentlet' and identifier.host_inode = ? and identifier.parent_path like ?";
 
 	/*
 	 * To load file identifiers that are children of a host and have inheritable permissions
@@ -1900,11 +1901,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			contAPI.refresh((Contentlet)permissionable);
 		}
 		//DOTCMS-4959
-		if(permissionable instanceof Host && ((Host)permissionable).isSystemHost()){
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			contAPI.refresh(((Host)permissionable).getStructure());
-			//http://jira.dotmarketing.net/browse/DOTCMS-5768
-			permissionCache.clearCache();
+		if(permissionable instanceof Host) { 
+		    if(((Host)permissionable).isSystemHost()){
+		        ContentletAPI contAPI = APILocator.getContentletAPI();
+	            contAPI.refresh(((Host)permissionable).getStructure());
+	            //http://jira.dotmarketing.net/browse/DOTCMS-5768
+	            permissionCache.clearCache();
+		    }
+		    else {
+		        // https://github.com/dotCMS/dotCMS/issues/2229
+		        APILocator.getContentletAPI().refreshContentUnderHost((Host)permissionable);
+		    }
 		}
 	}
 
@@ -2449,8 +2456,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					}
 				}
 
-				if(permissionable instanceof Template && ((Template) permissionable).isDrawed()) {
+				if(permissionable instanceof Template && UtilMethods.isSet(((Template) permissionable).isDrawed()) && ((Template) permissionable).isDrawed()) {
 					 type = Template.TEMPLATE_LAYOUTS_CANONICAL_NAME;
+				}
+				
+				if(permissionable instanceof NavResult) {
+				    type = ((NavResult)permissionable).getEnclosingPermissionClassName();
 				}
 
 				Permissionable parentPermissionable = permissionable.getParentPermissionable();
@@ -2482,7 +2493,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
 					dc1.addParam(permissionable.getPermissionId());
 					List<Map<String, Object>> l = dc1.loadObjectResults();
-					if(l != null && l.size()>0){
+					
+					DotConnect dc2 = new DotConnect();
+                    dc2.setSQL("SELECT id FROM identifier WHERE id = ?");
+                    dc2.addParam(permissionable.getPermissionId());
+                    List<Map<String, Object>> l2 = dc2.loadObjectResults();
+                    
+					if((l != null && l.size()>0) || (l2!=null && l2.size()>0)){
 						dc1.setSQL(deletePermissionableReferenceSQL);
 						dc1.addParam(permissionable.getPermissionId());
 						dc1.loadResult();
@@ -3299,14 +3316,18 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 		for (Map<String, String> idMap : idsToUpdate) {
 			String id = idMap.get("id");
-			Permissionable childPermissionable;
+			
+			//Search contentlets by identifier (all languages) and set permissions
+			String luceneQuery = "+identifier:"+id+" +working:true";
 			try {
-				childPermissionable = contentAPI.findContentletByIdentifier(id, false, 0, systemUser, false);
+				for(Permissionable childPermissionable: contentAPI.search(luceneQuery,1,0,null,systemUser, false)) {
+					savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+					break;
+				}
 			} catch (DotSecurityException e) {
 				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
 			}
-			savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
 		}
 
 		// Structures
@@ -3367,7 +3388,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		int offset=0;
 		List<Contentlet> contentlets;
 		do {
-			String query="structurename:"+structure.getName();
+			String query="structurename:"+structure.getVelocityVarName();
 			try {
 			    contentlets=contAPI.search(query, limit, offset, "identifier", APILocator.getUserAPI().getSystemUser(), false);
             } catch (DotSecurityException e) {
@@ -3404,6 +3425,36 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		dc.loadResult();
 		permissionCache.clearCache();
 
+		// at least we need to regenerate for template and structure
+		HibernateUtil hu=new HibernateUtil(Template.class);
+		int offset=0;
+		int max=100;
+		List<Template> list=null;
+		do {
+    		hu.setQuery("from "+Template.class.getCanonicalName());
+    		hu.setFirstResult(offset);
+    		hu.setMaxResults(max);
+    		list = hu.list();
+    		for(Template t : list) {
+    		    getPermissions(t);
+    		}
+    		offset=offset+max;
+		} while(list.size()>0);
+		
+		hu=new HibernateUtil(Structure.class);
+        offset=0;
+        
+        List<Structure> listSt=null;
+        do {
+            hu.setQuery("from "+Structure.class.getCanonicalName());
+            hu.setFirstResult(offset);
+            hu.setMaxResults(max);
+            listSt = hu.list();
+            for(Structure st : listSt) {
+                getPermissions(st);
+            }
+            offset=offset+max;
+        } while(listSt.size()>0);
 	}
 
 

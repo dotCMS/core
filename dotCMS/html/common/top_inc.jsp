@@ -22,7 +22,7 @@ THIS FILE AND ITS INCLUDES
 
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:bi="urn:bi" xmlns:csp="urn:csp">
 <head>
-	<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE8,chrome=1" />
+	<meta http-equiv="x-ua-compatible" content="IE=edge" >
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	
 	<meta content="no-cache" http-equiv="Cache-Control" />

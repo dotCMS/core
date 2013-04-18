@@ -377,57 +377,63 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    removeContentFromIndex(content, false);
 	}
 
+	private void removeContentFromIndex(final Contentlet content, final boolean onlyLive, final List<Relationship> relationships) throws DotHibernateException {
+		 Runnable indexRunner = new Runnable() {
+	            public void run() {
+	        	    try {
+	            	    String id=content.getIdentifier()+"_"+content.getLanguageId();
+	            	    Client client=new ESClient().getClient();
+	            	    BulkRequestBuilder bulk=client.prepareBulk();
+	            	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+
+	            	    bulk.add(client.prepareDelete(info.live, "content", id));
+	            	    if(info.reindex_live!=null)
+	            	        bulk.add(client.prepareDelete(info.reindex_live, "content", id));
+
+	        	        if(!onlyLive) {
+
+	        	            // here we search for relationship fields pointing to this
+	        	            // content to be deleted. Those contentlets are reindexed
+	        	            // to avoid left those fields making noise in the index
+	        	            for(Relationship rel : relationships) {
+	        	                String q = "";
+	        	                boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+
+	        	                if(isSameStructRelationship)
+	        	                    q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + content.getIdentifier() + " " +
+	        	                        rel.getRelationTypeValue() + "-child:" + content.getIdentifier() + ") ";
+	        	                else
+	        	                    q = "+type:content +" + rel.getRelationTypeValue() + ":" + content.getIdentifier();
+
+	        	                List<Contentlet> related = APILocator.getContentletAPI().search(q, -1, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+	        	                indexContentletList(bulk, related, false);
+	        	            }
+
+	        	            bulk.add(client.prepareDelete(info.working, "content", id));
+	        	            if(info.reindex_working!=null)
+	        	                bulk.add(client.prepareDelete(info.reindex_working, "content", id));
+	        	        }
+
+	                    bulk.execute().actionGet();
+
+	        	    }
+	        	    catch(Exception ex) {
+	        	        throw new ElasticSearchException(ex.getMessage(),ex);
+	        	    }
+	            }
+	        };
+	        HibernateUtil.addCommitListener(indexRunner);
+	}
+	
 	public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotHibernateException {
 
 	    if(content==null || !UtilMethods.isSet(content.getIdentifier())) return;
 
+	    List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(content.getStructure());
 	    // add a commit listener to index the contentlet if the entire
         // transaction finish clean
-        HibernateUtil.addCommitListener(new Runnable() {
-            public void run() {
-        	    try {
-            	    String id=content.getIdentifier()+"_"+content.getLanguageId();
-            	    Client client=new ESClient().getClient();
-            	    BulkRequestBuilder bulk=client.prepareBulk();
-            	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-
-            	    bulk.add(client.prepareDelete(info.live, "content", id));
-            	    if(info.reindex_live!=null)
-            	        bulk.add(client.prepareDelete(info.reindex_live, "content", id));
-
-        	        if(!onlyLive) {
-
-        	            // here we search for relationship fields pointing to this
-        	            // content to be deleted. Those contentlets are reindexed
-        	            // to avoid left those fields making noise in the index
-        	            List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(content.getStructure());
-        	            for(Relationship rel : relationships) {
-        	                String q = "";
-        	                boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
-
-        	                if(isSameStructRelationship)
-        	                    q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + content.getIdentifier() + " " +
-        	                        rel.getRelationTypeValue() + "-child:" + content.getIdentifier() + ") ";
-        	                else
-        	                    q = "+type:content +" + rel.getRelationTypeValue() + ":" + content.getIdentifier();
-
-        	                List<Contentlet> related = APILocator.getContentletAPI().search(q, -1, 0, null, APILocator.getUserAPI().getSystemUser(), false);
-        	                indexContentletList(bulk, related, false);
-        	            }
-
-        	            bulk.add(client.prepareDelete(info.working, "content", id));
-        	            if(info.reindex_working!=null)
-        	                bulk.add(client.prepareDelete(info.reindex_working, "content", id));
-        	        }
-
-                    bulk.execute().actionGet();
-
-        	    }
-        	    catch(Exception ex) {
-        	        throw new ElasticSearchException(ex.getMessage(),ex);
-        	    }
-            }
-        });
+        removeContentFromIndex(content, onlyLive, relationships);
+       
 	}
 
 	public void removeContentFromLiveIndex(final Contentlet content) throws DotHibernateException {

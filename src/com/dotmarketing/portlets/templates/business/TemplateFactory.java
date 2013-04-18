@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -30,6 +31,7 @@ public interface TemplateFactory {
 	 * @throws DotDataException
 	 */
 	public void save(Template template) throws DotDataException;
+	void save(Template template, String existingId)throws DotDataException;
 	
 	/**
 	 * Delete template from cache.
@@ -46,5 +48,13 @@ public interface TemplateFactory {
 	public List<HTMLPage> getPagesUsingTemplate(Template template) throws DotDataException;
 	
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException;
+
+	public Template find(String inode) throws DotStateException, DotDataException;
 	
+
+	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException;
+
+
 }

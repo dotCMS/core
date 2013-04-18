@@ -106,6 +106,7 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException 
 	 */
 	protected abstract Contentlet save(Contentlet contentlet) throws DotDataException, DotSecurityException;
+	protected abstract Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
@@ -321,4 +322,17 @@ public abstract class ContentletFactory {
     protected abstract Object loadField(String inode, String fieldContentlet) throws DotDataException;
     
     protected abstract long indexCount(String query);
+    
+    /**
+     * Gets the top viewed contents identifier and numberOfViews for a particular structure for a specified date interval
+     * 
+     * @param structureName
+     * @param startDate
+     * @param endDate
+     * @param user
+     * @return
+     * @throws DotDataException 
+     */
+	public abstract List<Map<String, String>> getMostViewedContent(String structureInode,Date startDate, Date endDate, User user) throws DotDataException;
+
 }

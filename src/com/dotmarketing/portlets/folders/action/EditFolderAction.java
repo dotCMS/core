@@ -33,11 +33,9 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.factories.InodeGenerator;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
@@ -45,20 +43,16 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
-import com.dotmarketing.business.CacheLocator;
 
 /**
  * @author Maria
@@ -363,6 +357,9 @@ public class EditFolderAction extends DotPortletAction {
 				{
 					//if the not, doesn't show before and doesn't show now, delete the menus
 					RefreshMenus.deleteMenu(f);
+					CacheLocator.getNavToolCache().removeNav(f.getHostId(), f.getInode());
+					Identifier ident=APILocator.getIdentifierAPI().find(f);
+					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 				}
 					
 				// For messages to be displayed on messages page

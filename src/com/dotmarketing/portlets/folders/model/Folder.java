@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -37,18 +38,18 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
     /** nullable persistent field */
     private boolean showOnMenu;
-    
+
     /** nullable persistent field */
     private String hostId = "";
 
 
     private String title;
     /** default constructor */
-    
+
     private String filesMasks;
-    
+
     private String defaultFileType;
-    
+
 
 	public Folder() {
     	this.setType("folder");
@@ -147,7 +148,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
     public String toString() {
 		return ToStringBuilder.reflectionToString(this);
     }
-    
+
 	/**
 	 * @return Returns the hostId.
 	 */
@@ -172,7 +173,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	   this.identifier = identifier;
 	   setHostId(this.hostId);
 	}
-	
+
 	public void copy (Folder template) {
 		this.setHostId(template.getHostId());
 		this.setName(template.getName());
@@ -189,7 +190,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	public void setFilesMasks(String filesMasks) {
 		this.filesMasks = filesMasks;
 	}
-	
+
 
 	public String getDefaultFileType() {
 		return defaultFileType;
@@ -212,7 +213,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
     }
 
     //Methods from permissionable and parent permissionable
-    
+
 	@Override
 	public List<PermissionSummary> acceptedPermissions() {
 		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
@@ -222,7 +223,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		accepted.add(new PermissionSummary("edit-permissions", "edit-permissions-permission-description", PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 		return accepted;
 	}
-	
+
 	@Override
 	public boolean isParentPermissionable() {
 		return true;
@@ -230,9 +231,9 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
 	@Override
 	public Permissionable getParentPermissionable() throws DotDataException {
-		
+
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-		
+
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		Folder parentFolder;
 		try {
@@ -243,13 +244,28 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		}
 		if(parentFolder != null)
 			return parentFolder;
-		
+
 		try {
 			return APILocator.getHostAPI().findParentHost(this, systemUser, false);
 		} catch (DotSecurityException e) {
 			Logger.error(Folder.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
+	}
+
+	public String getPath() {
+
+		Identifier id = null;
+
+		try {
+			id = APILocator.getIdentifierAPI().find(this.getIdentifier());
+		} catch (DotDataException e) {
+			Logger.error(Folder.class, e.getMessage(), e);
+		} catch (Exception e) {
+			Logger.debug(this, " This is usually not a problem as it is usually just the identifier not being found" +  e.getMessage(), e);
+		}
+
+		return id!=null?id.getPath():null;
 	}
 
 }
