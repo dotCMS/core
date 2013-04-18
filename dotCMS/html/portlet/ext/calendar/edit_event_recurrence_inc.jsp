@@ -49,7 +49,7 @@
 				
 				
 				
-				<%---       DAILY RECURRANCE        --%>
+				<%--       DAILY RECURRANCE        --%>
 				<div id="dailyRecurrence" class="eventRecurrence">
 					<%= LanguageUtil.get(pageContext, "Every") %>: 
 						<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalDaily" id="recurrenceIntervalDaily" onchange="setRecurrenceInterval('recurrenceIntervalDaily');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" /> 
@@ -62,7 +62,7 @@
 				
 				
 				
-				<%---       WEEKLY RECURRANCE        --%>
+				<%--       WEEKLY RECURRANCE        --%>
 				<div id="weeklyRecurrence"  style="border:0px solid red;padding:3px;white-space:nowrap">
 					<%= LanguageUtil.get(pageContext, "Every") %>:  
 					<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalWeekly" id="recurrenceIntervalWeekly" onchange="setRecurrenceInterval('recurrenceIntervalWeekly');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" /> 
@@ -98,7 +98,7 @@
 				
 				
 				
-				<%---       MONTHLY RECURRANCE        --%>
+				<%--       MONTHLY RECURRANCE        --%>
 				<div id="monthlyRecurrence">
 					<style>
 						#monthRecurrTable td{
@@ -173,7 +173,7 @@
 				
 				
 				
-				<%---       YEARLY RECURRANCE        --%>
+				<%--       YEARLY RECURRANCE        --%>
 				<div id="annualRecurrence">
 				
 					<table id="yearRecurrTable">
