@@ -16,9 +16,9 @@ rem limitations under the License.
 
 if "%OS%" == "Windows_NT" setlocal
 rem ---------------------------------------------------------------------------
-rem Stop script for the CATALINA Server
+rem Configuration test script for the CATALINA Server
 rem
-rem $Id: shutdown.bat 895392 2010-01-03 14:02:31Z kkolinko $
+rem $Id: configtest.bat 1137560 2011-06-20 09:27:44Z rjung $
 rem ---------------------------------------------------------------------------
 
 rem Guess CATALINA_HOME if not defined
@@ -54,6 +54,6 @@ shift
 goto setArgs
 :doneSetArgs
 
-call "%EXECUTABLE%" stop %CMD_LINE_ARGS%
+call "%EXECUTABLE%" configtest %CMD_LINE_ARGS%
 
 :end

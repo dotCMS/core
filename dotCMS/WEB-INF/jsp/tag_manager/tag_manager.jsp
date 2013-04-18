@@ -471,7 +471,7 @@ td {font-size: 100%;}
 	</div>
 </div>
 
- <%--------------- Add Tag Dialog-----------------%>
+ <%-- Add Tag Dialog --%>
 
 <div id="addTagDialog" title="<%= LanguageUtil.get(pageContext, "edit-tag") %>" dojoType="dijit.Dialog" style="display: none;width:500px">
 	<form id="newTagForm" dojoType="dijit.form.Form" class="roleForm">
@@ -528,9 +528,9 @@ td {font-size: 100%;}
 		</div>
 	</form>
 </div>
-<%--------------- /Add Tag Dialog-----------------%>
+<%-- /Add Tag Dialog --%>
 
-<%--------------- Import Tag Dialog-----------------%>
+<%-- Import Tag Dialog --%>
 
 <div id="importTagsDialog" title="<%= LanguageUtil.get(pageContext, "import-tags") %>" dojoType="dijit.Dialog" style="display: none;width:500px">
 	<form id="importTagsForm" dojoType="dijit.form.Form" class="roleForm">
@@ -557,4 +557,4 @@ td {font-size: 100%;}
 		</div>
 	</form>
 </div>
-<%--------------- /Import Tags Dialog-----------------%>
+<%-- /Import Tags Dialog --%>

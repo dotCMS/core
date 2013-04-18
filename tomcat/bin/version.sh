@@ -18,8 +18,14 @@
 # -----------------------------------------------------------------------------
 # Version Script for the CATALINA Server
 #
-# $Id: version.sh 562770 2007-08-04 22:13:58Z markt $
+# $Id: version.sh 1202062 2011-11-15 06:50:02Z mturk $
 # -----------------------------------------------------------------------------
+
+# Better OS/400 detection: see Bugzilla 31132
+os400=false
+case "`uname`" in
+OS400*) os400=true;;
+esac
 
 # resolve links - $0 may be a softlink
 PRG="$0"
@@ -38,10 +44,19 @@ PRGDIR=`dirname "$PRG"`
 EXECUTABLE=catalina.sh
 
 # Check that target executable exists
-if [ ! -x "$PRGDIR"/"$EXECUTABLE" ]; then
-  echo "Cannot find $PRGDIR/$EXECUTABLE"
-  echo "This file is needed to run this program"
-  exit 1
+if $os400; then
+  # -x will Only work on the os400 if the files are:
+  # 1. owned by the user
+  # 2. owned by the PRIMARY group of the user
+  # this will not work if the user belongs in secondary groups
+  eval
+else
+  if [ ! -x "$PRGDIR"/"$EXECUTABLE" ]; then
+    echo "Cannot find $PRGDIR/$EXECUTABLE"
+    echo "The file is absent or does not have execute permission"
+    echo "This file is needed to run this program"
+    exit 1
+  fi
 fi
 
 exec "$PRGDIR"/"$EXECUTABLE" version "$@"
