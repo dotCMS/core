@@ -22,6 +22,8 @@ public class LogConsoleAjaxAction extends IndexAjaxAction {
 
     public static final String CONTENT_JSON = "application/json";
 
+//    public void 
+    
     /**
      * Method that will get the current logs list and will send them to the client in a JSON format
      *
