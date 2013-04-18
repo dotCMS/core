@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
+import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
 import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
@@ -29,13 +30,12 @@ import org.junit.runners.Suite;
         PermissionAPITest.class,
         ContainerAPITest.class,
         DotCMSCMISTest.class,
-        //LinkCheckerAPITest.class,
+        LinkCheckerAPITest.class,
         TemplateAPITest.class,
         HTMLPageAPITest.class,
         PublishingEndPointAPITest.class,
         CategoryAPITest.class,
         FieldAPITest.class
-//        CMISBaseTest.class
 } )
 public class AllTestsSuite {
 

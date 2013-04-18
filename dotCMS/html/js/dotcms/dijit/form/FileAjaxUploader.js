@@ -246,7 +246,6 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		dojo.style(this.fileUploadForm, { display: 'none' });
 		dojo.style(this.fileUploadStatus, { display: 'none' });
 		dojo.style(this.fileUploadRemoveButton, { display: '' });
-		dojo.style(this.fileUploadInfoButton, { display: '' });
 		FileAjax.clearFileUploadStatus(this.name, function () {});
 		this.onUploadFinish(this.fileName, this);
 
