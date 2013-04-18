@@ -69,10 +69,9 @@ public class WebResource {
 	 *
 	 * <br><br>There are five ways to get the User. They are executed in the specified order. When found, the remaining ways won't be executed.
 	 * <br>1) Using username and password contained in <code>params</code>.
-	 * <br>2) Using username and password contained in the <code>request</code> parameters.
-	 * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter DOTAUTH.
-	 * <br>4) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
-	 * <br>5) From the session. It first tries to get the Backend logged in user. If no user found, tries to get the Frontend logged in user.
+	 * <br>2) Using username and password in Base64 contained in the <code>request</code> HEADER parameter DOTAUTH.
+	 * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
+	 * <br>4) From the session. It first tries to get the Backend logged in user. If no user found, tries to get the Frontend logged in user.
 	 *
 	 *
 	 * @param params a string containing the URL parameters in the /key/value form
@@ -82,14 +81,14 @@ public class WebResource {
 	 * @return an initDataObject with the resulting <code>Map</code>
 	 */
 
-	protected InitDataObject init(String params, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser) {
+	protected InitDataObject init(String params, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser) throws SecurityException {
 
 		checkForceSSL(request);
 
 		InitDataObject initData = new InitDataObject();
 
 		if(!UtilMethods.isSet(params))
-			return initData;
+			params = "";
 
 		Map<String, String> paramsMap = buildParamsMap(params);
 		User user = null;
@@ -106,10 +105,9 @@ public class WebResource {
 	 * Returns an authenticated {@link User}. There are five ways to get the User.
 	 * They are executed in the specified order. When found, the remaining ways won't be executed.
 	 * <br><br>1) Using username and password contained in <code>params</code>.
-	 * <br>2) Using username and password contained in the <code>request</code> parameters.
-	 * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter DOTAUTH.
-	 * <br>4) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
-	 * <br>5) From the session. It first tries to get the Backend logged in user. If no user found, tries to get the Frontend logged in user.
+	 * <br>2) Using username and password in Base64 contained in the <code>request</code> HEADER parameter DOTAUTH.
+	 * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
+	 * <br>4) From the session. It first tries to get the Backend logged in user. If no user found, tries to get the Frontend logged in user.
 	 *
 	 * @param paramsMap a map containing the URL parameters
 	 * @param request
@@ -122,7 +120,6 @@ public class WebResource {
 		boolean forcefrontendauth = Config.getBooleanProperty("FORCE_FRONT_END_AUTH", false);
 
 		User user = (user = authenticateUserFromURL(paramsMap, request)) != null ? user
-				: (user = authenticateUserFromPost(paramsMap, request)) != null ? user
 						: (user = authenticateUserFromHeaderAuth(paramsMap, request)) != null ? user
 								: (user = authenticateUserFromBasicAuth(paramsMap, request)) != null ? user
 										: !forcefrontendauth ? (user = getBackUserFromRequest(request)) != null ? user
@@ -140,14 +137,6 @@ public class WebResource {
 	private User authenticateUserFromURL(Map<String, String> paramsMap, HttpServletRequest request) {
 
 		String username = paramsMap.get(RESTParams.USER.getValue());
-		String password = paramsMap.get(RESTParams.PASSWORD.getValue());
-
-		return authenticateUser(username, password, request);
-	}
-
-	private User authenticateUserFromPost(Map<String, String> paramsMap, HttpServletRequest request) {
-
-		String username = request.getParameter(RESTParams.USER.getValue());
 		String password = paramsMap.get(RESTParams.PASSWORD.getValue());
 
 		return authenticateUser(username, password, request);
@@ -225,10 +214,12 @@ public class WebResource {
 
 					Logger.warn(this.getClass(), "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
 					SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
-					throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
+					throw new SecurityException("Invalid credentials", Response.Status.UNAUTHORIZED);
 				}
 
-			}  catch (Exception e) {  // doLogin throwing Exception
+			}  catch(SecurityException e) {
+				throw e;
+			} catch (Exception e) {  // doLogin throwing Exception
 
 				Logger.warn(this.getClass(), "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
 				SecurityLogger.logDebug(this.getClass(), "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
