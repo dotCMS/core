@@ -528,20 +528,39 @@ public class StructureAjax {
 		return null;
 	}
 
-	public String checkDependencies(String structureInode) throws DotDataException{
+	public Map<Object,Object> checkDependencies(String structureInode) throws DotDataException{
 
-		String result = null;
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest request = ctx.getHttpServletRequest();
+		
+		Map<Object,Object> result = new HashMap<Object, Object>();
+		List<Map<String,String>> containersList = new ArrayList<Map<String,String>>();
+		
 		// checking if there are containers using this structure
 		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(structureInode);
-
-		if(containers.size()>0) {
-			StringBuilder names=new StringBuilder();
-
-			for(int i=0; i<containers.size(); i++) {
-				names.append(containers.get(i).getFriendlyName()).append(", ");
+		Map<String, Container> containersInUse = new HashMap<String, Container>();		
+		
+		for(Container c : containers) {
+			try {
+				containersInUse.put(c.getIdentifier(), c);
+			} catch (Exception e) {
 			}
-			result =  names.toString();
+ 		}
+		
+		for(Container c : containersInUse.values()){
+			String hostTitle = "";
+			try {
+				hostTitle = APILocator.getHostAPI().findParentHost(c, PortalUtil.getUser(request), false).getTitle();
+			} catch (Exception e) {}
+			Map<String,String> containerMap = new HashMap<String, String>();
+			containerMap.put("title", hostTitle + " : " + c.getTitle());
+			containerMap.put("identifier", c.getIdentifier());
+			containerMap.put("inode", c.getInode());
+			containersList.add(containerMap);
 		}
+		
+		result.put("containers", containersList);
+		result.put("size",containersList.size());		
 		return result;
 	}
 

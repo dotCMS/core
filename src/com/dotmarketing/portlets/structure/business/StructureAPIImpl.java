@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.structure.business;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -33,15 +35,23 @@ public class StructureAPIImpl implements StructureAPI {
         if(!perAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_WRITE, user)) 
             throw new DotSecurityException("User doesn't have permission to delete the structure");
         
-        // checking if there is containers using this structure
-        List<Container> containers = APILocator.getContainerAPI().findContainersForStructure(st.getInode());
-        if (containers.size() > 0) {
-            StringBuilder names = new StringBuilder();
-            for (int i = 0; i < containers.size(); i++)
-                names.append(containers.get(i).getFriendlyName()).append(", ");
-            throw new DotStateException("Structure " + st.getName() + 
-                    " can't be deleted because the following containers are using it: " + names);
-        }
+     // checking if there is containers using this structure
+     		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(st.getInode());
+     		Map<String, String> containersInUse = new HashMap<String, String>();
+     		StringBuilder names=new StringBuilder();
+     		for(Container c : containers) {
+     			try {
+     				String hostTitle = APILocator.getHostAPI().findParentHost(c, user, false).getTitle();
+     				containersInUse.put(c.getIdentifier(), hostTitle + " : " + c.getTitle() + "</br>");
+     			} catch (Exception e) {
+     			}
+      		}
+     		for(String title : containersInUse.values()){
+     			names.append(title).append("</br>");
+     		}
+     		if(UtilMethods.isSet(names.toString()))
+     			throw new DotStateException("Structure " + st.getName() + 
+                         " can't be deleted because the following containers are using it: " + names);
         
         // default structure can't be deleted
         if(st.isDefaultStructure())

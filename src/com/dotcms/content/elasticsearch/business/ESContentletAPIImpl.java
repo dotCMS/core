@@ -2007,7 +2007,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				}
 				if (!createNewVersion && contentlet != null && !InodeUtils.isSet(contentlet.getInode()))
 				    throw new DotContentletStateException("Contentlet must exist already");
-				if (contentlet != null && contentlet.isArchived())
+				if (contentlet != null && contentlet.isArchived() && contentlet.getMap().get("_dont_validate_me") == null)
 				    throw new DotContentletStateException("Unable to checkin an archived piece of content, please un-archive first");
 				if (!perAPI.doesUserHavePermission(InodeUtils.isSet(contentlet.getIdentifier()) ? contentlet : contentlet.getStructure(),
 				        PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
