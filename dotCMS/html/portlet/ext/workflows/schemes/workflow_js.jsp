@@ -361,10 +361,12 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=delete&stepId=" + stepId,
 			handle : function(dataOrError, ioArgs) {
 				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						showDotCMSSystemMessage(dataOrError, true);
-
-
+					if (dataOrError.indexOf("FAILURE") == 0) {					
+							dataOrError = '<div class="warningText">' + dataOrError + '</div>';
+							var thisdialog = new dijit.Dialog({ title: "Delete Step", content: dataOrError });
+							dojo.body().appendChild(thisdialog.domNode);
+							thisdialog.startup();
+							thisdialog.show();
 					} else {
 						stepAdmin.deleteSuccess(dataOrError);
 					}
