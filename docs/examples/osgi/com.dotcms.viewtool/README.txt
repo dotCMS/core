@@ -30,10 +30,9 @@ Beware!!!
 In order to work inside the Apache Felix OSGI runtime, the import
 and export directive must be bidirectional.
 
-The DotCMS must declare the set of packages that will be available
-to the OSGI plugins by changing the property:
-felix.org.osgi.framework.system.packages.extra
-inside the configuration file src-conf/dotmarketing-config.properties
+The DotCMS must declare the set of packages that will be available to
+the OSGI plugins by changing the file: dotCMS/WEB-INF/felix/osgi-extra.conf.
+This is possible also using the dotCMS UI (CMS Admin->Dynamic Plugins->Exported Packages).
 
 Only after that exported packages are defined in this list,
 a plugin can Import the packages to use them inside the OSGI blundle.
