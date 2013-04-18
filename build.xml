@@ -489,7 +489,7 @@
                         <classpath refid="files-classpath" />
                         <doctitle>
                                 <![CDATA[
-                        <h1>dotCMS 2.1 API Specification</h1>
+                        <h1>dotCMS 2.5 API Specification</h1>
                         ]]>
                         </doctitle>
                         <bottom>
@@ -515,26 +515,21 @@
 
 	<mkdir dir="${build.war}"/>
 
-	<zip destfile="${build.war}/${war.name}.war">
-		<zipfileset dir="dotCMS/" >
-			<exclude name="**/.svn"/>
+	 <copy todir="${build.war}/${war.name}.war">
+		<fileset dir="dotCMS/">
 			<exclude name="assets/"/>
 			<exclude name="WEB-INF/backup/"/>
 			<exclude name="WEB-INF/dotlucene/"/>
 			<exclude name="dot_secure/"/>
 			<exclude name="dotsecure/"/>
-		</zipfileset>
-	</zip>
-
+		</fileset>
+	</copy>
+	
 </target>
 
 
 
-<target name="war-no-jsp" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
-	<antcall target="war-file"/>
-</target>
-
-<target name="war" depends="deploy-core,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
+<target name="war" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
 	<antcall target="war-file"/>
 </target>
 
@@ -611,6 +606,7 @@
 			<classpath>
 	          <fileset dir="tomcat">
 	              <include name="bin/bootstrap.jar"/>
+	          	  <include name="bin/tomcat-juli.jar"/>
 	          </fileset>
 	        </classpath>
 	    </java>
@@ -623,6 +619,7 @@
 		 	<classpath>
 	          <fileset dir="tomcat">
 	              <include name="bin/bootstrap.jar"/>
+	          	  <include name="bin/tomcat-juli.jar"/>
 	          </fileset>
 	        </classpath>
 	    </java>
