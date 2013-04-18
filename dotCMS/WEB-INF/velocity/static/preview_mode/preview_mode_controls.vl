@@ -22,13 +22,15 @@
 
 <script>
 	dojo.require("dijit.Dialog");
+	dojo.require("dijit.form.Form");
 	dojo.require("dijit.ProgressBar");
+	dojo.require("dijit.form.RadioButton");
 	dojo.require("dijit.form.Button");
 	dojo.require("dijit.form.TextBox");
 	dojo.require("dijit.form.DateTextBox");
 	dojo.require("dijit.form.TimeTextBox");
 	dojo.require("dijit.form.CheckBox");
-	
+
 	//Widget functions
 	var _dotStructureTypeName = "";
 	var _dotPage = 1;
@@ -37,22 +39,22 @@
 	var _dotWidgetSearchString = "";
 	var _inodeCounter = 0;
 	var pushHandler = null;
-	
+
 	 function remotePublish(){
-    	dojo.require("dotcms.dojo.push.PushHandler");	
-    	pushHandler = new dotcms.dojo.push.PushHandler('$languagewebapi.getFromUserLanguage("modes.Create-New-Page")');
+    	dojo.require("dotcms.dojo.push.PushHandler");
+    	pushHandler = new dotcms.dojo.push.PushHandler('$languagewebapi.getFromUserLanguage("Remote-Publish")');
         pushHandler.showDialog('$htmlPageInode');
     }
-	
+
 	function openAddWidget(containerInode) {
-		hideCurrentMenu();	
+		hideCurrentMenu();
 	   	document.getElementById('container').value = containerInode;
        	var myDialog = dijit.byId("dotAddWidget");
        	myDialog.titleNode.innerHTML='<img src="/html/images/icons/gear.png" width="16" height="16" align="absbottom" hspace="3" />$languagewebapi.getFromUserLanguage("modes.Add-Widget")';
        	dojo.parser.parse("dotAddWidget");
       	myDialog.show();
 	}
-	
+
 	function _dotWidgetInitiate(){
 		_dotWidgetCleanResultsData();
 		dijit.byId('widgetSearch').setDisabled(true);
@@ -60,7 +62,7 @@
 		dijit.byId('widgetAdd').setDisabled(true);
 		dijit.byId('widgetAdd').attr('iconClass','plusIconDis');
 		dijit.byId('_dotWidgetAjaxSearch').attr('disabled', true);
-		dijit.byId('widgetAdd').setLabel("$languagewebapi.getFromUserLanguage('modes.Create-New')");	
+		dijit.byId('widgetAdd').setLabel("$languagewebapi.getFromUserLanguage('modes.Create-New')");
 		var _dotWidgetSelect = document.getElementById("_dotWidgetSelect");
 			var woptions = _dotWidgetSelect.options;
 			for(i=0;i<woptions.length;i++){
@@ -86,7 +88,7 @@
 		fieldsValues[1] = dijit.byId('_dotWidgetAjaxSearch').attr('value');
 		ContentletAjax.searchContentlet(_dotWidgetInodeSelected, fieldsValues, categoriesValues, false, false, _dotPage, _dotPerPage, "title asc", _dotFillWidgetResults);
 	}
-	
+
 	function _dotWidgetSearch(){
 		_dotPage = 1;
 		var _dotWidgetAjaxSearch = document.getElementById("_dotWidgetAjaxSearch");
@@ -97,25 +99,25 @@
 		_dotWidgetSearchString = _dotWidgetAjaxSearch.value;
 		ContentletAjax.searchContentlet(_dotWidgetInodeSelected, fieldsValues, categoriesValues, false, false, _dotPage, _dotPerPage,"title asc", _dotFillWidgetResults);
 	}
-	
+
 	function _dotFillWidgetResults(widgets){
 		_dotWidgetCleanResultsData();
-					
+
 		var _dotWidgetListings = document.getElementById("_dotWidgetListings");
 		var counters = widgets[0];
 		var hasNext = counters["hasNext"];
 		var hasPrevious = counters["hasPrevious"];
 		var total = counters["total"];
-		
+
 		dijit.byId('widgetSearch').setDisabled(false);
 		dijit.byId('widgetSearch').attr('iconClass','searchIcon');
 		dijit.byId('widgetAdd').setDisabled(false);
 		dijit.byId('widgetAdd').attr('iconClass','plusIcon');
-		dijit.byId('_dotWidgetAjaxSearch').attr('disabled', false);	
+		dijit.byId('_dotWidgetAjaxSearch').attr('disabled', false);
 		dijit.byId('widgetAdd').setLabel("$languagewebapi.getFromUserLanguage('modes.Create-New') "  + _dotStructureTypeName );
-		
+
 		var header = widgets[1][0];
-		
+
 		widgets = widgets.slice(2,widgets.length);
 		for(var i = _dotWidgetListings.rows.length - 1; i > 0; i--){
 			_dotWidgetListings.deleteRow(i);
@@ -123,32 +125,32 @@
 		for (var i = 0; i < widgets.length; i++) {
 		    if(widgets[i].inode){
 				var row = _dotWidgetListings.insertRow(i);
-	
-				var myTd = document.createElement('td'); 
+
+				var myTd = document.createElement('td');
 				dojo.attr(myTd,{
 				    style:{
 				        width:"75px"
 				    }
 				});
 				row.appendChild(myTd);
-	
+
 				var x = widgets[i].inode ;
-	            var dojoWidget = dijit.byId("select_" + x); 
+	            var dojoWidget = dijit.byId("select_" + x);
 	            if (dojoWidget != null)
 	            	dojoWidget.destroy();
-	            
+
 	            var x2 = "'" + x + "'";
 	            myTd.innerHTML = '<button dojoType="dijit.form.Button" id="select_' + x + '" onClick="dotAddWidgetToContainer(' + x2 + ')" type="button">$languagewebapi.getFromUserLanguage("modes.Select")</button>';
-				var myTd = document.createElement('td'); 
+				var myTd = document.createElement('td');
 				myTd.innerHTML = widgets[i][header["fieldVelocityVarName"]];
 				row.appendChild(myTd);
 			}
 		}
-		
+
 		dojo.parser.parse(dojo.byId('_dotWidgetListings'));
-		
+
 		if(hasNext || hasPrevious){
-		
+
 			var row = _dotWidgetListings.insertRow(_dotWidgetListings.rows.length);
 			var html = '<td colspan="2" style="border-top:1px solid #B8B8B8;"><table width="100%" border="0"><tr>';
 			if (hasPrevious) {
@@ -158,59 +160,59 @@
 			}
 			html = html + '<td align="center">$languagewebapi.getFromUserLanguage("modes.Page") ' + _dotPage; + '</td>';
 			if(hasNext){
-				html = html + "<td align='right' width='100'><a href='javascript:_dotNextWidgetPage()'>$languagewebapi.getFromUserLanguage('modes.Next')</a></td></tr></table></td>";	
+				html = html + "<td align='right' width='100'><a href='javascript:_dotNextWidgetPage()'>$languagewebapi.getFromUserLanguage('modes.Next')</a></td></tr></table></td>";
 			} else {
 				html = html + '<td width="100">&nbsp;<td></tr></table</td>';
 			}
-			
+
 			if(dojo.isIE){//DOTCMS-5146
-				
+
 				if (hasPrevious) {
 					var cell1 = row.insertCell();
-					cell1.width = "100";										
+					cell1.width = "100";
 					cell1.innerHTML='<a href="javascript:_dotPrevWidgetPage()">$languagewebapi.getFromUserLanguage("modes.Previous")</a>';
 				} else {
 					var cell1 = row.insertCell();
-					cell1.width = "100";										
+					cell1.width = "100";
 					cell1.innerHTML='&nbsp;';
 				}
-				
+
 				var cell2 = row.insertCell();
-				cell2.align = "center";										
-				cell2.innerHTML='$languagewebapi.getFromUserLanguage("modes.Page") ' + _dotPage;		
-				
+				cell2.align = "center";
+				cell2.innerHTML='$languagewebapi.getFromUserLanguage("modes.Page") ' + _dotPage;
+
 				if(hasNext){
 					var cell3 = row.insertCell();
 					cell3.width = "100";
-					cell3.align= "right";										
-					cell3.innerHTML = "<a href='javascript:_dotNextWidgetPage()'>$languagewebapi.getFromUserLanguage('modes.Next')</a>";	
+					cell3.align= "right";
+					cell3.innerHTML = "<a href='javascript:_dotNextWidgetPage()'>$languagewebapi.getFromUserLanguage('modes.Next')</a>";
 				} else {
 					var cell3 = row.insertCell();
-					cell3.width = "100";															
-					cell3.innerHTML = '&nbsp;';				
+					cell3.width = "100";
+					cell3.innerHTML = '&nbsp;';
 				}
-																
+
 			}else{
 				row.innerHTML=html;
 			}
 		}
 	}
-	
+
 	function _dotNextWidgetPage(){
 		_dotPage = _dotPage + 1;
 		_dotWidgetSelected();
 	}
-	
+
 	function _dotPrevWidgetPage(){
 		_dotPage = _dotPage - 1;
 		_dotWidgetSelected();
 	}
-	
+
 	function _dotCloseWidgetDiv(){
 		var myDialog = dijit.byId("dotAddWidget");
 		myDialog.hide();
 	}
-			
+
 	function _dotWidgetCleanResultsData(){
 		var _dotWidgetListings = document.getElementById("_dotWidgetListings");
 		for(var i = _dotWidgetListings.rows.length - 1; i >= 0; i--){
@@ -221,7 +223,7 @@
 		td.innerHTML='&nbsp;';
 		td.setAttribute('style','padding-top:3px;padding-bottom:3px');
 	}
-	
+
 
 
 	// Form functions
@@ -230,42 +232,42 @@
 	var _dotFormNameSelected="";
 	var _dotFormInodeSelected="";
 	var _dotFormSearchString = "";
-	
+
 	function openAddForm(containerInode) {
-		hideCurrentMenu();	
+		hideCurrentMenu();
 		document.getElementById('container').value=containerInode;
 	    var myDialog = dijit.byId("dotAddForm");
 	    myDialog.titleNode.innerHTML='<img src="/html/images/icons/ui-scroll-pane-form.png" width="16" height="16" align="absbottom" hspace="3" />$languagewebapi.getFromUserLanguage("add-form")';
 	    myDialog.show();
 	}
-			
+
 	function _dotFormSelected(_dotFormInodeSelected){
 		console.log(_dotFormInodeSelected);
 		ContentletAjax.searchFormWidget(_dotFormInodeSelected, _dotFillFormResults);
 	}
-	
+
 	function _dotFillFormResults(forms){
-		dotAddFormToContainer(forms.inode);	
+		dotAddFormToContainer(forms.inode);
 	}
-	
+
 	function _dotCloseFormDiv(){
        var myDialog = dijit.byId("dotAddForm");
        myDialog.hide();
 	}
-			
+
 	function _dotFormClearFields(){
 		var _dotFormListings = document.getElementById("_dotFormListings");
 		for(var i = _dotFormListings.rows.length - 1; i >= 0; i--){
 			_dotFormListings.deleteRow(i);
-		}			
+		}
 	}
 	// End form functions
-	
+
 	//Container/Content Controls Functions
 
 	var currentMenu;
 	function showHideMenu(x, evt, sender){
-        
+
 		var ele = dojo.byId("control-" + x);
 
 		//Displaying the control
@@ -283,24 +285,24 @@
 		var senderCoords = dojo.coords (sender);
 		var windowDim = dojo.marginBox(dojo.body());
 		var menuDim = dojo.marginBox(ele);
-		
+
 		//Repositioning it to the mouse position
 		var posx = senderCoords.x + menuFrameDim.w;
 		if(posx + menuDim.w > windowDim.w - 5) posx = windowDim.w - 5 - menuDim.w;
 		var posy = senderCoords.y + senderCoords.h;
-		
+
 		dojo.style(ele, { position: 'absolute', top: posy+'px', left: posx+'px' })
-		
+
 	}
-	
-	
+
+
 	function hideCurrentMenu() {
 		if(currentMenu != null) {
 			dojo.style(currentMenu, { display: 'none' })
 		}
-	}	
+	}
 	dojo.connect(window, 'onresize', this, hideCurrentMenu);
-	
+
 	function backToCMS(){
 		window.location  = "${viewFoldersURL}";
 	}
@@ -327,30 +329,30 @@
 		form = document.getElementById('submitParent');
 	    form.cmd.value="addChild";
 	    var content = 'contentlets';
-		var popup = 'contentlet';		
-		
+		var popup = 'contentlet';
+
 		// DOTCMS-6097
-		newwin = false;		
+		newwin = false;
 		var onContentSelection = function(cont){
 			document.getElementById(popup).value = cont.inode;
 			document.getElementById("selected"+popup).value = cont.inode;
-			parameter = document.getElementById("submitParent").value;			
+			parameter = document.getElementById("submitParent").value;
 			submitParent(parameter);
 			};
 		var callback = function(containerStructure){
-			var strInode = containerStructure['inode'];			
-			dojo.require("dotcms.dijit.form.ContentSelector");			
-			
+			var strInode = containerStructure['inode'];
+			dojo.require("dotcms.dijit.form.ContentSelector");
+
 			// http://jira.dotmarketing.net/browse/DOTCMS-6269
 			if(reuseContentDialog)
 			   reuseContentDialog.dialog.destroyRecursive();
-			
+
 			reuseContentDialog = new dotcms.dijit.form.ContentSelector({
 						structureInode:strInode,
 						onContentSelected:onContentSelection
 					});
 			reuseContentDialog.show();
-		};		
+		};
 		ContainerAjax.getContainerStructure(x,callback);
 	}
 
@@ -415,7 +417,7 @@
 		form.cmd.value="newedit";
 		form.submit();
 	}
-	
+
 	function addWidget(structure){
 	 	document.getElementById('contentlet').value=0;
 	 	document.getElementById('_dotAddWidget').value='true';
@@ -437,7 +439,7 @@
 	    form.cmd.value="addChild";
 		form.submit();
 	}
-	
+
 	function dotAddFormToContainer(formInode){
 		document.getElementById('contentlet').value=formInode;
 		form = document.getElementById('submitParent');
@@ -455,14 +457,14 @@
 		#end
 		form.submit();
 	}
-	
+
 	function editEvent(x){
 	 	document.getElementById('event').value=x;
 		form = document.getElementById('submitParent');
         form.cmd.value="editEvent";
         form.submit();
 	}
-	
+
 	function moveDown(x,y,z){
 	 	document.getElementById('container').value=x;
 	 	document.getElementById('contentlet').value=y;
@@ -472,7 +474,7 @@
         ##DOTCMS-5363
 		#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
 			document.getElementById('referer').value="$request.getAttribute('com.dotmarketing.wiki.contentlet.url')";
-		#end        
+		#end
         form.submit();
 	}
 
@@ -486,7 +488,7 @@
         ##DOTCMS-5363
 		#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
 			document.getElementById('referer').value="$request.getAttribute('com.dotmarketing.wiki.contentlet.url')";
-		#end        
+		#end
         form.submit();
 
 	}
@@ -511,7 +513,7 @@
 		form.referer.value = formsubmitParent.referer.value;
 		form.submit();
 	}
-	
+
 	function addContentletChapter(x){
 		document.getElementById('container').value=0;
 	 	document.getElementById('contentlet').value=0;
@@ -522,21 +524,21 @@
 		form.selectedStructure.value=x;
 		form.submit();
 	}
-	
+
 	function getPosition(who){
 		var T= 0,L= 0;
    		while(who){
   			L+= who.offsetLeft;
    			T+= who.offsetTop;
       		who= who.offsetParent;
-		}    		
-  		return [L,T + 25];    
-	}	
-	
+		}
+  		return [L,T + 25];
+	}
+
 	var _dotInnerHTML = new Array();
 
 	function _dotRevertInlineEdit(inode,fieldVar){
-	
+
 	    //http://jira.dotmarketing.net/browse/DOTCMS-6251
 		if (!('filter' in Array.prototype)) {
             Array.prototype.filter= function(filter, that /*opt*/) {
@@ -547,10 +549,10 @@
                 return other;
             };
         }
-	
-		var iframe = window.frames[1];	
+
+		var iframe = window.frames[1];
 	    dojo.setContext(iframe.window, iframe.window.document);
-	    
+
 		// get editable area
 	    var editable = dojo.byId("editable-"+inode+ fieldVar);
 
@@ -564,30 +566,30 @@
 	    		var newFieldVar = _dotInnerHTML[i][0].replace(inode, "");
 	    		var otherField = dojo.byId("editable-"+inode+ newFieldVar);
 	    		otherField.innerHTML = _dotInnerHTML[i][1];
-	    		
+
 	    	}
 	    }
-	    
+
 	    // function for removing the innerHTML from array
 	   	var removeItem = function(x) {
 		   return (x[0].indexOf(inode)<0);
 		}
 	    _dotInnerHTML = _dotInnerHTML.filter(removeItem);
-	    
+
 	    // remove the inline controls
 	   var inlineVar = "inline-"+inode;
 	   dojo.destroy(dojo.byId(inlineVar));
-	   
+
 		// restore the normal container based edit control
 		var normalEditControls = dojo.byId("edit-"+inode);
 	   	if(normalEditControls){
 	   		dojo.style(normalEditControls, "display", "block");
 	   	}
-	   
-	   
-	   
+
+
+
 		dojo.setContext(window, window.document);
-	    
+
 	}
 
 
@@ -612,15 +614,15 @@
 			var myArr = [inode+ fieldVar, editable.innerHTML];
 			_dotInnerHTML.push(myArr);
 		}
-		
+
 		// if we already have the inline controls for the inode, return
 		if(dojo.byId("inline-" + inode) != undefined){
 			dojo.setContext(window, window.document);
 			return;
 		}
-		
 
-		
+
+
 		// get the normal container based edit control
 		var normalEditControls = dojo.byId("edit-"+inode);
 
@@ -665,13 +667,13 @@
 		   	dojo.style(inlineControls, "top", ((ec2.y - 32) + dojo.body().scrollTop) + "px" );
 	   		dojo.style(inlineControls, "left", (ec2.x + dojo.body().scrollLeft) + "px" );
 	   	}
-	   	
+
 	   	dojo.style(inlineControls, "display", "block");
 		dojo.setContext(window, window.document);
 	}
-	
+
 	var _dotInodeLookupTable = new Array();
-	
+
 	function _dotSaveDraftContentViaAjax(inode){
 	    var contentData = [];
 	    var separator = 'com.dotmarketing.contentlet.form_name_value_separator';
@@ -679,34 +681,34 @@
    		dojo.setContext(iframe.window, iframe.window.document);
    		var els = dojo.query(".dotContentletInline" + inode);
 	    for (i = 0; i< els.length; i++) {
-	     
+
 	          contentData.push(els[i].title+separator+els[i].innerHTML);
 	    }
-	    
+
 	  	// function for removing the undo innerHTML from array
 	   	var removeItem = function(x) {
 		   return (x[0].indexOf(inode)<0);
 		}
 	    _dotInnerHTML = dojo.filter(_dotInnerHTML,removeItem);
 	    dojo.setContext(window, window.document);
-	    
-	    dijit.byId('savingContentDialog').show(); 	  
+
+	    dijit.byId('savingContentDialog').show();
 
    		ContentletAjax.saveContentProperties(inode,contentData,false,false,false,saveContentCallback);
 	}
-	
-	function saveContentCallback(data){	
+
+	function saveContentCallback(data){
 	    var errorDisplayElement = dijit.byId('saveContentErrors');
-	    if(data["saveContentErrors"] != null ){	// To show DotContentletValidationExceptions.		
-			var exceptionData = data["saveContentErrors"];			
-			var errorList = "";			
+	    if(data["saveContentErrors"] != null ){	// To show DotContentletValidationExceptions.
+			var exceptionData = data["saveContentErrors"];
+			var errorList = "";
 			for (var i = 0; i < exceptionData.length; i++) {
-				var error = exceptionData[i];				
-				errorList = errorList+"<li>"+error+"</li>";					
-			}	
+				var error = exceptionData[i];
+				errorList = errorList+"<li>"+error+"</li>";
+			}
         dojo.byId('exceptionData').innerHTML = "<ul>"+errorList+"</ul>";
 		dijit.byId('savingContentDialog').hide();
-		errorDisplayElement.show();					
+		errorDisplayElement.show();
 	   }else{
 	     dijit.byId('savingContentDialog').hide();
 	   }
@@ -714,22 +716,22 @@
 	   var inlineVar = "inline-"+data.contentletInode;
 	   dojo.setContext(window.frames[1].window, window.frames[1].window.document);
 	   dojo.destroy(dojo.byId(inlineVar));
-	   
-	   
-	   
-	   
-	   
+
+
+
+
+
 		// container based edit control
 		var normalEditControls = dojo.byId("edit-"+data.contentletInode);
 	   	if(normalEditControls){
 	   		dojo.style(normalEditControls, "display", "block");
 	   	}
-	   
-	   
-	   
+
+
+
 		dojo.setContext(window, window.document);
 	}
-	
+
 	dojo.addOnLoad(
 	  function(){
 			if(document.body.className == undefined){
@@ -738,14 +740,14 @@
 			else{
 				document.body.className = document.body.className  + " dmundra";
 			}
-			
+
 			dojo.connect(dijit.byId("dotAddWidget"), "hide", _dotWidgetInitiate);
 	  	}
 	);
 
-	
-    	
-    	
+
+
+
 </script>
 <div style="display:none">
     <form action="${directorURL}" id="submitParent" method="post" target="_top">
@@ -772,7 +774,7 @@
 		<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
 		<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
 		<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
-		<input name="remotePublishNeverExpire" id="remotePublishNeverExpire" type="hidden" value="">
+		<input name="iWantTo" id=iWantTo type="hidden" value="">
 	</form>
 </div>
 
@@ -781,7 +783,7 @@
 </div>
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
-		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');	
+		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');
 	});
 </script>
 
