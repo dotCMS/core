@@ -524,9 +524,10 @@ public class EditStructureAction extends DotPortletAction {
 		    SessionMessages.add(req, "message", "message.structure.deletestructure");
 		}
 		catch(DotStateException ex) {
-		    if(ex.getMessage().contains("containers"))
+		    if(ex.getMessage().contains("containers")){
 		        SessionMessages.add(req, "message", "message.structure.notdeletestructure.container");
-		    else if(ex.getMessage().contains("default"))
+		    	SessionMessages.add(req, "message", ex.getMessage());
+		    } else if(ex.getMessage().contains("default"))
 		        SessionMessages.add(req, "message", "message.structure.notdeletestructure");
 		    
 		}
