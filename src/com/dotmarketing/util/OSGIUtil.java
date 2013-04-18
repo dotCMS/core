@@ -18,10 +18,7 @@ import org.osgi.framework.launch.Framework;
 import javax.servlet.ServletContextEvent;
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Created by Jonathan Gamba
@@ -29,8 +26,7 @@ import java.util.Properties;
  */
 public class OSGIUtil {
 
-    public static final Long BUNDLE_HTTP_BRIDGE_ID = 6L;
-
+    public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
     public String FELIX_EXTRA_PACKAGES_FILE;
 
@@ -90,7 +86,7 @@ public class OSGIUtil {
         Main.loadSystemProperties();
 
         // (4) Copy framework properties from the system properties.
-        Main.copySystemProperties( configProps );
+        Main.copySystemProperties( propertiesToMap( configProps ) );
 
         // (5) Use the specified auto-deploy directory over default.
         if ( bundleDir != null ) {
@@ -241,6 +237,25 @@ public class OSGIUtil {
         extraPackages = extraPackages.replaceAll( "\\\\", "" );
 
         return extraPackages;
+    }
+
+    /**
+     * Transform a given Properties object into a Map
+     *
+     * @param props
+     * @return
+     */
+    private Map<String, String> propertiesToMap ( Properties props ) {
+
+        HashMap<String, String> propertiesMap = new HashMap<String, String>();
+
+        Enumeration<Object> e = props.keys();
+        while ( e.hasMoreElements() ) {
+            String s = (String) e.nextElement();
+            propertiesMap.put( s, props.getProperty( s ) );
+        }
+
+        return propertiesMap;
     }
 
 }
