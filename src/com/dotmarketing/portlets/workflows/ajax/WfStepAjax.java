@@ -93,11 +93,8 @@ public class WfStepAjax extends WfBaseAction {
 			WorkflowStep step = wapi.findStep(stepId);
 			wapi.deleteStep(step);
 		} catch (DotDataException e) {
-			Logger.error(this.getClass(),e.getMessage(),e);
-
-				
-				writeError(response, "Delete Failed:"+  e.getMessage());
-
+			Logger.error(this.getClass(),e.getMessage());
+			writeError(response, "</br> Delete Failed : </br>"+  e.getMessage());
 		}
 		
 		
