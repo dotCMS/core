@@ -243,6 +243,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		boolean localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 		try{
+			
+			// Checking for Next Step references
+						for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
+							if(otherStep.equals(step))
+								continue;
+							for(WorkflowAction a : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
+								if(a.getNextStep().equals(step.getId())){
+									throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" + 
+											" Step : '"+otherStep.getName() + "' ->  Action : '" + a.getName() + "' </br></br>");
+								}
+							}
+						}
+
 			List<WorkflowAction> actions = wfac.findActions(step);
 			for(WorkflowAction action : actions){
 				List<WorkflowActionClass> actionClasses = wfac.findActionClasses(action);
