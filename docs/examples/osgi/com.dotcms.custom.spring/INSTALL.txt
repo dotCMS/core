@@ -16,12 +16,12 @@ In order to install this bundle:
 2) 	From this directory (ROOT of the plugin), execute the "build" task of the build.xml ant 
 	file to create the bundle jar file.
 
-3) In order to run this example is required to modify the exposed packages to the OSGI context from dotCMS.
-   That is possible using the dotCMS UI (CMS Admin->Dynamic Plugins->Exported Packages), the complete working list
-   for this example is under the "conf" folder under the ROOT of the plugin. Please just replace the current content
-   with the one found in the: plugin ROOT/conf/osgi-extra.conf file.
-   What we did with the expose packages list was to remove the Spring references in order to use the Spring libraries inside
-   our plugin and not the ones provide by dotCMS and avoiding problems with multiple versions of Spring classes.
+3)  In order to run this example is required to modify the exposed packages to the OSGI context from dotCMS.
+    That is possible using the dotCMS UI (CMS Admin->Dynamic Plugins->Exported Packages), the complete working list
+    for this example is under the "conf" folder under the ROOT of the plugin. Please just replace the current content
+    with the one found in the: plugin ROOT/conf/osgi-extra.conf file.
+    What we did with the expose packages list was to remove the Spring references in order to use the Spring libraries inside
+    our plugin and not the ones provide by dotCMS and avoiding problems with multiple versions of Spring classes.
 
 To install this bundle:
 
