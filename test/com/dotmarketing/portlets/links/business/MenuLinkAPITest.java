@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.links.business;
 
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -15,6 +14,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import static org.junit.Assert.*;
@@ -71,5 +71,35 @@ public class MenuLinkAPITest extends TestBase {
         // then it should live under parent2
         assertEquals(parent2.getPermissionId(), pAPI.findParentPermissionable(link).getPermissionId());
         
+    }
+    
+    @Test
+    public void save() throws Exception {
+        Folder folder = fAPI.createFolders("/testsave", host, user, false);
+        Link link = new Link();
+        link.setFriendlyName("test link");
+        link.setTitle(link.getFriendlyName());
+        link.setHostId(host.getIdentifier());
+        link.setLinkType(Link.LinkType.EXTERNAL.toString());
+        link.setUrl("google.com");
+        link.setProtocal("http://");
+        mAPI.save(link, folder, user, false);
+        assertTrue(InodeUtils.isSet(link.getInode()));
+        assertTrue(InodeUtils.isSet(link.getIdentifier()));
+        
+        link = new Link();
+        String existingInode = UUIDGenerator.generateUuid();
+        String existingIdent = UUIDGenerator.generateUuid();
+        link.setInode(existingInode);
+        link.setIdentifier(existingIdent);
+        link.setFriendlyName("test link");
+        link.setTitle(link.getFriendlyName());
+        link.setHostId(host.getIdentifier());
+        link.setLinkType(Link.LinkType.EXTERNAL.toString());
+        link.setUrl("google.com");
+        link.setProtocal("http://");
+        mAPI.save(link, folder, user, false);
+        assertEquals(existingIdent,link.getIdentifier());
+        assertEquals(existingInode,link.getInode());
     }
 }
