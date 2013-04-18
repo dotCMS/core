@@ -36,6 +36,7 @@ import org.apache.struts.config.impl.ModuleConfigImpl;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -225,11 +226,18 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 try {
                     OSGIProxyServlet.bundleContext.getBundle();
                 } catch ( IllegalStateException e ) {
-                    //If we are here is because we have an invalid bundle context, so we need to provide a new one
-                    BundleContext httpBundle = context.getBundle( OSGIUtil.BUNDLE_HTTP_BRIDGE_ID ).getBundleContext();
-                    OSGIProxyServlet.tracker = new DispatcherTracker( httpBundle, null, OSGIProxyServlet.servletConfig );
-                    OSGIProxyServlet.tracker.open();
-                    OSGIProxyServlet.bundleContext = httpBundle;
+
+                    Bundle[] bundles = context.getBundles();
+                    for ( Bundle bundle : bundles ) {
+                        if ( bundle.getSymbolicName().equals( OSGIUtil.BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME ) ) {
+                            //If we are here is because we have an invalid bundle context, so we need to provide a new one
+                            BundleContext httpBundle = bundle.getBundleContext();
+                            OSGIProxyServlet.tracker = new DispatcherTracker( httpBundle, null, OSGIProxyServlet.servletConfig );
+                            OSGIProxyServlet.tracker.open();
+                            OSGIProxyServlet.bundleContext = httpBundle;
+                        }
+
+                    }
                 }
 
             }
