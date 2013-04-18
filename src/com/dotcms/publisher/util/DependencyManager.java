@@ -130,7 +130,7 @@ public class DependencyManager {
 				}
 
 				// Content dependencies
-				String luceneQuery = "+conHost:" + h.getInode();
+				String luceneQuery = "+conHost:" + h.getIdentifier();
 
 				List<Contentlet> contentList = APILocator.getContentletAPI().search(luceneQuery, 0, 0, null, user, false);
 				for (Contentlet contentlet : contentList) {
