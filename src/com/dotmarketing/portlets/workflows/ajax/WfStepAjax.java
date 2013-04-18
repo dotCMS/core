@@ -100,8 +100,6 @@ public class WfStepAjax extends WfBaseAction {
 		
 	}
 	public void add(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		Map<String, Object> map = request.getParameterMap();
-		
 		
 		String stepName = URLDecoder.decode(request.getParameter("stepName"), "UTF-8");
 		String schemeId = request.getParameter("schemeId");
