@@ -117,8 +117,8 @@ function indexAll(checked){
         dijit.byId('hostSelector').set('disabled','disabled');
         dijit.byId('addHostButton').set('disabled','disabled');
     }else{
-        dijit.byId('hostSelector').set('disabled','');
-        dijit.byId('addHostButton').set('disabled','');
+    	dijit.byId('hostSelector').attr('disabled', false);
+        dijit.byId('addHostButton').attr('disabled', false);
     }
 }
 
