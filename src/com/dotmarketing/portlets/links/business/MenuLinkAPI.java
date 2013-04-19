@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -120,6 +121,29 @@ public interface MenuLinkAPI {
      */
     public Link find(String inode, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
-
-	
+    /**
+     * Moves the link to the specified host
+     * 
+     * @param link link to move 
+     * @param host target host
+     * @param user user to check permissions on
+     * @param respectFrontEndRoles check for anonymous role permissions
+     * @throws DotDataException if permission denied
+     * @throws DotSecurityException data related exceptions 
+     * @return if the link were moved. mostly if didn't existing in the target host
+     */
+    public boolean move(Link link, Host host, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
+    
+    /**
+     * Moves the link to the specified folder
+     * 
+     * @param link link to move 
+     * @param folder target folder
+     * @param user user to check permissions on
+     * @param respectFrontEndRoles check for anonymous role permissions
+     * @throws DotDataException if permission denied
+     * @throws DotSecurityException data related exceptions
+     * @return if the link were moved. mostly if didn't existing in the target folder
+     */
+    public boolean move(Link link, Folder folder, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 }
