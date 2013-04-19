@@ -52,7 +52,7 @@
 	var invalidAddresPhoneMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.user.address.invalid.phone")) %>';
 	var invalidAddresFaxMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.user.address.invalid.fax")) %>';
 	var invalidAddresCellMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.user.address.invalid.cell")) %>';
-
+	var invalidEmail = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "please-enter-a-valid-email-address")) %>';
 	var currentUserId = '<%= user.getUserId() %>';
 	var layoutId = '<%=((Layout) request.getAttribute(WebKeys.LAYOUT)).getId()%>';
 
@@ -338,7 +338,17 @@
 			showDotCMSSystemMessage(userSavedMsg);
 			return;
 		}
-
+		
+		var userEmail;
+		if(currentUser == null){
+			var pattern=/^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\.([a-zA-Z])+([a-zA-Z])+/;
+			userEmail = dijit.byId('emailAddress').attr('value');
+			if(!pattern.test(userEmail)){
+				alert(invalidEmail);
+				return;
+			}
+		}
+		
 		var passswordValue;
 		var reenterPasswordValue;
 		if(passwordChanged) {

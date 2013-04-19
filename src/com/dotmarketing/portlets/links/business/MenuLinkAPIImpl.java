@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -161,6 +162,28 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
     		throw new DotSecurityException("User "+ user + " does not have permission to link " + inode);
     	}
     	return link;
+    }
+
+    @Override
+    public boolean move(Link link, Host host, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException {
+        if(!permissionAPI.doesUserHavePermission(link, PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
+            throw new DotSecurityException("User "+user+" does not have permissions to move link "+link.getInode());
+        }
+        if(!permissionAPI.doesUserHavePermissions(host, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", LINKS:"+PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
+            throw new DotSecurityException("User "+user+" does not have permissions to move a link to host "+host.getHostname());
+        }
+        return LinkFactory.moveLink(link, host);
+    }
+
+    @Override
+    public boolean move(Link link, Folder folder, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException {
+        if(!permissionAPI.doesUserHavePermission(link, PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
+            throw new DotSecurityException("User "+user+" does not have permissions to move link "+link.getInode());
+        }
+        if(!permissionAPI.doesUserHavePermissions(folder, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", LINKS:"+PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
+            throw new DotSecurityException("User "+user+" does not have permissions to move a link to folder "+folder.getPath());
+        }
+        return LinkFactory.moveLink(link, folder);
     }
 
 }
