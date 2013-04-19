@@ -697,6 +697,7 @@
 			<replacefilter token="{url}" value="${db.url}"/>
 			<replacefilter token="{username}" value="${db.username}"/>
 			<replacefilter token="{password}" value="${db.password}"/>
+			<replacefilter token="{valquery}" value="${db.valquery}"/>
 		</replace>
 	</target>
 

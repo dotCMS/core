@@ -17,7 +17,7 @@
 	        url="{url}"
 	        username="{username}" password="{password}" maxActive="60" maxIdle="10" maxWait="60000"
 		  removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
-		  validationQuery="SELECT 1" testOnBorrow="true" />		  
+		  validationQuery="{valquery}" testOnBorrow="true" />		  
 	
 	<!-- MYSQL UTF8 
 	<Resource name="jdbc/dotCMSPool" auth="Container"
