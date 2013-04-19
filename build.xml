@@ -91,6 +91,9 @@
 		</fileset>
 	</path>
 
+	<!-- include ant-contrib -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml"/>
+
 	<!-- Target to create the build directories prior to the -->
 	<!-- compile target. -->
 	<target name="prepare">
