@@ -50,6 +50,7 @@ import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.UploadServletRequest;
+import com.liferay.util.FileUtil;
 
 /**
  * This Action manage the submit content save procedure
@@ -610,8 +611,8 @@ public class SubmitContentAction extends DispatchAction{
 						+ File.separator + fileName);
 				if (dest.exists())
 					dest.delete();
-				f.renameTo(dest);
-               //http://jira.dotmarketing.net/browse/DOTCMS-3463
+				FileUtil.move(f, dest);
+				//http://jira.dotmarketing.net/browse/DOTCMS-3463
 				/*SubmitContentUtil.saveTempFile(user, host, f, tempUserFolder
 						.getAbsolutePath(), binaryFieldName);*/
 				//String path = dest.getAbsolutePath();
