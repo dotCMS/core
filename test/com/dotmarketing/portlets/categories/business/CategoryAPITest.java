@@ -1,15 +1,25 @@
 package com.dotmarketing.portlets.categories.business;
 
+import com.dotcms.TestBase;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.portlets.ContentletBaseTest;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -22,7 +32,20 @@ import static org.junit.Assert.*;
  * Created by Jonathan Gamba
  * Date: 4/8/13
  */
-public class CategoryAPITest extends ContentletBaseTest {
+public class CategoryAPITest extends TestBase {
+
+    private static User user;
+    private static Host defaultHost;
+
+    @BeforeClass
+    public static void prepare () throws DotSecurityException, DotDataException {
+
+        HostAPI hostAPI = APILocator.getHostAPI();
+
+        //Setting the test user
+        user = APILocator.getUserAPI().getSystemUser();
+        defaultHost = hostAPI.findDefaultHost( user, false );
+    }
 
     /**
      * Testing {@link CategoryAPI#getParents(Categorizable, com.liferay.portal.model.User, boolean)}
@@ -38,6 +61,7 @@ public class CategoryAPITest extends ContentletBaseTest {
 
         CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
         List<Category> categories = new ArrayList<Category>();
 
@@ -332,6 +356,44 @@ public class CategoryAPITest extends ContentletBaseTest {
         assertNull( category );//Shouldn't exits
         cachedCategories = categoryCache.getChildren( childCategory2 );
         assertNull( cachedCategories );//Shouldn't exist
+    }
+
+    /**
+     * Creates an Structure object for a later use in the tests
+     *
+     * @param name
+     * @param structureVelocityVarName
+     * @throws com.dotmarketing.exception.DotHibernateException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     */
+    protected static Structure createStructure ( String name, String structureVelocityVarName ) throws DotDataException, DotSecurityException {
+
+        PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        //Set up a test folder
+        Folder testFolder = APILocator.getFolderAPI().createFolders( "/" + new Date().getTime() + "/", defaultHost, user, false );
+        permissionAPI.permissionIndividually( permissionAPI.findParentPermissionable( testFolder ), testFolder, user, false );
+
+        //Create the structure
+        Structure testStructure = new Structure();
+
+        testStructure.setDefaultStructure( false );
+        testStructure.setDescription( "JUnit Test Structure Description." );
+        testStructure.setHost( defaultHost.getIdentifier() );
+        testStructure.setFolder( testFolder.getInode() );
+        testStructure.setName( name );
+        testStructure.setOwner( user.getUserId() );
+        testStructure.setDetailPage( "" );
+        testStructure.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
+        testStructure.setVelocityVarName( structureVelocityVarName );
+
+        //Saving the structure
+        StructureFactory.saveStructure( testStructure );
+        StructureCache.addStructure( testStructure );
+
+        return testStructure;
     }
 
 }
