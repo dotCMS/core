@@ -354,10 +354,24 @@ public class HostAPIImpl implements HostAPI {
 		c.setInode("");
 		c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
 		APILocator.getVersionableAPI().setLive(c);
-		Host h =  new Host(c);
-		hostCache.add(h);
+		Host savedHost =  new Host(c);
+		hostCache.add(savedHost);
+
+		if(host.isDefault()) {  // If host is marked as default make sure that no other host is already set to be the default
+			List<Host> hosts= findAll(user, respectFrontendRoles);
+			for(Host h : hosts){
+				if(h.getIdentifier().equals(host.getIdentifier())){
+					continue;
+				}
+				if(h.isDefault()){
+					h.setDefault(false);
+					save(h, user, respectFrontendRoles);
+				}
+			}
+		}
+		
 		hostCache.clearAliasCache();
-		return h;
+		return savedHost;
 
 	}
 
@@ -754,31 +768,8 @@ public class HostAPIImpl implements HostAPI {
 	}
 
 	public void makeDefault(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
-		Host currentDefault = findDefaultHost(user, respectFrontendRoles);
 		host.setDefault(true);
-
-		if(host != null){
-			hostCache.remove(host);
-		}
-
 		save(host, user, respectFrontendRoles);
-		if(currentDefault != null){
-			currentDefault.setDefault(false);
-			save(currentDefault, user, respectFrontendRoles);
-		}
-		List<Host> hosts= findAll(user, respectFrontendRoles);
-		for(Host h : hosts){
-			if(h.getIdentifier().equals(host.getIdentifier()) || h.getIdentifier().equals(currentDefault.getIdentifier())){
-				continue;
-			}
-			if(h.isDefault()){
-				h.setDefault(false);
-				save(h, user, respectFrontendRoles);
-			}
-
-		}
-
-
 	}
 
 	public Host DBSearch(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
