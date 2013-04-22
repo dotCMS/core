@@ -73,6 +73,8 @@ import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.scripting.util.php.DotCMSPHPCauchoVFS;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 
 /**
  * This class was written originally written for the Scripting Plugin
@@ -162,6 +164,10 @@ public class PHPServlet extends HttpServlet {
 	public void service(HttpServletRequest request, HttpServletResponse response)
 	throws ServletException, IOException {
 		if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
+			try {
+				response.getWriter().println(LanguageUtil.get(request.getLocale(), "scripting_not_enabled_contact_admin"));
+			} catch (LanguageException e) {
+			}
 			return;
 		}
 		php.setWorkDir(getPath(request));
