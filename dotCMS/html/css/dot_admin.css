@@ -87,9 +87,9 @@ li.smallify .navMenu-arrow{display:block;}
 	#menu ul li a {float:none;}
 /* End IE5-Mac hack */
 
-#menu ul.dropdown{position:absolute;top: 0px;left: 0px;visibility:hidden;z-index:999;background:#fff;border-bottom: 1px solid #D1D1D1;border-left: 1px solid #D1D1D1;border-right: 1px solid #D1D1D1;text-decoration: none;width:220px;-moz-box-shadow:0px 3px 5px #aaa;-webkit-box-shadow:0px 3px 5px #aaa;}
+#menu ul.dropdown{position:absolute;top: 0px;left: 0px;visibility:hidden;z-index:999;background:#fff;border-bottom: 1px solid #D1D1D1;border-left: 1px solid #D1D1D1;border-right: 1px solid #D1D1D1;text-decoration: none;min-width:220px;-moz-box-shadow:0px 3px 5px #aaa;-webkit-box-shadow:0px 3px 5px #aaa;}
 #menu ul.dropdown li.level2{background-image:none;padding:0;overflow:hidden;}
-#menu ul.dropdown li.level2 a{font-size:85%;color:#5f5f5f;margin:0;background:#fff;background-image:none;display:block;vertical-align:middle;line-height:18px;height:18px;padding:3px 0;}
+#menu ul.dropdown li.level2 a{font-size:85%;color:#5f5f5f;margin:0;background:#fff;background-image:none;display:block;vertical-align:middle;line-height:18px;height:18px;padding:3px 10px;}
 #menu ul.dropdown li.level2 a:hover{background:#F2F2F2;}
 #menu ul.dropdown li.level2 a span{display:inline-block;float:left;width:18px;height:18px;margin:0 5px 2px 5px;}
 
