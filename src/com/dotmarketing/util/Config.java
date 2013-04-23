@@ -114,7 +114,11 @@ public class Config {
 	    return property;
 	}
 	
-	//Config get and set properties methods
+	/**
+	 * @deprecated  Use getStringProperty(String name, String default) and
+	 * set an intelligent default
+	 */
+	@Deprecated
     public static String getStringProperty (String name) {
         _refreshProperties ();
         String[] propsArr = props.getStringArray(name);
@@ -133,7 +137,11 @@ public class Config {
 	    _refreshProperties ();
 	    return props.getStringArray(name);
 	}
-
+	/**
+	 * @deprecated  Use getIntProperty(String name, int default) and
+	 * set an intelligent default
+	 */
+	@Deprecated
 	public static int getIntProperty (String name) {
 	    _refreshProperties ();
 	    return props.getInt(name);
@@ -143,7 +151,11 @@ public class Config {
 	    _refreshProperties ();
 	    return props.getInt(name, defaultVal);
 	}
-
+	/**
+	 * @deprecated  Use getFloatProperty(String name, float default) and
+	 * set an intelligent default
+	 */
+	@Deprecated
 	public static float getFloatProperty (String name) {
 	    _refreshProperties ();
 	    return props.getFloat(name);
@@ -153,7 +165,11 @@ public class Config {
 	    _refreshProperties ();
 	    return props.getFloat(name, defaultVal);
 	}
-
+	/**
+	 * @deprecated  Use getBooleanProperty(String name, boolean default) and
+	 * set an intelligent default
+	 */
+	@Deprecated
 	public static boolean getBooleanProperty (String name) {
 	    _refreshProperties ();
 	    return props.getBoolean(name);
