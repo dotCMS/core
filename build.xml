@@ -644,6 +644,21 @@
 				grant connect,resource to ${db.username};
 			</sql>
 	    </then>
+		<elseif>
+			<equals arg1="${db.driver}" arg2="net.sourceforge.jtds.jdbc.Driver"/>
+			<then>
+				<sql driver="${db.driver}"
+	                url="${db.admin.url}"
+	                userid="${db.username}"
+	                password="${db.password}"
+	                autocommit="true"
+	                classpathref="files-classpath">
+	                CREATE DATABASE ${db.name};
+					ALTER DATABASE ${db.name} SET READ_COMMITTED_SNAPSHOT ON;
+					ALTER DATABASE ${db.name} SET ALLOW_SNAPSHOT_ISOLATION ON;
+	            </sql>
+			</then>
+		</elseif>
 		<else>
     		<sql driver="${db.driver}"
     			url="${db.base.url}"
@@ -671,6 +686,19 @@
 				drop user ${db.username} cascade;
             </sql>
 		</then>
+		<elseif>
+            <equals arg1="${db.driver}" arg2="net.sourceforge.jtds.jdbc.Driver"/>
+            <then>
+                <sql driver="${db.driver}"
+                    url="${db.admin.url}"
+                    userid="${db.username}"
+                    password="${db.password}"
+                    autocommit="true"
+                    classpathref="files-classpath">
+                	DROP DATABASE ${db.name};
+            	</sql>
+        	</then>
+    	 </elseif>
 		 <else>
     		<sql driver="${db.driver}"
     			url="${db.base.url}"
