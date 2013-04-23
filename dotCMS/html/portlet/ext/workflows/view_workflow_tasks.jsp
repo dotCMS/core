@@ -472,7 +472,7 @@ bottom="/html/common/box_bottom.jsp">
                         <%} %>
 				        <a href="#" onclick="assignedToMe()"><%=LanguageUtil.get(pageContext, "me") %></a> 
 					</dd>
-					<dt><%=LanguageUtil.get(pageContext, "Older-than (days)") %></dt>
+					<dt><%=LanguageUtil.get(pageContext, "Older_than_(days)") %></dt>
 					<dd>
 					   <input type="text" id="daysold" name="daysold"/>
 					</dd>
