@@ -372,6 +372,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // DOTCMS - 4393
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
+        Language defaultLang=APILocator.getLanguageAPI().getDefaultLanguage();
         for (Field field : fields) {
             if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
                     || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
@@ -386,9 +387,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
                     	Contentlet fileAssetCont = null;
                     	try {
-                    		fileAssetCont = findContentletByIdentifier(id.getId(), true, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
+                    		fileAssetCont = findContentletByIdentifier(id.getId(), true, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false);
                         } catch(DotContentletStateException se) {
-                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
+                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false);
                         }
                         publish(fileAssetCont, APILocator.getUserAPI().getSystemUser(), false);
                     }else if(InodeUtils.isSet(id.getInode())){
@@ -397,7 +398,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 } catch (Exception ex) {
                     Logger.debug(this, ex.toString());
-                    throw new DotStateException("Problem occured while publishing file");
+                    throw new DotStateException("Problem occured while publishing file",ex);
                 }
             }
         }
