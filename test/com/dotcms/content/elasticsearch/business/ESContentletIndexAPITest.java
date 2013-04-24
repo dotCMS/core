@@ -1,23 +1,34 @@
 package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.TestBase;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -35,17 +46,40 @@ import static org.junit.Assert.*;
  */
 public class ESContentletIndexAPITest extends TestBase {
 
+    private static String stemmerText;
+    private static String stemmerText2;
     private static User user;
     private static Host defaultHost;
+    private static String pageExt;
+    private static Language defaultLanguage;
 
     @BeforeClass
     public static void prepare () throws DotSecurityException, DotDataException {
 
         HostAPI hostAPI = APILocator.getHostAPI();
+        LanguageAPI languageAPI = APILocator.getLanguageAPI();
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
         defaultHost = hostAPI.findDefaultHost( user, false );
+        pageExt = Config.getStringProperty( "VELOCITY_PAGE_EXTENSION" );
+        //Getting the default language
+        defaultLanguage = languageAPI.getDefaultLanguage();
+
+        stemmerText = "A stemmer for English, for example, should identify the string \"cats\" (and " +
+                "possibly \"catlike\", \"catty\" etc.) as based on the root \"cat\", " +
+                "and \"stemmer\", \"stemming\", \"stemmed\" as based on \"stem\". A stemming algorithm " +
+                "reduces the words \"fishing\", \"fished\", \"fish\", and \"fisher\" to the " +
+                "root word, \"fish\". On the other hand, \"argue\", \"argued\", \"argues\", \"arguing\", " +
+                "and \"argus\" reduce to the stem \"argu\" (illustrating the case where the stem is " +
+                "not itself a word or root) but \"argument\" and \"arguments\" reduce to the stem \"argument\".";
+
+        stemmerText2 = "A stemmer for English, for example, should identify the strings catlike, catty, etc.) as " +
+                "and stemmer, stemming, stemmed. A stemming algorithm " +
+                "reduces the words fishing, fished, and fisher to the " +
+                "root word. On the other hand, argue, argued, argues, arguing, " +
+                "and argus reduce to the stem ... (illustrating the case where the stem is " +
+                "not itself a word or root) but argument and arguments reduce to the stem argument.";
     }
 
     /**
@@ -370,6 +404,7 @@ public class ESContentletIndexAPITest extends TestBase {
      * {@link ContentletIndexAPI#removeContentFromIndex(com.dotmarketing.portlets.contentlet.model.Contentlet)} methods
      *
      * @throws Exception
+     * @see ContentletAPI
      * @see ContentletIndexAPI
      * @see ESContentletIndexAPI
      */
@@ -384,38 +419,44 @@ public class ESContentletIndexAPITest extends TestBase {
         //Creating a test contentlet
         Contentlet testContentlet = loadTestContentlet( testStructure );
 
-        //And add it to the index
-        Date initDate = new Date();
-        indexAPI.addContentToIndex( testContentlet );
+        try {
 
-        //We are just making time in order to let it apply the index
-        wait( initDate, 2 );
+            //And add it to the index
+            indexAPI.addContentToIndex( testContentlet );
 
-        //Verify if it was added to the index
-        String query = "+structureName:" + testStructure.getVelocityVarName() + " +deleted:false +live:true";
-        List<Contentlet> result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+            //We are just making time in order to let it apply the index
+            contentletAPI.isInodeIndexed( testContentlet.getInode(), true );
 
-        //Validations
-        assertNotNull( result );
-        assertTrue( !result.isEmpty() );
+            //Verify if it was added to the index
+            String query = "+structureName:" + testStructure.getVelocityVarName() + " +deleted:false +live:true";
+            List<Contentlet> result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
 
-        //Remove the contentlet from the index
-        initDate = new Date();
-        indexAPI.removeContentFromIndex( testContentlet );
+            //Validations
+            assertNotNull( result );
+            assertTrue( !result.isEmpty() );
 
-        //We are just making time in order to let it apply the index
-        wait( initDate, 2 );
+            //Remove the contentlet from the index
+            //Date initDate = new Date();
+            indexAPI.removeContentFromIndex( testContentlet );
 
-        result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+            //We are just making time in order to let it apply the index
+            //wait( initDate, 2 );
 
-        //Validations
-        assertTrue( result == null || result.isEmpty() );
+            //Verify if it was removed to the index
+            result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+
+            //Validations
+            assertTrue( result == null || result.isEmpty() );
+        } finally {
+            APILocator.getContentletAPI().delete( testContentlet, user, false );
+        }
     }
 
     /**
      * Testing {@link ContentletIndexAPI#removeContentFromIndexByStructureInode(String)}
      *
      * @throws Exception
+     * @see ContentletAPI
      * @see ContentletIndexAPI
      * @see ESContentletIndexAPI
      */
@@ -430,32 +471,150 @@ public class ESContentletIndexAPITest extends TestBase {
         //Creating a test contentlet
         Contentlet testContentlet = loadTestContentlet( testStructure );
 
-        //And add it to the index
-        Date initDate = new Date();
-        indexAPI.addContentToIndex( testContentlet );
+        try {
+            //And add it to the index
+            indexAPI.addContentToIndex( testContentlet );
 
-        //We are just making time in order to let it apply the index
-        wait( initDate, 2 );
+            //We are just making time in order to let it apply the index
+            contentletAPI.isInodeIndexed( testContentlet.getInode(), true );
 
-        //Verify if it was added to the index
-        String query = "+structureName:" + testStructure.getVelocityVarName() + " +deleted:false +live:true";
-        List<Contentlet> result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+            //Verify if it was added to the index
+            String query = "+structureName:" + testStructure.getVelocityVarName() + " +deleted:false +live:true";
+            List<Contentlet> result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
 
+            //Validations
+            assertNotNull( result );
+            assertTrue( !result.isEmpty() );
+
+            //Remove the contentlet from the index
+            indexAPI.removeContentFromIndexByStructureInode( testStructure.getInode() );
+
+            //Verify if it was removed to the index
+            result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+
+            //Validations
+            assertTrue( result == null || result.isEmpty() );
+        } finally {
+            APILocator.getContentletAPI().delete( testContentlet, user, false );
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#search(String, int, int, String, com.liferay.portal.model.User, boolean)}
+     *
+     * @throws Exception
+     * @see ContentletAPI
+     * @see ContentletIndexAPI
+     * @see ESContentletIndexAPI
+     */
+    @Test
+    public void testStemmer () throws Exception {
+
+        SiteSearchAPI siteSearchAPI = APILocator.getSiteSearchAPI();
+
+        IndiciesAPI.IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+        String currentSiteSearchIndex = indiciesInfo.site_search;
+        String indexName = currentSiteSearchIndex;
+        if ( currentSiteSearchIndex == null ) {
+            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + new Date().getTime();
+            APILocator.getSiteSearchAPI().createSiteSearchIndex( indexName, null, 1 );
+        }
+
+        //Creating a test structure
+        Structure testStructure = loadTestStructure();
+        //Creating a test contentlet
+        Contentlet testContentlet = loadTestContentlet( testStructure );
+        //Creating a test html page
+        HTMLPage testHtmlPage = loadHtmlPage( testContentlet );
+
+        //Build a site search result in order to add it to the index
+        VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo( testHtmlPage.getIdentifier() );
+        String docId = testContentlet.getIdentifier() + "_" + defaultLanguage.getId();
+
+        SiteSearchResult res = new SiteSearchResult( testHtmlPage.getMap() );
+        res.setLanguage( defaultLanguage.getId() );
+        // map contains [fileSize, content, author, title, keywords,
+        // description, contentType, contentEncoding]
+        res.setFileName( testHtmlPage.getFriendlyName() );
+        res.setModified( versionInfo.getVersionTs() );
+        res.setHost( defaultHost.getIdentifier() );
+        res.setMimeType( "text/html" );
+        res.setContentLength( 1 );//Just sending something different than 0
+        res.setContent( stemmerText2 );
+        res.setUri( testHtmlPage.getURI() );
+        res.setUrl( testHtmlPage.getPageUrl() );
+        res.setId( docId );
+
+        //Adding it to the index
+        siteSearchAPI.putToIndex( indexName, res );
+
+        //Testing the stemer
+        SiteSearchResults siteSearchResults = siteSearchAPI.search( indexName, "cats", 0, 100 );
         //Validations
-        assertNotNull( result );
-        assertTrue( !result.isEmpty() );
+        assertTrue( siteSearchResults != null );
+        assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
+        assertTrue( siteSearchResults.getTotalResults() > 0 );
 
-        //Remove the contentlet from the index
-        initDate = new Date();
-        indexAPI.removeContentFromIndexByStructureInode( testStructure.getInode() );
+        /*// is the live guy
+        if ( UtilMethods.isSet( versionInfo.getLiveInode() ) ) {
+            // if this is the deleted guy
+        } else if ( !UtilMethods.isSet( versionInfo.getLiveInode() ) ) {
+            APILocator.getSiteSearchAPI().deleteFromIndex( "site_search_" + new Date().getTime(), docId );
+        }*/
+    }
 
-        //We are just making time in order to let it apply the index
-        wait( initDate, 2 );
+    /**
+     * Creates and returns a test html page
+     *
+     * @param contentlet
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private HTMLPage loadHtmlPage ( Contentlet contentlet ) throws DotSecurityException, DotDataException {
 
-        result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+        Structure structure = contentlet.getStructure();
 
-        //Validations
-        assertTrue( result == null || result.isEmpty() );
+        //Create a container for the given contentlet
+        Container container = new Container();
+        container.setCode( "this is the code" );
+        container.setFriendlyName( "test container" );
+        container.setTitle( "his is the title" );
+        container.setStructureInode( structure.getInode() );
+        container.setMaxContentlets( 5 );
+        container.setPreLoop( "preloop code" );
+        container.setPostLoop( "postloop code" );
+        //Save it
+        container = APILocator.getContainerAPI().save( container, structure, defaultHost, user, false );
+
+        //Create a template
+        String body = "<html><body> #parseContainer('" + container.getIdentifier() + "') </body></html>";
+        String title = "empty test template " + UUIDGenerator.generateUuid();
+
+        Template template = new Template();
+        template.setTitle( title );
+        template.setBody( body );
+
+        template = APILocator.getTemplateAPI().saveTemplate( template, defaultHost, user, false );
+
+        //Create the html page
+        String pageUrl = "testpage_" + new Date().getTime() + "." + pageExt;
+        Folder homeFolder = APILocator.getFolderAPI().createFolders( "/home/", defaultHost, user, false );
+        HTMLPage htmlPage = new HTMLPage();
+        htmlPage.setPageUrl( pageUrl );
+        htmlPage.setFriendlyName( pageUrl );
+        htmlPage.setTitle( pageUrl );
+        htmlPage = APILocator.getHTMLPageAPI().saveHTMLPage( htmlPage, template, homeFolder, user, false );
+        //Make it live
+        APILocator.getVersionableAPI().setLive( htmlPage );
+
+        MultiTree multiTree = new MultiTree();
+        multiTree.setParent1( htmlPage.getIdentifier() );
+        multiTree.setParent2( container.getIdentifier() );
+        multiTree.setChild( contentlet.getIdentifier() );
+        multiTree.setTreeOrder( 1 );
+        MultiTreeFactory.saveMultiTree( multiTree );
+
+        return htmlPage;
     }
 
     /**
@@ -484,8 +643,8 @@ public class ESContentletIndexAPITest extends TestBase {
         StructureFactory.saveStructure( testStructure );
         StructureCache.addStructure( testStructure );
         //Adding test field
-        Field field = new Field( "testtext", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, true, true, true, 1, "", "", "", true, false, true );
-        field.setVelocityVarName( "testtext" );
+        Field field = new Field( "Wysiwyg", Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, testStructure, true, true, true, 1, false, false, false );
+        field.setVelocityVarName( "wysiwyg" );
         field.setListed( true );
         FieldFactory.saveField( field );
         FieldsCache.addField( field );
@@ -501,34 +660,18 @@ public class ESContentletIndexAPITest extends TestBase {
      */
     private Contentlet loadTestContentlet ( Structure testStructure ) throws Exception {
 
-        LanguageAPI languageAPI = APILocator.getLanguageAPI();
-
-        //Getting the default language
-        Language language = languageAPI.getDefaultLanguage();
-
         //Set up a test contentlet
         Contentlet testContentlet = new Contentlet();
         testContentlet.setStructureInode( testStructure.getInode() );
         testContentlet.setHost( defaultHost.getIdentifier() );
-        testContentlet.setLanguageId( language.getId() );
-        testContentlet.setStringProperty( "testtext", "A test value" );
+        testContentlet.setLanguageId( defaultLanguage.getId() );
+        testContentlet.setStringProperty( "wysiwyg", stemmerText2 );
         testContentlet = APILocator.getContentletAPI().checkin( testContentlet, user, false );
-        //Boolean indexed = APILocator.getContentletAPI().isInodeIndexed( testContentlet.getInode() );
+
         //Make it live
         APILocator.getVersionableAPI().setLive( testContentlet );
 
         return testContentlet;
-    }
-
-    private void wait ( Date from, int seconds ) {
-        //We are just making time
-        while ( compareInSeconds( from, new Date() ) < seconds ) {
-            //Waiting.....
-        }
-    }
-
-    private Long compareInSeconds ( Date from, Date to ) {
-        return (to.getTime() - from.getTime()) / 1000;
     }
 
 }
