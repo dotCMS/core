@@ -511,15 +511,20 @@ public class ESContentletIndexAPITest extends TestBase {
     public void testStemmer () throws Exception {
 
         SiteSearchAPI siteSearchAPI = APILocator.getSiteSearchAPI();
+        //ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
+        //*****************************************************************
+        //Verify if we already have and site search index, if not lets create one...
         IndiciesAPI.IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
         String currentSiteSearchIndex = indiciesInfo.site_search;
         String indexName = currentSiteSearchIndex;
         if ( currentSiteSearchIndex == null ) {
-            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + new Date().getTime();
+            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format( new Date() );
             APILocator.getSiteSearchAPI().createSiteSearchIndex( indexName, null, 1 );
+            APILocator.getSiteSearchAPI().activateIndex( indexName );
         }
 
+        //*****************************************************************
         //Creating a test structure
         Structure testStructure = loadTestStructure();
         //Creating a test contentlet
@@ -527,14 +532,13 @@ public class ESContentletIndexAPITest extends TestBase {
         //Creating a test html page
         HTMLPage testHtmlPage = loadHtmlPage( testContentlet );
 
+        //*****************************************************************
         //Build a site search result in order to add it to the index
         VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo( testHtmlPage.getIdentifier() );
-        String docId = testContentlet.getIdentifier() + "_" + defaultLanguage.getId();
+        String docId = testHtmlPage.getIdentifier() + "_" + defaultLanguage.getId();
 
         SiteSearchResult res = new SiteSearchResult( testHtmlPage.getMap() );
         res.setLanguage( defaultLanguage.getId() );
-        // map contains [fileSize, content, author, title, keywords,
-        // description, contentType, contentEncoding]
         res.setFileName( testHtmlPage.getFriendlyName() );
         res.setModified( versionInfo.getVersionTs() );
         res.setHost( defaultHost.getIdentifier() );
@@ -547,20 +551,14 @@ public class ESContentletIndexAPITest extends TestBase {
 
         //Adding it to the index
         siteSearchAPI.putToIndex( indexName, res );
+        //contentletAPI.isInodeIndexed( testHtmlPage.getInode(), true );
 
         //Testing the stemer
-        SiteSearchResults siteSearchResults = siteSearchAPI.search( indexName, "cats", 0, 100 );
+        SiteSearchResults siteSearchResults = siteSearchAPI.search( indexName, "argu", 0, 100 );
         //Validations
         assertTrue( siteSearchResults != null );
         assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
         assertTrue( siteSearchResults.getTotalResults() > 0 );
-
-        /*// is the live guy
-        if ( UtilMethods.isSet( versionInfo.getLiveInode() ) ) {
-            // if this is the deleted guy
-        } else if ( !UtilMethods.isSet( versionInfo.getLiveInode() ) ) {
-            APILocator.getSiteSearchAPI().deleteFromIndex( "site_search_" + new Date().getTime(), docId );
-        }*/
     }
 
     /**
