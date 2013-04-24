@@ -42,7 +42,6 @@ import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.internal.InternalSearchHits;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -238,37 +237,6 @@ public class ESContentletIndexAPITest extends TestBase {
 
         //Validate
         assertNotSame( liveActiveIndex, liveIndex );
-    }
-
-    /**
-     * Testing the {@link ContentletIndexAPI#setUpFullReindex()}, {@link ContentletIndexAPI#isInFullReindex()}
-     * and {@link ContentletIndexAPI#getNewIndex()} methods
-     *
-     * @throws Exception
-     * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
-     */
-    @Test
-    @Ignore ("Working on this test")
-    public void getNewIndex () throws Exception {
-
-        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-
-        //Full reindex
-        String timeStamp = indexAPI.setUpFullReindex();
-
-        //Should say it is running....
-        Boolean isInFullReindex = indexAPI.isInFullReindex();
-        assertTrue( isInFullReindex );
-
-        //***************************************************
-
-        //Get the indices that are running
-        List<String> indices = indexAPI.getNewIndex();
-
-        //Validate
-        assertNotNull( indices );
-        assertTrue( !indices.isEmpty() );
     }
 
     /**
@@ -579,7 +547,6 @@ public class ESContentletIndexAPITest extends TestBase {
             //And finally remove the index
             siteSearchAPI.deleteFromIndex( indexName, docId );
         }
-
     }
 
     /**
