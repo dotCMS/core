@@ -15,6 +15,7 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
@@ -1539,12 +1540,22 @@ public class FolderFactoryImpl extends FolderFactory {
 	@Override
 	protected void save(Folder folderInode, String existingId) throws DotDataException {
 		if(existingId==null){
-			HibernateUtil.saveOrUpdate(folderInode);
+			Folder folderToSave = folderInode;
+			if(UtilMethods.isSet(folderInode.getInode())) {
+				folderToSave = (Folder) new HibernateUtil(Folder.class).load(folderInode.getInode());
+				try{
+					BeanUtils.copyProperties(folderToSave, folderInode);
+				}
+				catch (Exception e) {
+					throw new DotDataException(e.getMessage(), e);
+				}
+			}
+			HibernateUtil.saveOrUpdate(folderToSave);
+			fc.removeFolder(folderToSave, APILocator.getIdentifierAPI().find(folderToSave.getIdentifier()));
 		}else{
 			folderInode.setInode(existingId);
 			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
 		}
-		
 	}
 	
 }
