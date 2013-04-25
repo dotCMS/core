@@ -93,19 +93,32 @@ public class TimeMachineFilter implements Filter {
 //		    if(uri.equals("/"))
 //		        uri="/home/index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 		    
-		    
+		    final String pageEXT=Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"); 
 		    
 		    if(uri.endsWith("/"))
-		        uri+="index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+		        uri+="index."+pageEXT;
 
 		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
 		            "live"+java.io.File.separator+
 		            host.getHostname()+java.io.File.separator+langid+
 		            uri);
+		    
 		    if(file.isDirectory()) {
-		        file=new java.io.File(file,"index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
+		        file=new java.io.File(file,"index."+pageEXT);
 		    }
+		    
+		    final String defid=Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		    if(!file.exists() && !uri.endsWith(pageEXT) && !langid.equals(defid)) {
+		        // if the file doesn't exists then lets see if there exists a version for the default language
+		        // https://github.com/dotCMS/dotCMS/issues/2710
+		        file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
+	                    "tm_"+date.getTime()+java.io.File.separator+
+	                    "live"+java.io.File.separator+
+	                    host.getHostname()+java.io.File.separator+defid+
+	                    uri);
+		    }
+		    
 		    if(file.exists()) {
 		        resp.setContentType(ctx.getMimeType(uri));
 		        resp.setContentLength((int)file.length());
@@ -115,6 +128,7 @@ public class TimeMachineFilter implements Filter {
 		        return;
 		    }
 		    else {
+		        
 		        
 		        try {
 					request.getRequestDispatcher("/html/portlet/ext/timemachine/timemachine_404.jsp").forward(request, response);

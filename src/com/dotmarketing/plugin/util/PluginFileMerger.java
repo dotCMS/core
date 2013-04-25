@@ -508,8 +508,8 @@ public class PluginFileMerger {
 				+ File.separator + "dwr.xml"), "<!-- BEGIN PLUGINS -->",
 				"<!-- END PLUGINS -->", "<!-- BEGIN PLUGIN:" + name + " -->",
 				"<!-- END PLUGIN:" + name + " -->", dwr, overrideMap,
-				"<!-- BEGIN OVERRIDE:" + name,
-				" END OVERRIDE:" + name + " -->", "<!-- BEGIN OVERRIDE");
+				"<!-- BEGIN OVERRIDE:" + name + "-->",
+				"<!-- END OVERRIDE:" + name + " -->", "<!-- BEGIN OVERRIDE");
 
 		String web = PluginUtil.getTextData("conf/web-ext.xml", jar);
 		mergeWebXML(web,

@@ -58,7 +58,13 @@
 %>
 
 
-
+<style>
+.dijitTree {
+	width: 100% !important;
+	max-height: 150px !important;
+	overflow: auto;
+}
+</style>
 <div class="fieldWrapper">
 
 	<div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
@@ -161,6 +167,8 @@
         String folder = (String)(request.getAttribute("folder") != null?request.getAttribute("folder"):"");
         String selectorValue = UtilMethods.isSet(folder) && !folder.equals(FolderAPI.SYSTEM_FOLDER)?folder:host;
 %>
+
+
      <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" onChange="updateHostFolderValues('<%=field.getVelocityVarName()%>');"
             value="<%= selectorValue %>"></div>
      <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
@@ -230,10 +238,10 @@
 	            </td>
 			</tr>
         </table>
-        
+
         <!-- AChecker errors -->
         <div id="acheck<%=field.getVelocityVarName()%>"></div>
-        
+
     </div>
     <script type="text/javascript">
         dojo.addOnLoad(function () {
@@ -270,7 +278,7 @@
         int month=0;
         int year=0;
         GregorianCalendar cal=null;
-        
+
         if(dateValue!=null) {
 	        cal = new GregorianCalendar();
 	        cal.setTime((Date) dateValue);
@@ -302,7 +310,7 @@
 
             String hour=null;
             String min=null;
-            
+
             if(cal!=null) {
                 hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
                 min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
@@ -409,7 +417,7 @@
             }%>
             <% com.dotmarketing.portlets.contentlet.model.Contentlet contentlet = (com.dotmarketing.portlets.contentlet.model.Contentlet) request.getAttribute("contentlet"); %>
             <div id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
-               fieldName="<%=field.getVelocityVarName()%>" 
+               fieldName="<%=field.getVelocityVarName()%>"
                inode="<%= binInode%>"
                identifier="<%=field.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')" dojoType="dotcms.dijit.form.FileAjaxUploader">
             </div>

@@ -3726,7 +3726,7 @@ env-entry, and ejb-ref elements should follow this fragment.
 <!-- BEGIN PLUGIN-FILTER:com.dotcms.salesforce.plugin -->
 <filter>
 	<filter-name>SalesForceFilter</filter-name>
-	<filter-class>com.dotmarketing.filters.SalesForceFilter</filter-class>
+	<filter-class>com.dotcms.enterprise.salesforce.SalesForceFilter</filter-class>
 	<init-param>
 		<param-name>com.dotmarketing.filters.salesforce.filter.tokenUrl</param-name>
 		<param-value>https://test.salesforce.com/services/oauth2/token</param-value>

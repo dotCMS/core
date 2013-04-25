@@ -2,22 +2,17 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-import net.sf.hibernate.Hibernate;
-
-import org.quartz.SimpleTrigger;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.SQLQueryFactory;
@@ -48,9 +43,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.SimpleScheduledTask;
-import com.dotmarketing.quartz.job.UpdateContentsOnDeleteHost;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -80,7 +72,7 @@ public class HostAPIImpl implements HostAPI {
 		try{
 			host  = hostCache.getDefaultHost();
 			if(host != null){
-				if(APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+				if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 					return host;
 				}
 			}
@@ -105,7 +97,7 @@ public class HostAPIImpl implements HostAPI {
 				Logger.fatal(this, "More of one host is marked as default!!");
 			}
 			host = new Host(list.get(0));
-			if(APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+			if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 				hostCache.add(host);
 				return host;
 			}
@@ -149,7 +141,7 @@ public class HostAPIImpl implements HostAPI {
 				hostCache.addHostAlias(serverName, host);
 			}
 		}
-		if(APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+		if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 			return host;
 		}
 		else{
@@ -174,7 +166,7 @@ public class HostAPIImpl implements HostAPI {
 		try{
 			host  = hostCache.get(hostName);
 			if(host != null){
-				if(APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+				if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 					return host;
 				}
 			}
@@ -183,12 +175,8 @@ public class HostAPIImpl implements HostAPI {
 			Logger.debug(HostAPIImpl.class, e.getMessage(), e);
 		}
 
-
-
-
 		try {
 			Structure st = StructureCache.getStructureByVelocityVarName("Host");
-			Field hostNameField = st.getFieldVar("hostName");
 			String query = "+structureInode:" + st.getInode() +
 					" +working:true +Host.hostName:" + hostName;
 
@@ -234,7 +222,6 @@ public class HostAPIImpl implements HostAPI {
 
 		try {
 			Structure st = StructureCache.getStructureByVelocityVarName("Host");
-			Field aliasesField = st.getFieldVar("aliases");
 
 			List<Contentlet> list = APILocator.getContentletAPI().search("+structureInode:" + st.getInode() +
 					" +working:true +Host.aliases:" + alias, 0, 0, null, user, respectFrontendRoles);
@@ -291,7 +278,7 @@ public class HostAPIImpl implements HostAPI {
 		}
 
 		if(host != null){
-			if(!APILocator.getPermissionAPI().doesUserHavePermission(host, APILocator.getPermissionAPI().PERMISSION_READ, user, respectFrontendRoles)){
+			if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 				String u = (user != null) ? user.getUserId() : null;
 
 				String message = "User " + u + " does not have permission to host:" + host.getHostname();
@@ -367,10 +354,24 @@ public class HostAPIImpl implements HostAPI {
 		c.setInode("");
 		c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
 		APILocator.getVersionableAPI().setLive(c);
-		Host h =  new Host(c);
-		hostCache.add(h);
+		Host savedHost =  new Host(c);
+		hostCache.add(savedHost);
+
+		if(host.isDefault()) {  // If host is marked as default make sure that no other host is already set to be the default
+			List<Host> hosts= findAll(user, respectFrontendRoles);
+			for(Host h : hosts){
+				if(h.getIdentifier().equals(host.getIdentifier())){
+					continue;
+				}
+				if(h.isDefault()){
+					h.setDefault(false);
+					save(h, user, respectFrontendRoles);
+				}
+			}
+		}
+		
 		hostCache.clearAliasCache();
-		return h;
+		return savedHost;
 
 	}
 
@@ -767,67 +768,8 @@ public class HostAPIImpl implements HostAPI {
 	}
 
 	public void makeDefault(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
-		Host currentDefault = findDefaultHost(user, respectFrontendRoles);
 		host.setDefault(true);
-		Structure st = StructureCache.getStructureByVelocityVarName("Host");
-
-
-
-		if(host != null){
-			hostCache.remove(host);
-		}
-
 		save(host, user, respectFrontendRoles);
-		if(currentDefault != null){
-			currentDefault.setDefault(false);
-			save(currentDefault, user, respectFrontendRoles);
-		}
-		List<Host> hosts= findAll(user, respectFrontendRoles);
-		for(Host h : hosts){
-			if(h.getIdentifier().equals(host.getIdentifier()) || h.getIdentifier().equals(currentDefault.getIdentifier())){
-				continue;
-			}
-			if(h.isDefault()){
-				h.setDefault(false);
-				save(h, user, respectFrontendRoles);
-			}
-
-		}
-
-
-	}
-
-	private void removeHostFromContents(Host host) throws DotSecurityException, DotDataException {
-		Map<String, Object> parameters = new HashMap<String, Object>();
-		parameters.put("host", host);
-		if(host != null){
-			hostCache.remove(host);
-		}
-		try {
-			if(!QuartzUtils.isJobSequentiallyScheduled("setup-host-" + host.getIdentifier(), "setup-host-group")) {
-				Calendar startTime = Calendar.getInstance();
-				SimpleScheduledTask task = new SimpleScheduledTask("delete-host-" + host.getIdentifier(),
-						"delete-host-group",
-						"Update content from deleted host " + host.getIdentifier(),
-						UpdateContentsOnDeleteHost.class.getCanonicalName(),
-						false,
-						"delete-host-" + host.getIdentifier() + "-trigger",
-						"delete-host-trigger-group",
-						startTime.getTime(),
-						null,
-						SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT,
-						5,
-						true,
-						parameters,
-						0,
-						0);
-				QuartzUtils.scheduleTask(task);
-			}
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-		hostCache.clearAliasCache();
 	}
 
 	public Host DBSearch(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
