@@ -306,6 +306,12 @@ public class URLMapTest extends TestBase  {
 				HttpServletRequest request = ServletTestRunner.localRequest.get();
 				String serverName = request.getServerName();
 				Integer serverPort = request.getServerPort();
+				String localAddr = request.getLocalAddr();
+				Integer localPort = request.getLocalPort();
+				Logger.info(this.getClass(), "serverName: " + serverName);
+				Logger.info(this.getClass(), "serverPort: " + serverPort);
+				Logger.info(this.getClass(), "localAddr: " + localAddr);
+				Logger.info(this.getClass(), "localPort: " + localPort);
 
 				HttpClient httpclient = new DefaultHttpClient();
 				HttpGet httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/the-gas-price");
