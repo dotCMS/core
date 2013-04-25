@@ -122,6 +122,7 @@ public class FileUtil {
 	public static void copyDirectory(File source, File destination) {
 		copyDirectory(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
+	
 
 	public static void copyFile(
 		String sourceFileName, String destinationFileName) {
@@ -171,19 +172,28 @@ public class FileUtil {
 		
 		}
 		if(!hardLinks) {
+			
+			FileChannel srcChannel = null;
+			FileChannel dstChannel = null;
+			
 			try {
-				FileChannel srcChannel = new FileInputStream(source).getChannel();
-				FileChannel dstChannel = new FileOutputStream(
-					destination).getChannel();
+				srcChannel = new FileInputStream(source).getChannel();
+				dstChannel = new FileOutputStream(destination).getChannel();
 
-				dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
-
-				srcChannel.close();
-				dstChannel.close();
-			}
-			catch (IOException ioe) {
+				dstChannel.transferFrom(srcChannel, 0, srcChannel.size());				
+			}catch (IOException ioe) {
 				Logger.error(FileUtil.class,ioe.getMessage(),ioe);
+			}	
+			finally {
+				try {
+					srcChannel.close();
+					dstChannel.close();
+				} catch (IOException ioe) {
+					Logger.error(FileUtil.class,ioe.getMessage(),ioe);
+				}
 			}
+			
+			
 		}
 
 	}
