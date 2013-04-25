@@ -17,7 +17,7 @@
 	
 	<filter>
 		<filter-name>SalesForceFilter</filter-name>
-		<filter-class>com.dotmarketing.filters.SalesForceFilter</filter-class>
+		<filter-class>com.dotcms.enterprise.salesforce.SalesForceFilter</filter-class>
 		<init-param>
 			<param-name>com.dotmarketing.filters.salesforce.filter.serverName</param-name>
 			<param-value>localhost</param-value>
