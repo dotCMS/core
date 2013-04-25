@@ -1,6 +1,7 @@
 package com;
 
 import com.dotcms.cmis.DotCMSCMISTest;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
@@ -28,24 +29,24 @@ import org.junit.runners.Suite;
 
 @RunWith (Suite.class)
 @Suite.SuiteClasses ({
-    LinkCheckerAPITest.class,
-    TemplateAPITest.class,
-    HTMLPageAPITest.class,
-    CategoryAPITest.class,
-    MenuLinkAPITest.class,
-    ContentletFactoryTest.class,
-    ContentletAPITest.class,
-    ContainerAPITest.class,
-    FieldFactoryTest.class,
-    StructureFactoryTest.class,
-    FieldAPITest.class,
-    URLMapTest.class,
-    PermissionAPITest.class,
-    PublishingEndPointAPITest.class,
-    ESContentletIndexAPITest.class,
-    DotCMSCMISTest.class,
-    WebResourceTest.class,
-    RoleResourceTest.class
+        LinkCheckerAPITest.class,
+        TemplateAPITest.class,
+        HTMLPageAPITest.class,
+        CategoryAPITest.class,
+        MenuLinkAPITest.class,
+        ContentletFactoryTest.class,
+        ContentletAPITest.class,
+        ContainerAPITest.class,
+        FieldFactoryTest.class,
+        StructureFactoryTest.class,
+        FieldAPITest.class,
+        URLMapTest.class,
+        PermissionAPITest.class,
+        PublishingEndPointAPITest.class,
+        ESContentletIndexAPITest.class,
+        DotCMSCMISTest.class,
+        WebResourceTest.class,
+        RoleResourceTest.class
 })
 public class AllTestsSuite {
 
