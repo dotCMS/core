@@ -864,26 +864,30 @@ var theme = 'dmundra';
 	<div style="clear:both"></div>
 </div>
 #elseif($UtilMethods.isSet($user) && !$structures.haveEditPermision($structure, $user))
-
-  <div class="submitContent">
+   <div class="submitContent">
 		<div class="formTop">&nbsp;</div>
 		<div class="formBody">
-			$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.not.proper.permissions')
+		   #if($contentNoPermissionsSource)
+  				#dotParse($contentNoPermissionsSource)
+   			#else
+				$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.not.proper.permissions')
+			#end
 		</div>
 		<div style="clear:both"></div>
 	</div>
-
 #else
-
 	<div class="submitContent">
 		<div class="formTop">&nbsp;</div>
 		<div class="formBody">
-			$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.login.message1') <a href="/dotCMS/login">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.login.message2')</a> $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.login.message3') ${structure.name}.
+		   #if($contentLoginSource)
+  				#dotParse($contentLoginSource)
+   			#else
+				$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.login.message1') <a href="/dotCMS/login">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.login.message2')</a> $text.getFromSessionLanguage('org.dotcms.frontend.content.submission.login.message3') ${structure.name}.
+			#end
 			$session.setAttribute("REDIRECT_AFTER_LOGIN","${VTLSERVLET_URI}?$!{request.getQueryString()}")
 		</div>
 		<div style="clear:both"></div>
 	</div>
-
 #end
 
 <script language="javascript">
