@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.structure.business;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Date;
 
@@ -298,25 +299,29 @@ public class URLMapTest extends TestBase  {
 
 
 			// TODO: make request to both pages
-			HttpServletRequest request = ServletTestRunner.localRequest.get();
-			String serverName = request.getServerName();
-			Integer serverPort = request.getServerPort();
 
-			HttpClient httpclient = new DefaultHttpClient();
-			HttpGet httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/the-gas-price");
-			ResponseHandler<String> responseHandler = new BasicResponseHandler();
-			Thread.sleep(1000);
-            String responseBody = httpclient.execute(httpget, responseHandler);
+			if(contentletAPI.isInodeIndexed(englishContent.getInode()) &&
+				contentletAPI.isInodeIndexed(spanishContent.getInode())) {
 
-			assertTrue(responseBody.contains("the-gas-price"));
+				HttpServletRequest request = ServletTestRunner.localRequest.get();
+				String serverName = request.getServerName();
+				Integer serverPort = request.getServerPort();
 
-			httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas");
-            responseBody = httpclient.execute(httpget, responseHandler);
+				HttpClient httpclient = new DefaultHttpClient();
+				HttpGet httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/the-gas-price");
+				ResponseHandler<String> responseHandler = new BasicResponseHandler();
+				String responseBody = httpclient.execute(httpget, responseHandler);
 
+				assertTrue(responseBody.contains("the-gas-price"));
 
-			assertTrue(responseBody.contains("el-precio-del-gas"));
+				httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas");
+				responseBody = httpclient.execute(httpget, responseHandler);
 
+				assertTrue(responseBody.contains("el-precio-del-gas"));
 
+			} else {
+				fail("Content indexing timeout.");
+			}
 
 		} catch (Exception e) {
 			try {
