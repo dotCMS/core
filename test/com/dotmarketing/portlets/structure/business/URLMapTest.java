@@ -300,8 +300,8 @@ public class URLMapTest extends TestBase  {
 
 			// TODO: make request to both pages
 
-			if(contentletAPI.isInodeIndexed(englishContent.getInode()) &&
-				contentletAPI.isInodeIndexed(spanishContent.getInode())) {
+			if(contentletAPI.isInodeIndexed(englishContent.getInode(), true) &&
+				contentletAPI.isInodeIndexed(spanishContent.getInode(), true)) {
 
 				HttpServletRequest request = ServletTestRunner.localRequest.get();
 				String serverName = request.getServerName();
