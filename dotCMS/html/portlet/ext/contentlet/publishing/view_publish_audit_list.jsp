@@ -1,3 +1,4 @@
+<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.beans.PermissionableProxy"%>
 <%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
@@ -240,7 +241,7 @@
 							<%if(count > 2){%>...<%=bundleAssets.keySet().size()-3%> <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %><% break;} %>
 							<%String assetType = bundleAssets.get(id); %>
 							<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
-								<strong><%= assetType%></strong> : <%= assetTitle %>
+								<strong><%= assetType%></strong> : <%=StringEscapeUtils.escapeHtml(assetTitle)%>
 						<%count++;} %>
 						</td>
 					<%}else{ %>
