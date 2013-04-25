@@ -8,6 +8,8 @@ import java.math.BigInteger;
 import org.junit.Test;
 
 import com.dotcms.enterprise.cmis.utils.CMISUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.UtilMethods;
 
 public class DotCMSCMISTest extends CMISBaseTest {
 
@@ -15,10 +17,10 @@ public class DotCMSCMISTest extends CMISBaseTest {
     public void testCMISReadWrite () throws Exception {   
     	
         //Validations
-//        assertTrue( UtilMethods.isSet(getdefaultHostId()) && 
-//        		APILocator.getHostAPI().findDefaultHost(
-//        				APILocator.getUserAPI().getSystemUser(), false).getInode().equals(getdefaultHostId()));
-//        
+        assertTrue( UtilMethods.isSet(getdefaultHostId()) && 
+        		APILocator.getHostAPI().findDefaultHost(
+        				APILocator.getUserAPI().getSystemUser(), false).getInode().equals(getdefaultHostId()));
+        
         String folderId = createFolder("CMISJunitTest" + new java.util.Date().getTime()); 
       //Validations
         assertNotNull( folderId );
