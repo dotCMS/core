@@ -4,13 +4,10 @@ import java.io.FileInputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.chemistry.opencmis.commons.PropertyIds;
-import org.apache.chemistry.opencmis.commons.data.ObjectData;
-import org.apache.chemistry.opencmis.commons.data.ObjectInFolderData;
 import org.apache.chemistry.opencmis.commons.data.ObjectInFolderList;
 import org.apache.chemistry.opencmis.commons.data.ObjectList;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
@@ -29,7 +26,6 @@ import com.dotcms.TestBase;
 import com.dotcms.enterprise.cmis.server.CMISManager;
 import com.dotcms.enterprise.cmis.server.CMISService;
 import com.dotcms.enterprise.cmis.utils.CMISUtils;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -68,15 +64,7 @@ public class CMISBaseTest extends TestBase {
     }
     
     protected static String getdefaultHostId() throws Exception {
-        String id=null;
-    	List<ObjectInFolderData> hosts = getRootFolderChildren().getObjects();
-    	for(ObjectInFolderData hh : hosts) {
-    	    String host=(String)hh.getObject().getProperties().getProperties().get("cmis:name").getValues().get(0); 
-    	    Host ho=APILocator.getHostAPI().findByName(host, user, false);
-    	    if(ho!=null && ho.isDefault())
-    	        return ho.getInode();
-    	}
-    	return id;
+        return getRootFolderChildren().getObjects().get(0).getObject().getId();
     }
     
     protected static ObjectInFolderList getRootFolderChildren(){
