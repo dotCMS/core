@@ -42,6 +42,7 @@ import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.internal.InternalSearchHits;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -195,6 +196,7 @@ public class ESContentletIndexAPITest extends TestBase {
      * @see ESContentletIndexAPI
      */
     @Test
+    @Ignore
     public void activateDeactivateIndex () throws Exception {
 
         ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
@@ -370,11 +372,10 @@ public class ESContentletIndexAPITest extends TestBase {
             assertTrue( !result.isEmpty() );
 
             //Remove the contentlet from the index
-            //Date initDate = new Date();
             indexAPI.removeContentFromIndex( testContentlet );
 
             //We are just making time in order to let it apply the index
-            //wait( initDate, 2 );
+            wasContentRemoved( query );
 
             //Verify if it was removed to the index
             result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
@@ -443,7 +444,7 @@ public class ESContentletIndexAPITest extends TestBase {
      * @see ESContentletIndexAPI
      */
     @Test
-    public void testStemmer () throws Exception {
+    public void testSearch () throws Exception {
 
         SiteSearchAPI siteSearchAPI = APILocator.getSiteSearchAPI();
 
@@ -489,6 +490,8 @@ public class ESContentletIndexAPITest extends TestBase {
 
         try {
 
+            //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //+++++++++++++++++++++++++STEMMERS+++++++++++++++++++++++++
             /*
             NOTE: THE CONTENT TEXT DOES NOT CONTAIN THE ROOT WORDS, THIS IS JUST THE REFERENCE TEXT SHOWING HOW SHOULD WORKS!!
 
@@ -505,7 +508,6 @@ public class ESContentletIndexAPITest extends TestBase {
             //Testing the stemer
             SiteSearchResults siteSearchResults = siteSearchAPI.search( indexName, "argu", 0, 100 );
             //Validations
-            assertTrue( siteSearchResults != null );
             assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
             assertTrue( siteSearchResults.getTotalResults() > 0 );
             String highLights = siteSearchResults.getResults().get( 0 ).getHighLights()[0];
@@ -518,7 +520,6 @@ public class ESContentletIndexAPITest extends TestBase {
             //Testing the stemer
             siteSearchResults = siteSearchAPI.search( indexName, "cats", 0, 100 );
             //Validations
-            assertTrue( siteSearchResults != null );
             assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
             assertTrue( siteSearchResults.getTotalResults() > 0 );
             highLights = siteSearchResults.getResults().get( 0 ).getHighLights()[0];
@@ -527,7 +528,6 @@ public class ESContentletIndexAPITest extends TestBase {
             //Testing the stemer
             siteSearchResults = siteSearchAPI.search( indexName, "stem", 0, 100 );
             //Validations
-            assertTrue( siteSearchResults != null );
             assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
             assertTrue( siteSearchResults.getTotalResults() > 0 );
             highLights = siteSearchResults.getResults().get( 0 ).getHighLights()[0];
@@ -538,11 +538,50 @@ public class ESContentletIndexAPITest extends TestBase {
             //Testing the stemer
             siteSearchResults = siteSearchAPI.search( indexName, "argument", 0, 100 );
             //Validations
-            assertTrue( siteSearchResults != null );
             assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
             assertTrue( siteSearchResults.getTotalResults() > 0 );
             highLights = siteSearchResults.getResults().get( 0 ).getHighLights()[0];
             assertTrue( highLights.contains( "<em>arguments</em>" ) );
+
+            //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //++++++++++++++++++++++++++NGrams++++++++++++++++++++++++++
+            //Testing the search with words that are in each extreme of the text
+            siteSearchResults = siteSearchAPI.search( indexName, "english illustrating", 0, 100 );
+            //Validations
+            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
+            assertTrue( siteSearchResults.getTotalResults() > 0 );
+
+            //Testing the search with words that are not in find order
+            siteSearchResults = siteSearchAPI.search( indexName, "arguments algorithm", 0, 100 );
+            //Validations
+            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
+            assertTrue( siteSearchResults.getTotalResults() > 0 );
+
+            //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //++++++++++++++++++++++++OTHER TESTS+++++++++++++++++++++++
+            //Testing the search
+            siteSearchResults = siteSearchAPI.search( indexName, "engli*", 0, 100 );
+            //Validations
+            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
+            assertTrue( siteSearchResults.getTotalResults() > 0 );
+
+            //Testing the search
+            siteSearchResults = siteSearchAPI.search( indexName, "*engli", 0, 100 );
+            //Validations
+            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
+            assertEquals( siteSearchResults.getTotalResults(), 0 );
+
+            //Testing the search
+            siteSearchResults = siteSearchAPI.search( indexName, "e", 0, 100 );
+            //Validations
+            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
+            assertEquals( siteSearchResults.getTotalResults(), 0 );
+
+            //Testing the search with a non existing word
+            siteSearchResults = siteSearchAPI.search( indexName, "weird", 0, 100 );
+            //Validations
+            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
+            assertEquals( siteSearchResults.getTotalResults(), 0 );
         } finally {
             //And finally remove the index
             siteSearchAPI.deleteFromIndex( indexName, docId );
@@ -728,6 +767,37 @@ public class ESContentletIndexAPITest extends TestBase {
             throw new RuntimeException( e );
         }
         return resp.getHits();
+    }
+
+    public boolean wasContentRemoved ( String query ) {
+
+        ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        boolean removed = false;
+        int counter = 0;
+        while ( counter < 300 ) {
+            try {
+                //Verify if it was removed to the index
+                List<Contentlet> result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+
+                //Validations
+                if ( result == null || result.isEmpty() ) {
+                    return true;
+                }
+            } catch ( Exception e ) {
+                Logger.error( this.getClass(), e.getMessage(), e );
+                return false;
+            }
+
+            try {
+                Thread.sleep( 100 );
+            } catch ( Exception e ) {
+                Logger.debug( this, "Cannot sleep : ", e );
+            }
+            counter++;
+        }
+
+        return removed;
     }
 
 }
