@@ -73,7 +73,7 @@ public class CMISBaseTest extends TestBase {
     	for(ObjectInFolderData hh : hosts) {
     	    String host=(String)hh.getObject().getProperties().getProperties().get("cmis:name").getValues().get(0); 
     	    Host ho=APILocator.getHostAPI().findByName(host, user, false);
-    	    if(ho.isDefault())
+    	    if(ho!=null && ho.isDefault())
     	        return ho.getInode();
     	}
     	return id;
