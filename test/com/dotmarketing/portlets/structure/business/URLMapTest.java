@@ -3,11 +3,14 @@ package com.dotmarketing.portlets.structure.business;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
@@ -304,21 +307,7 @@ public class URLMapTest extends TestBase  {
 					contentletAPI.isInodeIndexed(spanishContent.getInode(), true) &&
 						contentletAPI.isInodeIndexed(widget.getInode(), true)) {
 
-				HttpServletRequest request = ServletTestRunner.localRequest.get();
-				String serverName = request.getServerName();
-				Integer serverPort = request.getServerPort();
-
-				HttpClient httpclient = new DefaultHttpClient();
-				HttpGet httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/the-gas-price");
-				ResponseHandler<String> responseHandler = new BasicResponseHandler();
-				String responseBody = httpclient.execute(httpget, responseHandler);
-
-				assertTrue(responseBody.contains("the-gas-price"));
-
-				httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas");
-				responseBody = httpclient.execute(httpget, responseHandler);
-
-				assertTrue(responseBody.contains("el-precio-del-gas"));
+				makeRequests(10);
 
 			} else {
 				fail("Content indexing timeout.");
@@ -341,6 +330,37 @@ public class URLMapTest extends TestBase  {
 		}
 
 
+	}
+
+	private void makeRequests(int tries) throws ClientProtocolException, IOException {
+		try {
+			HttpServletRequest request = ServletTestRunner.localRequest.get();
+			String serverName = request.getServerName();
+			Integer serverPort = request.getServerPort();
+
+			HttpClient httpclient = new DefaultHttpClient();
+			HttpGet httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/the-gas-price");
+			ResponseHandler<String> responseHandler = new BasicResponseHandler();
+			String responseBody = httpclient.execute(httpget, responseHandler);
+
+			assertTrue(responseBody.contains("the-gas-price"));
+
+			httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas");
+			responseBody = httpclient.execute(httpget, responseHandler);
+
+			assertTrue(responseBody.contains("el-precio-del-gas"));
+		} catch(HttpResponseException e) {
+			if(tries>0) {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e1) {
+					Logger.error(this.getClass(), e1.getMessage());
+				}
+				makeRequests(tries--);
+			}
+			else
+				throw e;
+		}
 	}
 
 
