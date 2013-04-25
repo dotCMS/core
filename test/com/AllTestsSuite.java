@@ -1,6 +1,7 @@
 package com;
 
 import com.dotcms.cmis.DotCMSCMISTest;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.portlets.categories.business.CategoryAPITest;
@@ -17,12 +18,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 /**
- * Created by Jonathan Gamba.
- * Date: 3/7/12
- * Time: 7:55 PM
+ * @author Jonathan Gamba.
+ *         Date: 3/7/12
  */
-@RunWith ( Suite.class )
-@Suite.SuiteClasses ( {
+@RunWith (Suite.class)
+@Suite.SuiteClasses ({
         FieldFactoryTest.class,
         StructureFactoryTest.class,
         ContentletFactoryTest.class,
@@ -35,8 +35,9 @@ import org.junit.runners.Suite;
         HTMLPageAPITest.class,
         PublishingEndPointAPITest.class,
         CategoryAPITest.class,
-        FieldAPITest.class
-} )
+        FieldAPITest.class,
+        ESContentletIndexAPITest.class
+})
 public class AllTestsSuite {
 
 }
