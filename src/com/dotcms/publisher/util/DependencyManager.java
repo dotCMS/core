@@ -185,6 +185,10 @@ public class DependencyManager {
 
 	private void setFolderListDependencies(List<Folder> folderList) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		for (Folder f : folderList) {
+			
+			// Add folder even if empty
+			folders.add(f.getInode());
+			
 			// Host dependency
 			hosts.add(f.getHostId());
 
