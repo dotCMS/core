@@ -7,13 +7,13 @@ import javax.servlet.http.HttpSession;
 
 import com.dotcms.enterprise.BaseAuthenticator;
 import com.dotcms.enterprise.LDAPImpl;
+import com.dotcms.enterprise.salesforce.SalesForceUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SalesForceUtils;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
