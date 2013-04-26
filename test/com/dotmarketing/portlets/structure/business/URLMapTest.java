@@ -1,17 +1,15 @@
 package com.dotmarketing.portlets.structure.business;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,34 +44,28 @@ import com.liferay.portal.model.User;
 
 public class URLMapTest extends TestBase  {
 
+	private Folder testFolder;
+	private Template template;
+	private Container container;
+	private Structure testSt;
+	private Contentlet widget;
+	private User user;
+
 	@Before
-	public void init() {
-
-	}
-
-
-	@Test
-	public void testURLMaps() throws Exception {
-
-		Folder testFolder = null;
-		Template template = null;
-		Container container = null;
-		Structure testSt = null;
-		Contentlet widget = null;
-		User user = null;
-
-
+	public void createAssets() throws Exception {
 		try {
 
 			user = APILocator.getUserAPI().getSystemUser();
-//			Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
-			Host demoHost=APILocator.getHostAPI().findDefaultHost(user, false);
+			Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+			//			Host demoHost=APILocator.getHostAPI().findDefaultHost(user, false);
 
 
 			HibernateUtil.startTransaction();
 
 			// CONTAINER
 			container = new Container();
+
+			Structure simpleWidgetSt = StructureCache.getStructureByVelocityVarName("SimpleWidget");
 
 			container.setCode( "$!{story}" );
 			container.setFriendlyName( "newsTestContainer" );
@@ -93,6 +85,7 @@ public class URLMapTest extends TestBase  {
 			container.setTitle("News Test Container");
 			container.setType("containers");
 			container.setUseDiv( true );
+			container.setStructureInode(simpleWidgetSt.getInode());
 
 			WebAssetFactory.createAsset( container, user.getUserId(), demoHost );
 			APILocator.getVersionableAPI().setLive( container );
@@ -173,7 +166,7 @@ public class URLMapTest extends TestBase  {
 			APILocator.getVersionableAPI().setLive( htmlPage );
 
 			// WIDGET
-			Structure simpleWidgetSt = StructureCache.getStructureByVelocityVarName("SimpleWidget");
+
 
 			widget = new Contentlet();
 			widget.setReviewInterval("1m");
@@ -298,32 +291,14 @@ public class URLMapTest extends TestBase  {
 			APILocator.getVersionableAPI().setLive(spanishContent);
 
 			HibernateUtil.commitTransaction();
+			Integer counter = 10;
 
-
-			// TODO: make request to both pages
-
-			if(contentletAPI.isInodeIndexed(englishContent.getInode(), true) &&
-					contentletAPI.isInodeIndexed(spanishContent.getInode(), true) &&
-						contentletAPI.isInodeIndexed(widget.getInode(), true)) {
-
-				HttpServletRequest request = ServletTestRunner.localRequest.get();
-				String serverName = request.getServerName();
-				Integer serverPort = request.getServerPort();
-
-				HttpClient httpclient = new DefaultHttpClient();
-				HttpGet httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/the-gas-price");
-				ResponseHandler<String> responseHandler = new BasicResponseHandler();
-				String responseBody = httpclient.execute(httpget, responseHandler);
-
-				assertTrue(responseBody.contains("the-gas-price"));
-
-				httpget = new HttpGet("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas");
-				responseBody = httpclient.execute(httpget, responseHandler);
-
-				assertTrue(responseBody.contains("el-precio-del-gas"));
-
-			} else {
-				fail("Content indexing timeout.");
+			while((!contentletAPI.isInodeIndexed(englishContent.getInode(), true) ||
+							!contentletAPI.isInodeIndexed(spanishContent.getInode(), true) ||
+								!contentletAPI.isInodeIndexed(widget.getInode(), true)) && counter>0) {
+				Thread.sleep(1000);
+				counter--;
+				continue;
 			}
 
 		} catch (Exception e) {
@@ -334,14 +309,71 @@ public class URLMapTest extends TestBase  {
 			}
 			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
 			throw e;
-		} finally {
-			if(testFolder!=null) APILocator.getFolderAPI().delete(testFolder, user, false);
-			if(template!=null) APILocator.getTemplateAPI().delete(template, user, false);
-			if(container!=null) APILocator.getContainerAPI().delete(container, user, false);
-			if(testSt!=null) APILocator.getStructureAPI().delete(testSt, user);
-			if(widget!=null) APILocator.getContentletAPI().delete(widget, user, false);
+		}
+	}
+
+
+	@Test
+	public void testURLMaps() throws Exception {
+
+		// TODO: make request to both pages
+
+		//			if(contentletAPI.isInodeIndexed(englishContent.getInode(), true) &&
+		//					contentletAPI.isInodeIndexed(spanishContent.getInode(), true) &&
+		//						contentletAPI.isInodeIndexed(widget.getInode(), true)) {
+
+		HttpServletRequest request = ServletTestRunner.localRequest.get();
+		String serverName = request.getServerName();
+		Integer serverPort = request.getServerPort();
+
+		URL urlE = new URL("http://"+serverName+":"+serverPort+"/newstest/the-gas-price/");
+
+//		Thread.sleep(3000);
+
+		StringBuilder contentE = new StringBuilder(2048);
+		BufferedReader brE = null;
+		brE = new BufferedReader(new InputStreamReader(urlE.openStream()));
+		String lineE = "";
+
+		while (lineE != null)
+		{
+			lineE = brE.readLine();
+			contentE.append(lineE);
 		}
 
+		System.out.println("contentE: " + contentE);
+
+		assertTrue(contentE.toString().contains("the-gas-price"));
+
+		URL urlS = new URL("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas/");
+
+		StringBuilder contentS = new StringBuilder(2048);
+		BufferedReader brS = new BufferedReader(new InputStreamReader(urlS.openStream()));
+		String lineS = "";
+
+		while (lineS != null)
+		{
+			lineS = brS.readLine();
+			contentS.append(lineS);
+		}
+
+		System.out.println("contentS: " + contentS);
+		assertTrue(contentS.toString().contains("el-precio-del-gas"));
+
+
+		//			} else {
+		//				fail("Content indexing timeout.");
+		//			}
+
+	}
+
+	@After
+	public void deleteAssets() throws Exception {
+		if(testFolder!=null) APILocator.getFolderAPI().delete(testFolder, user, false);
+		if(template!=null) APILocator.getTemplateAPI().delete(template, user, false);
+		if(container!=null) APILocator.getContainerAPI().delete(container, user, false);
+		if(testSt!=null) APILocator.getStructureAPI().delete(testSt, user);
+		if(widget!=null) APILocator.getContentletAPI().delete(widget, user, false);
 
 	}
 
