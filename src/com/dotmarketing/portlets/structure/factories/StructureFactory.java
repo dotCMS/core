@@ -23,6 +23,7 @@ import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.cms.urlmap.filters.URLMapFilter;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -391,6 +392,10 @@ public class StructureFactory {
 		Date now = new Date();
 		structure.setiDate(now);
 		HibernateUtil.saveOrUpdate(structure);
+		
+		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
+		    StructureCache.clearURLMasterPattern();
+		}
 	}
 	
 	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
