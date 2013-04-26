@@ -55,8 +55,6 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 public class URLMapFilter implements Filter {
@@ -101,6 +99,8 @@ public class URLMapFilter implements Filter {
 		// http://jira.dotmarketing.net/browse/DOTCMS-6079
 		if (uri.endsWith("/"))
 			uri = uri.substring(0, uri.length() - 1);
+		
+		Logger.info(this, "Getting reques host: "+host.getHostname()+" uri: "+uri+"");
 	    
 		String pointer = null;
 		
@@ -140,6 +140,7 @@ public class URLMapFilter implements Filter {
 			chain.doFilter(req, res);
 			return;
 		}
+		Logger.info(this, "master pattern "+mastRegEx+" to match url "+url);
 		if (RegEX.contains(url, mastRegEx)) {
 			boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
 			boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
@@ -237,7 +238,9 @@ public class URLMapFilter implements Filter {
                     }
 					
 					try {
+					    Logger.info(this, "this is the query "+query.toString());
 						cons = conAPI.searchIndex(query.toString(), 1, 0, (hostIsRequired?"conhost, modDate": "modDate"), user, true);
+						Logger.info(this, "got "+cons.size()+" contents");
 						ContentletSearch c = cons.get(0);
 						session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,String.valueOf(conAPI.find(c.getInode(), user, true).getLanguageId()));
 						request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
@@ -305,9 +308,10 @@ public class URLMapFilter implements Filter {
 							request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
 							LogFactory.getLog(this.getClass()).debug("URLMAP FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
 						}
-						
+						Logger.info(this, "go into request dispatcher");
 						request.getRequestDispatcher(ident.getURI()).forward(req, res);
 					}else{
+					    Logger.info(this, "pass the chain... no content match");
 						chain.doFilter(req, res);
 					}
 					return;
@@ -317,6 +321,7 @@ public class URLMapFilter implements Filter {
 			}
 
 		}
+		Logger.info(this, "pass the chain... no pattern match");
 		chain.doFilter(req, res);
 	}
 
