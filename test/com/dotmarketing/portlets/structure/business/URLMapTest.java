@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.structure.business;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -269,7 +270,6 @@ public class URLMapTest extends TestBase  {
 			contentletAPI.setContentletProperty( englishContent, headline, "the-gas-price" );
 			contentletAPI.setContentletProperty( englishContent, story, "the-gas-price" );
 			contentletAPI.setContentletProperty( englishContent, urlTitle, "the-gas-price" );
-			//			englishContent.setStringProperty("urlNewsTitle", "the-gas-price");
 
 			englishContent = contentletAPI.checkin( englishContent, null, permissionAPI.getPermissions( testSt ), user, false );
 			APILocator.getVersionableAPI().setLive(englishContent);
@@ -285,20 +285,17 @@ public class URLMapTest extends TestBase  {
 			contentletAPI.setContentletProperty( spanishContent, headline, "el-precio-del-gas" );
 			contentletAPI.setContentletProperty( spanishContent, story, "el-precio-del-gas" );
 			contentletAPI.setContentletProperty( spanishContent, urlTitle, "el-precio-del-gas" );
-			//			spanishContent.setStringProperty("urlNewsTitle", "el-precio-del-gas");
 
 			spanishContent = contentletAPI.checkin( spanishContent, null, permissionAPI.getPermissions( testSt ), user, false );
 			APILocator.getVersionableAPI().setLive(spanishContent);
 
 			HibernateUtil.commitTransaction();
-			Integer counter = 10;
 
-			while((!contentletAPI.isInodeIndexed(englishContent.getInode(), true) ||
-							!contentletAPI.isInodeIndexed(spanishContent.getInode(), true) ||
-								!contentletAPI.isInodeIndexed(widget.getInode(), true)) && counter>0) {
-				Thread.sleep(1000);
-				counter--;
-				continue;
+			if(!(contentletAPI.isInodeIndexed(englishContent.getInode(), true) &&
+							contentletAPI.isInodeIndexed(spanishContent.getInode(), true) &&
+								contentletAPI.isInodeIndexed(widget.getInode(), true))) {
+				fail("Content indexing timeout.");
+
 			}
 
 		} catch (Exception e) {
@@ -316,19 +313,12 @@ public class URLMapTest extends TestBase  {
 	@Test
 	public void testURLMaps() throws Exception {
 
-		// TODO: make request to both pages
-
-		//			if(contentletAPI.isInodeIndexed(englishContent.getInode(), true) &&
-		//					contentletAPI.isInodeIndexed(spanishContent.getInode(), true) &&
-		//						contentletAPI.isInodeIndexed(widget.getInode(), true)) {
 
 		HttpServletRequest request = ServletTestRunner.localRequest.get();
 		String serverName = request.getServerName();
 		Integer serverPort = request.getServerPort();
 
 		URL urlE = new URL("http://"+serverName+":"+serverPort+"/newstest/the-gas-price/");
-
-//		Thread.sleep(3000);
 
 		StringBuilder contentE = new StringBuilder(2048);
 		BufferedReader brE = null;
@@ -341,7 +331,6 @@ public class URLMapTest extends TestBase  {
 			contentE.append(lineE);
 		}
 
-		System.out.println("contentE: " + contentE);
 
 		assertTrue(contentE.toString().contains("the-gas-price"));
 
@@ -357,14 +346,7 @@ public class URLMapTest extends TestBase  {
 			contentS.append(lineS);
 		}
 
-		System.out.println("contentS: " + contentS);
 		assertTrue(contentS.toString().contains("el-precio-del-gas"));
-
-
-		//			} else {
-		//				fail("Content indexing timeout.");
-		//			}
-
 	}
 
 	@After
@@ -376,7 +358,6 @@ public class URLMapTest extends TestBase  {
 		if(widget!=null) APILocator.getContentletAPI().delete(widget, user, false);
 
 	}
-
 
 
 }
