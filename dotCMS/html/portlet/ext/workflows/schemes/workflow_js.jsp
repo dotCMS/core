@@ -25,7 +25,8 @@ dojo.declare(
     "ValidationTextarea",
     [dijit.form.ValidationTextBox,dijit.form.SimpleTextarea],
     {
-        invalidMessage: "This field is required"
+        invalidMessage: "This field is required",
+        regExp: "(.|\\s)*" 
     }
 );
 
