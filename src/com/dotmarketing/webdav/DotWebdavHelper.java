@@ -890,7 +890,16 @@ public class DotWebdavHelper {
 
 				if (currentData != null) {
 					// Saving the new working data
-					FileChannel writeCurrentChannel = new FileOutputStream(workingFile).getChannel();
+					Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
+					Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
+					java.io.File tempUserFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + 
+							java.io.File.separator + fieldVar.getFieldContentlet());
+					if (!tempUserFolder.exists())
+						tempUserFolder.mkdirs();
+
+					java.io.File fileData = new java.io.File(tempUserFolder.getAbsolutePath() + java.io.File.separator + fileName);
+					// Saving the new working data
+					FileChannel writeCurrentChannel = new FileOutputStream(fileData).getChannel();
 					writeCurrentChannel.truncate(0);
 					ByteBuffer buffer = ByteBuffer.allocate(currentData.length);
 					buffer.put(currentData);
@@ -898,7 +907,7 @@ public class DotWebdavHelper {
 					writeCurrentChannel.write(buffer);
 					writeCurrentChannel.force(false);
 					writeCurrentChannel.close();
-					Logger.debug(this, "WEBDAV fileName:" + fileName + ":" + workingFile.getAbsolutePath());
+					Logger.debug(this, "WEBDAV fileName:" + fileName + ":" + fileData.getAbsolutePath());
 
 					if(destinationFile instanceof File){
 						// checks if it's an image
@@ -930,7 +939,7 @@ public class DotWebdavHelper {
 					}else{
 						fileAssetCont.setInode(null);
 						fileAssetCont.setFolder(parent.getInode());
-						fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, workingFile);
+						fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 						fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
 						if(isAutoPub)
 						    APILocator.getVersionableAPI().setLive(fileAssetCont);
