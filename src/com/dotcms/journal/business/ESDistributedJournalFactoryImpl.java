@@ -31,28 +31,28 @@ import com.dotmarketing.util.UtilMethods;
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactory<T> {
-    
+
     private String[] serversIds = ClusterThreadProxy.getClusteredServerIds();
     private String serverId ;
-    
+
     private boolean indexationEnabled = Config.getBooleanProperty("DIST_INDEXATION_ENABLED");
-    
+
     private String TIMESTAMPSQL = "NOW()";
     private String REINDEXENTRIESSELECTSQL = "SELECT * FROM load_records_to_index(?, ?)";
     private String ORACLEREINDEXENTRIESSELECTSQL = "SELECT * FROM table(load_records_to_index(?, ?))";
     private String MYSQLREINDEXENTRIESSELECTSQL = "{call load_records_to_index(?,?)}";
-    
+
     public ESDistributedJournalFactoryImpl(T newIndexValue) {
         super(newIndexValue);
 
         Logger.info(this, "Server IDs configured: " + Arrays.toString(serversIds));
-        
+
         serverId = ConfigUtils.getServerId();
-        
+
         if (serversIds.length < 1) {
             serversIds = new String[] { serverId };
         }
-        
+
         if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
             TIMESTAMPSQL = "GETDATE()";
         } else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
@@ -60,19 +60,19 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                REINDEXENTRIESSELECTSQL = ORACLEREINDEXENTRIESSELECTSQL;
             else
                 REINDEXENTRIESSELECTSQL = "SELECT * FROM table(CAST(load_records_to_index(?, ?)))";
-            TIMESTAMPSQL = "CAST(SYSTIMESTAMP AS TIMESTAMP)"; 
+            TIMESTAMPSQL = "CAST(SYSTIMESTAMP AS TIMESTAMP)";
         } else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)) {
             REINDEXENTRIESSELECTSQL = MYSQLREINDEXENTRIESSELECTSQL;
-            
+
         }
     }
-    
+
     @Override
     protected void addBuildNewIndexEntries() throws DotDataException {
         DotConnect dc = new DotConnect();
         try {
             String sql = "insert into dist_reindex_journal(inode_to_index,ident_to_index, priority, dist_action, time_entered) " +
-                  " select distinct identifier,identifier," + REINDEX_JOURNAL_PRIORITY_NEWINDEX +"," + REINDEX_ACTION_REINDEX_OBJECT + ", " + TIMESTAMPSQL +  
+                  " select distinct identifier,identifier," + REINDEX_JOURNAL_PRIORITY_NEWINDEX +"," + REINDEX_ACTION_REINDEX_OBJECT + ", " + TIMESTAMPSQL +
                   " from contentlet where inode is not null and identifier is not null";
             dc.setSQL(sql);
             dc.loadResult();
@@ -134,32 +134,17 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     protected void addStructureReindexEntries(T structureInode)
             throws DotDataException {
         DotConnect dc = new DotConnect();
-        Connection conn = null;
         try {
-            conn = DbConnectionFactory.getConnection();
-            conn.setAutoCommit(false);
             String sql = "insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) " +
-            		" select distinct c.identifier,c.identifier,"+REINDEX_JOURNAL_PRIORITY_STRUCTURE_REINDEX+"," + 
+            		" select distinct c.identifier,c.identifier,"+REINDEX_JOURNAL_PRIORITY_STRUCTURE_REINDEX+"," +
                     REINDEX_ACTION_REINDEX_OBJECT + "," + TIMESTAMPSQL  + " from contentlet c " +
                     		" where c.structure_inode = ? and c.identifier is not null";
             dc.setSQL(sql);
             dc.addParam(structureInode);
-            dc.loadResult(conn);
-            
-        } catch (SQLException ex) {
+            dc.loadResult();
+
+        } catch (Exception ex) {
             Logger.fatal(this,"Error  unlocking the reindex journal table" +  ex);
-        } finally {
-            try {
-                conn.commit();
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            } finally {
-                try {
-                    conn.close();
-                } catch (Exception e) {
-                    Logger.error(this, e.getMessage(), e);
-                }
-            }
         }
     }
 
@@ -171,7 +156,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             dc.setSQL("select count(*) as count from dist_reindex_journal");
             dc.addParam(serverId);
             List<Map<String, String>> results = dc.loadResults();
-            String c = results.get(0).get("count");            
+            String c = results.get(0).get("count");
             count = Long.parseLong(c);
         } catch (Exception ex) {
             Logger
@@ -234,7 +219,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         dc.addParam(iJournal.getId());
         dc.loadResult();
     }
-    
+
     @Override
     protected void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException {
         DotConnect dc = new DotConnect();
@@ -245,7 +230,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             sql.append(idx.getId());
         }
         sql.append(')');
-        
+
         dc.setSQL(sql.toString());
         Connection con = null;
 		try {
@@ -282,14 +267,14 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             		" WHERE time_entered < NOW() "+ sign + " INTERVAL '"+ time +" " + type.toString()  +"' ");
         else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
             reindexJournalCleanupSql.append("DELETE FROM dist_reindex_journal " +
-            		" WHERE CAST(time_entered AS TIMESTAMP) <  CAST(SYSTIMESTAMP "+ sign + 
+            		" WHERE CAST(time_entered AS TIMESTAMP) <  CAST(SYSTIMESTAMP "+ sign +
             		     "  INTERVAL '"+time+"' "+ type.toString() + " AS TIMESTAMP)");
-        
+
         if(includeInodeCheck)
             reindexJournalCleanupSql.append(" AND inode_to_index NOT IN " +
             		" (SELECT i.inode FROM inode i,contentlet c " +
             		"  WHERE type = 'contentlet' AND i.inode=c.inode AND c.identifier = ident_to_index)");
-        
+
         reindexJournalCleanupSql.append(" AND serverid = ?");
 
         Connection conn = null;
@@ -312,7 +297,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             throw new DotDataException(e1.getMessage(), e1);
         }
     }
-    
+
     @Override
     protected List<String> findCacheEntriesToRemove() throws DotDataException {
         DotConnect dc = new DotConnect();
@@ -384,7 +369,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                 // in the stored procedure
                 dc.setSQL("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
                 dc.loadResult();
-        
+
                 dc.setSQL("load_records_to_index @server_id='"+serverId+"', @records_to_fetch=50");
                 dc.setForceQuery(true);
                 results = dc.loadObjectResults(con);
@@ -394,7 +379,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                 dc.addParam(50);
                 results = dc.loadObjectResults(con);
             }
-            
+
             for (Map<String, Object> r : results) {
                 IndexJournal<T> ij = new IndexJournal<T>();
                 ij.setId(((Number)r.get("id")).longValue());
@@ -447,9 +432,9 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             ArrayList<Map<String, String>> ret = dc.loadResults(con);
             if (ret != null && ret.size() > 0
                     && UtilMethods.isSet(ret.get(0).get("max"))) {
-                
+
                 Long max = Long.parseLong(ret.get(0).get("max"));
-            
+
                 dc.setSQL("INSERT INTO dist_journal (object_to_index, time_entered, serverid, journal_type) " +
                 		" SELECT object_to_index, min(time_entered),  serverid, journal_type FROM dist_process p1 " +
                 		" WHERE NOT EXISTS (SELECT p.id FROM dist_process p, dist_journal j " +
@@ -458,12 +443,12 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                 		       " AND id <=? GROUP BY object_to_index, serverid, journal_type");
                 dc.addParam(max);
                 dc.loadResult(con);
-                
+
                 dc.setSQL("DELETE FROM dist_process WHERE id<=?");
                 dc.addParam(max);
                 dc.loadResult(con);
             }
-        
+
         } catch (SQLException e1) {
             throw new DotDataException(e1.getMessage(), e1);
         } finally {
@@ -485,7 +470,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             }
         }
     }
-    
+
     protected long recordsLeftToIndexForServer() throws DotDataException {
         return recordsLeftToIndexForServer(DbConnectionFactory.getConnection());
     }
@@ -501,41 +486,41 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
     @Override
     protected void refreshContentUnderFolder(Folder folder) throws DotDataException {
-        final String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+ 
+        final String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+
                            " SELECT distinct identifier.id, identifier.id, ?, ? " +
-                           " FROM contentlet join identifier ON contentlet.identifier=identifier.id "+ 
+                           " FROM contentlet join identifier ON contentlet.identifier=identifier.id "+
                            " WHERE identifier.host_inode=? AND identifier.parent_path LIKE ? ";
         DotConnect dc = new DotConnect();
         dc.setSQL(sql);
         dc.addParam(REINDEX_JOURNAL_PRIORITY_CONTENT_REINDEX);
-        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT); 
+        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT);
         dc.addParam(folder.getHostId());
-        String folderPath = APILocator.getIdentifierAPI().find(folder).getPath(); 
+        String folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
         dc.addParam(folderPath+"%");
         dc.loadResult();
     }
 
     @Override
     protected void refreshContentUnderHost(Host host) throws DotDataException {
-        String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+ 
+        String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+
                 " SELECT id, id, ?, ? " +
-                " FROM identifier "+ 
+                " FROM identifier "+
                 " WHERE asset_type='contentlet' and identifier.host_inode=?";
         DotConnect dc = new DotConnect();
         dc.setSQL(sql);
         dc.addParam(REINDEX_JOURNAL_PRIORITY_CONTENT_REINDEX);
-        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT); 
+        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT);
         dc.addParam(host.getIdentifier());
         dc.loadResult();
-        
+
         // https://github.com/dotCMS/dotCMS/issues/2229
-        sql =   " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+ 
+        sql =   " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+
                 " SELECT asset_id, asset_id, ?, ? " +
-                " FROM permission_reference "+ 
+                " FROM permission_reference "+
                 " WHERE reference_id=?";
         dc.setSQL(sql);
         dc.addParam(REINDEX_JOURNAL_PRIORITY_CONTENT_REINDEX);
-        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT); 
+        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT);
         dc.addParam(host.getIdentifier());
         dc.loadResult();
     }
@@ -549,7 +534,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     protected List<IndexJournal> viewReindexJournalData() throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("select count(*) as mycount,serverid,priority from dist_reindex_journal group by serverid,priority order by serverid, priority");
-        List<IndexJournal> journalList = new ArrayList<IndexJournal>(); 
+        List<IndexJournal> journalList = new ArrayList<IndexJournal>();
         List<Map<String, String>> results = dc.loadResults();
         for (Map<String, String> r : results) {
             IndexJournal index = new IndexJournal(r.get("serverid"),new Integer(r.get("mycount")),new Long(r.get("priority")));
@@ -561,13 +546,13 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     public class ClusterMutex {
         private String myLock = "lock table dist_lock write";
         private String myCommit = "unlock tables";
-        
+
         private String msLock = "SELECT * FROM dist_lock WITH (XLOCK)";
 
-        
+
         private String oraClusterLock = "LOCK TABLE DIST_JOURNAL IN EXCLUSIVE MODE";
         private String pgLock = "lock table DIST_JOURNAL;";
-        
+
         public ClusterMutex(Connection conn) {
             conn1 = conn;
         }
@@ -584,29 +569,29 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                 Statement s = conn1.createStatement();
                 s.execute(myLock);
             }
-            
-            
+
+
             if (DbConnectionFactory.getDBType().equals(
                     DbConnectionFactory.ORACLE)) {
                 conn1.setAutoCommit(false);
                 Statement s = conn1.createStatement();
                 s.execute(oraClusterLock);
             }
-            
+
             if (DbConnectionFactory.getDBType().equals(
                     DbConnectionFactory.MSSQL)) {
                 conn1.setAutoCommit(false);
                 Statement s = conn1.createStatement();
                 s.execute(msLock);
             }
-            
+
             if (DbConnectionFactory.getDBType().equals(
                     DbConnectionFactory.POSTGRESQL)) {
                 conn1.setAutoCommit(false);
                 Statement s = conn1.createStatement();
                 s.execute(pgLock);
             }
-            
+
         }
 
         public void unlockTable() throws SQLException {
