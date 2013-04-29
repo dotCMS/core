@@ -2290,7 +2290,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	if(oldFile==null || !oldFile.equals(incomingFile)){
 				                	//FileUtil.deltree(binaryFieldFolder);
 
-			                		FileUtil.move(incomingFile, newFile);
+			                		FileUtil.copyFile(incomingFile, newFile);
 
 			                		// what happens is we never clean up the temp directory
 			                		// answer: this happends --> https://github.com/dotCMS/dotCMS/issues/1071
