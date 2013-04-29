@@ -355,7 +355,7 @@ public class SubmitContentAction extends DispatchAction{
 				Map <String, Object> binaryvalues= new HashMap <String, Object>();
 				if (field.getFieldType().equals("binary"))
 				{
-					tempBinaryValues=processBinaryTempFileUpload( field.getVelocityVarName(), request) ;
+					tempBinaryValues=processBinaryTempFileUpload( field.getVelocityVarName(), request, field.getFieldContentlet()) ;
 					binaryvalues.put("field", field);
 					parametersName.add(tempBinaryValues.get("parameterName").toString());
 					Object ob = tempBinaryValues.get("parameterValues");
@@ -578,7 +578,7 @@ public class SubmitContentAction extends DispatchAction{
 	}
 
 	public Map<String, Object> processBinaryTempFileUpload(String binaryFieldName,
-			HttpServletRequest request) throws PortalException,
+			HttpServletRequest request, String fieldContentlet) throws PortalException,
 			SystemException, Exception {
 
 		UploadServletRequest uploadRequest = (UploadServletRequest) request;
@@ -603,7 +603,7 @@ public class SubmitContentAction extends DispatchAction{
 				fileName = uploadRequest.getFileName(binaryFieldName);
 
 				File tempUserFolder = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
-								+ java.io.File.separator + user.getUserId());
+								+ java.io.File.separator + user.getUserId() + java.io.File.separator + fieldContentlet);
 				if (!tempUserFolder.exists())
 					tempUserFolder.mkdirs();
 
