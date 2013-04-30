@@ -630,28 +630,87 @@
 
 	<!-- Creates an empty db. Attributes are defined in the build.properties file -->
 	<target name="create-db" >
-		<sql driver="${db.driver}"
-			url="${db.base.url}"
-			userid="${db.username}"
-			password="${db.password}"
-			autocommit="true"
-			classpathref="files-classpath">
-			DROP DATABASE IF EXISTS ${db.name};
-			CREATE DATABASE ${db.name};
-		</sql>
+		<if>
+			<equals arg1="${db.driver}" arg2="oracle.jdbc.OracleDriver"/>
+		<then>
+			<sql driver="${db.driver}"
+                url="${db.base.url}"
+                userid="${db.oracleadmin.user}"
+                password="${db.oracleadmin.pass}"
+                autocommit="true"
+                classpathref="files-classpath">
+				create user ${db.username} identified by ${db.password};
+				grant dba to ${db.username};
+				grant connect,resource to ${db.username};
+			</sql>
+	    </then>
+		<elseif>
+			<equals arg1="${db.driver}" arg2="net.sourceforge.jtds.jdbc.Driver"/>
+			<then>
+				<sql driver="${db.driver}"
+	                url="${db.admin.url}"
+	                userid="${db.username}"
+	                password="${db.password}"
+	                autocommit="true"
+	                classpathref="files-classpath">
+	                CREATE DATABASE ${db.name};
+					ALTER DATABASE ${db.name} SET READ_COMMITTED_SNAPSHOT ON;
+					ALTER DATABASE ${db.name} SET ALLOW_SNAPSHOT_ISOLATION ON;
+	            </sql>
+			</then>
+		</elseif>
+		<else>
+    		<sql driver="${db.driver}"
+    			url="${db.base.url}"
+    			userid="${db.username}"
+    			password="${db.password}"
+    			autocommit="true"
+    			classpathref="files-classpath">
+    			CREATE DATABASE ${db.name};
+    		</sql>
+		</else>
+		</if>
 	</target>
 
 	<!-- Drops the test db. Attributes are defined in the build.properties file -->
 	<target name="drop-db" >
-				<sql driver="${db.driver}"
-					url="${db.base.url}"
-					userid="${db.username}"
-					password="${db.password}"
-					autocommit="true"
-					classpathref="files-classpath">
-					DROP DATABASE IF EXISTS ${db.name};
-				</sql>
-			</target>
+		<if>
+			<equals arg1="${db.driver}" arg2="oracle.jdbc.OracleDriver"/>
+		<then>
+			<sql driver="${db.driver}"
+                url="${db.base.url}"
+                userid="${db.oracleadmin.user}"
+                password="${db.oracleadmin.pass}"
+                autocommit="true"
+                classpathref="files-classpath">
+				drop user ${db.username} cascade;
+            </sql>
+		</then>
+		<elseif>
+            <equals arg1="${db.driver}" arg2="net.sourceforge.jtds.jdbc.Driver"/>
+            <then>
+                <sql driver="${db.driver}"
+                    url="${db.admin.url}"
+                    userid="${db.username}"
+                    password="${db.password}"
+                    autocommit="true"
+                    classpathref="files-classpath">
+                	DROP DATABASE ${db.name};
+            	</sql>
+        	</then>
+    	 </elseif>
+		 <else>
+    		<sql driver="${db.driver}"
+    			url="${db.base.url}"
+    			userid="${db.username}"
+    			password="${db.password}"
+    			autocommit="true"
+    			classpathref="files-classpath">
+    			DROP DATABASE IF EXISTS ${db.name};
+    		</sql>
+		 </else>
+	    </if>
+	</target>
 
 	<!-- Prepare and relocate the server.xml and ROOT.xml used for the test while backing up the originals -->
 	<!-- The db attributes and tomcat port is defined in the build.properties file -->
@@ -666,6 +725,7 @@
 			<replacefilter token="{url}" value="${db.url}"/>
 			<replacefilter token="{username}" value="${db.username}"/>
 			<replacefilter token="{password}" value="${db.password}"/>
+			<replacefilter token="{valquery}" value="${db.valquery}"/>
 		</replace>
 	</target>
 
