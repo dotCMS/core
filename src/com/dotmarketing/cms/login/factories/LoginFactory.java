@@ -14,7 +14,6 @@ import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -57,11 +56,14 @@ public class LoginFactory {
                 }
 
                 return doLogin(userName, user.getPassword(), true, request, response);
-            } catch (Exception e) {
+            } catch (Exception e) { // $codepro.audit.disable logExceptions
+        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
+
             	return false;
             }
         } catch (Exception e) {
-            Logger.error(LoginFactory.class, "AutoLogin Failed: " + e);
+    		SecurityLogger.logInfo(LoginFactory.class,"Auto login failed (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
+
             
             if(useSalesForceLoginFilter){
             	String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
@@ -89,12 +91,14 @@ public class LoginFactory {
                          
                         return true;
                          
-                     } catch (Exception ex) {
+                     } catch (Exception ex) { // $codepro.audit.disable logExceptions
+     	        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login to salesforce from IP: " + request.getRemoteAddr());
+
                      	return false;
                      }
             	}
             	else
-            		Logger.info(LoginFactory.class, "Unable to retrieve user from SalesForce with id: " + decryptedId);
+            		SecurityLogger.logInfo(LoginFactory.class, "Unable to retrieve user from SalesForce with id: " + decryptedId);
             		
         }
 
@@ -122,10 +126,14 @@ public class LoginFactory {
         	
         	if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
 				if(userName.equalsIgnoreCase(APILocator.getUserAPI().getSystemUser().getEmailAddress())){
+	        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login with email as " + userName + " from IP: " + request.getRemoteAddr());
+
 					return false;
 				}
 			} else {
 				if(userName.equalsIgnoreCase(APILocator.getUserAPI().getSystemUser().getUserId())){
+	        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login with userID as " + userName + " from IP: " + request.getRemoteAddr());
+
 					return false;
 				}
 			}
@@ -171,12 +179,16 @@ public class LoginFactory {
 	            }
 	            
 	            if ((user == null) || (!UtilMethods.isSet(user.getEmailAddress()))) {
+	        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login or no email set for " + userName + " from IP: " + request.getRemoteAddr());
+
 	            	throw new NoSuchUserException();
 	            }
 	            
 	            if (user.isNew() || 
 	            		(!Config.getBooleanProperty("ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN", false) && !user.isActive())) {
-	            	  return false;
+	        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login to an inactive account as " + userName + " from IP: " + request.getRemoteAddr());
+
+	            	return false;
 	            }
 	            
 	            match = user.getPassword().equals(password) || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
@@ -225,6 +237,8 @@ public class LoginFactory {
 	            		match = false;
 		            	user.setFailedLoginAttempts(user.getFailedLoginAttempts()+1);
 		            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
+		        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
+
 		            	
 	            	}
 	            }
@@ -290,10 +304,14 @@ public class LoginFactory {
 
         	if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
  				if(userName.equalsIgnoreCase(APILocator.getUserAPI().getSystemUser().getEmailAddress())){
+ 					SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made  - you cannot login as the system user");
+
  					return false;
  				}
  			} else {
  				if(userName.equalsIgnoreCase(APILocator.getUserAPI().getSystemUser().getUserId())){
+ 					SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made  - you cannot login as the system user");
+
  					return false;
  				}
  			}
@@ -339,12 +357,16 @@ public class LoginFactory {
  	            }
 
  	            if ((user == null) || (!UtilMethods.isSet(user.getEmailAddress()))) {
+ 					SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made  - user cannot be found");
+
  	            	throw new NoSuchUserException();
  	            }
 
  	            if (user.isNew() ||
  	            		(!Config.getBooleanProperty("ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN", false) && !user.isActive())) {
- 	            	  return false;
+ 					SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made  - user is marked inactive");
+
+ 	            	return false;
  	            }
 
  	            match = user.getPassword().equals(password) || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
@@ -363,9 +385,12 @@ public class LoginFactory {
                 return true;
             }
         } catch (NoSuchUserException e) {
+			SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made :" + e);
+
         	throw e;
         } catch (Exception e) {
-            Logger.error(LoginFactory.class, "Login Failed" + e);
+			SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made :" + e);
+
         }
 
         return false;
