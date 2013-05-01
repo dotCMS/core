@@ -23,6 +23,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.CustomScoreQueryBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -1272,17 +1273,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    Client client=new ESClient().getClient();
 	    SearchResponse resp = null;
         try {
-        	QueryStringQueryBuilder qb = QueryBuilders.queryString(qq);
-        	SearchRequestBuilder srb = client.prepareSearch();
-
-        	if(UtilMethods.isSet(sortBy) && sortBy.equals("random")) {
-        		CustomScoreQueryBuilder cs = new CustomScoreQueryBuilder(qb);
-        		cs.script("random()");
-        		srb.setQuery(cs);
-        	} else {
-        		srb.setQuery(qb);
-        	}
-
+        	
+        	SearchRequestBuilder srb = client.prepareSearch().setQuery(QueryBuilders.matchAllQuery());
+        	
+        	srb.setFilter(
+        			FilterBuilders.queryFilter(
+        					QueryBuilders.queryString(qq)).cache(true));
+        	
         	srb.setIndices(indexToHit);
         	srb.addFields("inode","identifier");
 
@@ -1292,18 +1289,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 srb.setFrom(offset);
 
             if(UtilMethods.isSet(sortBy) && !sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
-            	String[] sortbyArr=sortBy.split(",");
-            	for (String sort : sortbyArr) {
-            		String[] x=sort.trim().split(" ");
-//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase()).order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-//                            SortOrder.DESC : SortOrder.ASC));
-//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + ".org").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-//                          SortOrder.DESC : SortOrder.ASC));
-            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-                                SortOrder.DESC : SortOrder.ASC));
-//            		srb.addSort(x[0].toLowerCase(),x.length>1 && x[1].equalsIgnoreCase("desc") ?
-//                            SortOrder.DESC : SortOrder.ASC);
-				}
+            	if(sortBy.equals("random")) {
+            		srb.addSort(SortBuilders.scriptSort("Math.random()", "number"));
+            	}
+            	else {
+            		String[] sortbyArr=sortBy.split(",");
+	            	for (String sort : sortbyArr) {
+	            		String[] x=sort.trim().split(" ");
+	//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase()).order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
+	//                            SortOrder.DESC : SortOrder.ASC));
+	//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + ".org").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
+	//                          SortOrder.DESC : SortOrder.ASC));
+	            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
+	                                SortOrder.DESC : SortOrder.ASC));
+	//            		srb.addSort(x[0].toLowerCase(),x.length>1 && x[1].equalsIgnoreCase("desc") ?
+	//                            SortOrder.DESC : SortOrder.ASC);
+	            		
+					}
+            	}
             }
             try{
             	resp = srb.execute().actionGet();
