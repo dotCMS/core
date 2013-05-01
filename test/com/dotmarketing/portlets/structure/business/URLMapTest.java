@@ -302,9 +302,9 @@ public class URLMapTest extends TestBase  {
 			try {
 				HibernateUtil.rollbackTransaction();
 			} catch (DotHibernateException e1) {
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+				Logger.error(URLMapTest.class,e.getMessage(),e1);
 			}
-			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
+			Logger.error(URLMapTest.class,e.getMessage(),e);
 			throw e;
 		}
 	}
