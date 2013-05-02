@@ -35,11 +35,11 @@ public class PluginFileMerger {
 	private String name;
 	private static Logger logger=Logger.getLogger(PluginFileMerger.class);
 	boolean deployAppClassLoader = false;
-	
+
 	public PluginFileMerger () {
-		
+
 	}
-	
+
 	public void undeploy(String rootPath, String pluginPath) {
 		this.rootPath = rootPath;
 		logger.debug("Starting undeploy");
@@ -53,12 +53,12 @@ public class PluginFileMerger {
 			}
 
 		}
-		
+
 		logger.debug("Deleting files from WEB-INF/classes");
 		File classesDir = new File(rootPath + File.separator + "WEB-INF" + File.separator + "classes" + File.separator);
 		deleteRecursive(classesDir);
 	}
-	
+
 	private static void deleteRecursive(File dir){
 		File[] files = dir.listFiles();
 		if (files != null) {
@@ -288,12 +288,12 @@ public class PluginFileMerger {
 				+ File.separator + "portlet-ext.xml"), "<!-- BEGIN PLUGIN:"
 				+ name + " -->", "<!-- END PLUGIN:" + name + " -->",
 				"<!-- BEGIN OVERRIDE:" + name, " END OVERRIDE:" + name + " -->");
-		
+
 		removeFragmentXML(new File(rootPath + File.separator + "WEB-INF"
 				+ File.separator + "urlrewrite.xml"), "<!-- BEGIN PLUGIN:"
 				+ name + " -->", "<!-- END PLUGIN:" + name + " -->",
 				"<!-- BEGIN OVERRIDE:" + name, " END OVERRIDE:" + name + " -->");
-		
+
 		removeFragmentXML(new File(rootPath + File.separator + "WEB-INF"
 				+ File.separator + "liferay-portlet-ext.xml"),
 				"<!-- BEGIN PLUGIN:" + name + " -->", "<!-- END PLUGIN:" + name
@@ -325,14 +325,14 @@ public class PluginFileMerger {
 				+ "classes" + File.separator + "dotmarketing-config.properties"),
 				"## BEGIN PLUGIN:" + name, "## END PLUGIN:" + name, "#",
 				"## OVERRIDE:" + name);
-		
+
 		removeLanguageProperties(jar);
-		
+
 		removeFiles();
 	}
 
 	private void removeLanguageProperties(JarFile jar) throws IOException {
-		
+
 		String[] languageFiles = PluginUtil.listFiles("(conf/Language-ext(.*).properties)", jar);
 
 		Pattern langFilePattern = Pattern.compile("conf/(Language-ext(.*).properties)");
@@ -363,9 +363,9 @@ public class PluginFileMerger {
 					if(langFW != null)
 						langFW.close();
 				}
-				
+
 			}
-		}		
+		}
 	}
 
 	public void removeFiles() {
@@ -402,32 +402,32 @@ public class PluginFileMerger {
 					   int size = path.split("/").length;
 					   for(int j=size;j>0;j--){
 							File dir = new File(fullPath);
-							 if (dir.exists() && dir.listFiles().length == 0) 
+							 if (dir.exists() && dir.listFiles().length == 0)
 							   dir.delete();
 							fullPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
 					   }
 			        }
-				}	
+				}
 			}
-			
+
 			deleteDirectory(new File(staticDest));
 			deleteDirectory(new File(velocityDest));
 			deleteDirectory(new File(jspDest));
 			deleteFiles(libDest,"pluginlib-"+name+"-",".jar");
-			
+
 			//Look for any TinyMCE plugins
 			String tinyMCEDest = rootPath + File.separator + "html" + File.separator  + "js" + File.separator  + "tinymce" + File.separator +   "jscripts" + File.separator  + "tiny_mce" + File.separator  +  File.separator
 			+ "plugins" + File.separator;
 			final String prefix= "plugin_"+name+"_";
 			FileFilter filter=new FileFilter() {
-	
+
 				public boolean accept(File pathname) {
 					if (pathname.getName().startsWith(prefix)) {
 						return true;
 					}
 					return false;
 				}
-				
+
 			};
 			File tinyMCEDir=new File(tinyMCEDest);
 			File[] tinyMCEPlugins=tinyMCEDir.listFiles(filter);
@@ -438,7 +438,7 @@ public class PluginFileMerger {
 			logger.error(e.getMessage(), e);
 		}
 	}
-	
+
 	private boolean deleteFiles(String directory,String prefix,String postfix) {
 		File dir=new File(directory);
 		final String fPrefix=prefix;
@@ -451,7 +451,7 @@ public class PluginFileMerger {
 				}
 				return false;
 			}
-			
+
 		});
 		if(list!= null){
 			for (String item:list) {
@@ -462,7 +462,7 @@ public class PluginFileMerger {
 				}
 			}
 		}
-		
+
 		return true;
 	}
 
@@ -508,13 +508,13 @@ public class PluginFileMerger {
 				+ File.separator + "dwr.xml"), "<!-- BEGIN PLUGINS -->",
 				"<!-- END PLUGINS -->", "<!-- BEGIN PLUGIN:" + name + " -->",
 				"<!-- END PLUGIN:" + name + " -->", dwr, overrideMap,
-				"<!-- BEGIN OVERRIDE:" + name + "-->",
-				"<!-- END OVERRIDE:" + name + " -->", "<!-- BEGIN OVERRIDE");
+				"<!-- BEGIN OVERRIDE:" + name,
+				" END OVERRIDE:" + name + " -->", "<!-- BEGIN OVERRIDE");
 
 		String web = PluginUtil.getTextData("conf/web-ext.xml", jar);
 		mergeWebXML(web,
 				new File(rootPath + File.separator + "WEB-INF/web.xml"));
-		
+
 		String genWeb = PluginUtil.getTextData("conf/generated_web.xml", jar);
 		if (genWeb!=null) {
 		genWeb=genWeb.replaceAll("<url-pattern>/", "<url-pattern>/plugins/"+name+"/");
@@ -523,7 +523,7 @@ public class PluginFileMerger {
 				"<!-- END JSPS -->", "<!-- BEGIN PLUGIN:" + name + " -->",
 				"<!-- END PLUGIN:" + name + " -->", genWeb);
 		}
-	
+
 		String portal = PluginUtil.getTextData("conf/portal-ext.properties",
 				jar);
 		merge(new File(rootPath + File.separator + "WEB-INF" + File.separator
@@ -543,7 +543,7 @@ public class PluginFileMerger {
 				+ "portlet-ext.xml"), "<!-- BEGIN PLUGINS -->",
 				"<!-- END PLUGINS -->", "<!-- BEGIN PLUGIN:" + name + " -->",
 				"<!-- END PLUGIN:" + name + " -->", portlet);
-		
+
 		String urlrewrite = PluginUtil.getTextData("conf/urlrewrite-ext.xml", jar);
 		merge(new File(rootPath + File.separator + "WEB-INF" + File.separator
 				+ "urlrewrite.xml"), "<!-- BEGIN PLUGINS -->",
@@ -607,13 +607,13 @@ public class PluginFileMerger {
 		logger.info("Starting to copy files to file system");
 		copyFiles(plugin,name);
 		logger.info("Finished to copy files to file system");
-		
+
 		//Copy tiny_mce plugins
-		
+
 	}
 
 	private void mergeLanguageFiles(JarFile jar) throws IOException {
-		
+
 		String[] languageFiles = PluginUtil.listFiles("(conf/Language-ext(.*).properties)", jar);
 
 		Pattern langFilePattern = Pattern.compile("conf/(Language-ext(.*).properties)");
@@ -646,10 +646,10 @@ public class PluginFileMerger {
 					if(langFW != null)
 						langFW.close();
 				}
-				
+
 			}
 		}
-		
+
 	}
 
 	private void copyFiles(File plugin,String name) throws IOException {
@@ -689,16 +689,16 @@ public class PluginFileMerger {
 					}else{
 					    dropStaticFile(libDest, entry, jar, "pluginlib-"+name+"-", true, true);
 					}
-					
+
 				}
-				
+
 				if (entry.getName().startsWith("jsp/")) {
 					// Extract it
 					dropStaticFile(jspDest, entry, jar, null, true, true);
 
 				}
 				if (entry.getName().startsWith("tiny_mce/")) {
-					// Extract it					
+					// Extract it
 					// Use _ instead of -, otherwise js breaks
 					dropStaticFile(tinyMCEDest, entry, jar, "plugin_"+name+"_", false, true);
 
@@ -716,9 +716,9 @@ public class PluginFileMerger {
 		if (prefix == null) {
 			prefix = "";
 		}
-		
+
 		String path = entry.getName();
-		
+
 		String fileName=path.substring(path.lastIndexOf("/")+1);
 		if (stripParentDir) {
 			path = path.substring(path.indexOf("/"));
@@ -738,7 +738,7 @@ public class PluginFileMerger {
 			} else {
 				full="/"+prefix +path.substring(0)+File.separator+fileName;
 			}
-			
+
 		}
 		logger.info("Extracting: " + entry.getName()
 				+ " to destination: " + dest + " as " + full);
@@ -775,13 +775,13 @@ public class PluginFileMerger {
 		}
 
 	}
-	
+
 	public static void dropStaticFile(String dest, String dest2, ZipEntry entry, JarFile jar,
 			String prefix, boolean prefixFile, boolean stripParentDir) throws IOException {
 		if (prefix == null) {
 			prefix = "";
 		}
-			
+
 			String path = entry.getName();
 
 			String fileName=path.substring(path.lastIndexOf("/")+1);
@@ -790,7 +790,7 @@ public class PluginFileMerger {
 			}
 			path = path.substring(0, path.lastIndexOf("/"));
 			String	full=null;
-			
+
 
 			if (prefixFile) {
 				full=path+File.separator+prefix+fileName;
@@ -840,7 +840,7 @@ public class PluginFileMerger {
 				out.close();
 				in.close();
 			}
-			
+
 			if(entry.getName().endsWith(".jar")){
 				logger.info("Extracting jar " + efile.getName());
 				FileInputStream fis = new FileInputStream(efile);
@@ -860,7 +860,7 @@ public class PluginFileMerger {
 							logger.error("Cannot create: " + folder);
 							System.exit(0);
 						}
-				
+
 		        		 if(!zipEntry.isDirectory()) {
 				                //No need to use buffered streams since we're doing our own buffering
 				                final FileOutputStream fos = new FileOutputStream(fileToWrite);
@@ -870,7 +870,7 @@ public class PluginFileMerger {
 				                }
 				                fos.close();
 				            }
-			        
+
 					}
 				}
 		        zis.close();
@@ -907,7 +907,7 @@ public class PluginFileMerger {
 		map2 = new HashMap<String, String>();
 		map2.put("context-param", "param-name");
 		overrideMaps.put("context-param", map2);
-		
+
 		entities.add("security-constraint");
 
 		entities.add("listener");
@@ -963,7 +963,7 @@ public class PluginFileMerger {
 //		map2 = new HashMap<String, String>();
 		map2.put("plug-in", "class");
 		overrideMaps.put("plug-in", map2);
-		
+
 		Map<String, String> map = separateXML(fragment, entities);
 
 		for (String key : map.keySet()) {
@@ -1029,7 +1029,7 @@ public class PluginFileMerger {
 
 	/**
 	 * Merges and overrides properties
-	 * 
+	 *
 	 * @param input
 	 * @param targetCommentBegin
 	 * @param targetCommentEnd
@@ -1124,7 +1124,7 @@ public class PluginFileMerger {
 
 	/**
 	 * Merges and overrides XML files.
-	 * 
+	 *
 	 * @param input
 	 * @param targetCommentBegin
 	 * @param targetCommentEnd
@@ -1135,7 +1135,7 @@ public class PluginFileMerger {
 	 * @param overrideBegin
 	 * @param overrideEnd
 	 * @param override
-	 *            
+	 *
 	 * @return
 	 * @throws IOException
 	 */
@@ -1254,7 +1254,7 @@ public class PluginFileMerger {
 
 	/**
 	 * Merges and overrides XML files.
-	 * 
+	 *
 	 * @param input
 	 * @param targetCommentBegin
 	 * @param targetCommentEnd
@@ -1265,7 +1265,7 @@ public class PluginFileMerger {
 	 * @param overrideBegin
 	 * @param overrideEnd
 	 * @param override
-	 *            
+	 *
 	 * @return
 	 * @throws IOException
 	 */
@@ -1361,51 +1361,6 @@ public class PluginFileMerger {
 				// If not inside range, comment out.
 			}
 			buf.append(s.substring(pos));
-
-			s = buf.toString();
-			buf = new StringBuffer();
-
-			// <(form-bean) [^(/)]*?name="(ResumeForm|JobsForm|mapsMapsForm)"
-			// [^(/)]*?/>
-			patternText = "<(" + tagName + ") [^(/)]*?" + keyName + "=\"(";
-			for (String entity : keyList) {
-				patternText += entity + "|";
-			}
-			patternText = patternText.substring(0, patternText.length() - 1);
-			patternText += ")\" [^(/)]*?/>";
-
-			p = Pattern.compile(patternText, Pattern.DOTALL);
-			m = p.matcher(s);
-
-			pos = 0;
-			while (m.find()) {
-				int from = m.start();
-				int to = m.end();
-				buf.append(s.substring(pos, from));
-				pos = from;
-
-				if (!(from > startIndex && (to < endIndex))) {
-					// Figure out if it's commented out
-					boolean commented = s.substring(
-							s.substring(0, from).lastIndexOf(">"), from)
-							.contains(override);
-					if (commented) {
-						buf.append(s.substring(from, to));
-					} else {
-						buf.append(overrideBegin);
-						buf.append("\n");
-						buf.append(s.substring(from, to));
-						buf.append("\n");
-						buf.append(overrideEnd);
-					}
-				} else {
-					buf.append(s.substring(from, to));
-				}
-				pos = to;
-				// If not inside range, comment out.
-			}
-			buf.append(s.substring(pos));
-
 		}
 		return buf.toString();
 	}
