@@ -152,7 +152,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		ses.setAttribute(com.dotmarketing.util.WebKeys.LAYOUT, layout);
 
 
-		int structureType = req.getParameter("contype") == null ? 0:Integer.valueOf(req.getParameter("contype"));
+		int structureType = req.getParameter("contentStructureType") == null ? 0:Integer.valueOf(req.getParameter("contentStructureType"));
 		if(structureType==Structure.STRUCTURE_TYPE_FORM){
 			if(InodeUtils.isSet(req.getParameter("structure_id"))){
 				referer=referer+"&structure_id="+req.getParameter("structure_id");
