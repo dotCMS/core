@@ -1247,10 +1247,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	
 	private SearchRequestBuilder createRequest(Client client, String query) {
 		if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false)) {
-			return client.prepareSearch().setQuery(
+			/* this is filtered query
+			 * return client.prepareSearch().setQuery(
         			QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), 
                         FilterBuilders.queryFilter(
-        					QueryBuilders.queryString(query)).cache(true)));
+        					QueryBuilders.queryString(query)).cache(true)));*/
+			/* this is a match_all query with a separated filter */
+			return client.prepareSearch().setQuery(QueryBuilders.matchAllQuery())
+					.setFilter(FilterBuilders.queryFilter(
+							QueryBuilders.queryString(query)).cache(true));
 		}
 		else {
 			return client.prepareSearch().setQuery(QueryBuilders.queryString(query));
