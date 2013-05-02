@@ -72,6 +72,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
@@ -83,7 +84,6 @@ import com.liferay.portal.model.User;
 public class ESContentFactoryImpl extends ContentletFactory {
 	private ContentletCache cc = CacheLocator.getContentletCache();
 	private ESClient client = null;
-	private ESMappingAPIImpl mapping = new ESMappingAPIImpl();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	private static final Contentlet cache404Content= new Contentlet();
@@ -837,12 +837,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			sw.append(" +languageid:" + languageId);
 			sw.append(" +deleted:false");
 
-			QueryBuilder builder = QueryBuilders.queryString(sw.toString());
-
-			//QueryBuilder builder = QueryBuilders.termQuery("identifier", identifier);
+			SearchRequestBuilder request = createRequest(client, sw.toString());
 
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-			SearchResponse response = client.prepareSearch((live ? info.live : info.working)).setQuery(builder)
+			SearchResponse response = request.setIndices((live ? info.live : info.working))
 			        .addFields("inode","identifier").execute().actionGet();
 			SearchHits hits = response.hits();
 			Contentlet contentlet = find(hits.getAt(0).field("inode").getValue().toString());
@@ -973,9 +971,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected List<Contentlet> findContentletsByHost(String hostId, int limit, int offset) throws DotDataException {
 		try {
 
-			BoolQueryBuilder builder = QueryBuilders.boolQuery().must(QueryBuilders.fieldQuery("conhost", hostId));
-
-			SearchResponse response = client.getClient().prepareSearch().setQuery(builder).
+			SearchResponse response = createRequest(client.getClient(), "+conhost:"+hostId).
 			        setSize(limit).setFrom(offset).addFields("inode","identifier").execute()
 					.actionGet();
 
@@ -1251,6 +1247,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return crb.execute().actionGet().count();
 	}
 	
+	private SearchRequestBuilder createRequest(Client client, String query) {
+		if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false)) {
+			return client.prepareSearch().setQuery(
+        			QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), 
+                        FilterBuilders.queryFilter(
+        					QueryBuilders.queryString(query)).cache(true)));
+		}
+		else {
+			return client.prepareSearch().setQuery(QueryBuilders.queryString(query));
+		}
+	}
+	
 	@Override
 	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
 	    String qq=findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
@@ -1274,11 +1282,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    SearchResponse resp = null;
         try {
         	
-        	SearchRequestBuilder srb = client.prepareSearch().setQuery(QueryBuilders.matchAllQuery());
-        	
-        	srb.setFilter(
-        			FilterBuilders.queryFilter(
-        					QueryBuilders.queryString(qq)).cache(true));
+        	SearchRequestBuilder srb = createRequest(client,qq);
         	
         	srb.setIndices(indexToHit);
         	srb.addFields("inode","identifier");
