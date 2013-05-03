@@ -1361,6 +1361,53 @@ public class PluginFileMerger {
 				// If not inside range, comment out.
 			}
 			buf.append(s.substring(pos));
+
+			s = buf.toString();
+			buf = new StringBuffer();
+			startIndex = s.indexOf(startComment);
+			endIndex = s.indexOf(endComment);
+
+			// <(form-bean) [^(/)]*?name="(ResumeForm|JobsForm|mapsMapsForm)"
+			// [^(/)]*?/>
+			patternText = "<(" + tagName + ") [^(/)]*?" + keyName + "=\"(";
+			for (String entity : keyList) {
+				patternText += entity + "|";
+			}
+			patternText = patternText.substring(0, patternText.length() - 1);
+			patternText += ")\" [^(/)]*?/>";
+
+			p = Pattern.compile(patternText, Pattern.DOTALL);
+			m = p.matcher(s);
+
+			pos = 0;
+			while (m.find()) {
+				int from = m.start();
+				int to = m.end();
+				buf.append(s.substring(pos, from));
+				pos = from;
+
+				if (!(from > startIndex && (to < endIndex))) {
+					// Figure out if it's commented out
+					boolean commented = s.substring(
+							s.substring(0, from).lastIndexOf(">"), from)
+							.contains(override);
+					if (commented) {
+						buf.append(s.substring(from, to));
+					} else {
+						buf.append(overrideBegin);
+						buf.append("\n");
+						buf.append(s.substring(from, to));
+						buf.append("\n");
+						buf.append(overrideEnd);
+					}
+				} else {
+					buf.append(s.substring(from, to));
+				}
+				pos = to;
+				// If not inside range, comment out.
+			}
+			buf.append(s.substring(pos));
+
 		}
 		return buf.toString();
 	}
