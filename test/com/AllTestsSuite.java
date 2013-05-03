@@ -2,6 +2,7 @@ package com;
 
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
+import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
@@ -44,7 +45,8 @@ import org.junit.runners.Suite;
     ESContentletIndexAPITest.class,
     DotCMSCMISTest.class,
     WebResourceTest.class,
-    RoleResourceTest.class
+    RoleResourceTest.class,
+    ESIndexSpeedTest.class
 })
 public class AllTestsSuite {
 
