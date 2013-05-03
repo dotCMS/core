@@ -20,13 +20,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.lucene.queryParser.ParseException;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -44,7 +47,60 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 
 @Path("/content")
 public class ContentResource extends WebResource {
-
+	/**
+	 * performs a call to APILocator.getContentletAPI().searchIndex() with the 
+	 * specified parameters.
+	 * Example call using curl:
+	 * curl -XGET http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0 
+	 * 
+	 * @param request request object
+	 * @param query lucene query
+	 * @param sortBy field to sortby
+	 * @param limit how many results return
+	 * @param offset how many results skip 
+	 * @return json array of objects. each object with inode and identifier
+	 * @throws ParseException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws JSONException
+	 */
+	@GET
+	@Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String indexSearch(@Context HttpServletRequest request, @PathParam("query") String query, @PathParam("sortby") String sortBy, @PathParam("limit") int limit, @PathParam("offset") int offset) throws ParseException, DotSecurityException, DotDataException, JSONException {
+		InitDataObject initData = init(null, true, request, false);
+		
+		List<ContentletSearch> searchIndex = APILocator.getContentletAPI().searchIndex(query, limit, offset, sortBy, initData.getUser(), true);
+		JSONArray array=new JSONArray();
+		for(ContentletSearch cs : searchIndex) {
+			array.put(new JSONObject()
+			        .put("inode", cs.getInode())
+					.put("identifier", cs.getIdentifier()));
+		}
+		return array.toString();
+	}
+	
+	/**
+	 * Performs a call to APILocator.getContentletAPI().indexCount()
+	 * using the specified parameters.
+	 * 
+	 * Example call using curl:
+	 * curl -XGET http://localhost:8080/api/content/indexcount/+structurename:webpagecontent
+	 * 
+	 * @param request request obejct
+	 * @param query lucene query to count on
+	 * @return a string with the count
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Path("/indexcount/{query}")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String indexCount(@Context HttpServletRequest request, @PathParam("query") String query) throws DotDataException, DotSecurityException {
+		InitDataObject initData = init(null, true, request, false);
+		return Long.toString(APILocator.getContentletAPI().indexCount(query, initData.getUser(), true));
+	}
+	
 	@GET
 	@Path("/{params:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
