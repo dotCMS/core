@@ -21,8 +21,7 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.CustomScoreQueryBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -71,6 +70,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
@@ -82,7 +82,6 @@ import com.liferay.portal.model.User;
 public class ESContentFactoryImpl extends ContentletFactory {
 	private ContentletCache cc = CacheLocator.getContentletCache();
 	private ESClient client = null;
-	private ESMappingAPIImpl mapping = new ESMappingAPIImpl();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	private static final Contentlet cache404Content= new Contentlet();
@@ -836,12 +835,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			sw.append(" +languageid:" + languageId);
 			sw.append(" +deleted:false");
 
-			QueryBuilder builder = QueryBuilders.queryString(sw.toString());
-
-			//QueryBuilder builder = QueryBuilders.termQuery("identifier", identifier);
+			SearchRequestBuilder request = createRequest(client, sw.toString());
 
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-			SearchResponse response = client.prepareSearch((live ? info.live : info.working)).setQuery(builder)
+			SearchResponse response = request.setIndices((live ? info.live : info.working))
 			        .addFields("inode","identifier").execute().actionGet();
 			SearchHits hits = response.hits();
 			Contentlet contentlet = find(hits.getAt(0).field("inode").getValue().toString());
@@ -972,9 +969,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected List<Contentlet> findContentletsByHost(String hostId, int limit, int offset) throws DotDataException {
 		try {
 
-			BoolQueryBuilder builder = QueryBuilders.boolQuery().must(QueryBuilders.fieldQuery("conhost", hostId));
-
-			SearchResponse response = client.getClient().prepareSearch().setQuery(builder).
+			SearchResponse response = createRequest(client.getClient(), "+conhost:"+hostId).
 			        setSize(limit).setFrom(offset).addFields("inode","identifier").execute()
 					.actionGet();
 
@@ -1250,6 +1245,23 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return crb.execute().actionGet().count();
 	}
 	
+	private SearchRequestBuilder createRequest(Client client, String query) {
+		if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false)) {
+			/* this is filtered query
+			 * return client.prepareSearch().setQuery(
+        			QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), 
+                        FilterBuilders.queryFilter(
+        					QueryBuilders.queryString(query)).cache(true)));*/
+			/* this is a match_all query with a separated filter */
+			return client.prepareSearch().setQuery(QueryBuilders.matchAllQuery())
+					.setFilter(FilterBuilders.queryFilter(
+							QueryBuilders.queryString(query)).cache(true));
+		}
+		else {
+			return client.prepareSearch().setQuery(QueryBuilders.queryString(query));
+		}
+	}
+	
 	@Override
 	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
 	    String qq=findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
@@ -1272,17 +1284,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    Client client=new ESClient().getClient();
 	    SearchResponse resp = null;
         try {
-        	QueryStringQueryBuilder qb = QueryBuilders.queryString(qq);
-        	SearchRequestBuilder srb = client.prepareSearch();
-
-        	if(UtilMethods.isSet(sortBy) && sortBy.equals("random")) {
-        		CustomScoreQueryBuilder cs = new CustomScoreQueryBuilder(qb);
-        		cs.script("random()");
-        		srb.setQuery(cs);
-        	} else {
-        		srb.setQuery(qb);
-        	}
-
+        	
+        	SearchRequestBuilder srb = createRequest(client,qq);
+        	
         	srb.setIndices(indexToHit);
         	srb.addFields("inode","identifier");
 
@@ -1292,18 +1296,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 srb.setFrom(offset);
 
             if(UtilMethods.isSet(sortBy) && !sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
-            	String[] sortbyArr=sortBy.split(",");
-            	for (String sort : sortbyArr) {
-            		String[] x=sort.trim().split(" ");
-//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase()).order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-//                            SortOrder.DESC : SortOrder.ASC));
-//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + ".org").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-//                          SortOrder.DESC : SortOrder.ASC));
-            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-                                SortOrder.DESC : SortOrder.ASC));
-//            		srb.addSort(x[0].toLowerCase(),x.length>1 && x[1].equalsIgnoreCase("desc") ?
-//                            SortOrder.DESC : SortOrder.ASC);
-				}
+            	if(sortBy.equals("random")) {
+            		srb.addSort(SortBuilders.scriptSort("Math.random()", "number"));
+            	}
+            	else {
+            		String[] sortbyArr=sortBy.split(",");
+	            	for (String sort : sortbyArr) {
+	            		String[] x=sort.trim().split(" ");
+	//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase()).order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
+	//                            SortOrder.DESC : SortOrder.ASC));
+	//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + ".org").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
+	//                          SortOrder.DESC : SortOrder.ASC));
+	            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
+	                                SortOrder.DESC : SortOrder.ASC));
+	//            		srb.addSort(x[0].toLowerCase(),x.length>1 && x[1].equalsIgnoreCase("desc") ?
+	//                            SortOrder.DESC : SortOrder.ASC);
+	            		
+					}
+            	}
             }
             try{
             	resp = srb.execute().actionGet();
