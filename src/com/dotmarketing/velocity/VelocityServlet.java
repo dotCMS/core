@@ -133,7 +133,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
-		Logger.info(this, "TEST ME2");
+		
 		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) && LicenseUtil.getLevel() < 399) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
