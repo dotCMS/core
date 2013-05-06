@@ -492,11 +492,11 @@
                         <classpath refid="files-classpath" />
                         <doctitle>
                                 <![CDATA[
-                        <h1>dotCMS 2.1 API Specification</h1>
+                        <h1>dotCMS 2.3 API Specification</h1>
                         ]]>
                         </doctitle>
                         <bottom>
-                                <![CDATA[<i>Copyright &#169; 2012 dotCMS Inc. All Rights Reserved.</i>]]></bottom>
+                                <![CDATA[<i>Copyright &#169; 2013 dotCMS Inc. All Rights Reserved.</i>]]></bottom>
                 <tag name="todo" scope="all" description="To do:" />
         </javadoc>
 
