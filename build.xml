@@ -407,7 +407,7 @@
 
 		<antcall target="clean" />
 
-		<antcall target="deploy-core" />
+		<antcall target="deploy-no-jsp" />
 
         <!--dotserver code (./dotserver)-->
         <copy todir="${distribution.dotserver.output}">
@@ -448,7 +448,7 @@
 
 			<antcall target="clean" />
 
-			<antcall target="deploy-core" />
+			<antcall target="deploy-no-jsp" />
 
 			<!--dotserver code (./dotserver)-->
 		 	<copy todir="${distribution.dotserver.output}">
