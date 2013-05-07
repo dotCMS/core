@@ -12,13 +12,12 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
-import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
 
 public class PluginMergerTest extends TestBase {
 
 	@Test
-	public void testMergeByAttribute() {
+	public void testMergeByAttribute() throws IOException {
 		PluginFileMerger fileMerger = new PluginFileMerger();
 
 		String rootPath = System.getProperty( "user.dir" ) + File.separator + "dotCMS";
@@ -40,42 +39,36 @@ public class PluginMergerTest extends TestBase {
 		FileUtil.copyFile(dwrFile, dwrCopy, false);
 
 
-		try {
-			fileMerger.mergeByAttribute(dwrCopy, "<!-- BEGIN PLUGINS -->",
-					"<!-- END PLUGINS -->", "<!-- BEGIN PLUGIN:" + name + " -->",
-					"<!-- END PLUGIN:" + name + " -->", dwr, overrideMap,
-					"<!-- BEGIN OVERRIDE:" + name,
-					" END OVERRIDE:" + name + " -->", "<!-- BEGIN OVERRIDE");
+		fileMerger.mergeByAttribute(dwrCopy, "<!-- BEGIN PLUGINS -->",
+				"<!-- END PLUGINS -->", "<!-- BEGIN PLUGIN:" + name + " -->",
+				"<!-- END PLUGIN:" + name + " -->", dwr, overrideMap,
+				"<!-- BEGIN OVERRIDE:" + name,
+				" END OVERRIDE:" + name + " -->", "<!-- BEGIN OVERRIDE");
 
 
-			FileReader fr = new FileReader(dwrCopy);
-			BufferedReader br = new BufferedReader(fr);
-			StringBuilder fileContent = new StringBuilder();
-			String line = null;
+		FileReader fr = new FileReader(dwrCopy);
+		BufferedReader br = new BufferedReader(fr);
+		StringBuilder fileContent = new StringBuilder();
+		String line = null;
 
-			while((line=br.readLine())!=null) {
-				fileContent.append(line);
-			}
-
-			br.close();
-
-			String comentedPart = "<!-- BEGIN OVERRIDE:dwr-override<create creator=\"new\" javascript=\"UserAjax\" scope=\"application\">"
-					+ "      <param name=\"class\" value=\"com.dotmarketing.portlets.user.ajax.UserAjax\"/>"
-					+ "    </create> END OVERRIDE:dwr-override -->";
-
-			String newPart = "<!-- BEGIN PLUGIN:dwr-override --><!-- BEGIN OVERRIDE:override-test<create creator=\"new\" javascript=\"UserAjax\" scope=\"application\">"
-					+ "      <param name=\"class\" value=\"com.arqiva.plugins.ajax.ArqivaUserAjax\"/>"
-					+ "   </create> END OVERRIDE:override-test --><!-- END PLUGIN:dwr-override -->";
-
-			System.out.println(fileContent);
-
-			assertTrue(fileContent.toString().contains(comentedPart));
-			assertTrue(fileContent.toString().contains(newPart));
-
-		} catch (IOException e) {
-			Logger.error(getClass(), e.getMessage());
+		while((line=br.readLine())!=null) {
+			fileContent.append(line);
 		}
 
+		br.close();
+
+		String comentedPart = "<!-- BEGIN OVERRIDE:dwr-override<create creator=\"new\" javascript=\"UserAjax\" scope=\"application\">"
+				+ "      <param name=\"class\" value=\"com.dotmarketing.portlets.user.ajax.UserAjax\"/>"
+				+ "    </create> END OVERRIDE:dwr-override -->";
+
+		String newPart = "<!-- BEGIN PLUGIN:dwr-override --><!-- BEGIN OVERRIDE:override-test<create creator=\"new\" javascript=\"UserAjax\" scope=\"application\">"
+				+ "      <param name=\"class\" value=\"com.arqiva.plugins.ajax.ArqivaUserAjax\"/>"
+				+ "   </create> END OVERRIDE:override-test --><!-- END PLUGIN:dwr-override -->";
+
+		System.out.println(fileContent);
+
+		assertTrue(fileContent.toString().contains(comentedPart));
+		assertTrue(fileContent.toString().contains(newPart));
 
 
 	}
