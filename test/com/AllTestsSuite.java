@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
 import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
 import com.dotmarketing.portlets.templates.business.TemplateAPITest;
 import com.dotmarketing.plugin.PluginMergerTest;
+import com.dotmarketing.webdav.WebDavTest;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -49,7 +50,8 @@ import org.junit.runners.Suite;
     WebResourceTest.class,
     RoleResourceTest.class,
     ESIndexSpeedTest.class,
-    PluginMergerTest.class
+    PluginMergerTest.class,
+    WebDavTest.class
 })
 public class AllTestsSuite {
 
