@@ -111,11 +111,13 @@ public class FileAssetConverter {
 								tempUserFolder.mkdirs();
 
 							binFile = new java.io.File(tempUserFolder.getAbsolutePath() + java.io.File.separator + file.getFileName());
-								FileChannel ic = new FileInputStream(assetFile).getChannel();
-								FileChannel oc = new FileOutputStream(binFile).getChannel();
-								ic.transferTo(0, ic.size(), oc);
-								ic.close();
-								oc.close();
+							if(binFile.exists())
+								binFile.delete();
+							FileChannel ic = new FileInputStream(assetFile).getChannel();
+							FileChannel oc = new FileOutputStream(binFile).getChannel();
+							ic.transferTo(0, ic.size(), oc);
+							ic.close();
+							oc.close();
 						}
 					} catch (IOException e) {
 						if(!failed.contains(id))
