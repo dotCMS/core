@@ -120,8 +120,10 @@ public class AjaxFileUploadServlet extends HttpServlet {
 							File.separator + fieldName);
 					if (!tempUserFolder.exists())
 						tempUserFolder.mkdirs();
-					
-					fileItem.write(new File(tempUserFolder.getAbsolutePath() + File.separator + fileName));
+					File dest=new File(tempUserFolder.getAbsolutePath() + File.separator + fileName);
+					if(dest.exists())
+						dest.delete();
+					fileItem.write(dest);
 					fileItem.delete();
 				}
 			}

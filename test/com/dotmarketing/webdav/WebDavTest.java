@@ -46,6 +46,8 @@ public class WebDavTest extends TestBase {
 	    ff1.upload(f1);
 	    ff2.upload(f2);
 	    
+	    Thread.sleep(1000); // wait for the index
+	    
 	    List<? extends Resource> children1 = ff1.children();
 	    List<? extends Resource> children2 = ff2.children();
 	    assertEquals(1,children1.size());
@@ -60,7 +62,7 @@ public class WebDavTest extends TestBase {
 	    ByteArrayOutputStream sw2=new ByteArrayOutputStream();
 	    r2.download(sw2, null);
 	    
-	    assertEquals("text1",sw1);
-	    assertEquals("text2",sw2);
+	    assertEquals("text1",sw1.toString());
+	    assertEquals("text2",sw2.toString());
 	}
 }
