@@ -2,6 +2,7 @@ package com;
 
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
+import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
@@ -18,6 +19,8 @@ import com.dotmarketing.portlets.structure.business.URLMapTest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
 import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
 import com.dotmarketing.portlets.templates.business.TemplateAPITest;
+import com.dotmarketing.plugin.PluginMergerTest;
+
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -44,7 +47,9 @@ import org.junit.runners.Suite;
     ESContentletIndexAPITest.class,
     DotCMSCMISTest.class,
     WebResourceTest.class,
-    RoleResourceTest.class
+    RoleResourceTest.class,
+    ESIndexSpeedTest.class,
+    PluginMergerTest.class
 })
 public class AllTestsSuite {
 
