@@ -856,6 +856,8 @@ public class DotWebdavHelper {
 						tempUserFolder.mkdirs();
 
 					java.io.File fileData = new java.io.File(tempUserFolder.getAbsolutePath() + java.io.File.separator + fileName);
+					if(fileData.exists())
+						fileData.delete();
 					// Saving the new working data
 					FileChannel writeCurrentChannel = new FileOutputStream(fileData).getChannel();
 					writeCurrentChannel.truncate(0);
@@ -898,6 +900,8 @@ public class DotWebdavHelper {
 						tempUserFolder.mkdirs();
 
 					java.io.File fileData = new java.io.File(tempUserFolder.getAbsolutePath() + java.io.File.separator + fileName);
+					if(fileData.exists())
+						fileData.delete();
 					// Saving the new working data
 					FileChannel writeCurrentChannel = new FileOutputStream(fileData).getChannel();
 					writeCurrentChannel.truncate(0);
