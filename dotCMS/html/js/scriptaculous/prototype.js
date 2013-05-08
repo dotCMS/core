@@ -1392,7 +1392,7 @@ Element.Methods = {
     element = $(element);
     for (var name in style) {
       var value = style[name];
-      if(name == 'opacity') {
+      if(name == 'opacity' && typeof element.getStyle('filter') != 'undefined') {
         if (value == 1) {
           value = (/Gecko/.test(navigator.userAgent) &&
             !/Konqueror|Safari|KHTML/.test(navigator.userAgent)) ? 0.999999 : 1.0;
