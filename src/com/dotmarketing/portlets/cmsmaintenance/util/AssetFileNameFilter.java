@@ -13,19 +13,27 @@ public class AssetFileNameFilter implements FileFilter {
 		if(dir ==null){
 			return false;
 		}
-		
-		
+
+
 		if(dir.getAbsolutePath().contains("dotGenerated") ){
 			return false;
 		}
 		String name = dir.getName();
-		String[] path = dir.getAbsolutePath().split(File.separator);
+		String osname = System.getProperty("os.name");
+		String[] path = null;
+
+		if (osname.startsWith("Windows"))
+			path = dir.getAbsolutePath().split("\\\\");
+		else
+			path = dir.getAbsolutePath().split(File.separator);
+
+
 		String[] test = new String[0];
 		String assetPath=null;
         try {
         	assetPath = Config.getStringProperty("ASSET_REAL_PATH", Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")));
         	test = new File(assetPath).getAbsolutePath().split(File.separator);
-        } catch (Exception e) { 
+        } catch (Exception e) {
         	Logger.debug(this.getClass(), e.getMessage());
         }
         if(test.length +1 == path.length){
@@ -47,7 +55,7 @@ public class AssetFileNameFilter implements FileFilter {
 			}
         }
 		return true;
-		
+
 	}
 
 }
