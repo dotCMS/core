@@ -102,13 +102,8 @@ td {font-size: 100%;}
 	};
 
 	var sortSelectable = function() {
-		dojo.forEach(
-			      dojo.query('[unselectable]'),
-			      function(selectTag){
-			        selectTag.unselectable = 'off';
-			      }
-			    );
-			 
+		var toSel = document.activeElement;
+		document.getElementById(toSel.id).setAttribute("unselectable", "off");			 
 	};
 
 	
