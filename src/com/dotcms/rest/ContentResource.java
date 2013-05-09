@@ -13,12 +13,16 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.lucene.queryParser.ParseException;
 import org.codehaus.jettison.json.JSONArray;
@@ -37,6 +41,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
+import com.sun.jersey.core.header.ContentDisposition;
+import com.sun.jersey.multipart.BodyPart;
+import com.sun.jersey.multipart.FormDataMultiPart;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -320,5 +327,32 @@ public class ContentResource extends WebResource {
 		    return map;
 		}
 
+	}
+	
+	@PUT
+	@Path("/{params:.*}")
+	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	public Response saveContent(@Context HttpServletRequest request, @Context HttpServletResponse response, 
+			FormDataMultiPart multipart,@PathParam("params") String params) {
+		InitDataObject init=init(params,true,request,true);
+		User user=init.getUser();
+		
+		Contentlet contentlet=new Contentlet();
+		for(BodyPart part : multipart.getBodyParts()) {
+			if(part.getMediaType().equals(MediaType.APPLICATION_JSON)) {
+				
+			}
+			else if(part.getMediaType().equals(MediaType.APPLICATION_XML)) {
+				
+			}
+			else if(part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED)) {
+				
+			}
+			else if(part.getContentDisposition().getType().equals("attachment")) {
+				
+			}
+		}
+		return null;
 	}
 }
