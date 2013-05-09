@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -27,6 +31,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -44,6 +49,7 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -54,15 +60,13 @@ import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.viewtools.RequestWrapper;
-import com.liferay.portal.model.User;
 
 /**
  * Created by Jonathan Gamba.
@@ -790,9 +794,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( tree.getParent(), contentlet.getInode() );
         assertEquals( tree.getChild(), menuLinkIdentifier.getInode() );
         assertEquals( tree.getRelationType(), RELATION_TYPE );
-    
+
         menuLinkAPI.delete( menuLink, user, false );
-    
+
     }
 
     /**
@@ -992,7 +996,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void getAllRelationshipsByContentlet () throws DotSecurityException, DotDataException {
-    	
+
     	//First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
 
@@ -1038,10 +1042,10 @@ public class ContentletAPITest extends ContentletBaseTest {
         st.setVelocityVarName("testAllLanguages"+System.currentTimeMillis());
         st.setHost(defaultHost.getIdentifier());
         StructureFactory.saveStructure(st);
-        
+
         Field ff=new Field("title",Field.FieldType.TEXT,Field.DataType.TEXT,st,true,true,true,1,false,false,true);
         FieldFactory.saveField(ff);
-        
+
         String identifier=null;
         List<Language> list=APILocator.getLanguageAPI().getLanguages();
         Contentlet last=null;
@@ -1057,10 +1061,10 @@ public class ContentletAPITest extends ContentletBaseTest {
             APILocator.getVersionableAPI().setLive(con);
             last=con;
         }
-        
+
         //Get all the contentles siblings for this contentlet (contentlet for all the languages)
         List<Contentlet> forAllLanguages = contentletAPI.getAllLanguages( last, true, user, false );
-        
+
         //Validations
         assertNotNull( forAllLanguages );
         assertTrue( !forAllLanguages.isEmpty() );
@@ -1137,7 +1141,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Now a new contentlet
         Contentlet newContentlet = createContentlet( testStructure, null, false );
-        
+
         //Now we need to delete it
         contentletAPI.delete( newContentlet, user, false );
 
@@ -1146,9 +1150,9 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
-        
+
         // make sure the db is totally clean up
-        
+
         AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
     }
 
@@ -1721,12 +1725,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
     }
-    
+
     /**
      * Now we introduce the case when we wanna add content with
      * the inode & identifier we set. The content should not exists
-     * for that inode nor the identifier. 
-     * 
+     * for that inode nor the identifier.
+     *
      * @throws Exception if test fails
      */
     @Test
@@ -1735,56 +1739,56 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, false, 1, false, false, false );
         FieldFactory.saveField( field );
-        
+
         Contentlet cont=new Contentlet();
         cont.setStructureInode(testStructure.getInode());
         cont.setStringProperty(field.getVelocityVarName(), "a value");
         cont.setReviewInterval( "1m" );
         cont.setStructureInode( testStructure.getInode() );
         cont.setHost( defaultHost.getIdentifier() );
-        
+
         // here comes the existing inode and identifier
         // for this test we generate them using the normal
-        // generator but the use case for this is when 
+        // generator but the use case for this is when
         // the content comes from another dotCMS instance
         String inode=UUIDGenerator.generateUuid();
         String identifier=UUIDGenerator.generateUuid();
         cont.setInode(inode);
         cont.setIdentifier(identifier);
-        
+
         Contentlet saved = contentletAPI.checkin(cont, user, false);
         //contentlets.add(saved);
-        
+
         assertEquals(saved.getInode(), inode);
         assertEquals(saved.getIdentifier(), identifier);
-        
+
         // the inode should hit the index
         contentletAPI.isInodeIndexed(inode, 2);
-        
+
         CacheLocator.getContentletCache().clearCache();
-        
+
         // now lets test with existing content
         Contentlet existing=contentletAPI.find(inode, user, false);
         assertEquals(inode, existing.getInode());
         assertEquals(identifier, existing.getIdentifier());
-        
+
         // new inode to create a new version
         String newInode=UUIDGenerator.generateUuid();
         existing.setInode(newInode);
-        
+
         saved=contentletAPI.checkin(existing, user, false);
         contentlets.add(saved);
-        
+
         assertEquals(newInode, saved.getInode());
         assertEquals(identifier, saved.getIdentifier());
-        
+
         contentletAPI.isInodeIndexed(newInode);
     }
-    
+
     /**
      * Making sure we set pub/exp dates on identifier when saving content
      * and we set them back to the content when reading.
-     * 
+     *
      * https://github.com/dotCMS/dotCMS/issues/1763
      */
     @Test
@@ -1800,21 +1804,21 @@ public class ContentletAPITest extends ContentletBaseTest {
         testStructure.setPublishDateVar(fieldPubDate.getVelocityVarName());
         testStructure.setExpireDateVar(fieldExpDate.getVelocityVarName());
         StructureFactory.saveStructure(testStructure);
-        
+
         // some dates to play with
         Date d1=new Date();
         Date d2=new Date(d1.getTime()+60000L);
         Date d3=new Date(d2.getTime()+60000L);
         Date d4=new Date(d3.getTime()+60000L);
-        
+
         // get default lang and one alternate to play with sibblings
         long deflang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
         long altlang=-1;
         for(Language ll : APILocator.getLanguageAPI().getLanguages())
             if(ll.getId()!=deflang)
                 altlang=ll.getId();
-        
-        // if we save using d1 & d1 then the identifier should 
+
+        // if we save using d1 & d1 then the identifier should
         // have those values after save
         Contentlet c1=new Contentlet();
         c1.setStructureInode(testStructure.getInode());
@@ -1824,11 +1828,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         c1.setLanguageId(deflang);
         c1=APILocator.getContentletAPI().checkin(c1, user, false);
         APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
-        
+
         Identifier ident=APILocator.getIdentifierAPI().find(c1);
         assertEquals(d1,ident.getSysPublishDate());
         assertEquals(d2,ident.getSysExpireDate());
-        
+
         // if we save another language version for the same identifier
         // then the identifier should be updated with those dates d3&d4
         Contentlet c2=new Contentlet();
@@ -1840,16 +1844,16 @@ public class ContentletAPITest extends ContentletBaseTest {
         c2.setLanguageId(altlang);
         c2=APILocator.getContentletAPI().checkin(c2, user, false);
         APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
-        
+
         Identifier ident2=APILocator.getIdentifierAPI().find(c2);
         assertEquals(d3,ident2.getSysPublishDate());
         assertEquals(d4,ident2.getSysExpireDate());
-        
+
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
         assertEquals(d3,c11.getDateProperty(fieldPubDate.getVelocityVarName()));
         assertEquals(d4,c11.getDateProperty(fieldExpDate.getVelocityVarName()));
-        
+
         // also it should be in the index update with the new dates
         FastDateFormat datetimeFormat = ESMappingAPIImpl.datetimeFormat;
         String q="+structureName:"+testStructure.getVelocityVarName()+
@@ -1858,15 +1862,15 @@ public class ContentletAPITest extends ContentletBaseTest {
                 " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
         assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
     }
-    
-    
+
+
     @Test
     public void rangeQuery() throws Exception {
         // https://github.com/dotCMS/dotCMS/issues/2630
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
         Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
         FieldFactory.saveField( field );
-        
+
         List<Contentlet> list=new ArrayList<Contentlet>();
         String[] letters={"a","b","c","d","e","f","g"};
         for(String letter : letters) {
@@ -1887,15 +1891,15 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals("d",search.get(2).getStringProperty(field.getVelocityVarName()));
         assertEquals("e",search.get(3).getStringProperty(field.getVelocityVarName()));
         assertEquals("f",search.get(4).getStringProperty(field.getVelocityVarName()));
-        
+
         contentletAPI.delete(list, user, false);
         FieldFactory.deleteField(field);
         StructureFactory.deleteStructure(testStructure);
     }
-    
+
     @Test
     public void widgetInvalidateAllLang() throws Exception {
-        
+
         Structure sw=StructureCache.getStructureByVelocityVarName("SimpleWidget");
         Language def=APILocator.getLanguageAPI().getDefaultLanguage();
         Contentlet w = new Contentlet();
@@ -1907,17 +1911,17 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getVersionableAPI().setLive(w);
         APILocator.getContentletIndexAPI().addContentToIndex(w,false,true);
         contentletAPI.isInodeIndexed(w.getInode(),true);
-        
-        
+
+
         /*
          * For every language we should get the same content and contentMap template code
          */
         String contentEXT=Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
         VelocityEngine engine = VelocityUtil.getEngine();
         SimpleNode contentTester = engine.getRuntimeServices().parse(new StringReader("code:$code"), "tester1");
-        
+
         contentTester.init(null, null);
-        
+
         InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
 
         DotRequestProxy requestProxy = (DotRequestProxy) Proxy
@@ -1929,13 +1933,13 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .newProxyInstance(DotResponseProxy.class.getClassLoader(),
                         new Class[] { DotResponseProxy.class },
                         dotInvocationHandler);
-        
+
         requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
-        
+
         Template teng1 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
         Template tesp1 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
-        
+
         Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         StringWriter writer=new StringWriter();
         teng1.merge(ctx, writer);
@@ -1946,13 +1950,13 @@ public class ContentletAPITest extends ContentletBaseTest {
         tesp1.merge(ctx, writer);
         contentTester.render(new InternalContextAdapterImpl(ctx), writer);
         assertEquals("code:Initial code",writer.toString());
-        
+
         Contentlet w2=contentletAPI.checkout(w.getInode(), user, false);
         w2.setStringProperty("code", "Modified Code to make templates different");
         w2 = contentletAPI.checkin(w2, user, false);
         contentletAPI.publish(w2, user, false);
         contentletAPI.isInodeIndexed(w2.getInode(),true);
-        
+
         // now if everything have been cleared correctly those should match again
         Template teng3 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
         Template tesp3 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
@@ -1966,11 +1970,103 @@ public class ContentletAPITest extends ContentletBaseTest {
         tesp3.merge(ctx, writer);
         contentTester.render(new InternalContextAdapterImpl(ctx), writer);
         assertEquals("code:Modified Code to make templates different",writer.toString());
-        
+
         // clean up
         APILocator.getVersionableAPI().removeLive(w2.getIdentifier(), w2.getLanguageId());
         contentletAPI.archive(w2, user, false);
         contentletAPI.delete(w2, user, false);
+    }
+
+    @Test
+    public void testFileCopyOnSecondLanguageVersion() throws DotDataException, DotSecurityException {
+
+    	// Structure
+        Structure testStructure = new Structure();
+
+        testStructure.setDefaultStructure( false );
+        testStructure.setDescription( "structure2709" );
+        testStructure.setFixed( false );
+        testStructure.setIDate( new Date() );
+        testStructure.setName( "structure2709" );
+        testStructure.setOwner( user.getUserId() );
+        testStructure.setDetailPage( "" );
+        testStructure.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
+        testStructure.setType( "structure" );
+        testStructure.setVelocityVarName( "structure2709" );
+
+        StructureFactory.saveStructure( testStructure );
+
+        Permission permissionRead = new Permission( testStructure.getInode(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ );
+        Permission permissionEdit = new Permission( testStructure.getInode(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_EDIT );
+        Permission permissionWrite = new Permission( testStructure.getInode(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_WRITE );
+
+        APILocator.getPermissionAPI().save( permissionRead, testStructure, user, false );
+        APILocator.getPermissionAPI().save( permissionEdit, testStructure, user, false );
+        APILocator.getPermissionAPI().save( permissionWrite, testStructure, user, false );
+
+
+        // Fields
+
+        // title
+        Field title = new Field();
+        title.setFieldName("testTitle2709");
+        title.setFieldType(FieldType.TEXT.toString());
+        title.setListed(true);
+        title.setRequired(true);
+        title.setSearchable(true);
+        title.setStructureInode(testStructure.getInode());
+        title.setType("field");
+        title.setValues("");
+        title.setVelocityVarName("testTitle2709");
+        title.setIndexed(true);
+        title.setFieldContentlet("text4");
+        FieldFactory.saveField( title );
+
+        // file
+        Field file = new Field();
+        file.setFieldName("testFile2709");
+        file.setFieldType(FieldType.FILE.toString());
+        file.setListed(true);
+        file.setRequired(true);
+        file.setSearchable(true);
+        file.setStructureInode(testStructure.getInode());
+        file.setType("field");
+        file.setValues("");
+        file.setVelocityVarName("testFile2709");
+        file.setIndexed(true);
+        file.setFieldContentlet("text1");
+        FieldFactory.saveField( file );
+
+        // ENGLISH CONTENT
+        Contentlet englishContent = new Contentlet();
+        englishContent.setReviewInterval( "1m" );
+        englishContent.setStructureInode( testStructure.getInode() );
+        englishContent.setLanguageId(1);
+
+        List<Contentlet> files =  APILocator.getContentletAPI().search("+structureName:FileAsset", 10, -1, null, user, false);
+        Contentlet fileA = files.get(0);
+
+        contentletAPI.setContentletProperty( englishContent, title, "englishTitle2709" );
+        contentletAPI.setContentletProperty( englishContent, file, fileA.getInode() );
+
+        englishContent = contentletAPI.checkin( englishContent, null, APILocator.getPermissionAPI().getPermissions( testStructure ), user, false );
+
+        // SPANISH CONTENT
+		Contentlet spanishContent = new Contentlet();
+		spanishContent.setReviewInterval("1m");
+		spanishContent.setStructureInode(testStructure.getInode());
+		spanishContent.setLanguageId(2);
+		spanishContent.setIdentifier(englishContent.getIdentifier());
+
+		contentletAPI.setContentletProperty( spanishContent, title, "spanishTitle2709" );
+		contentletAPI.setContentletProperty( spanishContent, file, fileA.getInode() );
+
+		spanishContent = contentletAPI.checkin( spanishContent, null, APILocator.getPermissionAPI().getPermissions( testStructure ), user, false );
+		Object retrivedFile = spanishContent.get("testFile2709");
+		assertTrue(retrivedFile!=null);
+
+		APILocator.getStructureAPI().delete(testStructure, user);
+
     }
 
 }
