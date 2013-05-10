@@ -301,8 +301,9 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			   </span>
 
 			   <br/>
+			   <br/>
 
-			   <input type="checkbox" name="clearBeforeRestore"/><%= LanguageUtil.get(pageContext,"Clear-Existing-Data") %>
+			   <input type="checkbox" name="clearBeforeRestore"/>&nbsp;<%= LanguageUtil.get(pageContext,"Clear-Existing-Data") %>
 		   </form>
 		   <br/>
 
