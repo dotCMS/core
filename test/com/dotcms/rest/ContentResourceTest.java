@@ -1,10 +1,12 @@
 package com.dotcms.rest;
 
+import java.io.ByteArrayInputStream;
 import java.net.URLEncoder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.io.IOUtils;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -15,6 +17,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.servlets.test.ServletTestRunner;
@@ -25,6 +28,9 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.Base64;
+import com.sun.jersey.multipart.BodyPart;
+import com.sun.jersey.multipart.MultiPart;
+import com.sun.jersey.multipart.file.StreamDataBodyPart;
 
 public class ContentResourceTest extends TestBase {
     Client client;
@@ -169,4 +175,47 @@ public class ContentResourceTest extends TestBase {
 
         
     }
+    
+    @Test
+    public void multipartPUT() throws Exception {
+        final String salt=Long.toString(System.currentTimeMillis());
+        final User sysuser=APILocator.getUserAPI().getSystemUser();
+        
+        ClientResponse response = contRes.path("/publish/1").type(MediaType.MULTIPART_FORM_DATA_TYPE)
+                                   .header(authheader, authvalue).put(ClientResponse.class, 
+                                           new MultiPart()
+                                             .bodyPart(new BodyPart(
+                                                     new JSONObject()
+                                                        .put("hostFolder", "demo.dotcms.com:/resources")
+                                                        .put("title", "newfile"+salt+".txt")
+                                                        .put("fileName", "newfile"+salt+".txt")
+                                                        .put("languageId", "1")
+                                                        .put("stInode", StructureCache.getStructureByVelocityVarName("FileAsset").getInode())
+                                                        .toString(), MediaType.APPLICATION_JSON_TYPE))
+                                             .bodyPart(new StreamDataBodyPart(
+                                                         "newfile"+salt+".txt", 
+                                                         new ByteArrayInputStream(("this is the salt "+salt).getBytes()),
+                                                         "newfile"+salt+".txt",
+                                                         MediaType.APPLICATION_OCTET_STREAM_TYPE)));
+        Assert.assertEquals(200, response.getStatus());
+        Contentlet cont=APILocator.getContentletAPI().find(response.getHeaders().getFirst("inode"),sysuser,false);
+        Assert.assertNotNull(cont);
+        Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
+        Assert.assertTrue(response.getLocation().toString().endsWith("/api/content/inode/"+cont.getInode()));
+        FileAsset file=APILocator.getFileAssetAPI().fromContentlet(cont);
+        Assert.assertEquals("/resources/newfile"+salt+".txt",file.getURI());
+        Assert.assertEquals("demo.dotcms.com", APILocator.getHostAPI().find(file.getHost(), sysuser, false).getHostname());
+        Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getFileInputStream()));
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
