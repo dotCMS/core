@@ -37,6 +37,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
@@ -44,10 +45,12 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
@@ -436,10 +439,47 @@ public class ContentResource extends WebResource {
     protected Response saveContent(Contentlet contentlet, InitDataObject init) throws URISyntaxException {
         final boolean live = init.getParamsMap().containsKey("publish");
         boolean clean=false;
+        
         try {
+            // preparing categories
+            List<Category> cats=new ArrayList<Category>();
+            for(Field field : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
+                if(field.getFieldType().equals(FieldType.CATEGORY.toString())) {
+                    String catValue=contentlet.getStringProperty(field.getVelocityVarName());
+                    if(UtilMethods.isSet(catValue)) {
+                        for(String cat : catValue.split("\\s*,\\s*")) {
+                            // take it as catId
+                            Category category=APILocator.getCategoryAPI().find(cat, init.getUser(), false);
+                            if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
+                                cats.add(category);
+                            }
+                            else {
+                                // try it as catKey
+                                category=APILocator.getCategoryAPI().findByKey(cat, init.getUser(), false);
+                                if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
+                                    cats.add(category);
+                                }
+                                else {
+                                    // try it as variable
+                                    // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
+                                    HibernateUtil hu=new HibernateUtil(Category.class);
+                                    hu.setQuery("from "+Category.class.getCanonicalName()+" WHERE category_velocity_var_name=?");
+                                    hu.setParam(cat);
+                                    category=(Category)hu.load();
+                                    if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
+                                        cats.add(category);
+                                    }                                    
+                                }
+                            }
+                            
+                        }
+                    }
+                }
+            }            
+            
             HibernateUtil.startTransaction();
             
-            contentlet = APILocator.getContentletAPI().checkin(contentlet,init.getUser(),false);
+            contentlet = APILocator.getContentletAPI().checkin(contentlet,new HashMap<Relationship, List<Contentlet>>(),cats,new ArrayList<Permission>(),init.getUser(),false);
             
             if(live)
                 APILocator.getContentletAPI().publish(contentlet, init.getUser(), false);
@@ -553,6 +593,9 @@ public class ContentResource extends WebResource {
                             catch(Exception ex) {
                                 // just pass
                             }
+                        }
+                        else if(ff.getFieldType().equals(FieldType.CATEGORY.toString())) {
+                            contentlet.setStringProperty(ff.getVelocityVarName(), value.toString());
                         }
                         else {
                             APILocator.getContentletAPI().setContentletProperty(contentlet, ff, value);
