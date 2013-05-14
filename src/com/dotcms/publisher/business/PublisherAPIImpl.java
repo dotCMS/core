@@ -1,9 +1,5 @@
 package com.dotcms.publisher.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -20,6 +16,10 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implement the PublishQueueAPI abstract class methods
@@ -66,203 +66,230 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSINSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	private static final String OCLINSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 
-	public void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user) throws DotPublisherException {
-		if(identifiers != null) {
+    /**
+     * Prepare the given content to be publish adding it to the Publishing queue
+     *
+     * @param identifiers
+     * @param bundleId
+     * @param publishDate
+     * @param user
+     * @throws DotPublisherException
+     */
+    public void addContentsToPublish ( List<String> identifiers, String bundleId, Date publishDate, User user ) throws DotPublisherException {
 
-			try{
-				HibernateUtil.startTransaction();
-				for(String identifier: identifiers) {
-					DotConnect dc = new DotConnect();
-					if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-						dc.setSQL(PGINSERTSQL);
-					} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-						dc.setSQL(MYINSERTSQL);
-					} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-						dc.setSQL(MSINSERTSQL);
-					} else{
-						dc.setSQL(OCLINSERTSQL);
-					}
+        if ( identifiers != null ) {
 
-					PermissionAPI strPerAPI = APILocator.getPermissionAPI();
-					
+            try {
+                HibernateUtil.startTransaction();
+                for ( String identifier : identifiers ) {
 
+                    DotConnect dc = new DotConnect();
+                    if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.POSTGRESQL ) ) {
+                        dc.setSQL( PGINSERTSQL );
+                    } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+                        dc.setSQL( MYINSERTSQL );
+                    } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MSSQL ) ) {
+                        dc.setSQL( MSINSERTSQL );
+                    } else {
+                        dc.setSQL( OCLINSERTSQL );
+                    }
 
-					Identifier iden = APILocator.getIdentifierAPI().find(identifier);
-					String type = "";
+                    PermissionAPI strPerAPI = APILocator.getPermissionAPI();
 
-					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
-					    try {
-    						// check if it is a structure
-    						Structure st = null;
-					    	List<Structure> sts = StructureFactory.getStructures();
-    						for (Structure s : sts) {
-    							if(s.getInode().equals(identifier)) {
-    								st = s;
-    							}
-							}
-    						Folder folder = null;
-    						
-    						/**
-    						 * ISSUE 2244: https://github.com/dotCMS/dotCMS/issues/2244
-    						 * 
-    						 */
-    						// check if it is a category
-    						if(CATEGORY.equals(identifier)) {
-    							type = "category";
-    						}
-    						
-    						else if(UtilMethods.isSet(st)) {
-    							if (!strPerAPI.doesUserHavePermission(st,PermissionAPI.PERMISSION_PUBLISH, user)) {
-    								Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + st.getIdentifier() );
-    								continue;
-    							}
+                    String type = "";
+                    //First verify if we are trying to publish an OSGI jar bundle in order to avoid unnecessary calls
+                    if ( identifier.contains( ".jar" ) ) {
+                        type = "osgi";
+                    } else {
 
-    							type = "structure";
-    						}
-    						
-    						// check if it is a folder
-    						else if(UtilMethods.isSet(folder = APILocator.getFolderAPI().find(identifier, user, false))) {
-    							if (!strPerAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_PUBLISH, user)) {
-    								Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + folder.getIdentifier() );
-    								continue;
-    							}
+                        Identifier iden = APILocator.getIdentifierAPI().find( identifier );
 
-    							type = "folder";
-    						}  						
-					    }
-					    catch(Exception ex) {
-					        // well, none of those
-					    }
+                        if ( !UtilMethods.isSet( iden.getId() ) ) { // we have an inode, not an identifier
+                            try {
+                                // check if it is a structure
+                                Structure st = null;
+                                List<Structure> sts = StructureFactory.getStructures();
+                                for ( Structure s : sts ) {
+                                    if ( s.getInode().equals( identifier ) ) {
+                                        st = s;
+                                    }
+                                }
+                                Folder folder;
 
-					} else {
-						if (!strPerAPI.doesUserHavePermission(iden,PermissionAPI.PERMISSION_PUBLISH, user)) {
-							Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + iden.getId() );
-							continue;
-					    }
-						type = UtilMethods.isSet(APILocator.getHostAPI().find(identifier, user, false))?"host":iden.getAssetType();
-					}
+                                /**
+                                 * ISSUE 2244: https://github.com/dotCMS/dotCMS/issues/2244
+                                 *
+                                 */
+                                // check if it is a category
+                                if ( CATEGORY.equals( identifier ) ) {
+                                    type = "category";
+                                } else if ( UtilMethods.isSet( st ) ) {
+                                    if ( !strPerAPI.doesUserHavePermission( st, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
+                                        Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + st.getIdentifier() );
+                                        continue;
+                                    }
 
-					dc.addParam(PublisherAPI.ADD_OR_UPDATE_ELEMENT);
-					dc.addObject(identifier); //asset
-					dc.addParam(new Date()); // entered date
-					dc.addObject(1); // language id
-					dc.addParam(false);	//in error field
+                                    type = "structure";
+                                }
 
-					//TODO How do I get new columns value?
-					dc.addParam(publishDate);
-					dc.addObject(null); // server id
-					dc.addObject(type);
-					dc.addObject(bundleId);
-					dc.addObject(null); // target
+                                // check if it is a folder
+                                else if ( UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
+                                    if ( !strPerAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
+                                        Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + folder.getIdentifier() );
+                                        continue;
+                                    }
 
-					dc.loadResult();
-				}
+                                    type = "folder";
+                                }
+                            } catch ( Exception ex ) {
+                                // well, none of those
+                            }
 
-				HibernateUtil.commitTransaction();
-			}catch(Exception e){
+                        } else {
+                            if ( !strPerAPI.doesUserHavePermission( iden, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
+                                Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + iden.getId() );
+                                continue;
+                            }
+                            type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? "host" : iden.getAssetType();
+                        }
+                    }
 
-				try {
-					HibernateUtil.rollbackTransaction();
-				} catch (DotHibernateException e1) {
-					Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-				}
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
-				throw new DotPublisherException("Unable to add element to publish queue table:" + e.getMessage(), e);
-			}
-		}
-	}
+                    dc.addParam( PublisherAPI.ADD_OR_UPDATE_ELEMENT );
+                    dc.addObject( identifier ); //asset
+                    dc.addParam( new Date() ); // entered date
+                    dc.addObject( 1 ); // language id
+                    dc.addParam( false );    //in error field
 
-	public void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user) throws DotPublisherException {
-		if(identifiers != null) {
+                    //TODO How do I get new columns value?
+                    dc.addParam( publishDate );
+                    dc.addObject( null ); // server id
+                    dc.addObject( type );
+                    dc.addObject( bundleId );
+                    dc.addObject( null ); // target
 
+                    dc.loadResult();
+                }
 
-			try{
-				HibernateUtil.startTransaction();
-				for(String identifier: identifiers) {
-					DotConnect dc = new DotConnect();
-					if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-						dc.setSQL(PGINSERTSQL);
-					} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-						dc.setSQL(MYINSERTSQL);
-					} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-						dc.setSQL(MSINSERTSQL);
-					} else{
-						dc.setSQL(OCLINSERTSQL);
-					}
+                HibernateUtil.commitTransaction();
+            } catch ( Exception e ) {
 
-					PermissionAPI strPerAPI = APILocator.getPermissionAPI();
+                try {
+                    HibernateUtil.rollbackTransaction();
+                } catch ( DotHibernateException e1 ) {
+                    Logger.error( PublisherAPIImpl.class, e.getMessage(), e1 );
+                }
+                Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
+                throw new DotPublisherException( "Unable to add element to publish queue table:" + e.getMessage(), e );
+            }
+        }
+    }
 
-					Identifier iden = APILocator.getIdentifierAPI().find(identifier);
-					String type = "";
+    /**
+     * Prepare the given content to be UN publish adding it to the Publishing queue
+     *
+     * @param identifiers
+     * @param bundleId
+     * @param unpublishDate
+     * @param user
+     * @throws DotPublisherException
+     */
+    public void addContentsToUnpublish ( List<String> identifiers, String bundleId, Date unpublishDate, User user ) throws DotPublisherException {
 
-					if(!UtilMethods.isSet(iden.getId())) { // we have an inode, not an identifier
-						// check if it is a structure
-						Structure st = null;
-				    	List<Structure> sts = StructureFactory.getStructures();
-						for (Structure s : sts) {
-							if(s.getInode().equals(identifier)) {
-								st = s;
-							}
-						}
-						Folder folder = null;
+        if ( identifiers != null ) {
 
-						if(UtilMethods.isSet(st)) {
-							if (!strPerAPI.doesUserHavePermission(st,PermissionAPI.PERMISSION_PUBLISH, user)) {
-								Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + st.getIdentifier() );
-								continue;
-							}
+            try {
+                HibernateUtil.startTransaction();
+                for ( String identifier : identifiers ) {
+                    DotConnect dc = new DotConnect();
+                    if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.POSTGRESQL ) ) {
+                        dc.setSQL( PGINSERTSQL );
+                    } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+                        dc.setSQL( MYINSERTSQL );
+                    } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MSSQL ) ) {
+                        dc.setSQL( MSINSERTSQL );
+                    } else {
+                        dc.setSQL( OCLINSERTSQL );
+                    }
 
-							type = "structure";
-						}
-						// check if it is a folder
-						else if(UtilMethods.isSet(folder = APILocator.getFolderAPI().find(identifier, user, false))) {
-							if (!strPerAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_PUBLISH, user)) {
-								Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + folder.getIdentifier() );
-								continue;
-							}
+                    PermissionAPI strPerAPI = APILocator.getPermissionAPI();
 
-							type = "folder";
-						}
+                    String type = "";
+                    //First verify if we are trying to publish an OSGI jar bundle in order to avoid unnecessary calls
+                    if ( identifier.contains( ".jar" ) ) {
+                        type = "osgi";
+                    } else {
 
-					} else {
-						if (!strPerAPI.doesUserHavePermission(iden,PermissionAPI.PERMISSION_PUBLISH, user)) {
-							Logger.info(PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + iden.getId() );
-							continue;
-					    }
-						type = UtilMethods.isSet(APILocator.getHostAPI().find(identifier, user, false))?"host":iden.getAssetType();
-					}
+                        Identifier iden = APILocator.getIdentifierAPI().find( identifier );
 
-					dc.addParam(PublisherAPI.DELETE_ELEMENT);
-					dc.addObject(identifier); //asset
-					dc.addParam(new Date());
-					dc.addObject(1);
-					dc.addParam(false);	//in error field
+                        if ( !UtilMethods.isSet( iden.getId() ) ) { // we have an inode, not an identifier
+                            // check if it is a structure
+                            Structure st = null;
+                            List<Structure> sts = StructureFactory.getStructures();
+                            for ( Structure s : sts ) {
+                                if ( s.getInode().equals( identifier ) ) {
+                                    st = s;
+                                }
+                            }
+                            Folder folder;
 
-					//TODO How do I get new columns value?
-					dc.addParam(unpublishDate);
-					dc.addObject(null);
-					dc.addObject(type);
-					dc.addObject(bundleId);
-					dc.addObject(null);
+                            if ( UtilMethods.isSet( st ) ) {
+                                if ( !strPerAPI.doesUserHavePermission( st, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
+                                    Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + st.getIdentifier() );
+                                    continue;
+                                }
 
-					dc.loadResult();
-				}
+                                type = "structure";
+                            }
+                            // check if it is a folder
+                            else if ( UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
+                                if ( !strPerAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
+                                    Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + folder.getIdentifier() );
+                                    continue;
+                                }
 
-				HibernateUtil.commitTransaction();
-			}catch(Exception e){
+                                type = "folder";
+                            }
 
-				try {
-					HibernateUtil.rollbackTransaction();
-				} catch (DotHibernateException e1) {
-					Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-				}
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
-				throw new DotPublisherException("Unable to add element to publish queue table:" + e.getMessage(), e);
-			}
-		}
-	}
+                        } else {
+                            if ( !strPerAPI.doesUserHavePermission( iden, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
+                                Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + iden.getId() );
+                                continue;
+                            }
+                            type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? "host" : iden.getAssetType();
+                        }
+                    }
 
-	private static final String TREE_QUERY = "select * from tree where child = ? or parent = ?";
+                    dc.addParam( PublisherAPI.DELETE_ELEMENT );
+                    dc.addObject( identifier ); //asset
+                    dc.addParam( new Date() );
+                    dc.addObject( 1 );
+                    dc.addParam( false );    //in error field
+
+                    //TODO How do I get new columns value?
+                    dc.addParam( unpublishDate );
+                    dc.addObject( null );
+                    dc.addObject( type );
+                    dc.addObject( bundleId );
+                    dc.addObject( null );
+
+                    dc.loadResult();
+                }
+
+                HibernateUtil.commitTransaction();
+            } catch ( Exception e ) {
+
+                try {
+                    HibernateUtil.rollbackTransaction();
+                } catch ( DotHibernateException e1 ) {
+                    Logger.error( PublisherAPIImpl.class, e.getMessage(), e1 );
+                }
+                Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
+                throw new DotPublisherException( "Unable to add element to publish queue table:" + e.getMessage(), e );
+            }
+        }
+    }
+
+    private static final String TREE_QUERY = "select * from tree where child = ? or parent = ?";
 	/**
 	 * Get tree data of a content
 	 * @param indentifier
