@@ -353,7 +353,7 @@ public class ContentResource extends WebResource {
 
         Contentlet contentlet=new Contentlet();
         for(BodyPart part : multipart.getBodyParts()) {
-            if(part.getMediaType().equals(MediaType.APPLICATION_JSON)) {
+            if(part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE)) {
                 try {
                     processJSON(contentlet,part.getEntityAs(InputStream.class));
                 } catch (JSONException e) {
@@ -362,21 +362,21 @@ public class ContentResource extends WebResource {
                     return Response.status(Status.INTERNAL_SERVER_ERROR).build();
                 }
             }
-            else if(part.getMediaType().equals(MediaType.APPLICATION_XML)) {
+            else if(part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE)) {
                 try {
                     processXML(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
                     return Response.status(Status.INTERNAL_SERVER_ERROR).build();
                 }
             }
-            else if(part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED)) {
+            else if(part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE)) {
                 try {
                     processForm(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
                     return Response.status(Status.INTERNAL_SERVER_ERROR).build();
                 }
             }
-            else if(part.getContentDisposition().getType().equals("attachment")) {
+            else if(part.getContentDisposition()!=null) {
                 InputStream input=part.getEntityAs(InputStream.class);
                 String filename=part.getContentDisposition().getFileName();
                 java.io.File tmp=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
