@@ -261,9 +261,16 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
             dijit.byId('savingOSGIDialog').show();
             setTimeout(function() {bundles.reboot(false);dijit.byId('savingOSGIDialog').hide();},4000);
         }
+    },
+
+    remotePublishBundle : function(jarFile){
+        pushHandler.showDialog(jarFile);
     }
 
 });
+
+dojo.require("dotcms.dojo.push.PushHandler");
+var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 var mainAdmin = new dotcms.dijit.osgi.MainAdmin({});
 var bundles = new dotcms.dijit.osgi.Bundles({});
