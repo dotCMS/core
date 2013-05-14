@@ -2,6 +2,10 @@ package com.dotcms.rest;
 
 import java.io.ByteArrayInputStream;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
@@ -16,13 +20,16 @@ import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
+import com.ibm.icu.util.Calendar;
 import com.liferay.portal.model.User;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -31,6 +38,8 @@ import com.sun.jersey.core.util.Base64;
 import com.sun.jersey.multipart.BodyPart;
 import com.sun.jersey.multipart.MultiPart;
 import com.sun.jersey.multipart.file.StreamDataBodyPart;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ContentResourceTest extends TestBase {
     Client client;
@@ -206,6 +215,60 @@ public class ContentResourceTest extends TestBase {
         Assert.assertEquals("/resources/newfile"+salt+".txt",file.getURI());
         Assert.assertEquals("demo.dotcms.com", APILocator.getHostAPI().find(file.getHost(), sysuser, false).getHostname());
         Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getFileInputStream()));
+    }
+    
+    @Test
+    public void categoryAndTagFields() throws Exception {
+        User sysuser=APILocator.getUserAPI().getSystemUser();
+        Structure st=StructureCache.getStructureByVelocityVarName("Blog");
+        String salt=Long.toString(System.currentTimeMillis());
+        ClientResponse response=contRes.path("/justsave/1").type(MediaType.APPLICATION_JSON_TYPE)
+                .header(authheader, authvalue).put(ClientResponse.class,
+                        new JSONObject()
+                                .put("stInode", st.getInode())
+                                .put("languageId", 1)
+                                .put("host1", "demo.dotcms.com")
+                                .put("title", "blog post "+salt)
+                                .put("urlTitle", "blog-post-"+salt)
+                                .put("author", "junit")
+                                .put("sysPublishDate", new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
+                                                          .format(Calendar.getInstance().getTime()))
+                                .put("body","blog post content "+salt)
+                                .put("topic", "investing,banking")
+                                .put("tags", "junit,integration tests,jenkins")
+                                .put("contentHost", "demo.dotcms.com:/home").toString());
+        Assert.assertEquals(200, response.getStatus());
+        String inode=response.getHeaders().getFirst("inode");
+        Contentlet cont=APILocator.getContentletAPI().find(inode, sysuser, false);
+        Assert.assertNotNull(cont);
+        Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
+        
+        /////////////////////////
+        // checking categories //
+        /////////////////////////
+        
+        List<Category> cats=APILocator.getCategoryAPI().getParents(cont, sysuser, false);
+        Assert.assertNotNull(cats);
+        Assert.assertEquals(2,cats.size());
+        
+        Set<String> expectedIds=new HashSet<String>();
+        expectedIds.add("investing"); expectedIds.add("banking");
+        expectedIds.remove(cats.get(0).getCategoryVelocityVarName());
+        expectedIds.remove(cats.get(1).getCategoryVelocityVarName());
+        Assert.assertEquals(0, expectedIds.size());
+        
+        ///////////////////
+        // checking tags //
+        ///////////////////
+        
+        List<Tag> tags=APILocator.getTagAPI().getTagsByInode(cont.getInode());
+        Assert.assertNotNull(tags);
+        Assert.assertEquals(3, tags.size());
+        Set<String> expectedTags=new HashSet<String>(Arrays.asList("junit,integration tests,jenkins".split(",")));
+        for(Tag tt : tags) {
+            Assert.assertTrue(expectedTags.remove(tt.getTagName()));
+        }
+        
     }
 }
 
