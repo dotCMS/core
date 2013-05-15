@@ -55,8 +55,6 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 public class URLMapFilter implements Filter {
@@ -136,7 +134,7 @@ public class URLMapFilter implements Filter {
 		boolean trailSlash = uri.endsWith("/");
 		boolean isDotPage = uri.substring(uri.lastIndexOf(".")+1).equals(Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
 		String url = (!trailSlash && !isDotPage)?uri+'/':uri;
-		if (!UtilMethods.isSet(mastRegEx) || uri.contains("webdav")) {
+		if (!UtilMethods.isSet(mastRegEx) || uri.startsWith("/webdav")) {
 			chain.doFilter(req, res);
 			return;
 		}
