@@ -646,6 +646,8 @@ public class CalendarAjax {
 					File binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
 							+ File.separator + user.getUserId() + File.separator + elementName
 							+ File.separator + binaryFileValue);
+					if(binaryFile.exists())
+						binaryFile.delete();
 					elementValue = binaryFile;
 				}else{
 					elementValue = null;

@@ -165,6 +165,8 @@ public class ImageToolAjaxServlet extends HttpServlet {
 						tempUserFolder.mkdirs();
 					
 					java.io.File dest = new java.io.File(tempUserFolder.getCanonicalPath() + java.io.File.separator + fileName);
+					if(dest.exists())
+						dest.delete();
 					
 					FileUtil.copyFile(binaryFile, dest);
 					binaryFile.delete();
