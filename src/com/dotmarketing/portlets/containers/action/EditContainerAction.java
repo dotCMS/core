@@ -164,11 +164,11 @@ public class EditContainerAction extends DotPortletAction implements
 							return;
 						}
 					}
-					
+
 					Container cont=(Container)req.getAttribute(WebKeys.CONTAINER_EDIT);
 					if(cont.isLocked())
 					    APILocator.getVersionableAPI().setLocked(cont, false, user);
-					
+
 					try{
 
 
@@ -449,7 +449,7 @@ public class EditContainerAction extends DotPortletAction implements
         if (UtilMethods.isSet(container.getLuceneQuery())) {
             cf.setDynamic(true);
         }
-        
+
 		// BEGIN GRAZIANO issue-12-dnd-template
         if(UtilMethods.isSet(container.getCode())){
 			if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
@@ -463,7 +463,7 @@ public class EditContainerAction extends DotPortletAction implements
 				currentStructure = StructureFactory.getDefaultStructure();
 			} else {
 				currentStructure = StructureCache.getStructureByInode(container.getStructureInode());
-				if (!InodeUtils.isSet(currentStructure.getInode()))
+				if (currentStructure==null || !InodeUtils.isSet(currentStructure.getInode()))
 					currentStructure = StructureFactory.getDefaultStructure();
 			}
 			cf.setStructureInode(currentStructure.getInode());
@@ -473,6 +473,11 @@ public class EditContainerAction extends DotPortletAction implements
         Host host = hostAPI.findParentHost(container, user, false);
         if(host!= null)
         	cf.setHostId(host.getIdentifier());
+
+
+        // Getting container structures
+        cf.setContainerStructures(APILocator.getContainerAPI().getContainerStructures(container));
+
 
 		//Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, container);
@@ -535,12 +540,12 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 		container.setStructureInode(currentStructure.getInode());
 		//container.addParent(currentStructure);
-		
+
 		// BEGIN GRAZIANO issue-12-dnd-template
 		if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
 			container.setForMetadata(true);
 		// END GRAZIANO issue-12-dnd-template
-		
+
 		// it saves or updates the asset
 		if (InodeUtils.isSet(currentContainer.getInode())) {
 			Identifier identifier = APILocator.getIdentifierAPI().find(currentContainer);

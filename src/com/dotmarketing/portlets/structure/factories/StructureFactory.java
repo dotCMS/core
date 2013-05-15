@@ -299,7 +299,7 @@ public class StructureFactory {
 		}
 		return retList;
 	}
-	
+
 	public static List<Structure> getStructuresUnderHost(Host h, User user, boolean respectFrontendRoles) throws DotDataException
 	{
 
@@ -392,12 +392,12 @@ public class StructureFactory {
 		Date now = new Date();
 		structure.setiDate(now);
 		HibernateUtil.saveOrUpdate(structure);
-		
+
 		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
 		    StructureCache.clearURLMasterPattern();
 		}
 	}
-	
+
 	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
 	{
 		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
