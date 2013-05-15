@@ -237,7 +237,6 @@
 
 		<joined-subclass name="com.dotmarketing.portlets.containers.model.Container" table="containers">
 			<key column="inode" />
-			<property column="code" name="code" type="string" length="123456789" />
 			<property column="pre_loop" name="preLoop" type="string" length="123456789" />
 			<property column="post_loop" name="postLoop" type="string"  length="123456789"/>
 			<property column="show_on_menu" name="showOnMenu" type="boolean" />
@@ -255,7 +254,6 @@
 			<property column="lucene_query" name="luceneQuery" type="string" length="123456789" />
 			<property column="notes" name="notes" type="string" />
 			<property column="identifier" length="36" name="identifier" type="string" />
-			<property column="structure_inode" length="36" name="structureInode" type="string" />
 			<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
 			<property column="for_metadata" name="forMetadata" type="boolean" />
 			<!-- *********************** END GRAZIANO issue-12-dnd-template   -->
@@ -1248,6 +1246,19 @@
 		<property name="containerId" type="string">
 			<column name="container_id" length="36" not-null="true"/>
 		</property>
+	</class>
+
+	<class name="com.dotmarketing.beans.ContainerStructures" table="container_structures">
+	    <id name="id" column="id" type="string" length="36" unsaved-value="">
+		  <generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="containerId" type="string">
+			<column name="container_id" length="36" not-null="true" />
+		</property>
+		<property name="structureId" type="string">
+			<column name="structure_id" length="36" not-null="true"/>
+		</property>
+		<property column="code" name="code" type="string" length="123456789" />
 	</class>
 
 

@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.ContainerStructures;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -15,10 +16,10 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
 public interface ContainerAPI {
-	
+
 	/**
 	 * Copies container to the specified host
-	 * 
+	 *
 	 * @param source
 	 * @param destination
 	 * @param user
@@ -28,10 +29,10 @@ public interface ContainerAPI {
 	 * @throws DotSecurityException
 	 */
 	public Container copy(Container source, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
 	/**
 	 * Returns the working container by the id
-	 * 
+	 *
 	 * @param id
 	 * @param user
 	 * @param respectFrontendRoles
@@ -40,10 +41,10 @@ public interface ContainerAPI {
 	 * @throws DotSecurityException
 	 */
 	public Container getWorkingContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
 	/**
 	 * Returns the live container by the id
-	 * 
+	 *
 	 * @param id
 	 * @param user
 	 * @param respectFrontendRoles
@@ -52,29 +53,43 @@ public interface ContainerAPI {
 	 * @throws DotSecurityException
 	 */
 	public Container getLiveContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
 	/**
-	 * 
+	 *
 	 * Retrieves the children working containers attached to the given template
-	 * 
+	 *
 	 * @param parentTemplate
 	 * @return
 	 * @author David H Torres
-	 * @throws DotHibernateException 
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws DotStateException 
-	 * 
+	 * @throws DotHibernateException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 *
 	 */
 	public List<Container> getContainersInTemplate(Template parentTemplate) throws DotHibernateException, DotStateException, DotDataException, DotSecurityException;
-	
+
+	/**
+	 *
+	 * Retrieves a list of container-structure relationships by container
+	 *
+	 * @param container
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 *
+	 */
+
+	public List<ContainerStructures> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
+
 	/**
 	 * Retrieves all the containers attached to the given host
 	 * @param parentPermissionable
 	 * @author David H Torres
-	 * @return 
-	 * @throws DotDataException 
-	 * 
+	 * @return
+	 * @throws DotDataException
+	 *
 	 */
 	public List<Container> findContainersUnder(Host parentHost) throws DotDataException;
 
@@ -83,13 +98,13 @@ public interface ContainerAPI {
 	 * @param parentPermissionable
 	 * @return
 	 * @throws DotDataException
-	 * @throws DotSecurityException 
+	 * @throws DotSecurityException
 	 */
 	public List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Save container
-	 * 
+	 *
 	 * @param container
 	 * @param structure
 	 * @param host
@@ -100,11 +115,11 @@ public interface ContainerAPI {
 	 * @throws DotSecurityException
 	 */
 	public Container save(Container container, Structure structure, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
-	
+
+
 	/**
 	 * Delete the specified container
-	 * 
+	 *
 	 * @param container
 	 * @param user
 	 * @param respectFrontendRoles
@@ -113,15 +128,15 @@ public interface ContainerAPI {
 	 * @throws Exception
 	 */
 	public boolean delete(Container container, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
-	
+
 	/**
 	 * Retrieves the parent host of a container
-	 * @throws DotSecurityException 
+	 * @throws DotSecurityException
 	 */
 	public Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
 	/**
-	 * Retrieves a paginated list of containers the user can use 
+	 * Retrieves a paginated list of containers the user can use
 	 * @param user
 	 * @param includeArchived
 	 * @param params
@@ -137,10 +152,10 @@ public interface ContainerAPI {
 	 * @throws DotDataException
 	 */
 	public List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
-	
+
 	/**
 	 * Retrieves containers using the specified structure
-	 * 
+	 *
 	 * @param structureInode
 	 * @return
 	 * @throws DotDataException
@@ -149,6 +164,6 @@ public interface ContainerAPI {
             throws DotDataException;
 
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
-	
-	
+
+
 }
