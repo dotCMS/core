@@ -49,10 +49,28 @@ public class FileUpdater {
         String backUpPath = home + File.separator + UpdateAgent.FOLDER_HOME_BACK_UP + File.separator + currentBackUpFolderName;
         //.dotserver folder path
         String dotserverPath = home + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER;
+        //.autoUpdater folder path
+        //String autoUpdaterPath = home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER;
 
         try {
+
+            /**
+             * Now we need to be sure we have the commons-configuration jar, it should be there, but be we better check.
+             * This will be need it just for old versions of the autoupdater, after 2.3.1 won't be necessary
+             */
+            /*File updaterCommonsConfiguration = new File( autoUpdaterPath + File.separator + "libs" + File.separator + "commons-configuration-1.0.jar" );
+            if ( !updaterCommonsConfiguration.exists() ) {//First verify it we already have it
+
+                //Copy the one on dotCMS to the autoupdater libs folder
+                File commonsConfiguration = new File( dotserverPath + File.separator +
+                        "dotCMS" + File.separator + "WEB-INF" + File.separator + "lib" + File.separator + "commons-configuration-1.0.jar" );
+                if ( commonsConfiguration.exists() ) {
+                    FileUtil.copyFile( commonsConfiguration, updaterCommonsConfiguration, false );
+                }
+            }*/
+
             //First we need to create the back up for the current project, for this we need to user hard links, this back up could be huge
-            FileUtil.copyDirectory(dotserverPath, backUpPath, true);
+            FileUtil.copyDirectory( dotserverPath, backUpPath, true );
 
             /*//First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
             File antLauncher = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" );
@@ -60,7 +78,7 @@ public class FileUpdater {
                 logger.debug( Messages.getString( "UpdateAgent.debug.extracting.ant" ) );
                 UpdateUtil.unzipDirectory( updateFile, "bin/ant", home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER, false );
             }*/
-        } catch (Exception e) {
+        } catch ( Exception e ) {
             String error = Messages.getString( "UpdateAgent.error.ant.prepare.back-up" );
             if ( !UpdateAgent.isDebug ) {
                 error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
@@ -143,7 +161,7 @@ public class FileUpdater {
                 File assetsFolder = new File( backUpPath + File.separator + assets );
                 File destFolder = new File( dotserverFolder + File.separator + assets );
                 //Copying using hardlinks
-                FileUtil.copyDirectory(assetsFolder, destFolder);
+                FileUtil.copyDirectory( assetsFolder, destFolder );
                 //copyFolder( assetsFolder, destFolder );
 
                 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -155,7 +173,7 @@ public class FileUpdater {
                 File esdataFolder = new File( backUpPath + File.separator + esdata );
                 destFolder = new File( dotserverFolder + File.separator + esdata );
                 //Copying using hardlinks
-                FileUtil.copyDirectory(esdataFolder, destFolder);
+                FileUtil.copyDirectory( esdataFolder, destFolder );
                 //copyFolder( esdataFolder, destFolder );
 
                 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -170,7 +188,7 @@ public class FileUpdater {
                 File tempDestFolder = new File( dotserverFolder + File.separator + pluginsTemp );
 
                 //First we need to move this folder to a temporal one in order to extract some files later
-                if (destFolder.exists()) {
+                if ( destFolder.exists() ) {
                     success = destFolder.renameTo( tempDestFolder );
 
                     if ( !success ) {
@@ -185,25 +203,25 @@ public class FileUpdater {
                 //Now we need to copy the back up plugins folder
                 File pluginsFolder = new File( backUpPath + File.separator + plugins );
                 //Copying using hardlinks
-                FileUtil.copyDirectory(pluginsFolder, destFolder, true);
+                FileUtil.copyDirectory( pluginsFolder, destFolder, true );
                 //copyFolder( pluginsFolder, destFolder );
 
                 //Now we need to remove the common.xml and plugins.xml
                 File commonXML = new File( dotserverFolder + File.separator + plugins + File.separator + "common.xml" );
                 File pluginsXML = new File( dotserverFolder + File.separator + plugins + File.separator + "plugins.xml" );
-                if (commonXML.exists()) {
+                if ( commonXML.exists() ) {
                     commonXML.delete();
                 }
-                if (pluginsXML.exists()) {
+                if ( pluginsXML.exists() ) {
                     pluginsXML.delete();
                 }
                 //And copying them from the temporal plugins folder
                 File origCommonXML = new File( dotserverFolder + File.separator + pluginsTemp + File.separator + "common.xml" );
                 File origPluginsXML = new File( dotserverFolder + File.separator + pluginsTemp + File.separator + "plugins.xml" );
-                if (origCommonXML.exists()) {
+                if ( origCommonXML.exists() ) {
                     origCommonXML.renameTo( commonXML );
                 }
-                if (origPluginsXML.exists()) {
+                if ( origPluginsXML.exists() ) {
                     origPluginsXML.renameTo( pluginsXML );
                 }
 

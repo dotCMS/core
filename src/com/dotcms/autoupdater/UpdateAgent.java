@@ -65,7 +65,6 @@ public class UpdateAgent {
             return;
         } catch ( ParseException e ) {
             System.err.println( Messages.getString( "UpdateAgent.error.command.parsing" ) + e.getMessage() );
-
             return;
         }
 
