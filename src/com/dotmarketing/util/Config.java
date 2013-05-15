@@ -1,5 +1,9 @@
 package com.dotmarketing.util;
 
+import com.dotcms.util.AsciiArt;
+import com.dotmarketing.db.DbConnectionFactory;
+import org.apache.commons.configuration.PropertiesConfiguration;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -8,11 +12,6 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
-import org.apache.commons.configuration.PropertiesConfiguration;
-
-import com.dotcms.util.AsciiArt;
-import com.dotmarketing.db.DbConnectionFactory;
 
 public class Config {
     
@@ -98,7 +97,10 @@ public class Config {
 	 */
 	public static String getStringProperty(String name,String defValue) {
 		_refreshProperties ();
-	    String[] propsArr = props.getStringArray(name);
+        if ( props == null ) {
+            return defValue;
+        }
+        String[] propsArr = props.getStringArray(name);
 	    String property = new String ();
 	    int i = 0;
 	    if ((propsArr !=null) &&(propsArr.length>0)) {
@@ -141,7 +143,10 @@ public class Config {
 
 	public static int getIntProperty (String name, int defaultVal) {
 	    _refreshProperties ();
-	    return props.getInt(name, defaultVal);
+        if ( props == null ) {
+            return defaultVal;
+        }
+        return props.getInt(name, defaultVal);
 	}
 
 	public static float getFloatProperty (String name) {
@@ -151,7 +156,10 @@ public class Config {
 
 	public static float getFloatProperty (String name, float defaultVal) {
 	    _refreshProperties ();
-	    return props.getFloat(name, defaultVal);
+        if ( props == null ) {
+            return defaultVal;
+        }
+        return props.getFloat(name, defaultVal);
 	}
 
 	public static boolean getBooleanProperty (String name) {
@@ -161,7 +169,10 @@ public class Config {
 
 	public static boolean getBooleanProperty (String name, boolean defaultVal) {
 	    _refreshProperties ();
-	    return props.getBoolean(name, defaultVal);
+        if ( props == null ) {
+            return defaultVal;
+        }
+        return props.getBoolean(name, defaultVal);
 	}
 
 	@SuppressWarnings("unchecked")
