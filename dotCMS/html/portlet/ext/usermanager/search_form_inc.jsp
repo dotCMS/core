@@ -166,40 +166,40 @@
 	    	dijit.byId("cellPhone").setValue("");
 		}
 		if(dijit.byId("dateOfBirthFromDojo")!=null){
-	    	dijit.byId("dateOfBirthFromDojo").setValue("");
+	    	dijit.byId("dateOfBirthFromDojo").set("value",null);
 		}
 		if(dijit.byId("dateOfBirthToDojo")!=null){
-		   dijit.byId("dateOfBirthToDojo").setValue("");
+		   dijit.byId("dateOfBirthToDojo").set("value",null);
 		}
 
 		if(dijit.byId("lastLoginSince")!=null){
 		   dijit.byId("lastLoginSince").setValue("");
 		}
 		if(dijit.byId("lastLoginDateFromDojo")!=null){
-		   dijit.byId("lastLoginDateFromDojo").setValue("");
+		   dijit.byId("lastLoginDateFromDojo").set("value",null);
 		}
 		if(dijit.byId("lastLoginDateToDojo")!=null){
-		  dijit.byId("lastLoginDateToDojo").setValue("");
+		  dijit.byId("lastLoginDateToDojo").set("value",null);
 		}
 
 		if(dijit.byId("createdSince")!=null){
 		  dijit.byId("createdSince").setValue("");
 		}
 		if(dijit.byId("createdDateFromDojo")!=null){
-		  dijit.byId("createdDateFromDojo").setValue("");
+		  dijit.byId("createdDateFromDojo").set("value",null);
 		}
 		if(dijit.byId("createdDateToDojo")!=null){
-		  dijit.byId("createdDateToDojo").setValue("");
+		  dijit.byId("createdDateToDojo").set("value",null);
 		}
 
 		if(dijit.byId("lastVisitSince")!=null){
 		  dijit.byId("lastVisitSince").setValue("");
 		}
 		if(dijit.byId("lastVisitDateFromDojo")!=null){
-		  dijit.byId("lastVisitDateFromDojo").setValue("");
+		  dijit.byId("lastVisitDateFromDojo").set("value",null);
 		}
 		if(dijit.byId("lastVisitDateToDojo")!=null){
-		   dijit.byId("lastVisitDateToDojo").setValue("");
+		   dijit.byId("lastVisitDateToDojo").set("value",null);
 		}
 
 		if(dijit.byId("active")!=null){
@@ -376,8 +376,8 @@
 		var temp = dijit.byId("lastLoginSince").getValue();
 		if ((temp != null) && (temp != "")) {
 			document.getElementById("lastLoginTypeSearch").value = "Since";
-			dijit.byId("lastLoginDateFromDojo").setValue("");
-			dijit.byId("lastLoginDateToDojo").setValue("");
+			dijit.byId("lastLoginDateFromDojo").set("value",null);
+			dijit.byId("lastLoginDateToDojo").set("value",null);
 			document.getElementById("lastLoginDateFrom").value = "";
 			document.getElementById("lastLoginDateTo").value = "";
 		}
@@ -439,8 +439,8 @@
 		var temp = dijit.byId("createdSince").getValue();
 		if ((temp != null) && (temp != "")) {
 			document.getElementById("createdTypeSearch").value = "Since";
-			dijit.byId("createdDateFromDojo").setValue("");
-			dijit.byId("createdDateToDojo").setValue("");
+			dijit.byId("createdDateFromDojo").set("value",null);
+			dijit.byId("createdDateToDojo").set("value",null);
 			document.getElementById("createdDateFrom").value = "";
 			document.getElementById("createdDateTo").value = "";
 		}
@@ -497,8 +497,8 @@
 		var temp = dijit.byId("lastVisitSince").getValue();
 		if ((temp != null) && (temp != "")) {
 			document.getElementById("lastVisitTypeSearch").value = "Since";
-			dijit.byId("lastVisitDateFromDojo").setValue("");
-			dijit.byId("lastVisitDateToDojo").setValue("");
+			dijit.byId("lastVisitDateFromDojo").set("value",null);
+			dijit.byId("lastVisitDateToDojo").set("value",null);
 			document.getElementById("lastVisitDateFrom").value = "";
 			document.getElementById("lastVisitDateTo").value = "";
 		}
@@ -666,7 +666,7 @@
 		var temp = dijit.byId("dateOfBirthFromDojo").getValue();
 		if ((temp != null) && (temp != "")) {
 			document.getElementById("dateOfBirthTypeSearch").value = "DateRange";
-			dijit.byId("dateOfBirthSinceDojo").setValue("");
+			dijit.byId("dateOfBirthSinceDojo").set("value",null);
 			document.getElementById("dateOfBirthSince").value = "";
 			document.getElementById("dateOfBirthFrom").value = formatDateToDotcmsDate(temp);
 		} else {
@@ -678,7 +678,7 @@
 		var temp = dijit.byId("dateOfBirthToDojo").getValue();
 		if ((temp != null) && (temp != "")) {
 			document.getElementById("dateOfBirthTypeSearch").value = "DateRange";
-			dijit.byId("dateOfBirthSinceDojo").setValue("");
+			dijit.byId("dateOfBirthSinceDojo").set("value",null);
 			document.getElementById("dateOfBirthSince").value = "";
 			document.getElementById("dateOfBirthTo").value = formatDateToDotcmsDate(temp);
 		} else {
@@ -691,8 +691,8 @@
 		if ((temp != null) && (temp != "")) {
 			document.getElementById("dateOfBirthSince").value = formatDateToDotcmsDate(temp);
 			document.getElementById("dateOfBirthTypeSearch").value = "Since";
-			dijit.byId("dateOfBirthFromDojo").setValue("");
-			dijit.byId("dateOfBirthToDojo").setValue("");
+			dijit.byId("dateOfBirthFromDojo").set("value",null);
+			dijit.byId("dateOfBirthToDojo").set("value",null);
 			document.getElementById("dateOfBirthFrom").value = "";
 			document.getElementById("dateOfBirthTo").value = "";
 		} else {
