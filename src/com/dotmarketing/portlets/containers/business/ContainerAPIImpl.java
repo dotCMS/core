@@ -6,7 +6,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.dotmarketing.beans.ContainerStructures;
+import org.springframework.beans.BeanUtils;
+
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.TemplateContainers;
@@ -20,15 +22,19 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -235,6 +241,49 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	/**
 	 *
+	 * saves a list of container-structure relationships
+	 *
+	 * @param containerStructureList
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 *
+	 */
+	public void saveContainerStructures(List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException  {
+
+		boolean local = false;
+		try{
+			try {
+				local = HibernateUtil.startLocalTransactionIfNeeded();
+			} catch (DotDataException e1) {
+				Logger.error(TemplateFactoryImpl.class,e1.getMessage(),e1);
+				throw new DotHibernateException("Unable to start a local transaction " + e1.getMessage(), e1);
+			}
+
+			// get one of the relations to get the container id
+			ContainerStructure cs = containerStructureList.get(0);
+
+			HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure where container_id = '" + cs.getContainerId() + "'");
+
+			for(ContainerStructure containerStructure:containerStructureList){
+				HibernateUtil.save(containerStructure);
+			}
+		}catch(DotHibernateException e){
+			if(local){
+				HibernateUtil.rollbackTransaction();
+			}
+			throw new DotWorkflowException(e.getMessage());
+
+		}finally{
+			if(local){
+				HibernateUtil.commitTransaction();
+			}
+		}
+	}
+
+	/**
+	 *
 	 * Retrieves a list of container-structure relationships by container
 	 *
 	 * @param container
@@ -244,10 +293,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 * @throws DotStateException
 	 *
 	 */
-	@SuppressWarnings("unchecked")
-	public List<ContainerStructures> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
 
-		HibernateUtil dh = new HibernateUtil(ContainerStructures.class);
+		HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
 		dh.setSQLQuery("select {container_structures.*} from container_structures where container_structures.container_id = ?");
 		dh.setParam(container.getIdentifier());
 		return dh.list();

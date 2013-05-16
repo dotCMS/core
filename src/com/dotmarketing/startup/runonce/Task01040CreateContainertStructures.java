@@ -35,9 +35,9 @@ public class Task01040CreateContainertStructures implements StartupTask{
 
 		String addTemplateFK = "alter table container_structures add constraint FK_container_id foreign key (container_id) references identifier(id)";
 
-		String container_structures_relations = "Select identifier,structure_inode, code from containers ";
+		String container_structures_relations = "Select identifier,structure_inode, code from containers where max_contentlets > 0 ";
 
-		String drop_code_column = "alter table containers drop column code";
+		String delete_code_when_content = "update containers set code='' where max_contentlets > 0";
 		String drop_structure_column = "alter table containers drop column structure_inode";
 
 
@@ -66,7 +66,7 @@ public class Task01040CreateContainertStructures implements StartupTask{
 				dc.addParam(code);
 				dc.loadResult();
 			}
-			dc.executeStatement(drop_code_column);
+			dc.executeStatement(delete_code_when_content);
 			dc.executeStatement(drop_structure_column);
 		} catch (Exception e) {
 		 HibernateUtil.rollbackTransaction();

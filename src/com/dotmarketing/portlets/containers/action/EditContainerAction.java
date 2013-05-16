@@ -2,7 +2,9 @@ package com.dotmarketing.portlets.containers.action;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.portlet.ActionRequest;
@@ -16,6 +18,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
@@ -538,13 +541,13 @@ public class EditContainerAction extends DotPortletAction implements
 		} else {
 			currentStructure = StructureCache.getStructureByInode(fm.getStructureInode());
 		}
-		container.setStructureInode(currentStructure.getInode());
-		//container.addParent(currentStructure);
+//		container.setStructureInode(currentStructure.getInode());
 
-		// BEGIN GRAZIANO issue-12-dnd-template
-		if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
-			container.setForMetadata(true);
-		// END GRAZIANO issue-12-dnd-template
+		// TODO: HOW IS THIS GOING TO BEHAVE WITH MULTIPLE CODES?
+//		// BEGIN GRAZIANO issue-12-dnd-template
+//		if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
+//			container.setForMetadata(true);
+//		// END GRAZIANO issue-12-dnd-template
 
 		// it saves or updates the asset
 		if (InodeUtils.isSet(currentContainer.getInode())) {
@@ -572,6 +575,24 @@ public class EditContainerAction extends DotPortletAction implements
 		//Saving the host of the container
 		identifier.setHostId(host.getIdentifier());
 		APILocator.getIdentifierAPI().save(identifier);
+
+		// saving the multiple structures
+		String structuresIdsStr = req.getParameter("structuresIds");
+
+		String[] structuresIds = structuresIdsStr.split("#");
+		List<ContainerStructure> csList = new LinkedList<ContainerStructure>();
+
+		for (String structureId : structuresIds) {
+			String code = req.getParameter("code_"+structureId);
+			ContainerStructure cs = new ContainerStructure();
+			cs.setContainerId(container.getIdentifier());
+			cs.setStructureId(structureId);
+			cs.setCode(code);
+			csList.add(cs);
+		}
+
+		APILocator.getContainerAPI().saveContainerStructures(csList);
+
 
 		SessionMessages.add(httpReq, "message", "message.containers.save");
 		ActivityLogger.logInfo(this.getClass(), "Save WebAsset action", "User " + user.getPrimaryKey() + " saved " + container.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));

@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotmarketing.beans.ContainerStructures;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -81,7 +81,20 @@ public interface ContainerAPI {
 	 *
 	 */
 
-	public List<ContainerStructures> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
+	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
+
+	/**
+	 *
+	 * saves a list of container-structure relationships
+	 *
+	 * @param containerStructureList
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 *
+	 */
+	public void saveContainerStructures(List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves all the containers attached to the given host

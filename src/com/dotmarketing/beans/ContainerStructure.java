@@ -1,6 +1,6 @@
 package com.dotmarketing.beans;
 
-public class ContainerStructures {
+public class ContainerStructure {
 
 	private String id;
 
@@ -10,7 +10,7 @@ public class ContainerStructures {
 
 	private String code;
 
-	public ContainerStructures(){
+	public ContainerStructure(){
 	}
 
 	public String getId() {
