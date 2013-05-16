@@ -7,12 +7,24 @@
 <%@page import="java.util.HashMap"%>
 <%@page import="org.osgi.framework.Bundle"%>
 <%@ page import="com.dotmarketing.util.OSGIUtil" %>
+<%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
+<%@ page import="com.dotmarketing.business.APILocator" %>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
+<%@ page import="com.dotmarketing.util.UtilMethods" %>
 
 <script type="text/javascript">
     require(["dijit/form/SimpleTextarea"]);
 
     var popupMenusDiv;
     var popupMenus = "";
+
+    var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+    <%
+    PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();
+    %>
+    var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 </script>
 <%
 Bundle[] ba = OSGIUtil.getInstance().getBundleContext().getBundles();
@@ -101,12 +113,14 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
         <script type="text/javascript">
 
             <%if(b.getLocation().contains(File.separator) && b.getLocation().contains(File.separator + "load" + File.separator)){ %>
-                popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i++%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=jarFile%>\">";
-                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"javascript:bundles.remotePublishBundle('<%=jarFile%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
-                popupMenus += "</div>";
+                if(enterprise && sendingEndpoints) {
+                    popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i++%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=jarFile%>\">";
+                    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"javascript:bundles.remotePublishBundle('<%=jarFile%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+                    popupMenus += "</div>";
 
-                popupMenusDiv = document.getElementById("popup_menus");
-                popupMenusDiv.innerHTML = popupMenus;
+                    popupMenusDiv = document.getElementById("popup_menus");
+                    popupMenusDiv.innerHTML = popupMenus;
+                }
             <%} %>
         </script>
 	<%}%>
