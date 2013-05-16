@@ -10,7 +10,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.validator.ValidatorForm;
 
-import com.dotmarketing.beans.ContainerStructures;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.Constants;
 
@@ -56,7 +56,7 @@ public class ContainerForm extends ValidatorForm {
 
     private boolean dynamic;
 
-    private List<ContainerStructures> containerStructures;
+    private List<ContainerStructure> containerStructures;
 
 
 
@@ -310,11 +310,11 @@ public class ContainerForm extends ValidatorForm {
 		this.owner = owner;
 	}
 
-	public List<ContainerStructures> getContainerStructures() {
+	public List<ContainerStructure> getContainerStructures() {
 		return containerStructures;
 	}
 
-	public void setContainerStructures(List<ContainerStructures> containerStructures) {
+	public void setContainerStructures(List<ContainerStructure> containerStructures) {
 		this.containerStructures = containerStructures;
 	}
 

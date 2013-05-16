@@ -1,6 +1,18 @@
 package com.dotmarketing.portlets.containers.ajax;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.directwebremoting.WebContextFactory;
+
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.ajax.util.ContainerAjaxUtil;
@@ -10,10 +22,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import org.directwebremoting.WebContextFactory;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
 
 /**
  * Class used by new dwr interface created for Design Template.
@@ -77,14 +85,25 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
                     contMap.put( "fullTitle", contMap.get( "title" ) );
                 }
 
-                StringBuffer containerCode = new StringBuffer( cont.getCode() );
+//                StringBuffer containerCode = new StringBuffer( cont.getCode() );
+                List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(cont);
+                boolean checkContainerCode = false;
+
+                for (ContainerStructure cs : csList) {
+                	if(ContainerAjaxUtil.checkContainerCode( cs.getCode())) {
+                		checkContainerCode = true;
+                	} else {
+                		checkContainerCode = false;
+                		break;
+                	}
+                }
 
                 /**
                  * adding the max_contentlets information to the result map because we must filter for the containers that accept
                  * contents and doesn't stay into the template for more than one time.
                  */
                 contMap.put( "maxContentlets", cont.getMaxContentlets() );
-                if ( !ContainerAjaxUtil.checkContainerCode( containerCode ) && !cont.isForMetadata() ) {
+                if ( !checkContainerCode && !cont.isForMetadata() ) {
 
                     //Now we need to verify if an exclude list was sent from the client
                     Boolean excludeContainer = false;

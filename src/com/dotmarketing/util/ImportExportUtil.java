@@ -68,7 +68,7 @@ import com.thoughtworks.xstream.XStream;
  *
  */
 public class ImportExportUtil {
-    
+
     /**
      * The path where tmp files are stored. This gets wiped alot
      */
@@ -106,6 +106,7 @@ public class ImportExportUtil {
     private List<File> foldersXML = new ArrayList<File>();
     private List<File> templatesXML = new ArrayList<File>();
     private List<File> templateContainersXML = new ArrayList<File>();
+    private List<File> containerStructuresXML = new ArrayList<File>();
     private List<File> filesXML = new ArrayList<File>();
     private List<File> versionInfoFilesXML = new ArrayList<File>();
     private List<File> workFlowTaskXML = new ArrayList<File>();
@@ -114,7 +115,7 @@ public class ImportExportUtil {
     private List<File> workFlowTaskFilesXML = new ArrayList<File>();
     private List<File> tagFiles = new ArrayList<File>();
     private File workflowSchemaFile = null;
-    
+
     public ImportExportUtil() {
         MaintenanceUtil.flushCache();
         // Set the asset paths
@@ -144,7 +145,7 @@ public class ImportExportUtil {
         classesWithIdentity.add("DashboardSummary");
         classesWithIdentity.add("DashboardSummaryContent");
         classesWithIdentity.add("DashboardSummaryVisits");
-        
+
         tableNames = new HashMap<String, String>();
         //tableNames.put("Inode", "inode");
         tableNames.put("Rating", "content_rating");
@@ -211,7 +212,7 @@ public class ImportExportUtil {
             tableIDColumns.put("analytic_summary_visits", "id");
         }
     }
-    
+
     /**
      * Takes a zip file from the temp directory to restore dotCMS data. Currently it will blow away all current data
      * This method cannot currently be run in a transaction. For performance reasons with db drivers and connections it closes the
@@ -226,7 +227,7 @@ public class ImportExportUtil {
         out.println("<pre>Found " + _tempFiles.length + " files to import");
         Logger.info(this, "Found " + _tempFiles.length + " files to import");
         deleteDotCMS();
-        
+
         File assetDir = null;
         boolean hasAssetDir = false;
         for (int i = 0; i < _tempFiles.length; i++) {
@@ -236,7 +237,7 @@ public class ImportExportUtil {
 				Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
 			}
             File _importFile = new File(getBackupTempFilePath() + "/" + _tempFiles[i]);
-            
+
             if(_importFile.isDirectory()){
                 if(_importFile.getName().equals("asset")){
                     hasAssetDir = true;
@@ -245,17 +246,19 @@ public class ImportExportUtil {
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.contentlet.business.Contentlet_")){
                 contentletsXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.templates.model.Template_")){
-                templatesXML.add(new File(_importFile.getPath()));	
+                templatesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.beans.TemplateContainers_")) {
                 templateContainersXML.add(new File(_importFile.getPath()));
+            }else if(_importFile.getName().contains("com.dotmarketing.beans.ContainerStructure_")) {
+                containerStructuresXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.containers.model.Container_")){
-                containersXML.add(new File(_importFile.getPath()));	
+                containersXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.files.model.File_")){
-                filesXML.add(new File(_importFile.getPath()));	
+                filesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.htmlpages.model.HTMLPage_")){
-                pagesXML.add(new File(_importFile.getPath()));	
+                pagesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.links.model.Link_")){
-                menuLinksXML.add(new File(_importFile.getPath()));	
+                menuLinksXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.structure.model.Structure_")){
                 structuresXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.business.LayoutsRoles_")){
@@ -321,7 +324,7 @@ public class ImportExportUtil {
             }
             out.flush();
         }
-        
+
         try {
             doXMLFileImport(companyXML, out);
         } catch (Exception e) {
@@ -333,7 +336,7 @@ public class ImportExportUtil {
             Reader charStream = null;
             XStream _xstream = null;
             Class _importClass = null;
-            
+
             Pattern p = Pattern.compile("_[0-9]{8}");
             Matcher m  = p.matcher(file.getName());
             if(m.find()){
@@ -342,16 +345,16 @@ public class ImportExportUtil {
             else{
                 _className = file.getName().substring(0, file.getName().lastIndexOf("."));
             }
-            
+
             try{
                 _importClass = Class.forName(_className);
             }catch (Exception e) {
                 Logger.error(this, "Class not found " + _className, e);
                 return;
             }
-            
+
             _xstream = new XStream();
-            
+
             try{
                 charStream = new InputStreamReader(new FileInputStream(file), "UTF-8");
             }catch (UnsupportedEncodingException uet) {
@@ -363,7 +366,7 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to import " + _className, e);
             }
         }
-        
+
         Collections.sort(roles);
         try{
             HibernateUtil.closeSession();
@@ -371,10 +374,10 @@ public class ImportExportUtil {
                 HibernateUtil _dh = new HibernateUtil(Role.class);
                 String id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(Role.class).getIdentifierPropertyName();
                 HibernateUtil.getSession().close();
-                
+
                 if (UtilMethods.isSet(id)) {
                     String prop = BeanUtils.getProperty(role, id);
-                    
+
                     try {
                         if(id.equalsIgnoreCase("id")){
                             Long myId = new Long(Long.parseLong(prop));
@@ -389,7 +392,7 @@ public class ImportExportUtil {
                             Logger.error(this, "Unable to save role " + role.getId(), ex);
                         }
                     }
-                    
+
                 } else {
                     HibernateUtil.save(role);
                 }
@@ -408,7 +411,7 @@ public class ImportExportUtil {
         } catch (Exception e) {
             Logger.error(this, "Unable to load " + userXML.getName() + " : " + e.getMessage(), e);
         }
-        
+
         for (File file : usersRolesXML) {
             try{
 				HibernateUtil.closeSession();
@@ -441,16 +444,16 @@ public class ImportExportUtil {
         } catch (Exception e) {
             Logger.error(this, "Unable to load " + rolesLayoutsXML.getName() + " : " + e.getMessage(), e);
         }
-        
+
         try{
-            /* Because of the parent check we do at db we need to import 
+            /* Because of the parent check we do at db we need to import
              * folder identifiers first but for the same reason we need to sort them first
              * by parent_path
              */
-            
+
             final List<Identifier> folderIdents=new ArrayList<Identifier>();
             final XStream xstream = new XStream();
-            
+
             // collecting all folder identifiers
             for(File ff : identifiersXML) {
                 List<Identifier> idents=(List<Identifier>)xstream.fromXML(new FileInputStream(ff));
@@ -459,14 +462,14 @@ public class ImportExportUtil {
                         folderIdents.add(ident);
                 }
             }
-            
+
             // sorting folder identifiers by parent path in order to pass parent check
             Collections.sort(folderIdents, new Comparator<Identifier>() {
                 public int compare(Identifier o1, Identifier o2) {
                     return o1.getParentPath().compareTo(o2.getParentPath());
                 }
             });
-            
+
             // saving folder identifiers
             for(Identifier ident : folderIdents) {
                 Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
@@ -474,7 +477,7 @@ public class ImportExportUtil {
             }
             HibernateUtil.flush();
             HibernateUtil.closeSession();
-            
+
             // now we need to save all remaining identifiers (folders already added)
             for(File ff : identifiersXML) {
                 try {
@@ -487,13 +490,13 @@ public class ImportExportUtil {
                     Logger.error(this, "Unable to load " + ff.getName() + " : " + e.getMessage(), e);
                 }
             }
-            
+
             HibernateUtil.closeSession();
-            
+
             // we store here defaultFileType for every folder
-            // because of mutual folder <--> structure dependency 
+            // because of mutual folder <--> structure dependency
             final Map<String,String> fileTypesInodes=new HashMap<String,String>();
-            
+
             // now we can import folders
             for(File ff : foldersXML) {
                 try {
@@ -509,9 +512,9 @@ public class ImportExportUtil {
                     Logger.error(this, "Unable to load " + ff.getName() + " : " + e.getMessage(), e);
                 }
             }
-            
+
             HibernateUtil.closeSession();
-            
+
             // we need structures before contentlets
             // but structures have references to folders and hosts identifiers
             // so, here is the place to do it
@@ -522,7 +525,7 @@ public class ImportExportUtil {
                     Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
                 }
             }
-            
+
             // updating file_type on folder now that structures were added
             DotConnect dc = new DotConnect();
             for(Entry<String,String> entry : fileTypesInodes.entrySet()) {
@@ -531,10 +534,10 @@ public class ImportExportUtil {
                 dc.addParam(entry.getKey());
                 dc.loadResult();
             }
-            
+
             HibernateUtil.closeSession();
-            
-            // We have all identifiers, structures and users. Ready to import contentlets! 
+
+            // We have all identifiers, structures and users. Ready to import contentlets!
             for (File file : contentletsXML) {
                 try{
                     doXMLFileImport(file, out);
@@ -542,11 +545,11 @@ public class ImportExportUtil {
                     Logger.error(this, "Unable to load hosts from " + file.getName() + " : " + e.getMessage(), e);
                 }
             }
-            
+
         } catch (Exception e) {
             Logger.error(this, "Unable to load contentlet, structures and folders " + e.getMessage(), e);
         }
-        
+
         for (File file : templatesXML) {
             try{
                 HibernateUtil.closeSession();
@@ -559,8 +562,20 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
             }
         }
-        
+
         for (File file : templateContainersXML) {
+            try{
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
+            }
+            try{
+                doXMLFileImport(file, out);
+            } catch (Exception e) {
+                Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
+            }
+        }
+        for (File file : containerStructuresXML) {
             try{
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
@@ -620,7 +635,7 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
             }
         }
-        
+
         for (File file : treeXMLs) {
             try{
 				HibernateUtil.closeSession();
@@ -717,22 +732,22 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
             }
         }
-        
-        
+
+
         // workflow schemas need to come before permissions
         if(workflowSchemaFile != null){
         	try{
         		WorkflowImportExportUtil.getInstance().importWorkflowExport(workflowSchemaFile);
-        		
+
         	}catch(Exception e){
         		 Logger.error(this, "Unable to import workflowSchemaFile" + e.getMessage(), e);
         	}
 
         }
-        
-        
-        
-        
+
+
+
+
         for (File file : permissionXMLs) {
             try{
 				HibernateUtil.closeSession();
@@ -745,7 +760,7 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
             }
         }
-        
+
         // finally as all assets are loaded we can import versionInfo files
         for (File file : versionInfoFilesXML) {
             try{
@@ -807,7 +822,7 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
             }
         }
-        
+
         for (File file : tagFiles) {
             try{
                 HibernateUtil.closeSession();
@@ -820,37 +835,37 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
             }
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
+
+
+
+
+
         cleanUpDBFromImport();
         if(hasAssetDir && assetDir!= null && assetDir.exists())
             copyAssetDir(assetDir);
-        
-        
+
+
         out.println("Done Importing");
-        
+
         deleteTempFiles();
-        
+
         try {
             HibernateUtil.commitTransaction();
         } catch (DotHibernateException e) {
             Logger.error(this, e.getMessage(),e);
         }
-        
+
         MaintenanceUtil.flushCache();
-        
+
         ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
-        
+
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Logger.info(this, "Building Initial Index");
         try {
@@ -867,7 +882,7 @@ public class ImportExportUtil {
             Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
         }
         int counter = 0;
-        
+
         while(recordsToIndex > 0){
             if(counter > 600){
                 try {
@@ -893,13 +908,13 @@ public class ImportExportUtil {
         }
         Logger.info(this, "Finished Building Initial Index");
         ReindexThread.stopThread();
-        
+
         CacheLocator.getCacheAdministrator().flushAll();
         MaintenanceUtil.deleteStaticFileStore();
         MaintenanceUtil.deleteMenuCache();
-        
+
     }
-    
+
     private void copyAssetDir(File fromAssetDir){
         File ad;
         if(!UtilMethods.isSet(assetRealPath)){
@@ -938,7 +953,7 @@ public class ImportExportUtil {
             }
         }
     }
-    
+
     /**
      * This is not completed should delete all the dotcms data from an install
      * @author Will
@@ -949,20 +964,20 @@ public class ImportExportUtil {
             //			Set<String> _tablesToDelete = new HashSet<String>();
             ArrayList<String> _tablesToDelete = new ArrayList<String>();
             Map map =null;
-            
+
             try {
                 map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
             } catch (DotHibernateException e) {
                 Logger.error(this,e.getMessage(),e);
             }
-            
+
             Iterator it = map.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry pairs = (Map.Entry) it.next();
                 AbstractEntityPersister cmd = (AbstractEntityPersister) pairs.getValue();
                 String tableName = cmd.getTableName();
                 //				Class x = (Class) pairs.getKey();
-                
+
                 if(!tableName.equalsIgnoreCase("inode")
                         && !tableName.equalsIgnoreCase("plugin")
                         && !tableName.equalsIgnoreCase("plugin_property")
@@ -1008,8 +1023,8 @@ public class ImportExportUtil {
             _tablesToDelete.add("pollsdisplay");
             _tablesToDelete.add("pollsquestion");
             _tablesToDelete.add("pollsvote");
-            
-            
+
+
             DotConnect _dc = null;
             for (String table : _tablesToDelete) {
                 Logger.info(this, "About to delete all records from " + table);
@@ -1038,11 +1053,11 @@ public class ImportExportUtil {
             }
         }
     }
-    
+
     interface ObjectFilter {
         boolean includeIt(Object obj);
     }
-    
+
     /**
      * This method takes an xml file and will try to import it via XStream and
      * Hibernate
@@ -1058,12 +1073,12 @@ public class ImportExportUtil {
     private void doXMLFileImport(File f, PrintWriter out)throws DotDataException, HibernateException {
         doXMLFileImport(f, out, null);
     }
-    
+
     private void doXMLFileImport(File f, PrintWriter out, ObjectFilter filter)throws DotDataException, HibernateException {
         if( f ==null){
             return;
         }
-        
+
         BufferedInputStream _bin = null;
         Reader charStream = null;
         try {
@@ -1071,7 +1086,7 @@ public class ImportExportUtil {
             String _className = null;
             Class _importClass = null;
             HibernateUtil _dh = null;
-            
+
             boolean counter = false;
             boolean image = false;
             boolean portlet = false;
@@ -1082,7 +1097,7 @@ public class ImportExportUtil {
             boolean pollsdisplay = false;
             boolean pollsquestion = false;
             boolean pollsvote = false;
-            
+
             /* if we have a multipart import file */
             Pattern p = Pattern.compile("_[0-9]{8}");
             Matcher m  = p.matcher(f.getName());
@@ -1092,7 +1107,7 @@ public class ImportExportUtil {
             else{
                 _className = f.getName().substring(0, f.getName().lastIndexOf("."));
             }
-            
+
             if(_className.equals("Counter")){
                 counter = true;
             }else if(_className.equals("Image")){
@@ -1124,7 +1139,7 @@ public class ImportExportUtil {
             _xstream = new XStream();
             out.println("Importing:\t" + _className);
             Logger.info(this, "Importing:\t" + _className);
-            
+
             try{
                 charStream = new InputStreamReader(new FileInputStream(f), "UTF-8");
             }catch (UnsupportedEncodingException uet) {
@@ -1140,7 +1155,7 @@ public class ImportExportUtil {
                 }
                 else {
                     l = all;
-                }   
+                }
             }catch(Exception e){
                 Logger.error(this, "Unable to import " + _className, e);
             }
@@ -1361,9 +1376,9 @@ public class ImportExportUtil {
                 HibernateUtil.getSession().close();
                 boolean identityOn = false;
                 String cName = _className.substring(_className.lastIndexOf(".") + 1);
-                
-                
-                
+
+
+
                 String tableName = "";
                 if(classesWithIdentity.contains(cName) && dbType.equals(DbConnectionFactory.MSSQL) && !cName.equalsIgnoreCase("inode")){
                     tableName = tableNames.get(cName);
@@ -1379,10 +1394,10 @@ public class ImportExportUtil {
                         com.dotmarketing.portlets.contentlet.business.Contentlet contentlet = (com.dotmarketing.portlets.contentlet.business.Contentlet)l.get(j);
                         changeDateForSQLServer(contentlet, out);
                     }
-                    
+
                     if (UtilMethods.isSet(id)) {
                         String prop = BeanUtils.getProperty(obj, id);
-                        
+
                         try {
                             HibernateUtil.startTransaction();
                             if(id.substring(id.length()-2,id.length()).equalsIgnoreCase("id")){
@@ -1406,7 +1421,7 @@ public class ImportExportUtil {
                                 Logger.warn(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage());
                                 Logger.info(this, "Problematic object: "+obj+" prop:"+prop);
                                 Logger.info(this, _xstream.toXML(obj));
-                                
+
                                 try{
                                     HibernateUtil.rollbackTransaction();
                                     HibernateUtil.closeSession();
@@ -1414,7 +1429,7 @@ public class ImportExportUtil {
                                 continue;
                             }
                         }
-                        
+
                     } else {
                         if(obj instanceof Tree){
                             Tree t = (Tree) obj;
@@ -1433,7 +1448,7 @@ public class ImportExportUtil {
                             }
                             else{
                                 Logger.warn(this.getClass(), "Can't import tree- no matching inodes: {parent=" + t.getParent() + ", child=" + t.getChild() +"}");
-                                
+
                             }
                         }
                         else{
@@ -1447,8 +1462,8 @@ public class ImportExportUtil {
                     HibernateUtil.getSession().flush();
                     HibernateUtil.closeSession();
                     try {
-                        
-                        
+
+
                         Thread.sleep(3);
                     } catch (InterruptedException e) {
                         // TODO Auto-generated catch block
@@ -1474,9 +1489,9 @@ public class ImportExportUtil {
         } catch (DotSecurityException e) {
             Logger.error(this,e.getMessage(),e);
         } finally {
-            
+
             try {
-                
+
                 if (charStream != null) {
                     charStream.close();
                 }
@@ -1485,7 +1500,7 @@ public class ImportExportUtil {
             }
         }
     }
-    
+
     /**
      * Simple FileNameFilter for XML files
      *
@@ -1493,7 +1508,7 @@ public class ImportExportUtil {
      *
      */
     private class XMLFileNameFilter implements FilenameFilter {
-        
+
         public boolean accept(File f, String s) {
             if (s.toLowerCase().endsWith(".xml")) {
                 return true;
@@ -1502,17 +1517,17 @@ public class ImportExportUtil {
             }
         }
     }
-    
+
     private void turnIdentityOnMSSQL(String tableName) throws SQLException{
         DotConnect dc = new DotConnect();
         dc.executeStatement("set identity_insert " + tableName + " on");
     }
-    
+
     private void turnIdentityOffMSSQL(String tableName) throws SQLException{
         DotConnect dc = new DotConnect();
         dc.executeStatement("set identity_insert " + tableName + " off");
     }
-    
+
     private void cleanUpDBFromImport(){
         String dbType = DbConnectionFactory.getDBType();
         DotConnect dc = new DotConnect();
@@ -1543,41 +1558,41 @@ public class ImportExportUtil {
             Logger.error(this,"cleanUpDBFromImport failed:"+ e, e);
         }
     }
-    
+
     public String getBackupTempFilePath() {
         return backupTempFilePath;
     }
-    
+
     public void setBackupTempFilePath(String backupTempFilePath) {
         this.backupTempFilePath = backupTempFilePath;
     }
-    
-    
+
+
     /**
      *
      * @param zipFile
      * @return
      */
     public boolean validateZipFile(File zipFile){
-        
+
         String tempdir = getBackupTempFilePath();
         try {
             deleteTempFiles();
-            
+
             File ftempDir = new File(tempdir);
             ftempDir.mkdirs();
             File tempZip = new File(tempdir + File.separator + zipFile.getName());
             tempZip.createNewFile();
             FileChannel ic = new FileInputStream(zipFile).getChannel();
             FileChannel oc = new FileOutputStream(tempZip).getChannel();
-            
+
             // to handle huge zipfiles
             ic.transferTo(0, ic.size(), oc);
-            
+
             ic.close();
             oc.close();
-            
-            
+
+
             /*
              * Unzip zipped backups
              */
@@ -1586,13 +1601,13 @@ public class ImportExportUtil {
                 ZipUtil.extract(z, new File(backupTempFilePath));
             }
             return true;
-            
+
         } catch (Exception e) {
             Logger.error(this,"Error with file",e);
             return false;
         }
     }
-    
+
     private boolean validateDate(Date date){
         java.util.Calendar calendar = java.util.Calendar.getInstance();
         calendar.set(1753, 01, 01);
@@ -1601,9 +1616,9 @@ public class ImportExportUtil {
             validated = false;
         }
         return validated;
-        
+
     }
-    
+
     private void changeDateForSQLServer(com.dotmarketing.portlets.contentlet.business.Contentlet contentlet, PrintWriter out){
         if(!validateDate(contentlet.getDate1())){
             contentlet.setDate1(new Date());

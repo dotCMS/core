@@ -4,10 +4,44 @@
 
 	function submitfm(form,subcmd) {
 
-			var numContentlets = parseInt(dijit.byId("maxContentlets").value);
-			if(dijit.byId("toggleEditorCode").checked){
-				document.getElementById("codeMask").value=codeEditor.getCode();
+			var inputSts = document.createElement('input');
+		    inputSts.type = 'hidden';
+		    inputSts.name = 'structuresIds';
+		    inputSts.id = 'structuresIds';
+
+		    var tabChildren = dijit.byId("tabContainer").getChildren();
+
+			structuresAdded = new Array();
+
+		    tabChildren.forEach(function(widget, index, hash){
+				var structureInode = widget.id.split("_")[1];
+				structuresAdded.push(structureInode);
+			});
+
+
+			for(var i=0; i < structuresAdded.length; i++) {
+
+				var input = document.createElement('input');
+			    input.type = 'hidden';
+			    input.name = 'code_' + structuresAdded[i];
+			    input.id = 'code_' + structuresAdded[i];
+
+				if(codeEditor[structuresAdded[i]]!=null) {
+					dojo.byId("codeMask"+structuresAdded[i]).value = codeEditor[structuresAdded[i]].getCode();
+   				}
+
+   				input.value = dojo.byId("codeMask"+structuresAdded[i]).value;
+   				form.appendChild(input);
+
+   				inputSts.value = inputSts.value + structuresAdded[i] + "#";
 			}
+
+			form.appendChild(inputSts);
+
+			var numContentlets = parseInt(dijit.byId("maxContentlets").value);
+<!-- 			if(dijit.byId("toggleEditorCode").checked){ -->
+<!-- 				document.getElementById("codeMask").value=codeEditor.getCode(); -->
+<!-- 			} -->
 			if(dijit.byId("toggleEditorPreLoop").checked && numContentlets > 0){
 				document.getElementById("preLoopMask").value=preLoopEditor.getCode();
 			}
@@ -22,7 +56,7 @@
 
 			//DOTCMS-5415
 			document.getElementById("preLoop").value = document.getElementById("preLoopMask").value;
-			document.getElementById("code").value = document.getElementById("codeMask").value;
+<!-- 			document.getElementById("code").value = document.getElementById("codeMask").value; -->
 			document.getElementById("postLoop").value = document.getElementById("postLoopMask").value;
 
 			form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
@@ -38,7 +72,11 @@
 	}
 
 	function addVariable() {
-		var structureInode = dijit.byId("structureSelect").attr('value');
+
+		var selectedTab = dijit.byId('tabContainer').selectedChildWidget;
+		var structureInode = selectedTab.id.split("_")[1];
+
+<!-- 		var structureInode = dijit.byId("structureSelect").attr('value'); -->
 		dijit.registry.remove('variablesDialog');
 	 	new dijit.Dialog({
 	 		id: 'variablesDialog',
@@ -49,14 +87,28 @@
 	}
 
 	function insertAtCursor( myValue, myFieldName) {
+
+		var selectedTab = dijit.byId('tabContainer').selectedChildWidget;
+		var structureInode = selectedTab.id.split("_")[1];
+
 		myField = document.getElementById(myFieldName);
         if(myFieldName=="codeMask") {
-        	if(codeEditor) {
-        		var pos= codeEditor.cursorPosition(true);
-				codeEditor.insertIntoLine(pos.line, pos.character, myValue);
-			} else {
-				myField.value=myField.value+myValue;
-			}
+
+			myField = dojo.byId("codeMask"+structureInode);
+
+        	if(codeEditor[structureInode]) {
+        		var pos= codeEditor[structureInode].cursorPosition(true);
+				codeEditor[structureInode].insertIntoLine(pos.line, pos.character, myValue);
+        	} else {
+        		myField.value=myField.value+myValue;
+        	}
+
+<!--         	if(codeEditor) { -->
+<!--         		var pos= codeEditor.cursorPosition(true); -->
+<!-- 				codeEditor.insertIntoLine(pos.line, pos.character, myValue); -->
+<!-- 			} else { -->
+<!-- 				myField.value=myField.value+myValue; -->
+<!-- 			} -->
 		} else if(myFieldName=="preLoopMask") {
 			if(preLoopEditor) {
 				var pos= preLoopEditor.cursorPosition(true);
@@ -186,16 +238,18 @@
 			var val = document.getElementById("maxContentlets").value;
 			var ele = document.getElementById("preLoopDiv");
 			var ele2 = document.getElementById("postLoopDiv");
-			var ele3 = document.getElementById("structureControls");
+<!-- 			var ele3 = document.getElementById("structureControls"); -->
 
-			var selectedTab = dijit.byId('tabContainer').selectedChildWidget;
-			var structureId = selectedTab.id.split("_")[1];
+<!-- 			var selectedTab = dijit.byId('tabContainer').selectedChildWidget; -->
+<!-- 			var structureId = selectedTab.id.split("_")[1]; -->
 
-
-			if(!codeEditorCreated[structureId]){
-			codeEditor[structureId]=codeMirrorArea("codeMask"+structureId, "<%=codeWidth%>", "<%=codeHeight%>");
-			codeEditorCreated[structureId]=true;
+			for(var i=0; i < structuresAdded.length; i++) {
+				if(codeEditor[structuresAdded[i]]==null) {
+					codeEditor[structuresAdded[i]]=codeMirrorArea("codeMask"+structuresAdded[i],"<%=codeWidth%>", "<%=codeHeight%>");
+  	       			codeEditorCreated[structuresAdded[i]]=true;
+   				}
 			}
+
 			if(isNaN(parseInt(val)) || parseInt(val)==0){
 			    if(preLoopEditorCreated){
 			    	preLoopEditor=codeMirrorRemover(preLoopEditor,"preLoopMask");
@@ -207,12 +261,12 @@
 			    }
 				ele.style.display="none";
 				ele2.style.display="none";
-				ele3.style.display="none";
+<!-- 				ele3.style.display="none"; -->
 			}
 			else{
 				ele.style.display="";
 				ele2.style.display="";
-				ele3.style.display="";
+<!-- 				ele3.style.display=""; -->
 				if(!preLoopEditorCreated){
 					preLoopEditor=codeMirrorArea("preLoopMask", "<%=preLoopWidth%>", "<%=preLoopHeight%>");
 					preLoopEditorCreated=true;
@@ -520,6 +574,12 @@
          closable:true
 	    });
 
+	    require(["dojo/on"], function(on){
+		  on(cp1, "close", function(e){
+		    removeStructure(structureInode);
+		  });
+		});
+
 	    cp1.startup();
 
 	    var textarea = new dijit.form.Textarea({
@@ -539,5 +599,19 @@
 
 	function addStructureToList(structureId) {
 		structuresAdded.push(structureId);
+	}
+
+	function removeStructure(structureId) {
+<!-- 		codeMirrorRemover(codeEditor[structureId], "codeMask"+structureId); -->
+<!-- 		removeElement(dojo.byId("codeMask"+structureId)); -->
+
+		require(["dojo/dom-construct"], function(domConstruct){
+		  domConstruct.destroy("codeMask"+structureId);
+		  domConstruct.destroy("codeMask"+structureId);
+		});
+
+		codeEditor[structureId] = null;
+		var index = structuresAdded.indexOf(structureId);
+		structuresAdded.splice(index,1);
 	}
 
