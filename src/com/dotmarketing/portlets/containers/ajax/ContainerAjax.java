@@ -11,16 +11,17 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.directwebremoting.WebContextFactory;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.portlets.containers.ajax.util.ContainerAjaxUtil;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -157,6 +158,31 @@ public class ContainerAjax {
 //		Commented by issue-2093
 //		result.put("inode", st.getInode());
 		return result;
+	}
+
+	public List<Map<String, String>> getContainerStructures(String containerInode) throws Exception{
+		Container cont = (Container) InodeFactory.getInode(containerInode, Container.class);
+
+		List<Map<String,String>> resultList = new ArrayList<Map<String,String>>();
+		List<ContainerStructure> csList;
+
+		try {
+			csList = APILocator.getContainerAPI().getContainerStructures(cont);
+
+			for (ContainerStructure cs : csList) {
+				Map<String, String> result = new HashMap<String, String>();
+				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+				result.put("inode", cs.getStructureId());
+				result.put("name", st.getName());
+				resultList.add(result);
+			}
+
+		} catch (Exception e) {
+			Logger.error(getClass(), e.getMessage());
+			throw e;
+		}
+
+		return resultList;
 	}
 
 	public String checkDependencies(String containerInode) throws DotDataException, DotRuntimeException, DotSecurityException, PortalException, SystemException{

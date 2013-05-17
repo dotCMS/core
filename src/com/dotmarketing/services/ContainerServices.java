@@ -5,15 +5,18 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -116,8 +119,7 @@ public class ContainerServices {
             if (isDynamic) {
             	// commented by issue-2093
 //                Structure containerStructure = StructureCache.getStructureByInode(container.getStructureInode());
-//
-//                sb.append("#set ($contentletResultsMap" ).append( identifier.getInode() ).append(
+//                   sb.append("#set ($contentletResultsMap" ).append( identifier.getInode() ).append(
 //                        " = $contents.searchWithLuceneQuery(\"").append( containerStructure.getInode() ).append("\", " ).append(
 //                                "\"$LUCENE_QUERY\", " ).append(
 //                                "\"$SORT_PAGE\", " ).append(
@@ -176,6 +178,10 @@ public class ContainerServices {
 
                 String code = container.getCode();
 
+                sb.append("#set ($structureCode" ).append(
+                		" = $containerAPI.getStructureCode(\"").append( container.getIdentifier() ).append("\", \"$ContentletStructure\"))" );
+
+
                 //### HEADER ###
                 String startTag = "${contentletStart}";
                 if(!code.contains(startTag))
@@ -214,7 +220,9 @@ public class ContainerServices {
                 sb.append("#if($isWidget == true)");
                 	sb.append("$widgetCode");
                 sb.append(" #else ");
-                	sb.append(code );
+//                	sb.append(code );
+//                	sb.append("$structureCode" );
+                	sb.append("$structureCode" );
                 sb.append(" #end ");
               //The empty div added for styling issue in Internet Explorer is closed here
                 //http://jira.dotmarketing.net/browse/DOTCMS-1974
