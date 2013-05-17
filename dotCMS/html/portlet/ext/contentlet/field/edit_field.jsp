@@ -204,14 +204,14 @@
         	}
         }
 %>
-    <div style="margin-bottom:20px;max-width:600px;overflow:visible;">
+    <div style="margin-bottom:20px;width:700px;overflow:visible;border:0px red solid">
         <textarea  <%= isReadOnly?"readonly=\"readonly\"":"" %>
             class="editWYSIWYGField" rows="7"
             name="<%=field.getFieldContentlet()%>"
-            id="<%=field.getVelocityVarName()%>"  style="width:100%; height:350px;font-family:monospace;clear:both;"><%=UtilMethods.htmlifyString(textValue)%>
+            id="<%=field.getVelocityVarName()%>" style="width:100%; height:450px;font-family:monospace;clear:both;"><%=UtilMethods.htmlifyString(textValue)%>
 		</textarea>
 
-   		<table style="margin:10px 5px 20px 5px;width:600px;">
+   		<table style="margin:10px 5px 20px 5px;">
             <tr>
 				<td class="WYSIWYGControls">
 	                <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>')">
