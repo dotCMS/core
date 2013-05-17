@@ -792,7 +792,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			} else if (UtilMethods.isSet(contentletFormData.get("contentcontainer_inode"))) {
 				String containerInode = (String) contentletFormData.get("contentcontainer_inode");
 				Container container = (Container) InodeFactory.getInode(containerInode, Container.class);
-				st = (Structure) InodeFactory.getInode(container.getStructureInode(), Structure.class);
+				// commented by issue-2093
+//				st = (Structure) InodeFactory.getInode(container.getStructureInode(), Structure.class);
 			}else if (UtilMethods.isSet(contentletFormData.get("sibblingStructure"))) {
 				selectedStructure = (String) contentletFormData.get("sibblingStructure");
 				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);

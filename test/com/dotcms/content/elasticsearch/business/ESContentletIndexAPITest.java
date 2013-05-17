@@ -208,7 +208,7 @@ public class ESContentletIndexAPITest extends TestBase {
 
         String oldActiveLive = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_LIVE_INDEX_NAME);
         String oldActiveWorking = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_WORKING_INDEX_NAME);
-        
+
         //Creates the working index
         Boolean result = indexAPI.createContentIndex( workingIndex );
         assertTrue( result );
@@ -334,7 +334,7 @@ public class ESContentletIndexAPITest extends TestBase {
         assertNotNull( indices );
         assertTrue( indices.isEmpty() );
         */
-        
+
         // this blows up everything. do not try at home
     }
 
@@ -434,7 +434,7 @@ public class ESContentletIndexAPITest extends TestBase {
                 result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
                 x++;
             } while((result == null || result.isEmpty()) && x<100);
-            
+
         } finally {
             APILocator.getContentletAPI().delete( testContentlet, user, false );
         }
@@ -610,12 +610,14 @@ public class ESContentletIndexAPITest extends TestBase {
         container.setCode( "this is the code" );
         container.setFriendlyName( "test container" );
         container.setTitle( "his is the title" );
-        container.setStructureInode( structure.getInode() );
+     // commented by issue-2093
+//        container.setStructureInode( structure.getInode() );
         container.setMaxContentlets( 5 );
         container.setPreLoop( "preloop code" );
         container.setPostLoop( "postloop code" );
         //Save it
-        container = APILocator.getContainerAPI().save( container, structure, defaultHost, user, false );
+     // commented by issue-2093
+//        container = APILocator.getContainerAPI().save( container, structure, defaultHost, user, false );
 
         //Create a template
         String body = "<html><body> #parseContainer('" + container.getIdentifier() + "') </body></html>";
