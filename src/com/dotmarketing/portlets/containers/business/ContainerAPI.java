@@ -127,7 +127,7 @@ public interface ContainerAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public Container save(Container container, Structure structure, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
 	/**

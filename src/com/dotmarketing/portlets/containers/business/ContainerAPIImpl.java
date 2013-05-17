@@ -3,10 +3,9 @@ package com.dotmarketing.portlets.containers.business;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.beans.BeanUtils;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -73,8 +72,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
        	newContainer.setTitle(source.getTitle() + appendToName);
 
         //Copy the structure relationship
-        Structure st = StructureCache.getStructureByInode(source.getStructureInode());
-        newContainer.setStructureInode(st.getInode());
+//        Structure st = StructureCache.getStructureByInode(source.getStructureInode());
+//        newContainer.setStructureInode(st.getInode());
 
         //creates new identifier for this webasset and persists it
 		Identifier newIdentifier = APILocator.getIdentifierAPI().createNew(newContainer, destination);
@@ -88,6 +87,23 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			APILocator.getVersionableAPI().setLive(newContainer);
 		}
 
+		// issue-2093 Copying multiple structures per container
+		if(source.getMaxContentlets()>0) {
+
+			List<ContainerStructure> sourceCS = getContainerStructures(source);
+			List<ContainerStructure> newContainerCS = new LinkedList<ContainerStructure>();
+
+			for (ContainerStructure oldCS : sourceCS) {
+				ContainerStructure newCS = new ContainerStructure();
+				newCS.setContainerId(newContainer.getIdentifier());
+				newCS.setStructureId(oldCS.getStructureId());
+				newCS.setCode(oldCS.getCode());
+				newContainerCS.add(newCS);
+			}
+
+			saveContainerStructures(newContainerCS);
+
+		}
 
 		/*TreeFactory.saveTree(new Tree(destination.getIdentifier(), newContainer.getInode()));
 
@@ -314,7 +330,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Container save(Container container, Structure structure, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Container currentContainer = null;
 		List<Template> currentTemplates = null;
 		Identifier identifier = null;
@@ -349,9 +365,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			throw new DotSecurityException("You don't have permission to write the container.");
 		}
 
-		if((structure != null && !existingInode) && !permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to use the structure.");
+		for (ContainerStructure cs : containerStructureList) {
+			Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+			if((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+				throw new DotSecurityException("You don't have permission to use the structure. Structure Name: " + st.getName());
+			}
 		}
+
 
 		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			throw new DotSecurityException("You don't have permission to write on the given host.");
@@ -360,8 +380,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		String userId = user.getUserId();
 
 		// Associating the current structure
-		if ((structure != null) && InodeUtils.isSet(structure.getInode()))
-			container.setStructureInode(structure.getInode());
+//		if ((structure != null) && InodeUtils.isSet(structure.getInode()))
+//			container.setStructureInode(structure.getInode());
 			//TreeFactory.saveTree(new Tree(structure.getInode(), container.getInode()));
 
 		container.setModUser(user.getUserId());
@@ -394,6 +414,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				TreeFactory.saveTree(new Tree(parentInode.getInode(), container.getInode()));
 			}
 		}
+
+		// save the container-structure relationships , issue-2093
+		saveContainerStructures(containerStructureList);
 
         //Saving the host of the templatecontainers
         //TreeFactory.saveTree(new Tree(host.getIdentifier(), container.getInode()));

@@ -86,7 +86,8 @@ public class URLMapTest extends TestBase  {
 			container.setTitle("News Test Container");
 			container.setType("containers");
 			container.setUseDiv( true );
-			container.setStructureInode(simpleWidgetSt.getInode());
+			// commented by issue-2093
+//			container.setStructureInode(simpleWidgetSt.getInode());
 
 			WebAssetFactory.createAsset( container, user.getUserId(), demoHost );
 			APILocator.getVersionableAPI().setLive( container );

@@ -4,44 +4,57 @@
 
 	function submitfm(form,subcmd) {
 
-			var inputSts = document.createElement('input');
-		    inputSts.type = 'hidden';
-		    inputSts.name = 'structuresIds';
-		    inputSts.id = 'structuresIds';
+			var numContentlets = parseInt(dijit.byId("maxContentlets").value);
 
-		    var tabChildren = dijit.byId("tabContainer").getChildren();
+			if (numContentlets > 0){
 
-			structuresAdded = new Array();
+				var inputSts = document.createElement('input');
+			    inputSts.type = 'hidden';
+			    inputSts.name = 'structuresIds';
+			    inputSts.id = 'structuresIds';
 
-		    tabChildren.forEach(function(widget, index, hash){
-				var structureInode = widget.id.split("_")[1];
-				structuresAdded.push(structureInode);
-			});
+			    var tabChildren = dijit.byId("tabContainer").getChildren();
 
+				structuresAdded = new Array();
 
-			for(var i=0; i < structuresAdded.length; i++) {
+			    tabChildren.forEach(function(widget, index, hash){
+					var structureInode = widget.id.split("_")[1];
+					structuresAdded.push(structureInode);
+				});
 
-				var input = document.createElement('input');
-			    input.type = 'hidden';
-			    input.name = 'code_' + structuresAdded[i];
-			    input.id = 'code_' + structuresAdded[i];
+				if(structuresAdded.length==0) {
+					alert('Must Add at Least one Content Type when Max Contentlets is greater than zero')
+				}
 
-				if(codeEditor[structuresAdded[i]]!=null) {
-					dojo.byId("codeMask"+structuresAdded[i]).value = codeEditor[structuresAdded[i]].getCode();
-   				}
+				for(var i=0; i < structuresAdded.length; i++) {
 
-   				input.value = dojo.byId("codeMask"+structuresAdded[i]).value;
-   				form.appendChild(input);
+					var input = document.createElement('input');
+				    input.type = 'hidden';
+				    input.name = 'code_' + structuresAdded[i];
+				    input.id = 'code_' + structuresAdded[i];
 
-   				inputSts.value = inputSts.value + structuresAdded[i] + "#";
+					if(codeMultiEditor[structuresAdded[i]]!=null) {
+						dojo.byId("codeMaskMulti"+structuresAdded[i]).value = codeMultiEditor[structuresAdded[i]].getCode();
+	   				}
+
+	   				input.value = dojo.byId("codeMaskMulti"+structuresAdded[i]).value;
+	   				form.appendChild(input);
+
+	   				inputSts.value = inputSts.value + structuresAdded[i] + "#";
+				}
+
+				form.appendChild(inputSts);
+
+			} else {
+				if(dijit.byId("toggleEditorCode").checked){
+					document.getElementById("codeMask").value=codeEditor.getCode();
+				}
+
+				document.getElementById("code").value = document.getElementById("codeMask").value;
 			}
 
-			form.appendChild(inputSts);
 
-			var numContentlets = parseInt(dijit.byId("maxContentlets").value);
-<!-- 			if(dijit.byId("toggleEditorCode").checked){ -->
-<!-- 				document.getElementById("codeMask").value=codeEditor.getCode(); -->
-<!-- 			} -->
+
 			if(dijit.byId("toggleEditorPreLoop").checked && numContentlets > 0){
 				document.getElementById("preLoopMask").value=preLoopEditor.getCode();
 			}
@@ -56,7 +69,7 @@
 
 			//DOTCMS-5415
 			document.getElementById("preLoop").value = document.getElementById("preLoopMask").value;
-<!-- 			document.getElementById("code").value = document.getElementById("codeMask").value; -->
+
 			document.getElementById("postLoop").value = document.getElementById("postLoopMask").value;
 
 			form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
@@ -92,23 +105,25 @@
 		var structureInode = selectedTab.id.split("_")[1];
 
 		myField = document.getElementById(myFieldName);
-        if(myFieldName=="codeMask") {
 
-			myField = dojo.byId("codeMask"+structureInode);
+		if(myFieldName=="codeMask") {
+        	if(codeEditor) {
+        		var pos= codeEditor.cursorPosition(true);
+				codeEditor.insertIntoLine(pos.line, pos.character, myValue);
+			} else {
+				myField.value=myField.value+myValue;
+			}
+		} else if(myFieldName=="codeMaskMulti") {
 
-        	if(codeEditor[structureInode]) {
-        		var pos= codeEditor[structureInode].cursorPosition(true);
-				codeEditor[structureInode].insertIntoLine(pos.line, pos.character, myValue);
+			myField = dojo.byId("codeMaskMulti"+structureInode);
+
+        	if(codeMultiEditor[structureInode]) {
+        		var pos= codeMultiEditor[structureInode].cursorPosition(true);
+				codeMultiEditor[structureInode].insertIntoLine(pos.line, pos.character, myValue);
         	} else {
         		myField.value=myField.value+myValue;
         	}
 
-<!--         	if(codeEditor) { -->
-<!--         		var pos= codeEditor.cursorPosition(true); -->
-<!-- 				codeEditor.insertIntoLine(pos.line, pos.character, myValue); -->
-<!-- 			} else { -->
-<!-- 				myField.value=myField.value+myValue; -->
-<!-- 			} -->
 		} else if(myFieldName=="preLoopMask") {
 			if(preLoopEditor) {
 				var pos= preLoopEditor.cursorPosition(true);
@@ -129,43 +144,43 @@
 	}
 
 	function add(x){
-		insertAtCursor("$!{" + x + "}\n", 'codeMask');
+		insertAtCursor("$!{" + x + "}\n", 'codeMaskMulti');
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addImage(velocityVarName){
 		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"ImageURI})) \n   <img src=\"$!{"+velocityVarName+"ImageURI}\" alt=\"$!{"+velocityVarName+"ImageTitle}\"  /> \n#end \n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addLink(velocityVarName) {
 		var insert = "#if ($" + "{" + velocityVarName+"LinkURL}) \n   <a href=\"$!{"+velocityVarName+"LinkProtocol}$!{"+velocityVarName+"LinkURL}\" target=\"$!{"+velocityVarName+"LinkTarget}\">$!{"+velocityVarName+"LinkTitle}</a> \n#end \n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addFile(velocityVarName) {
 		var insert = "#if ($" + "{" + velocityVarName+"FileURI}) \n   <a href=\"$!{"+velocityVarName+"FileURI}\">$!{"+velocityVarName+"FileTitle}</a> \n#end \n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 	function addBinaryFile(velocityVarName) {
 		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <a href=\"$!{"+velocityVarName+"BinaryFileURI}?force_download=1&filename=$!{"+velocityVarName+"BinaryFileTitle}\">$!{"+velocityVarName+"BinaryFileTitle}</a> \n#end \n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 
 	function addBinaryResize(velocityVarName) {
 		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/resize-image/${ContentIdentifier}/" + velocityVarName + "?w=150&h=100\" />\n#end \n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addBinaryThumbnail(velocityVarName) {
 		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/image-thumbnail/${ContentIdentifier}/" + velocityVarName + "?w=150&h=150\" />\n#end \n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
@@ -173,37 +188,37 @@
 
 	function addTextField(velocityVarName) {
 		var insert = "<input type=\"text\" name=\"" + velocityVarName + "\" id=\"" + velocityVarName + "\" value=\"$!{" + velocityVarName + "}\"> \n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addInodeField(velocityVarName) {
 		var insert = "$!{" + velocityVarName + "}\n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addTextArea(velocityVarName) {
 		var insert = "<textarea name=\"" + velocityVarName + "\" id=\"" + velocityVarName + "\">$!{" + velocityVarName + "}</textarea> \n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
     function addCustomField(velocityVarName) {
 	    var insert = "#if ($" + "{" + velocityVarName+"Code}) \n  $!{"+ velocityVarName + "Code} \n#end \n" ;
-        insertAtCursor(insert, "codeMask");
+        insertAtCursor(insert, "codeMaskMulti");
         dijit.byId('variablesDialog').hide();
 
 	}
 
 	function addButton(buttonValue, velocityVarName) {
 		var insert = "<input type=\"button\" value=\"" + buttonValue + "\" name=\"" + velocityVarName + "\" id=\"" + velocityVarName + "\" onClick=\"$!{" + velocityVarName + "ButtonCode}\">\n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function paintCode(code) {
-		insertAtCursor(code, "codeMask");
+		insertAtCursor(code, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
@@ -225,32 +240,44 @@
 
 	function addIdentifierField(velocityVarName) {
 		var insert = "$!{" + velocityVarName + "}\n";
-		insertAtCursor(insert, "codeMask");
+		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	var postLoopEditorCreated=false;
 	var preLoopEditorCreated=false;
-	var codeEditorCreated = {};
+	var codeEditorCreated = false;
+	var codeMultiEditorCreated = {};
 
 	function showHideCode(){
 
 			var val = document.getElementById("maxContentlets").value;
 			var ele = document.getElementById("preLoopDiv");
 			var ele2 = document.getElementById("postLoopDiv");
-<!-- 			var ele3 = document.getElementById("structureControls"); -->
+			var ele3 = document.getElementById("multiCodeButtonDiv");
+			var ele4 = document.getElementById("codeButtonDiv");
+
+			// select a default value for the filtering select
+			var structureSelect = dijit.byId("structureSelect");
+			structureSelect.set("value", structureSelect.store.data[0].value);
 
 <!-- 			var selectedTab = dijit.byId('tabContainer').selectedChildWidget; -->
 <!-- 			var structureId = selectedTab.id.split("_")[1]; -->
 
+			if(!codeEditorCreated){
+				codeEditor=codeMirrorArea("codeMask", "<%=codeWidth%>", "<%=codeHeight%>");
+				codeEditorCreated=true;
+			}
+
 			for(var i=0; i < structuresAdded.length; i++) {
-				if(codeEditor[structuresAdded[i]]==null) {
-					codeEditor[structuresAdded[i]]=codeMirrorArea("codeMask"+structuresAdded[i],"<%=codeWidth%>", "<%=codeHeight%>");
-  	       			codeEditorCreated[structuresAdded[i]]=true;
+				if(codeMultiEditor[structuresAdded[i]]==null) {
+					codeMultiEditor[structuresAdded[i]]=codeMirrorArea("codeMaskMulti"+structuresAdded[i],"<%=codeWidth%>", "<%=codeHeight%>");
+  	       			codeMultiEditorCreated[structuresAdded[i]]=true;
    				}
 			}
 
 			if(isNaN(parseInt(val)) || parseInt(val)==0){
+
 			    if(preLoopEditorCreated){
 			    	preLoopEditor=codeMirrorRemover(preLoopEditor,"preLoopMask");
 			    	preLoopEditorCreated=false;
@@ -261,12 +288,14 @@
 			    }
 				ele.style.display="none";
 				ele2.style.display="none";
-<!-- 				ele3.style.display="none"; -->
+				ele3.style.display="none";
+				ele4.style.display="";
 			}
 			else{
 				ele.style.display="";
 				ele2.style.display="";
-<!-- 				ele3.style.display=""; -->
+				ele3.style.display="";
+				ele4.style.display="none";
 				if(!preLoopEditorCreated){
 					preLoopEditor=codeMirrorArea("preLoopMask", "<%=preLoopWidth%>", "<%=preLoopHeight%>");
 					preLoopEditorCreated=true;
@@ -275,6 +304,11 @@
 	            	postLoopEditor=codeMirrorArea("postLoopMask", "<%=postLoopWidth%>", "<%=postLoopHeight%>");
 	            	postLoopEditorCreated=true;
 	            }
+			}
+
+			if(structuresAdded.length==0 && val>0) {
+				// add a initial structure
+				addCodeTab();
 			}
 	}
 
@@ -420,14 +454,14 @@
 
 	function setWidths(w) {
 		setWidth('preLoopMask','<%=preLoopWidth%>');
-<%-- 		setWidth('codeMask','<%=codeWidth%>'); --%>
+		setWidth('codeMask','<%=codeWidth%>');
 		setWidth('postLoopMask','<%=postLoopWidth%>');
 
 	}
 
 	function setHeights(h) {
 		setHeight('preLoopMask','<%=preLoopHeight%>');
-<%-- 		setHeight('codeMask','<%=codeHeight%>'); --%>
+		setHeight('codeMask','<%=codeHeight%>');
 		setHeight('postLoopMask','<%=postLoopHeight%>');
 
 	}
@@ -461,7 +495,8 @@
 
 	var preLoopEditor;
 	var postLoopEditor;
-	var codeEditor = {};
+	var codeEditor = false;
+	var codeMultiEditor = {};
 	var structuresAdded = new Array();
 
  	function codeMirrorArea(textarea, width, height){
@@ -490,29 +525,40 @@
     var htmlArea = "<textarea onkeydown='return catchTab(this,event)' property='${textAreaId}' id='${textAreaId}' style='width:${textAreaWidth}; height:${textAreaHeight}; font-size: 12px'></textarea>";
 	function codeMirrorToggler(editor, textareaId, width, height){
 
-
-         if(textareaId=="codeMask"){
-            	if(dijit.byId("toggleEditorCode").checked){
-            		dijit.byId("toggleEditorCode").disabled=true;
+			if(textareaId=="codeMask"){
+	            	if(dijit.byId("toggleEditorCode").checked){
+	            		dijit.byId("toggleEditorCode").disabled=true;
+	            		editor=codeMirrorArea(textareaId,width, height);
+	            		codeEditorCreated=true;
+	            		dijit.byId("toggleEditorCode").disabled=false;
+	            	} else{
+	            		dijit.byId("toggleEditorCode").disabled=true;
+	            		editor=codeMirrorRemover(editor, textareaId);
+	            		codeEditorCreated=false;
+	            		dijit.byId("toggleEditorCode").disabled=false;
+	            	}
+	         } else if(textareaId=="codeMaskMulti"){
+            	if(dijit.byId("toggleEditorCodeMultiple").checked){
+            		dijit.byId("toggleEditorCodeMultiple").disabled=true;
 
 					for(var i=0; i < structuresAdded.length; i++) {
-						if(codeEditor[structuresAdded[i]]==null) {
-							codeEditor[structuresAdded[i]]=codeMirrorArea(textareaId+structuresAdded[i],width, height);
-    	       				codeEditorCreated[structuresAdded[i]]=true;
+						if(codeMultiEditor[structuresAdded[i]]==null) {
+							codeMultiEditor[structuresAdded[i]]=codeMirrorArea(textareaId+structuresAdded[i],width, height);
+    	       				codeMultiEditorCreated[structuresAdded[i]]=true;
            				}
 					}
 
-            		dijit.byId("toggleEditorCode").disabled=false;
+            		dijit.byId("toggleEditorCodeMultiple").disabled=false;
             	} else{
-            		dijit.byId("toggleEditorCode").disabled=true;
+            		dijit.byId("toggleEditorCodeMultiple").disabled=true;
 
             		for(var i=0; i < structuresAdded.length; i++) {
-            			codeEditor[structuresAdded[i]]=codeMirrorRemover(codeEditor[structuresAdded[i]], textareaId+structuresAdded[i]);
-            			codeEditorCreated[structuresAdded[i]]=false;
+            			codeMultiEditor[structuresAdded[i]]=codeMirrorRemover(codeMultiEditor[structuresAdded[i]], textareaId+structuresAdded[i]);
+            			codeMultiEditorCreated[structuresAdded[i]]=false;
             		}
 
 
-            		dijit.byId("toggleEditorCode").disabled=false;
+            		dijit.byId("toggleEditorCodeMultiple").disabled=false;
             	}
             }
 			else if(textareaId=="preLoopMask"){
@@ -566,6 +612,11 @@
 		var structureInode = dijit.byId("structureSelect").attr('value');
 		var label = dijit.byId("structureSelect").attr('displayedValue');
 
+		if(structureInode=='') {
+			alert('Must Select a Content Type');
+			return;
+		}
+
 		var tc = dijit.byId("tabContainer");
 		var cp1 = new dijit.layout.ContentPane({
 		 id: "tab_"+structureInode,
@@ -583,8 +634,8 @@
 	    cp1.startup();
 
 	    var textarea = new dijit.form.Textarea({
-		    name: "codeMask"+structureInode,
-		    id: "codeMask"+structureInode,
+		    name: "codeMaskMulti"+structureInode,
+		    id: "codeMaskMulti"+structureInode,
 		    value: "",
 		    style: "width:99%; height:300px"
 		  });
@@ -593,7 +644,26 @@
 	    tc.addChild(cp1);
 	    tc.selectChild(cp1);
 	    addStructureToList(structureInode);
-	    codeMirrorToggler(null, 'codeMask','<%=codeWidth%>', '<%=codeHeight%>' );
+
+	   	// remove the structure added from the filtering select's store
+
+<!-- 	    var structureSelect = dijit.byId("structureSelect"); -->
+<!-- 	    var options = structureSelect.store.data; -->
+<!-- 	    var indexToRemove = null; -->
+
+<!-- 		dojo.some(options, function(widget, index, hash){ -->
+<!-- 			if(widget.value==structureInode) { -->
+<!-- 				indexToRemove = index; -->
+<!-- 				return false; -->
+<!-- 			} -->
+<!-- 		}); -->
+
+<!-- 		structureSelect.store.data.splice(indexToRemove,1); -->
+
+		// end removing structure added
+
+
+	    codeMirrorToggler(null, 'codeMaskMulti','<%=codeWidth%>', '<%=codeHeight%>' );
 
 	}
 
@@ -602,15 +672,11 @@
 	}
 
 	function removeStructure(structureId) {
-<!-- 		codeMirrorRemover(codeEditor[structureId], "codeMask"+structureId); -->
-<!-- 		removeElement(dojo.byId("codeMask"+structureId)); -->
+		codeMirrorRemover(codeMultiEditor[structureId], "codeMaskMulti"+structureId);
 
-		require(["dojo/dom-construct"], function(domConstruct){
-		  domConstruct.destroy("codeMask"+structureId);
-		  domConstruct.destroy("codeMask"+structureId);
-		});
+		dijit.byId('codeMaskMulti'+structureId).destroy();
 
-		codeEditor[structureId] = null;
+		codeMultiEditor[structureId] = null;
 		var index = structuresAdded.indexOf(structureId);
 		structuresAdded.splice(index,1);
 	}

@@ -47,12 +47,10 @@ public class Container extends WebAsset implements Serializable {
 	private String luceneQuery;
 	private String notes;
 
-	private String structureInode;
-	
 	// BEGIN GRAZIANO issue-12-dnd-template
 	private Boolean forMetadata;
 	// END GRAZIANO issue-12-dnd-template
-	
+
 	public String getURI(Folder folder) {
 		String folderPath = "";
 		try {
@@ -249,13 +247,13 @@ public class Container extends WebAsset implements Serializable {
 		this.staticify = staticify;
 	}
 
-	public String getStructureInode() {
-		return structureInode;
-	}
-
-	public void setStructureInode(String structureInode) {
-		this.structureInode = structureInode;
-	}
+//	public String getStructureInode() {
+//		return structureInode;
+//	}
+//
+//	public void setStructureInode(String structureInode) {
+//		this.structureInode = structureInode;
+//	}
 
 	public String getLuceneQuery() {
 		return luceneQuery;

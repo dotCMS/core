@@ -57,7 +57,7 @@ public class ContainerAjax {
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = userWebAPI.getLoggedInUser(req);
 		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-	
+
 		List<Container> fullListContainers = new ArrayList<Container>();
 		try{
 			if(UtilMethods.isSet(query.get("hostId"))) {
@@ -74,7 +74,7 @@ public class ContainerAjax {
 		Collections.sort(fullListContainers, new ContainerComparator(baseHostId));
 		Map<String, Object> results = new HashMap<String, Object>();
 		List<Map<String, Object>> list = new LinkedList<Map<String, Object>> ();
-	
+
 		for(Container cont : fullListContainers) {
 			Map<String, Object> contMap = cont.getMap();
 			if(passFilter(contMap, query)) {
@@ -86,22 +86,22 @@ public class ContainerAjax {
 				} else {
 					contMap.put("fullTitle", contMap.get("title"));
 				}
-	
+
 				list.add(contMap);
 			}
 		}
-	
+
 		if(start >= list.size()) start =  list.size() - 1;
 		if(start < 0)  start  = 0;
 		if(start + count >= list.size()) count = list.size() - start;
 		List<Map<String, Object>> containers = list.subList(start, start + count);
-	
+
 		results.put("totalResults", list.size());
 		results.put("list", containers);
-	
+
 		return results;
 	}
-	
+
 	class ContainerComparator implements Comparator<Container> {
 
 		private String baseHostId;
@@ -151,9 +151,11 @@ public class ContainerAjax {
 
 	public java.util.Map<String, String> getContainerStructure(String containerInode){
 		Container cont = (Container) InodeFactory.getInode(containerInode, Container.class);
-		Structure st = (Structure)InodeFactory.getInode(cont.getStructureInode(), Structure.class);
+//		Commented by issue-2093
+//		Structure st = (Structure)InodeFactory.getInode(cont.getStructureInode(), Structure.class);
 		Map<String, String> result = new HashMap<String, String>();
-		result.put("inode", st.getInode());
+//		Commented by issue-2093
+//		result.put("inode", st.getInode());
 		return result;
 	}
 

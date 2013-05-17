@@ -454,23 +454,29 @@ public class EditContainerAction extends DotPortletAction implements
         }
 
 		// BEGIN GRAZIANO issue-12-dnd-template
-        if(UtilMethods.isSet(container.getCode())){
+
+        if(UtilMethods.isSet(container.getCode()) && container.getMaxContentlets()==0){
 			if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
 				container.setForMetadata(true);
 			// END GRAZIANO issue-12-dnd-template
+        } else if(container.getMaxContentlets()>0) {
+        	// TODO: HOW IS THIS GOING TO BE HANDLED WITH MULTIPLE CODES? IS THE METADATA ONLY WHEN NO STRUCTURE IS SELECTED?
         }
+
+
 		// Getting container structure
-		if (!InodeUtils.isSet(cf.getStructureInode())) {
-			Structure currentStructure;
-			if (!InodeUtils.isSet(container.getInode())) {
-				currentStructure = StructureFactory.getDefaultStructure();
-			} else {
-				currentStructure = StructureCache.getStructureByInode(container.getStructureInode());
-				if (currentStructure==null || !InodeUtils.isSet(currentStructure.getInode()))
-					currentStructure = StructureFactory.getDefaultStructure();
-			}
-			cf.setStructureInode(currentStructure.getInode());
-		}
+        // commented by issue-2093
+//		if (!InodeUtils.isSet(cf.getStructureInode())) {
+//			Structure currentStructure;
+//			if (!InodeUtils.isSet(container.getInode())) {
+//				currentStructure = StructureFactory.getDefaultStructure();
+//			} else {
+//				currentStructure = StructureCache.getStructureByInode(container.getStructureInode());
+//				if (currentStructure==null || !InodeUtils.isSet(currentStructure.getInode()))
+//					currentStructure = StructureFactory.getDefaultStructure();
+//			}
+//			cf.setStructureInode(currentStructure.getInode());
+//		}
 
         //gets the container host
         Host host = hostAPI.findParentHost(container, user, false);
@@ -543,8 +549,8 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 //		container.setStructureInode(currentStructure.getInode());
 
-		// TODO: HOW IS THIS GOING TO BEHAVE WITH MULTIPLE CODES?
-//		// BEGIN GRAZIANO issue-12-dnd-template
+		// commented by issue-2093
+		// BEGIN GRAZIANO issue-12-dnd-template
 //		if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
 //			container.setForMetadata(true);
 //		// END GRAZIANO issue-12-dnd-template
@@ -577,21 +583,24 @@ public class EditContainerAction extends DotPortletAction implements
 		APILocator.getIdentifierAPI().save(identifier);
 
 		// saving the multiple structures
-		String structuresIdsStr = req.getParameter("structuresIds");
+		if(container.getMaxContentlets()>0) {
+			String structuresIdsStr = req.getParameter("structuresIds");
 
-		String[] structuresIds = structuresIdsStr.split("#");
-		List<ContainerStructure> csList = new LinkedList<ContainerStructure>();
+			String[] structuresIds = structuresIdsStr.split("#");
+			List<ContainerStructure> csList = new LinkedList<ContainerStructure>();
 
-		for (String structureId : structuresIds) {
-			String code = req.getParameter("code_"+structureId);
-			ContainerStructure cs = new ContainerStructure();
-			cs.setContainerId(container.getIdentifier());
-			cs.setStructureId(structureId);
-			cs.setCode(code);
-			csList.add(cs);
+			for (String structureId : structuresIds) {
+				String code = req.getParameter("code_"+structureId);
+				ContainerStructure cs = new ContainerStructure();
+				cs.setContainerId(container.getIdentifier());
+				cs.setStructureId(structureId);
+				cs.setCode(code);
+				csList.add(cs);
+			}
+
+			APILocator.getContainerAPI().saveContainerStructures(csList);
+
 		}
-
-		APILocator.getContainerAPI().saveContainerStructures(csList);
 
 
 		SessionMessages.add(httpReq, "message", "message.containers.save");

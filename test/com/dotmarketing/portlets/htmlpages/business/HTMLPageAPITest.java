@@ -110,7 +110,8 @@ public class HTMLPageAPITest extends TestBase {
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
         Structure st=StructureCache.getStructureByVelocityVarName("FileAsset");
-        container = APILocator.getContainerAPI().save(container, st, host, sysuser, false);
+     // commented by issue-2093
+//        container = APILocator.getContainerAPI().save(container, st, host, sysuser, false);
 
         // a template for the page
         Template template=new Template();
@@ -180,7 +181,8 @@ public class HTMLPageAPITest extends TestBase {
     		container.setPreLoop("preloop code");
     		container.setPostLoop("postloop code");
     		Structure st=StructureCache.getStructureByVelocityVarName("FileAsset");
-    		container = APILocator.getContainerAPI().save(container, st, host, sysuser, false);
+    		// commented by issue-2093
+//    		container = APILocator.getContainerAPI().save(container, st, host, sysuser, false);
 
     		// a template for the page
     		template=new Template();
