@@ -18,7 +18,7 @@ import java.util.jar.JarFile;
 public class UpdateAgent {
 
     public static String MANIFEST_PROPERTY_AGENT_VERSION = "Agent-Version";
-    private static String MANIFEST_PROPERTY_RELEASE_VERSION = "Release-Version";
+    //private static String MANIFEST_PROPERTY_RELEASE_VERSION = "Release-Version";
 
     public static Logger logger;
     public static boolean isDebug = false;
@@ -65,7 +65,6 @@ public class UpdateAgent {
             return;
         } catch ( ParseException e ) {
             System.err.println( Messages.getString( "UpdateAgent.error.command.parsing" ) + e.getMessage() );
-
             return;
         }
 
@@ -108,8 +107,19 @@ public class UpdateAgent {
             String agentVersion = UpdateUtil.getManifestValue( MANIFEST_PROPERTY_AGENT_VERSION );
             logger.debug( Messages.getString( "UpdateAgent.text.autoupdater.version" ) + agentVersion );
 
-            File updateFile = null;
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //+++++++++++++++++++++VERIFY FOR NEW VERSIONS OF THE AUTOUPDATER++++++++++++++++++++
+            if ( !line.hasOption( UpdateOptions.NO_UPDATE ) ) {
+                // Check to see if new version of the updater exists
+                File newAgent = downloadAgent( version );
+                if ( newAgent != null ) {
+                    // Exit, We found an update for the autoupdater, the auto updater script will restart the process after the update of the autoupdater.jar
+                    logger.info( Messages.getString( "UpdateAgent.text.new.autoupdater" ) );
+                    System.exit( 0 );
+                }
+            }
 
+            File updateFile = null;
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //Verify if the user specified a version to update to
@@ -164,18 +174,6 @@ public class UpdateAgent {
                 logger.info( " " );
 
             } else {
-
-                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                //+++++++++++++++++++++VERIFY FOR NEW VERSIONS OF THE AUTOUPDATER++++++++++++++++++++
-                if ( !line.hasOption( UpdateOptions.NO_UPDATE ) ) {
-                    // Check to see if new version of the updater exists
-                    File newAgent = downloadAgent();
-                    if ( newAgent != null ) {
-                        // Exit, We found an update for the autoupdater, the auto updater script will restart the process after the update of the autoupdater.jar
-                        logger.info( Messages.getString( "UpdateAgent.text.new.autoupdater" ) );
-                        System.exit( 0 );
-                    }
-                }
 
                 // Download update file
                 if ( minor != null ) {
@@ -412,7 +410,7 @@ public class UpdateAgent {
 
             public boolean accept ( File pathname ) {
                 String fileName = pathname.getName().toLowerCase();
-                if ( fileName.startsWith( "dotcms_" ) && fileName.endsWith( ".jar" ) && ( !fileName.startsWith( "dotcms_ant" ) ) ) {
+                if ( fileName.startsWith( "dotcms_" ) && fileName.endsWith( ".jar" ) && (!fileName.startsWith( "dotcms_ant" )) ) {
                     return true;
                 }
                 return false;
@@ -477,7 +475,7 @@ public class UpdateAgent {
      */
     private boolean checkHome ( String home ) throws UpdateException {
 
-        String[] homeCheckElements = { "build.xml", "dotCMS/WEB-INF/web.xml" };
+        String[] homeCheckElements = {"build.xml", "dotCMS/WEB-INF/web.xml"};
 
         File homeFolder;
         for ( String check : homeCheckElements ) {
@@ -495,7 +493,7 @@ public class UpdateAgent {
      *
      * @return Autoupdater client update file
      */
-    private File downloadAgent () {
+    private File downloadAgent ( String version ) {
 
         File updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "autoUpdater.new" );
 
@@ -504,7 +502,8 @@ public class UpdateAgent {
             updateFile.createNewFile();
 
             Map<String, String> map = new HashMap<String, String>();
-            map.put( "version", UpdateUtil.getManifestValue( MANIFEST_PROPERTY_RELEASE_VERSION ) );
+            map.put( "version", version );
+            //map.put( "version", UpdateUtil.getManifestValue( MANIFEST_PROPERTY_RELEASE_VERSION ) );
             map.put( "agent_version", UpdateUtil.getManifestValue( MANIFEST_PROPERTY_AGENT_VERSION ) );
 
             if ( allowTestingBuilds ) {
@@ -559,7 +558,7 @@ public class UpdateAgent {
         Object[] keys = pars.keySet().toArray();
         NameValuePair[] data = new NameValuePair[keys.length];
         for ( int i = 0; i < keys.length; i++ ) {
-            String key = ( String ) keys[i];
+            String key = (String) keys[i];
             NameValuePair pair = new NameValuePair( key, pars.get( key ) );
             data[i] = pair;
         }
@@ -635,13 +634,13 @@ public class UpdateAgent {
 
                 byte[] buffer = new byte[1024];
                 int bytesRead, bytesWritten = 0;
-                while ( ( bytesRead = is.read( buffer ) ) != -1 ) {
+                while ( (bytesRead = is.read( buffer )) != -1 ) {
                     outStream.write( buffer, 0, bytesRead );
                     bytesWritten += bytesRead;
 
                     //Keep tracking of the download status
                     long currentTime = System.currentTimeMillis();
-                    if ( ( currentTime - startTime ) > refreshInterval ) {
+                    if ( (currentTime - startTime) > refreshInterval ) {
                         String message = downloadProgress.getProgressMessage( bytesWritten, startTime, currentTime );
                         startTime = currentTime;
                         System.out.print( "\r" + message );
@@ -753,14 +752,14 @@ public class UpdateAgent {
                 long startTime = System.currentTimeMillis();
                 long refreshInterval = 500;
                 DownloadProgress dp = new DownloadProgress( length );
-                while ( ( len = is.read( b ) ) != -1 ) {
+                while ( (len = is.read( b )) != -1 ) {
                     for ( int i = 0; i < len; i++ ) {
-                        out.write( ( char ) b[i] );
+                        out.write( (char) b[i] );
                         count++;
                     }
                     long currentTime = System.currentTimeMillis();
 
-                    if ( ( currentTime - startTime ) > refreshInterval ) {
+                    if ( (currentTime - startTime) > refreshInterval ) {
                         String message = dp.getProgressMessage( count, startTime, currentTime );
                         startTime = currentTime;
                         System.out.print( "\r" + message );
