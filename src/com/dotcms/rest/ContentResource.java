@@ -2,6 +2,9 @@ package com.dotcms.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -439,6 +442,15 @@ public class ContentResource extends WebResource {
         
         return saveContent(contentlet,init);
     }
+    
+    /*
+    @PATCH
+    @Path("/{params:.*}")
+    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes({MediaType.APPLICATION_JSON,MediaType.APPLICATION_XML,MediaType.APPLICATION_FORM_URLENCODED})
+    public Response singlePatch(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
+        return Response.ok().build();
+    }*/
     
     protected Response saveContent(Contentlet contentlet, InitDataObject init) throws URISyntaxException {
         boolean live = init.getParamsMap().containsKey("publish");
