@@ -519,6 +519,7 @@ public class BrowserAjax {
                 }
                 
                 refreshIndex(null, parentFolder, user, null, folder );
+                APILocator.getPermissionAPI().resetPermissionReferences(folder);
             }
         } catch ( Exception e ) {
             HibernateUtil.rollbackTransaction();
