@@ -3,6 +3,8 @@ package com.dotcms.rest;
 import java.io.ByteArrayInputStream;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,13 +20,27 @@ import org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.DataType;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
@@ -217,6 +233,7 @@ public class ContentResourceTest extends TestBase {
         Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getFileInputStream()));
     }
     
+    @SuppressWarnings("unchecked")
     @Test
     public void categoryAndTagFields() throws Exception {
         User sysuser=APILocator.getUserAPI().getSystemUser();
@@ -268,6 +285,185 @@ public class ContentResourceTest extends TestBase {
         for(Tag tt : tags) {
             Assert.assertTrue(expectedTags.remove(tt.getTagName()));
         }
+        
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
+    public void workflowTask() throws  Exception {
+        final String salt=Long.toString(System.currentTimeMillis());
+                
+        // a mandatory scheme to test
+        WorkflowScheme scheme = new WorkflowScheme();
+        scheme.setMandatory(true);
+        scheme.setName("Rest Mandatory Workflow "+salt);
+        scheme.setDescription("testing rest save content");
+        scheme.setCreationDate(new Date());
+        APILocator.getWorkflowAPI().saveScheme(scheme);
+        
+        WorkflowStep step1=new WorkflowStep();
+        step1.setCreationDate(new Date());
+        step1.setEnableEscalation(false);
+        step1.setMyOrder(1);
+        step1.setName("Step 1");
+        step1.setResolved(false);
+        step1.setSchemeId(scheme.getId());
+        APILocator.getWorkflowAPI().saveStep(step1);
+        
+        WorkflowStep step2=new WorkflowStep();
+        step2.setCreationDate(new Date());
+        step2.setEnableEscalation(false);
+        step2.setMyOrder(2);
+        step2.setName("Step 2");
+        step2.setResolved(false);
+        step2.setSchemeId(scheme.getId());
+        APILocator.getWorkflowAPI().saveStep(step2);
+        
+        WorkflowStep step3=new WorkflowStep();
+        step3.setCreationDate(new Date());
+        step3.setEnableEscalation(false);
+        step3.setMyOrder(3);
+        step3.setName("Step 3");
+        step3.setResolved(true);
+        step3.setSchemeId(scheme.getId());
+        APILocator.getWorkflowAPI().saveStep(step3);
+        
+        // Save as Draft Step1 -> Step1
+        WorkflowAction saveDraft=new WorkflowAction();
+        saveDraft.setId(UUIDGenerator.generateUuid());
+        saveDraft.setName("Save as Draft");
+        saveDraft.setOrder(1);
+        saveDraft.setNextStep(step1.getId());
+        saveDraft.setRequiresCheckout(true);
+        saveDraft.setStepId(step1.getId());
+        saveDraft.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        APILocator.getWorkflowAPI().saveAction(saveDraft, 
+                Arrays.asList(new Permission[] { 
+                        new Permission(
+                                saveDraft.getPermissionType(),
+                                saveDraft.getId(),
+                                APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                                PermissionAPI.PERMISSION_USE) }));
+        
+     // Save as Draft Step1 -> Step1
+        WorkflowAction escalate=new WorkflowAction();
+        escalate.setId(UUIDGenerator.generateUuid());
+        escalate.setName("Save and Assign");
+        escalate.setOrder(2);
+        escalate.setNextStep(step1.getId());
+        escalate.setRequiresCheckout(true);
+        escalate.setStepId(step1.getId());
+        escalate.setAssignable(true);
+        escalate.setCommentable(true);
+        escalate.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        APILocator.getWorkflowAPI().saveAction(escalate, 
+                Arrays.asList(new Permission[] { 
+                        new Permission(
+                                escalate.getPermissionType(),
+                                escalate.getId(),
+                                APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                                PermissionAPI.PERMISSION_USE) }));
+        
+        // Send for review Step1 -> Step2
+        WorkflowAction sendReview=new WorkflowAction();
+        sendReview.setId(UUIDGenerator.generateUuid());
+        sendReview.setName("Send for review");
+        sendReview.setOrder(3);
+        sendReview.setNextStep(step2.getId());
+        sendReview.setRequiresCheckout(false);
+        sendReview.setStepId(step1.getId());
+        sendReview.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        APILocator.getWorkflowAPI().saveAction(sendReview, 
+                Arrays.asList(new Permission[] { 
+                        new Permission(
+                                sendReview.getPermissionType(),
+                                sendReview.getId(),
+                                APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                                PermissionAPI.PERMISSION_USE) }));
+        
+        // reject Step2 -> Step1
+        WorkflowAction reject=new WorkflowAction();
+        reject.setId(UUIDGenerator.generateUuid());
+        reject.setName("Reject");
+        reject.setOrder(1);
+        reject.setNextStep(step1.getId());
+        reject.setRequiresCheckout(false);
+        reject.setStepId(step2.getId());
+        reject.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        APILocator.getWorkflowAPI().saveAction(reject, 
+                Arrays.asList(new Permission[] { 
+                        new Permission(
+                                reject.getPermissionType(),
+                                reject.getId(),
+                                APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                                PermissionAPI.PERMISSION_USE) }));
+        
+        // publish Step2 -> Step3
+        WorkflowAction publish=new WorkflowAction();
+        publish.setId(UUIDGenerator.generateUuid());
+        publish.setName("Publish");
+        publish.setOrder(2);
+        publish.setNextStep(step3.getId());
+        publish.setRequiresCheckout(false);
+        publish.setStepId(step2.getId());
+        publish.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        APILocator.getWorkflowAPI().saveAction(publish, 
+                Arrays.asList(new Permission[] { 
+                        new Permission(
+                                publish.getPermissionType(),
+                                publish.getId(),
+                                APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                                PermissionAPI.PERMISSION_USE) }));
+        WorkflowActionClass publishlet=new WorkflowActionClass();
+        publishlet.setActionId(publish.getId());
+        publishlet.setClazz(com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.class.getCanonicalName());
+        publishlet.setName("publish");
+        publishlet.setOrder(1);
+        APILocator.getWorkflowAPI().saveActionClass(publishlet);
+        
+        // a test structure with that scheme
+        Structure st=new Structure();
+        st.setName("Rest test st "+salt);
+        st.setVelocityVarName("restTestSt"+salt);
+        st.setDescription("testing rest content creation with mandatory workflow");
+        StructureFactory.saveStructure(st);
+        Field field=new Field("Title",FieldType.TEXT,DataType.TEXT,st,true,true,true,1,false,false,true);
+        FieldFactory.saveField(field);
+        APILocator.getWorkflowAPI().saveSchemeForStruct(st, scheme);
+        
+        // send the Rest api call
+        User sysuser=APILocator.getUserAPI().getSystemUser();
+        User bill=APILocator.getUserAPI().loadUserById("dotcms.org.2806");
+        Role billrole=APILocator.getRoleAPI().getUserRole(bill);
+        ClientResponse response=contRes.path("/Save%20and%20Assign/1/wfActionComments/please%20do%20this%20for%20me/wfActionAssign/"+billrole.getId())
+            .type(MediaType.APPLICATION_JSON_TYPE)
+            .header(authheader, authvalue).put(ClientResponse.class,
+                new JSONObject()
+                    .put("stInode", st.getInode())
+                    .put("languageId", 1)
+                    .put(field.getVelocityVarName(), "test title "+salt)
+                    .toString());
+        Assert.assertEquals(200, response.getStatus());
+        
+        Contentlet cont = APILocator.getContentletAPI().find(response.getHeaders().getFirst("inode"), sysuser, false);
+        Assert.assertNotNull(cont);
+        Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
+        
+        // must be in the first step
+        Assert.assertEquals(step1.getId(), APILocator.getWorkflowAPI().findStepByContentlet(cont).getId());
+        
+        boolean assigned=false;
+        
+        HashMap<String, Object> map = new HashMap<String,Object>();
+        map.put("assignedTo",billrole.getId());
+        for(WorkflowTask task : APILocator.getWorkflowAPI().searchTasks(new WorkflowSearcher(map, sysuser))) {
+            if(task.getWebasset().equals(cont.getIdentifier())) {
+                assigned=true;
+                Assert.assertEquals("please do this for me",task.getDescription());
+                break;
+            }
+        }
+        Assert.assertTrue(assigned);
         
     }
 }

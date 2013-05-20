@@ -39,6 +39,7 @@ import org.codehaus.jettison.json.JSONObject;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -50,11 +51,14 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
@@ -437,7 +441,7 @@ public class ContentResource extends WebResource {
     }
     
     protected Response saveContent(Contentlet contentlet, InitDataObject init) throws URISyntaxException {
-        final boolean live = init.getParamsMap().containsKey("publish");
+        boolean live = init.getParamsMap().containsKey("publish");
         boolean clean=false;
         
         try {
@@ -477,6 +481,31 @@ public class ContentResource extends WebResource {
                 }
             }            
             
+            // running a workflow action?
+            for(WorkflowAction action : APILocator.getWorkflowAPI().findAvailableActions(contentlet, init.getUser())) {
+                if(init.getParamsMap().containsKey(action.getName().toLowerCase())) {
+                    
+                    contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, action.getId());
+                    
+                    if(action.isCommentable()) {
+                        String comment=init.getParamsMap().get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
+                        if(UtilMethods.isSet(comment)) {
+                            contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, comment);
+                        }
+                    }
+                    
+                    if(action.isAssignable()) {
+                        String assignTo=init.getParamsMap().get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
+                        if(UtilMethods.isSet(assignTo)) {
+                            contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, assignTo);
+                        }
+                    }
+                    
+                    live=false; // avoid manually publishing 
+                    break;
+                }
+            }
+            
             HibernateUtil.startTransaction();
             
             contentlet = APILocator.getContentletAPI().checkin(contentlet,new HashMap<Relationship, List<Contentlet>>(),cats,new ArrayList<Permission>(),init.getUser(),false);
@@ -491,7 +520,8 @@ public class ContentResource extends WebResource {
             return Response.status(Status.CONFLICT).build();
         } catch (DotSecurityException e) {
             return Response.status(Status.FORBIDDEN).build();
-        } catch (DotDataException e) {
+        } catch (Exception e) {
+            Logger.warn(this, e.getMessage(), e);
             return Response.serverError().build();
         }
         finally {
@@ -504,7 +534,12 @@ public class ContentResource extends WebResource {
             }
         }
         
-        APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),live);
+        // waiting for the index
+        try {
+            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),contentlet.isLive());
+        } catch (Exception ex) {
+            return Response.serverError().build();
+        }
         
         return Response.seeOther(new URI("/content/inode/"+contentlet.getInode()))
                        .header("inode", contentlet.getInode())
