@@ -1,14 +1,11 @@
 /**
- * 
+ *
  */
 package com.dotmarketing.portlets.contentlet.business;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.lucene.queryParser.ParseException;
 
@@ -47,11 +44,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	private List<ContentletAPIPreHook> preHooks = new ArrayList<ContentletAPIPreHook>();
 	private List<ContentletAPIPostHook> postHooks = new ArrayList<ContentletAPIPostHook>();
 	private ContentletAPI conAPI;
-	
+
 	public ContentletAPIInterceptor() {
 		conAPI = APILocator.getContentletAPIImpl();
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#addFileToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
 	 */
@@ -402,8 +399,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.cleanHostField(structure, user, respectFrontendRoles);
 		}
-	}	
-	
+	}
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#convertContentletToFatContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.contentlet.business.Contentlet)
 	 */
@@ -738,7 +735,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentletByIdentifier(java.lang.String, boolean, long, com.liferay.portal.model.User, boolean)
 	 */
@@ -756,7 +753,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentletForLanguage(long, com.dotmarketing.beans.Identifier)
 	 */
@@ -792,7 +789,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-	
+
 
 	public List<Contentlet> findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
@@ -822,7 +819,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.findContentletsByHost(parentHost, user, respectFrontendRoles);
 		}
 		return c;
-	}	
+	}
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentletsByIdentifiers(java.lang.String[], boolean, long, com.liferay.portal.model.User, boolean)
@@ -1398,7 +1395,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.refresh(structure);
 		}
-		
+
 	}
 
 	public void refresh(Contentlet contentlet) throws DotReindexStateException,
@@ -1414,7 +1411,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.refresh(contentlet);
 		}
-		
+
 	}
 
 	public void refreshAllContent() throws DotReindexStateException {
@@ -1428,8 +1425,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		conAPI.refreshAllContent();
 		for(ContentletAPIPostHook post : postHooks){
 			post.refreshAllContent();
-		}		
-	}	
+		}
+	}
 
 	public void refreshContentUnderHost(Host host) throws DotReindexStateException {
 		for(ContentletAPIPreHook pre : preHooks){
@@ -1443,9 +1440,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.refreshContentUnderHost(host);
 		}
-		
+
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#relateContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, java.util.List, com.liferay.portal.model.User, boolean)
 	 */
@@ -1708,7 +1705,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			throw new InstantiationException("This hook must implement ContentletAPIPosthook");
 		}
 	}
-	
+
 	public void addPostHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
         addPostHook( o );
@@ -1720,9 +1717,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
             postHooks.add( (ContentletAPIPostHook) postHook );
 		}else {
 			throw new InstantiationException("This hook must implement ContentletAPIPosthook");
-		}		
+		}
 	}
-	
+
 	public void addPreHook(String className, int indexToAddAt)	throws InstantiationException, IllegalAccessException,ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
 		if(o instanceof ContentletAPIPreHook){
@@ -1740,12 +1737,36 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         preHooks.remove( preHook );
     }
 
+    public void delPreHookByClassName ( String className ) {
+
+        Iterator<ContentletAPIPreHook> iterator = preHooks.iterator();
+
+        while ( iterator.hasNext() ) {
+            ContentletAPIPreHook hook = iterator.next();
+            if ( className.equals( hook.getClass().getName() ) ) {
+                iterator.remove();
+            }
+        }
+    }
+
     public void delPostHook ( int indexToRemAt ) {
         postHooks.remove( indexToRemAt );
     }
 
     public void delPostHook ( Object postHook ) {
         postHooks.remove( postHook );
+    }
+
+    public void delPostHookByClassName ( String className ) {
+
+        Iterator<ContentletAPIPostHook> iterator = postHooks.iterator();
+
+        while ( iterator.hasNext() ) {
+            ContentletAPIPostHook hook = iterator.next();
+            if ( className.equals( hook.getClass().getName() ) ) {
+                iterator.remove();
+            }
+        }
     }
 
 	public List<String> getPreHooks() {
@@ -1755,7 +1776,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return result;
 	}
-	
+
 	public List<String> getPostHooks() {
 		List<String> result = new ArrayList<String>();
 		for (ContentletAPIPostHook hook : postHooks) {
@@ -1778,7 +1799,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-	
+
 	public long contentletIdentifierCount() throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.contentletIdentifierCount();
@@ -1793,18 +1814,18 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-	
+
 	public void deleteAllVersionsandBackup(List<Contentlet> contentlets,
 			User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException, DotContentletStateException {
 
-		
+
 	}
 
 	public List<Contentlet> getSiblings(String identifier)
 			throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
-			 
+
 			 boolean preResult = pre.getSiblings(identifier);
 			if(!preResult){
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
@@ -1833,8 +1854,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-	
-	
+
+
 	public Contentlet copyContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, user, respectFrontendRoles);
@@ -1842,14 +1863,14 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
-		}	
+		}
 		Contentlet c = conAPI.copyContentlet(contentlet, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.copyContentlet(contentlet, user, respectFrontendRoles, c);
 		}
 		return c;
 	}
-	
+
 	public Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, host, user, respectFrontendRoles);
@@ -1857,14 +1878,14 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
-		}	
+		}
 		Contentlet c = conAPI.copyContentlet(contentlet, host, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.copyContentlet(contentlet, host, user, respectFrontendRoles, c);
 		}
 		return c;
 	}
-	
+
 	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, folder, user, respectFrontendRoles);
@@ -1872,14 +1893,14 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
-		}	
+		}
 		Contentlet c = conAPI.copyContentlet(contentlet, folder, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.copyContentlet(contentlet, folder, user, respectFrontendRoles, c);
 		}
 		return c;
 	}
-	
+
 	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, folder, user, appendCopyToFileName, respectFrontendRoles);
@@ -1887,7 +1908,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
-		}	
+		}
 		Contentlet c = conAPI.copyContentlet(contentlet, folder, user, appendCopyToFileName, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.copyContentlet(contentlet, folder, user, appendCopyToFileName, respectFrontendRoles, c);
@@ -1909,7 +1930,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-	
+
 	public boolean isInodeIndexed(String inode,boolean live) {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.isInodeIndexed(inode,live);
@@ -1953,7 +1974,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.UpdateContentWithSystemHost(hostIdentifier);
 		}
 	}
-	
+
 	public void removeUserReferences(String userId)throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.removeUserReferences(userId);
@@ -1966,7 +1987,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.removeUserReferences(userId);
 		}
-		
+
 	}
 
 	public String getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
@@ -1981,7 +2002,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.getUrlMapForContentlet(contentlet, user, respectFrontendRoles);
 		}
-		
+
 		return result;
 	}
 
@@ -1998,11 +2019,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.deleteVersion(contentlet, user, respectFrontendRoles);
 		}
 
-		
+
 	}
 
 	public Contentlet saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{
-		
+
 
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.saveDraft(contentlet,contentRelationships, cats,permissions, user, respectFrontendRoles);
@@ -2015,10 +2036,10 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.saveDraft(contentlet,contentRelationships, cats,permissions, user, respectFrontendRoles);
 		}
-		
+
 		return contentlet;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean)
 	 */
@@ -2054,7 +2075,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean, int, boolean)
 	 */
@@ -2071,7 +2092,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
 		}
 		return c;
-	}	
+	}
 
 	public void refreshContentUnderFolder(Folder folder)
 			throws DotReindexStateException {
@@ -2087,7 +2108,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.refreshContentUnderFolder(folder);
 		}
 	}
-	
+
 	public void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.removeFolderReferences(folder);
@@ -2101,7 +2122,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.removeFolderReferences(folder);
 		}
 	}
-	
+
 	public boolean canLock(Contentlet contentlet, User user) throws   DotLockException {
 		boolean ret = true;
 		for(ContentletAPIPreHook pre : preHooks){
@@ -2145,9 +2166,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
                 throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
             }
         }
-        
+
         Object value=conAPI.loadField(inode, field);
-        
+
         for(ContentletAPIPostHook post : postHooks){
             post.loadField(inode,field,value);
         }
@@ -2163,15 +2184,15 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
                 throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
             }
         }
-        
+
         long value=conAPI.indexCount(luceneQuery, user, respectFrontendRoles);
-        
+
         for(ContentletAPIPostHook post : postHooks){
             post.indexCount(luceneQuery,user,respectFrontendRoles,value);
         }
         return value;
     }
-	
+
 	@Override
 	public List<Map<String, String>> getMostViewedContent(String structureVariableName,
 			String startDate, String endDate, User user) {
