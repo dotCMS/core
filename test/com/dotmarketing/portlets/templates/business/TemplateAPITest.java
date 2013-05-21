@@ -2,9 +2,13 @@ package com.dotmarketing.portlets.templates.business;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 
 import com.dotcms.TestBase;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
@@ -77,15 +81,19 @@ public class TemplateAPITest extends TestBase {
 
         // a container to use inside the template
         Container container = new Container();
-        container.setCode("this is the code");
         container.setFriendlyName("test container");
         container.setTitle("his is the title");
         container.setMaxContentlets(5);
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
         Structure st=StructureCache.getStructureByVelocityVarName("host");
-     // commented by issue-2093
-//        container = APILocator.getContainerAPI().save(container, st, host, user, false);
+
+        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(st.getInode());
+        cs.setCode("this is the code");
+        csList.add(cs);
+        container = APILocator.getContainerAPI().save(container, csList, host, user, false);
 
 
         String body="<html><body> #parseContainer('"+container.getIdentifier()+"') </body></html>";

@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.contentlet.action;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.portlet.PortletConfig;
@@ -14,6 +11,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
@@ -64,10 +62,10 @@ public class ViewContentletAction extends DotPortletAction {
 		{
 			if (req.getParameter("container_inode") != null)
 			{
-				// commented by issue-2093
-//				Container cont = (Container) InodeFactory.getInode(req.getParameter("container_inode"), Container.class);
-//				Structure st = (Structure)InodeFactory.getInode(cont.getStructureInode(), Structure.class);
-//				req.setAttribute(WebKeys.Structure.STRUCTURE, st);
+				Container cont = (Container) InodeFactory.getInode(req.getParameter("container_inode"), Container.class);
+
+				List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(cont);
+				req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
 			}
 			else if (req.getParameter("structure_id") != null)
 			{

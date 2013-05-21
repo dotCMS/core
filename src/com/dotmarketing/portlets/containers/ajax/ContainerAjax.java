@@ -150,16 +150,6 @@ public class ContainerAjax {
 		return true;
 	}
 
-	public java.util.Map<String, String> getContainerStructure(String containerInode){
-		Container cont = (Container) InodeFactory.getInode(containerInode, Container.class);
-//		Commented by issue-2093
-//		Structure st = (Structure)InodeFactory.getInode(cont.getStructureInode(), Structure.class);
-		Map<String, String> result = new HashMap<String, String>();
-//		Commented by issue-2093
-//		result.put("inode", st.getInode());
-		return result;
-	}
-
 	public List<Map<String, String>> getContainerStructures(String containerInode) throws Exception{
 		Container cont = (Container) InodeFactory.getInode(containerInode, Container.class);
 

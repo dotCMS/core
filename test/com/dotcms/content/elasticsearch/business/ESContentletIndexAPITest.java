@@ -4,6 +4,7 @@ import com.dotcms.TestBase;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.VersionInfo;
@@ -33,6 +34,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -610,14 +612,18 @@ public class ESContentletIndexAPITest extends TestBase {
         container.setCode( "this is the code" );
         container.setFriendlyName( "test container" );
         container.setTitle( "his is the title" );
-     // commented by issue-2093
-//        container.setStructureInode( structure.getInode() );
         container.setMaxContentlets( 5 );
         container.setPreLoop( "preloop code" );
         container.setPostLoop( "postloop code" );
         //Save it
-     // commented by issue-2093
-//        container = APILocator.getContainerAPI().save( container, structure, defaultHost, user, false );
+
+        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(structure.getInode());
+        cs.setCode("this is the code");
+        csList.add(cs);
+
+        container = APILocator.getContainerAPI().save( container, csList, defaultHost, user, false );
 
         //Create a template
         String body = "<html><body> #parseContainer('" + container.getIdentifier() + "') </body></html>";

@@ -13,6 +13,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -83,11 +84,14 @@ public class LinkCheckerAPITest extends TestBase {
             container=new Container();
             container.setTitle("LinkChecker Container "+uuid);
             container.setCode("$html");
-         // commented by issue-2093
-//            container.setStructureInode(structure.getInode());
             container.setMaxContentlets(0);
-         // commented by issue-2093
-//            container=APILocator.getContainerAPI().save(container, structure, host, sysuser, false);
+
+            List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+            ContainerStructure cs = new ContainerStructure();
+            cs.setStructureId(structure.getInode());
+            cs.setCode("this is the code");
+            csList.add(cs);
+            container=APILocator.getContainerAPI().save(container, csList, host, sysuser, false);
 
             template=new Template();
             template.setTitle("empty template "+uuid);

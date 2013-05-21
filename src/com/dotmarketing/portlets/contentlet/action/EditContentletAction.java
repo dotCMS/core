@@ -725,11 +725,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
 				selectedStructure = req.getParameter("selectedStructure");
 				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
-			} else if (InodeUtils.isSet(req.getParameter("contentcontainer_inode"))) {
-				String containerInode = req.getParameter("contentcontainer_inode");
-				Container container = (Container) InodeFactory.getInode(containerInode, Container.class);
-				// commented by issue-2093
-//				st = (Structure) InodeFactory.getInode(container.getStructureInode(), Structure.class);
 			}else if (InodeUtils.isSet(req.getParameter("sibblingStructure"))) {
 				selectedStructure = req.getParameter("sibblingStructure");
 				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
@@ -885,10 +880,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			structure = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
 			contentlet.setStructureInode(structure.getInode());
 		} else if (cmd.equals("newedit")) {
-			String containerInode = req.getParameter("contentcontainer_inode");
-			Container container = (Container) InodeFactory.getInode(containerInode, Container.class);
-			// commented by issue-2093
-//			structure = (Structure) InodeFactory.getInode(container.getStructureInode(), Structure.class);
+			structure = StructureFactory.getDefaultStructure();
 			contentlet.setStructureInode(structure.getInode());
 		}
 

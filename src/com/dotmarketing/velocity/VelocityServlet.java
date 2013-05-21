@@ -61,8 +61,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.portlets.containers.factories.ContainerFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -927,10 +925,11 @@ public abstract class VelocityServlet extends HttpServlet {
                 context.put( "totalSize" + c.getIdentifier(), new Integer( contentletList.size() ) );
                 // ### Add the structure fake contentlet ###
                 if ( contentletList.size() == 0 ) {
-                	// BEGIN COMMENTED by issue-2093
-                    //Structure structure = ContainerFactory.getContainerStructure( c );
-                    //contentletList.add( structure.getInode() + "" );
-                	//  END COMMENTED by issue-2093
+
+                	List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(c);
+                    for (ContainerStructure cs : csList) {
+                    	contentletList.add( cs.getStructureId() + "" );
+					}
 
 
                     // sets contentletlist with all the files to load per
