@@ -1,3 +1,4 @@
+<%@page import="org.mockito.internal.matchers.EndsWith"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
 
 <%@ page import="java.util.*" %>
@@ -156,6 +157,10 @@
                         structureVelocityVarNames+=st.getVelocityVarName();
 
         }
+        
+        
+        
+        String _allValue = (UtilMethods.webifyString(fieldsSearch.get("_all")).endsWith("*")) ? UtilMethods.webifyString(fieldsSearch.get("_all")).substring(0,UtilMethods.webifyString(fieldsSearch.get("_all")).length()-1) : UtilMethods.webifyString(fieldsSearch.get("_all"));
 %>
 
 
@@ -343,7 +348,9 @@
 <input type="hidden" name="structureInodesList" id="structureInodesList" value="<%= structureInodesList %>">
 <input type="hidden" name="hostField" id="hostField" value="<%= conHostValue %>"/>
 <input type="hidden" name="folderField" id="folderField" value="<%= conFolderValue %>"/>
-
+<input type="hidden" value="" name="Identifier" id="Identifier" size="10"/>
+<input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
+<input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
 <!-- START Split Screen -->
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:400px;" id="borderContainer" class="shadowBox headerBox">
 
@@ -358,7 +365,7 @@
                                         <dt><FONT COLOR="#FF0000"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Structure-Read-Permissions" )) %></FONT></dt>
                                 </div>
                         <%}%>
-
+					
                         <!-- START Advanced Search-->
                         <div id="advancedSearch">
                                 <dl>
@@ -430,57 +437,67 @@
                                         <% } %>
                                 </dl>
 								<div class="clear"></div>
+                                <dt><%= LanguageUtil.get(pageContext, "Search") %>:</dt>
+                                <dd>
+                                	  <input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>">
+                                </dd>
+                                
+                                
+                                <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
+	                                <div class="clear"></div>
+	                                <!-- Ajax built search fields  --->
+	                                        <div id="search_fields_table"></div>
+											<div class="clear"></div>
+	                                <!-- /Ajax built search fields  --->
+	
+	 								<!-- Ajax built Categories   --->
+	                        		<dl id="search_categories_list"></dl>
+									<div class="clear"></div>
+									<!-- /Ajax built Categories   --->
+				
 
-                                <!-- Ajax built search fields  --->
-                                        <div id="search_fields_table"></div>
-										<div class="clear"></div>
-                                <!-- /Ajax built search fields  --->
+	                                <dl id="filterSystemHostTable" style="display: ">
+	                                    <dt><%= LanguageUtil.get(pageContext, "Exclude-system-host") %>:</dt>
+	                                    <dd>
+	                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
+	                                   </dd>
+	                                </dl>
+									<div class="clear"></div>
+									
+									
+	                                <dl>
+	                                     <dt><%= LanguageUtil.get(pageContext, "Show") %>:</dt>
+	                                     <dd>
+	                                     
+	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
+	                                     		<option value="all"></option>
+	                                     		<option value="archived"><%= LanguageUtil.get(pageContext, "Archived-only") %></option>
+	                                     		<option value="locked"><%= LanguageUtil.get(pageContext, "Locked-only") %></option>
+	                                     		<option value="unpublished"><%= LanguageUtil.get(pageContext, "Unpublish only") %></option>
+	                                     	
+	                                     	</select>
+	
+	                                     </dd>
+	                                </dl>
 
-                                <dl>
-                                        <%--
-                                                <dt><%= LanguageUtil.get(pageContext, "Identifier") %>:</dt>
-                                                <dd><input type="hidden" value="" name="Identifier" dojoType="dijit.form.TextBox" id="Identifier" size="10"/></dd>
-                                         --%>
-                                         <input type="hidden" value="" name="Identifier" id="Identifier" size="10"/>
-                                         <input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
-                                         <input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
-                                        <dt><%= LanguageUtil.get(pageContext, "Archived-only") %>:</dt>
-                                        <dd><input type="checkbox" dojoType="dijit.form.CheckBox" id="showDeletedCB" onclick="displayArchiveButton();doSearch(1);" <%=showDeleted?"checked=\"checked\"":""%>></dd>
-                                </dl>
-								<div class="clear"></div>
+	                                <div  style="text-align: center" >
+	                                	<a href="javascript:showHideQuery()"><%= LanguageUtil.get(pageContext, "Show-Query")%></a>
+	                                </div>
+	                                <div id="measureTheHeightOfSearchTools" class="clear"></div>
+								</div>
 
-                                <dl id="filterSystemHostTable" style="display: ">
-                                    <dt><%= LanguageUtil.get(pageContext, "Exclude-system-host") %>:</dt>
-                                    <dd>
-                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
-                                   </dd>
-                                </dl>
-								<div class="clear"></div>
+			                 	<div  style="text-align: center" >
+	                                	<a href="javascript:toggleAdvancedSearchDiv()"><span class="small" id="toggleDivText"><%= LanguageUtil.get(pageContext, "Advanced") %></span></a>
+	                          	</div>
+             
 
-                                <dl>
-                                    <dt><%= LanguageUtil.get(pageContext, "Locked-only") %>:</dt>
-                                        <dd>
-                                         <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterLockedCB" onclick="doSearch(1);" <%=filterLocked?"checked=\"checked\"":""%>>
-                                   </dd>
-                                </dl>
-								<div class="clear"></div>
-								
-								<dl>
-                                   <dt><%= LanguageUtil.get(pageContext, "Unpublish only") %>:</dt>
-                                   <dd>
-                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterUnpublishCB" onclick="doSearch(1);" <%=filterUnpublish?"checked=\"checked\"":""%>>
-                                   </dd>
-                               </dl>                               
-                               <div class="clear"></div>
 
-                                <dl id="search_categories_list"></dl>
-								<div class="clear"></div>
                         </div>
                         <!-- END Advanced Search-->
 
 
 
-                        <div class="buttonRow">
+                        <div class="buttonRow" style='margin-top:10px;'>
                                 <span id="searchButton"></span>
 
                                 <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
