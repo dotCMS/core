@@ -3,13 +3,16 @@ package com.dotmarketing.portlets.containers.business;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -22,7 +25,6 @@ public class ContainerAPITest extends ContentletBaseTest {
     @Test
     public void save() throws Exception {
         Container c = new Container();
-        c.setCode("this is the code");
         c.setFriendlyName("test container");
         c.setTitle("his is the title");
         c.setMaxContentlets(5);
@@ -37,8 +39,13 @@ public class ContainerAPITest extends ContentletBaseTest {
         User user = APILocator.getUserAPI().getSystemUser();
         Host host = APILocator.getHostAPI().findDefaultHost(user, false);
 
-        // commented by issue-2093
-//        cc = APILocator.getContainerAPI().save(cc, st, host, user, false);
+        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(st.getIdentifier());
+        cs.setCode("this is the code");
+        csList.add(cs);
+
+        cc = APILocator.getContainerAPI().save(cc, csList, host, user, false);
 
         assertTrue(UtilMethods.isSet(cc.getInode()));
         assertTrue(UtilMethods.isSet(cc.getIdentifier()));
@@ -59,7 +66,6 @@ public class ContainerAPITest extends ContentletBaseTest {
     @Test
     public void saveWithExistingIds() throws Exception {
         Container c = new Container();
-        c.setCode("this is the code");
         c.setFriendlyName("test container for existing inode/identifier");
         c.setTitle("his is the title for existing inode/identifier");
         c.setMaxContentlets(5);
@@ -80,8 +86,13 @@ public class ContainerAPITest extends ContentletBaseTest {
         User user = APILocator.getUserAPI().getSystemUser();
         Host host = APILocator.getHostAPI().findDefaultHost(user, false);
 
-        // commented by issue-2093
-//        cc = APILocator.getContainerAPI().save(cc, st, host, user, false);
+        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(st.getIdentifier());
+        cs.setCode("this is the code");
+        csList.add(cs);
+
+        cc = APILocator.getContainerAPI().save(cc, csList, host, user, false);
 
         assertTrue(UtilMethods.isSet(cc.getInode()));
         assertTrue(UtilMethods.isSet(cc.getIdentifier()));
@@ -106,8 +117,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         String newInode=UUIDGenerator.generateUuid();
         cc.setPreLoop("new preloop");
         cc.setInode(newInode);
-     // commented by issue-2093
-//        cc = APILocator.getContainerAPI().save(cc, st, host, user, false);
+        cc = APILocator.getContainerAPI().save(cc, csList, host, user, false);
         assertEquals(newInode, cc.getInode());
         assertEquals(existingIdentifier, cc.getIdentifier());
         cc = APILocator.getContainerAPI().getWorkingContainerById(cc.getIdentifier(), user, false);
@@ -119,7 +129,6 @@ public class ContainerAPITest extends ContentletBaseTest {
     @Test
     public void delete() throws Exception {
         Container container = new Container();
-        container.setCode("this is the code");
         container.setFriendlyName("test container");
         container.setTitle("his is the title");
         container.setMaxContentlets(5);
@@ -130,14 +139,19 @@ public class ContainerAPITest extends ContentletBaseTest {
 
         User user = APILocator.getUserAPI().getSystemUser();
         Host host = APILocator.getHostAPI().findDefaultHost(user, false);
-     // commented by issue-2093
-//        Container saved = APILocator.getContainerAPI().save(container, st, host, user, false);
 
-//        String inode=saved.getInode();
-//        String identifier=saved.getIdentifier();
-//
-//        assertTrue(APILocator.getContainerAPI().delete(saved, user, false));
+        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(st.getIdentifier());
+        cs.setCode("this is the code");
+        csList.add(cs);
+        Container saved = APILocator.getContainerAPI().save(container, csList, host, user, false);
 
-//        AssetUtil.assertDeleted(inode, identifier, "containers");
+        String inode=saved.getInode();
+        String identifier=saved.getIdentifier();
+
+        assertTrue(APILocator.getContainerAPI().delete(saved, user, false));
+
+        AssetUtil.assertDeleted(inode, identifier, "containers");
     }
 }

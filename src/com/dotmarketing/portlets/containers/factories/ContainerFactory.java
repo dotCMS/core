@@ -163,10 +163,5 @@ public class ContainerFactory {
 
 		return newContainer;
     }
-//	  Commented by issue-2093
-//    public static Structure getContainerStructure(Container container)
-//    {
-//    	Structure structure = StructureCache.getStructureByInode(container.getStructureInode());
-//    	return structure;
-//    }
+
 }

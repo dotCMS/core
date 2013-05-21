@@ -27,6 +27,7 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -319,6 +320,32 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	}
 
 	/**
+	 *
+	 * Retrieves the list of structures related to the given container
+	 *
+	 * @param container
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 *
+	 */
+	public List<Structure> getStructuresInContainer(Container container) throws DotStateException, DotDataException, DotSecurityException  {
+
+		List<ContainerStructure> csList =  getContainerStructures(container);
+		List<Structure> structureList = new ArrayList<Structure>();
+
+		for (ContainerStructure cs : csList) {
+			Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+			structureList.add(st);
+		}
+
+		return structureList;
+	}
+
+
+
+	/**
 	 * Retrieves all the containers attached to the given host
 	 * @param parentPermissionable
 	 * @return
@@ -416,6 +443,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 
 		// save the container-structure relationships , issue-2093
+		for (ContainerStructure cs : containerStructureList) {
+			cs.setContainerId(container.getIdentifier());
+		}
 		saveContainerStructures(containerStructureList);
 
         //Saving the host of the templatecontainers
