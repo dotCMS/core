@@ -460,7 +460,7 @@ public class UtilHTML {
 				if (chars[i] == ';')
 					buf.append(";");
 				else
-					buf.append("&#" + (int) chars[i]);
+					buf.append("&#" + (int) chars[i]+";");
 			}  
 		}
 		return buf.toString();
