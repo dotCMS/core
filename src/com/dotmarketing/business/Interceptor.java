@@ -88,6 +88,13 @@ public interface Interceptor {
     public void delPreHook ( Object preHook );
 
     /**
+     * Removes a given hook from the list
+     *
+     * @param className of the hook to remove
+     */
+    public void delPreHookByClassName ( String className );
+
+    /**
      * Removes a hook from the list at the specified index
      */
     public void delPostHook ( int indexToRemAt );
@@ -98,5 +105,12 @@ public interface Interceptor {
      * @param postHook
      */
     public void delPostHook ( Object postHook );
+
+    /**
+     * Removes a given hook from the list
+     *
+     * @param className of the hook to remove
+     */
+    public void delPostHookByClassName ( String className );
 
 }

@@ -443,4 +443,7 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
         return true;
     }
 
+    public void isInodeIndexed ( String inode, boolean live, boolean returnValue ) {
+    }
+
 }
