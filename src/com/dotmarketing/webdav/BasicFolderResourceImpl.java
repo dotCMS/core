@@ -57,10 +57,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             
             
             try {
-                IFileAsset existing=dotDavHelper.loadFile(path+newName, user);
-                if(existing==null || !InodeUtils.isSet(existing.getInode())) {
-                    dotDavHelper.createResource(path + newName, isAutoPub, user);
-                }
+                dotDavHelper.createResource(path + newName, isAutoPub, user);
             } catch (Exception e) {
                 Logger.error(FolderResourceImpl.class,e.getMessage(),e);
                 throw new DotRuntimeException(e.getMessage(), e);
