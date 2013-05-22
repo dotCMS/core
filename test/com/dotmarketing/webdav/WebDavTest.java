@@ -19,7 +19,6 @@ import org.junit.Test;
 import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.ettrema.httpclient.File;
 import com.ettrema.httpclient.Folder;
@@ -113,6 +112,8 @@ public class WebDavTest extends TestBase {
         File wtFile=(File)wt.child("legacy.txt");
         final String newContent="new File content";
         wtFile.setContent(new ByteArrayInputStream(newContent.getBytes()), (long)newContent.getBytes().length);
+        
+        file = APILocator.getFileAPI().getWorkingFileById(file.getIdentifier(), user, false);
         
         // the file should have the new content
         Assert.assertEquals(newContent, IOUtils.toString(new FileReader(APILocator.getFileAPI().getAssetIOFile(file))));
