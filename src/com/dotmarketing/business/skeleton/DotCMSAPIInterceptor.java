@@ -363,4 +363,12 @@ public class DotCMSAPIInterceptor implements DotCMSAPI, Interceptor {
 		return null;
 	}
 
+    public void delPreHookByClassName ( String className ) {
+        // TODO Auto-generated method stub
+    }
+
+    public void delPostHookByClassName ( String className ) {
+        // TODO Auto-generated method stub
+    }
+
 }
