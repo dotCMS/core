@@ -21,6 +21,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
@@ -831,17 +832,7 @@ public class DotWebdavHelper {
 			}
 
 			InputStream is = content;
-			/*
-			 * int size = is.available(); byte[] currentData = new byte[size];
-			 * is.read(currentData);
-			 */
-
-			ByteArrayOutputStream arrayWriter = new ByteArrayOutputStream();
-			int read = -1;
-			while ((read = is.read()) != -1) {
-				arrayWriter.write(read);
-			}
-			byte[] currentData = arrayWriter.toByteArray();
+			byte[] currentData = IOUtils.toByteArray(is);
 
 			if(destinationFile==null){
 				Contentlet fileAsset = new Contentlet();
@@ -892,16 +883,22 @@ public class DotWebdavHelper {
 
 				if (currentData != null) {
 					// Saving the new working data
-					Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
-					Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
-					java.io.File tempUserFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + 
-							java.io.File.separator + fieldVar.getFieldContentlet());
-					if (!tempUserFolder.exists())
-						tempUserFolder.mkdirs();
-
-					java.io.File fileData = new java.io.File(tempUserFolder.getAbsolutePath() + java.io.File.separator + fileName);
-					if(fileData.exists())
-						fileData.delete();
+				    java.io.File fileData;
+				    if(destinationFile instanceof File) {
+				        fileData=workingFile;
+				    }
+				    else {
+    					Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
+    					Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
+    					java.io.File tempUserFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + 
+    							java.io.File.separator + fieldVar.getFieldContentlet());
+    					if (!tempUserFolder.exists())
+    						tempUserFolder.mkdirs();
+    
+    					fileData = new java.io.File(tempUserFolder.getAbsolutePath() + java.io.File.separator + fileName);
+    					if(fileData.exists())
+    						fileData.delete();
+				    }
 					// Saving the new working data
 					FileChannel writeCurrentChannel = new FileOutputStream(fileData).getChannel();
 					writeCurrentChannel.truncate(0);
@@ -932,14 +929,6 @@ public class DotWebdavHelper {
 
 						}
 
-						// Wiping out the thumbnails and resized versions
-						String folderPath = workingFile.getParentFile().getAbsolutePath();
-						Identifier id = new Identifier();
-						try {
-							id = idapi.find((File)destinationFile);
-						} catch (Exception he) {
-							Logger.error(this, "Cannot load identifier : ", he);
-						}
 					}else{
 						fileAssetCont.setInode(null);
 						fileAssetCont.setFolder(parent.getInode());
