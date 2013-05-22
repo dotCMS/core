@@ -39,6 +39,7 @@ public class Task01040CreateContainertStructures implements StartupTask{
 
 		String delete_code_when_content = "update containers set code='' where max_contentlets > 0";
 		String drop_structure_column = "alter table containers drop column structure_inode";
+		String drop_metadata_column = "alter table containers drop column for_metadata";
 
 
 		HibernateUtil.startTransaction();
@@ -68,6 +69,7 @@ public class Task01040CreateContainertStructures implements StartupTask{
 			}
 			dc.executeStatement(delete_code_when_content);
 			dc.executeStatement(drop_structure_column);
+			dc.executeStatement(drop_metadata_column);
 		} catch (Exception e) {
 		 HibernateUtil.rollbackTransaction();
 		 Logger.error(this, e.getMessage(),e);
