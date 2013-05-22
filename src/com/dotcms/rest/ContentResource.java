@@ -2,9 +2,6 @@ package com.dotcms.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -42,7 +39,6 @@ import org.codehaus.jettison.json.JSONObject;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -58,10 +54,8 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
@@ -423,16 +417,14 @@ public class ContentResource extends WebResource {
         
         Contentlet contentlet=new Contentlet();
         try {
-            switch(request.getContentType()) {
-            case MediaType.APPLICATION_JSON:
+            if(request.getContentType().equals(MediaType.APPLICATION_JSON)) {
                 processJSON(contentlet, request.getInputStream());
-                break;
-            case MediaType.APPLICATION_XML:
+            }
+            else if(request.getContentType().equals(MediaType.APPLICATION_XML)) {
                 processXML(contentlet, request.getInputStream());
-                break;
-            case MediaType.APPLICATION_FORM_URLENCODED:
+            }
+            else if(request.getContentType().equals(MediaType.APPLICATION_FORM_URLENCODED)) {
                 processForm(contentlet, request.getInputStream());
-                break;
             }
         } catch(JSONException e) {
             return Response.status(Status.BAD_REQUEST).build();
@@ -527,8 +519,9 @@ public class ContentResource extends WebResource {
             
             HibernateUtil.commitTransaction();
             clean = true;
-        } catch (DotContentletStateException
-                | IllegalArgumentException e) {
+        } catch (DotContentletStateException e) {
+            return Response.status(Status.CONFLICT).build();
+        } catch(IllegalArgumentException e) {
             return Response.status(Status.CONFLICT).build();
         } catch (DotSecurityException e) {
             return Response.status(Status.FORBIDDEN).build();
