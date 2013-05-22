@@ -161,7 +161,6 @@ public class TailLogServlet extends HttpServlet {
 				}
 				response.getOutputStream().flush();
 				Thread.sleep(1000);
-				break;
 			}
 		} catch (Exception e) {
 			if (thread != null) {
