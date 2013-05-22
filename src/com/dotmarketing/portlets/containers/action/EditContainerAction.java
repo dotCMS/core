@@ -453,31 +453,6 @@ public class EditContainerAction extends DotPortletAction implements
             cf.setDynamic(true);
         }
 
-		// BEGIN GRAZIANO issue-12-dnd-template
-
-        if(UtilMethods.isSet(container.getCode()) && container.getMaxContentlets()==0){
-			if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
-				container.setForMetadata(true);
-			// END GRAZIANO issue-12-dnd-template
-        } else if(container.getMaxContentlets()>0) {
-        	// TODO: HOW IS THIS GOING TO BE HANDLED WITH MULTIPLE CODES? IS THE METADATA ONLY WHEN NO STRUCTURE IS SELECTED?
-        }
-
-
-		// Getting container structure
-        // commented by issue-2093
-//		if (!InodeUtils.isSet(cf.getStructureInode())) {
-//			Structure currentStructure;
-//			if (!InodeUtils.isSet(container.getInode())) {
-//				currentStructure = StructureFactory.getDefaultStructure();
-//			} else {
-//				currentStructure = StructureCache.getStructureByInode(container.getStructureInode());
-//				if (currentStructure==null || !InodeUtils.isSet(currentStructure.getInode()))
-//					currentStructure = StructureFactory.getDefaultStructure();
-//			}
-//			cf.setStructureInode(currentStructure.getInode());
-//		}
-
         //gets the container host
         Host host = hostAPI.findParentHost(container, user, false);
         if(host!= null)
