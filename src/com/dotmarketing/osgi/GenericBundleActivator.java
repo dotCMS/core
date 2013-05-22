@@ -77,8 +77,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private Collection<ActionConfig> actions;
     private Collection<Portlet> portlets;
     private Collection<Rule> rules;
-    private Collection preHooks;
-    private Collection postHooks;
+    private Collection<String> preHooks;
+    private Collection<String> postHooks;
     private ActivatorUtil activatorUtil = new ActivatorUtil();
 
     private ClassLoader getFelixClassLoader () {
@@ -567,13 +567,15 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void addPreHook ( Object preHook ) throws Exception {
 
         Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
+        //First we need to be sure we are not adding the same hook more than once
+        interceptor.delPreHookByClassName( preHook.getClass().getName() );
 
         if ( preHooks == null ) {
-            preHooks = new ArrayList();
+            preHooks = new ArrayList<String>();
         }
 
         interceptor.addPreHook( preHook );
-        preHooks.add( preHook );
+        preHooks.add( preHook.getClass().getName() );
     }
 
     /**
@@ -585,13 +587,15 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void addPostHook ( Object postHook ) throws Exception {
 
         Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
+        //First we need to be sure we are not adding the same hook more than once
+        interceptor.delPostHookByClassName( postHook.getClass().getName() );
 
         if ( postHooks == null ) {
-            postHooks = new ArrayList();
+            postHooks = new ArrayList<String>();
         }
 
         interceptor.addPostHook( postHook );
-        postHooks.add( postHook );
+        postHooks.add( postHook.getClass().getName() );
     }
 
     //*******************************************************************
@@ -614,9 +618,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterQuartzJobs();
         unregisterActionMappings();
         unregisterPortles();
-        unregisterServlets( context );
         unregisterRewriteRule();
         activatorUtil.cleanResources( context );
+        unregisterServlets( context );
     }
 
     /**
@@ -671,8 +675,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
         if ( postHooks != null ) {
 
             Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
-            for ( Object postHook : postHooks ) {
-                interceptor.delPostHook( postHook );
+            for ( String postHook : postHooks ) {
+                interceptor.delPostHookByClassName( postHook );
             }
         }
     }
@@ -687,8 +691,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
         if ( preHooks != null ) {
 
             Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
-            for ( Object preHook : preHooks ) {
-                interceptor.delPreHook( preHook );
+            for ( String preHook : preHooks ) {
+                interceptor.delPreHookByClassName( preHook );
             }
         }
     }
@@ -964,8 +968,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 //ExtHttpService httpService = (ExtHttpService) context.getService( sRef );
                 Object httpService = context.getService( sRef );
 
-                //Method unregisterServletMethod = httpService.getClass().getMethod( "unregisterAll" );
-                Method unregisterAllMethod = httpService.getClass().getMethods()[1];//unregisterAll
+                //Now invoke the method that will unregister all the registered Servlets and Filters
+                Method unregisterAllMethod = httpService.getClass().getMethod( "unregisterAll" );
                 unregisterAllMethod.invoke( httpService );
             }
         }
