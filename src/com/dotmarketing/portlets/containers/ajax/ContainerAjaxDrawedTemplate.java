@@ -103,7 +103,7 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
                  * contents and doesn't stay into the template for more than one time.
                  */
                 contMap.put( "maxContentlets", cont.getMaxContentlets() );
-                if ( !checkContainerCode && !cont.isForMetadata() ) {
+                if ( !checkContainerCode  ) {
 
                     //Now we need to verify if an exclude list was sent from the client
                     Boolean excludeContainer = false;
