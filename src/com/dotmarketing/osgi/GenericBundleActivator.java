@@ -24,6 +24,7 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.felix.http.api.ExtHttpService;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.struts.Globals;
@@ -810,7 +811,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
 
         private String getBundleFolder ( BundleContext context ) {
-            return OSGI_FOLDER + File.separator + context.getBundle().getBundleId();
+
+            //We will use the bundle jar name as the folder name for the osgi resources we move inside dotCMS
+            String bundleLocation = context.getBundle().getLocation();
+            String jarFileName = FilenameUtils.getName( bundleLocation );
+            jarFileName = jarFileName.replace( ".jar", "" );
+
+            //return OSGI_FOLDER + File.separator + context.getBundle().getBundleId();
+            return OSGI_FOLDER + File.separator + jarFileName;
         }
 
         private ModuleConfig getModuleConfig () {
