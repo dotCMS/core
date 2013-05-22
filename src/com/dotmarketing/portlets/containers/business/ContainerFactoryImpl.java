@@ -123,7 +123,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			if(InodeUtils.isSet(InodeFactory.getInode(parent, Structure.class).getInode()))
 				query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id"
 						+ " and exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = asset.identifier and cs.structureId = '"+parent+"' ) ");
-//			  query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id and asset.structureInode = '"+parent+"' ");
 		   else
 			   query.append(" ,tree in class " + Tree.class.getName() + " where asset.inode = inode.inode " +
 						    "and asset.identifier = identifier.id and tree.parent = '"+parent+"' and tree.child=asset.inode");
