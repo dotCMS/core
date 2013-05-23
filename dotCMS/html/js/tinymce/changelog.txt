@@ -1,3 +1,35 @@
+Version 3.5.8 (2012-11-20)
+	Fixed bug where html5 data attributes where stripped from contents.
+	Fixed bug where toolbar was annouced multiple times with JAWS on Firefox.
+	Fixed bug where the editor view whouldn't scroll to BR elements when using shift+enter or br enter mode.
+	Fixed bug where a JS error would be thrown when trying to paste table rows then the rows clipboard was empty.
+	Fixed bug with auto detection logic for youtube urls in the media plugin.
+	Fixed bug where the formatter would throw errors if you used the jQuery version of TinyMCE and the latest jQuery.
+	Fixed bug where the latest WebKit versions would produce span elements when deleting text between blocks.
+	Fixed bug where the autolink plugin would produce DOM exceptions when pressing shift+enter inside a block element.
+	Fixed bug where toggling of blockquotes when using br enter mode would produce an exception.
+	Fixed bug where focusing out of the body of the editor wouldn't properly add an undo level.
+	Fixed issue with warning message being displayed on IE 9+ about the meta header fix for IE 8.
+Version 3.5.7 (2012-09-20)
+	Changed table row properties dialog to not update multiple rows when row type is header or footer.
+	Fixed bug in hyperlink dialog for IE9 where links with no target attr set had target value of --
+	Changing toolbars to have a toolbar role for FF keyboard navigation works correctly.
+	Fixed bug where applying formatting to an empty block element would produce redundant spans.
+	Fixed bug where caret formatting on IE wouldn't properly apply if you pressed enter/return.
+	Fixed bug where loading TinyMCE using an async script wouldn't properly initialize editors.
+	Fixed bug where some white space would be removed after inline elements before block elements.
+	Fixed bug where it wouldn't properly parse attributes with a single backslash as it's contents.
+	Fixed bug where noscript elements would loose it's contents on older IE versions.
+	Fixed bug where backspace inside empty blockquote wouldn't delete it properly.
+	Fixed bug where custom elements with . in their names wouldn't work properly.
+	Fixed bug where the custom_elements option didn't properly setup the block elements schema structure.
+	Fixed bug where the custom_elements option didn't auto populate the extended_valid_elements.
+	Fixed bug where the whole TD element would get blcok formatted when there where BR elements in it.
+	Fixed bug where IE 9 might crash if the editor was hidden and specific styles where applied to surrounding contents.
+	Fixed bug where shift+enter inside a table cell on Gecko would produce an zero width non breaking space between tr:s.
+	Fixed bug where the advlink dialog wouldn't properly populate the anchors dropdown if the HTML5 schema was used.
+	Fixed issue with missing autofocus attribute on input element when using the HTML5 schema.
+	Fixed issue where enter inside a block contained within an LI element wouldn't produce a new LI.
 Version 3.5.6 (2012-07-26)
 	Added "text" as a valid option to the editor.getContent format option. Makes it easier to get a text representation of the editor contents.
 	Fixed bug where resizing an image to less that 0x0 pixels would display the ghost image at an incorrect position.
