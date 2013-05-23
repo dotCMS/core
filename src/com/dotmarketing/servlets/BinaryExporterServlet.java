@@ -529,25 +529,6 @@ private boolean isContent(String id, boolean byInode, long langId, boolean respe
 
 			} catch (Exception e) {
 				Logger.debug(this.getClass(), "cant find identifier " + id);
-
-				//try to find file using its identifier
-				String p= "";
-				try{
-					Identifier ident = APILocator.getIdentifierAPI().find(id);
-				    if(respectFrontendRoles){
-					  p = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId());
-				    }else{
-					  p = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId());
-				    }
-				    p = p.substring(5, p.lastIndexOf("."));
-				    IFileAsset file = fileAPI.find(p, userAPI.getSystemUser(), false);
-				    if(UtilMethods.isSet(file.getInode()))
-				    	return false;
-				}
-				catch(Exception nfe){
-					Logger.debug(this.getClass(), "cant find identifier " + id);
-				}
-
 			}
 		}
 		cacheMisses.put(id+byInode, true);
