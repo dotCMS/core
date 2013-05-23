@@ -198,7 +198,7 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 				out.print("\r\n");
 
 				for(Tag tag : tagsList ){
-					out.print(tag.getTagName()+",");
+					out.print(new String(tag.getTagName().getBytes("UTF-8"), "ISO-8859-1")+","); 
 					out.print(tag.getHostId());
 					out.print("\r\n");
 				}
