@@ -5,29 +5,22 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import com.bradmcevoy.http.Auth;
-import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.FolderResource;
 import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.Range;
-import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Resource;
-import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.exceptions.BadRequestException;
-import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -61,9 +54,11 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             path = path + "/";
         }
         if(!dotDavHelper.isTempResource(newName)){
+            
+            
             try {
                 dotDavHelper.createResource(path + newName, isAutoPub, user);
-            } catch (DotDataException e) {
+            } catch (Exception e) {
                 Logger.error(FolderResourceImpl.class,e.getMessage(),e);
                 throw new DotRuntimeException(e.getMessage(), e);
             }
