@@ -367,7 +367,7 @@
                 <%int showDim=300; %>
                 <%int imageEditors=0; %>
                 <!--  If you are not enterprise -->
-                <%if(("100".equals(System.getProperty("dotcms_level")))){ %>
+                <%if(LicenseUtil.getLevel() < 199){ %>
                     <div style="position:relative;width:<%=showDim+40 %>px;">
                         <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=1&filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
                                 class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
