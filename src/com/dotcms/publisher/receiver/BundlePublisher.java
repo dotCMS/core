@@ -13,22 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import com.dotcms.enterprise.publishing.remote.handler.*;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.publishing.remote.handler.CategoryHandler;
-import com.dotcms.enterprise.publishing.remote.handler.ContainerHandler;
-import com.dotcms.enterprise.publishing.remote.handler.ContentHandler;
-import com.dotcms.enterprise.publishing.remote.handler.FolderHandler;
-import com.dotcms.enterprise.publishing.remote.handler.HTMLPageHandler;
-import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
-import com.dotcms.enterprise.publishing.remote.handler.LanguageHandler;
-import com.dotcms.enterprise.publishing.remote.handler.LinkHandler;
-import com.dotcms.enterprise.publishing.remote.handler.RelationshipHandler;
-import com.dotcms.enterprise.publishing.remote.handler.StructureHandler;
-import com.dotcms.enterprise.publishing.remote.handler.TemplateHandler;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -87,6 +77,7 @@ public class BundlePublisher extends Publisher {
            
        	handlers.add(new ContentHandler());
        	handlers.add(new LanguageHandler());
+       	handlers.add(new OSGIHandler());
        	handlers.add(new LinkHandler());
 
         auditAPI = PublishAuditAPI.getInstance();
