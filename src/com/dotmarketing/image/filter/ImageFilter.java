@@ -21,13 +21,13 @@ public abstract class ImageFilter implements ImageFilterIf {
 	protected final static String FILE_EXT = "png";
 
 	/**
-	 * the value of this field is used to insure that the generated cache files 
-	 * 1) do not overwrite each other. 
+	 * the value of this field is used to insure that the generated cache files
+	 * 1) do not overwrite each other.
 	 * 2) are unique based on the parameters and order in the filter
 	 * 3) adds the "Rendition" tag to the final image in the filter chain, if so requested
 	 * this is so we can reuse the same heavily generated file (resize:5000px) again and again when needed
-	 * 
-	 * 
+	 *
+	 *
 	 * @param fieldName
 	 * @param parameters
 	 * @return
@@ -64,18 +64,18 @@ public abstract class ImageFilter implements ImageFilterIf {
 					}
 				}
 			}
-			
-			
+
+
 			MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
 			digest.update((inode + sb.toString() + this.getClass()).getBytes());
-			
+
 			StringBuilder ret = new StringBuilder();
 			ret.append( WebKeys.GENERATED_FILE);
 			ret.append(thisFilter + "_");
 			ret.append(convertToHex(digest.digest()));
-			
 
-			
+
+
 			Logger.debug(this.getClass(), "");
 			Logger.debug(this.getClass(), "------------------------------------------------------------------");
 			Logger.debug(this.getClass(), "   for : " + file.getAbsolutePath()+" " + sb);
@@ -83,7 +83,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 			Logger.debug(this.getClass(), "   unique key: " + ret.toString());
 			Logger.debug(this.getClass(), "------------------------------------------------------------------");
 			Logger.debug(this.getClass(), "");
-			
+
 			return ret.toString();
 		} catch (NoSuchAlgorithmException e) {
 			throw new DotStateException(this.getClass() + ":" + e);
@@ -124,39 +124,39 @@ public abstract class ImageFilter implements ImageFilterIf {
 			overwrite = true;
 		else if (parameters.get("overwrite") != null)
 			overwrite = true;
-		
+
 		return overwrite;
 	}
-	
-	
+
+
 	/**
 	 * returns the file that can be used to store resutlts.
 	 * The heavy lifting is being in the getUniqueFileName() method
 	 * @param file
 	 * @param parameters
 	 * @return
-	 * @throws IOException 
-	 * @throws DotRuntimeException 
+	 * @throws IOException
+	 * @throws DotRuntimeException
 	 */
 	protected File getResultsFile(File file, Map<String, String[]> parameters) throws DotRuntimeException{
 		return  getResultsFile(file, parameters, FILE_EXT);
 	}
-	
-	
+
+
 	/**
 	 * returns the file that can be used to store resutlts.
 	 * The heavy lifting is being in the getUniqueFileName() method
 	 * @param file
 	 * @param parameters
 	 * @return
-	 * @throws IOException 
-	 * @throws DotRuntimeException 
+	 * @throws IOException
+	 * @throws DotRuntimeException
 	 */
 	protected File getResultsFile(File file, Map<String, String[]> parameters, String fileExt) throws DotRuntimeException{
 		String fileFolderPath = file.getParent();
-		
+
 		String inode =null;
-		
+
 		try{
 			if(file.getName().startsWith(WebKeys.GENERATED_FILE)){
 				inode = file.getName();
@@ -165,7 +165,12 @@ public abstract class ImageFilter implements ImageFilterIf {
 				return  new File(resultFilePath);
 			}
 			else{
-				inode = RegEX.find(file.getCanonicalPath(), "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}").get(0).getMatch();
+				try{
+					inode = RegEX.find(file.getCanonicalPath(), "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}").get(0).getMatch();
+				}
+				catch (Exception e){
+					inode = parameters.get("assetInodeOrIdentifier")[0];
+				}
 				File dirs = new File(Config.CONTEXT.getRealPath("/assets/dotGenerated/" + inode.charAt(0) + "/" + inode.charAt(1)));
 				dirs.mkdirs();
 				String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);
@@ -174,7 +179,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 			}
 
 
-			
+
 		}
 		catch(Exception e){
 			throw new DotRuntimeException("Cannot find the inode of the file : " + e.getMessage());
