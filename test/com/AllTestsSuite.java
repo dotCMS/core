@@ -4,6 +4,7 @@ import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
+import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
 import com.dotmarketing.business.PermissionAPITest;
@@ -51,7 +52,8 @@ import org.junit.runners.Suite;
     RoleResourceTest.class,
     ESIndexSpeedTest.class,
     PluginMergerTest.class,
-    WebDavTest.class
+    WebDavTest.class,
+    ContentResourceTest.class
 })
 public class AllTestsSuite {
 
