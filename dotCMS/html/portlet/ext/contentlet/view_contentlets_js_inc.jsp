@@ -2220,7 +2220,7 @@
     	executeWfAction: function(wfId, assignable, commentable, inode ){
     		this.wfActionId=wfId;
 
-    		//if(assignable || commentable){
+    		if(assignable == 'true' || commentable == 'true'){
     			var dia = dijit.byId("contentletWfDialog");
     			if(dia){
     				dia.destroyRecursive();
@@ -2247,11 +2247,21 @@
     			dia.show();
     			myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId + "&inode=" + inode);
     			return;
-    		//}
-    		//else{
-        		//dojo.byId("wfActionId").value=wfId;
-        		//saveContent(false);
-    		//}
+    		}
+    		else{
+        		   var wfActionAssign 		= "";
+		    		var selectedItem 		= "";
+		    		var wfConId 			= inode;
+		    		var wfActionId 			= this.wfActionId;
+		    		var wfActionComments 	= "";
+		    		var publishDate			="";
+		    		var publishTime 		= ""; 
+		    		var expireDate 			= ""; 
+		    		var expireTime 			=""; 
+		    		var neverExpire 		="";
+					BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
+		    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);  
+    		}
 
     	},
 
@@ -2325,8 +2335,8 @@
     });
 
     function fileActionCallback (response) {
-    	reloadContent ();
-		showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Perform-Workflow")) %>');
+    	doSearch();
+    	showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Workflow-executed")) %>');
 	}
 
     var contentAdmin ;
