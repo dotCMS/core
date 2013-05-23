@@ -264,6 +264,7 @@ public class ThumbnailImage extends HttpServlet {
         			}
             	}else if(id!=null && InodeUtils.isSet(id.getId())){
                     File file = fileAPI.find(inode,user,true);
+                    Identifier tempId = APILocator.getIdentifierAPI().loadFromCache(file.getIdentifier());
                     isSet =InodeUtils.isSet(file.getInode());
                     boolean isInodeUUID = false;
                     //Verify if file asset inode is UUID (1.9+) or a simple string (legacy image from 1.7)
@@ -277,7 +278,7 @@ public class ThumbnailImage extends HttpServlet {
     					//Legacy image, the inode is not a valid UUID string.
     					isInodeUUID = false;
     				}
-    				if(isInodeUUID)
+    				if(isInodeUUID && "contentlet".equals(tempId.getAssetType()))
     					fileName = file.getFileName();
     				else
     					fileName = inode + "." + UtilMethods.getFileExtension(file.getFileName());
