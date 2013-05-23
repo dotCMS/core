@@ -10,22 +10,11 @@ import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
+import com.dotcms.enterprise.publishing.remote.bundler.*;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.HTMLPageBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.LinkBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.StructureBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -60,7 +49,7 @@ public class PushPublisher extends Publisher {
 	public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
 		if(LicenseUtil.getLevel()<300)
 	        throw new RuntimeException("need an enterprise pro license to run this bundler");
-	    
+
 		this.config = super.init(config);
 		tFactory = new TrustFactory();
 
@@ -72,7 +61,7 @@ public class PushPublisher extends Publisher {
 	public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
 		if(LicenseUtil.getLevel()<300)
 	        throw new RuntimeException("need an enterprise pro license to run this bundler");
-	    
+
 	    PublishAuditHistory currentStatusHistory = null;
 		try {
 			//Compressing bundle
@@ -82,72 +71,72 @@ public class PushPublisher extends Publisher {
 			list.add(bundleRoot);
 			File bundle = new File(bundleRoot+File.separator+".."+File.separator+config.getId()+".tar.gz");
 			PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
-			
-			
-			
+
+
+
 			//Retriving enpoints and init client
 			List<PublishingEndPoint> endpoints = ((PushPublisherConfig)config).getEndpoints();
 			Map<String, List<PublishingEndPoint>> endpointsMap = new HashMap<String, List<PublishingEndPoint>>();
 			List<PublishingEndPoint> buffer = null;
 			//Organize the endpoints grouping them by groupId
 			for (PublishingEndPoint pEndPoint : endpoints) {
-				
+
 				String gid = UtilMethods.isSet(pEndPoint.getGroupId()) ? pEndPoint.getGroupId() : pEndPoint.getId();
-				
+
 				if(endpointsMap.get(gid) == null)
 					buffer = new ArrayList<PublishingEndPoint>();
-				else 
+				else
 					buffer = endpointsMap.get(gid);
-				
+
 				buffer.add(pEndPoint);
-				
+
 				// put in map with either the group key or the id if no group is set
 				endpointsMap.put(gid, buffer);
-				
+
 			}
-			
+
 			ClientConfig cc = new DefaultClientConfig();
-			
+
 			if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals(""))
 				cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
 			Client client = Client.create(cc);
-			
+
 			//Updating audit table
 			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
-			
+
 			currentStatusHistory.setPublishStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
 			//Increment numTries
 			currentStatusHistory.addNumTries();
-	        
+
 	        boolean hasError = false;
 	        int errorCounter = 0;
-	        
+
 	        for ( String group : endpointsMap.keySet()) {
 	        	List<PublishingEndPoint> groupList = endpointsMap.get(group);
-	        	
+
 	        	boolean sent = false;
 				for (PublishingEndPoint endpoint : groupList) {
 					EndpointDetail detail = new EndpointDetail();
 					try {
 						FormDataMultiPart form = new FormDataMultiPart();
-				        form.field("AUTH_TOKEN", 
+				        form.field("AUTH_TOKEN",
 				        		retriveKeyString(
 				        				PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
-				        
+
 				        form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
-				        
+
 				        form.field("ENDPOINT_ID", endpoint.getId());
 				        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
-						
+
 						//Sending bundle to endpoint
 				        WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
-				        
-				        ClientResponse response = 
+
+				        ClientResponse response =
 				        		resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
-				        
-				        
-				        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) 
+
+
+				        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK)
 				        {
 				        	detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 				        	detail.setInfo("Everything ok");
@@ -161,41 +150,41 @@ public class PushPublisher extends Publisher {
 					} catch(Exception e) {
 						hasError = true;
 						detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-						
+
 						String error = 	"An error occured for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
-						
-						
+
+
 						detail.setInfo(error);
-			        	
+
 			        	Logger.error(this.getClass(), error);
 					}
-			        
+
 			        currentStatusHistory.addOrUpdateEndpoint(group, endpoint.getId(), detail);
-			        
+
 			        if(sent)
 			        	break;
 				}
-				
+
 				if(!sent) {
 					hasError = true;
 					errorCounter++;
 				}
 	        }
-			
+
 			if(!hasError) {
 				//Updating audit table
 		        currentStatusHistory.setPublishEnd(new Date());
-				pubAuditAPI.updatePublishAuditStatus(config.getId(), 
+				pubAuditAPI.updatePublishAuditStatus(config.getId(),
 						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
-				
+
 				//Deleting queue records
 				//pubAPI.deleteElementsFromPublishQueueTable(config.getId());
 			} else {
 				if(errorCounter == endpointsMap.size()) {
-					pubAuditAPI.updatePublishAuditStatus(config.getId(), 
+					pubAuditAPI.updatePublishAuditStatus(config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
 				} else {
-					pubAuditAPI.updatePublishAuditStatus(config.getId(), 
+					pubAuditAPI.updatePublishAuditStatus(config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
 				}
 			}
@@ -209,18 +198,18 @@ public class PushPublisher extends Publisher {
 			} catch (DotPublisherException e1) {
 				throw new DotPublishingException(e.getMessage());
 			}
-			
+
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotPublishingException(e.getMessage());
 
 		}
 	}
-	
-	
 
 
 
-	
+
+
+
 	private String retriveKeyString(String token) throws IOException {
 		String key = null;
 		if(token.contains(File.separator)) {
@@ -230,51 +219,64 @@ public class PushPublisher extends Publisher {
 		} else {
 			key = token;
 		}
-		
+
 		return PublicEncryptionFactory.encryptString(key);
 	}
 
-	
-	@SuppressWarnings("rawtypes")
-	@Override
-	public List<Class> getBundlers() {
-		boolean buildCategories = false;
-		for(PublishQueueElement element : ((PushPublisherConfig)config).getAssets())
-			if(element.getType().equals("category"))
-				buildCategories = true;
-		List<Class> list = new ArrayList<Class>();
-		
-		//The order is important cause 
-		//I need to add all containers associated with templates
-		
-		/**
-		 * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
-		 * 
-		 */
-		if(buildCategories)
-			list.add(CategoryBundler.class);
-		else {
-			list.add(DependencyBundler.class);
-			list.add(HostBundler.class);
-			list.add(ContentBundler.class);
-			list.add(FolderBundler.class);
-			list.add(TemplateBundler.class);
-			list.add(ContainerBundler.class);
-			list.add(HTMLPageBundler.class);
-			list.add(LinkBundler.class);
-			
-			if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")){
-				list.add(StructureBundler.class);
-				/**
-				 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
-				 * 
-				 */
-				list.add(RelationshipBundler.class);			
-			}
-			list.add(LanguageBundler.class);
-		}
-		
-		return list;
-	}
+    /**
+     * Returns the proper bundlers for each of the elements on the Publishing queue
+     *
+     * @return
+     */
+    @SuppressWarnings ("rawtypes")
+    @Override
+    public List<Class> getBundlers () {
+
+        boolean buildCategories = false;
+        boolean buildOSGIBundle = false;
+        for ( PublishQueueElement element : config.getAssets() ) {
+            if ( element.getType().equals( "category" ) ) {
+                buildCategories = true;
+            } else if ( element.getType().equals( "osgi" ) ) {
+                buildOSGIBundle = true;
+            }
+        }
+
+        List<Class> list = new ArrayList<Class>();
+
+        //The order is important cause
+        //I need to add all containers associated with templates
+
+        /**
+         * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
+         *
+         */
+        if ( buildCategories ) {
+            list.add( CategoryBundler.class );
+        } else if ( buildOSGIBundle ) {
+            list.add( OSGIBundler.class );
+        } else {
+            list.add( DependencyBundler.class );
+            list.add( HostBundler.class );
+            list.add( ContentBundler.class );
+            list.add( FolderBundler.class );
+            list.add( TemplateBundler.class );
+            list.add( ContainerBundler.class );
+            list.add( HTMLPageBundler.class );
+            list.add( LinkBundler.class );
+
+            if ( Config.getBooleanProperty( "PUSH_PUBLISHING_PUSH_STRUCTURES" ) ) {
+                list.add( StructureBundler.class );
+                /**
+                 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
+                 *
+                 */
+                list.add( RelationshipBundler.class );
+            }
+            list.add( LanguageBundler.class );
+        }
+
+        return list;
+    }
 
 }

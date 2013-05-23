@@ -17,11 +17,15 @@ var tinyMCE_GZ = {
 
 		s = t.settings;
 
-		for (i=0; i<nl.length; i++) {
-			n = nl[i];
+		if (window.tinyMCEPreInit) {
+			t.baseURL = tinyMCEPreInit.base;
+		} else {
+			for (i=0; i<nl.length; i++) {
+				n = nl[i];
 
-			if (n.src && n.src.indexOf('tiny_mce') != -1)
-				t.baseURL = n.src.substring(0, n.src.lastIndexOf('/'));
+				if (n.src && n.src.indexOf('tiny_mce') != -1)
+					t.baseURL = n.src.substring(0, n.src.lastIndexOf('/'));
+			}
 		}
 
 		if (!t.coreLoaded)
@@ -120,15 +124,14 @@ var tinyMCE_GZ = {
 	},
 
 	eval : function(co) {
-		var w = window;
+		var se = document.createElement('script');
 
-		// Evaluate script
-		if (!w.execScript) {
-			if (/Gecko/.test(navigator.userAgent))
-				eval(co, w); // Firefox 3.0
-			else
-				eval.call(w, co);
-		} else
-			w.execScript(co); // IE
+		// Create script
+		se.type = 'text/javascript';
+		se.text = co;
+
+		// Add it to evaluate it and remove it
+		(document.getElementsByTagName('head')[0] || document.documentElement).appendChild(se);
+		se.parentNode.removeChild(se);
 	}
 };

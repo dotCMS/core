@@ -179,7 +179,6 @@ dojo.require("dotcms.dojo.push.PushHandler");
 var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 function remotePublishStructure (inode) {
-	alert(inode);
 	pushHandler.showDialog(inode);
 }
 
