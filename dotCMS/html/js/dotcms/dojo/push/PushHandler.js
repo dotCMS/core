@@ -141,7 +141,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 			handleAs: "text",
 			load: function(data){
 				if(data.indexOf("FAILURE") > -1){
-					
 					alert(data);
 				}
 				dialog.hide();
@@ -150,12 +149,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 				alert(error);
 				dialog.hide();
 			}
-		}
+		};
 
 		var deferred = dojo.xhrPost(xhrArgs);	
-		
-		
-
 	}
 
-})
+});

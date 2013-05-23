@@ -7,9 +7,24 @@
 <%@page import="java.util.HashMap"%>
 <%@page import="org.osgi.framework.Bundle"%>
 <%@ page import="com.dotmarketing.util.OSGIUtil" %>
+<%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
+<%@ page import="com.dotmarketing.business.APILocator" %>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
+<%@ page import="com.dotmarketing.util.UtilMethods" %>
 
 <script type="text/javascript">
     require(["dijit/form/SimpleTextarea"]);
+
+    var popupMenusDiv;
+    var popupMenus = "";
+
+    var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+    <%
+    PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();
+    %>
+    var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 </script>
 <%
 Bundle[] ba = OSGIUtil.getInstance().getBundleContext().getBundles();
@@ -79,19 +94,35 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Actions")%></th>		
 	</tr>
 	<%boolean hasBundles = false; %>
-	<% for(Bundle b : ba){ %>
+	<%  int i = 0;
+        for(Bundle b : ba){
+            String jarFile = b.getLocation().contains( File.separator ) ? b.getLocation().substring( b.getLocation().lastIndexOf( File.separator ) + 1 ) : "System";
+    %>
 		<%if(ignoreBuns.contains(b.getSymbolicName()) ){continue;} %>
 		<% hasBundles = true; %>
-		<tr>
+		<tr id="tr<%=jarFile%>">
 			<td><%=b.getSymbolicName()%></td>
 			<td><%=states.get(b.getState())%></td>
-			<td><%=b.getLocation().contains(File.separator)?b.getLocation().substring(b.getLocation().lastIndexOf(File.separator) + 1):"System"%></td>
+			<td><%=jarFile%></td>
 			<td>
 				<%if(b.getState() != Bundle.ACTIVE){ %><a href="javascript:bundles.start('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a><% } %>
 				<%if(b.getState() == Bundle.ACTIVE){ %><a href="javascript:bundles.stop('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a><% } %>
 				<%if(b.getLocation().contains(File.separator) && b.getLocation().contains(File.separator + "load" + File.separator)){ %>&nbsp;|&nbsp;<a href="javascript:bundles.undeploy('<%=b.getLocation().substring(b.getLocation().lastIndexOf(File.separatorChar) + 1)%>')"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a><%} %>
 			</td>
 		</tr>
+        <script type="text/javascript">
+
+            <%if(b.getLocation().contains(File.separator) && b.getLocation().contains(File.separator + "load" + File.separator)){ %>
+                if(enterprise && sendingEndpoints) {
+                    popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i++%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=jarFile%>\">";
+                    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"javascript:bundles.remotePublishBundle('<%=jarFile%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+                    popupMenus += "</div>";
+
+                    popupMenusDiv = document.getElementById("popup_menus");
+                    popupMenusDiv.innerHTML = popupMenus;
+                }
+            <%} %>
+        </script>
 	<%}%>
 	<%if(!hasBundles){ %>
 		<tr>
@@ -104,3 +135,14 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 <div id="savingOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="OSGI" style="display: none;">
 	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
 </div>
+
+
+<div id="popup_menus"></div>
+<form id="remotePublishForm">
+    <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+    <input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+    <input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+    <input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+    <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+    <input name="iWantTo" id=iWantTo type="hidden" value="">
+</form>
