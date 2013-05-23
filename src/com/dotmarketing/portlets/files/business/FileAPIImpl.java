@@ -652,7 +652,7 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 	public File getFileByURI(String uri, Host host, boolean live, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
 		File file = ffac.getFileByURI(uri, host, live);
-		if (!permissionAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+		if (file!=null && !permissionAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 		}
 		return file;

@@ -274,7 +274,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
         <% } %>
 
 
-		<div data-dojo-type="dijit.Dialog" style="width:400px;" id="restoreIndexDialog">
+		<div data-dojo-type="dijit.Dialog" style="width:345px;text-align: center;" id="restoreIndexDialog">
 		    <img id="uploadProgress" src="/html/images/icons/round-progress-bar.gif"/>
 		    <span id="uploadFileName"></span>
 			<form method="post"

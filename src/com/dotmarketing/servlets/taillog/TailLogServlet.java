@@ -3,8 +3,6 @@ package com.dotmarketing.servlets.taillog;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
 import java.util.regex.Pattern;
 
 import javax.servlet.ServletException;
@@ -18,7 +16,6 @@ import org.apache.commons.io.input.TailerListenerAdapter;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -98,7 +95,7 @@ public class TailLogServlet extends HttpServlet {
 			return;
 		}
 		
-
+		response.setContentType("text/html;charset=UTF-8");
 
 		ServletOutputStream out = response.getOutputStream();
 
@@ -164,7 +161,6 @@ public class TailLogServlet extends HttpServlet {
 				}
 				response.getOutputStream().flush();
 				Thread.sleep(1000);
-
 			}
 		} catch (Exception e) {
 			if (thread != null) {
