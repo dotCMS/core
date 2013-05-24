@@ -461,7 +461,7 @@ alter table file_asset add constraint fk_user_file_asset foreign key (mod_user) 
 alter table links add constraint fk_user_links foreign key (mod_user) references user_(userid);
 
 ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id);
-ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
+--ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
 ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) references identifier(id);
 
 CREATE OR REPLACE FUNCTION check_template_id()RETURNS trigger AS '
@@ -709,7 +709,7 @@ create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 CREATE TABLE broken_link (
    id VARCHAR(36) PRIMARY KEY,
-   inode VARCHAR(36) NOT NULL, 
+   inode VARCHAR(36) NOT NULL,
    field VARCHAR(36) NOT NULL,
    link VARCHAR(255) NOT NULL,
    title VARCHAR(255) NOT NULL,
@@ -730,20 +730,20 @@ operation int8, asset VARCHAR(2000) NOT NULL,
 language_id  int8 NOT NULL, entered_date TIMESTAMP,
 last_try TIMESTAMP, num_of_tries int8 NOT NULL DEFAULT 0,
 in_error bool DEFAULT 'f', last_results TEXT,
-publish_date TIMESTAMP, server_id VARCHAR(256), 
+publish_date TIMESTAMP, server_id VARCHAR(256),
 type VARCHAR(256), bundle_id VARCHAR(256), target text);
 
 CREATE TABLE publishing_queue_audit
-(bundle_id VARCHAR(256) PRIMARY KEY NOT NULL, 
-status INTEGER, 
-status_pojo text, 
-status_updated TIMESTAMP, 
+(bundle_id VARCHAR(256) PRIMARY KEY NOT NULL,
+status INTEGER,
+status_pojo text,
+status_updated TIMESTAMP,
 create_date TIMESTAMP);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE publishing_end_point (
-	id varchar(36) PRIMARY KEY, 
-	group_id varchar(700), 
+	id varchar(36) PRIMARY KEY,
+	group_id varchar(700),
 	server_name varchar(700) unique,
 	address varchar(250),
 	port varchar(10),

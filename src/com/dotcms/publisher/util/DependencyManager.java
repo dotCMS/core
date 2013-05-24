@@ -10,6 +10,7 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publishing.DotBundleException;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -85,7 +86,7 @@ public class DependencyManager {
 				folders.add(asset.getAsset());
 			} else if(asset.getType().equals("host")) {
 				hosts.add(asset.getAsset());
-			}  
+			}
 		}
 
 		if(config.getOperation().equals(Operation.PUBLISH)) {
@@ -99,7 +100,7 @@ public class DependencyManager {
 		}else{
 			contents.addAll(getContentIds(config.getLuceneQueries()));
 		}
-		
+
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -151,10 +152,10 @@ public class DependencyManager {
 			}
 
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
@@ -175,20 +176,20 @@ public class DependencyManager {
 
 			setFolderListDependencies(folderList);
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
 
 	private void setFolderListDependencies(List<Folder> folderList) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		for (Folder f : folderList) {
-			
+
 			// Add folder even if empty
 			folders.add(f.getInode());
-			
+
 			// Host dependency
 			hosts.add(f.getHostId());
 
@@ -277,7 +278,12 @@ public class DependencyManager {
 				for (Container container : containerList) {
 					containers.add(container.getIdentifier());
 					// Structure dependencies
-					structures.add(container.getStructureInode());
+					List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(container);
+
+					for (ContainerStructure containerStructure : csList) {
+						structures.add(containerStructure.getStructureId());
+					}
+
 					List<MultiTree> treeList = MultiTreeFactory.getMultiTree(workingPage,container);
 
 					for (MultiTree mt : treeList) {
@@ -288,10 +294,10 @@ public class DependencyManager {
 				}
 			}
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
@@ -309,7 +315,7 @@ public class DependencyManager {
 
 				containerList.clear();
 				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(wkT, user, false));
-				
+
 				if(lvT!=null && InodeUtils.isSet(lvT.getInode())) {
 				    containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(lvT, user, false));
 				}
@@ -321,10 +327,10 @@ public class DependencyManager {
 			}
 
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		}
 
@@ -348,13 +354,17 @@ public class DependencyManager {
 
 				for (Container container : containerList) {
 					// Structure dependencies
-					structures.add(container.getStructureInode());
+					List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(container);
+
+					for (ContainerStructure containerStructure : csList) {
+						structures.add(containerStructure.getStructureId());
+					}
 				}
 
 			}
 
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(),e);
@@ -371,8 +381,8 @@ public class DependencyManager {
 		}
 	}
 
-	
-	
+
+
 	private void structureDependencyHelper(String stInode){
 		Structure st = StructureCache.getStructureByInode(stInode);
 		hosts.add(st.getHost()); // add the host dependency
@@ -393,14 +403,14 @@ public class DependencyManager {
 			}
 		}
 	}
-		
-	
+
+
 	private void processList(List<Contentlet> cons) throws DotDataException, DotSecurityException {
 	    Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
 	    Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
 
         //Getting all related content
-	    
+
         for (Contentlet con : cons) {
         	hosts.add(con.getHost()); // add the host dependency
             contentsToProcess.add(con);
@@ -426,11 +436,11 @@ public class DependencyManager {
         	contentsWithDependenciesToProcess.add(con);
 	        //Copy asset files to bundle folder keeping original folders structure
 	        List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
-	
+
 	        for(Field ff : fields) {
 	            if (ff.getFieldType().equals(Field.FieldType.IMAGE.toString())
 	                    || ff.getFieldType().equals(Field.FieldType.FILE.toString())) {
-	
+
 	                try {
 	                    String value = "";
 	                    if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
@@ -448,10 +458,10 @@ public class DependencyManager {
 	                    throw new DotStateException("Problem occured while publishing file");
 	                }
 	            }
-	
+
 	        }
         }
-        
+
         // Adding the Contents (including related) and adding filesAsContent
         for (Contentlet con : contentsWithDependenciesToProcess) {
         	hosts.add(con.getHost()); // add the host dependency
@@ -483,7 +493,11 @@ public class DependencyManager {
                         for (Container container : containerList) {
                             containers.add(container.getIdentifier());
                             // Structure dependencies
-                            structures.add(container.getStructureInode());
+                            List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(container);
+
+        					for (ContainerStructure containerStructure : csList) {
+        						structures.add(containerStructure.getStructureId());
+        					}
                         }
                     }
                 }
@@ -491,7 +505,7 @@ public class DependencyManager {
                 Logger.debug(this, e.toString());
             }
 
-            if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")) {
+            if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true)) {
                 structures.add(con.getStructureInode());
             }
         }
@@ -514,7 +528,7 @@ public class DependencyManager {
 		}
 		return ret;
 	}
-	
+
 	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
@@ -522,7 +536,7 @@ public class DependencyManager {
             for(String id : cons){
                 processList(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
             }
-            
+
     		for(String luceneQuery: luceneQueries) {
     		    List<Contentlet> cs = APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false);
     			processList(cs);

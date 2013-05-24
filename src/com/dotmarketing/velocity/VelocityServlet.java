@@ -42,6 +42,7 @@ import org.apache.velocity.tools.view.context.ChainedContext;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -53,14 +54,13 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.portlets.containers.factories.ContainerFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -133,7 +133,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
-		
+
 		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) && LicenseUtil.getLevel() < 399) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
@@ -366,7 +366,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		if (cachedUri == null) {
 			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
 		}
-		
+
 		// now  we check identifier cache first (which DOES NOT have a 404 cache )
 		Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
 		if(ident ==null && ident.getInode() == null){
@@ -511,7 +511,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			String trimmedPage = out.toString().trim();
 			response.getWriter().write(trimmedPage);
 			response.getWriter().close();
-			synchronized (key) {				
+			synchronized (key) {
 				//CacheLocator.getBlockDirectiveCache().clearCache();
 				CacheLocator.getHTMLPageCache().remove(page);
 				CacheLocator.getBlockDirectiveCache().add(getPageCacheKey(request), trimmedPage, (int) page.getCacheTTL());
@@ -535,8 +535,8 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		// Getting the user to check the permissions
 		com.liferay.portal.model.User user = null;
-		
-		try {			
+
+		try {
 				user = com.liferay.portal.util.PortalUtil.getUser( request );
 		} catch (Exception nsue) {
 			Logger.warn(this, "Exception trying getUser: " + nsue.getMessage(), nsue);
@@ -562,7 +562,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
 		boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, user);
 		boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199 && UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
-		
+
 		context.put("EDIT_HTMLPAGE_PERMISSION", new Boolean(hasWritePermOverHTMLPage));
 		context.put("PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasPublishPermOverHTMLPage));
 		context.put("REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasRemotePublishPermOverHTMLPage));
@@ -590,10 +590,15 @@ public abstract class VelocityServlet extends HttpServlet {
 
 			context.put("EDIT_CONTAINER_PERMISSION" + c.getIdentifier(), permissionAPI.doesUserHavePermission(c, PERMISSION_WRITE, user, true));
 
-			// to check user has permission to write this container
-			Structure st = (Structure) InodeFactory.getInode(c.getStructureInode(), Structure.class);
+			boolean hasWritePermOverTheStructure = false;
 
-			boolean hasWritePermOverTheStructure = permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user, true);
+			for (ContainerStructure cs : APILocator.getContainerAPI().getContainerStructures(c)) {
+				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+
+				hasWritePermOverTheStructure &= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user, true);
+			}
+
+
 			context.put("ADD_CONTENT_PERMISSION" + c.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
 
 			Logger.debug(VelocityServlet.class, String.valueOf("container" + c.getIdentifier()) + "=/working/" + c.getIdentifier() + "."
@@ -784,7 +789,7 @@ public abstract class VelocityServlet extends HttpServlet {
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_WRITE, backendUser );
         boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, backendUser );
         boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199 && UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
-		
+
         context.put( "ADD_CHILDREN_HTMLPAGE_PERMISSION", new Boolean( hasAddChildrenPermOverHTMLPage ) );
         context.put( "EDIT_HTMLPAGE_PERMISSION", new Boolean( hasWritePermOverHTMLPage ) );
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
@@ -829,8 +834,15 @@ public abstract class VelocityServlet extends HttpServlet {
                 context.put( "USE_CONTAINER_PERMISSION" + c.getIdentifier(), hasReadPermissionOnContainer );
 
             // to check user has permission to write this container
-            Structure st = (Structure) InodeFactory.getInode( c.getStructureInode(), Structure.class );
-            boolean hasWritePermOverTheStructure = permissionAPI.doesUserHavePermission( st, PERMISSION_WRITE, backendUser );
+            boolean hasWritePermOverTheStructure = false;
+
+			for (ContainerStructure cs : APILocator.getContainerAPI().getContainerStructures(c)) {
+				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+
+				hasWritePermOverTheStructure &= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, backendUser);
+			}
+
+
             context.put( "ADD_CONTENT_PERMISSION" + c.getIdentifier(), new Boolean( hasWritePermOverTheStructure ) );
 
             Logger.debug( VelocityServlet.class, String.valueOf( "container" + c.getIdentifier() ) + "=/working/" + c.getIdentifier() + "."
@@ -913,8 +925,13 @@ public abstract class VelocityServlet extends HttpServlet {
                 context.put( "totalSize" + c.getIdentifier(), new Integer( contentletList.size() ) );
                 // ### Add the structure fake contentlet ###
                 if ( contentletList.size() == 0 ) {
-                    Structure structure = ContainerFactory.getContainerStructure( c );
-                    contentletList.add( structure.getInode() + "" );
+
+                	List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(c);
+                    for (ContainerStructure cs : csList) {
+                    	contentletList.add( cs.getStructureId() + "" );
+					}
+
+
                     // sets contentletlist with all the files to load per
                     // container
                     context.remove( "contentletList" + c.getIdentifier() );
