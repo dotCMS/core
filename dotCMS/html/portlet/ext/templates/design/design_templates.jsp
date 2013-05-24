@@ -93,12 +93,10 @@
 %>
 <script type='text/javascript' src='/dwr/interface/TemplateAjax.js'></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
-<script language="JavaScript" src="/html/js/template/dwr/interface/MetadataContainerAjax.js"></script>
 <script language="Javascript">
 
 	dojo.require('dotcms.dijit.form.FileSelector');
 	dojo.require('dotcms.dojo.data.ContainerReadStoreDrawedTemplate');
-	dojo.require('dotcms.dojo.data.MetadataContainerReadStore');
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
 
 	var referer = '<%=referer%>';
@@ -198,21 +196,9 @@
 		addDrawedContainer(idDiv,container,value,'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>','<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-with-contents-already-exists"))%>');
 	}
 
-	function addMetadataContainer() {
-		dijit.byId('metadataContainerSelector').hide();
-		var value = dijit.byId('metadataContainersList').attr('value');
-		var container = dijit.byId('metadataContainersList').attr('item');
-
-		addDrawedMetadataContainer(container, value, '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>');
-
-	}
-
 	function addFile() {
 		fileSelector.show();
 	}
-
-
-
 
 	function previewTemplate(name, params) {
 

@@ -220,7 +220,7 @@
 		%>
 							</select>
 							<button dojoType="dijit.form.Button"  onClick="addCodeTab()" iconClass="plusIcon" type="button">
-						        	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-structure")) %>
+						        	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-content-type")) %>
 						    </button>
 					    </div>
 					</dd>
