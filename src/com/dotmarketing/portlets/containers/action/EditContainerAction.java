@@ -522,13 +522,6 @@ public class EditContainerAction extends DotPortletAction implements
 		} else {
 			currentStructure = StructureCache.getStructureByInode(fm.getStructureInode());
 		}
-//		container.setStructureInode(currentStructure.getInode());
-
-		// commented by issue-2093
-		// BEGIN GRAZIANO issue-12-dnd-template
-//		if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
-//			container.setForMetadata(true);
-//		// END GRAZIANO issue-12-dnd-template
 
 		// it saves or updates the asset
 		if (InodeUtils.isSet(currentContainer.getInode())) {
