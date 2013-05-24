@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.containers.factories;
 
+import java.util.LinkedList;
 import java.util.List;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -25,7 +27,7 @@ import com.dotmarketing.util.Logger;
  * @author  will
  */
 public class ContainerFactory {
-    
+
       public static java.util.List getActiveContainers() {
         HibernateUtil dh = new HibernateUtil(Container.class);
         List<Container> activeContainers = null;
@@ -35,7 +37,7 @@ public class ContainerFactory {
 			activeContainers = dh.list();
 		} catch (DotHibernateException e) {
 			Logger.error(ContainerFactory.class, e.getMessage(), e);
-		} 
+		}
         return activeContainers;
     }
 
@@ -52,7 +54,7 @@ public class ContainerFactory {
 
         return containersByOrder;
     }
- 
+
     public static java.util.List getContainerByCondition(String condition) {
 		HibernateUtil dh = new HibernateUtil(Container.class);
 		List<Container> containers = null ;
@@ -77,7 +79,7 @@ public class ContainerFactory {
 		}
         return list.size()>0;
     }
-    
+
     public static Container getContainerByFriendlyName(String friendlyName) {
         HibernateUtil dh = new HibernateUtil(Container.class);
         Container container = null ;
@@ -90,11 +92,11 @@ public class ContainerFactory {
 		}
         return container;
     }
-    
+
     public static Container copyContainer (Container currentContainer) throws DotDataException, DotStateException, DotSecurityException {
-    	
+
     	HostAPI hostAPI = APILocator.getHostAPI();
-    	
+
 		//gets the new information for the template from the request object
 		Container newContainer = new Container();
 
@@ -102,15 +104,17 @@ public class ContainerFactory {
        	newContainer.setFriendlyName(currentContainer.getFriendlyName()
 				+ " (COPY) ");
        	newContainer.setTitle(currentContainer.getTitle() + " (COPY) ");
-       	
+
         //Copy the structure
-        Structure st = StructureCache.getStructureByInode(currentContainer.getStructureInode());
-        newContainer.setStructureInode(st.getInode());
+//        Structure st = StructureCache.getStructureByInode(currentContainer.getStructureInode());
+//        newContainer.setStructureInode(st.getInode());
+
+
 
 		//persists the webasset
 		HibernateUtil.saveOrUpdate(newContainer);
 
-		
+
 		//Copy the host
 		Host h;
 		try {
@@ -118,7 +122,7 @@ public class ContainerFactory {
 		} catch (DotSecurityException e) {
 			Logger.error(ContainerFactory.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
-		} 
+		}
         //TreeFactory.saveTree(new Tree(h.getIdentifier(), newContainer.getInode()));
 
         //creates new identifier for this webasset and persists it
@@ -126,25 +130,38 @@ public class ContainerFactory {
 
 		// save identifier id
 		HibernateUtil.saveOrUpdate(newContainer);
-		
+
 		APILocator.getVersionableAPI().setWorking(newContainer);
 		if(currentContainer.isLive())
 		    APILocator.getVersionableAPI().setLive(newContainer);
-		
+
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		//Copy permissions
 		perAPI.copyPermissions(currentContainer, newContainer);
-		
+
 		//saves to working folder under velocity
 		ContainerServices.invalidate(newContainer, newIdentifier,
 				true);
-    	
+
+		// issue-2093 Copying multiple structures per container
+		if(currentContainer.getMaxContentlets()>0) {
+
+			List<ContainerStructure> sourceCS = APILocator.getContainerAPI().getContainerStructures(currentContainer);
+			List<ContainerStructure> newContainerCS = new LinkedList<ContainerStructure>();
+
+			for (ContainerStructure oldCS : sourceCS) {
+				ContainerStructure newCS = new ContainerStructure();
+				newCS.setContainerId(newContainer.getIdentifier());
+				newCS.setStructureId(oldCS.getStructureId());
+				newCS.setCode(oldCS.getCode());
+				newContainerCS.add(newCS);
+			}
+
+			APILocator.getContainerAPI().saveContainerStructures(newContainerCS);
+
+		}
+
 		return newContainer;
     }
-    
-    public static Structure getContainerStructure(Container container)
-    {
-    	Structure structure = StructureCache.getStructureByInode(container.getStructureInode());
-    	return structure;
-    }
+
 }

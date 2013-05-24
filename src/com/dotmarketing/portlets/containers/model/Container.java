@@ -9,7 +9,6 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -47,12 +46,6 @@ public class Container extends WebAsset implements Serializable {
 	private String luceneQuery;
 	private String notes;
 
-	private String structureInode;
-	
-	// BEGIN GRAZIANO issue-12-dnd-template
-	private Boolean forMetadata;
-	// END GRAZIANO issue-12-dnd-template
-	
 	public String getURI(Folder folder) {
 		String folderPath = "";
 		try {
@@ -249,31 +242,12 @@ public class Container extends WebAsset implements Serializable {
 		this.staticify = staticify;
 	}
 
-	public String getStructureInode() {
-		return structureInode;
-	}
-
-	public void setStructureInode(String structureInode) {
-		this.structureInode = structureInode;
-	}
-
 	public String getLuceneQuery() {
 		return luceneQuery;
 	}
 
 	public void setLuceneQuery(String luceneQuery) {
 		this.luceneQuery = luceneQuery;
-	}
-
-	public Boolean isForMetadata() {
-		return forMetadata;
-	}
-
-	public void setForMetadata(Boolean forMetadata) {
-		if(null!=forMetadata)
-			this.forMetadata = forMetadata;
-		else
-			this.forMetadata = false;
 	}
 
 	/*

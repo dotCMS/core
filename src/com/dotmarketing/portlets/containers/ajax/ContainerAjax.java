@@ -11,16 +11,17 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.directwebremoting.WebContextFactory;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.portlets.containers.ajax.util.ContainerAjaxUtil;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -57,7 +58,7 @@ public class ContainerAjax {
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = userWebAPI.getLoggedInUser(req);
 		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-	
+
 		List<Container> fullListContainers = new ArrayList<Container>();
 		try{
 			if(UtilMethods.isSet(query.get("hostId"))) {
@@ -74,7 +75,7 @@ public class ContainerAjax {
 		Collections.sort(fullListContainers, new ContainerComparator(baseHostId));
 		Map<String, Object> results = new HashMap<String, Object>();
 		List<Map<String, Object>> list = new LinkedList<Map<String, Object>> ();
-	
+
 		for(Container cont : fullListContainers) {
 			Map<String, Object> contMap = cont.getMap();
 			if(passFilter(contMap, query)) {
@@ -86,22 +87,22 @@ public class ContainerAjax {
 				} else {
 					contMap.put("fullTitle", contMap.get("title"));
 				}
-	
+
 				list.add(contMap);
 			}
 		}
-	
+
 		if(start >= list.size()) start =  list.size() - 1;
 		if(start < 0)  start  = 0;
 		if(start + count >= list.size()) count = list.size() - start;
 		List<Map<String, Object>> containers = list.subList(start, start + count);
-	
+
 		results.put("totalResults", list.size());
 		results.put("list", containers);
-	
+
 		return results;
 	}
-	
+
 	class ContainerComparator implements Comparator<Container> {
 
 		private String baseHostId;
@@ -149,12 +150,29 @@ public class ContainerAjax {
 		return true;
 	}
 
-	public java.util.Map<String, String> getContainerStructure(String containerInode){
+	public List<Map<String, String>> getContainerStructures(String containerInode) throws Exception{
 		Container cont = (Container) InodeFactory.getInode(containerInode, Container.class);
-		Structure st = (Structure)InodeFactory.getInode(cont.getStructureInode(), Structure.class);
-		Map<String, String> result = new HashMap<String, String>();
-		result.put("inode", st.getInode());
-		return result;
+
+		List<Map<String,String>> resultList = new ArrayList<Map<String,String>>();
+		List<ContainerStructure> csList;
+
+		try {
+			csList = APILocator.getContainerAPI().getContainerStructures(cont);
+
+			for (ContainerStructure cs : csList) {
+				Map<String, String> result = new HashMap<String, String>();
+				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+				result.put("inode", cs.getStructureId());
+				result.put("name", st.getName());
+				resultList.add(result);
+			}
+
+		} catch (Exception e) {
+			Logger.error(getClass(), e.getMessage());
+			throw e;
+		}
+
+		return resultList;
 	}
 
 	public String checkDependencies(String containerInode) throws DotDataException, DotRuntimeException, DotSecurityException, PortalException, SystemException{

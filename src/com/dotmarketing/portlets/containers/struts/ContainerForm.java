@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.containers.struts;
 
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;
@@ -8,6 +10,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.validator.ValidatorForm;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.Constants;
 
@@ -28,9 +31,9 @@ public class ContainerForm extends ValidatorForm {
 
     private String preLoop;
     private String postLoop;
-    
+
     private boolean staticify;
-    
+
     /** nullable persistent field */
     private String friendlyName;
 
@@ -43,20 +46,22 @@ public class ContainerForm extends ValidatorForm {
 
     private boolean useDiv;
     private String sortContentletsBy;
-    
+
 	private String structureInode;
 
     private String hostId;
 
     private String luceneQuery;
     private String notes;
-    
+
     private boolean dynamic;
-    
-    
-    
+
+    private List<ContainerStructure> containerStructures;
+
+
+
     private String owner; // dotcms 472
-    
+
     public ContainerForm() {
     }
 
@@ -111,12 +116,12 @@ public class ContainerForm extends ValidatorForm {
 	public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
         ActionErrors errors = super.validate(mapping, request);
         if (errors == null) errors = new ActionErrors ();
-        
+
         if(request.getParameter("cmd")!=null && request.getParameter("cmd").equals(Constants.ADD)) {
             if (maxContentlets > 0) {
                 if (dynamic && !UtilMethods.isSet(luceneQuery)) {
                     errors.add("luceneQuery", new ActionMessage("error.containers.query.required"));
-                } 
+                }
             }
             if (!dynamic || maxContentlets == 0) {
                 dynamic = false;
@@ -304,6 +309,13 @@ public class ContainerForm extends ValidatorForm {
 	public void setOwner(String owner) {
 		this.owner = owner;
 	}
-	
-    
+
+	public List<ContainerStructure> getContainerStructures() {
+		return containerStructures;
+	}
+
+	public void setContainerStructures(List<ContainerStructure> containerStructures) {
+		this.containerStructures = containerStructures;
+	}
+
 }

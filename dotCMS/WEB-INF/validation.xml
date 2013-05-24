@@ -71,15 +71,15 @@
 			        <var-value>^([^\074^\076])*$</var-value>
 			    </var>
 			</field>
-			<field property="code" depends="required">
-				<arg0 key="prompt.containerCode" />
-			</field>
+<!-- 			<field property="code" depends="required"> -->
+<!-- 				<arg0 key="prompt.containerCode" /> -->
+<!-- 			</field> -->
 			<field property="hostId" depends="validwhen">
 				<arg0 key="prompt.host"/>
 		        <var>
 		          <var-name>test</var-name>
 		          <var-value>(*this* > 0)</var-value>
-		        </var>				    
+		        </var>
 			</field>
 		</form>
 
@@ -102,7 +102,7 @@
 		        <var>
 		          <var-name>test</var-name>
 		          <var-value>(*this* > 0)</var-value>
-		        </var>				    
+		        </var>
 			</field>
 		</form>
 
@@ -134,7 +134,7 @@
 		        <var>
 		          <var-name>test</var-name>
 		          <var-value>(*this* > 0)</var-value>
-		        </var>				    
+		        </var>
 			</field>
 		</form>
 
@@ -430,7 +430,7 @@
 		        <var>
 		          <var-name>test</var-name>
 		          <var-value>((urlMapPattern == null) or (*this* != null))</var-value>
-		        </var>				    
+		        </var>
 			</field>
 		</form>
 
@@ -461,7 +461,7 @@
 				<arg0 key="message.webevent.description" />
 			</field>
 		</form>
-		
+
 		<!-- ================= WebEventLocationForm ===================== -->
 		<form name="WebEventLocationForm">
 			<field property="strStartDate" depends="required">
@@ -487,20 +487,20 @@
 			    </var>
 			</field>
 		</form>
-		
+
 		<!--  ==========================ReportForm=================================== -->
 		<form name="ReportForm">
 			<field property="reportName" depends="required">
 				<arg0 key="message.report.form.name.mask" />
 			</field>
 			<field property="reportDescription" depends="required">
-				<arg0 key="message.report.form.description.mask" />				
+				<arg0 key="message.report.form.description.mask" />
 			</field>
 			<field property="selectedDataSource" depends="required">
-				<arg0 key="message.report.form.ds.mask" />				
+				<arg0 key="message.report.form.ds.mask" />
 			</field>
 		</form>
-		
+
 	</formset>
 
 </form-validation>

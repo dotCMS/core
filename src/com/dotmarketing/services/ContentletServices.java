@@ -305,13 +305,13 @@ public class ContentletServices {
 						}
 					}
 					catInodes=catbuilder.toString();
-					
+
 					sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FilteredCategories=$categories.filterCategoriesByUserPermissions([" ).append( catInodes ).append( "] ))");
 	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Categories=$categories.fetchCategoriesInodes($").append(field.getVelocityVarName()).append("FilteredCategories))");
 	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CategoriesNames=$categories.fetchCategoriesNames($").append(field.getVelocityVarName()).append("FilteredCategories))");
 	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "=$").append(field.getVelocityVarName()).append("Categories)");
 	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CategoriesKeys=$categories.fetchCategoriesKeys($").append(field.getVelocityVarName()).append("FilteredCategories))");
-				}	
+				}
 				else {
 				    sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FilteredCategories=$contents.getEmptyList())");
 	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "Categories=$contents.getEmptyList())");
@@ -337,7 +337,7 @@ public class ContentletServices {
 	        	}
 	        }
 			categories=catbuilder.toString();
-			
+
 			sb.append("#set($ContentletFilteredCategories=$categories.filterCategoriesByUserPermissions([" ).append( categories ).append( "] ))");
 	        sb.append("#set($ContentletCategories=$categories.fetchCategoriesInodes($ContentletFilteredCategories))");
 	        sb.append("#set($ContentletCategoryNames=$categories.fetchCategoriesNames($ContentletFilteredCategories))");
@@ -367,10 +367,11 @@ public class ContentletServices {
 
 		sb.append("#set( $CONTENT_INODE=\"" ).append( content.getInode() ).append( "\" )");
 		sb.append("#set( $IDENTIFIER_INODE=\"" ).append( identifier.getInode() ).append( "\" )");
-		
+
 		sb.append("#set( $ContentInode=\"" ).append( content.getInode() ).append( "\" )");
 		sb.append("#set( $ContentIdentifier=\"" ).append( identifier.getInode() ).append( "\" )");
 		sb.append("#set( $ContentletTitle=\"" ).append( UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI().getSystemUser(), true)) ).append( "\" )");
+		sb.append("#set( $ContentletStructure=\"" ).append( content.getStructureInode() ).append( "\" )");
 
 		if(structure.getStructureType()== Structure.STRUCTURE_TYPE_WIDGET){
 			sb.append("#set( $isWidget= \"" ).append( true ).append( "\")");
@@ -508,7 +509,7 @@ public class ContentletServices {
 			velocityRootPath= Config.CONTEXT.getRealPath(velocityRootPath);
 		}
 		velocityRootPath += java.io.File.separator;
-		
+
 		Set<Long> langs = new HashSet<Long>();
 		langs.add(asset.getLanguageId());
 		if(LanguageWebAPI.canApplyToAllLanguages(asset)) {

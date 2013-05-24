@@ -93,12 +93,10 @@
 %>
 <script type='text/javascript' src='/dwr/interface/TemplateAjax.js'></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
-<script language="JavaScript" src="/html/js/template/dwr/interface/MetadataContainerAjax.js"></script>
 <script language="Javascript">
 
 	dojo.require('dotcms.dijit.form.FileSelector');
 	dojo.require('dotcms.dojo.data.ContainerReadStoreDrawedTemplate');
-	dojo.require('dotcms.dojo.data.MetadataContainerReadStore');
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
 
 	var referer = '<%=referer%>';
@@ -189,11 +187,6 @@
 		document.getElementById("idDiv").value=idDiv;
 	}
 
-	function showAddMetadataContainerDialog() {
-		dijit.byId('metadataContainersList').attr('value', '');
-		dijit.byId('metadataContainerSelector').show();
-	}
-
 	function addContainer() {
 		var idDiv = document.getElementById("idDiv");
 		dijit.byId('containerSelector').hide();
@@ -203,21 +196,9 @@
 		addDrawedContainer(idDiv,container,value,'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>','<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-with-contents-already-exists"))%>');
 	}
 
-	function addMetadataContainer() {
-		dijit.byId('metadataContainerSelector').hide();
-		var value = dijit.byId('metadataContainersList').attr('value');
-		var container = dijit.byId('metadataContainersList').attr('item');
-
-		addDrawedMetadataContainer(container, value, '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-already-exists"))%>');
-
-	}
-
 	function addFile() {
 		fileSelector.show();
 	}
-
-
-
 
 	function previewTemplate(name, params) {
 
@@ -869,7 +850,6 @@
 </div>
 
 <span dojoType="dotcms.dojo.data.ContainerReadStoreDrawedTemplate" jsId="containerStore"></span>
-<span dojoType="dotcms.dojo.data.MetadataContainerReadStore" jsId="metadataContainerStore"></span>
 
 <!-- ADD CONTAINER DIALOG BOX -->
 <div dojoType="dijit.Dialog" id="containerSelector" title="<%=LanguageUtil.get(pageContext, "select-a-container")%>">
@@ -888,19 +868,3 @@
 	</div>
 </div>
 <!-- /ADD CONTAINER DIALOG BOX -->
-
-<!-- ADD METADATA CONTAINER DIALOG BOX -->
-<div dojoType="dijit.Dialog" id="metadataContainerSelector" title="<%=LanguageUtil.get(pageContext, "select-a-metadata-container")%>">
-	<p style="text-align: center">
-		<%=LanguageUtil.get(pageContext, "Container")%>
-  		<select id="metadataContainersList" name="metadataContainersList" dojoType="dijit.form.FilteringSelect"
-        	store="metadataContainerStore" searchDelay="300" pageSize="10" labelAttr="fullTitle" searchAttr="title"
-            invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
-        </select>
-    </p>
-    <div class="buttonRow">
-		<button dojoType="dijit.form.Button" onclick="addMetadataContainer()" type="button"><%=LanguageUtil.get(pageContext, "add-meta")%></button>
-		<button dojoType="dijit.form.Button" onclick="dijit.byId('metadataContainerSelector').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
-	</div>
-</div>
-<!-- /ADD METADATA CONTAINER DIALOG BOX -->

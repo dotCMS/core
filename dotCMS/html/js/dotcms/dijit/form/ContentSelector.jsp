@@ -13,9 +13,8 @@
 						</div>
 						<div class="sideMenuWrapper" style="height: 400px;overflow: auto;">
 							<input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
-							<div dojoAttachPoint="search_languages_table">
-								<dl><dt><%= LanguageUtil.get(pageContext, "Language") %>: </dt>
-							</div>
+							<div dojoAttachPoint="structures_select"></div>
+							<div dojoAttachPoint="search_languages_table"></div>
 							<div dojoAttachPoint="search_fields_table"></div>
 							<div dojoAttachPoint="search_categories_table">
 								<dl dojoAttachPoint="search_categories_list"></dl>
