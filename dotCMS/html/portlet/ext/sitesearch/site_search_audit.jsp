@@ -7,7 +7,7 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAuditAPI"%>
 <%@ include file="/html/common/init.jsp"%>
-<% 
+<%
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 SiteSearchAuditAPI audit = APILocator.getSiteSearchAuditAPI();
 String jobId=request.getParameter("jobId");
@@ -64,9 +64,11 @@ List<ScheduledTask> tasks = ssapi.getTasks();
   <% for(SiteSearchAudit a : recents) { %>
       <%
           StringBuilder hostList=new StringBuilder();
-          for(String hid : a.getHostList().split(","))
+          for(String hid : a.getHostList().split(",")) {
+        	  if(UtilMethods.isSet(hid))
               hostList.append(APILocator.getHostAPI().find(hid, APILocator.getUserAPI().getSystemUser(), false).getHostname())
                       .append("  ");
+          }
           StringBuilder langList=new StringBuilder();
           for(String lid : a.getLangList().split(",")) {
               Language lang=APILocator.getLanguageAPI().getLanguage(lid);
