@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotcms.publisher.business.PublisherAPIImpl;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
@@ -103,14 +104,20 @@ public class HTMLPageAPITest extends TestBase {
 
         // a container to use inside the template
         Container container = new Container();
-        container.setCode("this is the code");
         container.setFriendlyName("test container");
         container.setTitle("his is the title");
         container.setMaxContentlets(5);
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
         Structure st=StructureCache.getStructureByVelocityVarName("FileAsset");
-        container = APILocator.getContainerAPI().save(container, st, host, sysuser, false);
+
+        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(st.getInode());
+        cs.setCode("this is the code");
+        csList.add(cs);
+
+        container = APILocator.getContainerAPI().save(container, csList, host, sysuser, false);
 
         // a template for the page
         Template template=new Template();
@@ -173,14 +180,21 @@ public class HTMLPageAPITest extends TestBase {
 
     		// a container to use inside the template
     		container = new Container();
-    		container.setCode("this is the code");
     		container.setFriendlyName("test container");
     		container.setTitle("his is the title");
     		container.setMaxContentlets(5);
     		container.setPreLoop("preloop code");
     		container.setPostLoop("postloop code");
     		Structure st=StructureCache.getStructureByVelocityVarName("FileAsset");
-    		container = APILocator.getContainerAPI().save(container, st, host, sysuser, false);
+    		// commented by issue-2093
+
+    		List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+            ContainerStructure cs = new ContainerStructure();
+            cs.setStructureId(st.getInode());
+            cs.setCode("this is the code");
+            csList.add(cs);
+
+    		container = APILocator.getContainerAPI().save(container, csList, host, sysuser, false);
 
     		// a template for the page
     		template=new Template();

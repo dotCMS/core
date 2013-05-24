@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -34,7 +35,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		HibernateUtil.save(container);
 		containerCache.add(container.getInode(), container);
 	}
-	
+
 	public void save(Container container, String existingId) throws DotDataException {
 		HibernateUtil.saveWithPrimaryKey(container, existingId);
 		containerCache.add(container.getInode(), container);
@@ -120,7 +121,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				"inode in class " + Inode.class.getName()+", identifier in class " + Identifier.class.getName() +", vinfo in class "+ContainerVersionInfo.class.getName());
 		if(UtilMethods.isSet(parent)){
 			if(InodeUtils.isSet(InodeFactory.getInode(parent, Structure.class).getInode()))
-			  query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id and asset.structureInode = '"+parent+"' ");
+				query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id"
+						+ " and exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = asset.identifier and cs.structureId = '"+parent+"' ) ");
 		   else
 			   query.append(" ,tree in class " + Tree.class.getName() + " where asset.inode = inode.inode " +
 						    "and asset.identifier = identifier.id and tree.parent = '"+parent+"' and tree.child=asset.inode");
@@ -209,7 +211,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
     public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
         HibernateUtil dh = new HibernateUtil(Container.class);
-        dh.setQuery("FROM c IN CLASS "+Container.class+" WHERE c.structureInode=?");
+        dh.setQuery("FROM c IN CLASS "+Container.class+" WHERE "
+        		+ " exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = c.identifier and cs.structureId = ? ) ");
         dh.setParam(structureInode);
         return dh.list();
     }

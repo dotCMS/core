@@ -25,9 +25,12 @@
     <create creator="new" javascript="AlertMessagesWebAPI" scope="application">
       <param name="class" value="com.dotmarketing.util.AlertMessagesWebAPI"/>
     </create>
-    <create creator="new" javascript="UserAjax" scope="application">
+
+<!-- BEGIN OVERRIDE:dwr-override
+<create creator="new" javascript="UserAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.user.ajax.UserAjax"/>
     </create>
+ END OVERRIDE:dwr-override -->
     <create creator="new" javascript="RoleAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.RoleAjax"/>
     </create>
@@ -70,10 +73,7 @@
     <!-- BEGIN GRAZIANO issue-12-dnd-template -->
     <create creator="new" javascript="ContainerAjaxDrawedTemplate" scope="application">
       <param name="class" value="com.dotmarketing.portlets.containers.ajax.ContainerAjaxDrawedTemplate"/>
-    </create>    
-    <create creator="new" javascript="MetadataContainerAjax" scope="application">
-      <param name="class" value="com.dotmarketing.portlets.containers.ajax.MetadataContainerAjax"/>
-    </create>    
+    </create>
     <!-- END GRAZIANO issue-12-dnd-template -->
     <create creator="new" javascript="TemplateAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.templates.ajax.TemplateAjax"/>
@@ -112,6 +112,12 @@
     <convert converter="bean" match="com.dotcms.enterprise.achecker.model.GuideLineBean"/>
     <!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
+<!-- BEGIN PLUGIN:dwr-override -->
+<create creator="new" javascript="UserAjax" scope="application">
+      <param name="class" value="com.arqiva.plugins.ajax.ArqivaUserAjax"/>
+   </create>
+
+<!-- END PLUGIN:dwr-override -->
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
 	<convert converter="bean" match="com.dotmarketing.cms.polls.ajax.PollsAjax$VoteAnswer"/>

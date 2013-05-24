@@ -339,8 +339,9 @@
 			parameter = document.getElementById("submitParent").value;
 			submitParent(parameter);
 			};
-		var callback = function(containerStructure){
-			var strInode = containerStructure['inode'];
+		var callback = function(containerStructureList){
+			console.log(containerStructureList);
+			//var strInode = containerStructure['inode'];
 			dojo.require("dotcms.dijit.form.ContentSelector");
 
 			// http://jira.dotmarketing.net/browse/DOTCMS-6269
@@ -348,12 +349,16 @@
 			   reuseContentDialog.dialog.destroyRecursive();
 
 			reuseContentDialog = new dotcms.dijit.form.ContentSelector({
-						structureInode:strInode,
-						onContentSelected:onContentSelection
+						onContentSelected:onContentSelection,
+						containerStructures:containerStructureList
 					});
 			reuseContentDialog.show();
 		};
-		ContainerAjax.getContainerStructure(x,callback);
+		ContainerAjax.getContainerStructures(x,callback);
+	}
+
+	function displayStructure(structureInode) {
+		reuseContentDialog.displayStructureFields(structureInode);
 	}
 
 	function submitParent(){
