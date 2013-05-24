@@ -41,7 +41,7 @@ public class ContainerAPITest extends ContentletBaseTest {
 
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getIdentifier());
+        cs.setStructureId(st.getInode());
         cs.setCode("this is the code");
         csList.add(cs);
 
@@ -55,7 +55,9 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertTrue(UtilMethods.isSet(cc.getInode()));
         assertTrue(UtilMethods.isSet(cc.getIdentifier()));
 
-        assertTrue(cc.getCode().equals(c.getCode()));
+        List<ContainerStructure> csListCopy = APILocator.getContainerAPI().getContainerStructures(cc);
+        ContainerStructure csCopy = csListCopy.get(0);
+        assertTrue(csCopy.getCode().equals(cs.getCode()));
         assertTrue(cc.getFriendlyName().equals(c.getFriendlyName()));
         assertTrue(cc.getTitle().equals(c.getTitle()));
         assertTrue(cc.getMaxContentlets()==c.getMaxContentlets());
@@ -88,7 +90,7 @@ public class ContainerAPITest extends ContentletBaseTest {
 
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getIdentifier());
+        cs.setStructureId(st.getInode());
         cs.setCode("this is the code");
         csList.add(cs);
 
@@ -142,7 +144,7 @@ public class ContainerAPITest extends ContentletBaseTest {
 
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getIdentifier());
+        cs.setStructureId(st.getInode());
         cs.setCode("this is the code");
         csList.add(cs);
         Container saved = APILocator.getContainerAPI().save(container, csList, host, user, false);

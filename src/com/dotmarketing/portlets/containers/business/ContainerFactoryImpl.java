@@ -211,7 +211,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
     public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
         HibernateUtil dh = new HibernateUtil(Container.class);
-        dh.setQuery("FROM c IN CLASS "+Container.class+" WHERE c.structureInode=?");
+        dh.setQuery("FROM c IN CLASS "+Container.class+" WHERE "
+        		+ " exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = c.identifier and cs.structureId = ? ) ");
         dh.setParam(structureInode);
         return dh.list();
     }
