@@ -1253,6 +1253,7 @@
 		<property name="structureId" type="string">
 			<column name="structure_id" length="36" not-null="true"/>
 		</property>
+		<property column="code" name="code" type="string" length="123456789" />
 	</class>
 
     <!-- Dashboard -->
