@@ -317,8 +317,7 @@
 
 <!-- START Button Row -->
         <div class="buttonBoxLeft">
-	        <b><%=LanguageUtil.get(pageContext, "Type") %>:</b>
-	        <span id="structSelectBox"></span>
+	        
         </div>
 
         <div class="buttonBoxRight">
@@ -369,82 +368,87 @@
                         <!-- START Advanced Search-->
                         <div id="advancedSearch">
                                 <dl>
-                                        <%if (languages.size() > 1) { %>
-                                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
-                                                <dd>
-                                                    <div id="combo_zone2" style="width:215px; height:20px;">
-                                                        <input id="language_id"/>
-                                                    </div>
-                                                    <script>
-														<%StringBuffer buff = new StringBuffer();
-														  // http://jira.dotmarketing.net/browse/DOTCMS-6148
-														  buff.append("{identifier:'id',imageurl:'imageurl',label:'label',items:[");
-
-														  String imageURL="/html/images/languages/all.gif";
-														  String style="background-image:url(URLHERE);width:16px;height:11px;display:inline-block;vertical-align:middle;margin:3px 5px 3px 2px;";
-														  buff.append("{id:'0',value:'',lang:'All',imageurl:'"+imageURL+"',label:'<span style=\""+style.replaceAll("URLHERE",imageURL)+"\"></span>All'}");
-														  for (Language lang : languages) {
-															  imageURL="/html/images/languages/" + lang.getLanguageCode()  + "_" + lang.getCountryCode() +".gif";
-															  final String display=lang.getLanguage() + " - " + lang.getCountry().trim();
-															  buff.append(",{id:'"+lang.getId()+"',");
-															  buff.append("value:'"+lang.getId()+"',");
-															  buff.append("imageurl:'"+imageURL+"',");
-															  buff.append("lang:'"+display+"',");
-															  buff.append("label:'<span style=\""+style.replaceAll("URLHERE",imageURL)+"\"></span>"+display+"'}");
-														  }
-														  buff.append("]}");%>
-
-														function updateSelectBoxImage(myselect) {
-															var imagestyle = "url('" + myselect.item.imageurl + "')";
-															var selField = dojo.query('#combo_zone2 div.dijitInputField')[0];
-															dojo.style(selField, "backgroundImage", imagestyle);
-															dojo.style(selField, "backgroundRepeat", "no-repeat");
-															dojo.style(selField, "padding", "0px 0px 0px 25px");
-															dojo.style(selField, "backgroundColor", "transparent");
-															dojo.style(selField, "backgroundPosition", "3px 6px");
-														}
-
-															var storeData=<%=buff.toString()%>;
-															var langStore = new dojo.data.ItemFileReadStore({data: storeData});
-															var myselect = new dijit.form.FilteringSelect({
-																	 id: "language_id",
-																	 name: "language_id",
-																	 value: '',
-																	 required: true,
-																	 store: langStore,
-																	 searchAttr: "lang",
-																	 labelAttr: "label",
-																	 labelType: "html",
-																	 onChange: function() {
-																		 var el=dijit.byId('language_id');
-																		 updateSelectBoxImage(el);
-																	 },
-																	 labelFunc: function(item, store) { return store.getValue(item, "label"); }
-																},
-																dojo.byId("language_id"));
-
-																<%if(languageId.equals("0")) {%>
-																	myselect.setValue('<%=languages.get(0).getId()%>');
-																<%} else {%>
-																	myselect.setValue('<%=languageId%>');
-																<%}%>
-
-													</script>
-                                                </dd>
-                                        <%} else { %>
-                                                <% long langId = languages.get(0).getId(); %>
-                                                <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
-                                        <% } %>
+	                        		<dt><%=LanguageUtil.get(pageContext, "Type") %>:</dt>
+	                        		<dd><span id="structSelectBox"></span></dd>
+	                        		<div class="clear"></div>
+	
+	                        		<dt><%= LanguageUtil.get(pageContext, "Search") %>:</dt>
+	                        		<dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
                                 </dl>
-								<div class="clear"></div>
-                                <dt><%= LanguageUtil.get(pageContext, "Search") %>:</dt>
-                                <dd>
-                                	  <input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>">
-                                </dd>
-                                
                                 
                                 <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
+	                                
 	                                <div class="clear"></div>
+
+	                                <!-- Language search fields  --->
+	                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
+                                    <dd>
+                                        <div id="combo_zone2" style="width:215px; height:20px;">
+                                            <input id="language_id"/>
+                                        </div>
+                                    <%if (languages.size() > 1) { %>
+                                        <script>
+											<%StringBuffer buff = new StringBuffer();
+											  // http://jira.dotmarketing.net/browse/DOTCMS-6148
+											  buff.append("{identifier:'id',imageurl:'imageurl',label:'label',items:[");
+
+											  String imageURL="/html/images/languages/all.gif";
+											  String style="background-image:url(URLHERE);width:16px;height:11px;display:inline-block;vertical-align:middle;margin:3px 5px 3px 2px;";
+											  buff.append("{id:'0',value:'',lang:'All',imageurl:'"+imageURL+"',label:'<span style=\""+style.replaceAll("URLHERE",imageURL)+"\"></span>All'}");
+											  for (Language lang : languages) {
+												  imageURL="/html/images/languages/" + lang.getLanguageCode()  + "_" + lang.getCountryCode() +".gif";
+												  final String display=lang.getLanguage() + " - " + lang.getCountry().trim();
+												  buff.append(",{id:'"+lang.getId()+"',");
+												  buff.append("value:'"+lang.getId()+"',");
+												  buff.append("imageurl:'"+imageURL+"',");
+												  buff.append("lang:'"+display+"',");
+												  buff.append("label:'<span style=\""+style.replaceAll("URLHERE",imageURL)+"\"></span>"+display+"'}");
+											  }
+											  buff.append("]}");%>
+
+											function updateSelectBoxImage(myselect) {
+												var imagestyle = "url('" + myselect.item.imageurl + "')";
+												var selField = dojo.query('#combo_zone2 div.dijitInputField')[0];
+												dojo.style(selField, "backgroundImage", imagestyle);
+												dojo.style(selField, "backgroundRepeat", "no-repeat");
+												dojo.style(selField, "padding", "0px 0px 0px 25px");
+												dojo.style(selField, "backgroundColor", "transparent");
+												dojo.style(selField, "backgroundPosition", "3px 6px");
+											}
+
+												var storeData=<%=buff.toString()%>;
+												var langStore = new dojo.data.ItemFileReadStore({data: storeData});
+												var myselect = new dijit.form.FilteringSelect({
+														 id: "language_id",
+														 name: "language_id",
+														 value: '',
+														 required: true,
+														 store: langStore,
+														 searchAttr: "lang",
+														 labelAttr: "label",
+														 labelType: "html",
+														 onChange: function() {
+															 var el=dijit.byId('language_id');
+															 updateSelectBoxImage(el);
+														 },
+														 labelFunc: function(item, store) { return store.getValue(item, "label"); }
+													},
+													dojo.byId("language_id"));
+
+													<%if(languageId.equals("0")) {%>
+														myselect.setValue('<%=languages.get(0).getId()%>');
+													<%} else {%>
+														myselect.setValue('<%=languageId%>');
+													<%}%>
+
+										</script>
+                                    </dd>
+                            <%} else { %>
+                                    <% long langId = languages.get(0).getId(); %>
+                                    <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
+                            <% } %>
+                                        
+                                        
 	                                <!-- Ajax built search fields  --->
 	                                        <div id="search_fields_table"></div>
 											<div class="clear"></div>
@@ -455,22 +459,12 @@
 									<div class="clear"></div>
 									<!-- /Ajax built Categories   --->
 				
-
-	                                <dl id="filterSystemHostTable" style="display: ">
-	                                    <dt><%= LanguageUtil.get(pageContext, "Exclude-system-host") %>:</dt>
-	                                    <dd>
-	                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
-	                                   </dd>
-	                                </dl>
-									<div class="clear"></div>
-									
-									
 	                                <dl>
 	                                     <dt><%= LanguageUtil.get(pageContext, "Show") %>:</dt>
 	                                     <dd>
 	                                     
 	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
-	                                     		<option value="all"></option>
+	                                     		<option value="all"><%= LanguageUtil.get(pageContext, "All") %></option>
 	                                     		<option value="archived"><%= LanguageUtil.get(pageContext, "Archived-only") %></option>
 	                                     		<option value="locked"><%= LanguageUtil.get(pageContext, "Locked-only") %></option>
 	                                     		<option value="unpublished"><%= LanguageUtil.get(pageContext, "Unpublish only") %></option>
@@ -479,16 +473,21 @@
 	
 	                                     </dd>
 	                                </dl>
-
-	                                <div  style="text-align: center" >
-	                                	<a href="javascript:showHideQuery()"><%= LanguageUtil.get(pageContext, "Show-Query")%></a>
-	                                </div>
+	                                
+	                                <div class="clear"></div>
+	                                
+	                                <dl id="filterSystemHostTable" style="display: ">
+	                                    <dt></dt>
+	                                    <dd>
+	                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
+	                                       <%= LanguageUtil.get(pageContext, "Exclude-system-host") %>
+	                                   </dd>
+	                                </dl>
+									
 	                                <div id="measureTheHeightOfSearchTools" class="clear"></div>
 								</div>
 
-			                 	<div  style="text-align: center" >
-	                                	<a href="javascript:toggleAdvancedSearchDiv()"><span class="small" id="toggleDivText"><%= LanguageUtil.get(pageContext, "Advanced") %></span></a>
-	                          	</div>
+			                 	
              
 
 
@@ -512,6 +511,13 @@
                                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
                                 </button>
                         </div>
+                        
+	                   <a href="javascript:toggleAdvancedSearchDiv()" style="display:block;background:#f1f1f1;border-top:1px solid #ddd;padding:8px 10px;text-align:center;text-decoration:none;">
+	                       	<div id="toggleDivText">
+	                       		<%= LanguageUtil.get(pageContext, "Advanced") %> 
+	                       	</div>
+	                   </a>
+	                  
 
                 
         </div>
