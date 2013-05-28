@@ -175,81 +175,94 @@
 
 
         function fillResults(data) {
-                var counters = data[0];
-                var hasNext = counters["hasNext"];
-                var hasPrevious = counters["hasPrevious"];
-                var total = counters["total"];
-                var begin = counters["begin"];
-                var end = counters["end"];
-        		var totalPages = counters["totalPages"];
+        	//console.log("searching:" +  amISearching);
+        	if(amISearching <0){
+        		amISearching=0;
+        	}
+        	else if(amISearching>0){
+        		amISearching--;
+        	}
 
-                headers = data[1];
+        	if(amISearching>0){
+        		return;
+        	}
+        	
+            var counters = data[0];
+            var hasNext = counters["hasNext"];
+            var hasPrevious = counters["hasPrevious"];
+            var total = counters["total"];
+            var begin = counters["begin"];
+            var end = counters["end"];
+    		var totalPages = counters["totalPages"];
 
-                for (var i = 3; i < data.length; i++) {
-                        data[i - 3] = data[i];
-                }
-                data.length = data.length - 3;
+            headers = data[1];
 
-                dwr.util.removeAllRows("results_table");
+            for (var i = 3; i < data.length; i++) {
+                    data[i - 3] = data[i];
+            }
+            data.length = data.length - 3;
 
-                var funcs = new Array ();
-                if (data.length <= 0) {
-                        if (1 < totalPages) {
-                                doSearch(totalPages, counters["sortByUF"]);
-                        } else {
-                                funcs[0] = noResults;
-                                dwr.util.addRows("results_table", [ headers ] , funcs, { escapeHtml: false });
-                                document.getElementById("nextDiv").style.display = "none";
-                                document.getElementById("previousDiv").style.display = "none";
-                                showMatchingResults (0,0,0,0);
-                                fillQuery (counters);
-                                dijit.byId("searchButton").attr("disabled", false);
-                                dijit.byId("clearButton").setAttribute("disabled", false);
-                        }
-						
-                        return;
-                }
+            dwr.util.removeAllRows("results_table");
 
-                fillResultsTable (headers, data);
-                showMatchingResults (total,begin,end,totalPages);
-                fillQuery (counters);
-				amISearching = false;
+            var funcs = new Array ();
+            if (data.length <= 0) {
+                    if (1 < totalPages) {
+                            doSearch(totalPages, counters["sortByUF"]);
+                    } else {
+                            funcs[0] = noResults;
+                            dwr.util.addRows("results_table", [ headers ] , funcs, { escapeHtml: false });
+                            document.getElementById("nextDiv").style.display = "none";
+                            document.getElementById("previousDiv").style.display = "none";
+                            showMatchingResults (0,0,0,0);
+                            fillQuery (counters);
+                            dijit.byId("searchButton").attr("disabled", false);
+                            //dijit.byId("clearButton").setAttribute("disabled", false);
+                    }
+		
+                    return;
+            }
 
-                var popupsiframe = document.getElementById("popups");
-                for (var j = 0; j < data.length; j++) {
-	                var contentlet = data[j];
-	                var inode = contentlet["inode"];
-	                var live = contentlet["live"] == "true"?"1":"0";
-	                var working = contentlet["working"] == "true"?"1":"0";
-	                var deleted = contentlet["deleted"] == "true"?"1":"0";
-	                var locked = contentlet["locked"] == "true"?"1":"0";
-	                var permissions = contentlet["permissions"];
-	                var read = userHasReadPermission (contentlet, userId)?"1":"0";
-	                var write = userHasWritePermission (contentlet, userId)?"1":"0";
-	                var publish = userHasPublishPermission (contentlet, userId)?"1":"0";
-                }
+            fillResultsTable (headers, data);
+            showMatchingResults (total,begin,end,totalPages);
+            fillQuery (counters);
 
-                if (hasNext) {
-                        document.getElementById("nextDiv").style.display = "";
-                } else {
-                        document.getElementById("nextDiv").style.display = "none";
-                }
 
-                if (hasPrevious) {
-                        document.getElementById("previousDiv").style.display = "";
-                } else {
-                        document.getElementById("previousDiv").style.display = "none";
-                }
+            var popupsiframe = document.getElementById("popups");
+            for (var j = 0; j < data.length; j++) {
+				var contentlet = data[j];
+				var inode = contentlet["inode"];
+				var live = contentlet["live"] == "true"?"1":"0";
+				var working = contentlet["working"] == "true"?"1":"0";
+				var deleted = contentlet["deleted"] == "true"?"1":"0";
+				var locked = contentlet["locked"] == "true"?"1":"0";
+				var permissions = contentlet["permissions"];
+				var read = userHasReadPermission (contentlet, userId)?"1":"0";
+				var write = userHasWritePermission (contentlet, userId)?"1":"0";
+				var publish = userHasPublishPermission (contentlet, userId)?"1":"0";
+            }
 
-                dijit.byId("searchButton").attr("disabled", false);
-        		dijit.byId("clearButton").setAttribute("disabled", false);
-                togglePublish();
+            if (hasNext) {
+                    document.getElementById("nextDiv").style.display = "";
+            } else {
+                    document.getElementById("nextDiv").style.display = "none";
+            }
 
-                //SelectAll functionality
-                if(document.getElementById("fullCommand").value == "true"){
-                        dijit.byId('checkAll').attr('checked',true);
-                        selectAllContents();
-                }
+            if (hasPrevious) {
+                    document.getElementById("previousDiv").style.display = "";
+            } else {
+                    document.getElementById("previousDiv").style.display = "none";
+            }
+
+            dijit.byId("searchButton").attr("disabled", false);
+    		dijit.byId("clearButton").setAttribute("disabled", false);
+            togglePublish();
+
+            //SelectAll functionality
+            if(document.getElementById("fullCommand").value == "true"){
+                    dijit.byId('checkAll').attr('checked',true);
+                    selectAllContents();
+            }
+            amISearching--;
 
         }
 
@@ -1216,30 +1229,15 @@
                 if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
                         setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
                 } else {
+                
                         doSearch1 (page, sortBy);
                 }
         }
         
-		var amISearching = false;
+		var amISearching = 0;
 		
-		function asyncSearch(page, sortBy, secondSearch){
-			if(amISearching &&  secondSearch){
-				return;
-			}
-			else if(amISearching){
-				setTimeout(function() { asyncSearch(page, sortBy, true) }, 1000);
-				return;
-			}
-			else{
-				amISearching = true;
-				doSearch1 (page, sortBy)
-			}
-		}
 
         function doSearch1 (page, sortBy) {
-
-				
-				
                 var structureInode = dijit.byId('structure_inode').value;
 
                 if(structureInode ==""){
@@ -1253,9 +1251,6 @@
                 }
                 
 
-                
-                
-                
 
                 var structureVelraw=dojo.byId("structureVelocityVarNames").value;
                 var structInoderaw=dojo.byId("structureInodesList").value;
@@ -1296,7 +1291,7 @@
                         var fieldValue = "";
 
                         if(formField != null){
-                                                                if(dojo.attr(formField.id,DOT_FIELD_TYPE) == 'select'){
+                                if(dojo.attr(formField.id,DOT_FIELD_TYPE) == 'select'){
 
                                         var tempDijitObj = dijit.byId(formField.id);
                                         fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
@@ -1420,7 +1415,7 @@
                 }
 
                 dijit.byId("searchButton").attr("disabled", true);
-                dijit.byId("clearButton").attr("disabled", true);
+                //dijit.byId("clearButton").attr("disabled", false);
 
                 document.getElementById('fieldsValues').value = fieldsValues;
                 document.getElementById('categoriesValues').value = categoriesValues;
@@ -1446,7 +1441,9 @@
                                 if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
                                 dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
                         }
+                        amISearching++;
                         ContentletAjax.searchContentlets (structureInode, fieldsValues, categoriesValues, showDeleted, filterSystemHost, filterUnpublish, filterLocked, currentPage, currentSortBy, dateFrom, dateTo, fillResults);
+
                 }
 
         }
@@ -1870,47 +1867,47 @@
                                 }
                         }
                 }
-        document.getElementById("Identifier").value = "";
-        document.getElementById("lastModDateFrom").value = "";
-        document.getElementById("lastModDateTo").value = "";
+	        document.getElementById("Identifier").value = "";
+	        document.getElementById("lastModDateFrom").value = "";
+	        document.getElementById("lastModDateTo").value = "";
 
-       var showDeletedCB = dijit.byId("showDeletedCB");
-                if(showDeletedCB!=null){
-                        if(showDeletedCB.checked) {
-                          showDeletedCB.setValue(false);
-                        }
-                }
-
-                var filterSystemHostCB = dijit.byId("filterSystemHostCB");
-                if(filterSystemHostCB!=null){
-                        if(filterSystemHostCB.checked) {
-                          filterSystemHostCB.setValue(false);
-                        }
-                }
-
-                var filterLockedCB = dijit.byId("filterLockedCB");
-                if(filterLockedCB!=null){
-                        if(filterLockedCB.checked) {
-                          filterLockedCB.setValue(false);
-                        }
-                }
-
-                var filterUnpublishCB = dijit.byId("filterUnpublishCB");
-                if(filterUnpublishCB!=null){
-                       if(filterUnpublishCB.checked) {
-                         filterUnpublishCB.setValue(false);
-                       }
-                }
-
-                dwr.util.removeAllRows("results_table");
-                document.getElementById("nextDiv").style.display = "none";
-                document.getElementById("previousDiv").style.display = "none";
-
-
-
-                hideMatchingResults ();
-                
-                amISearching = false;
+       		var showDeletedCB = dijit.byId("showDeletedCB");
+	        if(showDeletedCB!=null){
+	                if(showDeletedCB.checked) {
+	                  showDeletedCB.setValue(false);
+	                }
+	        }
+	
+	        var filterSystemHostCB = dijit.byId("filterSystemHostCB");
+	        if(filterSystemHostCB!=null){
+	                if(filterSystemHostCB.checked) {
+	                  filterSystemHostCB.setValue(false);
+	                }
+	        }
+	
+	        var filterLockedCB = dijit.byId("filterLockedCB");
+	        if(filterLockedCB!=null){
+	                if(filterLockedCB.checked) {
+	                  filterLockedCB.setValue(false);
+	                }
+	        }
+	
+	        var filterUnpublishCB = dijit.byId("filterUnpublishCB");
+	        if(filterUnpublishCB!=null){
+	               if(filterUnpublishCB.checked) {
+	                 filterUnpublishCB.setValue(false);
+	               }
+	        }
+	
+	        dwr.util.removeAllRows("results_table");
+	        document.getElementById("nextDiv").style.display = "none";
+	        document.getElementById("previousDiv").style.display = "none";
+	
+	
+	
+	        hideMatchingResults ();
+	        
+	        amISearching =0;
                 
         }
 
@@ -2090,7 +2087,7 @@
                             "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint6")%></li>"+
                             "<li><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "message.contentlet.note1")) %></li>"+
                             "</ul></div>";
-			amISearching = false;
+
         }
 
         function showHideQuery () {

@@ -510,11 +510,12 @@ public class ContentletAjax {
 	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 
 		/*
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e2) {
-			Logger.error(ContentletAjax.class,e2.getMessage(),e2);
-		}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e2) {
+				Logger.error(ContentletAjax.class,e2.getMessage(),e2);
+			}
+			System.out.println();
 		*/
 		if(perPage < 1){
 			perPage = Config.getIntProperty("PER_PAGE");
