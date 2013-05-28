@@ -558,6 +558,8 @@ public class ContentletAjax {
 				}
 			}
 			luceneQuery.append("-structureName:Host ");
+			luceneQuery.append("-structureType:3 ");
+
 		}
 
 		

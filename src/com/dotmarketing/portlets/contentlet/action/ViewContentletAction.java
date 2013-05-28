@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.contentlet.action;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.portlet.PortletConfig;
@@ -81,6 +78,7 @@ public class ViewContentletAction extends DotPortletAction {
 				if(st.getStructureType()==Structure.STRUCTURE_TYPE_FORM){
 					List<Structure> structures =StructureFactory.getStructuresByUser(user,"structuretype="+st.getStructureType(), "upper(name)", 0, 0, "asc");
 					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
+					req.setAttribute("SHOW_FORMS_ONLY", true);
 				}else{
 					List<Structure> structures = StructureFactory.getNoSystemStructuresWithReadPermissions(user, false);
 					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);	
