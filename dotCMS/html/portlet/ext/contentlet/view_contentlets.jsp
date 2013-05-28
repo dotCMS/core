@@ -1,3 +1,5 @@
+<%@page import="bsh.This"%>
+<%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="org.mockito.internal.matchers.EndsWith"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
 
@@ -15,18 +17,18 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 
 <%
-        List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
-        List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
-
-
-
-        java.util.Map params = new java.util.HashMap();
-        params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets"});
-
-        String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
-
-        Map lastSearch = (Map)session.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_LAST_SEARCH);
-        Structure structure = StructureFactory.getDefaultStructure();
+	List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
+	List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
+	
+	
+	
+	java.util.Map params = new java.util.HashMap();
+	params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets"});
+	
+	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
+	
+	Map lastSearch = (Map)session.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_LAST_SEARCH);
+	Structure structure = StructureFactory.getDefaultStructure();
 
     Map<String, String> fieldsSearch = new HashMap<String,String>();
     Language selectedLanguage = new Language();
@@ -44,45 +46,50 @@
     }
     long selectedLanguageId = selectedLanguage.getId();
 
-        String structureSelected = "";
-        if(UtilMethods.isSet(request.getParameter("structure_id"))){
-                structureSelected=request.getParameter("structure_id");
-        }
+	String structureSelected = "";
+	if(UtilMethods.isSet(request.getParameter("structure_id"))){
+		structureSelected=request.getParameter("structure_id");
+	}
 
-        if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
-                if(session.getAttribute("selectedStructure") != null){
-                        structure = StructureCache.getStructureByInode((String)session.getAttribute("selectedStructure"));
-                        if(structures.contains(structure)){
-                                structureSelected = structure.getInode();
-                        }else{
-                                session.removeAttribute("selectedStructure");
-
-                                structureSelected = null;;
-                        }
-                }
-            fieldsSearch = (Map<String, String>) lastSearch.get("fieldsSearch");
-            categories = (List<String>) lastSearch.get("categories");
-            if(UtilMethods.isSet(lastSearch.get("showDeleted"))){
-            	showDeleted = (Boolean) lastSearch.get("showDeleted");
-            }
-            if(UtilMethods.isSet(lastSearch.get("filterSystemHost"))){
-            	filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
-            }
-            if(UtilMethods.isSet(lastSearch.get("filterLocked"))){
-            	filterLocked = (Boolean) lastSearch.get("filterLocked");
-            }
-            if(lastSearch.get("filterUnpublish")!=null)
-                filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
-            if(UtilMethods.isSet(lastSearch.get("page"))){
-            	currpage = (Integer) lastSearch.get("page");
-            }
-            if(UtilMethods.isSet(lastSearch.get("orderBy"))){
-            	orderBy = (String) lastSearch.get("orderBy");
-            }
-        if (UtilMethods.isSet(lastSearch.get("languageId")) && fieldsSearch.containsKey("languageId")) {
-            languageId = ((String) fieldsSearch.get("languageId")).trim();
-        }
-        }
+	if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
+		String ssstruc = (String)session.getAttribute("selectedStructure");
+		if(session.getAttribute("selectedStructure") != null && StructureCache.getStructureByInode((String)session.getAttribute("selectedStructure")) !=null){
+		        structure = StructureCache.getStructureByInode((String)session.getAttribute("selectedStructure"));
+		        if(structures.contains(structure)){
+		                structureSelected = structure.getInode();
+		        }else{
+		                session.removeAttribute("selectedStructure");
+		
+		                structureSelected = null;;
+		        }
+		}
+		if(lastSearch.get("fieldsSearch") != null){
+			fieldsSearch = (Map<String, String>) lastSearch.get("fieldsSearch");
+		}
+		if(lastSearch.get("categories") != null){
+			categories = (List<String>) lastSearch.get("categories");
+		}
+		if(UtilMethods.isSet(lastSearch.get("showDeleted"))){
+			showDeleted = (Boolean) lastSearch.get("showDeleted");
+		}
+		if(UtilMethods.isSet(lastSearch.get("filterSystemHost"))){
+			filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
+		}
+		if(UtilMethods.isSet(lastSearch.get("filterLocked"))){
+			filterLocked = (Boolean) lastSearch.get("filterLocked");
+		}
+		if(lastSearch.get("filterUnpublish")!=null)
+		    filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
+		if(UtilMethods.isSet(lastSearch.get("page"))){
+			currpage = (Integer) lastSearch.get("page");
+		}
+		if(UtilMethods.isSet(lastSearch.get("orderBy"))){
+			orderBy = (String) lastSearch.get("orderBy");
+		}
+		if (UtilMethods.isSet(lastSearch.get("languageId")) && fieldsSearch.containsKey("languageId")) {
+		    languageId = ((String) fieldsSearch.get("languageId")).trim();
+		}
+	}
 
         if(!InodeUtils.isSet(structureSelected)){
                 if(session.getAttribute("selectedStructure") != null){
@@ -93,30 +100,20 @@
                 }
         }
 
-
         if (!InodeUtils.isSet(structureSelected) || !structures.contains(StructureCache.getStructureByInode(structureSelected))) {
-            structure = (Structure)StructureFactory.getDefaultStructure();
-            if(APILocator.getPermissionAPI().doesUserHavePermission(structure, PermissionAPI.PERMISSION_EDIT, user)){
-                structureSelected = structure.getInode();
-            }
+
+                structureSelected = "_all";
+            
         }
 
-        if(!InodeUtils.isSet(structureSelected) || !structures.contains(StructureCache.getStructureByInode(structureSelected))){
-                List<Structure> structs = structures;
-                for(Structure struct : structs){
-                        if(APILocator.getPermissionAPI().doesUserHavePermission(struct, PermissionAPI.PERMISSION_READ, user)){
-                                structureSelected = struct.getInode();
-                                break;
-                        }
-                }
+		
+        List<Field> fields = new ArrayList<Field>();
+        try{
+        	fields = FieldsCache.getFieldsByStructureInode(structureSelected);
         }
-
-        if (InodeUtils.isSet(structureSelected)) {
-            structure = (Structure)StructureFactory.getStructureByInode(structureSelected);
+        catch(Exception e){
+        	Logger.debug(this.getClass(), e.getMessage());	
         }
-
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(structureSelected);
-
         boolean hasNoSearcheableHostFolderField = false;
         boolean hasHostFolderField = false;
         for (Field field: fields) {
@@ -131,7 +128,7 @@
                 }
         }
 
-        if (!UtilMethods.isSet(fieldsSearch.get("conHost")) || hasNoSearcheableHostFolderField) {
+        if (fieldsSearch == null ||  !UtilMethods.isSet(fieldsSearch.get("conHost")) || hasNoSearcheableHostFolderField) {
                 fieldsSearch.put("conHost", (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
         }
 
@@ -190,6 +187,13 @@
         identifier: "name",
         label: "label",
         items: [
+
+                {
+                    name: "_all",
+                    label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
+                    textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>"
+                },
+                
                 <%boolean started = false;%>
                 <%for(Structure s : structures){
                 	String spanClass = (s.getStructureType() ==1)
@@ -266,9 +270,7 @@
 
         <%@ include file="/html/portlet/ext/contentlet/view_contentlets_js_inc.jsp" %>
 
-        <liferay:include page="/html/js/calendar/calendar_js_box_ext.jsp" flush="true">
-        <liferay:param name="calendar_num" value="2" />
-        </liferay:include>
+
 
         function <portlet:namespace />setCalendarDate_0 (year, month, day) {
         var textbox = document.getElementById('lastModDateFrom');
@@ -430,6 +432,7 @@
 														 onChange: function() {
 															 var el=dijit.byId('language_id');
 															 updateSelectBoxImage(el);
+															 doSearch();
 														 },
 														 labelFunc: function(item, store) { return store.getValue(item, "label"); }
 													},
