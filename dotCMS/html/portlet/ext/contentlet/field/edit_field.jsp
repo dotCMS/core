@@ -322,11 +322,35 @@
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
                 dojoType="dijit.form.TimeTextBox" style="width: 100px;"
                 <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
+        <% }
 
+            if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
 
-        <% }%>
+                if (field.getVelocityVarName().equals( "expire" )) {
 
-    <% } //END DATIME/DATE/TIME Field
+                    if (UtilMethods.isSet( value )) {%>
+                        &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire()" dojoType="dijit.form.CheckBox" value="false" name="fieldNeverExpire" checked="false" id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+                    <%} else {%>
+                        &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire()" dojoType="dijit.form.CheckBox" value="true" name="fieldNeverExpire" checked="true" id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+                    <%}%>
+                    <script type="text/javascript">
+                        function toggleExpire() {
+                            var never = dijit.byId("fieldNeverExpire").getValue();
+                            if (never) {
+                                dijit.byId("expireDate").set("value", null);
+                                dijit.byId("expireTime").set("value", null);
+                            }
+                            dijit.byId("expireDate").disabled = never;
+                            dijit.byId("expireTime").disabled = never;
+                        }
+
+                        dojo.addOnLoad(function() {
+                            toggleExpire();
+                        });
+                    </script>
+                <%}
+            }
+    } //END DATIME/DATE/TIME Field
 
     //IMAGE kind of field rendering
     else if (field.getFieldType().equals(
