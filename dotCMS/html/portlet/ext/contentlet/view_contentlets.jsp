@@ -1,3 +1,6 @@
+<%@page import="bsh.This"%>
+<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="org.mockito.internal.matchers.EndsWith"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
 
 <%@ page import="java.util.*" %>
@@ -14,18 +17,18 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 
 <%
-        List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
-        List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
-
-
-
-        java.util.Map params = new java.util.HashMap();
-        params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets"});
-
-        String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
-
-        Map lastSearch = (Map)session.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_LAST_SEARCH);
-        Structure structure = StructureFactory.getDefaultStructure();
+	List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
+	List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
+	
+	
+	
+	java.util.Map params = new java.util.HashMap();
+	params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets"});
+	
+	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
+	
+	Map lastSearch = (Map)session.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_LAST_SEARCH);
+	Structure structure = StructureFactory.getDefaultStructure();
 
     Map<String, String> fieldsSearch = new HashMap<String,String>();
     Language selectedLanguage = new Language();
@@ -43,45 +46,50 @@
     }
     long selectedLanguageId = selectedLanguage.getId();
 
-        String structureSelected = "";
-        if(UtilMethods.isSet(request.getParameter("structure_id"))){
-                structureSelected=request.getParameter("structure_id");
-        }
+	String structureSelected = "";
+	if(UtilMethods.isSet(request.getParameter("structure_id"))){
+		structureSelected=request.getParameter("structure_id");
+	}
 
-        if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
-                if(session.getAttribute("selectedStructure") != null){
-                        structure = StructureCache.getStructureByInode((String)session.getAttribute("selectedStructure"));
-                        if(structures.contains(structure)){
-                                structureSelected = structure.getInode();
-                        }else{
-                                session.removeAttribute("selectedStructure");
-
-                                structureSelected = null;;
-                        }
-                }
-            fieldsSearch = (Map<String, String>) lastSearch.get("fieldsSearch");
-            categories = (List<String>) lastSearch.get("categories");
-            if(UtilMethods.isSet(lastSearch.get("showDeleted"))){
-            	showDeleted = (Boolean) lastSearch.get("showDeleted");
-            }
-            if(UtilMethods.isSet(lastSearch.get("filterSystemHost"))){
-            	filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
-            }
-            if(UtilMethods.isSet(lastSearch.get("filterLocked"))){
-            	filterLocked = (Boolean) lastSearch.get("filterLocked");
-            }
-            if(lastSearch.get("filterUnpublish")!=null)
-                filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
-            if(UtilMethods.isSet(lastSearch.get("page"))){
-            	currpage = (Integer) lastSearch.get("page");
-            }
-            if(UtilMethods.isSet(lastSearch.get("orderBy"))){
-            	orderBy = (String) lastSearch.get("orderBy");
-            }
-        if (UtilMethods.isSet(lastSearch.get("languageId")) && fieldsSearch.containsKey("languageId")) {
-            languageId = ((String) fieldsSearch.get("languageId")).trim();
-        }
-        }
+	if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
+		String ssstruc = (String)session.getAttribute("selectedStructure");
+		if(session.getAttribute("selectedStructure") != null && StructureCache.getStructureByInode((String)session.getAttribute("selectedStructure")) !=null){
+		        structure = StructureCache.getStructureByInode((String)session.getAttribute("selectedStructure"));
+		        if(structures.contains(structure)){
+		                structureSelected = structure.getInode();
+		        }else{
+		                session.removeAttribute("selectedStructure");
+		
+		                structureSelected = null;;
+		        }
+		}
+		if(lastSearch.get("fieldsSearch") != null){
+			fieldsSearch = (Map<String, String>) lastSearch.get("fieldsSearch");
+		}
+		if(lastSearch.get("categories") != null){
+			categories = (List<String>) lastSearch.get("categories");
+		}
+		if(UtilMethods.isSet(lastSearch.get("showDeleted"))){
+			showDeleted = (Boolean) lastSearch.get("showDeleted");
+		}
+		if(UtilMethods.isSet(lastSearch.get("filterSystemHost"))){
+			filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
+		}
+		if(UtilMethods.isSet(lastSearch.get("filterLocked"))){
+			filterLocked = (Boolean) lastSearch.get("filterLocked");
+		}
+		if(lastSearch.get("filterUnpublish")!=null)
+		    filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
+		if(UtilMethods.isSet(lastSearch.get("page"))){
+			currpage = (Integer) lastSearch.get("page");
+		}
+		if(UtilMethods.isSet(lastSearch.get("orderBy"))){
+			orderBy = (String) lastSearch.get("orderBy");
+		}
+		if (UtilMethods.isSet(lastSearch.get("languageId")) && fieldsSearch.containsKey("languageId")) {
+		    languageId = ((String) fieldsSearch.get("languageId")).trim();
+		}
+	}
 
         if(!InodeUtils.isSet(structureSelected)){
                 if(session.getAttribute("selectedStructure") != null){
@@ -92,30 +100,20 @@
                 }
         }
 
-
         if (!InodeUtils.isSet(structureSelected) || !structures.contains(StructureCache.getStructureByInode(structureSelected))) {
-            structure = (Structure)StructureFactory.getDefaultStructure();
-            if(APILocator.getPermissionAPI().doesUserHavePermission(structure, PermissionAPI.PERMISSION_EDIT, user)){
-                structureSelected = structure.getInode();
-            }
+
+                structureSelected = "_all";
+            
         }
 
-        if(!InodeUtils.isSet(structureSelected) || !structures.contains(StructureCache.getStructureByInode(structureSelected))){
-                List<Structure> structs = structures;
-                for(Structure struct : structs){
-                        if(APILocator.getPermissionAPI().doesUserHavePermission(struct, PermissionAPI.PERMISSION_READ, user)){
-                                structureSelected = struct.getInode();
-                                break;
-                        }
-                }
+		
+        List<Field> fields = new ArrayList<Field>();
+        try{
+        	fields = FieldsCache.getFieldsByStructureInode(structureSelected);
         }
-
-        if (InodeUtils.isSet(structureSelected)) {
-            structure = (Structure)StructureFactory.getStructureByInode(structureSelected);
+        catch(Exception e){
+        	Logger.debug(this.getClass(), e.getMessage());	
         }
-
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(structureSelected);
-
         boolean hasNoSearcheableHostFolderField = false;
         boolean hasHostFolderField = false;
         for (Field field: fields) {
@@ -130,7 +128,7 @@
                 }
         }
 
-        if (!UtilMethods.isSet(fieldsSearch.get("conHost")) || hasNoSearcheableHostFolderField) {
+        if (fieldsSearch == null ||  !UtilMethods.isSet(fieldsSearch.get("conHost")) || hasNoSearcheableHostFolderField) {
                 fieldsSearch.put("conHost", (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
         }
 
@@ -156,6 +154,10 @@
                         structureVelocityVarNames+=st.getVelocityVarName();
 
         }
+        
+        
+        
+        String _allValue = (UtilMethods.webifyString(fieldsSearch.get("_all")).endsWith("*")) ? UtilMethods.webifyString(fieldsSearch.get("_all")).substring(0,UtilMethods.webifyString(fieldsSearch.get("_all")).length()-1) : UtilMethods.webifyString(fieldsSearch.get("_all"));
 %>
 
 
@@ -185,6 +187,13 @@
         identifier: "name",
         label: "label",
         items: [
+
+                {
+                    name: "_all",
+                    label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
+                    textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>"
+                },
+                
                 <%boolean started = false;%>
                 <%for(Structure s : structures){
                 	String spanClass = (s.getStructureType() ==1)
@@ -261,9 +270,7 @@
 
         <%@ include file="/html/portlet/ext/contentlet/view_contentlets_js_inc.jsp" %>
 
-        <liferay:include page="/html/js/calendar/calendar_js_box_ext.jsp" flush="true">
-        <liferay:param name="calendar_num" value="2" />
-        </liferay:include>
+
 
         function <portlet:namespace />setCalendarDate_0 (year, month, day) {
         var textbox = document.getElementById('lastModDateFrom');
@@ -312,8 +319,7 @@
 
 <!-- START Button Row -->
         <div class="buttonBoxLeft">
-	        <b><%=LanguageUtil.get(pageContext, "Type") %>:</b>
-	        <span id="structSelectBox"></span>
+	        
         </div>
 
         <div class="buttonBoxRight">
@@ -343,7 +349,9 @@
 <input type="hidden" name="structureInodesList" id="structureInodesList" value="<%= structureInodesList %>">
 <input type="hidden" name="hostField" id="hostField" value="<%= conHostValue %>"/>
 <input type="hidden" name="folderField" id="folderField" value="<%= conFolderValue %>"/>
-
+<input type="hidden" value="" name="Identifier" id="Identifier" size="10"/>
+<input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
+<input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
 <!-- START Split Screen -->
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:400px;" id="borderContainer" class="shadowBox headerBox">
 
@@ -358,129 +366,140 @@
                                         <dt><FONT COLOR="#FF0000"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Structure-Read-Permissions" )) %></FONT></dt>
                                 </div>
                         <%}%>
-
+					
                         <!-- START Advanced Search-->
                         <div id="advancedSearch">
                                 <dl>
-                                        <%if (languages.size() > 1) { %>
-                                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
-                                                <dd>
-                                                    <div id="combo_zone2" style="width:215px; height:20px;">
-                                                        <input id="language_id"/>
-                                                    </div>
-                                                    <script>
-														<%StringBuffer buff = new StringBuffer();
-														  // http://jira.dotmarketing.net/browse/DOTCMS-6148
-														  buff.append("{identifier:'id',imageurl:'imageurl',label:'label',items:[");
-
-														  String imageURL="/html/images/languages/all.gif";
-														  String style="background-image:url(URLHERE);width:16px;height:11px;display:inline-block;vertical-align:middle;margin:3px 5px 3px 2px;";
-														  buff.append("{id:'0',value:'',lang:'All',imageurl:'"+imageURL+"',label:'<span style=\""+style.replaceAll("URLHERE",imageURL)+"\"></span>All'}");
-														  for (Language lang : languages) {
-															  imageURL="/html/images/languages/" + lang.getLanguageCode()  + "_" + lang.getCountryCode() +".gif";
-															  final String display=lang.getLanguage() + " - " + lang.getCountry().trim();
-															  buff.append(",{id:'"+lang.getId()+"',");
-															  buff.append("value:'"+lang.getId()+"',");
-															  buff.append("imageurl:'"+imageURL+"',");
-															  buff.append("lang:'"+display+"',");
-															  buff.append("label:'<span style=\""+style.replaceAll("URLHERE",imageURL)+"\"></span>"+display+"'}");
-														  }
-														  buff.append("]}");%>
-
-														function updateSelectBoxImage(myselect) {
-															var imagestyle = "url('" + myselect.item.imageurl + "')";
-															var selField = dojo.query('#combo_zone2 div.dijitInputField')[0];
-															dojo.style(selField, "backgroundImage", imagestyle);
-															dojo.style(selField, "backgroundRepeat", "no-repeat");
-															dojo.style(selField, "padding", "0px 0px 0px 25px");
-															dojo.style(selField, "backgroundColor", "transparent");
-															dojo.style(selField, "backgroundPosition", "3px 6px");
-														}
-
-															var storeData=<%=buff.toString()%>;
-															var langStore = new dojo.data.ItemFileReadStore({data: storeData});
-															var myselect = new dijit.form.FilteringSelect({
-																	 id: "language_id",
-																	 name: "language_id",
-																	 value: '',
-																	 required: true,
-																	 store: langStore,
-																	 searchAttr: "lang",
-																	 labelAttr: "label",
-																	 labelType: "html",
-																	 onChange: function() {
-																		 var el=dijit.byId('language_id');
-																		 updateSelectBoxImage(el);
-																	 },
-																	 labelFunc: function(item, store) { return store.getValue(item, "label"); }
-																},
-																dojo.byId("language_id"));
-
-																<%if(languageId.equals("0")) {%>
-																	myselect.setValue('<%=languages.get(0).getId()%>');
-																<%} else {%>
-																	myselect.setValue('<%=languageId%>');
-																<%}%>
-
-													</script>
-                                                </dd>
-                                        <%} else { %>
-                                                <% long langId = languages.get(0).getId(); %>
-                                                <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
-                                        <% } %>
+	                        		<dt><%=LanguageUtil.get(pageContext, "Type") %>:</dt>
+	                        		<dd><span id="structSelectBox"></span></dd>
+	                        		<div class="clear"></div>
+	
+	                        		<dt><%= LanguageUtil.get(pageContext, "Search") %>:</dt>
+	                        		<dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
                                 </dl>
-								<div class="clear"></div>
+                                
+                                <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
+	                                
+	                                <div class="clear"></div>
 
-                                <!-- Ajax built search fields  --->
-                                        <div id="search_fields_table"></div>
-										<div class="clear"></div>
-                                <!-- /Ajax built search fields  --->
-
-                                <dl>
-                                        <%--
-                                                <dt><%= LanguageUtil.get(pageContext, "Identifier") %>:</dt>
-                                                <dd><input type="hidden" value="" name="Identifier" dojoType="dijit.form.TextBox" id="Identifier" size="10"/></dd>
-                                         --%>
-                                         <input type="hidden" value="" name="Identifier" id="Identifier" size="10"/>
-                                         <input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
-                                         <input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
-                                        <dt><%= LanguageUtil.get(pageContext, "Archived-only") %>:</dt>
-                                        <dd><input type="checkbox" dojoType="dijit.form.CheckBox" id="showDeletedCB" onclick="displayArchiveButton();doSearch(1);" <%=showDeleted?"checked=\"checked\"":""%>></dd>
-                                </dl>
-								<div class="clear"></div>
-
-                                <dl id="filterSystemHostTable" style="display: ">
-                                    <dt><%= LanguageUtil.get(pageContext, "Exclude-system-host") %>:</dt>
+	                                <!-- Language search fields  --->
+	                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
                                     <dd>
-                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
-                                   </dd>
-                                </dl>
-								<div class="clear"></div>
+                                        <div id="combo_zone2" style="width:215px; height:20px;">
+                                            <input id="language_id"/>
+                                        </div>
+                                    <%if (languages.size() > 1) { %>
+                                        <script>
+											<%StringBuffer buff = new StringBuffer();
+											  // http://jira.dotmarketing.net/browse/DOTCMS-6148
+											  buff.append("{identifier:'id',imageurl:'imageurl',label:'label',items:[");
 
-                                <dl>
-                                    <dt><%= LanguageUtil.get(pageContext, "Locked-only") %>:</dt>
-                                        <dd>
-                                         <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterLockedCB" onclick="doSearch(1);" <%=filterLocked?"checked=\"checked\"":""%>>
-                                   </dd>
-                                </dl>
-								<div class="clear"></div>
-								
-								<dl>
-                                   <dt><%= LanguageUtil.get(pageContext, "Unpublish only") %>:</dt>
-                                   <dd>
-                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterUnpublishCB" onclick="doSearch(1);" <%=filterUnpublish?"checked=\"checked\"":""%>>
-                                   </dd>
-                               </dl>                               
-                               <div class="clear"></div>
+											  String imageURL="/html/images/languages/all.gif";
+											  String style="background-image:url(URLHERE);width:16px;height:11px;display:inline-block;vertical-align:middle;margin:3px 5px 3px 2px;";
+											  buff.append("{id:'0',value:'',lang:'All',imageurl:'"+imageURL+"',label:'<span style=\""+style.replaceAll("URLHERE",imageURL)+"\"></span>All'}");
+											  for (Language lang : languages) {
+												  imageURL="/html/images/languages/" + lang.getLanguageCode()  + "_" + lang.getCountryCode() +".gif";
+												  final String display=lang.getLanguage() + " - " + lang.getCountry().trim();
+												  buff.append(",{id:'"+lang.getId()+"',");
+												  buff.append("value:'"+lang.getId()+"',");
+												  buff.append("imageurl:'"+imageURL+"',");
+												  buff.append("lang:'"+display+"',");
+												  buff.append("label:'<span style=\""+style.replaceAll("URLHERE",imageURL)+"\"></span>"+display+"'}");
+											  }
+											  buff.append("]}");%>
 
-                                <dl id="search_categories_list"></dl>
-								<div class="clear"></div>
+											function updateSelectBoxImage(myselect) {
+												var imagestyle = "url('" + myselect.item.imageurl + "')";
+												var selField = dojo.query('#combo_zone2 div.dijitInputField')[0];
+												dojo.style(selField, "backgroundImage", imagestyle);
+												dojo.style(selField, "backgroundRepeat", "no-repeat");
+												dojo.style(selField, "padding", "0px 0px 0px 25px");
+												dojo.style(selField, "backgroundColor", "transparent");
+												dojo.style(selField, "backgroundPosition", "3px 6px");
+											}
+
+												var storeData=<%=buff.toString()%>;
+												var langStore = new dojo.data.ItemFileReadStore({data: storeData});
+												var myselect = new dijit.form.FilteringSelect({
+														 id: "language_id",
+														 name: "language_id",
+														 value: '',
+														 required: true,
+														 store: langStore,
+														 searchAttr: "lang",
+														 labelAttr: "label",
+														 labelType: "html",
+														 onChange: function() {
+															 var el=dijit.byId('language_id');
+															 updateSelectBoxImage(el);
+															 doSearch();
+														 },
+														 labelFunc: function(item, store) { return store.getValue(item, "label"); }
+													},
+													dojo.byId("language_id"));
+
+													<%if(languageId.equals("0")) {%>
+														myselect.setValue('<%=languages.get(0).getId()%>');
+													<%} else {%>
+														myselect.setValue('<%=languageId%>');
+													<%}%>
+
+										</script>
+                                    </dd>
+                            <%} else { %>
+                                    <% long langId = languages.get(0).getId(); %>
+                                    <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
+                            <% } %>
+                                        
+                                        
+	                                <!-- Ajax built search fields  --->
+	                                        <div id="search_fields_table"></div>
+											<div class="clear"></div>
+	                                <!-- /Ajax built search fields  --->
+	
+	 								<!-- Ajax built Categories   --->
+	                        		<dl id="search_categories_list"></dl>
+									<div class="clear"></div>
+									<!-- /Ajax built Categories   --->
+				
+	                                <dl>
+	                                     <dt><%= LanguageUtil.get(pageContext, "Show") %>:</dt>
+	                                     <dd>
+	                                     
+	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
+	                                     		<option value="all"><%= LanguageUtil.get(pageContext, "All") %></option>
+	                                     		<option value="archived"><%= LanguageUtil.get(pageContext, "Archived-only") %></option>
+	                                     		<option value="locked"><%= LanguageUtil.get(pageContext, "Locked-only") %></option>
+	                                     		<option value="unpublished"><%= LanguageUtil.get(pageContext, "Unpublish only") %></option>
+	                                     	
+	                                     	</select>
+	
+	                                     </dd>
+	                                </dl>
+	                                
+	                                <div class="clear"></div>
+	                                
+	                                <dl id="filterSystemHostTable" style="display: ">
+	                                    <dt></dt>
+	                                    <dd>
+	                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
+	                                       <%= LanguageUtil.get(pageContext, "Exclude-system-host") %>
+	                                   </dd>
+	                                </dl>
+									
+	                                <div id="measureTheHeightOfSearchTools" class="clear"></div>
+								</div>
+
+			                 	
+             
+
+
                         </div>
                         <!-- END Advanced Search-->
 
 
 
-                        <div class="buttonRow">
+                        <div class="buttonRow" style='margin-top:10px;'>
                                 <span id="searchButton"></span>
 
                                 <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
@@ -495,6 +514,13 @@
                                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
                                 </button>
                         </div>
+                        
+	                   <a href="javascript:toggleAdvancedSearchDiv()" style="display:block;background:#f1f1f1;border-top:1px solid #ddd;padding:8px 10px;text-align:center;text-decoration:none;">
+	                       	<div id="toggleDivText">
+	                       		<%= LanguageUtil.get(pageContext, "Advanced") %> 
+	                       	</div>
+	                   </a>
+	                  
 
                 
         </div>
