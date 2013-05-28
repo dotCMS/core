@@ -1572,8 +1572,8 @@ public class ContentletAjax {
 			saveContentErrors.add(errorString);
 		}
 		catch(PublishStateException pe) {
-		    String errorString = LanguageUtil.get(user,"message.contentlet.pubfuturedate");
-		    saveContentErrors.add(errorString);
+		    String errorString = LanguageUtil.get( user, pe.getMessage() );
+		    saveContentErrors.add( errorString );
 		}
 		catch (Exception e) {
 			saveContentErrors.add(e.toString());
