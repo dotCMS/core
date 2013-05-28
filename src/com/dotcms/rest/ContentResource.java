@@ -49,6 +49,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -71,6 +72,8 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 
 @Path("/content")
 public class ContentResource extends WebResource {
+    private static final String RELATIONSHIP_KEY = "__##relationships##__";
+
     /**
      * performs a call to APILocator.getContentletAPI().searchIndex() with the 
      * specified parameters.
@@ -510,9 +513,11 @@ public class ContentResource extends WebResource {
                 }
             }
             
+            Map<Relationship,List<Contentlet>> relationships=(Map<Relationship,List<Contentlet>>)contentlet.get(RELATIONSHIP_KEY);
+            
             HibernateUtil.startTransaction();
             
-            contentlet = APILocator.getContentletAPI().checkin(contentlet,new HashMap<Relationship, List<Contentlet>>(),cats,new ArrayList<Permission>(),init.getUser(),false);
+            contentlet = APILocator.getContentletAPI().checkin(contentlet,relationships,cats,new ArrayList<Permission>(),init.getUser(),false);
             
             if(live)
                 APILocator.getContentletAPI().publish(contentlet, init.getUser(), false);
@@ -575,18 +580,49 @@ public class ContentResource extends WebResource {
     protected void processMap(Contentlet contentlet, Map<String,Object> map) {
         String stInode=(String)map.get(Contentlet.STRUCTURE_INODE_KEY);
         if(UtilMethods.isSet(stInode)) {
+            String stName=(String)map.get("stName");
+            if(UtilMethods.isSet(stName)) {
+                stInode = StructureCache.getStructureByVelocityVarName(stName).getInode();
+            }
+        }
+        if(UtilMethods.isSet(stInode)) {
             Structure st=StructureCache.getStructureByInode(stInode);
             if(st!=null && InodeUtils.isSet(st.getInode())) {
                 // basic data
                 contentlet.setStructureInode(st.getInode());
-                if(map.containsKey("languageId"))
+                if(map.containsKey("languageId")) {
                     contentlet.setLanguageId(Long.parseLong((String)map.get("languageId")));
+                }
+                else {
+                    contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+                }
                 
                 // build a field map for easy lookup
                 Map<String,Field> fieldMap=new HashMap<String,Field>();
                 for(Field ff : FieldsCache.getFieldsByStructureInode(stInode))
                     fieldMap.put(ff.getVelocityVarName(), ff);
                 
+                // look for relationships
+                Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
+                for(Relationship rel : RelationshipFactory.getAllRelationshipsByStructure(st)) {
+                    String relname=rel.getRelationTypeValue();
+                    String query=(String)map.get(relname);
+                    if(UtilMethods.isSet(query)) {
+                        try {
+                            List<Contentlet> cons=APILocator.getContentletAPI().search(
+                                    query, 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+                            if(cons.size()>0) {
+                                relationships.put(rel, cons);
+                            }
+                        } catch (Exception e) {
+                            Logger.warn(this, e.getMessage(), e);
+                        }
+                    }
+                }
+                contentlet.setProperty(RELATIONSHIP_KEY, relationships);
+                
+                
+                // fill fields
                 for(Map.Entry<String,Object> entry : map.entrySet()) {
                     String key=entry.getKey();
                     Object value=entry.getValue();
