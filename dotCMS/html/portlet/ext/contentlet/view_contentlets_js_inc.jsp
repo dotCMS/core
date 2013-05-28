@@ -206,27 +206,27 @@
                                 dijit.byId("searchButton").attr("disabled", false);
                                 dijit.byId("clearButton").setAttribute("disabled", false);
                         }
-
+						
                         return;
                 }
 
                 fillResultsTable (headers, data);
                 showMatchingResults (total,begin,end,totalPages);
                 fillQuery (counters);
-
+				amISearching = false;
 
                 var popupsiframe = document.getElementById("popups");
                 for (var j = 0; j < data.length; j++) {
-                        var contentlet = data[j];
-                        var inode = contentlet["inode"];
-                        var live = contentlet["live"] == "true"?"1":"0";
-                        var working = contentlet["working"] == "true"?"1":"0";
-                        var deleted = contentlet["deleted"] == "true"?"1":"0";
-                        var locked = contentlet["locked"] == "true"?"1":"0";
-                        var permissions = contentlet["permissions"];
-                        var read = userHasReadPermission (contentlet, userId)?"1":"0";
-                        var write = userHasWritePermission (contentlet, userId)?"1":"0";
-                        var publish = userHasPublishPermission (contentlet, userId)?"1":"0";
+	                var contentlet = data[j];
+	                var inode = contentlet["inode"];
+	                var live = contentlet["live"] == "true"?"1":"0";
+	                var working = contentlet["working"] == "true"?"1":"0";
+	                var deleted = contentlet["deleted"] == "true"?"1":"0";
+	                var locked = contentlet["locked"] == "true"?"1":"0";
+	                var permissions = contentlet["permissions"];
+	                var read = userHasReadPermission (contentlet, userId)?"1":"0";
+	                var write = userHasWritePermission (contentlet, userId)?"1":"0";
+	                var publish = userHasPublishPermission (contentlet, userId)?"1":"0";
                 }
 
                 if (hasNext) {
@@ -242,7 +242,7 @@
                 }
 
                 dijit.byId("searchButton").attr("disabled", false);
-        dijit.byId("clearButton").setAttribute("disabled", false);
+        		dijit.byId("clearButton").setAttribute("disabled", false);
                 togglePublish();
 
                 //SelectAll functionality
@@ -1219,9 +1219,27 @@
                         doSearch1 (page, sortBy);
                 }
         }
+        
+		var amISearching = false;
+		
+		function asyncSearch(page, sortBy, secondSearch){
+			if(amISearching &&  secondSearch){
+				return;
+			}
+			else if(amISearching){
+				setTimeout(function() { asyncSearch(page, sortBy, true) }, 1000);
+				return;
+			}
+			else{
+				amISearching = true;
+				doSearch1 (page, sortBy)
+			}
+		}
 
         function doSearch1 (page, sortBy) {
 
+				
+				
                 var structureInode = dijit.byId('structure_inode').value;
 
                 if(structureInode ==""){
@@ -1245,11 +1263,11 @@
                 var structInode=structInoderaw.split(";");
                 var selectedStruct="";
                 for(var m2=0; m2 <= structInode.length ; m2++ ){
-             if(structureInode==structInode[m2]){
-                 selectedStruct=structureVel[m2];
+		             if(structureInode==structInode[m2]){
+		                 selectedStruct=structureVel[m2];
+	                 }
                  }
-                        }
-
+				
                 if (hasHostFolderField) {
                         getHostValue();
                 }
@@ -1412,7 +1430,7 @@
                 document.getElementById('filterLocked').value = filterLocked;
                 document.getElementById('filterUnpublish').value = filterUnpublish;
 				//console.log(fieldsValues);
-                if(isInodeSet(structureInode)){
+                if(isInodeSet(structureInode) || "_all" == structureInode){
                         var dateFrom=null;
                         var dateTo= null;
                         if((document.getElementById("lastModDateFrom").value!="")){
@@ -1580,14 +1598,16 @@
                         var cellData = data[i];
                         row.setAttribute("id","tr" + cellData.inode);
 
-                        //console.log(cellData);
+                        
 
                         var cell = row.insertCell (row.cells.length);
                         cell.style.whiteSpace="nowrap";
+                        
                         cell.innerHTML = statusDataCell(cellData, i);
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
                                 var cell = row.insertCell (row.cells.length);
+                                //console.log(headers[j]);
                                 cell.setAttribute("align","center");
                                 if (j == 0) {
                                         languageId = cellData["languageId"];
@@ -1607,6 +1627,7 @@
                                         cell.innerHTML = locale;
                                         var cell = row.insertCell (row.cells.length);
                                         var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
+                                        
                                 } else {
                                         var value = cellData[header["fieldVelocityVarName"]];
                                 }
@@ -1888,6 +1909,9 @@
 
 
                 hideMatchingResults ();
+                
+                amISearching = false;
+                
         }
 
         function userHasReadPermission (contentlet, userId) {
@@ -2066,7 +2090,7 @@
                             "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint6")%></li>"+
                             "<li><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "message.contentlet.note1")) %></li>"+
                             "</ul></div>";
-
+			amISearching = false;
         }
 
         function showHideQuery () {
