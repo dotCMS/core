@@ -187,12 +187,13 @@
         identifier: "name",
         label: "label",
         items: [
-
+				<%if(request.getAttribute("SHOW_FORMS_ONLY") == null){%>
                 {
                     name: "_all",
                     label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
                     textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>"
                 },
+                <%}%>
                 
                 <%boolean started = false;%>
                 <%for(Structure s : structures){
@@ -381,14 +382,14 @@
                                 <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
 	                                
 	                                <div class="clear"></div>
-
+									<%if (languages.size() > 1) { %>
 	                                <!-- Language search fields  --->
 	                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
                                     <dd>
                                         <div id="combo_zone2" style="width:215px; height:20px;">
                                             <input id="language_id"/>
                                         </div>
-                                    <%if (languages.size() > 1) { %>
+                                   
                                         <script>
 											<%StringBuffer buff = new StringBuffer();
 											  // http://jira.dotmarketing.net/browse/DOTCMS-6148
@@ -468,9 +469,9 @@
 	                                     
 	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
 	                                     		<option value="all"><%= LanguageUtil.get(pageContext, "All") %></option>
-	                                     		<option value="archived"><%= LanguageUtil.get(pageContext, "Archived-only") %></option>
-	                                     		<option value="locked"><%= LanguageUtil.get(pageContext, "Locked-only") %></option>
-	                                     		<option value="unpublished"><%= LanguageUtil.get(pageContext, "Unpublish only") %></option>
+	                                     		<option value="locked"><%= LanguageUtil.get(pageContext, "Locked") %></option>
+	                                     		<option value="unpublished"><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
+	                                     		<option value="archived"><%= LanguageUtil.get(pageContext, "Archived") %></option>
 	                                     	
 	                                     	</select>
 	
