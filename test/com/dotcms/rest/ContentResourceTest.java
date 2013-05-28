@@ -466,6 +466,11 @@ public class ContentResourceTest extends TestBase {
         Assert.assertTrue(assigned);
         
     }
+    
+    @Test
+    public void uriFileImageFields() throws Exception {
+        
+    }
 }
 
 
