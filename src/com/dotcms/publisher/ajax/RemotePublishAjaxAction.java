@@ -1,31 +1,5 @@
 package com.dotcms.publisher.ajax;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.hadoop.mapred.lib.Arrays;
-
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -45,22 +19,32 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.hadoop.mapred.lib.Arrays;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class RemotePublishAjaxAction extends AjaxAction {
-	
+
 	public static final String DIALOG_ACTION_EXPIRE="expire";
 	public static final String DIALOG_ACTION_PUBLISH="publish";
 	public static final String DIALOG_ACTION_PUBLISH_AND_EXPIRE="publishexpire";
-	
+
 	@Override
-	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {		
+	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		return;
 	}
 
@@ -69,26 +53,26 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		Map<String, String> map = getURIParams();
 		String cmd = map.get("cmd");
 		Method dispatchMethod = null;
-		
+
 		User user = getUser();
-		
+
 		try{
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
-				String userName = map.get("u") !=null 
-					? map.get("u") 
-						: map.get("user") !=null 
-							? map.get("user") 
+				String userName = map.get("u") !=null
+					? map.get("u")
+						: map.get("user") !=null
+							? map.get("user")
 								: null;
-			
-				String password = map.get("p") !=null 
-					? map.get("p") 
-							: map.get("passwd") !=null 
-								? map.get("passwd") 
-									: null;
-			
 
-				
+				String password = map.get("p") !=null
+					? map.get("p")
+							: map.get("passwd") !=null
+								? map.get("passwd")
+									: null;
+
+
+
 				LoginFactory.doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
@@ -106,12 +90,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			response.sendError(401);
 			return;
 		}
-		
-		
-		
-		
-		
-		
+
+
+
+
+
+
 		if(null!=cmd){
 			try {
 				dispatchMethod = this.getClass().getMethod(cmd, new Class[]{HttpServletRequest.class, HttpServletResponse.class});
@@ -123,18 +107,18 @@ public class RemotePublishAjaxAction extends AjaxAction {
 					Logger.error(this.getClass(), e1.getMessage(), e1.getCause());
 					throw new DotRuntimeException(e1.getMessage());
 				}
-			} 			
+			}
 			try {
 				dispatchMethod.invoke(this, new Object[]{request,response});
 			} catch (Exception e) {
 				Logger.error(this.getClass(), "Trying to invoke method:" + cmd);
 				Logger.error(this.getClass(), e.getMessage(), e.getCause());
 				throw new DotRuntimeException(e.getMessage());
-			}			
+			}
 		}
 
 	}
-	
+
 	public void unPublish(HttpServletRequest request, HttpServletResponse response) throws DotPublisherException {
 	    PublisherAPI publisherAPI = PublisherAPI.getInstance();
         String assetId = request.getParameter("assetIdentifier");
@@ -143,78 +127,91 @@ public class RemotePublishAjaxAction extends AjaxAction {
             identifiers.addAll(Arrays.asList(assetId.split(",")));
         else
             identifiers.add(assetId);
-        
+
         publisherAPI.addContentsToUnpublish(identifiers, UUIDGenerator.generateUuid(), new Date(), getUser());
 	}
-	
-	public void publish(HttpServletRequest request, HttpServletResponse response) throws WorkflowActionFailureException {
-			try {
-				PublisherAPI publisherAPI = PublisherAPI.getInstance();
-				String _assetId = request.getParameter("assetIdentifier");
-				String _contentPushPublishDate = request.getParameter("remotePublishDate");
-				String _contentPushPublishTime = request.getParameter("remotePublishTime");
-				String _contentPushExpireDate = request.getParameter("remotePublishExpireDate");
-				String _contentPushExpireTime = request.getParameter("remotePublishExpireTime");
-				String _iWantTo = request.getParameter("iWantTo");
-				
-				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
-				Date publishDate = dateFormat.parse(_contentPushPublishDate+"-"+_contentPushPublishTime);
-				
-				List<String> ids = new ArrayList<String>();			
 
-				try {
-					
-					// check for the categories
-					if(_assetId.equals("CAT")){
-						ids.add(_assetId);
-					}else{
-						// if the asset is a folder put the inode instead of the identifier
-						Folder folder = null;
-						try {
-							folder = APILocator.getFolderAPI().find(_assetId, getUser(), false);
-						} catch(DotDataException e) {
-						}
-						
-						if(folder!=null && UtilMethods.isSet(folder.getInode())) {
-							ids.add(_assetId);
-						} else {
-							// if the asset is not a folder and has identifier, put it, if not, put the inode
-							Identifier iden = APILocator.getIdentifierAPI().findFromInode(_assetId);
-							ids.add(iden.getId());
-						}						
-					}					
-				} catch(DotStateException e) {
-					ids.add(_assetId);
-				} catch (DotSecurityException e) {
-					e.printStackTrace();
-				}
-				
-				String bundleId = UUID.randomUUID().toString();			
-				if(_iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH) || _iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE)){
-					publisherAPI.addContentsToPublish(ids, bundleId, publishDate, getUser());
-				}
-				if(_iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE) || _iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE)){
-					if((!"".equals(_contentPushExpireDate.trim()) && !"".equals(_contentPushExpireTime.trim()))){
-						bundleId = UUID.randomUUID().toString();
-						Date expireDate = dateFormat.parse(_contentPushExpireDate+"-"+_contentPushExpireTime);
-						publisherAPI.addContentsToUnpublish(ids, bundleId, expireDate, getUser());
-					}
-				}
-			} catch (DotPublisherException e) {
-				Logger.debug(PushPublishActionlet.class, e.getMessage());
-				throw new  WorkflowActionFailureException(e.getMessage());
-			} catch (ParseException e){
-				Logger.debug(PushPublishActionlet.class, e.getMessage());
-				throw new  WorkflowActionFailureException(e.getMessage());			
-			} catch (DotDataException e) {
-				Logger.error(PushPublishActionlet.class, e.getMessage(), e);
-			}	
-	}
-	
-	public void downloadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
-		Map<String, String> map = getURIParams();
+    /**
+     * Send to publish a given element
+     *
+     * @param request
+     * @param response
+     * @throws WorkflowActionFailureException
+     */
+    public void publish ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException {
+
+        try {
+
+            PublisherAPI publisherAPI = PublisherAPI.getInstance();
+
+            //Read the form values
+            String _assetId = request.getParameter( "assetIdentifier" );
+            String _contentPushPublishDate = request.getParameter( "remotePublishDate" );
+            String _contentPushPublishTime = request.getParameter( "remotePublishTime" );
+            String _contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
+            String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
+            String _iWantTo = request.getParameter( "iWantTo" );
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
+            Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
+
+            List<String> ids = new ArrayList<String>();
+
+            try {
+
+                // check for the categories
+                if ( _assetId.equals( "CAT" ) ) {
+                    ids.add( _assetId );
+                } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
+                    ids.add( _assetId );
+                } else {
+                    // if the asset is a folder put the inode instead of the identifier
+                    Folder folder = null;
+                    try {
+                        folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
+                    } catch ( DotDataException e ) {
+                    }
+
+                    if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
+                        ids.add( _assetId );
+                    } else {
+                        // if the asset is not a folder and has identifier, put it, if not, put the inode
+                        Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
+                        ids.add( iden.getId() );
+                    }
+                }
+            } catch ( DotStateException e ) {
+                ids.add( _assetId );
+            } catch ( DotSecurityException e ) {
+                e.printStackTrace();
+            }
+
+            String bundleId = UUID.randomUUID().toString();
+            if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
+                publisherAPI.addContentsToPublish( ids, bundleId, publishDate, getUser() );
+            }
+            if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
+                if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
+                    bundleId = UUID.randomUUID().toString();
+                    Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
+                    publisherAPI.addContentsToUnpublish( ids, bundleId, expireDate, getUser() );
+                }
+            }
+        } catch ( DotPublisherException e ) {
+            Logger.debug( PushPublishActionlet.class, e.getMessage() );
+            throw new WorkflowActionFailureException( e.getMessage() );
+        } catch ( ParseException e ) {
+            Logger.debug( PushPublishActionlet.class, e.getMessage() );
+            throw new WorkflowActionFailureException( e.getMessage() );
+        } catch ( DotDataException e ) {
+            Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+        }
+    }
+
+    public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException {
+        Map<String, String> map = getURIParams();
 		response.setContentType("application/x-tgz");
-		
+
 		String bid = map.get("bid");
 		PublisherConfig config = new PublisherConfig();
 		config.setId(bid);
@@ -227,20 +224,20 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			response.sendError(500, "No Bundle Found");
 			return;
 		}
-		
+
 		response.setHeader("Content-Disposition", "attachment; filename=" + config.getId()+".tar.gz");
 		BufferedInputStream in = null;
 		try{
 			in = new BufferedInputStream(new FileInputStream(bundle));
-			byte[] buf = new byte[4096]; 
+			byte[] buf = new byte[4096];
 			int len;
-	
+
 			while ((len = in.read(buf, 0, buf.length))!= -1){
 				response.getOutputStream().write(buf, 0, len);
 			}
 		}
 		catch(Exception e){
-			
+
 		}
 		finally{
 			try{
@@ -250,7 +247,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		}
 		return;
 	}
-	
+
 	public void uploadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException, FileUploadException {
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload(factory);
@@ -262,13 +259,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		String bundlePath = ConfigUtils.getBundlePath()+File.separator;
 		String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
 		String endpointId = getUser().getUserId();
-		response.setContentType("text/html; charset=utf-8");  
-		PrintWriter out = response.getWriter();  
-		
+		response.setContentType("text/html; charset=utf-8");
+		PrintWriter out = response.getWriter();
+
 		PublishAuditStatus status;
 		try {
 			status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, null, bundleFolder);
-		
+
 	//		Write file on FS
 			FileUtil.writeToFile(bundle, bundlePath+bundleName);
 
@@ -277,11 +274,11 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			}
 
 			out.print("<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>");
-		
+
 		} catch (DotPublisherException e) {
 			// TODO Auto-generated catch block
 			out.print("<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'error'}</textarea></body></html>");
 		}
-		
+
 	}
 }

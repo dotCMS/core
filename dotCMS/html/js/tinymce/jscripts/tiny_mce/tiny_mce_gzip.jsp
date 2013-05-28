@@ -1,10 +1,13 @@
 <%@page import="java.io.*,java.util.zip.*" %>
 <%
 /**
- * $Id: tiny_mce_gzip.jsp 535 2008-01-14 15:01:34Z spocke $
+ * tiny_mce_gzip.jsp
  *
- * @author Moxiecode
- * @copyright Copyright © 2006, Moxiecode Systems AB, All rights reserved.
+ * Copyright 2009, Moxiecode Systems AB
+ * Released under LGPL License.
+ *
+ * License: http://tinymce.moxiecode.com/license
+ * Contributing: http://tinymce.moxiecode.com/contributing
  *
  * This file compresses the TinyMCE JavaScript using GZip and
  * enables the browser to do two requests instead of one for each .js file.
@@ -42,7 +45,6 @@
 		"some custom .js file"
 	*/};
 
-	response.reset();
 	// Headers
 	response.setContentType("text/javascript");
 	response.addHeader("Vary", "Accept-Encoding"); // Handle proxies
@@ -197,7 +199,7 @@
 	}
 
 	public String mapPath(HttpServletRequest request, String path) {
-		String absPath = getServletConfig().getServletContext().getRealPath(request.getRequestURI());
+		String absPath = getServletContext().getRealPath(request.getRequestURI());
 
 		absPath = absPath.substring(0, absPath.lastIndexOf(File.separatorChar) + 1);
 

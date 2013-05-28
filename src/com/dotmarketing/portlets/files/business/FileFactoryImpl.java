@@ -921,8 +921,13 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
         Logger.debug(FileFactory.class, "getFileByURI=" + uri);
         Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),false);
         Identifier id = APILocator.getIdentifierAPI().find(host, uri);
-        return (live) ? (File) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(), false)
+        if(id!=null && InodeUtils.isSet(id.getId())) {
+            return (live) ? (File) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(), false)
         		      : (File) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
+        }
+        else {
+            return null;
+        }
 
     }
 }

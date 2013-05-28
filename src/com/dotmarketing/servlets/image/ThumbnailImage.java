@@ -40,6 +40,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
@@ -263,8 +264,24 @@ public class ThumbnailImage extends HttpServlet {
         			}
             	}else if(id!=null && InodeUtils.isSet(id.getId())){
                     File file = fileAPI.find(inode,user,true);
+                    Identifier tempId = APILocator.getIdentifierAPI().loadFromCache(file.getIdentifier());
                     isSet =InodeUtils.isSet(file.getInode());
-                    fileName = file.getFileName();
+                    boolean isInodeUUID = false;
+                    //Verify if file asset inode is UUID (1.9+) or a simple string (legacy image from 1.7)
+    				try{
+    					String tempInode = RegEX.find(file.getInode(), "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}").get(0).getMatch();
+    					if(UtilMethods.isSet(tempInode))
+    						//Image/file as content, from 1.9+ version
+    						isInodeUUID = true;
+    				}
+    				catch (Exception e){
+    					//Legacy image, the inode is not a valid UUID string.
+    					isInodeUUID = false;
+    				}
+    				if(isInodeUUID && "contentlet".equals(tempId.getAssetType()))
+    					fileName = file.getFileName();
+    				else
+    					fileName = inode + "." + UtilMethods.getFileExtension(file.getFileName());
                     inodeOrId = inode;
             	}
 

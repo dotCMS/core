@@ -367,7 +367,7 @@
                 <%int showDim=300; %>
                 <%int imageEditors=0; %>
                 <!--  If you are not enterprise -->
-                <%if(("100".equals(System.getProperty("dotcms_level")))){ %>
+                <%if(LicenseUtil.getLevel() < 199){ %>
                     <div style="position:relative;width:<%=showDim+40 %>px;">
                         <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=1&filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
                                 class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
@@ -590,20 +590,25 @@
         id="<%=field.getVelocityVarName()%>MultiSelect"
         onchange="update<%=field.getVelocityVarName()%>MultiSelect()"
         style="width: 200px;""<%=field.isReadOnly()?"readonly=\"readonly\"":""%>">
-<%
-        for (int j = 0; j < pairs.length; j++) {
-                String pair = pairs[j];
-                String[] tokens = pair.split("\\|");
-                String name = (tokens.length > 0 ? tokens[0] : "");
-                String pairvalue = (tokens.length > 1 ? tokens[1] : name);
-                String selected = "";
-                String separator = (j<pairs.length-1)?",":"";
+        <%
                 String compareValue = (UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : ""));
-                if (UtilMethods.isSet(compareValue) && UtilMethods.isSet(pairvalue) && ((((String) compareValue).contains(pairvalue + separator) || ((String) compareValue).equals(pairvalue))))
-                {
-                    selected = "SELECTED";
-                }
-%>
+                String[] compareValueTokens = compareValue.split(",");
+                for (int j = 0; j < pairs.length; j++) {
+                        String pair = pairs[j];
+                        String[] tokens = pair.split("\\|");
+                        String name = (tokens.length > 0 ? tokens[0] : "");
+                        String pairvalue = (tokens.length > 1 ? tokens[1] : name);
+                        String selected = "";
+                        String separator = (j<pairs.length-1)?",":"";
+                        if(UtilMethods.isSet(pairvalue)){
+                            for(int k=0; k<compareValueTokens.length; k++){
+                                if(UtilMethods.isSet(compareValueTokens[k]) && pairvalue.equals(compareValueTokens[k])) {
+                                    selected = "SELECTED";
+                                    break;
+                                }
+                            }
+                        }
+        %>
         <option value="<%=pairvalue%>" <%=selected%>><%=name%></option>
 <%
         }
