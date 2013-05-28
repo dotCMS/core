@@ -37,6 +37,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -653,6 +654,30 @@ public class ContentResource extends WebResource {
                         }
                         else if(ff.getFieldType().equals(FieldType.CATEGORY.toString())) {
                             contentlet.setStringProperty(ff.getVelocityVarName(), value.toString());
+                        }
+                        else if((ff.getFieldType().equals(FieldType.FILE.toString()) || ff.getFieldType().equals(FieldType.IMAGE.toString())) &&
+                                value.toString().startsWith("//")) {
+                            boolean found=false;
+                            try {
+                                String str=value.toString().substring(2);
+                                String hostname=str.substring(0,str.indexOf('/'));
+                                String uri=str.substring(str.indexOf('/'));
+                                Host host=APILocator.getHostAPI().findByName(hostname, APILocator.getUserAPI().getSystemUser(), false);
+                                if(host!=null && InodeUtils.isSet(host.getIdentifier())) {
+                                    Identifier ident=APILocator.getIdentifierAPI().find(host, uri);
+                                    if(ident!=null && InodeUtils.isSet(ident.getId())) {
+                                        contentlet.setStringProperty(ff.getVelocityVarName(), ident.getId());
+                                        found=true;
+                                    }
+                                }
+                                if(!found) {
+                                    throw new Exception("asset "+value+" not found");
+                                }
+                                
+                            }
+                            catch(Exception ex) {
+                                throw new RuntimeException(ex);
+                            }
                         }
                         else {
                             APILocator.getContentletAPI().setContentletProperty(contentlet, ff, value);
