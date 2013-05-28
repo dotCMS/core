@@ -570,7 +570,7 @@ div.contextPopupMenuBox span{margin:0 8px 0 8px;}
 .messageZone{position:fixed;z-index:9999 !important;left:50%;top:40%;margin-left:-75px;width:150px;padding: 20px;color:#fff;background:rgba(0,0,0,0.8);-moz-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-border-radius: 8px;-khtml-border-radius: 8px;-moz-border-radius: 8px; border-radius: 8px;}
 .loadingIcon{background: url(/html/images/icons/ajax-loader.gif) no-repeat left center;padding:0 5px 0 3px;height:20px; vertical-align:middle;display:inline-block;width:16px;height:16px;}
 
-
+.typeCCol{white-space:nowrap;width:100%;text-align:left;}
 .error-message{color:maroon;text-align:center;}
 
 .systemErrorsHolder{position:fixed;left:50%;margin-left:-170px;width:300px;z-index:9999 !important;}
@@ -642,7 +642,7 @@ table.dojoxLegendNode td{padding-bottom:10px;}
 .noPie{background:url(/html/images/skin/pieBg.png;) no-repeat center top;width:180px;height:180px;margin:0 auto 30px auto;padding:60px 0 0 0;}
 .noPie span{display:block;width:125px;margin:0 auto;padding:5px;background:#aaa;border:solid 2px #f6f6f6;-moz-border-radius: 10px;-webkit-border-radius: 10px;color:#fff;text-align:center;}
 
-.contentletInnerTable{border:0px;padding:0px;margin:0px;}
+.contentletInnerTable{border:0px;padding:0px;margin:0px;width:100%}
 .contentletInnerTable tr td{border:0px;padding:0px;margin:0px;}
 .workflowActionLink{cursor:pointer;border:1px solid silver;margin-top:-1px;padding: 5px 0px 5px 10px;background:#ffffff;}
 .workflowActionLink:hover{background:#E0E9F6;}

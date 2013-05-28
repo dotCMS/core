@@ -97,6 +97,83 @@
                 }
         }
 
+
+		function initAdvancedSearch(){
+			var x = dojo.cookie("ShAdDi");
+			if(x !=null && x != undefined && x != 0){
+				resizeAdvancedSearch();
+			}
+		}
+
+
+		function resizeAdvancedSearch(){
+			var start = dojo.getStyle(dojo.byId('advancedSearchOptions'),'height');
+			// how tall should we be
+			var end=dojo.position(dojo.byId("measureTheHeightOfSearchTools")).y - dojo.position(dojo.byId("advancedSearchOptions")).y;
+
+			// resize
+			
+			dojo.setStyle(dojo.byId('advancedSearchOptions'),'height', '0px');
+
+			dojo.animateProperty({
+		        node: dojo.byId("advancedSearchOptions"),
+		        properties: {
+		            height: {start: start, end: end, unit: "px"},
+		        },
+		        duration: 500
+		    }).play();
+			dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Hide") %>";
+			dojo.cookie("ShAdDi", end, { });
+		}
+
+
+
+		function toggleAdvancedSearchDiv(){
+			// how tall are we
+			var showing = dojo.getStyle(dojo.byId('advancedSearchOptions'),'height');
+
+			// resize
+			if("0px" == showing || 0 ==showing){
+				dojo.cookie("ShAdDi", "0", { });
+				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Hide") %>";
+				resizeAdvancedSearch();
+			// hide
+			}else{
+
+				dojo.animateProperty({
+			        node: dojo.byId("advancedSearchOptions"),
+			        properties: {
+			            height: {start: showing, end: 0, unit: "px"},
+			        },
+			        duration: 500
+			    }).play();
+				dojo.cookie("ShAdDi", 0, { });
+				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Advanced") %>";
+			}
+		}
+
+
+
+
+
+
+		/**
+			focus on search box 
+		**/
+		require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+			dojo.require('dojox.timing');
+			t = new dojox.timing.Timer(500);
+			t.onTick = function(){
+			  focusUtil.focus(dom.byId("allFieldTB"));
+			  t.stop();
+			}
+			t.start();
+		});
+		
+
+
+
+
         function fillResults(data) {
                 var counters = data[0];
                 var hasNext = counters["hasNext"];
@@ -129,27 +206,27 @@
                                 dijit.byId("searchButton").attr("disabled", false);
                                 dijit.byId("clearButton").setAttribute("disabled", false);
                         }
-
+						
                         return;
                 }
 
                 fillResultsTable (headers, data);
                 showMatchingResults (total,begin,end,totalPages);
                 fillQuery (counters);
-
+				amISearching = false;
 
                 var popupsiframe = document.getElementById("popups");
                 for (var j = 0; j < data.length; j++) {
-                        var contentlet = data[j];
-                        var inode = contentlet["inode"];
-                        var live = contentlet["live"] == "true"?"1":"0";
-                        var working = contentlet["working"] == "true"?"1":"0";
-                        var deleted = contentlet["deleted"] == "true"?"1":"0";
-                        var locked = contentlet["locked"] == "true"?"1":"0";
-                        var permissions = contentlet["permissions"];
-                        var read = userHasReadPermission (contentlet, userId)?"1":"0";
-                        var write = userHasWritePermission (contentlet, userId)?"1":"0";
-                        var publish = userHasPublishPermission (contentlet, userId)?"1":"0";
+	                var contentlet = data[j];
+	                var inode = contentlet["inode"];
+	                var live = contentlet["live"] == "true"?"1":"0";
+	                var working = contentlet["working"] == "true"?"1":"0";
+	                var deleted = contentlet["deleted"] == "true"?"1":"0";
+	                var locked = contentlet["locked"] == "true"?"1":"0";
+	                var permissions = contentlet["permissions"];
+	                var read = userHasReadPermission (contentlet, userId)?"1":"0";
+	                var write = userHasWritePermission (contentlet, userId)?"1":"0";
+	                var publish = userHasPublishPermission (contentlet, userId)?"1":"0";
                 }
 
                 if (hasNext) {
@@ -165,7 +242,7 @@
                 }
 
                 dijit.byId("searchButton").attr("disabled", false);
-        dijit.byId("clearButton").setAttribute("disabled", false);
+        		dijit.byId("clearButton").setAttribute("disabled", false);
                 togglePublish();
 
                 //SelectAll functionality
@@ -1003,9 +1080,13 @@
                 document.getElementById("nextDiv").style.display = "none";
                 document.getElementById("previousDiv").style.display = "none";
                 counter_radio = 0;
-            counter_checkbox = 0;
+            	counter_checkbox = 0;
                 var div = document.getElementById("matchingResultsBottomDiv")
                 div.innerHTML = "";
+                
+               
+                
+                initAdvancedSearch();
         }
 
         function fieldName (field) {
@@ -1138,9 +1219,27 @@
                         doSearch1 (page, sortBy);
                 }
         }
+        
+		var amISearching = false;
+		
+		function asyncSearch(page, sortBy, secondSearch){
+			if(amISearching &&  secondSearch){
+				return;
+			}
+			else if(amISearching){
+				setTimeout(function() { asyncSearch(page, sortBy, true) }, 1000);
+				return;
+			}
+			else{
+				amISearching = true;
+				doSearch1 (page, sortBy)
+			}
+		}
 
         function doSearch1 (page, sortBy) {
 
+				
+				
                 var structureInode = dijit.byId('structure_inode').value;
 
                 if(structureInode ==""){
@@ -1152,6 +1251,11 @@
                 if(currentStructureFields == undefined){
                         currentStructureFields = Array();
                 }
+                
+
+                
+                
+                
 
                 var structureVelraw=dojo.byId("structureVelocityVarNames").value;
                 var structInoderaw=dojo.byId("structureInodesList").value;
@@ -1159,11 +1263,11 @@
                 var structInode=structInoderaw.split(";");
                 var selectedStruct="";
                 for(var m2=0; m2 <= structInode.length ; m2++ ){
-             if(structureInode==structInode[m2]){
-                 selectedStruct=structureVel[m2];
+		             if(structureInode==structInode[m2]){
+		                 selectedStruct=structureVel[m2];
+	                 }
                  }
-                        }
-
+				
                 if (hasHostFolderField) {
                         getHostValue();
                 }
@@ -1174,14 +1278,20 @@
                         fieldsValues[fieldsValues.length] = hostValue;
                 }
                 if (isInodeSet(folderValue)) {
+                
                         fieldsValues[fieldsValues.length] = "conFolder";
                         fieldsValues[fieldsValues.length] = folderValue;
                 }
+                var allField = dijit.byId("allFieldTB").getValue();
 
-
+				if (allField != undefined && allField.length>0 ) {
+		
+                        fieldsValues[fieldsValues.length] = "_all";
+                        fieldsValues[fieldsValues.length] = allField + "*";
+				}
                 for (var j = 0; j < currentStructureFields.length; j++) {
                         var field = currentStructureFields[j];
-            var fieldId = selectedStruct+"."+field["fieldVelocityVarName"] + "Field";
+            			var fieldId = selectedStruct+"."+field["fieldVelocityVarName"] + "Field";
                         var formField = document.getElementById(fieldId);
                         var fieldValue = "";
 
@@ -1294,17 +1404,18 @@
                 }
 
                 var filterLocked = false;
-                if (document.getElementById("filterLockedCB").checked) {
+                
+                if (dijit.byId("showingSelect").getValue() == "locked") {
                         filterLocked = true;
                 }
 
                 var filterUnpublish = false;
-                if (document.getElementById("filterUnpublishCB").checked) {
+                if (dijit.byId("showingSelect").getValue() == "unpublished") {
                        filterUnpublish = true;
                 }
 
                 var showDeleted = false;
-                if (document.getElementById("showDeletedCB").checked) {
+                if (dijit.byId("showingSelect").getValue() == "archived") {
                         showDeleted = true;
                 }
 
@@ -1318,8 +1429,8 @@
                 document.getElementById('filterSystemHost').value = filterSystemHost;
                 document.getElementById('filterLocked').value = filterLocked;
                 document.getElementById('filterUnpublish').value = filterUnpublish;
-
-                if(isInodeSet(structureInode)){
+				//console.log(fieldsValues);
+                if(isInodeSet(structureInode) || "_all" == structureInode){
                         var dateFrom=null;
                         var dateTo= null;
                         if((document.getElementById("lastModDateFrom").value!="")){
@@ -1487,14 +1598,16 @@
                         var cellData = data[i];
                         row.setAttribute("id","tr" + cellData.inode);
 
-                        console.log(cellData);
+                        
 
                         var cell = row.insertCell (row.cells.length);
                         cell.style.whiteSpace="nowrap";
+                        
                         cell.innerHTML = statusDataCell(cellData, i);
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
                                 var cell = row.insertCell (row.cells.length);
+                                //console.log(headers[j]);
                                 cell.setAttribute("align","center");
                                 if (j == 0) {
                                         languageId = cellData["languageId"];
@@ -1514,6 +1627,7 @@
                                         cell.innerHTML = locale;
                                         var cell = row.insertCell (row.cells.length);
                                         var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
+                                        
                                 } else {
                                         var value = cellData[header["fieldVelocityVarName"]];
                                 }
@@ -1671,7 +1785,9 @@
         }
 
         function clearSearch () {
-
+     			dijit.byId("showingSelect").set("value", "all");
+     			dijit.byId("allFieldTB").set("value", "");
+     			
                 var div = document.getElementById("matchingResultsBottomDiv");
                 div.innerHTML = "";
                 div = document.getElementById("metaMatchingResultsDiv");
@@ -1793,6 +1909,9 @@
 
 
                 hideMatchingResults ();
+                
+                amISearching = false;
+                
         }
 
         function userHasReadPermission (contentlet, userId) {
@@ -1971,7 +2090,7 @@
                             "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint6")%></li>"+
                             "<li><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "message.contentlet.note1")) %></li>"+
                             "</ul></div>";
-
+			amISearching = false;
         }
 
         function showHideQuery () {
@@ -2026,7 +2145,8 @@
 
     function togglePublish(){
         var cbArray = document.getElementsByName("publishInode");
-        var showArchive = document.getElementById("showDeletedCB").checked;
+        var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
+
         var cbCount = cbArray.length;
         for(i = 0;i< cbCount ;i++){
             if (cbArray[i].checked) {
@@ -2069,7 +2189,8 @@
                         }
     }
     function displayArchiveButton(){
-        var showArchive = document.getElementById("showDeletedCB").checked;
+
+        var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
         if (showArchive) {
             document.getElementById("archiveButtonDiv").style.display="";
             document.getElementById("unArchiveButtonDiv").style.display="none";
