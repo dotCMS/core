@@ -300,8 +300,13 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					if(splitted.length > 1) {
 						String value = "";
 						for(int i = 1; i < splitted.length; i++) {
-							value += splitted[i];
+							if(i == 1)
+								value += splitted[i];
+							else
+								value += "=" + splitted[i];// re-adding "="s removed by line.split("=")
 						}
+						if(line.endsWith("="))
+							value += "=";
 						list.add(new LanguageKey(langCode, null, splitted[0], value));
 					}
 				}
