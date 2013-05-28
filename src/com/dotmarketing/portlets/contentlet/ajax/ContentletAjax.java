@@ -1554,11 +1554,11 @@ public class ContentletAjax {
 			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
 			saveContentErrors.add(errorString);
 		}
-		catch(PublishStateException pe) {
-		    String errorString = LanguageUtil.get(user,"message.contentlet.pubfuturedate");
-		    saveContentErrors.add(errorString);
-		}
-		catch (Exception e) {
+        catch ( PublishStateException pe ) {
+            String errorString = LanguageUtil.get( user, pe.getMessage() );
+            saveContentErrors.add( errorString );
+        }
+        catch (Exception e) {
 			saveContentErrors.add(e.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);
 			callbackData.put("referer", referer);
