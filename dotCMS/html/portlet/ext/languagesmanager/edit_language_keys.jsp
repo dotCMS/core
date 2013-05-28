@@ -171,7 +171,8 @@
 
 		dijit.byId('savingKeysDialog').show();
 		LanguageAjax.saveKeys(currentLanguage,currentCountry,keysToAdd,keysToUpdate,keysToDelete,saveKeysCallback);
-		
+		keysToUpdate.length = 0;
+        keysToAdd.length = 0;
 	}
 
 	function saveKeysCallback(data){
