@@ -525,22 +525,43 @@ public class ContentletAjax {
 
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
 
-		if (UtilMethods.isSet(sess))
+		if (UtilMethods.isSet(sess)) {
 			sess.setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
+		}
 
-		Structure st = StructureCache.getStructureByInode(structureInode);
-
+		Map<String, String> fieldsSearch = new HashMap<String, String>();
+		List<Object> headers = new ArrayList<Object>();
+		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
+		Structure st = null;
+		if(!"_all".equals(structureInode)){
+		    st = StructureCache.getStructureByInode(structureInode);
+		    WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
+		    lastSearchMap.put("structure", st);
+		    luceneQuery.append("+structureName:" + st.getVelocityVarName() + " ");
+		}
+		else {
+		    for(int i=0;i<fields.size();i++){
+		        String x = fields.get(i);
+		        if("_all".equals(x)){
+		            String next =  fields.get(i+1);
+		            next = next.replaceAll("\\*", "");
+		            String y[] = next.split(" ");
+		            for(int j=0;j<y.length;j++){
+		                luceneQuery.append("title:" + y[j] + "* ");
+		            }
+		            break;
+		        }
+		    }
+		    luceneQuery.append("-structureName:Host ");
+		}
 
 		WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
 
-
-
-		lastSearchMap.put("structure", st);
-		luceneQuery.append("+structureName:" + st.getVelocityVarName() + " ");
-		Map<String, String> fieldsSearch = new HashMap<String, String>();
-
 		// Stores (database name,type description) pairs to catch certain field types.
-		List<Field> targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
+		List<Field> targetFields = new ArrayList<Field>();
+		if(st!=null){
+		    targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
+		}
 		Map<String,String> fieldContentletNames = new HashMap<String,String>();
 		Map<String,Field> decimalFields = new HashMap<String,Field>();//DOTCMS-5478
 
@@ -603,12 +624,11 @@ public class ContentletAjax {
 						}
 					}
 				}else {
-						List <Field> fieldsl = FieldsCache.getFieldsByStructureInode(st.getInode());
 						String fieldbcontentname="";
 						String fieldVelocityVarName = "";
 						Boolean isStructField=false;
 						String fieldVelName = "";
-						if(fieldName.startsWith(st.getVelocityVarName() + ".")){
+						if(st != null && fieldName.startsWith(st.getVelocityVarName() + ".")){
 							fieldVelName = fieldName.substring(fieldName.indexOf(".") + 1, fieldName.length());
 						}
 						else if(fieldName.startsWith(".")) {
@@ -621,7 +641,7 @@ public class ContentletAjax {
 						}
 						Field thisField = null;
 
-						for (Field fd : fieldsl) {
+						for (Field fd : targetFields) {
 							if (fd.getVelocityVarName().equals(fieldVelName) || fd.getFieldContentlet().equals(fieldVelName)) {
 								fieldbcontentname=fd.getFieldContentlet();
 								fieldVelocityVarName = fd.getVelocityVarName();
@@ -696,7 +716,17 @@ public class ContentletAjax {
 							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
 						} else {
 							if(isStructField==false){
-								luceneQuery.append("+" + fieldName + ":" + fieldValue.toString() + wildCard + " ");
+							    String next =  fieldValue.toString();
+							    if(!next.contains("'") && ! next.contains("\"")){ 
+							        next = next.replaceAll("\\*", "");
+							        String y[] = next.split(" ");
+							        for(int j=0;j<y.length;j++){
+							            luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
+							        }
+							    }
+							    else{
+							        luceneQuery.append("+" + fieldName +":" + next + " ");
+							   }
 							}
 							else {
 								luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue.toString() + wildCard + " ");
@@ -716,7 +746,16 @@ public class ContentletAjax {
 		//for (String cat : categories) {
 		//	luceneQuery.append("+c" + cat + "c:on ");
 		//}
+		
 		lastSearchMap.put("categories", categories);
+		
+		//Adding the headers as the second row of the results
+		for (Field f : targetFields) {
+		    if (f.isListed()) {
+		        fieldsMapping.put(f.getVelocityVarName(), f);
+		        headers.add(f.getMap());
+		    }
+		}
 
 		if (!UtilMethods.isSet(orderBy)){
 			orderBy = "modDate desc";
@@ -783,20 +822,15 @@ public class ContentletAjax {
 		Map<String, Object> counters = new HashMap<String, Object>();
 		results.add(counters);
 
-		//Adding the headers as the second row of the results
-		List<Object> headers = new ArrayList<Object>();
-		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
-		List<Field> stFields = FieldsCache.getFieldsByStructureInode(st.getInode());
-		for (Field f : stFields) {
-			if (f.isListed()) {
-				fieldsMapping.put(f.getVelocityVarName(), f);
-				headers.add(f.getMap());
-			}
-		}
+		
 		if (headers.size() == 0) {
 			Map<String, String> fieldMap = new HashMap<String, String> ();
-			fieldMap.put("fieldVelocityVarName", "identifier");
-			fieldMap.put("fieldName", "identifier");
+			fieldMap.put("fieldVelocityVarName", "__title__");
+			fieldMap.put("fieldName", "Title");
+			headers.add(fieldMap);
+			fieldMap = new HashMap<String, String> ();
+			fieldMap.put("fieldVelocityVarName", "__type__");
+			fieldMap.put("fieldName", "Type");
 			headers.add(fieldMap);
 		}
 		results.add(headers);
@@ -849,6 +883,16 @@ public class ContentletAjax {
 			searchResult.put("inode", con.getInode());
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
+			Structure s = StructureCache.getStructureByInode(con.getStructureInode());
+			String spanClass = (s.getStructureType() ==1)
+			        ? "contentIcon"
+			                :  (s.getStructureType() ==2)
+			                ? "gearIcon"
+			                        :  (s.getStructureType() ==3)
+			                        ? "formIcon"
+			                                : "fileIcon";
+			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + s.getName() +"</div>");
+			
 			String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 
 			searchResult.put("modDate", fieldValue);
