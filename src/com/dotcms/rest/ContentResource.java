@@ -580,7 +580,7 @@ public class ContentResource extends WebResource {
     
     protected void processMap(Contentlet contentlet, Map<String,Object> map) {
         String stInode=(String)map.get(Contentlet.STRUCTURE_INODE_KEY);
-        if(UtilMethods.isSet(stInode)) {
+        if(!UtilMethods.isSet(stInode)) {
             String stName=(String)map.get("stName");
             if(UtilMethods.isSet(stName)) {
                 stInode = StructureCache.getStructureByVelocityVarName(stName).getInode();
