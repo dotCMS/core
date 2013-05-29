@@ -29,10 +29,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-<<<<<<< HEAD
-=======
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
->>>>>>> 8723629... #2910 fixed stName & file/image by //host/uri
+
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
@@ -652,6 +649,7 @@ public class ContentResourceTest extends TestBase {
         Assert.assertEquals(working.getInode(), c2.getInode());
 
     }
+    
 }
 
 

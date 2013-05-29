@@ -613,6 +613,31 @@ public class ContentResource extends WebResource {
                 for(Field ff : FieldsCache.getFieldsByStructureInode(stInode))
                     fieldMap.put(ff.getVelocityVarName(), ff);
                 
+<<<<<<< HEAD
+=======
+                // look for relationships
+                Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
+                for(Relationship rel : RelationshipFactory.getAllRelationshipsByStructure(st)) {
+                    String relname=rel.getRelationTypeValue();
+                    String query=(String)map.get(relname);
+                    if(UtilMethods.isSet(query)) {
+                        try {
+                            List<Contentlet> cons=APILocator.getContentletAPI().search(
+                                    query, 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+                            if(cons.size()>0) {
+                                relationships.put(rel, cons);
+                            }
+                            Logger.info(this, "got "+cons.size()+" related contents");
+                        } catch (Exception e) {
+                            Logger.warn(this, e.getMessage(), e);
+                        }
+                    }
+                }
+                contentlet.setProperty(RELATIONSHIP_KEY, relationships);
+                
+                
+                // fill fields
+>>>>>>> 5408d67... #2910 testing relationships
                 for(Map.Entry<String,Object> entry : map.entrySet()) {
                     String key=entry.getKey();
                     Object value=entry.getValue();
