@@ -551,6 +551,12 @@ div.contextPopupMenuBox,.contextMenuBox {z-index:10000;width: 190px;display: blo
 div.contextPopupMenuBox a{line-height:18px;padding:3px 0;height:21px;vertical-align:middle;}
 div.contextPopupMenuBox span{margin:0 8px 0 8px;}
 
+
+table.sTypeTable{};
+table.sTypeTd{vertical-align: top};
+.sTypeHeader{font-weight:bold; nowrap;min-width: 175;border-bottom: 1px solid silver};
+table.sTypeTable.sTypeItem{text-transform: uppercase;white-space: nowrap;min-width: 175;};
+
 /* use in hmtl, templates, etc NOT in Browser Tree pop-ups*/
 #dotCMSErrors {background-color: #ffbcbc;border: 1px solid gray;width: 300px;overflow: auto;padding: 10px;margin-left: 100px;margin-bottom: 10px;}
 #dotCMSMessages {background-color: #fff;border: 1px solid gray;width: 300px;overflow: auto;padding: 10px;margin-left: auto;margin-right: auto;margin-bottom: 10px;}
