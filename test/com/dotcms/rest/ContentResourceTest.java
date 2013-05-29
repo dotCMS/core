@@ -28,12 +28,15 @@ import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -465,6 +468,134 @@ public class ContentResourceTest extends TestBase {
         }
         Assert.assertTrue(assigned);
         
+    }
+    
+    @Test
+    public void uriFileImageFields() throws Exception {
+        User sysuser=APILocator.getUserAPI().getSystemUser();
+        
+        final String salt=Long.toString(System.currentTimeMillis());
+        
+        Structure st=new Structure();
+        st.setName("Rest Test File Img "+salt);
+        st.setVelocityVarName("restTestSt"+salt);
+        st.setDescription("testing rest content creation with file&image fields");
+        StructureFactory.saveStructure(st);
+        Field title=new Field("Title",FieldType.TEXT,DataType.TEXT,st,true,true,true,1,false,false,true);
+        FieldFactory.saveField(title);
+        Field file=new Field("aFile",FieldType.FILE,DataType.TEXT,st,true,false,true,2,false,false,true);
+        FieldFactory.saveField(file);
+        Field image=new Field("aImage",FieldType.IMAGE,DataType.TEXT,st,true,false,true,3,false,false,true);
+        FieldFactory.saveField(image);
+        
+        Host demo=APILocator.getHostAPI().findByName("demo.dotcms.com", sysuser, false);
+        Folder ff=APILocator.getFolderAPI().createFolders("/rest/"+salt, demo, sysuser, false);
+        
+        java.io.File filefile = java.io.File.createTempFile("filefile", ".txt");
+        java.io.File imgimg = java.io.File.createTempFile("imgimg", ".jpg");
+        
+        Contentlet filea=new Contentlet();
+        filea.setFolder(ff.getInode());
+        filea.setHost(demo.getIdentifier());
+        filea.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+        filea.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, ff.getInode());
+        filea.setStringProperty(FileAssetAPI.TITLE_FIELD, "filefile.txt");
+        filea.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "filefile.txt");
+        filea.setBinary(FileAssetAPI.BINARY_FIELD, filefile);
+        filea.setLanguageId(1);
+        filea = APILocator.getContentletAPI().checkin(filea, sysuser, false);
+        
+        Contentlet imga=new Contentlet();
+        imga.setFolder(ff.getInode());
+        imga.setHost(demo.getIdentifier());
+        imga.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+        imga.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, ff.getInode());
+        imga.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "imgimg.jpg");
+        imga.setStringProperty(FileAssetAPI.TITLE_FIELD, "imgimg.jpg");
+        imga.setBinary(FileAssetAPI.BINARY_FIELD, imgimg);
+        imga.setLanguageId(1);
+        imga = APILocator.getContentletAPI().checkin(imga, sysuser, false);
+        
+        ClientResponse response=contRes.path("/publish/1")
+            .type(MediaType.APPLICATION_JSON_TYPE)
+            .header(authheader, authvalue).put(ClientResponse.class,
+                new JSONObject()
+                    .put("stName", st.getVelocityVarName())
+                    .put(file.getVelocityVarName(),"//demo.dotcms.com/rest/"+salt+"/filefile.txt")
+                    .put(image.getVelocityVarName(), "//demo.dotcms.com/rest/"+salt+"/imgimg.jpg")
+                    .put(title.getVelocityVarName(), "a simple title")
+                    .toString());
+        Assert.assertEquals(200, response.getStatus());
+        
+        String inode=response.getHeaders().getFirst("inode");
+        Contentlet cont = APILocator.getContentletAPI().find(inode, sysuser, false);
+        Assert.assertEquals(filea.getIdentifier(),cont.getStringProperty(file.getVelocityVarName()));
+        Assert.assertEquals(imga.getIdentifier(),cont.getStringProperty(image.getVelocityVarName()));
+    }
+    
+    @Test
+    public void relationShips() throws Exception {
+        final String salt=Long.toString(System.currentTimeMillis());
+        final User sysuser=APILocator.getUserAPI().getSystemUser();
+        
+        Structure st1=new Structure();
+        st1.setName("Rest Test rel "+salt);
+        st1.setVelocityVarName("restTestSt"+salt);
+        st1.setDescription("testing rest content creation with relationships");
+        StructureFactory.saveStructure(st1);
+        Field title1=new Field("Title",FieldType.TEXT,DataType.TEXT,st1,true,true,true,1,false,false,true);
+        FieldFactory.saveField(title1);
+        
+        Structure st2=new Structure();
+        st2.setName("Rest Test rel 2 "+salt);
+        st2.setVelocityVarName("restTestSt2"+salt);
+        st2.setDescription("testing rest content creation with relationships 2");
+        StructureFactory.saveStructure(st2);
+        Field title2=new Field("Title",FieldType.TEXT,DataType.TEXT,st2,true,true,true,1,false,false,true);
+        FieldFactory.saveField(title2);
+        
+        Contentlet c1=new Contentlet();
+        c1.setLanguageId(1);
+        c1.setStringProperty(title2.getVelocityVarName(), "title 2");
+        c1.setStructureInode(st2.getInode());
+        c1 = APILocator.getContentletAPI().checkin(c1, sysuser, false);
+        
+        Contentlet c2=new Contentlet();
+        c2.setLanguageId(1);
+        c2.setStringProperty(title2.getVelocityVarName(), "title 222");
+        c2.setStructureInode(st2.getInode());
+        c2 = APILocator.getContentletAPI().checkin(c2, sysuser, false);
+        
+        APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
+        
+        Relationship rel=new Relationship(st1,st2,"st1"+salt,"st2"+salt,0,false,false);
+        RelationshipFactory.saveRelationship(rel);
+        
+        ClientResponse response=contRes.path("/publish/1")
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .header(authheader, authvalue).put(ClientResponse.class,
+                    new JSONObject()
+                        .put("stName", st1.getVelocityVarName())
+                        .put(title1.getVelocityVarName(), "a simple title")
+                        .put(rel.getRelationTypeValue(), "+structureName:"+st2.getVelocityVarName())
+                        .toString());
+        Assert.assertEquals(200, response.getStatus());
+        
+        Thread.sleep(500); // wait for relation fields update
+        
+        String inode=response.getHeaders().getFirst("inode");
+        Contentlet cc=APILocator.getContentletAPI().find(inode, sysuser, false);
+        
+        List<Contentlet> relatedContent = APILocator.getContentletAPI().getRelatedContent(cc, rel, sysuser, false);
+        Assert.assertEquals(2, relatedContent.size());
+        
+        Set<String> inodes=new HashSet<String>();
+        inodes.add(c1.getInode()); inodes.add(c2.getInode());
+        inodes.remove(relatedContent.get(0).getInode());
+        inodes.remove(relatedContent.get(1).getInode());
+        Assert.assertEquals(0, inodes.size());
+            
     }
 }
 
