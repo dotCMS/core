@@ -472,7 +472,7 @@ public class ContentResourceTest extends TestBase {
     
     @Test
     public void uriFileImageFields() throws Exception {
-<<<<<<< HEAD
+
         User sysuser=APILocator.getUserAPI().getSystemUser();
         
         final String salt=Long.toString(System.currentTimeMillis());
@@ -645,9 +645,7 @@ public class ContentResourceTest extends TestBase {
         Assert.assertEquals(c1.getIdentifier(), c2.getIdentifier());
         
         Assert.assertEquals(working.getInode(), c2.getInode());
-=======
-        
->>>>>>> 915d837... #2910 working to get uri file and images
+
     }
 }
 
