@@ -28,6 +28,8 @@ import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -486,14 +488,49 @@ public class ContentResourceTest extends TestBase {
         Field image=new Field("aImage",FieldType.IMAGE,DataType.TEXT,st,true,false,true,3,false,false,true);
         FieldFactory.saveField(image);
         
+        Host demo=APILocator.getHostAPI().findByName("demo.dotcms.com", sysuser, false);
+        Folder ff=APILocator.getFolderAPI().createFolders("/rest/"+salt, demo, sysuser, false);
+        
+        java.io.File filefile = java.io.File.createTempFile("filefile", ".txt");
+        java.io.File imgimg = java.io.File.createTempFile("imgimg", ".jpg");
+        
+        Contentlet filea=new Contentlet();
+        filea.setFolder(ff.getInode());
+        filea.setHost(demo.getIdentifier());
+        filea.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+        filea.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, ff.getInode());
+        filea.setStringProperty(FileAssetAPI.TITLE_FIELD, "filefile.txt");
+        filea.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "filefile.txt");
+        filea.setBinary(FileAssetAPI.BINARY_FIELD, filefile);
+        filea.setLanguageId(1);
+        filea = APILocator.getContentletAPI().checkin(filea, sysuser, false);
+        
+        Contentlet imga=new Contentlet();
+        imga.setFolder(ff.getInode());
+        imga.setHost(demo.getIdentifier());
+        imga.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+        imga.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, ff.getInode());
+        imga.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "imgimg.jpg");
+        imga.setStringProperty(FileAssetAPI.TITLE_FIELD, "imgimg.jpg");
+        imga.setBinary(FileAssetAPI.BINARY_FIELD, imgimg);
+        imga.setLanguageId(1);
+        imga = APILocator.getContentletAPI().checkin(imga, sysuser, false);
+        
         ClientResponse response=contRes.path("/publish/1")
             .type(MediaType.APPLICATION_JSON_TYPE)
             .header(authheader, authvalue).put(ClientResponse.class,
                 new JSONObject()
                     .put("stName", st.getVelocityVarName())
-                    .put(file.getVelocityVarName(),"//demo.dotcms.com//") 
+                    .put(file.getVelocityVarName(),"//demo.dotcms.com/rest/"+salt+"/filefile.txt")
+                    .put(image.getVelocityVarName(), "//demo.dotcms.com/rest/"+salt+"/imgimg.jpg")
+                    .put(title.getVelocityVarName(), "a simple title")
                     .toString());
         Assert.assertEquals(200, response.getStatus());
+        
+        String inode=response.getHeaders().getFirst("inode");
+        Contentlet cont = APILocator.getContentletAPI().find(inode, sysuser, false);
+        Assert.assertEquals(filea.getIdentifier(),cont.getStringProperty(file.getVelocityVarName()));
+        Assert.assertEquals(imga.getIdentifier(),cont.getStringProperty(image.getVelocityVarName()));
     }
 }
 
