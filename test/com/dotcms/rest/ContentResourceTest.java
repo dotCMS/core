@@ -469,7 +469,31 @@ public class ContentResourceTest extends TestBase {
     
     @Test
     public void uriFileImageFields() throws Exception {
+        User sysuser=APILocator.getUserAPI().getSystemUser();
         
+        final String salt=Long.toString(System.currentTimeMillis());
+        
+        // a test structure with that scheme
+        Structure st=new Structure();
+        st.setName("Rest Test File Img "+salt);
+        st.setVelocityVarName("restTestSt"+salt);
+        st.setDescription("testing rest content creation with file&image fields");
+        StructureFactory.saveStructure(st);
+        Field title=new Field("Title",FieldType.TEXT,DataType.TEXT,st,true,true,true,1,false,false,true);
+        FieldFactory.saveField(title);
+        Field file=new Field("aFile",FieldType.FILE,DataType.TEXT,st,true,false,true,2,false,false,true);
+        FieldFactory.saveField(file);
+        Field image=new Field("aImage",FieldType.IMAGE,DataType.TEXT,st,true,false,true,3,false,false,true);
+        FieldFactory.saveField(image);
+        
+        ClientResponse response=contRes.path("/publish/1")
+            .type(MediaType.APPLICATION_JSON_TYPE)
+            .header(authheader, authvalue).put(ClientResponse.class,
+                new JSONObject()
+                    .put("stName", st.getVelocityVarName())
+                    .put(file.getVelocityVarName(),"//demo.dotcms.com//") 
+                    .toString());
+        Assert.assertEquals(200, response.getStatus());
     }
 }
 
