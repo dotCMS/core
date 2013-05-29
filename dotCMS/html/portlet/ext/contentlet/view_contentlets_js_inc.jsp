@@ -659,11 +659,27 @@
 
         }
 
-        function addNewContentlet(){
-          if(selectedStructureVarName == 'calendarEvent'){
-            structureInode = dijit.byId('structure_inode').value;
+
+		function updateSelectedStructAux(){
+			structureInode = dijit.byId('selectedStructAux').value;
+			addNewContentlet(structureInode);
+		}
+
+
+
+
+        function addNewContentlet(structureInode){
+			if(structureInode == undefined || structureInode==""){        
+        		structureInode = dijit.byId('structure_inode').value;
+        	}
+			if(structureInode == undefined || structureInode == "_all"){
+				dijit.byId("selectStructureDiv").show();
+				return;
+			}
+          else if(selectedStructureVarName == 'calendarEvent'){
+
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-        href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
+                href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
                 href += "<portlet:param name='cmd' value='new' />";
                 href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
                 href += "<portlet:param name='inode' value='' />";
@@ -672,9 +688,9 @@
                 href += "&lang=" + getSelectedLanguageId();
                 window.location=href;
           }else{
-            structureInode = dijit.byId('structure_inode').value;
+
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-        href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
+                href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
                 href += "<portlet:param name='cmd' value='new' />";
                 href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
                 href += "<portlet:param name='inode' value='' />";
