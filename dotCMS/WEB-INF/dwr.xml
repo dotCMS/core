@@ -25,12 +25,9 @@
     <create creator="new" javascript="AlertMessagesWebAPI" scope="application">
       <param name="class" value="com.dotmarketing.util.AlertMessagesWebAPI"/>
     </create>
-
-<!-- BEGIN OVERRIDE:dwr-override
-<create creator="new" javascript="UserAjax" scope="application">
+    <create creator="new" javascript="UserAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.user.ajax.UserAjax"/>
     </create>
- END OVERRIDE:dwr-override -->
     <create creator="new" javascript="RoleAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.RoleAjax"/>
     </create>
@@ -112,12 +109,6 @@
     <convert converter="bean" match="com.dotcms.enterprise.achecker.model.GuideLineBean"/>
     <!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
-<!-- BEGIN PLUGIN:dwr-override -->
-<create creator="new" javascript="UserAjax" scope="application">
-      <param name="class" value="com.arqiva.plugins.ajax.ArqivaUserAjax"/>
-   </create>
-
-<!-- END PLUGIN:dwr-override -->
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
 	<convert converter="bean" match="com.dotmarketing.cms.polls.ajax.PollsAjax$VoteAnswer"/>
