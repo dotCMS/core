@@ -29,13 +29,14 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -475,7 +476,6 @@ public class ContentResourceTest extends TestBase {
         
         final String salt=Long.toString(System.currentTimeMillis());
         
-        // a test structure with that scheme
         Structure st=new Structure();
         st.setName("Rest Test File Img "+salt);
         st.setVelocityVarName("restTestSt"+salt);
@@ -531,6 +531,71 @@ public class ContentResourceTest extends TestBase {
         Contentlet cont = APILocator.getContentletAPI().find(inode, sysuser, false);
         Assert.assertEquals(filea.getIdentifier(),cont.getStringProperty(file.getVelocityVarName()));
         Assert.assertEquals(imga.getIdentifier(),cont.getStringProperty(image.getVelocityVarName()));
+    }
+    
+    @Test
+    public void relationShips() throws Exception {
+        final String salt=Long.toString(System.currentTimeMillis());
+        final User sysuser=APILocator.getUserAPI().getSystemUser();
+        
+        Structure st1=new Structure();
+        st1.setName("Rest Test rel "+salt);
+        st1.setVelocityVarName("restTestSt"+salt);
+        st1.setDescription("testing rest content creation with relationships");
+        StructureFactory.saveStructure(st1);
+        Field title1=new Field("Title",FieldType.TEXT,DataType.TEXT,st1,true,true,true,1,false,false,true);
+        FieldFactory.saveField(title1);
+        
+        Structure st2=new Structure();
+        st2.setName("Rest Test rel 2 "+salt);
+        st2.setVelocityVarName("restTestSt2"+salt);
+        st2.setDescription("testing rest content creation with relationships 2");
+        StructureFactory.saveStructure(st2);
+        Field title2=new Field("Title",FieldType.TEXT,DataType.TEXT,st2,true,true,true,1,false,false,true);
+        FieldFactory.saveField(title2);
+        
+        Contentlet c1=new Contentlet();
+        c1.setLanguageId(1);
+        c1.setStringProperty(title2.getVelocityVarName(), "title 2");
+        c1.setStructureInode(st2.getInode());
+        c1 = APILocator.getContentletAPI().checkin(c1, sysuser, false);
+        
+        Contentlet c2=new Contentlet();
+        c2.setLanguageId(1);
+        c2.setStringProperty(title2.getVelocityVarName(), "title 222");
+        c2.setStructureInode(st2.getInode());
+        c2 = APILocator.getContentletAPI().checkin(c2, sysuser, false);
+        
+        APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
+        
+        Relationship rel=new Relationship(st1,st2,"st1"+salt,"st2"+salt,0,false,false);
+        RelationshipFactory.saveRelationship(rel);
+        
+        ClientResponse response=contRes.path("/publish/1")
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .header(authheader, authvalue).put(ClientResponse.class,
+                    new JSONObject()
+                        .put("stName", st1.getVelocityVarName())
+                        .put(title1.getVelocityVarName(), "a simple title")
+                        .put(rel.getRelationTypeValue(), "+structureName:"+st2.getVelocityVarName())
+                        .toString());
+        Assert.assertEquals(200, response.getStatus());
+        
+        Thread.sleep(500); // wait for relation fields update
+        
+        String inode=response.getHeaders().getFirst("inode");
+        Contentlet cc=APILocator.getContentletAPI().find(inode, sysuser, false);
+        
+        List<Contentlet> relatedContent = APILocator.getContentletAPI().getRelatedContent(cc, rel, sysuser, false);
+        Assert.assertEquals(2, relatedContent.size());
+        
+        Set<String> inodes=new HashSet<String>();
+        inodes.add(c1.getInode()); inodes.add(c2.getInode());
+        inodes.remove(relatedContent.get(0).getInode());
+        inodes.remove(relatedContent.get(1).getInode());
+        Assert.assertEquals(0, inodes.size());
+            
     }
 }
 

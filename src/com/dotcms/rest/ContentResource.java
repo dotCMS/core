@@ -615,6 +615,7 @@ public class ContentResource extends WebResource {
                             if(cons.size()>0) {
                                 relationships.put(rel, cons);
                             }
+                            Logger.info(this, "got "+cons.size()+" related contents");
                         } catch (Exception e) {
                             Logger.warn(this, e.getMessage(), e);
                         }
