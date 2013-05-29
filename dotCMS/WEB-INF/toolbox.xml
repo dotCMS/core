@@ -14,14 +14,11 @@
 -->
 <toolbox>
 	<!-- Velocity View Tools Start -->
-
-<!-- BEGIN OVERRIDE:dwr-override
-<tool>
+    <tool>
 	   <key>alternator</key>
 	   <scope>application</scope>
 	   <class>org.apache.velocity.tools.generic.AlternatorTool</class>
-	 </tool>
- END OVERRIDE:dwr-override -->
+	</tool>
 	<tool>
 		<key>cookietool</key>
 		<scope>request</scope>
@@ -390,13 +387,5 @@
 	<!-- Dotmarketing View Tools End -->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
-<!-- BEGIN PLUGIN:dwr-override -->
-<tool>
-	   <key>alternator</key>
-	   <scope>application</scope>
-	   <class>org.apache.velocity.tools.generic.MyAlternatorTool</class>
-	 </tool>
-
-<!-- END PLUGIN:dwr-override -->
  	<!-- END PLUGINS -->
 </toolbox>
