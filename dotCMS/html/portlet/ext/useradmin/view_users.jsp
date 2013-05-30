@@ -1,6 +1,10 @@
 <%@ include file="/html/portlet/ext/useradmin/init.jsp" %>
 
 <%@page import="com.dotmarketing.util.Config"%>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
+<%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+
 <%
 	int additionalVariablesCount = Config.getIntProperty("MAX_NUMBER_VARIABLES_TO_SHOW", 0);
 	String[] additionalVariableLabels = new String[additionalVariablesCount + 1];
@@ -10,6 +14,14 @@
 
 %>
 
+<script type="text/javascript">
+    var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+    <%
+    PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();
+    %>
+    var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
+</script>
 <%@ include file="/html/portlet/ext/useradmin/view_users_js_inc.jsp" %>
 
 
@@ -38,12 +50,11 @@
 <!-- START Left Column User listing -->
 	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;margin-top:38px;overflow:auto;" class="lineRight">
 
-			<div dojoType="dojox.grid.DataGrid" jsId="usersGrid" id="usersGrid" style="cursor: pointer; cursor: hand" autoHeight="true" structure="usersGridLayout" query="{ id: '*' }"></div>
-			<div class="clear"></div>
-			<div id="loadingUsers"><img src="/html/js/lightbox/images/loading.gif"></div>
-			<div class="clear"></div>
+        <div id="usersGrid"></div>
+        <div id="loadingUsers"><img src="/html/js/lightbox/images/loading.gif"></div>
+        <div class="clear"></div>
+        <div class="inputCaption" style="padding:3px 0 10px 10px;"><%= LanguageUtil.get(pageContext, "Limit-Max-50-Results") %></div>
 
-		<div class"inputCaption" style="padding:3px 0 10px 10px;"><%= LanguageUtil.get(pageContext, "Limit-Max-50-Results") %></div>
 	</div>
 <!-- END Left Column User listing -->
 
@@ -304,6 +315,20 @@
 <!-- END Right Column User Details -->
 
 </div>
+
+<form id="remotePublishForm">
+    <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+    <input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+    <input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+    <input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+    <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+    <input name="iWantTo" id=iWantTo type="hidden" value="">
+</form>
+
+<div dojoType="dijit.Menu" id="usersGrid_rowMenu" jsId="usersGrid_rowMenu" style="display: none;">
+    <div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublishUser"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>
+</div>
+
 <script type="text/javascript">
 
 	dojo.addOnLoad(function () {
