@@ -32,7 +32,7 @@
 			<div id="macro-login-message">$glossary.get("$!{_loginMessage}")</div>
 			<div class="macro-login-box-row">
 		          <label for="macro-login-user-name">$glossary.get("dotcms_macro_login_login")</label>
-		          <input type="text" name="_loginUserName" id="macro-login-user-name" tabindex="1"  value="$!{request.getParameter('_loginUserName')}" />
+		          <input type="text" name="_loginUserName" id="macro-login-user-name" tabindex="1"  value="$xsstool.escapeHTMLAttrib($request.getParameter('_loginUserName'))" />
 			</div>
 			<div class="macro-login-box-row">
 		 		<label for="macro-login-password">$glossary.get("dotcms_macro_login_password")</label>
