@@ -388,10 +388,6 @@
 		<servlet-class>com.dotmarketing.servlets.RedirectURLServlet</servlet-class>
 	</servlet>
 	<servlet>
-		<servlet-name>RecreateTreeServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.RecreateTreeServlet</servlet-class>
-	</servlet>
-	<servlet>
 		<servlet-name>TitleServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.image.TitleImage</servlet-class>
 	</servlet>
