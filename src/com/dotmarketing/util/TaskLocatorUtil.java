@@ -70,6 +70,7 @@ import com.dotmarketing.startup.runonce.Task01020CreateDefaultWorkflow;
 import com.dotmarketing.startup.runonce.Task01030AddSiteSearchAuditTable;
 import com.dotmarketing.startup.runonce.Task01035FixTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01040CreateContainertStructures;
+import com.dotmarketing.startup.runonce.Task01045AddPushPublishLogger;
 
 public class TaskLocatorUtil {
 
@@ -85,7 +86,7 @@ public class TaskLocatorUtil {
 		ret.add(FixTask00009CheckContentletsInexistentInodes.class);
 		ret.add(FixTask00011RenameHostInFieldVariableName.class);
 		ret.add(FixTask00012UpdateAssetsHosts.class);
-		ret.add(FixTask00020DeleteOrphanedIdentifiers.class);		
+		ret.add(FixTask00020DeleteOrphanedIdentifiers.class);
 		ret.add(FixTask00030DeleteOrphanedAssets.class);
 		ret.add(FixTask00040CheckFileAssetsMimeType.class);
 		ret.add(FixTask00050FixInodesWithoutContentlets.class);
@@ -141,6 +142,7 @@ public class TaskLocatorUtil {
         ret.add(Task01030AddSiteSearchAuditTable.class);
         ret.add(Task01035FixTriggerVarLength.class);
         ret.add(Task01040CreateContainertStructures.class);
+        ret.add(Task01045AddPushPublishLogger.class);
         return ret;
     }
 
