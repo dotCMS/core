@@ -286,7 +286,7 @@ function showLanguageSelector(){
 					<%}else{ %>
 						<%= LanguageUtil.get(pageContext, "user-id") %> : 
 					<%} %></label></dt>
-				<dd><input id="forgotPasswordEmailBox" name="forgotPasswordEmailBox" type="text"  value="<%= login %>"  dojoType="dijit.form.TextBox"></dd>
+				<dd><input id="forgotPasswordEmailBox" name="forgotPasswordEmailBox" type="text"  value="<%= Xss.escapeHTMLAttrib(login) %>"  dojoType="dijit.form.TextBox"></dd>
 				<dd><button dojoType="dijit.form.Button"  onClick="forgotPassword()"><%= LanguageUtil.get(pageContext, "get-new-password") %></button></dd>
 			</dl>
 		</div>
@@ -314,7 +314,7 @@ function showLanguageSelector(){
 					<%} %>
 				</label>
 			</dt>
-			<dd><input name="loginTextBox" id="loginTextBox" dojoType="dijit.form.TextBox" size="25" required="true" type="text" tabindex="1"  value="<%= login %>"></dd>
+			<dd><input name="loginTextBox" id="loginTextBox" dojoType="dijit.form.TextBox" size="25" required="true" type="text" tabindex="1"  value="<%= Xss.escapeHTMLAttrib(login) %>"></dd>
 			
 			<dt style="width:180px"><label for="loginPasswordTextBox"><%= LanguageUtil.get(pageContext, "password") %> : </label></dt>
 			<dd><input name="loginPasswordTextBox" id="loginPasswordTextBox" dojoType="dijit.form.TextBox" size="25" required="true" type="password" value="" tabindex="2" ></dd>
