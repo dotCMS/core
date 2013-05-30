@@ -326,10 +326,6 @@
 		<servlet-class>net.sf.jasperreports.j2ee.servlets.RtfServlet</servlet-class>
 	</servlet>
 	<servlet>
-		<servlet-name>JasperPrintServlet</servlet-name>
-		<servlet-class>servlets.JasperPrintServlet</servlet-class>
-	</servlet>
-	<servlet>
 		<servlet-name>ResizeImageServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.image.ResizeImageServlet</servlet-class>
 	</servlet>
@@ -756,10 +752,6 @@
 		<url-pattern>/servlets/rtf</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>JasperPrintServlet</servlet-name>
-		<url-pattern>/servlets/jasperprint</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
 	    <servlet-name>ResizeImageServlet</servlet-name>
 	    <url-pattern>/resize_image</url-pattern>
 	</servlet-mapping>
@@ -780,10 +772,6 @@
 		<url-pattern>/servlets/rtf</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>JasperPrintServlet</servlet-name>
-		<url-pattern>/servlets/jasperprint</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
 	    <servlet-name>ResizeImageServlet</servlet-name>
 	    <url-pattern>/resize_image</url-pattern>
 	</servlet-mapping>
@@ -802,10 +790,6 @@
 	<servlet-mapping>
 		<servlet-name>RtfServlet</servlet-name>
 		<url-pattern>/servlets/rtf</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>JasperPrintServlet</servlet-name>
-		<url-pattern>/servlets/jasperprint</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 	    <servlet-name>ResizeImageServlet</servlet-name>
@@ -850,10 +834,6 @@
 	<servlet-mapping>
 		<servlet-name>RedirectURLServlet</servlet-name>
 		<url-pattern>/redirect</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>RecreateTreeServlet</servlet-name>
-		<url-pattern>/RecreateTreeServlet</url-pattern>
 	</servlet-mapping>
 	<!-- title Servlet -->
 	<servlet-mapping>
