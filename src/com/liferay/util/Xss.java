@@ -22,6 +22,8 @@
 
 package com.liferay.util;
 
+import org.owasp.esapi.ESAPI;
+
 import com.dotmarketing.util.RegEX;
 
 /**
@@ -48,6 +50,10 @@ public class Xss {
 			return false;
 		}
 		return RegEX.contains(url, XSS_REGEXP_PATTERN);	
+	}
+	
+	public static String escapeHTMLAttrib(String value) {
+	    return value!=null ? ESAPI.encoder().encodeForHTMLAttribute(value) : "";
 	}
 
 }
