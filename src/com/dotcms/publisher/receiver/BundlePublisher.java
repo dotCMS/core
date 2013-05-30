@@ -58,6 +58,7 @@ public class BundlePublisher extends Publisher {
 		 * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
 		 * 
 		 */        
+       	handlers.add(new UserHandler());
        	handlers.add(new CategoryHandler());
        	handlers.add(new HostHandler());
        	handlers.add(new FolderHandler());

@@ -45,7 +45,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 				alert(error);
 				
 			}
-		}
+		};
 
 		var deferred = dojo.xhrPost(xhrArgs);	
 	},
