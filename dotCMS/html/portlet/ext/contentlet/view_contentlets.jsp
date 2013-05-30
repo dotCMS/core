@@ -660,7 +660,7 @@
 </div>
 
 <div dojoType="dijit.Dialog" id="selectStructureDiv" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>'>
-	<table class="listingTable sTypeTable">
+	<table class="sTypeTable">
 		<tr>
 			<%int stType=0; %>
 			<td class="sTypeTd">
@@ -684,12 +684,12 @@
 							%>
 							<div class="sTypeHeader" id="sType<%=strTypeName %>"><%=strTypeName %></div>
 						<%} %>
-						<div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getInode() %>');" class="small"><%=struc.getName() %></a><div>
+						<div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getInode() %>');"><%=struc.getName() %></a></div>
 						<%if(
 							(structures.size() %2==0 && i+1 == structures.size()/2) || (structures.size() %2==1 && (i == structures.size()/2))
 						){  %>
 						</td>
-						<td valign="top" nowrap="nowrap" style="min-width: 150px;">
+						<td valign="top" class="sTypeTd">
 					<%} %>
 				<%} %>
 		    </td>
