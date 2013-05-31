@@ -1286,7 +1286,7 @@ public class ContentletAjax {
 					binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
 					binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
 							+ File.separator + user.getUserId() + File.separator + elementName
-							+ File.separator + binaryFileValue);
+							+ File.separator + binaryFileValue.trim());
 					if(binaryFile.exists()) {
     					try {
     					    // https://github.com/dotCMS/dotCMS/issues/35
