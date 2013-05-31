@@ -24,7 +24,9 @@ public class XssWebAPI  implements ViewTool {
 	 return strip;
 	}
 	
-
+	public String escapeHTMLAttrib(String value) {
+	    return Xss.escapeHTMLAttrib(value);
+	}
 
 
 }

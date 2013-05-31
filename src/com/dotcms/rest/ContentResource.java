@@ -37,6 +37,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -49,6 +50,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -71,6 +73,8 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 
 @Path("/content")
 public class ContentResource extends WebResource {
+    private static final String RELATIONSHIP_KEY = "__##relationships##__";
+
     /**
      * performs a call to APILocator.getContentletAPI().searchIndex() with the 
      * specified parameters.
@@ -510,9 +514,11 @@ public class ContentResource extends WebResource {
                 }
             }
             
+            Map<Relationship,List<Contentlet>> relationships=(Map<Relationship,List<Contentlet>>)contentlet.get(RELATIONSHIP_KEY);
+            
             HibernateUtil.startTransaction();
             
-            contentlet = APILocator.getContentletAPI().checkin(contentlet,new HashMap<Relationship, List<Contentlet>>(),cats,new ArrayList<Permission>(),init.getUser(),false);
+            contentlet = APILocator.getContentletAPI().checkin(contentlet,relationships,cats,new ArrayList<Permission>(),init.getUser(),false);
             
             if(live)
                 APILocator.getContentletAPI().publish(contentlet, init.getUser(), false);
@@ -574,19 +580,51 @@ public class ContentResource extends WebResource {
     
     protected void processMap(Contentlet contentlet, Map<String,Object> map) {
         String stInode=(String)map.get(Contentlet.STRUCTURE_INODE_KEY);
+        if(!UtilMethods.isSet(stInode)) {
+            String stName=(String)map.get("stName");
+            if(UtilMethods.isSet(stName)) {
+                stInode = StructureCache.getStructureByVelocityVarName(stName).getInode();
+            }
+        }
         if(UtilMethods.isSet(stInode)) {
             Structure st=StructureCache.getStructureByInode(stInode);
             if(st!=null && InodeUtils.isSet(st.getInode())) {
                 // basic data
                 contentlet.setStructureInode(st.getInode());
-                if(map.containsKey("languageId"))
+                if(map.containsKey("languageId")) {
                     contentlet.setLanguageId(Long.parseLong((String)map.get("languageId")));
+                }
+                else {
+                    contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+                }
                 
                 // build a field map for easy lookup
                 Map<String,Field> fieldMap=new HashMap<String,Field>();
                 for(Field ff : FieldsCache.getFieldsByStructureInode(stInode))
                     fieldMap.put(ff.getVelocityVarName(), ff);
                 
+                // look for relationships
+                Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
+                for(Relationship rel : RelationshipFactory.getAllRelationshipsByStructure(st)) {
+                    String relname=rel.getRelationTypeValue();
+                    String query=(String)map.get(relname);
+                    if(UtilMethods.isSet(query)) {
+                        try {
+                            List<Contentlet> cons=APILocator.getContentletAPI().search(
+                                    query, 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+                            if(cons.size()>0) {
+                                relationships.put(rel, cons);
+                            }
+                            Logger.info(this, "got "+cons.size()+" related contents");
+                        } catch (Exception e) {
+                            Logger.warn(this, e.getMessage(), e);
+                        }
+                    }
+                }
+                contentlet.setProperty(RELATIONSHIP_KEY, relationships);
+                
+                
+                // fill fields
                 for(Map.Entry<String,Object> entry : map.entrySet()) {
                     String key=entry.getKey();
                     Object value=entry.getValue();
@@ -636,6 +674,30 @@ public class ContentResource extends WebResource {
                         }
                         else if(ff.getFieldType().equals(FieldType.CATEGORY.toString())) {
                             contentlet.setStringProperty(ff.getVelocityVarName(), value.toString());
+                        }
+                        else if((ff.getFieldType().equals(FieldType.FILE.toString()) || ff.getFieldType().equals(FieldType.IMAGE.toString())) &&
+                                value.toString().startsWith("//")) {
+                            boolean found=false;
+                            try {
+                                String str=value.toString().substring(2);
+                                String hostname=str.substring(0,str.indexOf('/'));
+                                String uri=str.substring(str.indexOf('/'));
+                                Host host=APILocator.getHostAPI().findByName(hostname, APILocator.getUserAPI().getSystemUser(), false);
+                                if(host!=null && InodeUtils.isSet(host.getIdentifier())) {
+                                    Identifier ident=APILocator.getIdentifierAPI().find(host, uri);
+                                    if(ident!=null && InodeUtils.isSet(ident.getId())) {
+                                        contentlet.setStringProperty(ff.getVelocityVarName(), ident.getId());
+                                        found=true;
+                                    }
+                                }
+                                if(!found) {
+                                    throw new Exception("asset "+value+" not found");
+                                }
+                                
+                            }
+                            catch(Exception ex) {
+                                throw new RuntimeException(ex);
+                            }
                         }
                         else {
                             APILocator.getContentletAPI().setContentletProperty(contentlet, ff, value);
