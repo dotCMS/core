@@ -158,6 +158,14 @@
         
         
         String _allValue = (UtilMethods.webifyString(fieldsSearch.get("_all")).endsWith("*")) ? UtilMethods.webifyString(fieldsSearch.get("_all")).substring(0,UtilMethods.webifyString(fieldsSearch.get("_all")).length()-1) : UtilMethods.webifyString(fieldsSearch.get("_all"));
+
+		String[] strTypeNames = new String[]{"",LanguageUtil.get(pageContext, "Content"),
+				LanguageUtil.get(pageContext, "Widget"),
+				LanguageUtil.get(pageContext, "Form"),
+				LanguageUtil.get(pageContext, "File")};
+
+
+
 %>
 
 
@@ -659,35 +667,22 @@
   <%= LanguageUtil.get(pageContext, "Loading")%>...
 </div>
 
-<div dojoType="dijit.Dialog" id="selectStructureDiv" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>'>
+<div dojoType="dijit.Dialog" id="selectStructureDiv"  title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>'>
+	
 	<table class="sTypeTable">
 		<tr>
 			<%int stType=0; %>
+			<%int maxPerCol=Config.getIntProperty("EDIT_CONTENT_STRUCTURES_PER_COLUMN", 15); %>
 			<td class="sTypeTd">
-			
 				<%int i=0; %>
-				<%for( i =0;i<structures.size();i++) {%>
-					<%Structure struc = structures.get(i); %>
-						<%if(stType != struc.getStructureType()){ %>
-							<% stType = struc.getStructureType(); %>
-							<% String strTypeName="";
-							switch(stType){
-							case 1:strTypeName =  	LanguageUtil.get(pageContext, "Content");
-													break;
-							case 2:strTypeName =  	LanguageUtil.get(pageContext, "Widget");
-													break;
-							case 3:strTypeName =  	LanguageUtil.get(pageContext, "Form");
-													break;
-							case 4:strTypeName =  	LanguageUtil.get(pageContext, "File");
-													break;
-							}
-							%>
-							<div class="sTypeHeader" id="sType<%=strTypeName %>"><%=strTypeName %></div>
-						<%} %>
-						<div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getInode() %>');"><%=struc.getName() %></a></div>
-						<%if(
-							(structures.size() %2==0 && i+1 == structures.size()/2) || (structures.size() %2==1 && (i == structures.size()/2))
-						){  %>
+				<%for( Structure struc : structures) {%>
+					<%if(stType != struc.getStructureType()){ %>
+						<% stType = struc.getStructureType(); %>
+						<div class="sTypeHeader" id="sType<%=strTypeNames[stType] %>"><%=strTypeNames[stType] %></div>
+					<%} %>
+					<div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getInode() %>');"><%=struc.getName() %></a></div>
+					<%if(i++ == maxPerCol){ %>
+						<%i=0; %>
 						</td>
 						<td valign="top" class="sTypeTd">
 					<%} %>
@@ -695,6 +690,7 @@
 		    </td>
 		</tr>
 	</table>
+	
 </div>
 
 
