@@ -146,6 +146,7 @@ dojo.ready(function(){
 		text-align:right;
 		vertical-align: top;
 		border-right:1px dotted silver;
+		white-space: nowrap;
 	}
 
 	.previewCon td{
@@ -155,7 +156,7 @@ dojo.ready(function(){
 	}
 	.textAreaDiv{
 		max-height: 250px; 
-		width: 600px;
+		width: 100%;
 		font-size:12px;
 		vertical-align: top;
 		overflow:auto;
@@ -166,7 +167,7 @@ dojo.ready(function(){
 
 <div id="contentPreviewDialog">
 	<div>
-		<table class="previewCon" align="center">
+		<table class="previewCon" align="center" style="width:100%">
 			<%if (fields.size() > 0)  {%>
 				<tr class="tRow">
 					<td class="fColumn">
@@ -275,7 +276,7 @@ dojo.ready(function(){
 					    		}
 					        }
 							if(!wysiwygPlain){%>
-								<textarea style="width:600px;height:400px;"><%=textValue %></textarea>
+								<textarea style="width:100%;height:500px;"><%=textValue %></textarea>
 							<%}else{ %>
 								<div class="textAreaDiv">
 								<% textValue = textValue.replaceAll("<", "&lt;");%>
