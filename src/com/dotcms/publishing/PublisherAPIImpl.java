@@ -77,17 +77,13 @@ public class PublisherAPIImpl implements PublisherAPI {
 				b.setConfig(config);
 				BundlerStatus bs = new BundlerStatus(b.getClass().getName());
 				status.addToBs(bs);
-				PushPublishLogger.log(this.getClass(), "Running Bundler  : "+b.getName(), config.getId());
 				b.generate(bundleRoot, bs);
-				PushPublishLogger.log(this.getClass(), "Bundler Completed: "+b.getName(), config.getId());
 			}
 			config.setBundlers(confBundlers);
 
 			// run publishers
 			for (Publisher p : pubs) {
-				PushPublishLogger.log(this.getClass(), "Running Publisher    : "+p.getClass().getName(), config.getId());
 				p.process(status);
-				PushPublishLogger.log(this.getClass(), "Publisher Completed  : "+p.getClass().getName(), config.getId());
 			}
 
 			PushPublishLogger.log(this.getClass(), "Completed Publishing Task", config.getId());
