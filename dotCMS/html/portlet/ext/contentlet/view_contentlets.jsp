@@ -158,6 +158,14 @@
         
         
         String _allValue = (UtilMethods.webifyString(fieldsSearch.get("_all")).endsWith("*")) ? UtilMethods.webifyString(fieldsSearch.get("_all")).substring(0,UtilMethods.webifyString(fieldsSearch.get("_all")).length()-1) : UtilMethods.webifyString(fieldsSearch.get("_all"));
+
+		String[] strTypeNames = new String[]{"",LanguageUtil.get(pageContext, "Content"),
+				LanguageUtil.get(pageContext, "Widget"),
+				LanguageUtil.get(pageContext, "Form"),
+				LanguageUtil.get(pageContext, "File")};
+
+
+
 %>
 
 
@@ -659,6 +667,33 @@
   <i class="loadingIcon"></i>
   <%= LanguageUtil.get(pageContext, "Loading")%>...
 </div>
+
+<div dojoType="dijit.Dialog" id="selectStructureDiv"  title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>'>
+	
+	<table class="sTypeTable">
+		<tr>
+			<%int stType=0; %>
+			<%int maxPerCol=Config.getIntProperty("EDIT_CONTENT_STRUCTURES_PER_COLUMN", 15); %>
+			<td class="sTypeTd">
+				<%int i=0; %>
+				<%for( Structure struc : structures) {%>
+					<%if(stType != struc.getStructureType()){ %>
+						<% stType = struc.getStructureType(); %>
+						<div class="sTypeHeader" id="sType<%=strTypeNames[stType] %>"><%=strTypeNames[stType] %></div>
+					<%} %>
+					<div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getInode() %>');"><%=struc.getName() %></a></div>
+					<%if(i++ == maxPerCol){ %>
+						<%i=0; %>
+						</td>
+						<td valign="top" class="sTypeTd">
+					<%} %>
+				<%} %>
+		    </td>
+		</tr>
+	</table>
+	
+</div>
+
 
 <script type="text/javascript">
 dojo.ready(resizeBrowser);

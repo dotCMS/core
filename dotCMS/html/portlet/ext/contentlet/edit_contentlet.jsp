@@ -48,7 +48,7 @@
 
 
 	// if host, set this to the current viewing host
-	if(structure.getVelocityVarName().equals("Host")) {
+	if(structure!= null && UtilMethods.isSet(structure.getInode()) && structure.getVelocityVarName().equals("Host")) {
 		if(contentlet != null && UtilMethods.isSet(contentlet.getIdentifier()))
 				session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,contentlet.getIdentifier() );
 
@@ -116,6 +116,11 @@
 	request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);
 
 
+	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 0, 100,"asc");
+	
+	
+	
+	
 	/*### DRAW THE DYNAMIC FIELDS ###*/
 
 	int counter = 0;
@@ -180,8 +185,61 @@ var editButtonRow="editContentletButtonRow";
 		<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-widget\") %>" />
 	<%} %>
 
+	<%if(!UtilMethods.isSet(structure.getInode())){ %>
+
+		<div dojoType="dijit.Dialog" id="selectStructureDiv" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>'>
+			<table style="margin:20px">
+				<tr>
+				  <td align="center"><%=LanguageUtil.get(pageContext, "Select-type") %>:</td>
+					<td align="center">
+					<select name="selectedStructAux" id="selectedStructAux" onChange="updateSelectedStructAux" dojoType="dijit.form.FilteringSelect">
+						<option = ""></option>
+						<%for(Structure struc : structures) {%>
+							<option value="<%=struc.getInode() %>"><%=struc.getName() %></option>
+						<%} %>
+				    	</select>
+				    </td>
+				</tr>
+			</table>
+		</div>
+		<script>
+			dojo.ready(function(){
+				dijit.byId("selectStructureDiv").show();
+			});
+			
+			function updateSelectedStructAux(){
+				var newloc = window.location.href;
+				console.log(newloc);
+				var struc = dijit.byId("selectedStructAux").getValue();
+				if(newloc.indexOf("selectedStructure=") > -1){
+					var s = newloc.indexOf("selectedStructure=");
+					var e = newloc.indexOf("&", s);
+					if(e>-1){
+						var val = newloc.substring(s + "selectedStructure=".length, e);
+						newloc = newloc.replace("selectedStructure=" + val, "selectedStructure=" + struc);
+					}
+					else{
+						newloc = newloc.replace("selectedStructure=", "selectedStructure=" + struc);
+						
+					}
+				}
+				else{
+					newloc = newloc+ "&selectedStructure=" + struc;
+				}
+				console.log(newloc);
+				window.location=newloc;
+			}
+			
+		</script>
+	<%} %>
 	<!--  FIRST TAB -->
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" >
+
+	
+
+
+
+
 
 		<!--  IF THE FIRST FIELD IS A TAB-->
 		<% if(fields != null &&
