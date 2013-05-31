@@ -139,6 +139,16 @@ li.smallify .navMenu-arrow{display:block;}
 .listingTable td table tr{border:none;}
 .listingTable td button, .listingTable table.dijitSelect, .listingTable td .dijitTextBox{font-size:12px;}
 
+/* CONTENT TYPE TABLE */
+.sTypeTable{border: 1px solid #D0D0D0; border-collapse: collapse; font-size: 11px;margin: 0 auto;}
+.sTypeTd{vertical-align: top; min-width:225px; white-space: nowrap;padding:0;border: 1px solid #D0D0D0;padding-bottom:20px;}
+.sTypeHeader{font-weight:bold;padding:3px 10px;background:#f3f3f3;border-bottom: 1px solid #D0D0D0;}
+.sTypeItem{}
+.sTypeItem a {display:block;padding:2px 10px;text-decoration:none;}
+.sTypeItem a:hover {background:#E2EBFE;}
+#sTypeFile{margin-top:20px;border-top: 1px solid #D0D0D0;}
+
+
 /* RELATIONSHIP TABLE */
 .relationLanguageFlag th, .relationLanguageFlag td{padding:0px 0px;border:0px;}
 
@@ -550,6 +560,12 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 div.contextPopupMenuBox,.contextMenuBox {z-index:10000;width: 190px;display: block;border-top: 1px solid #437AAD;border-bottom: 1px solid #437AAD;padding: 0px 0px 0px 0px;}
 div.contextPopupMenuBox a{line-height:18px;padding:3px 0;height:21px;vertical-align:middle;}
 div.contextPopupMenuBox span{margin:0 8px 0 8px;}
+
+
+table.sTypeTable{};
+table.sTypeTd{vertical-align: top};
+.sTypeHeader{font-weight:bold; nowrap;min-width: 175;border-bottom: 1px solid silver};
+table.sTypeTable.sTypeItem{text-transform: uppercase;white-space: nowrap;min-width: 175;};
 
 /* use in hmtl, templates, etc NOT in Browser Tree pop-ups*/
 #dotCMSErrors {background-color: #ffbcbc;border: 1px solid gray;width: 300px;overflow: auto;padding: 10px;margin-left: 100px;margin-bottom: 10px;}

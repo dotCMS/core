@@ -118,7 +118,7 @@ function viewFormsList()
 		
 		if (UtilMethods.isSet(request.getAttribute("ContentletForm"))) {
 			ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
-			cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "add-edit") + " " + contentletForm.getStructure().getName(), null));
+			cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "add-edit") + " " + UtilMethods.webifyString(contentletForm.getStructure().getName()), null));
 		} else {
 			cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "edit-contentlet"), null));
 		}
