@@ -52,6 +52,7 @@ public class PublishThread implements Runnable {
 			}
 		}
 
+		PushPublishLogger.log(PublishThread.class, "Finished bundle publish process", bundleName);
 		Logger.info(PublishThread.class, "Finished bundle publish process");
     }
 }
