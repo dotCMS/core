@@ -184,7 +184,7 @@
 
     var remotePublishUser = function () {
         if (window.selectedUser) {
-            pushHandler.showDialog(window.selectedUser);
+            pushHandler.showDialog( "user_" + window.selectedUser);
         }
     };
 

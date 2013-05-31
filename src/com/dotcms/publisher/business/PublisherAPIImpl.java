@@ -97,8 +97,11 @@ public class PublisherAPIImpl extends PublisherAPI{
                     PermissionAPI strPerAPI = APILocator.getPermissionAPI();
 
                     String type = "";
-                    //First verify if we are trying to publish an OSGI jar bundle in order to avoid unnecessary calls
-                    if ( identifier.contains( ".jar" ) ) {
+
+                    //First verify what kind of element we want to publish in order to avoid unnecessary calls
+                    if ( identifier.contains( "user_" ) ) {//Trying to publish a user
+                        type = "user";
+                    } else if ( identifier.contains( ".jar" ) ) {//Trying to publish an OSGI jar bundle
                         type = "osgi";
                     } else {
 
@@ -214,8 +217,11 @@ public class PublisherAPIImpl extends PublisherAPI{
                     PermissionAPI strPerAPI = APILocator.getPermissionAPI();
 
                     String type = "";
-                    //First verify if we are trying to publish an OSGI jar bundle in order to avoid unnecessary calls
-                    if ( identifier.contains( ".jar" ) ) {
+
+                    //First verify what kind of element we want to publish in order to avoid unnecessary calls
+                    if ( identifier.contains( "user_" ) ) {//Trying to publish a user
+                        type = "user";
+                    } else if ( identifier.contains( ".jar" ) ) {//Trying to publish an OSGI jar bundle
                         type = "osgi";
                     } else {
 
