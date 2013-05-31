@@ -16,35 +16,27 @@ GregorianCalendar cal = new GregorianCalendar();
 
 %>
 
-
-<script type="text/javascript">
-
-
-alert("test");
-function togglePublishExpireDivs(){
-	
-	var x = "publish" ;
-	if(dijit.byId("iwtExpire").isChecked()){
-		x = "expire" ;
-		
-	}
-	else 	if(dijit.byId("iwtPublishExpire").isChecked()){
-		x = "publishexpire" ;
-	}
-	alert(x);
-}
-
-</script>
-
 <!--  DOTCMS-7085 -->
 <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>"> 
 
 <div style="width:430px;" dojoType="dijit.form.Form" id="publishForm">
-		
-		
-		
-		
-		
+
+        <%--DATE FILTERING BOX--%>
+        <div class="fieldWrapper" id="filterTimeDiv" style="display: none;">
+            <div class="fieldName" style="width:80px">
+                <%= LanguageUtil.get( pageContext, "Publish" ) %>:
+            </div>
+            <div class="fieldValue">
+                <input type="text" dojoType="dijit.form.DateTextBox" value="now" required="true"
+                       id="wfFilterDateAux" name="wfFilterDateAux" style="width: 110px;">
+
+                <input type="text" data-dojo-type="dijit.form.TimeTextBox" value="now" required="true"
+                       id="wfFilterTimeAux" name="wfFilterTimeAux" style="width: 100px;"/>
+            </div>
+            <div class="clear"></div>
+        </div>
+        <%--DATE FILTERING BOX--%>
+
 		<div class="fieldWrapper">
 			<div class="fieldName" style="width:80px">
 				<%= LanguageUtil.get(pageContext, "I-want-to") %>:
@@ -112,4 +104,5 @@ function togglePublishExpireDivs(){
 			</button>
 		
 		</div>
+
 </div>

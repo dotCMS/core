@@ -40,6 +40,7 @@
 
 <div class="buttonBoxRight">
 	<button dojoType="dijit.form.Button" type="button" onclick="addUser()" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "Add-User") %></button>
+	<button dojoType="dijit.form.Button" type="button" onclick="remotePublishUsers()" iconClass="pushIcon"><%= LanguageUtil.get(pageContext, "Remote-Publish") %></button>
 </div>
 
 
