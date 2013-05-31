@@ -6,6 +6,10 @@ bin/*.sh
 .classpath
 .settings/*
 .project
+.idea/
+*.iml
+*.ipr
+*.iws
 tomcat/work
 tomcat/logs
 tomcat/temp
