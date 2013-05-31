@@ -188,6 +188,10 @@
         }
     };
 
+    var remotePublishUsers = function () {
+        pushHandler.showDialog( "users_", true );
+    };
+
 	var filterUsersHandler;
 
 	//Event handler then the user types to filter users
