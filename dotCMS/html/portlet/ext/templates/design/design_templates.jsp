@@ -20,6 +20,7 @@
 	@import url(/html/css/template/draw-template.css);
 	@import url(/html/css/template/drawed-reset-fonts-grids.css);
 	.gradient2{padding-top:30px;padding-bottom:20px;}
+	.hidden { visibility: hidden; display: none;}
 </style>
 
 <%
@@ -419,23 +420,7 @@
 				<div class="clear"></div>
 
 
-				<div class="fieldWrapperSide">
-					<div class="leftProperties">
-						<dl>
-							<dt><%=LanguageUtil.get(pageContext, "width")%>:</dt>
-							<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-									<%--<option value="doc-template"  <%if(parameters.getPageWidth().equals("doc-template")) {%>selected="selected"<%}%>>750px</option>--%>
-									<%--<option value="doc2-template" <%if(parameters.getPageWidth().equals("doc2-template")) {%>selected="selected"<%}%>>950px</option>--%>
-                                    <option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
-                                    <option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
-									<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
-
-								</select>
-							</dd>
-						</dl>
-					</div>
-				</div>
-				<div class="clear"></div>
+				
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
@@ -573,7 +558,7 @@
 
 				<div class="clear"></div>
 
-				<div class="fieldWrapperSide">
+				<div class="hidden">
 					<div class="leftProperties">
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
@@ -591,7 +576,7 @@
 				</div>
 
 				<div class="clear"></div>
-
+				
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
