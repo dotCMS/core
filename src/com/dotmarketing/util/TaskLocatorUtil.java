@@ -70,6 +70,7 @@ import com.dotmarketing.startup.runonce.Task01020CreateDefaultWorkflow;
 import com.dotmarketing.startup.runonce.Task01030AddSiteSearchAuditTable;
 import com.dotmarketing.startup.runonce.Task01035FixTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01040CreateContainertStructures;
+import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
 
 public class TaskLocatorUtil {
 
@@ -141,6 +142,7 @@ public class TaskLocatorUtil {
         ret.add(Task01030AddSiteSearchAuditTable.class);
         ret.add(Task01035FixTriggerVarLength.class);
         ret.add(Task01040CreateContainertStructures.class);
+        ret.add(Task01045FixUpgradeTriggerVarLength.class);
         return ret;
     }
 
