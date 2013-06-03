@@ -1470,7 +1470,7 @@
 					selectedCategories.push(selectBox[i].value)
 				}
 			}
-		}, this)
+		}, this);
 		UserAjax.updateUserCategories(currentUser.userId, selectedCategories, updateUserCategoriesCallback);
 	}
 
@@ -1501,20 +1501,19 @@
 		else
 			timeZoneSelect = dijit.byId('userTimeZone');
 		if(currentUser!=null){
-		var timeZone = currentUser.timeZoneId;
-		var language = currentUser.languageId;
-		if(timeZoneSelect){
-	     	timeZoneSelect.attr('value', timeZone);
-	     	dijit.byId('userLanguage').attr('value', language);
+            var timeZone = currentUser.timeZoneId;
+            var language = currentUser.languageId;
+            if(timeZoneSelect) {
+                timeZoneSelect.attr('value', timeZone);
+                dijit.byId('userLanguage').attr('value', language);
+            }
 		}
-		}
-
 	}
 
 
 	function updateUserLocale() {
-		var timeZoneId = dijit.byId('userTimeZone').attr('value')
-		var languageId = dijit.byId('userLanguage').attr('value')
+		var timeZoneId = dijit.byId('userTimeZone').attr('value');
+		var languageId = dijit.byId('userLanguage').attr('value');
 
 		UserAjax.updateUserLocale(currentUser.userId, timeZoneId, languageId, updateUserLocaleCallback);
 	}
@@ -1538,7 +1537,7 @@
 			error : function(error) {
 				targetNode.innerHTML = "An unexpected error occurred: " + error;
 			}
-		}
+		};
 
 		var deferred = dojo.xhrGet(xhrArgs);
 		return roleNode;

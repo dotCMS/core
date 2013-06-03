@@ -99,7 +99,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                     String type = "";
 
                     //First verify what kind of element we want to publish in order to avoid unnecessary calls
-                    if ( identifier.contains( "user_" ) || identifier.contains( "users_" ) ) {//Trying to publish a user
+                    if ( identifier.contains( "user_" ) ) {//Trying to publish a user
                         type = "user";
                     } else if ( identifier.contains( ".jar" ) ) {//Trying to publish an OSGI jar bundle
                         type = "osgi";
@@ -219,7 +219,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                     String type = "";
 
                     //First verify what kind of element we want to publish in order to avoid unnecessary calls
-                    if ( identifier.contains( "user_" ) || identifier.contains( "users_" ) ) {//Trying to publish a user
+                    if ( identifier.contains( "user_" ) ) {//Trying to publish a user
                         type = "user";
                     } else if ( identifier.contains( ".jar" ) ) {//Trying to publish an OSGI jar bundle
                         type = "osgi";
