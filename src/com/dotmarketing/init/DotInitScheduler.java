@@ -376,7 +376,7 @@ public class DotInitScheduler {
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
-						sched.rescheduleJob("trigger11", "group8", trigger);
+						sched.rescheduleJob("trigger11", "group11", trigger);
 				} catch (Exception e) {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
