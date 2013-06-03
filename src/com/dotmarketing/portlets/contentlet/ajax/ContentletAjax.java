@@ -1458,6 +1458,28 @@ public class ContentletAjax {
 			// everything Ok? then commit
 			HibernateUtil.commitTransaction();
 
+			// clean up tmp_binary
+
+			// https://github.com/dotCMS/dotCMS/issues/2921
+
+			if(contentlet!=null) {
+
+			    for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
+
+			        if(ff.getFieldType().equals(FieldType.BINARY.toString())) {
+
+			            File tmp=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+
+			                    +File.separator+user.getUserId()+File.separator+ff.getFieldContentlet());
+
+			            FileUtil.deltree(tmp);
+
+			        }
+
+			    }
+
+			}
+
 		}
 		catch (DotContentletValidationException ve) {
 
@@ -1953,4 +1975,3 @@ public class ContentletAjax {
 
 
 }
-
