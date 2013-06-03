@@ -103,7 +103,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	}
 	
 	protected void remove(Contentlet contentlet) {
-		if (contentlet != null ) {
+		if (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier())) {
 			cache.remove(contentlet.getIdentifier(), STEP_GROUP);
 			cache.remove(contentlet.getIdentifier(), TASK_GROUP);
 		}

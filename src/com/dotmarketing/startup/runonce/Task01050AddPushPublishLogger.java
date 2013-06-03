@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
-public class Task01045AddPushPublishLogger extends AbstractJDBCStartupTask {
+public class Task01050AddPushPublishLogger extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {

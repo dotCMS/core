@@ -686,7 +686,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 										" DECLARE\n " +
 										"   rowcount varchar2(100);\n " +
 										"   assetIdentifier varchar2(100);\n " +
-										"   parentPath varchar2(100);\n " +
+										"   parentPath varchar(255);\n " +
 										"   hostInode varchar2(100);\n " +
 										" BEGIN\n " +
 										"    for i in 1 .. check_parent_path_pkg.newRows.count LOOP\n " +
