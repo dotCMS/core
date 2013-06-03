@@ -24,7 +24,7 @@ GregorianCalendar cal = new GregorianCalendar();
         <%--DATE FILTERING BOX--%>
         <div class="fieldWrapper" id="filterTimeDiv" style="display: none;">
             <div class="fieldName" style="width:80px">
-                <%= LanguageUtil.get( pageContext, "Publish" ) %>:
+                <%= LanguageUtil.get( pageContext, "publish.created.after" ) %>:
             </div>
             <div class="fieldValue">
                 <input type="text" dojoType="dijit.form.DateTextBox" value="now" required="true"

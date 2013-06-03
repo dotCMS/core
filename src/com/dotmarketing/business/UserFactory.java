@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -131,6 +132,17 @@ public abstract class UserFactory {
 	 * @deprecated
      */
     protected abstract Map<String, Object> getUsersAnRolesByName(String filter, int start,int limit) throws DotDataException;
+
+    /**
+     * Returns a list of users ids filtering by a given creation date
+     *
+     * @param filterDate
+     * @param start
+     * @param limit      -1 for no limit
+     * @return
+     * @throws DotDataException
+     */
+    protected abstract List<String> getUsersIdsByCreationDate ( Date filterDate, int start, int limit ) throws DotDataException;
     
     /**
      * 
