@@ -1,22 +1,12 @@
 package com.dotcms.tika;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.activation.MimetypesFileTypeMap;
-
+import org.apache.tika.Tika;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
-
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -26,19 +16,28 @@ import com.dotmarketing.util.UtilMethods;
 public class TikaUtils {
 
 	
-	
+	/**
+	 * Right now the method use the Tika facade directly for parse the document without any kind of restriction about the parser because the 
+	 * new Tika().parse method use the AutoDetectParser by default.
+	 * 
+	 * 
+	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+	 *
+	 * May 31, 2013 - 12:27:19 PM
+	 */
 	public Map<String, String> getMetaDataMap(File binFile, String mimeType) {
 		Map<String, String> metaMap = new HashMap<String, String>();
-		Parser parser = (mimeType ==null) ? getParser(binFile) : getParser(binFile, mimeType);
-
+		Tika t = new Tika();
+		t.setMaxStringLength(Config.getIntProperty("TIKA_PARSE_CHARACTER_LIMIT", -1));
 		Metadata met = new Metadata();
-		// set -1 for no limit when parsing text content
-		ContentHandler handler = new BodyContentHandler(Config.getIntProperty("TIKA_PARSE_CHARACTER_LIMIT", -1));
-		ParseContext context = new ParseContext();
-		BufferedInputStream fis = null;
+		TikaInputStream tis = null;
 		try {
-			fis = new BufferedInputStream(new FileInputStream(binFile));
-			parser.parse(fis, handler, met, context);
+			
+			// no worry about the limit and less time to process.			
+			// with the TikaInputStream I can increase performances because it provide a 
+			// random access to the files (like for example for the PDF and for ZIP files).
+			tis = TikaInputStream.get(binFile, met);
+			String content = t.parseToString(tis.getFile());
 			metaMap = new HashMap<String, String>();
 
 			for (int i = 0; i < met.names().length; i++) {
@@ -50,24 +49,25 @@ public class TikaUtils {
 						metaMap.put(y, met.get(name));
 				}
 			}
-			if (handler != null && UtilMethods.isSet(handler.toString()))
-				metaMap.put(FileAssetAPI.CONTENT_FIELD, handler.toString());
+			metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
 		} catch (Exception e) {
-			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath());
-		} catch (Throwable t) {
-			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + " " + t.getMessage());
-		} finally {
-			try{
-			metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
-			if (fis != null) {
+			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " +e.getMessage());
+		} 
+		finally {
+			
+			// I don't need to close any kind of Stream because the parseToString method close it for me.
+			if(null!=tis){
 				try {
-					fis.close();
+					tis.close();
 				} catch (IOException e) {
+					Logger.error(this.getClass(), "Could not close the Tika stream. "+e.getMessage());
 				}
 			}
+			try{
+				metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
 			}
 			catch(Exception ex){
-				Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath());
+				Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " +ex.getMessage());
 			}
 		}
 
@@ -85,34 +85,34 @@ public class TikaUtils {
 		return getMetaDataMap(binFile, null);
 	}
 
-	/**
-	 * 
-	 * @param binFile
-	 * @return
-	 */
-	private Parser getParser(File binFile) {
-		String mimeType = new MimetypesFileTypeMap().getContentType(binFile);
-		return getParser(binFile, mimeType);
-	}
+//	/**
+//	 * 
+//	 * @param binFile
+//	 * @return
+//	 */
+//	private Parser getParser(File binFile) {
+//		String mimeType = new MimetypesFileTypeMap().getContentType(binFile);
+//		return getParser(binFile, mimeType);
+//	}
 
 	
-	private Parser getParser(File binFile, String mimeType) {
-		String[] mimeTypes = Config.getStringArrayProperty("CONTENT_PARSERS_MIMETYPES");
-		String[] parsers = Config.getStringArrayProperty("CONTENT_PARSERS");
-		int index = Arrays.binarySearch(mimeTypes, mimeType);
-		if (index > -1 && parsers.length > 0) {
-			String parserClassName = parsers[index];
-			Class<Parser> parserClass;
-			try {
-				parserClass = (Class<Parser>) Class.forName(parserClassName);
-				return parserClass.newInstance();
-			} catch (Exception e) {
-				Logger.warn(this.getClass(), "A content parser for mime type " + mimeType
-						+ " was found but could not be instantiated, using default content parser.");
-			}
-		}
-		return new AutoDetectParser();
-	}
+//	private Parser getParser(File binFile, String mimeType) {
+//		String[] mimeTypes = Config.getStringArrayProperty("CONTENT_PARSERS_MIMETYPES");
+//		String[] parsers = Config.getStringArrayProperty("CONTENT_PARSERS");
+//		int index = Arrays.binarySearch(mimeTypes, mimeType);
+//		if (index > -1 && parsers.length > 0) {
+//			String parserClassName = parsers[index];
+//			Class<Parser> parserClass;
+//			try {
+//				parserClass = (Class<Parser>) Class.forName(parserClassName);
+//				return parserClass.newInstance();
+//			} catch (Exception e) {
+//				Logger.warn(this.getClass(), "A content parser for mime type " + mimeType
+//						+ " was found but could not be instantiated, using default content parser.");
+//			}
+//		}
+//		return new AutoDetectParser();
+//	}
 	
 	
 	
