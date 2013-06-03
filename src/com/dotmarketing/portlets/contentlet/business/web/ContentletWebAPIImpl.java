@@ -581,8 +581,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				contentlet.setProperty("recurrenceMonthOfYear",1);
 			}
 
-
-			if (contentletFormData.get("recurrenceOccurs").toString().equals("daily")) {
+			if(contentletFormData.get("recurrenceOccurs") == null){
+					contentlet.setBoolProperty("recurs",false);
+			}else if (contentletFormData.get("recurrenceOccurs").toString().equals("daily")) {
 				contentlet.setLongProperty("recurrenceInterval",Long.valueOf(contentletFormData.get("recurrenceIntervalDaily").toString()));
 				contentlet.setStringProperty("recurrenceOccurs",Event.Occurrency.DAILY.toString());
 			}else if (contentletFormData.get("recurrenceOccurs").toString().equals("weekly")) {

@@ -1,19 +1,18 @@
 
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class VersionableAPIImpl implements VersionableAPI {
 
@@ -243,8 +242,9 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(identifier))
             throw new DotStateException("invalid identifier");
         Identifier ident=APILocator.getIdentifierAPI().find(identifier);
-        if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().after(new Date()))
-            throw new PublishStateException("Can't unpublish content that is scheduled to expire on a future date");
+        if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().after( new Date() ) ) {
+            throw new PublishStateException( "message.contentlet.unpublish.expired" );
+        }
         ContentletVersionInfo ver = vfac.getContentletVersionInfo(identifier, lang);
         if(ver ==null || !UtilMethods.isSet(ver.getIdentifier()))
             throw new DotStateException("No version info. Call setWorking first");
@@ -282,11 +282,13 @@ public class VersionableAPIImpl implements VersionableAPI {
             ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
             if(info ==null ||!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
-            
-            if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().after(new Date()))
-                throw new PublishStateException("Can't publish content that is scheduled to be published on future date");
-            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
-                throw new PublishStateException("Can't publish content that is expired");
+
+            if ( UtilMethods.isSet( ident.getSysPublishDate() ) && ident.getSysPublishDate().after( new Date() ) ) {
+                throw new PublishStateException( "message.contentlet.publish.future.date" );
+            }
+            if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().before( new Date() ) ) {
+                throw new PublishStateException( "message.contentlet.expired" );
+            }
             
             info.setLiveInode(versionable.getInode());
             vfac.saveContentletVersionInfo(info);

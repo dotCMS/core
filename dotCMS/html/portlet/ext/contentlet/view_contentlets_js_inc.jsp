@@ -97,82 +97,172 @@
                 }
         }
 
+
+		function initAdvancedSearch(){
+			var x = dojo.cookie("ShAdDi");
+			if(x !=null && x != undefined && x != 0){
+				resizeAdvancedSearch();
+			}
+		}
+
+
+		function resizeAdvancedSearch(){
+			var start = dojo.getStyle(dojo.byId('advancedSearchOptions'),'height');
+			// how tall should we be
+			var end=dojo.position(dojo.byId("measureTheHeightOfSearchTools")).y - dojo.position(dojo.byId("advancedSearchOptions")).y;
+
+			// resize
+			
+			dojo.setStyle(dojo.byId('advancedSearchOptions'),'height', '0px');
+
+			dojo.animateProperty({
+		        node: dojo.byId("advancedSearchOptions"),
+		        properties: {
+		            height: {start: start, end: end, unit: "px"},
+		        },
+		        duration: 500
+		    }).play();
+			dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Hide") %>";
+			dojo.cookie("ShAdDi", end, { });
+		}
+
+
+
+		function toggleAdvancedSearchDiv(){
+			// how tall are we
+			var showing = dojo.getStyle(dojo.byId('advancedSearchOptions'),'height');
+
+			// resize
+			if("0px" == showing || 0 ==showing){
+				dojo.cookie("ShAdDi", "0", { });
+				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Hide") %>";
+				resizeAdvancedSearch();
+			// hide
+			}else{
+
+				dojo.animateProperty({
+			        node: dojo.byId("advancedSearchOptions"),
+			        properties: {
+			            height: {start: showing, end: 0, unit: "px"},
+			        },
+			        duration: 500
+			    }).play();
+				dojo.cookie("ShAdDi", 0, { });
+				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Advanced") %>";
+			}
+		}
+
+
+
+
+
+
+		/**
+			focus on search box 
+		**/
+		require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+			dojo.require('dojox.timing');
+			t = new dojox.timing.Timer(500);
+			t.onTick = function(){
+			  focusUtil.focus(dom.byId("allFieldTB"));
+			  t.stop();
+			}
+			t.start();
+		});
+		
+
+
+
+
         function fillResults(data) {
-                var counters = data[0];
-                var hasNext = counters["hasNext"];
-                var hasPrevious = counters["hasPrevious"];
-                var total = counters["total"];
-                var begin = counters["begin"];
-                var end = counters["end"];
-        		var totalPages = counters["totalPages"];
+        	//console.log("searching:" +  amISearching);
+        	if(amISearching <0){
+        		amISearching=0;
+        	}
+        	else if(amISearching>0){
+        		amISearching--;
+        	}
 
-                headers = data[1];
+        	if(amISearching>0){
+        		return;
+        	}
+        	
+            var counters = data[0];
+            var hasNext = counters["hasNext"];
+            var hasPrevious = counters["hasPrevious"];
+            var total = counters["total"];
+            var begin = counters["begin"];
+            var end = counters["end"];
+    		var totalPages = counters["totalPages"];
 
-                for (var i = 3; i < data.length; i++) {
-                        data[i - 3] = data[i];
-                }
-                data.length = data.length - 3;
+            headers = data[1];
 
-                dwr.util.removeAllRows("results_table");
+            for (var i = 3; i < data.length; i++) {
+                    data[i - 3] = data[i];
+            }
+            data.length = data.length - 3;
 
-                var funcs = new Array ();
-                if (data.length <= 0) {
-                        if (1 < totalPages) {
-                                doSearch(totalPages, counters["sortByUF"]);
-                        } else {
-                                funcs[0] = noResults;
-                                dwr.util.addRows("results_table", [ headers ] , funcs, { escapeHtml: false });
-                                document.getElementById("nextDiv").style.display = "none";
-                                document.getElementById("previousDiv").style.display = "none";
-                                showMatchingResults (0,0,0,0);
-                                fillQuery (counters);
-                                dijit.byId("searchButton").attr("disabled", false);
-                                dijit.byId("clearButton").setAttribute("disabled", false);
-                        }
+            dwr.util.removeAllRows("results_table");
 
-                        return;
-                }
+            var funcs = new Array ();
+            if (data.length <= 0) {
+                    if (1 < totalPages) {
+                            doSearch(totalPages, counters["sortByUF"]);
+                    } else {
+                            funcs[0] = noResults;
+                            dwr.util.addRows("results_table", [ headers ] , funcs, { escapeHtml: false });
+                            document.getElementById("nextDiv").style.display = "none";
+                            document.getElementById("previousDiv").style.display = "none";
+                            showMatchingResults (0,0,0,0);
+                            fillQuery (counters);
+                            dijit.byId("searchButton").attr("disabled", false);
+                            //dijit.byId("clearButton").setAttribute("disabled", false);
+                    }
+		
+                    return;
+            }
 
-                fillResultsTable (headers, data);
-                showMatchingResults (total,begin,end,totalPages);
-                fillQuery (counters);
+            fillResultsTable (headers, data);
+            showMatchingResults (total,begin,end,totalPages);
+            fillQuery (counters);
 
 
-                var popupsiframe = document.getElementById("popups");
-                for (var j = 0; j < data.length; j++) {
-                        var contentlet = data[j];
-                        var inode = contentlet["inode"];
-                        var live = contentlet["live"] == "true"?"1":"0";
-                        var working = contentlet["working"] == "true"?"1":"0";
-                        var deleted = contentlet["deleted"] == "true"?"1":"0";
-                        var locked = contentlet["locked"] == "true"?"1":"0";
-                        var permissions = contentlet["permissions"];
-                        var read = userHasReadPermission (contentlet, userId)?"1":"0";
-                        var write = userHasWritePermission (contentlet, userId)?"1":"0";
-                        var publish = userHasPublishPermission (contentlet, userId)?"1":"0";
-                }
+            var popupsiframe = document.getElementById("popups");
+            for (var j = 0; j < data.length; j++) {
+				var contentlet = data[j];
+				var inode = contentlet["inode"];
+				var live = contentlet["live"] == "true"?"1":"0";
+				var working = contentlet["working"] == "true"?"1":"0";
+				var deleted = contentlet["deleted"] == "true"?"1":"0";
+				var locked = contentlet["locked"] == "true"?"1":"0";
+				var permissions = contentlet["permissions"];
+				var read = userHasReadPermission (contentlet, userId)?"1":"0";
+				var write = userHasWritePermission (contentlet, userId)?"1":"0";
+				var publish = userHasPublishPermission (contentlet, userId)?"1":"0";
+            }
 
-                if (hasNext) {
-                        document.getElementById("nextDiv").style.display = "";
-                } else {
-                        document.getElementById("nextDiv").style.display = "none";
-                }
+            if (hasNext) {
+                    document.getElementById("nextDiv").style.display = "";
+            } else {
+                    document.getElementById("nextDiv").style.display = "none";
+            }
 
-                if (hasPrevious) {
-                        document.getElementById("previousDiv").style.display = "";
-                } else {
-                        document.getElementById("previousDiv").style.display = "none";
-                }
+            if (hasPrevious) {
+                    document.getElementById("previousDiv").style.display = "";
+            } else {
+                    document.getElementById("previousDiv").style.display = "none";
+            }
 
-                dijit.byId("searchButton").attr("disabled", false);
-        dijit.byId("clearButton").setAttribute("disabled", false);
-                togglePublish();
+            dijit.byId("searchButton").attr("disabled", false);
+    		dijit.byId("clearButton").setAttribute("disabled", false);
+            togglePublish();
 
-                //SelectAll functionality
-                if(document.getElementById("fullCommand").value == "true"){
-                        dijit.byId('checkAll').attr('checked',true);
-                        selectAllContents();
-                }
+            //SelectAll functionality
+            if(document.getElementById("fullCommand").value == "true"){
+                    dijit.byId('checkAll').attr('checked',true);
+                    selectAllContents();
+            }
+            amISearching--;
 
         }
 
@@ -569,11 +659,27 @@
 
         }
 
-        function addNewContentlet(){
-          if(selectedStructureVarName == 'calendarEvent'){
-            structureInode = dijit.byId('structure_inode').value;
+
+		function updateSelectedStructAux(){
+			structureInode = dijit.byId('selectedStructAux').value;
+			addNewContentlet(structureInode);
+		}
+
+
+
+
+        function addNewContentlet(structureInode){
+			if(structureInode == undefined || structureInode==""){        
+        		structureInode = dijit.byId('structure_inode').value;
+        	}
+			if(structureInode == undefined || structureInode == "_all"){
+				dijit.byId("selectStructureDiv").show();
+				return;
+			}
+          else if(selectedStructureVarName == 'calendarEvent'){
+
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-        href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
+                href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
                 href += "<portlet:param name='cmd' value='new' />";
                 href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
                 href += "<portlet:param name='inode' value='' />";
@@ -582,9 +688,9 @@
                 href += "&lang=" + getSelectedLanguageId();
                 window.location=href;
           }else{
-            structureInode = dijit.byId('structure_inode').value;
+
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-        href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
+                href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
                 href += "<portlet:param name='cmd' value='new' />";
                 href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
                 href += "<portlet:param name='inode' value='' />";
@@ -1003,9 +1109,13 @@
                 document.getElementById("nextDiv").style.display = "none";
                 document.getElementById("previousDiv").style.display = "none";
                 counter_radio = 0;
-            counter_checkbox = 0;
+            	counter_checkbox = 0;
                 var div = document.getElementById("matchingResultsBottomDiv")
                 div.innerHTML = "";
+                
+               
+                
+                initAdvancedSearch();
         }
 
         function fieldName (field) {
@@ -1135,12 +1245,15 @@
                 if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
                         setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
                 } else {
+                
                         doSearch1 (page, sortBy);
                 }
         }
+        
+		var amISearching = 0;
+		
 
         function doSearch1 (page, sortBy) {
-
                 var structureInode = dijit.byId('structure_inode').value;
 
                 if(structureInode ==""){
@@ -1152,6 +1265,8 @@
                 if(currentStructureFields == undefined){
                         currentStructureFields = Array();
                 }
+                
+
 
                 var structureVelraw=dojo.byId("structureVelocityVarNames").value;
                 var structInoderaw=dojo.byId("structureInodesList").value;
@@ -1159,11 +1274,11 @@
                 var structInode=structInoderaw.split(";");
                 var selectedStruct="";
                 for(var m2=0; m2 <= structInode.length ; m2++ ){
-             if(structureInode==structInode[m2]){
-                 selectedStruct=structureVel[m2];
+		             if(structureInode==structInode[m2]){
+		                 selectedStruct=structureVel[m2];
+	                 }
                  }
-                        }
-
+				
                 if (hasHostFolderField) {
                         getHostValue();
                 }
@@ -1174,19 +1289,25 @@
                         fieldsValues[fieldsValues.length] = hostValue;
                 }
                 if (isInodeSet(folderValue)) {
+                
                         fieldsValues[fieldsValues.length] = "conFolder";
                         fieldsValues[fieldsValues.length] = folderValue;
                 }
+                var allField = dijit.byId("allFieldTB").getValue();
 
-
+				if (allField != undefined && allField.length>0 ) {
+		
+                        fieldsValues[fieldsValues.length] = "_all";
+                        fieldsValues[fieldsValues.length] = allField + "*";
+				}
                 for (var j = 0; j < currentStructureFields.length; j++) {
                         var field = currentStructureFields[j];
-            var fieldId = selectedStruct+"."+field["fieldVelocityVarName"] + "Field";
+            			var fieldId = selectedStruct+"."+field["fieldVelocityVarName"] + "Field";
                         var formField = document.getElementById(fieldId);
                         var fieldValue = "";
 
                         if(formField != null){
-                                                                if(dojo.attr(formField.id,DOT_FIELD_TYPE) == 'select'){
+                                if(dojo.attr(formField.id,DOT_FIELD_TYPE) == 'select'){
 
                                         var tempDijitObj = dijit.byId(formField.id);
                                         fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
@@ -1294,22 +1415,23 @@
                 }
 
                 var filterLocked = false;
-                if (document.getElementById("filterLockedCB").checked) {
+                
+                if (dijit.byId("showingSelect").getValue() == "locked") {
                         filterLocked = true;
                 }
 
                 var filterUnpublish = false;
-                if (document.getElementById("filterUnpublishCB").checked) {
+                if (dijit.byId("showingSelect").getValue() == "unpublished") {
                        filterUnpublish = true;
                 }
 
                 var showDeleted = false;
-                if (document.getElementById("showDeletedCB").checked) {
+                if (dijit.byId("showingSelect").getValue() == "archived") {
                         showDeleted = true;
                 }
 
                 dijit.byId("searchButton").attr("disabled", true);
-                dijit.byId("clearButton").attr("disabled", true);
+                //dijit.byId("clearButton").attr("disabled", false);
 
                 document.getElementById('fieldsValues').value = fieldsValues;
                 document.getElementById('categoriesValues').value = categoriesValues;
@@ -1318,8 +1440,8 @@
                 document.getElementById('filterSystemHost').value = filterSystemHost;
                 document.getElementById('filterLocked').value = filterLocked;
                 document.getElementById('filterUnpublish').value = filterUnpublish;
-
-                if(isInodeSet(structureInode)){
+				//console.log(fieldsValues);
+                if(isInodeSet(structureInode) || "_all" == structureInode){
                         var dateFrom=null;
                         var dateTo= null;
                         if((document.getElementById("lastModDateFrom").value!="")){
@@ -1335,7 +1457,9 @@
                                 if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
                                 dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
                         }
+                        amISearching++;
                         ContentletAjax.searchContentlets (structureInode, fieldsValues, categoriesValues, showDeleted, filterSystemHost, filterUnpublish, filterLocked, currentPage, currentSortBy, dateFrom, dateTo, fillResults);
+
                 }
 
         }
@@ -1487,14 +1611,16 @@
                         var cellData = data[i];
                         row.setAttribute("id","tr" + cellData.inode);
 
-                        console.log(cellData);
+                        
 
                         var cell = row.insertCell (row.cells.length);
                         cell.style.whiteSpace="nowrap";
+                        
                         cell.innerHTML = statusDataCell(cellData, i);
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
                                 var cell = row.insertCell (row.cells.length);
+                                //console.log(headers[j]);
                                 cell.setAttribute("align","center");
                                 if (j == 0) {
                                         languageId = cellData["languageId"];
@@ -1514,6 +1640,7 @@
                                         cell.innerHTML = locale;
                                         var cell = row.insertCell (row.cells.length);
                                         var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
+                                        
                                 } else {
                                         var value = cellData[header["fieldVelocityVarName"]];
                                 }
@@ -1671,7 +1798,9 @@
         }
 
         function clearSearch () {
-
+     			dijit.byId("showingSelect").set("value", "all");
+     			dijit.byId("allFieldTB").set("value", "");
+     			
                 var div = document.getElementById("matchingResultsBottomDiv");
                 div.innerHTML = "";
                 div = document.getElementById("metaMatchingResultsDiv");
@@ -1754,45 +1883,48 @@
                                 }
                         }
                 }
-        document.getElementById("Identifier").value = "";
-        document.getElementById("lastModDateFrom").value = "";
-        document.getElementById("lastModDateTo").value = "";
+	        document.getElementById("Identifier").value = "";
+	        document.getElementById("lastModDateFrom").value = "";
+	        document.getElementById("lastModDateTo").value = "";
 
-       var showDeletedCB = dijit.byId("showDeletedCB");
-                if(showDeletedCB!=null){
-                        if(showDeletedCB.checked) {
-                          showDeletedCB.setValue(false);
-                        }
-                }
-
-                var filterSystemHostCB = dijit.byId("filterSystemHostCB");
-                if(filterSystemHostCB!=null){
-                        if(filterSystemHostCB.checked) {
-                          filterSystemHostCB.setValue(false);
-                        }
-                }
-
-                var filterLockedCB = dijit.byId("filterLockedCB");
-                if(filterLockedCB!=null){
-                        if(filterLockedCB.checked) {
-                          filterLockedCB.setValue(false);
-                        }
-                }
-
-                var filterUnpublishCB = dijit.byId("filterUnpublishCB");
-                if(filterUnpublishCB!=null){
-                       if(filterUnpublishCB.checked) {
-                         filterUnpublishCB.setValue(false);
-                       }
-                }
-
-                dwr.util.removeAllRows("results_table");
-                document.getElementById("nextDiv").style.display = "none";
-                document.getElementById("previousDiv").style.display = "none";
-
-
-
-                hideMatchingResults ();
+       		var showDeletedCB = dijit.byId("showDeletedCB");
+	        if(showDeletedCB!=null){
+	                if(showDeletedCB.checked) {
+	                  showDeletedCB.setValue(false);
+	                }
+	        }
+	
+	        var filterSystemHostCB = dijit.byId("filterSystemHostCB");
+	        if(filterSystemHostCB!=null){
+	                if(filterSystemHostCB.checked) {
+	                  filterSystemHostCB.setValue(false);
+	                }
+	        }
+	
+	        var filterLockedCB = dijit.byId("filterLockedCB");
+	        if(filterLockedCB!=null){
+	                if(filterLockedCB.checked) {
+	                  filterLockedCB.setValue(false);
+	                }
+	        }
+	
+	        var filterUnpublishCB = dijit.byId("filterUnpublishCB");
+	        if(filterUnpublishCB!=null){
+	               if(filterUnpublishCB.checked) {
+	                 filterUnpublishCB.setValue(false);
+	               }
+	        }
+	
+	        dwr.util.removeAllRows("results_table");
+	        document.getElementById("nextDiv").style.display = "none";
+	        document.getElementById("previousDiv").style.display = "none";
+	
+	
+	
+	        hideMatchingResults ();
+	        
+	        amISearching =0;
+                
         }
 
         function userHasReadPermission (contentlet, userId) {
@@ -2026,7 +2158,8 @@
 
     function togglePublish(){
         var cbArray = document.getElementsByName("publishInode");
-        var showArchive = document.getElementById("showDeletedCB").checked;
+        var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
+
         var cbCount = cbArray.length;
         for(i = 0;i< cbCount ;i++){
             if (cbArray[i].checked) {
@@ -2069,7 +2202,8 @@
                         }
     }
     function displayArchiveButton(){
-        var showArchive = document.getElementById("showDeletedCB").checked;
+
+        var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
         if (showArchive) {
             document.getElementById("archiveButtonDiv").style.display="";
             document.getElementById("unArchiveButtonDiv").style.display="none";
