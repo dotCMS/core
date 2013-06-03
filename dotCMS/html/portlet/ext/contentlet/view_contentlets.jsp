@@ -42,7 +42,7 @@
         selectedLanguage = (Language)request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
     }
     long selectedLanguageId = selectedLanguage.getId();
-
+	String lanId = request.getParameter("language");
         String structureSelected = "";
         if(UtilMethods.isSet(request.getParameter("structure_id"))){
                 structureSelected=request.getParameter("structure_id");
@@ -78,9 +78,13 @@
             if(UtilMethods.isSet(lastSearch.get("orderBy"))){
             	orderBy = (String) lastSearch.get("orderBy");
             }
-        if (UtilMethods.isSet(lastSearch.get("languageId")) && fieldsSearch.containsKey("languageId")) {
-            languageId = ((String) fieldsSearch.get("languageId")).trim();
-        }
+        	if (fieldsSearch.containsKey("languageId")) {
+            	languageId = ((String) fieldsSearch.get("languageId")).trim();
+        	}else if (!fieldsSearch.isEmpty()){
+            	languageId = "0";
+    		}else if(lanId != null){
+            	languageId = lanId;
+   	 		}
         }
 
         if(!InodeUtils.isSet(structureSelected)){
@@ -415,12 +419,8 @@
 																	 labelFunc: function(item, store) { return store.getValue(item, "label"); }
 																},
 																dojo.byId("language_id"));
-
-																<%if(languageId.equals("0")) {%>
-																	myselect.setValue('<%=languages.get(0).getId()%>');
-																<%} else {%>
-																	myselect.setValue('<%=languageId%>');
-																<%}%>
+																
+																myselect.setValue('<%=languageId%>');
 
 													</script>
                                                 </dd>
