@@ -1,11 +1,10 @@
 package com.dotcms.tika;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.FileInputStream;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.tika.Tika;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
@@ -30,14 +29,10 @@ public class TikaUtils {
 		Tika t = new Tika();
 		t.setMaxStringLength(Config.getIntProperty("TIKA_PARSE_CHARACTER_LIMIT", -1));
 		Metadata met = new Metadata();
-		TikaInputStream tis = null;
 		try {
 			
-			// no worry about the limit and less time to process.			
-			// with the TikaInputStream I can increase performances because it provide a 
-			// random access to the files (like for example for the PDF and for ZIP files).
-			tis = TikaInputStream.get(binFile, met);
-			String content = t.parseToString(tis.getFile());
+			// no worry about the limit and less time to process.
+			String content = t.parseToString(new FileInputStream(binFile), met);
 			metaMap = new HashMap<String, String>();
 
 			for (int i = 0; i < met.names().length; i++) {
@@ -55,14 +50,7 @@ public class TikaUtils {
 		} 
 		finally {
 			
-			// I don't need to close any kind of Stream because the parseToString method close it for me.
-			if(null!=tis){
-				try {
-					tis.close();
-				} catch (IOException e) {
-					Logger.error(this.getClass(), "Could not close the Tika stream. "+e.getMessage());
-				}
-			}
+			// I don't need to close any kind of Stream because the parseToString method close it for me.			
 			try{
 				metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
 			}
