@@ -69,8 +69,8 @@ import com.dotmarketing.startup.runonce.Task01015AddPublishExpireDateToIdentifie
 import com.dotmarketing.startup.runonce.Task01020CreateDefaultWorkflow;
 import com.dotmarketing.startup.runonce.Task01030AddSiteSearchAuditTable;
 import com.dotmarketing.startup.runonce.Task01035FixTriggerVarLength;
-
 import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
+import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
 
 
 public class TaskLocatorUtil {
@@ -143,8 +143,8 @@ public class TaskLocatorUtil {
         ret.add(Task01020CreateDefaultWorkflow.class);
         ret.add(Task01030AddSiteSearchAuditTable.class);
         ret.add(Task01035FixTriggerVarLength.class);
-
         ret.add(Task01045FixUpgradeTriggerVarLength.class);
+        ret.add(Task01050AddPushPublishLogger.class);
 
         return ret;
     }

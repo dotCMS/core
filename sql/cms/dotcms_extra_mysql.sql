@@ -591,12 +591,13 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-userActivity.log','Log Users action on pages, structures, documents.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-security.log','Log users login activity into dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
+  insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-pushpublish.log','Log Push Publishing activity on dotCMS.');
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 CREATE TABLE broken_link (
    id VARCHAR(36) PRIMARY KEY,
-   inode VARCHAR(36) NOT NULL, 
+   inode VARCHAR(36) NOT NULL,
    field VARCHAR(36) NOT NULL,
    link VARCHAR(255) NOT NULL,
    title VARCHAR(255) NOT NULL,
@@ -608,28 +609,28 @@ alter table broken_link add CONSTRAINT fk_brokenl_content
 
 alter table broken_link add CONSTRAINT fk_brokenl_field
     FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
-    
+
 -- ****** Content Publishing Framework *******
-create table publishing_queue (id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, operation bigint, asset VARCHAR(2000) NOT NULL, language_id bigint NOT NULL, 
-entered_date DATETIME,last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, in_error varchar(1) DEFAULT '0', last_results LONGTEXT, 
-publish_date DATETIME, server_id VARCHAR(256), 
+create table publishing_queue (id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, operation bigint, asset VARCHAR(2000) NOT NULL, language_id bigint NOT NULL,
+entered_date DATETIME,last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, in_error varchar(1) DEFAULT '0', last_results LONGTEXT,
+publish_date DATETIME, server_id VARCHAR(256),
 type VARCHAR(256), bundle_id VARCHAR(256) , target text);
 
 CREATE TABLE IF NOT EXISTS publishing_queue_audit (
-	bundle_id VARCHAR(36) PRIMARY KEY NOT NULL, 
-	status INTEGER, 
-	status_pojo text, 
-	status_updated DATETIME, 
+	bundle_id VARCHAR(36) PRIMARY KEY NOT NULL,
+	status INTEGER,
+	status_pojo text,
+	status_updated DATETIME,
 	create_date DATETIME);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE IF NOT EXISTS publishing_end_point (
-	id varchar(36) PRIMARY KEY, 
-	group_id varchar(700), 
+	id varchar(36) PRIMARY KEY,
+	group_id varchar(700),
 	server_name varchar(255) unique,
 	address varchar(250),
 	port varchar(10),
-	protocol varchar(10),	
+	protocol varchar(10),
 	enabled tinyint,
 	auth_key text,
 	sending tinyint
