@@ -270,7 +270,7 @@ AFTER INSERT OR UPDATE ON identifier
 DECLARE
   rowcount varchar2(100);
   assetIdentifier varchar2(100);
-  parentPath varchar2(100);
+  parentPath varchar2(255);
   hostInode varchar2(100);
 BEGIN
    for i in 1 .. check_parent_path_pkg.newRows.count LOOP

@@ -265,7 +265,7 @@ function addGrid(gridId, yuiBId, rowCount){
 			gridDiv_2 = document.createElement("div");
 			gridDiv_2.setAttribute("class","yui-g-template");
 			gridDiv_2.setAttribute("id","yui-g-template");
-			gridDiv_2.setAttribute("style", "margin-right:10px");
+			gridDiv_2.setAttribute("style", "margin-left:10px");
 
 			var yuiUFirst_2 = document.createElement("div");
 			var yuiU2_2 = document.createElement("div");
