@@ -31,7 +31,6 @@ import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.BundlePublisherResource;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
@@ -39,6 +38,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 
 public class BundlePublisher extends Publisher {
+
     private PublishAuditAPI auditAPI = null;
     Map<String,Long> infoToRemove = new HashMap<String, Long>();
     //List<String> pagesToClear = new ArrayList<String>();
@@ -48,42 +48,44 @@ public class BundlePublisher extends Publisher {
     private List<IHandler> handlers = new ArrayList<IHandler>();
 
     @Override
-    public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
-        if(LicenseUtil.getLevel()<200)
-            throw new RuntimeException("need an enterprise licence to run this");
+    public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
+
+        if ( LicenseUtil.getLevel() < 200 ) {
+            throw new RuntimeException( "need an enterprise licence to run this" );
+        }
         handlers = new ArrayList<IHandler>();
+
         //The order is really important
-
         /**
-		 * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
-		 * 
-		 */        
-       	handlers.add(new UserHandler());
-       	handlers.add(new CategoryHandler(config));
-       	handlers.add(new HostHandler(config));
-       	handlers.add(new FolderHandler(config));
+         * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
+         *
+         */
+        handlers.add( new UserHandler( config ) );
+        handlers.add( new CategoryHandler( config ) );
+        handlers.add( new HostHandler( config ) );
+        handlers.add( new FolderHandler( config ) );
 
-       	if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")){
-       		handlers.add(new StructureHandler(config));
-   			/**
-   			 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
-   			 *
-   			 */
-           	handlers.add(new RelationshipHandler(config));
-       	}
+        if ( Config.getBooleanProperty( "PUSH_PUBLISHING_PUSH_STRUCTURES" ) ) {
+            handlers.add( new StructureHandler( config ) );
+            /**
+             * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
+             *
+             */
+            handlers.add( new RelationshipHandler( config ) );
+        }
 
-       	handlers.add(new ContainerHandler(config));
-       	handlers.add(new TemplateHandler(config));
-       	handlers.add(new HTMLPageHandler(config));
+        handlers.add( new ContainerHandler( config ) );
+        handlers.add( new TemplateHandler( config ) );
+        handlers.add( new HTMLPageHandler( config ) );
 
-       	handlers.add(new ContentHandler(config));
-       	handlers.add(new LanguageHandler(config));
-       	handlers.add(new OSGIHandler(config));
-       	handlers.add(new LinkHandler(config));
+        handlers.add( new ContentHandler( config ) );
+        handlers.add( new LanguageHandler( config ) );
+        handlers.add( new OSGIHandler( config ) );
+        handlers.add( new LinkHandler( config ) );
 
         auditAPI = PublishAuditAPI.getInstance();
 
-        this.config = super.init(config);
+        this.config = super.init( config );
         return this.config;
     }
 
@@ -95,15 +97,15 @@ public class BundlePublisher extends Publisher {
         String bundleName = config.getId();
         String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
         String bundlePath = ConfigUtils.getBundlePath()+File.separator+BundlePublisherResource.MY_TEMP;//FIXME
-        
+
       //Publish the bundle extracted
         PublishAuditHistory currentStatusHistory = null;
         EndpointDetail detail = new EndpointDetail();
-        
+
         try{
         	//Update audit
         	 currentStatusHistory = auditAPI.getPublishAuditStatus(bundleFolder).getStatusPojo();
-             
+
              currentStatusHistory.setPublishStart(new Date());
              detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
              detail.setInfo("Publishing bundle");
@@ -115,7 +117,6 @@ public class BundlePublisher extends Publisher {
         }catch (Exception e) {
         	Logger.error(BundlePublisher.class,"Unable to update audit table : " + e.getMessage(),e);
 		}
-        
 
 
         File folderOut = new File(bundlePath+bundleFolder);
@@ -131,11 +132,11 @@ public class BundlePublisher extends Publisher {
         } catch (FileNotFoundException e) {
             throw new DotPublishingException("Cannot extract the selected archive", e);
         }
-        
-        
+
+
         try {
             HibernateUtil.startTransaction();
-            
+
             //Execute the handlers
             for(IHandler handler : handlers ){
             	handler.handle(folderOut);
@@ -169,7 +170,7 @@ public class BundlePublisher extends Publisher {
             throw new DotPublishingException("Error Publishing: " +  e, e);
         }
 
-        
+
         try{
 		    //Update audit
 		    detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
@@ -183,7 +184,7 @@ public class BundlePublisher extends Publisher {
         }catch (Exception e) {
 			Logger.error(BundlePublisher.class,"Unable to update audit table : " + e.getMessage(),e);
 		}
-        
+
         try {
             HibernateUtil.closeSession();
         } catch (DotHibernateException e) {
@@ -192,7 +193,7 @@ public class BundlePublisher extends Publisher {
         return config;
     }
 
-    
+
 
     @SuppressWarnings("rawtypes")
     @Override
