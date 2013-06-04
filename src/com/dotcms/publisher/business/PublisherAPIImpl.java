@@ -1,5 +1,9 @@
 package com.dotcms.publisher.business;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -14,12 +18,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Implement the PublishQueueAPI abstract class methods
@@ -168,6 +169,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                     dc.addObject( null ); // target
 
                     dc.loadResult();
+
+                    PushPublishLogger.log(getClass(), "Asset added to Push Publish Queue. Action: Publish, Asset Type: " + type + ", Asset Id: " + identifier, bundleId, user);
                 }
 
                 HibernateUtil.commitTransaction();
@@ -273,6 +276,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                     dc.addObject( null );
 
                     dc.loadResult();
+
+                    PushPublishLogger.log(getClass(), "Asset added to Push Publish Queue. Action: Unpublish, Asset Type: " + type + ", Asset Id: " + identifier, bundleId, user);
                 }
 
                 HibernateUtil.commitTransaction();
