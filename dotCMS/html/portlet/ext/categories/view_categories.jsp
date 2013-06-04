@@ -67,7 +67,10 @@ td {font-size: 100%;}
 	dojo.require("dojox.timing._base");
 	dojo.require("dojo.hash");
 	dojo.require("dotcms.dojo.push.PushHandler");	
-
+	dojo.require("dijit.form.ValidationTextBox");
+    dojo.require("dojo.parser");
+    
+    
 	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Syncronization")%>');
 	
 	dojo.connect(dojo.global, "onhashchange", refresh);
@@ -115,7 +118,7 @@ td {font-size: 100%;}
 		if(toBlur.id!="addCatName" &&
 				toBlur.id!="addCatKey" &&
 				toBlur.id!="addCatKeywords" &&
-				toBlur.id.indexOf("dijit_form_NumberTextBox")) {
+				toBlur.id.indexOf("dijit_form_ValidationTextBox")) {
 			toBlur.blur();
 			this.focus();
 		}
@@ -127,11 +130,13 @@ td {font-size: 100%;}
 		var inode = grid.store.getValue(grid.getItem(index), 'inode');
 		var sort_order = grid.store.getValue(grid.getItem(index), 'sort_order');
 
-		return new dijit.form.NumberTextBox({
+		return new dijit.form.ValidationTextBox({
 			style : "width:60%; font-size: 11px; height: 15px",
 			value : sort_order,
 			name: inode,
 			maxLength: 15,
+			regExpGen:function(){ return "\\d+" }, 
+			invalidMessage:"Please enter numbers only",
 			type : "text",
 			onChange : sortCat,
 			onClick : sortSelectable,
