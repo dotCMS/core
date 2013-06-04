@@ -778,13 +778,14 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-userActivity.log','Log Users action on pages, structures, documents.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-security.log','Log users login activity into dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
+  insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-pushpublish.log','Log Push Publishing activity on dotCMS.');
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 
 CREATE TABLE broken_link (
    id VARCHAR(36) PRIMARY KEY,
-   inode VARCHAR2(36) NOT NULL, 
+   inode VARCHAR2(36) NOT NULL,
    field VARCHAR2(36) NOT NULL,
    link VARCHAR2(255) NOT NULL,
    title VARCHAR2(255) NOT NULL,
@@ -796,7 +797,7 @@ alter table broken_link add CONSTRAINT fk_brokenl_content
 
 alter table broken_link add CONSTRAINT fk_brokenl_field
     FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
-    
+
 -- ****** Content Publishing Framework *******
 CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
 
@@ -805,27 +806,27 @@ CREATE TABLE publishing_queue
 operation number(19,0), asset VARCHAR2(2000) NOT NULL,
 language_id number(19,0) NOT NULL, entered_date TIMESTAMP,
 last_try TIMESTAMP, num_of_tries number(19,0) DEFAULT 0 NOT NULL,
-in_error number(1,0) DEFAULT 0, last_results NCLOB, 
-publish_date TIMESTAMP, server_id VARCHAR2(256), 
+in_error number(1,0) DEFAULT 0, last_results NCLOB,
+publish_date TIMESTAMP, server_id VARCHAR2(256),
 type VARCHAR2(256), bundle_id VARCHAR2(256), target nclob);
 
-CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before 
-insert on publishing_queue for each row 
-begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; 
+CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before
+insert on publishing_queue for each row
+begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual;
 end;
 /
 
 CREATE TABLE publishing_queue_audit
-(bundle_id VARCHAR2(256) PRIMARY KEY NOT NULL, 
-status INTEGER, 
-status_pojo nclob, 
-status_updated TIMESTAMP, 
+(bundle_id VARCHAR2(256) PRIMARY KEY NOT NULL,
+status INTEGER,
+status_pojo nclob,
+status_updated TIMESTAMP,
 create_date TIMESTAMP);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE publishing_end_point (
-	id VARCHAR2(36) PRIMARY KEY, 
-	group_id VARCHAR2(700), 
+	id VARCHAR2(36) PRIMARY KEY,
+	group_id VARCHAR2(700),
 	server_name VARCHAR2(700) unique,
 	address VARCHAR2(250),
 	port VARCHAR2(10),

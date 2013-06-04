@@ -58,6 +58,7 @@ import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -544,7 +545,7 @@ public class ContentletAjax {
 			luceneQuery.append("+structureName:" + st.getVelocityVarName() + " ");
 		}
 		else {
-			
+
 			for(int i=0;i<fields.size();i++){
 				String x = fields.get(i);
 				if("_all".equals(x)){
@@ -562,7 +563,7 @@ public class ContentletAjax {
 
 		}
 
-		
+
 
 		// Stores (database name,type description) pairs to catch certain field types.
 		List<Field> targetFields = new ArrayList<Field>();
@@ -630,7 +631,7 @@ public class ContentletAjax {
 							Logger.error(ContentletAjax.class,e.getMessage(),e);
 						}
 					}
-				}else {									
+				}else {
 						String fieldbcontentname="";
 						String fieldVelocityVarName = "";
 						Boolean isStructField=false;
@@ -724,7 +725,7 @@ public class ContentletAjax {
 						} else {
 							if(isStructField==false){
 								String next =  fieldValue.toString();
-								if(!next.contains("'") && ! next.contains("\"")){ 
+								if(!next.contains("'") && ! next.contains("\"")){
 									next = next.replaceAll("\\*", "");
 									String y[] = next.split(" ");
 									for(int j=0;j<y.length;j++){
@@ -734,8 +735,8 @@ public class ContentletAjax {
 								else{
 									luceneQuery.append("+" + fieldName +":" + next + " ");
 								}
-							
-	
+
+
 							}
 							else {
 								luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue.toString() + wildCard + " ");
@@ -755,13 +756,13 @@ public class ContentletAjax {
 		//for (String cat : categories) {
 		//	luceneQuery.append("+c" + cat + "c:on ");
 		//}
-		
+
 		lastSearchMap.put("categories", categories);
-		
-		
+
+
 		//Adding the headers as the second row of the results
 
-		
+
 
 		for (Field f : targetFields) {
 			if (f.isListed()) {
@@ -771,9 +772,9 @@ public class ContentletAjax {
 		}
 
 
-		
-		
-		
+
+
+
 		if (!UtilMethods.isSet(orderBy)){
 			orderBy = "modDate desc";
 		}
@@ -911,7 +912,7 @@ public class ContentletAjax {
        								: "fileIcon";
 
 			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + s.getName() +"</div>");
-		
+
 			String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 
 			searchResult.put("modDate", fieldValue);
