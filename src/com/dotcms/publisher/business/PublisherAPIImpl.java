@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -171,6 +172,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                     dc.addObject( null ); // target
 
                     dc.loadResult();
+
+                    PushPublishLogger.log(getClass(), "Asset added to Push Publish Queue. Action: Publish, Asset Type: " + type + ", Asset Id: " + identifier, bundleId, user);
                 }
 
                 HibernateUtil.commitTransaction();
@@ -279,6 +282,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                     dc.addObject( null );
 
                     dc.loadResult();
+
+                    PushPublishLogger.log(getClass(), "Asset added to Push Publish Queue. Action: Unpublish, Asset Type: " + type + ", Asset Id: " + identifier, bundleId, user);
                 }
 
                 HibernateUtil.commitTransaction();

@@ -270,7 +270,7 @@ AFTER INSERT OR UPDATE ON identifier
 DECLARE
   rowcount varchar2(100);
   assetIdentifier varchar2(100);
-  parentPath varchar2(100);
+  parentPath varchar2(255);
   hostInode varchar2(100);
 BEGIN
    for i in 1 .. check_parent_path_pkg.newRows.count LOOP
@@ -778,6 +778,7 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-userActivity.log','Log Users action on pages, structures, documents.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-security.log','Log users login activity into dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
+  insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-pushpublish.log','Log Push Publishing activity on dotCMS.');
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
