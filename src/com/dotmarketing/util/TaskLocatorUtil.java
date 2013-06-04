@@ -14,7 +14,6 @@ import com.dotmarketing.fixtask.tasks.FixTask00009CheckContentletsInexistentInod
 import com.dotmarketing.fixtask.tasks.FixTask00011RenameHostInFieldVariableName;
 import com.dotmarketing.fixtask.tasks.FixTask00012UpdateAssetsHosts;
 import com.dotmarketing.fixtask.tasks.FixTask00020DeleteOrphanedIdentifiers;
-import com.dotmarketing.fixtask.tasks.FixTask00021CheckOrphanedAssets;
 import com.dotmarketing.fixtask.tasks.FixTask00030DeleteOrphanedAssets;
 import com.dotmarketing.fixtask.tasks.FixTask00040CheckFileAssetsMimeType;
 import com.dotmarketing.fixtask.tasks.FixTask00050FixInodesWithoutContentlets;
@@ -71,6 +70,7 @@ import com.dotmarketing.startup.runonce.Task01030AddSiteSearchAuditTable;
 import com.dotmarketing.startup.runonce.Task01035FixTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01040CreateContainertStructures;
 import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
+import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
 
 public class TaskLocatorUtil {
 
@@ -86,7 +86,7 @@ public class TaskLocatorUtil {
 		ret.add(FixTask00009CheckContentletsInexistentInodes.class);
 		ret.add(FixTask00011RenameHostInFieldVariableName.class);
 		ret.add(FixTask00012UpdateAssetsHosts.class);
-		ret.add(FixTask00020DeleteOrphanedIdentifiers.class);		
+		ret.add(FixTask00020DeleteOrphanedIdentifiers.class);
 		ret.add(FixTask00030DeleteOrphanedAssets.class);
 		ret.add(FixTask00040CheckFileAssetsMimeType.class);
 		ret.add(FixTask00050FixInodesWithoutContentlets.class);
@@ -143,6 +143,7 @@ public class TaskLocatorUtil {
         ret.add(Task01035FixTriggerVarLength.class);
         ret.add(Task01040CreateContainertStructures.class);
         ret.add(Task01045FixUpgradeTriggerVarLength.class);
+        ret.add(Task01050AddPushPublishLogger.class);
         return ret;
     }
 
