@@ -403,11 +403,14 @@
 	}
 
 	function removeContentlet(x,y){
-	 	document.getElementById('container').value=x;
-	 	document.getElementById('contentlet').value=y;
-		form = document.getElementById('submitParent');
-		form.cmd.value="removeChild";
-		form.submit();
+		 var r=confirm("Are you sure you want to remove content from this page?");
+    	if (r==true){
+	 		document.getElementById('container').value=x;
+	 		document.getElementById('contentlet').value=y;
+			form = document.getElementById('submitParent');
+			form.cmd.value="removeChild";
+			form.submit();
+		}	
 	}
 
 	function addContentlet(x){
