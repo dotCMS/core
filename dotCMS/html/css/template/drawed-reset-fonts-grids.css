@@ -120,6 +120,9 @@
 .yui-g-template .yui-u-template,.yui-g-template .yui-g-template,.yui-g-template .yui-gb-template,.yui-g-template .yui-gc-template,.yui-g-template .yui-gd-template,.yui-g-template .yui-ge-template,.yui-g-template .yui-gf-template,.yui-gc-template .yui-u-template,.yui-gd-template .yui-g-template,.yui-g-template .yui-gc-template .yui-u-template,.yui-ge-template .yui-u-template,.yui-ge-template .yui-g-template,.yui-gf-template .yui-g-template,.yui-gf-template .yui-u-template{
 	float:right
 }
+.yui-g-template .yui-g-template{
+	float:left
+}
 .yui-g-template div.first,.yui-gb-template div.first,.yui-gc-template div.first,.yui-gd-template div.first,.yui-ge-template div.first,.yui-gf-template div.first,.yui-g-template .yui-gc-template div.first,.yui-g-template .yui-ge-template div.first,.yui-gc-template div.first div.first{
 	float:left
 }

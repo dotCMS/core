@@ -44,7 +44,7 @@ public class BundlePublisher extends Publisher {
     //List<String> pagesToClear = new ArrayList<String>();
     Map<String, String> assetIds = new HashMap<String, String>();
     boolean bundleSuccess = true;
-    
+
     private List<IHandler> handlers = new ArrayList<IHandler>();
 
     @Override
@@ -53,32 +53,32 @@ public class BundlePublisher extends Publisher {
             throw new RuntimeException("need an enterprise licence to run this");
         handlers = new ArrayList<IHandler>();
         //The order is really important
-    	
+
         /**
 		 * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
-		 * 
-		 */        
-       	handlers.add(new CategoryHandler());
-       	handlers.add(new HostHandler());
-       	handlers.add(new FolderHandler());
-           
+		 *
+		 */
+       	handlers.add(new CategoryHandler(config));
+       	handlers.add(new HostHandler(config));
+       	handlers.add(new FolderHandler(config));
+
        	if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")){
-       		handlers.add(new StructureHandler());
+       		handlers.add(new StructureHandler(config));
    			/**
    			 * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
-   			 * 
-   			 */        	
-           	handlers.add(new RelationshipHandler());
+   			 *
+   			 */
+           	handlers.add(new RelationshipHandler(config));
        	}
-           
-       	handlers.add(new ContainerHandler());
-       	handlers.add(new TemplateHandler());
-       	handlers.add(new HTMLPageHandler());
-           
-       	handlers.add(new ContentHandler());
-       	handlers.add(new LanguageHandler());
-       	handlers.add(new OSGIHandler());
-       	handlers.add(new LinkHandler());
+
+       	handlers.add(new ContainerHandler(config));
+       	handlers.add(new TemplateHandler(config));
+       	handlers.add(new HTMLPageHandler(config));
+
+       	handlers.add(new ContentHandler(config));
+       	handlers.add(new LanguageHandler(config));
+       	handlers.add(new OSGIHandler(config));
+       	handlers.add(new LinkHandler(config));
 
         auditAPI = PublishAuditAPI.getInstance();
 
@@ -94,15 +94,15 @@ public class BundlePublisher extends Publisher {
         String bundleName = config.getId();
         String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
         String bundlePath = ConfigUtils.getBundlePath()+File.separator+BundlePublisherResource.MY_TEMP;//FIXME
-        
+
       //Publish the bundle extracted
         PublishAuditHistory currentStatusHistory = null;
         EndpointDetail detail = new EndpointDetail();
-        
+
         try{
         	//Update audit
         	 currentStatusHistory = auditAPI.getPublishAuditStatus(bundleFolder).getStatusPojo();
-             
+
              currentStatusHistory.setPublishStart(new Date());
              detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
              detail.setInfo("Publishing bundle");
@@ -114,7 +114,7 @@ public class BundlePublisher extends Publisher {
         }catch (Exception e) {
         	Logger.error(BundlePublisher.class,"Unable to update audit table : " + e.getMessage(),e);
 		}
-        
+
 
         File folderOut = new File(bundlePath+bundleFolder);
         folderOut.mkdir();
@@ -129,11 +129,11 @@ public class BundlePublisher extends Publisher {
         } catch (FileNotFoundException e) {
             throw new DotPublishingException("Cannot extract the selected archive", e);
         }
-        
-        
+
+
         try {
             HibernateUtil.startTransaction();
-            
+
             //Execute the handlers
             for(IHandler handler : handlers ){
             	handler.handle(folderOut);
@@ -167,7 +167,7 @@ public class BundlePublisher extends Publisher {
             throw new DotPublishingException("Error Publishing: " +  e, e);
         }
 
-        
+
         try{
 		    //Update audit
 		    detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
@@ -181,7 +181,7 @@ public class BundlePublisher extends Publisher {
         }catch (Exception e) {
 			Logger.error(BundlePublisher.class,"Unable to update audit table : " + e.getMessage(),e);
 		}
-        
+
         try {
             HibernateUtil.closeSession();
         } catch (DotHibernateException e) {
@@ -190,7 +190,7 @@ public class BundlePublisher extends Publisher {
         return config;
     }
 
-    
+
 
     @SuppressWarnings("rawtypes")
     @Override
