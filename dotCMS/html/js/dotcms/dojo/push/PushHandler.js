@@ -145,12 +145,15 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 
 		// BEGIN: PUSH PUBLISHING ACTIONLET
-        dojo.byId("assetIdentifier").value = this.assetIdentifier + this._getFilterDate();
+        dojo.byId("assetIdentifier").value = this.assetIdentifier;
         dojo.byId("remotePublishDate").value = publishDate;
         dojo.byId("remotePublishTime").value = publishTime;
         dojo.byId("remotePublishExpireDate").value = expireDate;
         dojo.byId("remotePublishExpireTime").value = expireTime;
         dojo.byId("iWantTo").value = iWantTo;
+        if (dojo.byId("remoteFilterDate")) {
+            dojo.byId("remoteFilterDate").value = this._getFilterDate();
+        }
 		// END: PUSH PUBLISHING ACTIONLET
 
 		var xhrArgs = {
