@@ -13,7 +13,7 @@ if ((emailAddress == null) || (emailAddress.equals("null"))) {
 String login = request.getParameter("my_account_login");
 if(!UtilMethods.isSet(login)){
 	login = (String) session.getAttribute("_failedLoginName");
-	
+
 }
 if(!UtilMethods.isSet(login)){
 	login = GetterUtil.getString(CookieUtil.get(request.getCookies(), CookieKeys.LOGIN));
@@ -29,7 +29,7 @@ String uId = null;
 Cookie[] cookies = request.getCookies();
 if(cookies != null){
 	for(Cookie c : cookies){
-	
+
 		if(CookieKeys.ID.equals(c.getName())){
 			try{
 				uId = PublicEncryptionFactory.decryptString(c.getValue());
@@ -39,19 +39,19 @@ if(cookies != null){
 				uId = null;
 			}
 		}
-		
+
 	}
 }
-if(UtilMethods.isSet(uId)){	
+if(UtilMethods.isSet(uId)){
 	session.setAttribute(WebKeys.USER_ID, uId);
 	String referer = (String)session.getAttribute(WebKeys.REFERER);
 
 	//DOTCMS-4943
-	UserAPI userAPI = APILocator.getUserAPI();			
+	UserAPI userAPI = APILocator.getUserAPI();
 	boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(request);
 	User loggedInUser = userAPI.loadUserById(uId, userAPI.getSystemUser(), respectFrontend);
 	session.setAttribute(org.apache.struts.Globals.LOCALE_KEY, loggedInUser.getLocale());
-	
+
 	if(UtilMethods.isSet(referer)){
 		session.removeAttribute(WebKeys.REFERER);
 		response.sendRedirect(referer);
@@ -67,7 +67,7 @@ if(UtilMethods.isSet(uId)){
 	out.println("window.location='/c/';");
 	out.println("</script>");
 	return;
-	
+
 }
 
 
@@ -98,7 +98,7 @@ boolean rememberMe = ParamUtil.get(request, "my_account_r_m", false);
 String errorMessage = null;
 if(cmd.equals("send") && SessionErrors.contains(request, NoSuchUserException.class.getName())){
 	errorMessage = LanguageUtil.get(pageContext, "the-email-address-you-requested-is-not-registered-in-our-database") ;
-} 
+}
 else if(cmd.equals("send") && SessionErrors.contains(request, SendPasswordException.class.getName())){
 	errorMessage = LanguageUtil.get(pageContext, "a-new-password-can-only-be-sent-to-an-external-email-address");
 }
@@ -108,7 +108,7 @@ else if(cmd.equals("send") && SessionErrors.contains(request, UserEmailAddressEx
 else if(cmd.equals("send") && SessionMessages.contains(request, "new_password_sent")){
 	String recipient = (String)SessionMessages.get(request, "new_password_sent");
 	errorMessage = LanguageUtil.format(pageContext, "a-new-password-has-been-sent-to-x", recipient, false);
-} 
+}
 
 else  if(cmd.equals("auth") && SessionErrors.contains(request, NoSuchUserException.class.getName()) || SessionErrors.contains(request, UserEmailAddressException.class.getName())){
 	errorMessage = LanguageUtil.get(pageContext, "please-enter-a-valid-login");
@@ -127,7 +127,7 @@ else  if(cmd.equals("auth") && SessionErrors.contains(request, RequiredLayoutExc
 	 errorMessage = LanguageUtil.get(pageContext, "user-without-portlet");
 }
 else  if(cmd.equals("auth") && SessionErrors.contains(request, UserActiveException.class.getName())){
-	 errorMessage = LanguageUtil.format(pageContext, "your-account-is-not-active", new LanguageWrapper[] {new LanguageWrapper("<b><i>", login, "</i></b>")}, false); 
+	 errorMessage = LanguageUtil.format(pageContext, "your-account-is-not-active", new LanguageWrapper[] {new LanguageWrapper("<b><i>", login, "</i></b>")}, false);
 }
 if(errorMessage != null){
 	session.setAttribute("_dotLoginMessages", errorMessage);
@@ -137,11 +137,11 @@ if(errorMessage != null){
 	return;
 }
 %>
-	
 
 
 
-<!-- 
+
+<!--
 <jsp:include page="/html/portal/about.jsp"></jsp:include>
 
 
@@ -165,35 +165,43 @@ if(errorMessage != null){
 <%@page import="com.dotmarketing.cms.factories.PublicEncryptionFactory"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <script type="text/javascript">
-	
+
 	dojo.addOnLoad(function(){
 		if (dojo.isIE <= 8) {
+			var cfMissing = false;
 			CFInstall.check({
-				mode: "overlay"
-			});
+	            mode: 'overlay',
+	            onmissing: function () {
+	                cfMissing = true;
+	            }
+	        });
+
+			if(!cfMissing) {
+				showLogin();
+			}
 		}else{
 			showLogin();
 		}
 	});
-	
-	
+
+
    //dojo.addOnLoad(showLogin);
-   
+
 	function showLogin(){
 	       var myDialog = dijit.byId("loginBox");
-	       dojo.style(myDialog.closeButtonNode, "visibility", "hidden"); 
+	       dojo.style(myDialog.closeButtonNode, "visibility", "hidden");
 	       myDialog.tabStart = dojo.byId("loginPasswordTextBox");
 	       myDialog.show();
 	       setTimeout("dijit.byId('loginPasswordTextBox').focus()",200);
 	}
-   
+
 	function showForgot(){
 		var myDialog = dijit.byId("loginBox");
 		myDialog.hide();
-		
+
 		myDialog = dijit.byId("forgotPassword");
-		myDialog.connect(myDialog,"hide",showLogin); 
-		
+		myDialog.connect(myDialog,"hide",showLogin);
+
 		myDialog.show();
 	}
 
@@ -203,16 +211,16 @@ if(errorMessage != null){
 		// set values
 		document.fm.my_account_cmd.value = "auth";
 		document.fm.referer.value = "<%= CTX_PATH %>";
-		
+
 		var loginTextValue = dojo.byId("loginTextBox").value;
-		
+
 		<%if(company.getAuthType().equals(Company.AUTH_TYPE_EA)){%>
 			if(!dojox.validate.isEmailAddress(loginTextValue)){
 				dojo.byId("dotLoginMessagesDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "please-enter-a-valid-email-address") %>';
 				return false;
 			}
 		<%}else{%>
-			if((loginTextValue.length == 0)					
+			if((loginTextValue.length == 0)
 					|| (loginTextValue.indexOf('>') != -1)
 					|| (loginTextValue.indexOf('<') != -1)){
 				dojo.byId("dotLoginMessagesDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "please-enter-a-valid-user-id") %>';
@@ -227,7 +235,7 @@ if(errorMessage != null){
 		myDialog.hide();
 
 		var myDialog = dijit.byId("progressBarBox");
-	    dojo.style(myDialog.closeButtonNode, "visibility", "hidden"); 
+	    dojo.style(myDialog.closeButtonNode, "visibility", "hidden");
 		myDialog.show();
 		var progressBarBox = dijit.byId("progressBarBox");
 
@@ -247,8 +255,8 @@ if(errorMessage != null){
 	}
 
 	function forgotPassword() {
-		if (confirm('<%= UnicodeLanguageUtil.get(pageContext, "a-new-password-will-be-generated-and-sent-to-your-external-email-address") %>')) { 
-			document.fm.my_account_cmd.value = 'send'; 
+		if (confirm('<%= UnicodeLanguageUtil.get(pageContext, "a-new-password-will-be-generated-and-sent-to-your-external-email-address") %>')) {
+			document.fm.my_account_cmd.value = 'send';
 
 			dojo.byId("my_account_email_address").value = dojo.byId("forgotPasswordEmailBox").value;
 
@@ -264,7 +272,7 @@ if(errorMessage != null){
 	        if (key == 13) {
 	                signIn();
 	        }
-	}); 
+	});
 
 
 function showLanguageSelector(){
@@ -282,24 +290,24 @@ function showLanguageSelector(){
 		<div id="forgotPassword" style="display:none" draggable="false" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "forgot-password") %>">
 			<dl>
 				<dt><label for="forgotPasswordEmailBox" class="formLabel"><%if(company.getAuthType().equals(Company.AUTH_TYPE_EA)){%>
-						<%= LanguageUtil.get(pageContext, "email-address") %> : 
+						<%= LanguageUtil.get(pageContext, "email-address") %> :
 					<%}else{ %>
-						<%= LanguageUtil.get(pageContext, "user-id") %> : 
+						<%= LanguageUtil.get(pageContext, "user-id") %> :
 					<%} %></label></dt>
 				<dd><input id="forgotPasswordEmailBox" name="forgotPasswordEmailBox" type="text"  value="<%= Xss.escapeHTMLAttrib(login) %>"  dojoType="dijit.form.TextBox"></dd>
 				<dd><button dojoType="dijit.form.Button"  onClick="forgotPassword()"><%= LanguageUtil.get(pageContext, "get-new-password") %></button></dd>
 			</dl>
 		</div>
 	<% } %>
-	
+
 
 	<div id="loginBox" dojoType="dijit.Dialog" draggable="false" style="display:none" title="<%= LanguageUtil.get(pageContext, "Login") %>">
 
 		<%if(session.getAttribute("_dotLoginMessages") != null ){ %>
 		<%String myMessages = (String) session.getAttribute("_dotLoginMessages") ; %>
-		
+
 			<div class="error-message" id="dotLoginMessagesDiv"><%=myMessages%></div>
-			
+
 		<%session.removeAttribute("_dotLoginMessages");  %>
 		<%}else{ %>
 			<div class="error-message" id="dotLoginMessagesDiv"></div>
@@ -308,17 +316,17 @@ function showLanguageSelector(){
 			<dt style="width:180px">
 				<label for="loginTextBox">
 					<%if(company.getAuthType().equals(Company.AUTH_TYPE_EA)){%>
-						<%= LanguageUtil.get(pageContext, "email-address") %> : 
+						<%= LanguageUtil.get(pageContext, "email-address") %> :
 					<%}else{ %>
-						<%= LanguageUtil.get(pageContext, "user-id") %> : 
+						<%= LanguageUtil.get(pageContext, "user-id") %> :
 					<%} %>
 				</label>
 			</dt>
 			<dd><input name="loginTextBox" id="loginTextBox" dojoType="dijit.form.TextBox" size="25" required="true" type="text" tabindex="1"  value="<%= Xss.escapeHTMLAttrib(login) %>"></dd>
-			
+
 			<dt style="width:180px"><label for="loginPasswordTextBox"><%= LanguageUtil.get(pageContext, "password") %> : </label></dt>
 			<dd><input name="loginPasswordTextBox" id="loginPasswordTextBox" dojoType="dijit.form.TextBox" size="25" required="true" type="password" value="" tabindex="2" ></dd>
-			
+
 			<dt style="width:180px"><label for="rememberMe"><%= LanguageUtil.get(pageContext, "remember-me") %> &nbsp;</label></dt>
 			<dd>
 				<c:if test="<%= company.isAutoLogin()%>">
@@ -329,7 +337,7 @@ function showLanguageSelector(){
 					</c:if>">
 				</c:if>
 			</dd>
-		</dl>		
+		</dl>
 
 		<!-- Button Row --->
 			<div class="buttonRow">
@@ -337,9 +345,9 @@ function showLanguageSelector(){
 					<%= LanguageUtil.get(pageContext, "sign-in") %>
 				</button>
 			</div>
-			
+
 			<div
-				style="float: left;  cursor: pointer;padding-bottom:6px;" class="inputCaption" 
+				style="float: left;  cursor: pointer;padding-bottom:6px;" class="inputCaption"
 				onmousedown="dijit.popup.open({popup: myDialog, around: dojo.byId('myLanguageImage')})">
 					<img title="" id="myLanguageImage" alt="" src="/html/images/languages/<%= locale.getLanguage() + "_" + locale.getCountry() %>.gif" align="left" style="padding:1px;border:1px solid #ffffff">
 					<%-- <%=locale.getDisplayLanguage(locale)%> --%>
@@ -351,7 +359,7 @@ function showLanguageSelector(){
 			    <div id="languageSelectorBar" style="visibility: hidden; display: none;" title="Select Language">
 			    	<div style="text-align: right;margin-right:-5px;margin-top:-3px;">
 			    		<img onclick="dijit.popup.close(myDialog);" alt="<%= LanguageUtil.get(pageContext, "close") %>" title="<%= LanguageUtil.get(pageContext, "close") %>" src="/html/js/dojo/release/dojo/dijit/themes/dmundra/images/tabCloseHover.png" width="10" height="10" style="cursor: pointer;">
-			    		
+
 			    	</div>
 			    	<div style="text-align: center;padding-left:10px;padding-right:10px;border: none;">
 				    	<% Locale[] locales = LanguageUtil.getAvailableLocales();%>
@@ -365,11 +373,11 @@ function showLanguageSelector(){
 				    </div>
 			   </div>
 			<%------/  Language Selector -----%>
-			
+
 			<div class="inputCaption" style="float:right;">
             	<a href="javascript:showForgot()"><%= LanguageUtil.get(pageContext, "forgot-password") %></a>
             </div>
-			
+
 		<!-- /Button Row --->
 	</div>
 
@@ -402,7 +410,7 @@ function showLanguageSelector(){
 	<input name="password" id="password" type="hidden" value="">
 	<input name="my_account_login" id="my_account_login" type="hidden" value="">
 	<input name="my_account_email_address" id="my_account_email_address" type="hidden" value="">
-	
+
 </form>
 
 <div class="inputCaption" style="color:#dddddd;text-align:right;position:absolute;bottom:10px; right:10px;">
@@ -418,6 +426,6 @@ function showLanguageSelector(){
 <script type="text/javascript">
 	var myDialog = new dijit.TooltipDialog({style:'display:none;'}, "languageSelectorBar");
 	myDialog.startup();
-	
+
 </script>
 <%@ include file="/html/common/bottom_inc.jsp" %>
