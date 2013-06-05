@@ -1,9 +1,13 @@
 package com.dotcms.tika;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -28,41 +32,56 @@ public class TikaUtils {
 	public Map<String, String> getMetaDataMap(File binFile, String mimeType) {
 		Map<String, String> metaMap = new HashMap<String, String>();
 		Tika t = new Tika();
-		t.setMaxStringLength(Config.getIntProperty("TIKA_PARSE_CHARACTER_LIMIT", -1));
 		Metadata met = new Metadata();
-		TikaInputStream tis = null;
+		int maxStringLenght = Config.getIntProperty("TIKA_PARSE_CHARACTER_LIMIT", -1);
+		int defaultMaxStringLenght = t.getMaxStringLength();
+		t.setMaxStringLength(maxStringLenght);
+		Reader fulltext = null;
+		InputStream is = null;
+		// if the limit is not "unlimited"
+		// I can use the faster parseToString
 		try {
-			
-			// no worry about the limit and less time to process.			
-			// with the TikaInputStream I can increase performances because it provide a 
-			// random access to the files (like for example for the PDF and for ZIP files).
-			tis = TikaInputStream.get(binFile, met);
-			String content = t.parseToString(tis.getFile());
-			metaMap = new HashMap<String, String>();
-
-			for (int i = 0; i < met.names().length; i++) {
-				String name = met.names()[i];
-				if (UtilMethods.isSet(name) && met.get(name) != null) {
-					// we will want to normalize our metadata for searching
-					String[] x = translateKey(name);
-					for (String y : x)
-						metaMap.put(y, met.get(name));
+			if(maxStringLenght>0 && maxStringLenght<=defaultMaxStringLenght){
+				// no worry about the limit and less time to process.
+				String content = t.parseToString(new FileInputStream(binFile), met);
+				metaMap = new HashMap<String, String>();
+				for (int i = 0; i < met.names().length; i++) {
+					String name = met.names()[i];
+					if (UtilMethods.isSet(name) && met.get(name) != null) {
+						// we will want to normalize our metadata for searching
+						String[] x = translateKey(name);
+						for (String y : x)
+							metaMap.put(y, met.get(name));
+					}
 				}
+				metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
+			}else{ // otherwise I must use the incremental parsing
+				is = TikaInputStream.get(binFile);
+				fulltext = t.parse(is, met);
+				metaMap = new HashMap<String, String>();
+				for (int i = 0; i < met.names().length; i++) {
+					String name = met.names()[i];
+					if (UtilMethods.isSet(name) && met.get(name) != null) {
+						// we will want to normalize our metadata for searching
+						String[] x = translateKey(name);
+						for (String y : x)
+							metaMap.put(y, met.get(name));
+					}
+				}				
+//				LineIterator lines = IOUtils.lineIterator(fulltext);
+//				StringBuffer sb = new StringBuffer();
+//				while(lines.hasNext())
+//					sb.append(lines.nextLine());
+				metaMap.put(FileAssetAPI.CONTENT_FIELD, IOUtils.toString(fulltext));
 			}
-			metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " +e.getMessage());
 		} 
-		finally {
-			
-			// I don't need to close any kind of Stream because the parseToString method close it for me.
-			if(null!=tis){
-				try {
-					tis.close();
-				} catch (IOException e) {
-					Logger.error(this.getClass(), "Could not close the Tika stream. "+e.getMessage());
-				}
-			}
+		finally {			
+			if(null!=fulltext)
+				IOUtils.closeQuietly(fulltext);		
+			if(null!=is)
+				IOUtils.closeQuietly(is);
 			try{
 				metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
 			}
@@ -70,7 +89,6 @@ public class TikaUtils {
 				Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " +ex.getMessage());
 			}
 		}
-
 		return metaMap;
 	}
 	
