@@ -1,9 +1,5 @@
 package com.dotcms.publisher.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -21,6 +17,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implement the PublishQueueAPI abstract class methods
@@ -98,8 +98,11 @@ public class PublisherAPIImpl extends PublisherAPI{
                     PermissionAPI strPerAPI = APILocator.getPermissionAPI();
 
                     String type = "";
-                    //First verify if we are trying to publish an OSGI jar bundle in order to avoid unnecessary calls
-                    if ( identifier.contains( ".jar" ) ) {
+
+                    //First verify what kind of element we want to publish in order to avoid unnecessary calls
+                    if ( identifier.contains( "user_" ) ) {//Trying to publish a user
+                        type = "user";
+                    } else if ( identifier.contains( ".jar" ) ) {//Trying to publish an OSGI jar bundle
                         type = "osgi";
                     } else {
 
@@ -217,8 +220,11 @@ public class PublisherAPIImpl extends PublisherAPI{
                     PermissionAPI strPerAPI = APILocator.getPermissionAPI();
 
                     String type = "";
-                    //First verify if we are trying to publish an OSGI jar bundle in order to avoid unnecessary calls
-                    if ( identifier.contains( ".jar" ) ) {
+
+                    //First verify what kind of element we want to publish in order to avoid unnecessary calls
+                    if ( identifier.contains( "user_" ) ) {//Trying to publish a user
+                        type = "user";
+                    } else if ( identifier.contains( ".jar" ) ) {//Trying to publish an OSGI jar bundle
                         type = "osgi";
                     } else {
 
