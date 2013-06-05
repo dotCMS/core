@@ -2,7 +2,6 @@ package com.dotmarketing.startup.runonce;
 
 import java.util.List;
 
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 public class Task01045FixUpgradeTriggerVarLength extends AbstractJDBCStartupTask {
