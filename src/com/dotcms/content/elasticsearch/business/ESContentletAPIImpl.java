@@ -76,7 +76,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.business.HostCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletAndBinary;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -105,7 +104,6 @@ import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -2902,7 +2900,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 else {
                     contentlet.setDateProperty(field.getVelocityVarName(), null);
                 }
-            }else{
+            }else if(field.isRequired() && value==null){
                 throw new DotContentletStateException("Date fields must either be of type String or Date");
             }
         }else if(field.getFieldContentlet().startsWith("bool")){
