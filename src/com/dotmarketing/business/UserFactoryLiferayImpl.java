@@ -3,10 +3,7 @@
  */
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -373,6 +370,43 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		}
 		return users;    		
 	}
+
+    @Override
+    public List<String> getUsersIdsByCreationDate ( Date filterDate, int start, int limit ) throws DotDataException {
+
+        DotConnect dotConnect = new DotConnect();
+        //Build the sql query
+        StringBuffer query = new StringBuffer( "SELECT user_.userId FROM user_ WHERE companyid = ? AND userid <> 'system' " );
+        if ( UtilMethods.isSet( filterDate ) ) {
+            query.append( " AND createdate >= ?" );
+        }
+        query.append( " ORDER BY firstName ASC, lastname ASC" );
+        dotConnect.setSQL( query.toString() );
+        Logger.debug( UserFactoryLiferayImpl.class, "::getUsersByCreationDate -> query: " + dotConnect.getSQL() );
+
+        //Add the required params
+        dotConnect.addParam( PublicCompanyFactory.getDefaultCompanyId() );
+        if ( UtilMethods.isSet( filterDate ) ) {
+            dotConnect.addParam( filterDate );
+        }
+
+        //Load the results
+        if ( start > -1 ) {
+            dotConnect.setStartRow( start );
+        }
+        if ( limit > -1 ) {
+            dotConnect.setMaxRows( limit );
+        }
+        ArrayList<Map<String, Object>> results = dotConnect.loadResults();
+
+        ArrayList<String> ids = new ArrayList<String>();
+        for ( Map<String, Object> hash : results ) {
+            String userId = (String) hash.get( "userid" );
+            ids.add( userId );
+        }
+        return ids;
+    }
+
 	@Override
 	public Map<String, Object> getUsersAnRolesByName(String filter, int start, int limit) throws DotDataException {
 		filter = (UtilMethods.isSet(filter) ? filter : "");
