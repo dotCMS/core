@@ -95,8 +95,7 @@ public class TimeMachineFilter implements Filter {
 		    
 		    final String pageEXT=Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"); 
 		    
-		    if(uri.endsWith("/"))
-		        uri+="index."+pageEXT;
+
 
 		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
@@ -104,8 +103,14 @@ public class TimeMachineFilter implements Filter {
 		            host.getHostname()+java.io.File.separator+langid+
 		            uri);
 		    
+		    // if we need to redirect to the index page
 		    if(file.isDirectory()) {
-		        file=new java.io.File(file,"index."+pageEXT);
+		        uri+="index."+pageEXT;
+		        file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
+			            "tm_"+date.getTime()+java.io.File.separator+
+			            "live"+java.io.File.separator+
+			            host.getHostname()+java.io.File.separator+langid+
+			            uri);
 		    }
 		    
 		    final String defid=Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -120,7 +125,10 @@ public class TimeMachineFilter implements Filter {
 		    }
 		    
 		    if(file.exists()) {
-		        resp.setContentType(ctx.getMimeType(uri));
+				String mimeType = APILocator.getFileAPI().getMimeType(file.getName());
+				if (mimeType == null)
+					mimeType = "application/octet-stream";
+				resp.setContentType(mimeType);
 		        resp.setContentLength((int)file.length());
 		        FileInputStream fis=new FileInputStream(file);
 		        IOUtils.copy(fis, resp.getOutputStream());
