@@ -150,6 +150,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentPushPublishTime = request.getParameter( "remotePublishTime" );
             String _contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
             String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
+            String _contentFilterDate = request.getParameter( "remoteFilterDate" );
             String _iWantTo = request.getParameter( "iWantTo" );
 
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
@@ -160,7 +161,21 @@ public class RemotePublishAjaxAction extends AjaxAction {
             try {
 
                 // check for the categories
-                if ( _assetId.equals( "CAT" ) ) {
+                if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
+                    //If we are trying to push users a filter date must be available
+                    if ( _assetId.contains( "users_" ) ) {
+                        Date filteringDate = dateFormat.parse( _contentFilterDate );
+                        //Get users where createdate >= ?
+                        List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
+                        if ( usersIds != null ) {
+                            for ( String id : usersIds ) {
+                                ids.add( "user_" + id );
+                            }
+                        }
+                    } else {
+                        ids.add( _assetId );
+                    }
+                } else if ( _assetId.equals( "CAT" ) ) {
                     ids.add( _assetId );
                 } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
                     ids.add( _assetId );

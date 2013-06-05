@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -157,6 +158,19 @@ public interface UserAPI {
      * @version 1.9
      */
     public List<User> getUsersByNameOrEmail(String filter,int page,int pageSize) throws DotDataException;
+
+    /**
+     * Returns a list of users ids filtering by a given creation date
+     * <br>This method will ALWAYS hit DB
+     *
+     * @param filterDate
+     * @param page
+     * @param pageSize   -1 for no limit
+     * @return
+     * @throws DotDataException
+     */
+    public List<String> getUsersIdsByCreationDate ( Date filterDate, int page, int pageSize ) throws DotDataException;
+
     /**
      * This method return a a paginated list of user that have a firstname, lastname or email like
      * the compare string passed
