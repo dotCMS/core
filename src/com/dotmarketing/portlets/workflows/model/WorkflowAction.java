@@ -72,6 +72,9 @@ public class WorkflowAction implements Permissionable, Serializable{
 	public boolean requiresCheckout() {
 		return requiresCheckout;
 	}
+	public boolean isRequiresCheckout() {
+        return requiresCheckout();
+    }
 	public void setRequiresCheckout(boolean requiresCheckout) {
 		this.requiresCheckout = requiresCheckout;
 	}
