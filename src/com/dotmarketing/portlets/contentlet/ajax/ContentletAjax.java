@@ -1648,6 +1648,8 @@ public class ContentletAjax {
 				Logger.debug(this, "Replacing referer language=" + referer);
 				referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);
 				Logger.debug(this, "Referer after being replaced=" + referer);
+			}else{
+				referer = referer+"&language="+language;
 			}
 		}
 		if(!isAutoSave){
@@ -1671,7 +1673,11 @@ public class ContentletAjax {
 			Logger.debug(this, "Error trying to cancelContentEdit");
 		}
 
-		referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);
+		if(referer.contains("language")){
+			referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);
+		}else{
+             referer = referer+"&language="+language;
+		}
 		return referer;
 	}
 
