@@ -510,14 +510,9 @@ public class ContentletAjax {
 	@SuppressWarnings("unchecked")
 	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 
-		/*
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e2) {
-				Logger.error(ContentletAjax.class,e2.getMessage(),e2);
-			}
-			System.out.println();
-		*/
+
+
+
 		if(perPage < 1){
 			perPage = Config.getIntProperty("PER_PAGE");
 		}
@@ -531,44 +526,43 @@ public class ContentletAjax {
 
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
 
-		if (UtilMethods.isSet(sess)){
+		if (UtilMethods.isSet(sess)) {
 			sess.setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
 		}
+
 		Map<String, String> fieldsSearch = new HashMap<String, String>();
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
 		Structure st = null;
 		if(!"_all".equals(structureInode)){
-			st = StructureCache.getStructureByInode(structureInode);
-			WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
-			lastSearchMap.put("structure", st);
-			luceneQuery.append("+structureName:" + st.getVelocityVarName() + " ");
+		    st = StructureCache.getStructureByInode(structureInode);
+		    WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
+		    lastSearchMap.put("structure", st);
+		    luceneQuery.append("+structureName:" + st.getVelocityVarName() + " ");
 		}
 		else {
-
-			for(int i=0;i<fields.size();i++){
-				String x = fields.get(i);
-				if("_all".equals(x)){
-					String next =  fields.get(i+1);
-					next = next.replaceAll("\\*", "");
-					String y[] = next.split(" ");
-					for(int j=0;j<y.length;j++){
-						luceneQuery.append("title:" + y[j] + "* ");
-					}
-					break;
-				}
-			}
-			luceneQuery.append("-structureName:Host ");
-			luceneQuery.append("-structureType:3 ");
-
+		    for(int i=0;i<fields.size();i++){
+		        String x = fields.get(i);
+		        if("_all".equals(x)){
+		            String next =  fields.get(i+1);
+		            next = next.replaceAll("\\*", "");
+		            String y[] = next.split(" ");
+		            for(int j=0;j<y.length;j++){
+		                luceneQuery.append("title:" + y[j] + "* ");
+		            }
+		            break;
+		        }
+		    }
+		    luceneQuery.append("-structureName:Host ");
+		    luceneQuery.append("-structureType:3 ");
 		}
 
-
+		WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
 
 		// Stores (database name,type description) pairs to catch certain field types.
 		List<Field> targetFields = new ArrayList<Field>();
 		if(st!=null){
-			targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
+		    targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		}
 		Map<String,String> fieldContentletNames = new HashMap<String,String>();
 		Map<String,Field> decimalFields = new HashMap<String,Field>();//DOTCMS-5478
@@ -724,19 +718,17 @@ public class ContentletAjax {
 							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
 						} else {
 							if(isStructField==false){
-								String next =  fieldValue.toString();
-								if(!next.contains("'") && ! next.contains("\"")){
-									next = next.replaceAll("\\*", "");
-									String y[] = next.split(" ");
-									for(int j=0;j<y.length;j++){
-										luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
-									}
-								}
-								else{
-									luceneQuery.append("+" + fieldName +":" + next + " ");
-								}
-
-
+							    String next =  fieldValue.toString();
+							    if(!next.contains("'") && ! next.contains("\"")){ 
+							        next = next.replaceAll("\\*", "");
+							        String y[] = next.split(" ");
+							        for(int j=0;j<y.length;j++){
+							            luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
+							        }
+							    }
+							    else{
+							        luceneQuery.append("+" + fieldName +":" + next + " ");
+							   }
 							}
 							else {
 								luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue.toString() + wildCard + " ");
@@ -756,24 +748,16 @@ public class ContentletAjax {
 		//for (String cat : categories) {
 		//	luceneQuery.append("+c" + cat + "c:on ");
 		//}
-
+		
 		lastSearchMap.put("categories", categories);
-
-
+		
 		//Adding the headers as the second row of the results
-
-
-
 		for (Field f : targetFields) {
-			if (f.isListed()) {
-				fieldsMapping.put(f.getVelocityVarName(), f);
-				headers.add(f.getMap());
-			}
+		    if (f.isListed()) {
+		        fieldsMapping.put(f.getVelocityVarName(), f);
+		        headers.add(f.getMap());
+		    }
 		}
-
-
-
-
 
 		if (!UtilMethods.isSet(orderBy)){
 			orderBy = "modDate desc";
@@ -784,7 +768,7 @@ public class ContentletAjax {
 		lastSearchMap.put("filterLocked", filterLocked);
 		lastSearchMap.put("filterUnpublish", filterUnpublish);
 
-		//System.out.println(luceneQuery.toString());
+
 		if(!showDeleted)
 			luceneQuery.append("+deleted:false ");
 		else
@@ -840,7 +824,7 @@ public class ContentletAjax {
 		Map<String, Object> counters = new HashMap<String, Object>();
 		results.add(counters);
 
-
+		
 		if (headers.size() == 0) {
 			Map<String, String> fieldMap = new HashMap<String, String> ();
 			fieldMap.put("fieldVelocityVarName", "__title__");
@@ -901,18 +885,16 @@ public class ContentletAjax {
 			searchResult.put("inode", con.getInode());
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
-			searchResult.put("__title__", con.getTitle());
 			Structure s = StructureCache.getStructureByInode(con.getStructureInode());
-        	String spanClass = (s.getStructureType() ==1)
-           			? "contentIcon"
-       				:	(s.getStructureType() ==2)
-           					? "gearIcon"
-       						:	(s.getStructureType() ==3)
-       						? "formIcon"
-       								: "fileIcon";
-
+			String spanClass = (s.getStructureType() ==1)
+			        ? "contentIcon"
+			                :  (s.getStructureType() ==2)
+			                ? "gearIcon"
+			                        :  (s.getStructureType() ==3)
+			                        ? "formIcon"
+			                                : "fileIcon";
 			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + s.getName() +"</div>");
-
+			
 			String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 
 			searchResult.put("modDate", fieldValue);
@@ -980,6 +962,7 @@ public class ContentletAjax {
 			searchResult.put("locked", locked.toString());
 			searchResult.put("structureInode", con.getStructureInode());
 			searchResult.put("workflowMandatory", String.valueOf(APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()));
+			searchResult.put("contentStructureType", ""+con.getStructure().getStructureType());
 
 			// Workflow Actions
 
@@ -1458,28 +1441,19 @@ public class ContentletAjax {
 
 			// everything Ok? then commit
 			HibernateUtil.commitTransaction();
-
+			
 			// clean up tmp_binary
-
 			// https://github.com/dotCMS/dotCMS/issues/2921
-
 			if(contentlet!=null) {
-
 			    for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
-
 			        if(ff.getFieldType().equals(FieldType.BINARY.toString())) {
-
 			            File tmp=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
-
 			                    +File.separator+user.getUserId()+File.separator+ff.getFieldContentlet());
-
 			            FileUtil.deltree(tmp);
-
 			        }
-
 			    }
-
 			}
+			
 
 		}
 		catch (DotContentletValidationException ve) {
@@ -1594,11 +1568,11 @@ public class ContentletAjax {
 			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
 			saveContentErrors.add(errorString);
 		}
-		catch(PublishStateException pe) {
-		    String errorString = LanguageUtil.get( user, pe.getMessage() );
-		    saveContentErrors.add( errorString );
-		}
-		catch (Exception e) {
+        catch ( PublishStateException pe ) {
+            String errorString = LanguageUtil.get( user, pe.getMessage() );
+            saveContentErrors.add( errorString );
+        }
+        catch (Exception e) {
 			saveContentErrors.add(e.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);
 			callbackData.put("referer", referer);
@@ -1649,8 +1623,8 @@ public class ContentletAjax {
 				referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);
 				Logger.debug(this, "Referer after being replaced=" + referer);
 			}else{
-				referer = referer+"&language="+language;
-			}
+		          	referer = referer+"&language="+language;
+		    }
 		}
 		if(!isAutoSave){
 			if(InodeUtils.isSet(newInode) && !conAPI.isInodeIndexed(newInode)){
@@ -1982,3 +1956,4 @@ public class ContentletAjax {
 
 
 }
+
