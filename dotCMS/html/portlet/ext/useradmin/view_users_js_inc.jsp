@@ -18,8 +18,10 @@
 	dojo.require("dojox.grid.DataGrid");
 	dojo.require("dojo.data.ItemFileReadStore");
 	dojo.require("dijit.dijit");
-	dojo.require("dojox.data.JsonRestStore")
+	dojo.require("dojox.data.JsonRestStore");
 
+    dojo.require("dotcms.dojo.push.PushHandler");
+    var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
 	//I18n messages
 	var abondonUserChangesConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "abondon-user-changes-confirm")) %>';
@@ -111,24 +113,56 @@
 
 	//Users list functions
 
-	//Initialization kicking the loading of users
-	dojo.addOnLoad(function () {
+    //Users grid Initialization
+    var usersData = {
+        identifier: 'id',
+        label: 'id',
+        items: [ { name: "Loading ...", email: "", id: "0" } ]
+    };
+    var usersStore = new dojo.data.ItemFileReadStore({data: usersData});
 
-		//Connecting the action of clicking a user row
+    var usersGridLayout = [[
+        { name: nameColumn, field: 'name', width:'50%' },
+        { name: emailColumn, field: 'email', width:'50%' },
+    ]];
 
-		dojo.connect(
-			    usersGrid,
-			    "onRowClick",
-			    function(evt) {
-				    var id = evt.grid.getItem(evt.rowIndex).id[0];
-				    editUser(id);
-			    }
-			)
+    //Initialization kicking the loading of users
+    dojo.ready(function() {
 
+        dojo.declare('dotcms.dojox.grid.DataGrid', dojox.grid.DataGrid, {
+            onRowContextMenu: function(e) {
 
-		//Loading the grid for first time
-		UserAjax.getUsersList(null, null, { start: 0, limit: 50 }, dojo.hitch(this, getUsersListCallback));
-	});
+                if(enterprise && sendingEndpoints) {
+
+                    var selected = e.grid.getItem(e.rowIndex);
+                    window.selectedUser = selected.id;
+                    try {
+                        usersGrid_rowMenu.bindDomNode(e.grid.domNode);
+                    } catch (ex) {
+                        console.error(ex);
+                    }
+                }
+            }
+        });
+
+        window.usersDataGrid = new dotcms.dojox.grid.DataGrid({
+            id: 'usersGrid',
+            store: usersStore,
+            structure: usersGridLayout,
+            style: 'cursor: pointer; cursor: hand',
+            autoHeight: true
+        }, dojo.byId('usersGrid'));
+        usersDataGrid.startup();
+
+        //Connecting the action of clicking a user row
+        dojo.connect( usersDataGrid, "onRowClick", function (evt) {
+                var id = evt.grid.getItem(evt.rowIndex).id[0];
+                editUser(id);
+        });
+
+        //Loading the grid for first time
+        UserAjax.getUsersList(null, null, { start: 0, limit: 50 }, dojo.hitch(this, getUsersListCallback));
+    });
 
 	//Gethering the data from server and setting the grid to display it
 	function getUsersListCallback (list) {
@@ -145,9 +179,18 @@
 			usersData.items.push({ name: record.name, id: record.id, email: record.emailaddress });
 		});
  		var usersStore = new dojo.data.ItemFileReadStore({data: usersData });
- 		usersGrid.setStore(usersStore);
-
+        usersDataGrid.setStore(usersStore);
 	}
+
+    var remotePublishUser = function () {
+        if (window.selectedUser) {
+            pushHandler.showDialog( "user_" + window.selectedUser);
+        }
+    };
+
+    var remotePublishUsers = function () {
+        pushHandler.showDialog( "users_", true );
+    };
 
 	var filterUsersHandler;
 
@@ -428,23 +471,6 @@
 			showDotCMSErrorMessage(userDeleteFailed);
 		}
 	}
-
-
-	//Users grid Initialization
-	var usersData = {
-		identifier: 'id',
-		label: 'id',
-		items: [ { name: "Loading ...", email: "", id: "0" } ]
-	};
-
-
-	var usersStore = new dojo.data.ItemFileReadStore({data: usersData});
-
-	var usersGridLayout = [[
-		{ name: nameColumn, field: 'name', width:'50%' },
-		{ name: emailColumn, field: 'email', width:'50%' },
-	]];
-
 
 
 	/* --------------------------------------------------------- */
@@ -1444,7 +1470,7 @@
 					selectedCategories.push(selectBox[i].value)
 				}
 			}
-		}, this)
+		}, this);
 		UserAjax.updateUserCategories(currentUser.userId, selectedCategories, updateUserCategoriesCallback);
 	}
 
@@ -1475,20 +1501,19 @@
 		else
 			timeZoneSelect = dijit.byId('userTimeZone');
 		if(currentUser!=null){
-		var timeZone = currentUser.timeZoneId;
-		var language = currentUser.languageId;
-		if(timeZoneSelect){
-	     	timeZoneSelect.attr('value', timeZone);
-	     	dijit.byId('userLanguage').attr('value', language);
+            var timeZone = currentUser.timeZoneId;
+            var language = currentUser.languageId;
+            if(timeZoneSelect) {
+                timeZoneSelect.attr('value', timeZone);
+                dijit.byId('userLanguage').attr('value', language);
+            }
 		}
-		}
-
 	}
 
 
 	function updateUserLocale() {
-		var timeZoneId = dijit.byId('userTimeZone').attr('value')
-		var languageId = dijit.byId('userLanguage').attr('value')
+		var timeZoneId = dijit.byId('userTimeZone').attr('value');
+		var languageId = dijit.byId('userLanguage').attr('value');
 
 		UserAjax.updateUserLocale(currentUser.userId, timeZoneId, languageId, updateUserLocaleCallback);
 	}
@@ -1512,7 +1537,7 @@
 			error : function(error) {
 				targetNode.innerHTML = "An unexpected error occurred: " + error;
 			}
-		}
+		};
 
 		var deferred = dojo.xhrGet(xhrArgs);
 		return roleNode;
