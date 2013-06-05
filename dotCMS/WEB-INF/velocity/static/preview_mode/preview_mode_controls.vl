@@ -402,9 +402,8 @@
 
 	}
 
-	function removeContentlet(x,y){
-		 var r=confirm("Are you sure you want to remove content from this page?");
-    	if (r==true){
+	function removeContentlet(x,y){		 
+    	if(confirm('$languagewebapi.getFromUserLanguage("message.confirm.modes.remove.content")')){
 	 		document.getElementById('container').value=x;
 	 		document.getElementById('contentlet').value=y;
 			form = document.getElementById('submitParent');
