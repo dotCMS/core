@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -172,8 +173,12 @@ public class UserAPIImpl implements UserAPI {
 	public List<User> getUsersByNameOrEmail(String filter, int page, int pageSize) throws DotDataException {
 		return uf.getUsersByNameOrEmail(filter, page, pageSize);
 	}
-	
-	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
+
+    public List<String> getUsersIdsByCreationDate ( Date filterDate, int page, int pageSize ) throws DotDataException {
+        return uf.getUsersIdsByCreationDate( filterDate, page, pageSize );
+    }
+
+    public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
 		return uf.getCountUsersByNameOrEmailOrUserID(filter);
 	}
 
