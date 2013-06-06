@@ -150,7 +150,7 @@ public class BundlePublisher extends Publisher {
             } catch (DotHibernateException e1) {
                 Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
             }
-            Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
+            Logger.error( PublisherAPIImpl.class, "Error Publishing Bundle: " + e.getMessage(), e );
 
             //Update audit
             try {
