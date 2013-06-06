@@ -3,11 +3,29 @@
  */
 package com.dotmarketing.util;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.csvreader.CsvReader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
@@ -39,14 +57,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.factories.TagFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 public class ImportUtil {
 
@@ -556,14 +566,53 @@ public class ImportUtil {
 					//valueObj = UtilMethods.escapeUnicodeCharsForHTML(value);
 				}//http://jira.dotmarketing.net/browse/DOTCMS-3232
 				else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-					String identifier = APILocator.getIdentifierAPI().findFromInode(value).getInode();
-					if(InodeUtils.isSet(identifier)){
+
+					Identifier identifier = null;
+					try{
+						identifier = APILocator.getIdentifierAPI().findFromInode(value);
+					}
+					catch(DotStateException dse){
+						Logger.debug(ImportUtil.class, dse.getMessage());
+						
+					}
+					if(identifier != null && InodeUtils.isSet(identifier.getInode())){
 						valueObj = value;
 						headersIncludeHostField = true;
-					}else{
-							throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
-									", value: " + value + ", invalid host/folder inode found, line will be ignored.");
-				    }
+					}else if(value.contains("//")){
+						String hostName=null;
+						StringWriter path = null;
+						
+							String[] arr = value.split("/");
+							path = new StringWriter().append("/");
+							
+							
+							for(String y : arr){
+								if(UtilMethods.isSet(y) && hostName == null){
+									hostName = y;
+									
+								}
+								else if(UtilMethods.isSet(y)){
+									path.append(y);
+									path.append("/");
+									
+								}
+							}
+							Host host = APILocator.getHostAPI().findByName(hostName, user, false);
+							Folder f = APILocator.getFolderAPI().findFolderByPath(path.toString(), host, user, false);
+							valueObj=host.getIdentifier();
+							headersIncludeHostField = true;
+					}
+					else{
+						Host h = APILocator.getHostAPI().findByName(value, user, false);
+						valueObj=h.getIdentifier();	
+						headersIncludeHostField = true;
+					}
+
+					if(valueObj ==null){
+						throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+								", value: " + value + ", invalid host/folder inode found, line will be ignored.");
+						
+					}
 				}else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 					String filePath = value;
 					if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) && !UtilMethods.isImage(filePath))
@@ -1146,8 +1195,10 @@ public class ImportUtil {
                         }
 						//END Load the old relationShips and add the new ones
 						cont = conAPI.checkin(cont,contentletRelationships, new ArrayList<Category>(categories), structurePermissions, user, false);
-						APILocator.getVersionableAPI().setWorking(cont);
-						APILocator.getVersionableAPI().setLive(cont);
+							
+						if(Config.getBooleanProperty("PUBLISH_CSV_IMPORTED_CONTENT_AUTOMATICALLY", false)){
+							APILocator.getContentletAPI().publish(cont, user, false);
+						}
 						for (Integer column : headers.keySet()) {
 							Field field = headers.get(column);
 							Object value = values.get(column);
