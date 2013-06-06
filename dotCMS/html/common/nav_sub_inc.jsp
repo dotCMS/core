@@ -225,7 +225,7 @@ dojo.require("dojo.cookie");
                         Role.ADMINISTRATOR).getId()%>', '<%=APILocator.getRoleAPI().loadCMSAdminRole().getId()%>' ], portal_loginAs_checkAdminRole);
                     <%} catch (Exception ex) {
 
-            }%>
+                      }%>
                 } else {
                     //dojo.byId('portal_loginasbutton').disabled = true;
                 }
@@ -298,13 +298,14 @@ dojo.require("dojo.cookie");
 
     var currentUserMyAccount;
     function editUserMyAccount(userIdMyAccount) {
-        //dojo.byId('loadingUserProfile').style.display = '';
-        UserAjax.getUserById(userIdMyAccount, editUserMyAccountCallback);
-    }
-
-    //Gathering the user info from the server and setting up the right hand side
-    //of user info
-    function editUserMyAccountCallback(user) {
+        var user = {
+        		id : "<%= user.getUserId() %>",
+        		type : "user",
+                firstName : "<%= user.getFirstName() %>",
+                lastName : "<%= user.getLastName() %>",
+                emailaddress : "<%=user.getEmailAddress()%>",
+                name : "<%=user.getFullName()%>"
+        };
 
         //Global user variable
         currentUserMyAccount = user;

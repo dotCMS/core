@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
@@ -15,42 +14,34 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 
 public class PortletAPIImpl implements PortletAPI {
+    
+    protected boolean hasPortletRights(User user, String pId) {
+        boolean hasRights=false;
+        try {
+            for (Layout layout : APILocator.getLayoutAPI().loadLayoutsForUser(user)) {
+                if(layout.getPortletIds().contains(pId)){
+                    hasRights = true;
+                    break;
+                }
+            }
+        }
+        catch(Exception ex) {
+            Logger.warn(this, "can't determine if user "+user.getUserId()+" has rights to portlet "+pId,ex);
+            hasRights=false;
+        }
+        return hasRights;
+    }
+    
+    public boolean hasUserAdminRights(User user) {
+        return hasPortletRights(user,"EXT_USER_ADMIN");
+    }
 
 	public boolean hasContainerManagerRights(User user) {
-		
-		boolean hasContainerManagerRights = false;
-		List<Layout> layouts;
-		try {
-			layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
-		} catch (DotDataException e) {
-			Logger.error(PortletAPIImpl.class,e.getMessage(),e);
-			return false;
-		}
-		for (Layout layout : layouts) {
-			if(layout.getPortletIds().contains("EXT_12")){
-				hasContainerManagerRights = true;
-				break;
-			}
-		}
-		return hasContainerManagerRights;
+		return hasPortletRights(user,"EXT_12");
 	}
 
 	public boolean hasTemplateManagerRights(User user) {
-		boolean hasTemplateManagerRights = false;
-		List<Layout> layouts;
-		try {
-			layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
-		} catch (DotDataException e) {
-			Logger.error(PortletAPIImpl.class,e.getMessage(),e);
-			return false;
-		}
-		for (Layout layout : layouts) {
-			if(layout.getPortletIds().contains("EXT_13")){
-				hasTemplateManagerRights = true;
-				break;
-			}
-		}		
-		return hasTemplateManagerRights;
+	    return hasPortletRights(user,"EXT_13");
 	}
 
 	public Portlet findPortlet(String portletId) {
