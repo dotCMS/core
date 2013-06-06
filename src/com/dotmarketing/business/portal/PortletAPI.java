@@ -19,5 +19,7 @@ public interface PortletAPI {
 	boolean canAddPortletToLayout(Portlet portlet);
 
 	boolean canAddPortletToLayout(String portletId);
+	
+	boolean hasUserAdminRights(User user);
 
 }
