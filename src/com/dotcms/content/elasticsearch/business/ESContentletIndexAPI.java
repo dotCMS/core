@@ -289,9 +289,9 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
                     contentToIndex.add(content);
                     if(deps)
                         contentToIndex.addAll(loadDeps(content));
-
+                    
                     indexContentletList(req, contentToIndex,reindexOnly);
-
+                                        
                     if(bulk==null && req.numberOfActions()>0)
                         req.execute().actionGet();
 
@@ -308,7 +308,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             // add a commit listener to index the contentlet if the entire
             // transaction finish clean
             HibernateUtil.addCommitListener(indexAction);
-	    }
+	    }	    
 	}
 
 	private void indexContentletList(BulkRequestBuilder req, List<Contentlet> contentToIndex, boolean reindexOnly) throws DotStateException, DotDataException, DotSecurityException, DotMappingException {
@@ -316,29 +316,26 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		for(Contentlet con : contentToIndex) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-            String mapping=null;
-
             if(con.isWorking()) {
-                mapping=mappingAPI.toJson(con);
                 if(!reindexOnly)
                     req.add(new IndexRequest(info.working, "content", id)
-                                .source(mapping));
+                                .source(mappingAPI.toMap(con)));
                 if(info.reindex_working!=null)
                     req.add(new IndexRequest(info.reindex_working, "content", id)
-                                .source(mapping));
+                                .source(mappingAPI.toMap(con)));
             }
 
             if(con.isLive()) {
-                if(mapping==null)
-                    mapping=mappingAPI.toJson(con);
                 if(!reindexOnly)
                     req.add(new IndexRequest(info.live, "content", id)
-                            .source(mapping));
+                            .source(mappingAPI.toMap(con)));
                 if(info.reindex_live!=null)
                     req.add(new IndexRequest(info.reindex_live, "content", id)
-                            .source(mapping));
+                            .source(mappingAPI.toMap(con)));
             }
+            ESMappingMemory.INSTANCE.removeFromMap(con.getIdentifier());
         }
+		
 	}
 
 	@SuppressWarnings("unchecked")
