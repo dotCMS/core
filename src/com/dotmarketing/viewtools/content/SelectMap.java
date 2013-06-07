@@ -61,4 +61,22 @@ public class SelectMap {
 	public Object getSelectValue() {
 		return selectValue;
 	}
+	
+	/**
+	 * This will return the label of the
+	 * selected value
+	 * @return
+	 */
+	public Object getSelectOption() {
+		if(selectValue !=null && values != null){
+			int i=0;
+			for(String x : values){
+				if(x.equals(selectValue)){
+					return options.get(i);
+				}
+				i++;
+			}
+		}
+		return null;
+	}
 }
