@@ -1,4 +1,4 @@
-<%-- 
+<%@ include file="/html/scripts/auth.jsp" %><%-- 
 To use pass in the  path to languages
 ie.. http://localhost:8080/html/scripts/language_compare.jsp?path=/Users/jasontesser/dev/git/dotcms/dotCMS/WEB-INF/messages/
 --%>

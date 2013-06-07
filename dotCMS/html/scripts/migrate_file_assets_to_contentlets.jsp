@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetConverter" %>
+<%@ include file="/html/scripts/auth.jsp" %><%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetConverter" %>
 <%@page import="com.dotmarketing.business.web.WebAPILocator" %>
 <%@page import="com.dotmarketing.business.web.UserWebAPI" %>
 <%@page import="com.liferay.portal.model.User" %>

@@ -1,4 +1,4 @@
-<%@ page import="javax.servlet.http.HttpUtils,java.util.Enumeration" %>
+<%@ include file="/html/scripts/auth.jsp" %><%@ page import="javax.servlet.http.HttpUtils,java.util.Enumeration" %>
 <HTML>
 <HEAD>
 	<TITLE>JSP snoop page</TITLE>
