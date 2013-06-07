@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.queryParser.ParseException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.json.JSONObject;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
@@ -113,7 +114,8 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONObject;
+import com.google.gson.Gson;
+
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -2414,8 +2416,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
 				        if(metaMap!=null){
 				            Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
-				            JSONObject jsonObject = new JSONObject(metaMap);
-				            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, jsonObject.toString());
+				            Gson gson = new Gson();
+				            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
 				            contentlet = conFac.save(contentlet);
 				            if(!isNewContent){
 				                LiveCache.removeAssetFromCache(contentlet);
