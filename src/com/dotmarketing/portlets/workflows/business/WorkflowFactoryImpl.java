@@ -152,7 +152,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		return step;
 	}
-	
+
 	 private WorkflowHistory convertHistory(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
 			final WorkflowHistory scheme = new WorkflowHistory();
 			row.put("actionId", row.get("workflow_action_id"));
@@ -179,11 +179,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public int countTasks(WorkflowSearcher searcher) throws DotDataException {
-		final DotConnect dc = new DotConnect();
-		final StringWriter sw = new StringWriter();
-		sw.append("select count(*) as mycount from workflow_task   ");
-		sw.append(this.getWorkflowSqlQuery(searcher, true));
-		dc.setSQL(sw.toString());
+		DotConnect dc = getWorkflowSqlQuery(searcher, true);
 		return dc.getInt("mycount");
 	}
 
@@ -425,7 +421,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			if(localTransaction){
 				HibernateUtil.commitTransaction();
 			}
-			cache.remove(c);	
+			cache.remove(c);
 		}
 	}
 
@@ -462,7 +458,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public List<WorkflowAction> findActions(WorkflowStep step) throws DotDataException {
-		
+
 		List<WorkflowAction> actions = cache.getActions(step);
 		if(actions ==null){
 			final DotConnect db = new DotConnect();
@@ -470,7 +466,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(step.getId());
 			actions =  this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class);
 			if(actions == null) actions= new ArrayList<WorkflowAction>();
-			
+
 			cache.addActions(step, actions);
 		}
 		return actions;
@@ -709,92 +705,123 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return contents;
 	}
 
-	private String getWorkflowSqlQuery(WorkflowSearcher searcher, boolean counting) throws DotDataException {
+	private DotConnect getWorkflowSqlQuery(WorkflowSearcher searcher, boolean counting) throws DotDataException {
 
 		final boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole());
+		DotConnect dc = new DotConnect();
+		final StringBuilder query = new StringBuilder();
 
-		final StringBuilder condition = new StringBuilder();
-		condition.append(", workflow_scheme, workflow_step ");
-		condition.append(" where  ");
+		if(counting)
+			query.append("select count(*) as mycount from workflow_task ");
+		else
+			query.append("select workflow_task.*  from workflow_task ");
+
+
+		query.append(", workflow_scheme, workflow_step ");
+		query.append(" where  ");
 		if (UtilMethods.isSet(searcher.getKeywords())) {
-			condition.append(" (lower(workflow_task.title) like '%" + searcher.getKeywords().trim().toLowerCase() + "%' or ");
-			condition.append(" lower(workflow_task.description) like '%" + searcher.getKeywords().trim().toLowerCase() + "%' )  and ");
+			query.append(" (lower(workflow_task.title) like ? or ");
+			query.append(" lower(workflow_task.description) like ? )  and ");
 		}
-		
+
 		if(!searcher.getShow4All() || !(APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())
                 || APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(),RoleAPI.WORKFLOW_ADMIN_ROLE_KEY))) {
 		    final List<Role> userRoles = new ArrayList<Role>();
 		    if (UtilMethods.isSet(searcher.getAssignedTo())) {
-    
+
     			final Role r = new Role();
     			r.setId(searcher.getAssignedTo());
     			userRoles.add(r);
     		} else {
     			userRoles.addAll(APILocator.getRoleAPI().loadRolesForUser(searcher.getUser().getUserId(), false));
     			userRoles.add(APILocator.getRoleAPI().getUserRole(searcher.getUser()));
-    
+
     		}
-    
+
     		String rolesString = "";
-    
+
     		for (final Role role : userRoles) {
     			if (!rolesString.equals("")) {
     				rolesString += ",";
     			}
     			rolesString += "'" + role.getId() + "'";
     		}
-    
-    		condition.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
+
+    		query.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
 		}
-		condition.append(" workflow_step.id = workflow_task.status and workflow_step.scheme_id = workflow_scheme.id and ");
+		query.append(" workflow_step.id = workflow_task.status and workflow_step.scheme_id = workflow_scheme.id and ");
 
 		if(searcher.getDaysOld()!=-1) {
 		    if(DbConnectionFactory.isMySql())
-		        condition.append(" datediff(now(),workflow_task.creation_date)>=").append(searcher.getDaysOld());
+		        query.append(" datediff(now(),workflow_task.creation_date)>=?");
 		    else if(DbConnectionFactory.isPostgres())
-		        condition.append(" extract(day from (now()-workflow_task.creation_date))>=").append(searcher.getDaysOld());
+		        query.append(" extract(day from (now()-workflow_task.creation_date))>=?");
 		    else if(DbConnectionFactory.isMsSql())
-		        condition.append(" datediff(d,workflow_task.creation_date,GETDATE())>=").append(searcher.getDaysOld());
+		        query.append(" datediff(d,workflow_task.creation_date,GETDATE())>=?");
 		    else if(DbConnectionFactory.isOracle())
-		        condition.append(" floor(sysdate-workflow_task.creation_date)>=").append(searcher.getDaysOld());
-		    condition.append(" and ");
+		        query.append(" floor(sysdate-workflow_task.creation_date)>=?");
+
+		    query.append(" and ");
 		}
-		
+
 		if (!searcher.isClosed() && searcher.isOpen()) {
-			condition.append("  workflow_step.resolved = " + DbConnectionFactory.getDBFalse() + " and ");
+			query.append("  workflow_step.resolved = " + DbConnectionFactory.getDBFalse() + " and ");
 		} else if (searcher.isClosed() && !searcher.isOpen()) {
-			condition.append(" workflow_step.resolved = " + DbConnectionFactory.getDBTrue() + " and ");
+			query.append(" workflow_step.resolved = " + DbConnectionFactory.getDBTrue() + " and ");
 		}
 
 		if (UtilMethods.isSet(searcher.getSchemeId())) {
-			condition.append(" workflow_scheme.id = '" + searcher.getSchemeId() + "' and ");
+			query.append(" workflow_scheme.id = ? and ");
 		}
 
 		if (UtilMethods.isSet(searcher.getStepId())) {
-			condition.append(" workflow_step.id = '" + searcher.getStepId() + "' and ");
+			query.append(" workflow_step.id = ? and ");
 		}
 
-		condition.append(" 1=1  ");
+		query.append(" 1=1  ");
 		if (!counting) {
-			condition.append(" order by ");
+			query.append(" order by ");
 			if (!UtilMethods.isSet(searcher.getStepId())) {
 				// condition.append(" status , ");
 			}
 			if (UtilMethods.isSet(searcher.getOrderBy())) {
-				condition.append(searcher.getOrderBy());
+				query.append(searcher.getOrderBy());
 			} else {
-				condition.append("mod_date desc");
+				query.append("mod_date desc");
 			}
 		}
 
-		return condition.toString();
+		dc.setSQL(query.toString());
+
+		// now we need to add the params
+
+		if (UtilMethods.isSet(searcher.getKeywords())) {
+			dc.addParam("%" + searcher.getKeywords().trim().toLowerCase() + "%");
+			dc.addParam("%" + searcher.getKeywords().trim().toLowerCase() + "%");
+		}
+
+		if(searcher.getDaysOld()!=-1) {
+		    dc.addParam(searcher.getDaysOld());
+		}
+
+		if (UtilMethods.isSet(searcher.getSchemeId())) {
+			dc.addParam(searcher.getSchemeId());
+		}
+
+		if (UtilMethods.isSet(searcher.getStepId())) {
+			dc.addParam(searcher.getStepId());
+		}
+
+		return dc;
 
 	}
 
 	public void removeAttachedFile(WorkflowTask task, String fileInode) throws DotDataException {
-		final String query = "delete from workflowtask_files where workflowtask_id = '" + task.getId() + "' and file_inode = '" + fileInode + "'";
+		final String query = "delete from workflowtask_files where workflowtask_id = ? and file_inode = ?";
 		final DotConnect dc = new DotConnect();
 		dc.setSQL(query);
+		dc.addParam(task.getId());
+		dc.addParam(fileInode);
 		dc.loadResult();
 
 	}
@@ -1101,14 +1128,29 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException {
-		final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
-		final StringWriter sw = new StringWriter();
-		sw.append("select {workflow_task.*}  from workflow_task   ");
-		sw.append(this.getWorkflowSqlQuery(searcher, false));
-		hu.setSQLQuery(sw.toString());
-		hu.setMaxResults(searcher.getCount());
-		hu.setFirstResult(searcher.getCount() * searcher.getPage());
-		return (List<WorkflowTask>) hu.list();
+		DotConnect dc = getWorkflowSqlQuery(searcher, false);
+		dc.setStartRow(searcher.getCount() * searcher.getPage());
+		dc.setMaxRows(searcher.getCount());
+		List<Map<String,Object>> results = dc.loadObjectResults();
+		List<WorkflowTask> wfTasks = new ArrayList<WorkflowTask>();
+
+		for (Map<String, Object> row : results) {
+			WorkflowTask wt = new WorkflowTask();
+			wt.setId(row.get("id").toString());
+			wt.setCreationDate((Date)row.get("creation_date"));
+			wt.setModDate((Date)row.get("mod_date"));
+			wt.setDueDate((Date)row.get("due_date"));
+			wt.setCreatedBy(row.get("created_by").toString());
+			wt.setAssignedTo(row.get("assigned_to").toString());
+			wt.setBelongsTo(row.get("belongs_to")!=null?row.get("belongs_to").toString():"");
+			wt.setTitle(row.get("title").toString());
+			wt.setDescription(row.get("description")!=null?row.get("description").toString():"");
+			wt.setStatus(row.get("status").toString());
+			wt.setWebasset(row.get("webasset").toString());
+			wfTasks.add(wt);
+		}
+
+		return wfTasks;
 	}
 
 	// christian escalation
@@ -1160,7 +1202,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             }
         } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
-        }        
+        }
         finally {
             HibernateUtil.getSession().clear();
         }
