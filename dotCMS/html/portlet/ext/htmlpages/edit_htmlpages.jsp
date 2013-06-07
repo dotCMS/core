@@ -384,8 +384,8 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 		</button>
 	<% } %>
 	<% } else { %>
-		<button dojoType="dijit.form.Button"  onClick="selectVersion(<%=htmlpage.getInode()%>, '<%=referer%>')" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this--version")) %>
+		<button dojoType="dijit.form.Button"  onClick="selectVersion('<%=htmlpage.getInode()%>' , '<%=referer%>')" type="button">
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
 		</button>
 	<% } %>
 
