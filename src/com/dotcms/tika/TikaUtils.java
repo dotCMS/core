@@ -68,11 +68,8 @@ public class TikaUtils {
 							metaMap.put(y, met.get(name));
 					}
 				}				
-//				LineIterator lines = IOUtils.lineIterator(fulltext);
-//				StringBuffer sb = new StringBuffer();
-//				while(lines.hasNext())
-//					sb.append(lines.nextLine());
 				metaMap.put(FileAssetAPI.CONTENT_FIELD, IOUtils.toString(fulltext));
+				System.gc();
 			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " +e.getMessage());
