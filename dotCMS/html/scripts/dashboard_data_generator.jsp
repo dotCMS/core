@@ -1,4 +1,4 @@
- <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
+<%@ include file="/html/scripts/auth.jsp" %><%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.beans.Clickstream404"%>
 <%@page import="com.dotmarketing.factories.ClickstreamRequestFactory"%>
 <%@page import="com.dotmarketing.cms.factories.PublicCompanyFactory"%>
