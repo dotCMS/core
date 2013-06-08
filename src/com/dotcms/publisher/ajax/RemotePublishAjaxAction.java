@@ -267,36 +267,41 @@ public class RemotePublishAjaxAction extends AjaxAction {
             return;
         }
 
-        //Read the bundle to see what kind of configuration we need to apply
-        String bundlePath = ConfigUtils.getBundlePath() + File.separator + basicConfig.getId();
-        File xml = new File( bundlePath + File.separator + "bundle.xml" );
-        PushPublisherConfig config = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
+        try {
+            //Read the bundle to see what kind of configuration we need to apply
+            String bundlePath = ConfigUtils.getBundlePath() + File.separator + basicConfig.getId();
+            File xml = new File( bundlePath + File.separator + "bundle.xml" );
+            PushPublisherConfig config = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
 
-        //Get the audit records related to this bundle
-        PublishAuditStatus status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
-        String pojo_string = status.getStatusPojo().getSerialized();
-        PublishAuditHistory auditHistory = PublishAuditHistory.getObjectFromString( pojo_string );
+            //Get the audit records related to this bundle
+            PublishAuditStatus status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
+            String pojo_string = status.getStatusPojo().getSerialized();
+            PublishAuditHistory auditHistory = PublishAuditHistory.getObjectFromString( pojo_string );
 
-        //Clean the number of tries, we want to try it again
-        auditHistory.setNumTries( 0 );
-        publishAuditAPI.updatePublishAuditStatus( config.getId(), status.getStatus(), auditHistory );
+            //Clean the number of tries, we want to try it again
+            auditHistory.setNumTries( 0 );
+            publishAuditAPI.updatePublishAuditStatus( config.getId(), status.getStatus(), auditHistory );
 
-        //Get the identifiers on this bundle
-        List<PublishQueueElement> assets = config.getAssets();
-        List<String> identifiers = new ArrayList<String>();
-        for ( PublishQueueElement asset : assets ) {
-            identifiers.add( asset.getAsset() );
+            //Get the identifiers on this bundle
+            List<PublishQueueElement> assets = config.getAssets();
+            List<String> identifiers = new ArrayList<String>();
+            for ( PublishQueueElement asset : assets ) {
+                identifiers.add( asset.getAsset() );
+            }
+
+            //Now depending of the operation lets add it to the queue job
+            if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
+                publisherAPI.addContentsToPublish( identifiers, bundleId, new Date(), getUser() );
+            } else {
+                publisherAPI.addContentsToUnpublish( identifiers, bundleId, new Date(), getUser() );
+            }
+
+            //Success...
+            response.getWriter().println( "Bundle added successfully to Publishing Queue." );
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error trying to add bundle id: " + bundleId + " to the Publishing Queue.", e );
+            response.getWriter().println( "FAILURE: Error trying to add bundle id: " + bundleId + " to the Publishing Queue." );
         }
-
-        //Now depending of the operation lets add it to the queue job
-        if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
-            publisherAPI.addContentsToPublish( identifiers, bundleId, new Date(), getUser() );
-        } else {
-            publisherAPI.addContentsToUnpublish( identifiers, bundleId, new Date(), getUser() );
-        }
-
-        //Success...
-        response.getWriter().println( "Bundle added successfully to Publishing Queue." );
     }
 
     public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException {
