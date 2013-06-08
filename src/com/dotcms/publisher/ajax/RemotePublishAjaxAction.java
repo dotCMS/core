@@ -1,10 +1,8 @@
 package com.dotcms.publisher.ajax;
 
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
-import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.PublishThread;
@@ -221,6 +219,84 @@ public class RemotePublishAjaxAction extends AjaxAction {
         } catch ( DotDataException e ) {
             Logger.error( PushPublishActionlet.class, e.getMessage(), e );
         }
+    }
+
+    /**
+     * Allow the user to send again a failed bundle to que publisher queue job in order to try to republish it again
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotPublisherException
+     */
+    public void retry ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException, DotPublisherException {
+
+        PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
+
+        //Read the parameters
+        String bundleId = request.getParameter( "bundleId" );
+
+        PublisherConfig basicConfig = new PublisherConfig();
+        basicConfig.setId( bundleId );
+        File bundleRoot = BundlerUtil.getBundleRoot( basicConfig );
+
+        /*
+        Verify if the bundle exist and was created correctly..., meaning, if there is not a .tar.gz file is because
+        something happened on the creation of the bundle.
+         */
+        File bundle = new File( bundleRoot + File.separator + ".." + File.separator + basicConfig.getId() + ".tar.gz" );
+        if ( !bundle.exists() ) {
+            Logger.error( this.getClass(), "No Bundle with id: " + bundleId + " found." );
+            response.getWriter().println( "FAILURE: No Bundle with id: " + bundleId + " found." );
+            return;
+        }
+
+        if ( !BundlerUtil.bundleExists( basicConfig ) ) {
+            Logger.error( this.getClass(), "No Bundle Descriptor for bundle id: " + bundleId + " found." );
+            response.getWriter().println( "FAILURE: No Bundle Descriptor for bundle id: " + bundleId + " found." );
+            return;
+        }
+
+        //First we need to verify is this bundle is already in the queue job
+        List<PublishQueueElement> foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
+        if ( foundBundles != null && !foundBundles.isEmpty() ) {
+            response.getWriter().println( "FAILURE: This Bundle is already in the Publishing Queue." );
+            return;
+        }
+
+        //Read the bundle to see what kind of configuration we need to apply
+        String bundlePath = ConfigUtils.getBundlePath() + File.separator + basicConfig.getId();
+        File xml = new File( bundlePath + File.separator + "bundle.xml" );
+        PushPublisherConfig config = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
+
+        //Get the audit records related to this bundle
+        PublishAuditStatus status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
+        String pojo_string = status.getStatusPojo().getSerialized();
+        PublishAuditHistory auditHistory = PublishAuditHistory.getObjectFromString( pojo_string );
+
+        //Clean the number of tries, we want to try it again
+        auditHistory.setNumTries( 0 );
+        publishAuditAPI.updatePublishAuditStatus( config.getId(), status.getStatus(), auditHistory );
+
+        //Get the identifiers on this bundle
+        List<PublishQueueElement> assets = config.getAssets();
+        List<String> identifiers = new ArrayList<String>();
+        for ( PublishQueueElement asset : assets ) {
+            identifiers.add( asset.getAsset() );
+        }
+
+        //Now depending of the operation lets add it to the queue job
+        if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
+            publisherAPI.addContentsToPublish( identifiers, bundleId, new Date(), getUser() );
+        } else {
+            publisherAPI.addContentsToUnpublish( identifiers, bundleId, new Date(), getUser() );
+        }
+
+        //Success...
+        response.getWriter().println( "Bundle added successfully to Publishing Queue." );
     }
 
     public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException {
