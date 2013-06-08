@@ -1,4 +1,4 @@
-<%
+<%@ include file="/html/scripts/auth.jsp" %><%
 Properties prop = new Properties();       
 
 /**

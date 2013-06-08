@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@ include file="/html/scripts/auth.jsp" %><%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="java.util.StringTokenizer"%>
 <%@page import="com.liferay.portal.model.User"%>
 
