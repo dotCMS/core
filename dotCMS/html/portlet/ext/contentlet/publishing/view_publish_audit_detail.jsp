@@ -10,140 +10,168 @@
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 
 <%
-	String bundleId = request.getParameter("bundle");
-	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
-	PublishAuditHistory currentEndpointHistory = null;
-	String assetTitle = null;
-	String assetType=null;
-			
-	
-	
-	
-	
-	int status = 0;
-	if(null!=bundleId){
-		PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus(bundleId);
-		String pojo_string = (String)publishAuditStatus.getStatusPojo().getSerialized();
-		currentEndpointHistory = PublishAuditHistory.getObjectFromString(pojo_string);
-		status = publishAuditStatus.getStatus().getCode();
-		
-		if(currentEndpointHistory != null && currentEndpointHistory.getAssets() != null && currentEndpointHistory.getAssets().size()>0){
-			for(String id : currentEndpointHistory.getAssets().keySet()){
-				assetType = currentEndpointHistory.getAssets().get(id);
-				assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); 
-				break;
-					
-			}
-			
-		}
-		
-		
-	}
+    String bundleId = request.getParameter("bundle");
+    PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    PublishAuditHistory currentEndpointHistory = null;
+    String assetTitle = null;
+    String assetType=null;
+
+
+    PublishAuditStatus.Status status = null;
+    int statusCode = 0;
+    if ( null != bundleId ) {
+        PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
+        String pojo_string = publishAuditStatus.getStatusPojo().getSerialized();
+        currentEndpointHistory = PublishAuditHistory.getObjectFromString( pojo_string );
+        status = publishAuditStatus.getStatus();
+        statusCode = status.getCode();
+
+        if ( currentEndpointHistory != null && currentEndpointHistory.getAssets() != null && currentEndpointHistory.getAssets().size() > 0 ) {
+            for ( String id : currentEndpointHistory.getAssets().keySet() ) {
+                assetType = currentEndpointHistory.getAssets().get( id );
+                assetTitle = PublishAuditUtil.getInstance().getTitle( assetType, id );
+                break;
+
+            }
+
+        }
+    }
 %>
 
 
 <script type="text/javascript">
-	function backToAuditList() {
-	   dijit.byId('bundleDetail').hide();
-	}
+    function backToAuditList() {
+        dijit.byId('bundleDetail').hide();
+    }
 </script>
-	
+
 
 <% if(null!=currentEndpointHistory){%>
 
 
-       
-    	<table class="listingTable shadowBox">
-    		<tr>
-    			<th><%= LanguageUtil.get(pageContext, "title") %></th>
-    			<td><b><%=assetTitle %></span></b> (<%=assetType %>)
-    			
-					<div style="float:right">
-						<button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
-					</div>
-    			
-    			
-    			</td>
-    		</tr>
-    		<tr>
-    			<th><%= LanguageUtil.get(pageContext, "status") %>:</th>
-    			<td> <%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(status))%></td>
-    		</tr>
-    		<tr>
-    			<th><%= LanguageUtil.get(pageContext, "publisher_Identifier") %>
-    			</td>
-    			<td> <%=bundleId %>
-    			</td>
-    		</tr>
-	    	<tr>
-	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_Start") %>: </b></th>
-	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleStart(),"MM/dd/yyyy hh:mma") %></td>
-	    	
-	    	</tr>
-	    	<tr>
-	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_End") %>: </b></th>
-	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleEnd(),"MM/dd/yyyy hh:mma") %></td>
-	    	
-	    	</tr>
-	    	<tr>
-	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_Start") %>: </b></th>
-	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishStart(),"MM/dd/yyyy hh:mma") %></td>
-	    	
-	    	</tr>
-	    	<tr>
-	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_End") %>: </b></th>
-	    		<td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishEnd(),"MM/dd/yyyy hh:mma") %></td>
-	    	
-	    	</tr>
-	    	<tr>
-	    		<th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Asset_Number") %>: </b></th>
-	    		<td style="background: white"><%=currentEndpointHistory.getAssets().size() %></td>
-	    	
-	    	</tr>
-    	</table>
 
-	<div>&nbsp;</div>
-	<table class="listingTable shadowBox">
-		<tr>		
-			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Audit_Endpoint") %></strong></th>			
-			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Audit_Endpoint_Status") %></strong></th>
-			<th><strong><%= LanguageUtil.get(pageContext, "publisher_Audit_Endpoint_Status_Info") %></strong></th>
-		</tr>
-	
-		<%
-				if(currentEndpointHistory.getEndpointsMap().size()>0) {
-				for(String groupkey : currentEndpointHistory.getEndpointsMap().keySet()) {
-					Map<String, EndpointDetail> groupMap = currentEndpointHistory.getEndpointsMap().get(groupkey);
-					
-					for(String key : groupMap.keySet()) {
-						EndpointDetail ed =  groupMap.get(key);
-						String serverName = key;
-						try{
-							serverName = pepAPI.findEndPointById(key).getServerName().toString();
-						}
-						catch(Exception e){
-							
-						}
-			%>
-					<tr>
-						<td nowrap="nowrap" valign="top"><%=serverName%></td>
-						<td valign="top"><%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(ed.getStatus()))%></td>
-						<td valign="top"><%=ed.getInfo()%></td>
-					</tr>	
-				<%}%>
-			<%}%>
-		<%}else{%>	
-			<tr>
-				<td colspan="5" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
-			</tr>	
-		<%}%>
-	</table>
+<table class="listingTable shadowBox">
+    <tr>
+        <th><%= LanguageUtil.get(pageContext, "title") %></th>
+        <td><b><span><%=assetTitle %></span></b> (<%=assetType %>)
+
+            <div style="float:right">
+                <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
+
+                <% if ( (statusCode != 0 && status != null) && (status.equals( PublishAuditStatus.Status.FAILED_TO_PUBLISH )) ) { %>
+                <button id="retryButton" dojoType="dijit.form.Button" onClick="retry('<%=bundleId%>')" iconClass="repeatIcon"><%= LanguageUtil.get(pageContext, "publisher_retry") %></button>
+                <%}%>
+            </div>
+
+
+        </td>
+    </tr>
+    <tr>
+        <th><%= LanguageUtil.get(pageContext, "status") %>:</th>
+        <td> <%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(statusCode))%></td>
+    </tr>
+    <tr>
+        <th><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></th>
+        <td> <%=bundleId %>
+        </td>
+    </tr>
+    <tr>
+        <th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_Start") %>: </b></th>
+        <td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleStart(),"MM/dd/yyyy hh:mma") %></td>
+
+    </tr>
+    <tr>
+        <th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Bundle_End") %>: </b></th>
+        <td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getBundleEnd(),"MM/dd/yyyy hh:mma") %></td>
+
+    </tr>
+    <tr>
+        <th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_Start") %>: </b></th>
+        <td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishStart(),"MM/dd/yyyy hh:mma") %></td>
+
+    </tr>
+    <tr>
+        <th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_End") %>: </b></th>
+        <td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishEnd(),"MM/dd/yyyy hh:mma") %></td>
+
+    </tr>
+    <tr>
+        <th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Asset_Number") %>: </b></th>
+        <td style="background: white"><%=currentEndpointHistory.getAssets().size() %></td>
+
+    </tr>
+</table>
+
+<div>&nbsp;</div>
+<table class="listingTable shadowBox">
+    <tr>
+        <th><strong><%= LanguageUtil.get(pageContext, "publisher_Audit_Endpoint") %></strong></th>
+        <th><strong><%= LanguageUtil.get(pageContext, "publisher_Audit_Endpoint_Status") %></strong></th>
+        <th><strong><%= LanguageUtil.get(pageContext, "publisher_Audit_Endpoint_Status_Info") %></strong></th>
+    </tr>
+
+    <%
+        if(currentEndpointHistory.getEndpointsMap().size()>0) {
+            for(String groupkey : currentEndpointHistory.getEndpointsMap().keySet()) {
+                Map<String, EndpointDetail> groupMap = currentEndpointHistory.getEndpointsMap().get(groupkey);
+
+                for(String key : groupMap.keySet()) {
+                    EndpointDetail ed =  groupMap.get(key);
+                    String serverName = key;
+                    try{
+                        serverName = pepAPI.findEndPointById(key).getServerName().toString();
+                    }
+                    catch(Exception e){
+
+                    }
+    %>
+    <tr>
+        <td nowrap="nowrap" valign="top"><%=serverName%></td>
+        <td valign="top"><%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(ed.getStatus()))%></td>
+        <td valign="top"><%=ed.getInfo()%></td>
+    </tr>
+    <%}%>
+    <%}%>
+    <%}else{%>
+    <tr>
+        <td colspan="5" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+    </tr>
+    <%}%>
+</table>
 <%} else {%>
-	<div style="float: left; color: red; weight: bold;">
-		<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail_Error") %> 
-	</div>
+<div style="float: left; color: red; weight: bold;">
+    <%= LanguageUtil.get(pageContext, "publisher_Audit_Detail_Error") %>
+</div>
 <%}%>
 
 <div class="buttonRow" style="margin-top: 15px;">
-	<button dojoType="dijit.form.Button" onClick="backToAuditList()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+    <button dojoType="dijit.form.Button" onClick="backToAuditList()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 </div>
+
+<script type="text/javascript">
+
+    /**
+     * Allow the user to send again a failed bundle to que publisher queue job in order to try to republish it again
+     * @param bundleId
+     */
+    var retry = function (bundleId) {
+
+        var xhrArgs = {
+            url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/retry",
+            content: {
+                'bundleId': bundleId
+            },
+            handleAs: "text",
+            load: function (data) {
+                /*if (data.indexOf("FAILURE") != -1) {
+                 alert(data.replace("FAILURE:",""));
+                 }*/
+                alert(data.replace("FAILURE:", ""));
+            },
+            error: function (error) {
+                alert(error);
+            }
+        };
+        dojo.xhrPost(xhrArgs);
+    }
+</script>
