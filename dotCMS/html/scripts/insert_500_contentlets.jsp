@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@ include file="/html/scripts/auth.jsp" %><%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.liferay.portal.model.User"%>
