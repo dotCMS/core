@@ -152,6 +152,51 @@
 		var url="&deleteAudit="+deleteMe;		
 		refreshAuditList(url);
 	}
+
+   /**
+    * Allow the user to send again failed bundles to que publisher queue job in order to try to republish them again
+    */
+   var retryBundles = function (bundleId) {
+
+       var toRetry = "";
+       if (bundleId == null || bundleId == undefined) {
+
+           dojo.query(".chkBoxAudits input").forEach(function (box) {
+               var j = dijit.byId(box.id);
+               if (j.checked) {
+                   toRetry += j.getValue() + ",";
+               }
+           });
+       } else {
+           toRetry = bundleId;
+       }
+
+       if (toRetry == "") {
+           showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "publisher_retry.select.one")%>");
+       }
+
+       var xhrArgs = {
+           url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/retry",
+           content: {
+               'bundlesIds': toRetry
+           },
+           handleAs: "text",
+           load: function (data) {
+
+               var isError = false;
+               if (data.indexOf("FAILURE") != -1) {
+                   isError = true;
+               }
+
+               var message = data.replace("FAILURE:", "");
+               showDotCMSSystemMessage(message, isError);
+           },
+           error: function (error) {
+               showDotCMSSystemMessage(error, true);
+           }
+       };
+       dojo.xhrPost(xhrArgs);
+   };
 	
 	
 
