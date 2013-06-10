@@ -242,6 +242,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
         String bundlesIds = request.getParameter( "bundlesIds" );
         String[] ids = bundlesIds.split( "," );
 
+        StringBuilder responseMessage = new StringBuilder();
+
         for ( String bundleId : ids ) {
 
             if ( bundleId.trim().isEmpty() ) {
@@ -261,7 +263,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 Logger.error( this.getClass(), "No Bundle with id: " + bundleId + " found." );
 
                 String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.error.not.found", new String[]{bundleId}, false );
-                response.getWriter().println( "FAILURE: " + message );
+                if ( responseMessage.length() > 0 ) {
+                    responseMessage.append( "<br>" );
+                }
+                responseMessage.append( "FAILURE: " ).append( message );
                 continue;
             }
 
@@ -270,7 +275,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 Logger.error( this.getClass(), "No Bundle Descriptor for bundle id: " + bundleId + " found." );
 
                 String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.error.not.descriptor.found", new String[]{bundleId}, false );
-                response.getWriter().println( "FAILURE: " + message );
+                if ( responseMessage.length() > 0 ) {
+                    responseMessage.append( "<br>" );
+                }
+                responseMessage.append( "FAILURE: " ).append( message );
                 continue;
             }
 
@@ -278,7 +286,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
             List<PublishQueueElement> foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
             if ( foundBundles != null && !foundBundles.isEmpty() ) {
                 String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.error.already.in.queue", new String[]{bundleId}, false );
-                response.getWriter().println( "FAILURE: " + message );
+                if ( responseMessage.length() > 0 ) {
+                    responseMessage.append( "<br>" );
+                }
+                responseMessage.append( "FAILURE: " ).append( message );
                 continue;
             }
 
@@ -313,14 +324,22 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
                 //Success...
                 String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.success", new String[]{bundleId}, false );
-                response.getWriter().println( message );
+                if ( responseMessage.length() > 0 ) {
+                    responseMessage.append( "<br>" );
+                }
+                responseMessage.append( message );
             } catch ( Exception e ) {
                 Logger.error( this.getClass(), "Error trying to add bundle id: " + bundleId + " to the Publishing Queue.", e );
 
                 String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.error.adding.to.queue", new String[]{bundleId}, false );
-                response.getWriter().println( "FAILURE: " + message );
+                if ( responseMessage.length() > 0 ) {
+                    responseMessage.append( "<br>" );
+                }
+                responseMessage.append( "FAILURE: " ).append( message );
             }
         }
+
+        response.getWriter().println( responseMessage.toString() );
     }
 
     public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException {

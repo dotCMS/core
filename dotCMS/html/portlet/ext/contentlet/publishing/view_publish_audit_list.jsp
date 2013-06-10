@@ -173,6 +173,7 @@
 
        if (toRetry == "") {
            showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "publisher_retry.select.one")%>");
+           return;
        }
 
        var xhrArgs = {
@@ -188,7 +189,7 @@
                    isError = true;
                }
 
-               var message = data.replace("FAILURE:", "");
+               var message = data.replace(/FAILURE:/g, '');
                showDotCMSSystemMessage(message, isError);
            },
            error: function (error) {
