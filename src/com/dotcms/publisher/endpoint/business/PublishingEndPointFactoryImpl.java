@@ -19,7 +19,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		super();
 		cache = CacheLocator.getPublishingEndPointCache();
 	}
-	
+
 	public void ensureCacheIsLoaded() throws DotDataException{
 		if(cache.isLoaded() == false) {
 			getEndPoints();
@@ -29,7 +29,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 	public List<PublishingEndPoint> getEndPoints() throws DotDataException {
 		if(cache.isLoaded())
 			return cache.getEndPoints();
-		
+
 		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(GET_END_POINTS);
@@ -42,7 +42,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		cache.setLoaded(true);
 		return endPoints;
 	}
-	
+
 	public List<PublishingEndPoint> getReceivingEndPoints() throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
@@ -51,7 +51,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 			if(endPoint.isSending() == false)
 				endPoints.add(endPoint);
 		}
-		return endPoints;		
+		return endPoints;
 	}
 
 	public PublishingEndPoint getEndPointById(String id) throws DotDataException {
@@ -118,7 +118,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		catch(DotDataException e) {
 			Logger.debug(PublishingEndPointFactoryImpl.class, "Unexpected DotDataException in deleteEndPointById method", e);
 			throw e;
-		}	
+		}
 	}
 
 	public PublishingEndPoint getEnabledSendingEndPointByAddress(String address) throws DotDataException {
@@ -130,7 +130,18 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		}
 		return null;
 	}
-	
+
+	public List<PublishingEndPoint> getSendingEndPointsByEnvironment(String environmentId) throws DotDataException {
+		ensureCacheIsLoaded();
+		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
+		for(PublishingEndPoint endPoint : getEndPoints()) {
+			if(endPoint.getGroupId().equals(environmentId) && endPoint.isSending()==false) {
+				endPoints.add(endPoint);
+			}
+		}
+		return endPoints;
+	}
+
 	public List<PublishingEndPoint> getEnabledReceivingEndPoints() throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> receiverEndPoints = new ArrayList<PublishingEndPoint>();

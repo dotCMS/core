@@ -1,4 +1,4 @@
-package com.dotcms.publisher.endpoint.ajax;
+package com.dotcms.publisher.environment.ajax;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -18,7 +20,7 @@ import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-public class PublishingEndpointAjaxAction extends AjaxAction {
+public class EnvironmentAjaxAction extends AjaxAction {
 
 	@Override
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -52,25 +54,19 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		}
 	}
 
-	public void addEndpoint(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void addEnvironment(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
         	String identifier = request.getParameter("identifier");
         	if(UtilMethods.isSet(identifier)){
-        		editEndpoint(request, response);
+        		editEnvironment(request, response);
         		return;
         	}
-        	PublishingEndPoint endpoint = new PublishingEndPoint();
-			endpoint.setServerName(new StringBuilder(request.getParameter("serverName")));
-			endpoint.setAddress(request.getParameter("address"));
-			endpoint.setPort(request.getParameter("port"));
-			endpoint.setProtocol(request.getParameter("protocol"));
-			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
-			endpoint.setEnabled(null!=request.getParameter("enabled"));
-			endpoint.setSending("receive".equals(request.getParameter("sending")));
-			endpoint.setGroupId(request.getParameter("environmentId"));
-			//Save the endpoint.
-			PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
-			peAPI.saveEndPoint(endpoint);
+        	Environment environment = new Environment();
+        	environment.setName(request.getParameter("environmentName"));
+        	environment.setPushToAll("pushToAll".equals(request.getParameter("pushType")));
+
+        	EnvironmentAPI eAPI = APILocator.getEnvironmentAPI();
+			eAPI.saveEnvironment(environment);
 
 		} catch (DotDataException e) {
 			response.getWriter().println("FAILURE: " + e.getMessage() );
@@ -78,22 +74,16 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		}
 	}
 
-	public void editEndpoint(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void editEnvironment(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		try {
-			PublishingEndPoint endpoint = new PublishingEndPoint();
 	        String identifier = request.getParameter("identifier");
-	        endpoint.setId(identifier);
-			endpoint.setServerName(new StringBuilder(request.getParameter("serverName")));
-			endpoint.setAddress(request.getParameter("address"));
-			endpoint.setPort(request.getParameter("port"));
-			endpoint.setProtocol(request.getParameter("protocol"));
-			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
-			endpoint.setEnabled(null!=request.getParameter("enabled"));
-			endpoint.setSending("receive".equals(request.getParameter("sending")));
-			endpoint.setGroupId(request.getParameter("groupId"));
-			//Update the endpoint.
-			PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
-			peAPI.updateEndPoint(endpoint);
+	        Environment environment = new Environment();
+	        environment.setId(identifier);
+        	environment.setName(request.getParameter("environmentName"));
+        	environment.setPushToAll("pushToAll".equals(request.getParameter("pushType")));
+
+        	EnvironmentAPI eAPI = APILocator.getEnvironmentAPI();
+			eAPI.updateEnvironment(environment);
 
 		} catch (DotDataException e) {
 			response.getWriter().println("FAILURE: " + e.getMessage() );
