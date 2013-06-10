@@ -3,6 +3,7 @@ package com.dotmarketing.common.reindex;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +34,9 @@ import com.dotmarketing.util.UtilMethods;
 public class ReindexThread extends Thread {
 
 	private static final ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-    private LinkedList<IndexJournal<String>> remoteQ = new LinkedList<IndexJournal<String>>();
-	private DistributedJournalAPI<String> jAPI = APILocator.getDistributedJournalAPI();
+    private final LinkedList<IndexJournal<String>> remoteQ = new LinkedList<IndexJournal<String>>();
+    private final LinkedList<IndexJournal<String>> remoteDelQ = new LinkedList<IndexJournal<String>>();
+	private final DistributedJournalAPI<String> jAPI = APILocator.getDistributedJournalAPI();
 
 	private static ReindexThread instance;
 
@@ -50,6 +52,12 @@ public class ReindexThread extends Thread {
 		start = false;
 	}
 
+	private void addRecordsToDelete(List<IndexJournal<String>> records) {
+	    synchronized(remoteDelQ) {
+	        remoteDelQ.addAll(records);
+	    }
+	}
+	
 	private void startProcessing(int sleep, int delay) {
 		this.sleep = sleep;
 		this.delay = delay;
@@ -122,7 +130,27 @@ public class ReindexThread extends Thread {
 					    }
 					}    
 					
-					if(!remoteQ.isEmpty()) {
+					if(!remoteDelQ.isEmpty()) {
+					    synchronized(remoteDelQ) {
+				            try {
+				                List<IndexJournal<String>> toDelete=remoteDelQ;
+				                if(toDelete.size()>=200) {
+				                    toDelete=remoteDelQ.subList(0, 200);
+				                }
+				                jAPI.deleteReindexEntryForServer(toDelete);
+				                if(toDelete.size()==remoteDelQ.size()) {
+				                    remoteDelQ.clear();
+				                } else {
+				                    for(int i=0;i<toDelete.size();i++)
+				                        remoteDelQ.removeFirst();
+				                }
+				            }
+				            catch(Exception ex) {
+				                Logger.warn(ReindexThread.class,"can't dele dist_reindex records. Will try again later", ex);
+				            }
+				        }
+					}
+					else if(!remoteQ.isEmpty()) {
 					    wait=false;
 					    Client client=new ESClient().getClient();
 						BulkRequestBuilder bulk=client.prepareBulk();
@@ -139,15 +167,11 @@ public class ReindexThread extends Thread {
 	    						}
     				        }
 						}
+						HibernateUtil.closeSession();
 				        if(bulk.numberOfActions()>0) {
 				            bulk.execute(new ActionListener<BulkResponse>() {
 				                void deleteRecords() {
-				                    try {
-                                        jAPI.deleteReindexEntryForServer(recordsToDelete);
-                                    }
-                                    catch(Exception ex) {
-                                        Logger.error(ReindexThread.class,"Error deleting records", ex);
-                                    }
+				                    addRecordsToDelete(recordsToDelete);
 				                }
                                 public void onResponse(BulkResponse resp) {
                                     deleteRecords();
@@ -157,6 +181,9 @@ public class ReindexThread extends Thread {
                                     deleteRecords();
                                 }
                             });
+				        }
+				        else if(recordsToDelete.size()>0) {
+				            addRecordsToDelete(recordsToDelete);
 				        }
 					}
 					
