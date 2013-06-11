@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 
@@ -66,20 +67,26 @@ public class PublisherAPIImpl implements PublisherAPI {
 				}
 			}
 
+            //Before to build the bundle lets make sure it wasn't already created
+            File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + config.getId() + ".tar.gz" );
+            if ( !compressedBundle.exists() ) {
 
-			// run bundlers
+                // Run bundlers
+                File bundleRoot = BundlerUtil.getBundleRoot( config );
 
-		File bundleRoot = BundlerUtil.getBundleRoot(config);
-			BundlerUtil.writeBundleXML(config);
-			for (Class<IBundler> c : bundlers) {
-				IBundler b = (IBundler) c.newInstance();
-				confBundlers.add(b);
-				b.setConfig(config);
-				BundlerStatus bs = new BundlerStatus(b.getClass().getName());
-				status.addToBs(bs);
-				b.generate(bundleRoot, bs);
-			}
-			config.setBundlers(confBundlers);
+                BundlerUtil.writeBundleXML( config );
+                for ( Class<IBundler> c : bundlers ) {
+
+                    IBundler bundler = c.newInstance();
+                    confBundlers.add( bundler );
+                    bundler.setConfig( config );
+                    BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
+                    status.addToBs( bs );
+                    //Generate the bundler
+                    bundler.generate( bundleRoot, bs );
+                }
+                config.setBundlers( confBundlers );
+            }
 
 			// run publishers
 			for (Publisher p : pubs) {
