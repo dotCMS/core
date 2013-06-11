@@ -3,6 +3,7 @@ package com.dotcms.publisher.ajax;
 import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.PublishThread;
@@ -261,58 +262,54 @@ public class RemotePublishAjaxAction extends AjaxAction {
             File bundle = new File( bundleRoot + File.separator + ".." + File.separator + basicConfig.getId() + ".tar.gz" );
             if ( !bundle.exists() ) {
                 Logger.error( this.getClass(), "No Bundle with id: " + bundleId + " found." );
-
-                String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.error.not.found", new String[]{bundleId}, false );
-                if ( responseMessage.length() > 0 ) {
-                    responseMessage.append( "<br>" );
-                }
-                responseMessage.append( "FAILURE: " ).append( message );
+                appendMessage( responseMessage, "publisher_retry.error.not.found", bundleId, true );
                 continue;
             }
 
             if ( !BundlerUtil.bundleExists( basicConfig ) ) {
-
                 Logger.error( this.getClass(), "No Bundle Descriptor for bundle id: " + bundleId + " found." );
-
-                String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.error.not.descriptor.found", new String[]{bundleId}, false );
-                if ( responseMessage.length() > 0 ) {
-                    responseMessage.append( "<br>" );
-                }
-                responseMessage.append( "FAILURE: " ).append( message );
+                appendMessage( responseMessage, "publisher_retry.error.not.descriptor.found", bundleId, true );
                 continue;
             }
 
             //First we need to verify is this bundle is already in the queue job
             List<PublishQueueElement> foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
             if ( foundBundles != null && !foundBundles.isEmpty() ) {
-                String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.error.already.in.queue", new String[]{bundleId}, false );
-                if ( responseMessage.length() > 0 ) {
-                    responseMessage.append( "<br>" );
-                }
-                responseMessage.append( "FAILURE: " ).append( message );
+                appendMessage( responseMessage, "publisher_retry.error.already.in.queue", bundleId, true );
                 continue;
             }
 
             try {
-                //Read the bundle to see what kind of configuration we need to apply
-                String bundlePath = ConfigUtils.getBundlePath() + File.separator + basicConfig.getId();
-                File xml = new File( bundlePath + File.separator + "bundle.xml" );
-                PushPublisherConfig config = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
 
                 //Get the audit records related to this bundle
                 PublishAuditStatus status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
                 String pojo_string = status.getStatusPojo().getSerialized();
                 PublishAuditHistory auditHistory = PublishAuditHistory.getObjectFromString( pojo_string );
 
+                //ONLY FAILED BUNDLES
+                if ( !status.getStatus().equals( Status.FAILED_TO_PUBLISH ) ) {
+                    appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
+                    continue;
+                }
+
+                //Read the bundle to see what kind of configuration we need to apply
+                String bundlePath = ConfigUtils.getBundlePath() + File.separator + basicConfig.getId();
+                File xml = new File( bundlePath + File.separator + "bundle.xml" );
+                PushPublisherConfig config = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
+
                 //Clean the number of tries, we want to try it again
                 auditHistory.setNumTries( 0 );
                 publishAuditAPI.updatePublishAuditStatus( config.getId(), status.getStatus(), auditHistory );
 
                 //Get the identifiers on this bundle
-                List<PublishQueueElement> assets = config.getAssets();
                 List<String> identifiers = new ArrayList<String>();
-                for ( PublishQueueElement asset : assets ) {
-                    identifiers.add( asset.getAsset() );
+                List<PublishQueueElement> assets = config.getAssets();
+                if ( assets == null || assets.isEmpty() ) {
+                    identifiers.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+                } else {
+                    for ( PublishQueueElement asset : assets ) {
+                        identifiers.add( asset.getAsset() );
+                    }
                 }
 
                 //Now depending of the operation lets add it to the queue job
@@ -323,19 +320,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 }
 
                 //Success...
-                String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.success", new String[]{bundleId}, false );
-                if ( responseMessage.length() > 0 ) {
-                    responseMessage.append( "<br>" );
-                }
-                responseMessage.append( message );
+                appendMessage( responseMessage, "publisher_retry.success", bundleId, false );
             } catch ( Exception e ) {
                 Logger.error( this.getClass(), "Error trying to add bundle id: " + bundleId + " to the Publishing Queue.", e );
-
-                String message = LanguageUtil.format( getUser().getLocale(), "publisher_retry.error.adding.to.queue", new String[]{bundleId}, false );
-                if ( responseMessage.length() > 0 ) {
-                    responseMessage.append( "<br>" );
-                }
-                responseMessage.append( "FAILURE: " ).append( message );
+                appendMessage( responseMessage, "publisher_retry.error.adding.to.queue", bundleId, true );
             }
         }
 
@@ -415,4 +403,27 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		}
 
 	}
+
+    /**
+     * Appends info messages to a main StringBuilder message for an easier display to the user
+     *
+     * @param responseMessage
+     * @param messageKey
+     * @param bundleId
+     * @param failure
+     * @throws LanguageException
+     */
+    private void appendMessage ( StringBuilder responseMessage, String messageKey, String bundleId, Boolean failure ) throws LanguageException {
+
+        String message = LanguageUtil.format( getUser().getLocale(), messageKey, new String[]{bundleId}, false );
+        if ( responseMessage.length() > 0 ) {
+            responseMessage.append( "<br>" );
+        }
+        if ( failure ) {
+            responseMessage.append( "FAILURE: " ).append( message );
+        } else {
+            responseMessage.append( message );
+        }
+    }
+
 }
