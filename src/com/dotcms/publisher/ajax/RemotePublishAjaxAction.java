@@ -2,6 +2,7 @@ package com.dotcms.publisher.ajax;
 
 import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerUtil;
@@ -243,6 +244,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
         String bundlesIds = request.getParameter( "bundlesIds" );
         String[] ids = bundlesIds.split( "," );
 
+        //Getting the list of receiving en
+        List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI().getEnabledReceivingEndPoints();
+
         StringBuilder responseMessage = new StringBuilder();
 
         for ( String bundleId : ids ) {
@@ -289,6 +293,14 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 //ONLY FAILED BUNDLES
                 if ( !status.getStatus().equals( Status.FAILED_TO_PUBLISH ) ) {
                     appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
+                    continue;
+                }
+
+                //We can not retry Received Bundles, just bundles that we are trying to send
+                Map<String, Map<String, EndpointDetail>> endPoints = auditHistory.getEndpointsMap();
+                Boolean sending = sendingBundle( receivingEndpoints, endPoints );
+                if ( !sending ) {
+                    appendMessage( responseMessage, "publisher_retry.error.cannot.retry.received", bundleId, true );
                     continue;
                 }
 
@@ -424,6 +436,31 @@ public class RemotePublishAjaxAction extends AjaxAction {
         } else {
             responseMessage.append( message );
         }
+    }
+
+    /**
+     * Verifies what we were doing to the current bundle, it was received for this server?, or this server is trying to send it....,
+     * we don't want to retry bundles we received.
+     *
+     * @param receivingEndpoints
+     * @param bundleEndPoints
+     * @return
+     */
+    private Boolean sendingBundle ( List<PublishingEndPoint> receivingEndpoints, Map<String, Map<String, EndpointDetail>> bundleEndPoints ) {
+
+        //If we have no "Send to" end points for sure this is a bundle we received
+        if ( receivingEndpoints == null || receivingEndpoints.isEmpty() ) {
+            return false;
+        }
+
+        //The end point is one or ours "Send to" end points, so it means we are trying to send this bundle
+        for ( PublishingEndPoint endPoint : receivingEndpoints ) {
+            if ( bundleEndPoints.containsKey( endPoint.getId() ) ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }
