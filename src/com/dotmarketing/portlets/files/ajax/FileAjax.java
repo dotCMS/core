@@ -101,15 +101,19 @@ public class FileAjax {
 			result.put("timeInSeconds", timeInSeconds);
 			result.put("uploadRate", uploadRate);
 			result.put("estimatedRuntime", estimatedRuntime);
-			result.put("error", null);			
+			result.put("error", null);		
+			
+			// dotcms 3022
+			ctx.getSession().setAttribute("SIZE_FILE_UPLOAD_STATS_" + fieldName, sizeTotal);
 			return result;
-		}
+		} 
 		return null;
 	}
 	
-	public void clearFileUploadStatus(String fieldName) {
+	public long clearFileUploadStatus(String fieldName) {
 		WebContext ctx = WebContextFactory.get();
+		long size = ((AjaxFileUploadListener.FileUploadStats)ctx.getSession().getAttribute("FILE_UPLOAD_STATS_" + fieldName)).getTotalSize();		
 		ctx.getSession().removeAttribute("FILE_UPLOAD_STATS_" + fieldName);
-	}
-	
+		return size;
+	}	
 }
