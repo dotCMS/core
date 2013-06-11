@@ -244,7 +244,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         String bundlesIds = request.getParameter( "bundlesIds" );
         String[] ids = bundlesIds.split( "," );
 
-        //Getting the list of receiving en
+        //Getting the list of receiving end points
         List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI().getEnabledReceivingEndPoints();
 
         StringBuilder responseMessage = new StringBuilder();
