@@ -55,5 +55,10 @@ public class Xss {
 	public static String escapeHTMLAttrib(String value) {
 	    return value!=null ? ESAPI.encoder().encodeForHTMLAttribute(value) : "";
 	}
+	
+	
+	public static String unEscapeHTMLAttrib(String value) {
+	    return value!=null ? ESAPI.encoder().decodeForHTML(value) : "";
+	}
 
 }
