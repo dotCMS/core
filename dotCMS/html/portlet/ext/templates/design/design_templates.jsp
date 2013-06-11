@@ -419,7 +419,20 @@
 
 				<div class="clear"></div>
 
-
+				<div class="hidden">
+					<div class="leftProperties">
+						<dl>
+							<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
+							<dd>
+								<select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">                                    
+                                    <option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
+                                    <option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
+				                    <option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
+								</select>
+							</dd>
+						</dl>
+					</div>
+				</div>
 				
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
