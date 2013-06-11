@@ -97,9 +97,10 @@ public class DependencyManager {
     		setStructureDependencies();
     		setContentDependencies(config.getLuceneQueries());
 		}else{
-			contents.addAll(getContentIds(config.getLuceneQueries()));
-		}
-		
+
+            contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+        }
+
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -498,23 +499,7 @@ public class DependencyManager {
 
 	}
 
-	private List<String> getContentIds(List<String> luceneQueries){
-		List<String> ret = new ArrayList<String>();
-		List<ContentletSearch> cs = new ArrayList<ContentletSearch>();
-		for(String luceneQuery: luceneQueries) {
-		    try {
-				cs = APILocator.getContentletAPI().searchIndex(
-				        luceneQuery, 0, 0, "moddate", user, false);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-		}
-		for (ContentletSearch contentletSearch : cs) {
-			ret.add(contentletSearch.getIdentifier());
-		}
-		return ret;
-	}
-	
+
 	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
