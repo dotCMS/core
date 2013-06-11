@@ -485,7 +485,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
 	public static final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000");
 	
-	@SuppressWarnings("unchecked")
 	protected void loadFields(Contentlet con, Map<String, String> m) throws DotDataException {
 	    FieldAPI fAPI=APILocator.getFieldAPI();
 	    List<Field> fields = new ArrayList<Field>(FieldsCache.getFieldsByStructureInode(con.getStructureInode()));

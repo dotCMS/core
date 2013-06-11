@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="java.util.Random"%>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
@@ -357,16 +358,32 @@ dojo.require("dojox.layout.ContentPane");
 	function persistContent(isAutoSave, publish){
 
 	   	var isAjaxFileUploading = false;
+	   	var alertFileAssetSize = false;
+	   	var size = 0;
+	   	var maxSizeForAlert = <%= Config.getIntProperty("UPLOAD_FILE_ASSET_MAX_SIZE",30) %>
 	   	dojo.query(".fajaxUpName").forEach(function(node, index, arr){
-	   		FileAjax.getFileUploadStatus(node.id,{async:false, callback: function(fileStats){
+	   		FileAjax.getFileUploadStatus(node.id,{callback: function(fileStats) {
 	   	   		if(fileStats!=null){
-	   	   		   isAjaxFileUploading = true;
-	   	   		}
-	   	   	}});
-	   	 });
-
+		   	   	   isAjaxFileUploading = true;
+		   	   	}
+		   	}, async:false});	   		
+	   			
+	   	});
+		var maxSize = document.getElementById("maxSizeFileLimit");
+		size = maxSize.value;
+		
+		if(size>maxSizeForAlert*1024*1024){
+			alertFileAssetSize=true;
+		}
+			
+	   	if(alertFileAssetSize){
+	   		document.getElementById('maxSizeFileAlert').innerHTML='<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "alert-file-too-large-takes-lot-of-time"))%>'
+	   	}else{
+	   		document.getElementById('maxSizeFileAlert').innerHTML='';
+	   	}
+	   	
 	   	if(isAjaxFileUploading){
-	   	showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-wait-until-all-files-are-uploaded")) %>');
+	   		showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-wait-until-all-files-are-uploaded")) %>');
 	       return false;
 	   	}
 
