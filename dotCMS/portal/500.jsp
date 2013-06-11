@@ -104,13 +104,6 @@
     <link rel="shortcut icon" href="http://<%=defaultHost.getHostname()%>/home/favicon.ico"" type="image/x-icon">
     <script>
         function showError(){
-            var ele = document.getElementById("error");
-            if(ele.style.display=="none"){
-                ele.style.display="";
-            }
-            else{
-                ele.style.display="none";
-            }
         
         }
         
@@ -172,34 +165,9 @@
             </div>
         </div>
         <br clear="all"/>&nbsp;<br clear="all"/>
-<div id="footer">&copy; <script>var d = new Date();document.write(d.getFullYear());</script>, <a href="http://<%=portalUrl%>"><%= LanguageUtil.get(pageContext,"500-copywright") %></a></div>
+		<div id="footer">&copy; <script>var d = new Date();document.write(d.getFullYear());</script>, <a href="http://<%=portalUrl%>"><%= LanguageUtil.get(pageContext,"500-copywright") %></a></div>
         <br clear="all"/>&nbsp;<br clear="all"/>
-		<div id="error" style="display: none;border: 1px #cccccc solid; padding:10px; margin:10px;width:80%">
-		        <% Exception x = (Exception) request.getAttribute("javax.servlet.error.exception");%>
-		        <%if(x instanceof javax.servlet.ServletException) {%>
-			        <% javax.servlet.ServletException sx = (javax.servlet.ServletException) request.getAttribute("javax.servlet.error.exception");%>
-			        <% if(sx != null){%>
-			            <%java.lang.Throwable t = sx.getRootCause();%>
-			            <%if(t != null){%>
-			            <% t.printStackTrace();%>
-			            <H2>Error information</H2>
-			            <pre><%=t.toString()%><%  java.lang.StackTraceElement[] ste =t.getStackTrace();%><%for(int i = 0; i< ste.length;i++){%>
-							<%=ste[i].toString()%><%}%>
-			             </pre>
-			             <%}%>
-			        <%}%>
-				<%}else{ %>
-			        <% if(x != null){%>
-			            <%java.lang.Throwable t = x.getCause();%>
-			            <%if(t != null){%>
-			            <% t.printStackTrace();%>
-			            <H2>Error information</H2>
-			            <pre><%=t.toString()%><%  java.lang.StackTraceElement[] ste =t.getStackTrace();%><%for(int i = 0; i< ste.length;i++){%>
-							<%=ste[i].toString()%><%}%>
-			             </pre>
-			             <%}%>
-			        <%}%>
-				<%} %>
+
 		
 		</div>
 		
