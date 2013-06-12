@@ -81,14 +81,19 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			
 			// Handle root SYSTEM or Root Host view
 			if(splitPath != null && splitPath.length == 1){
-				host = hostAPI.findByName(splitPath[0], user, false);
-				if(splitPath[0].equalsIgnoreCase("system")){
-					SystemRootResourceImpl sys = new SystemRootResourceImpl();
-					return sys;
-				}else{
-					HostResourceImpl hr = new HostResourceImpl(url);
-					return hr;
-				}
+			    if(dotDavHelper.isTempResource(url)){ 
+			        return null;
+			    }
+			    else {
+    				host = hostAPI.findByName(splitPath[0], user, false);
+    				if(splitPath[0].equalsIgnoreCase("system")){
+    					SystemRootResourceImpl sys = new SystemRootResourceImpl();
+    					return sys;
+    				}else{
+    					HostResourceImpl hr = new HostResourceImpl(url);
+    					return hr;
+    				}
+			    }
 			}
 		
 			
