@@ -20,7 +20,7 @@
 		<span  style="line-height:20px;font-weight: bold;"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Receiving_Server_Short") %></span>
 	</div>
 	<div class="yui-u" style="text-align:right;">
-		<button dojoType="dijit.form.Button" onClick="goToAddEndpoint();" iconClass="plusIcon">
+		<button dojoType="dijit.form.Button" onClick="goToAddEndpoint(null, 'true');" iconClass="plusIcon">
 			<%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
 		</button>
 	</div>
@@ -47,7 +47,7 @@
 			<td nowrap="nowrap">
 				<a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
 				<span class="deleteIcon"></span></a>&nbsp;
-				<a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
+				<a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
 				<span class="editIcon"></span></a>
 			</td>
 

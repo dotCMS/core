@@ -32,6 +32,11 @@ public interface PublishingEndPointAPI {
 	 *
 	 */
 	PublishingEndPoint findEndPointById(String id) throws DotDataException;
+	/**
+	 * Returns the single endPoint by serverName. If an endPoint is not found matching serverName then null is returned.
+	 *
+	 */
+	PublishingEndPoint findEndPointByName(String name) throws DotDataException;
 
 	/**
 	 * Returns enabled, sending endPoint that matches the provided address.  If a match is not found, null is returned.

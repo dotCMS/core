@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -165,5 +166,24 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 			}
 		}
 		return sendGroups;
+	}
+
+	@Override
+	public PublishingEndPoint getEndPointByName(String name)
+			throws DotDataException {
+
+		DotConnect dc = new DotConnect();
+		dc.setSQL(SELECT_END_POINT_BY_NAME);
+		dc.addParam(name);
+		List<Map<String, Object>> res = dc.loadObjectResults();
+		PublishingEndPoint e = null;
+
+		if(res!=null && !res.isEmpty()) {
+			Map<String, Object> row = res.get(0);
+			e = PublisherUtil.getObjectByMap(row);
+		}
+
+		return e;
+
 	}
 }

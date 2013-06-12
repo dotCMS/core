@@ -96,5 +96,22 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 
 	}
 
+	@Override
+	public Environment getEnvironmentByName(String name)
+			throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(SELECT_ENVIRONMENT_BY_NAME);
+		dc.addParam(name);
+		List<Map<String, Object>> res = dc.loadObjectResults();
+		Environment e = null;
+
+		if(res!=null && !res.isEmpty()) {
+			Map<String, Object> row = res.get(0);
+			e = PublisherUtil.getEnvironmentByMap(row);
+		}
+
+		return e;
+	}
+
 
 }

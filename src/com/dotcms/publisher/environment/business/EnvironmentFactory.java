@@ -13,10 +13,13 @@ public abstract class EnvironmentFactory {
 	protected static String UPDATE_ENVIRONMENT						=	"UPDATE publishing_environment SET name = ?, push_to_all = ? WHERE id = ?";
 	protected static String DELETE_ENVIRONMENT				=	"DELETE FROM publishing_environment WHERE id = ?";
 	protected static String SELECT_ENVIRONMENT_BY_ID				=	"SELECT * FROM publishing_environment WHERE id = ?";
+	protected static String SELECT_ENVIRONMENT_BY_NAME				=	"SELECT * FROM publishing_environment WHERE name = ?";
 
 	public abstract List<Environment> getEnvironments() throws DotDataException;
 
 	public abstract Environment getEnvironmentById(String id) throws DotDataException;
+
+	public abstract Environment getEnvironmentByName(String name) throws DotDataException;
 
 	public abstract void save(Environment environment) throws DotDataException;
 

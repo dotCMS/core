@@ -42,7 +42,6 @@
 		<button dojoType="dijit.form.Button" onClick="goToAddEnvironment();" iconClass="plusIcon">
 			<%= LanguageUtil.get(pageContext, "publisher_Add_Environment") %>
 		</button>
-
 	</div>
 </div>
 <div style="padding-top: 5px">
@@ -63,7 +62,7 @@
 						<%= LanguageUtil.get(pageContext, "Push-To-All") %> : <%=environment.getPushToAll()%>
 					</td>
 					<td align="right">
-						<button dojoType="dijit.form.Button" onClick="goToAddEndpoint('<%=environment.getId()%>');" iconClass="plusIcon">
+						<button dojoType="dijit.form.Button" onClick="goToAddEndpoint('<%=environment.getId()%>', 'false');" iconClass="plusIcon">
 							<%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
 						</button>
 					</td>
@@ -96,22 +95,22 @@
 									hasRow=true;%>
 								<tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
 									<td nowrap="nowrap">
-										<a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+										<a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
 										<span class="deleteIcon"></span></a>&nbsp;
-										<a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
+										<a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', '<%=environment.getId()%>', 'false')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
 										<span class="editIcon"></span></a>
 									</td>
 
 
-									<td style="cursor: pointer" width="50%" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+									<td width="50%" >
 										<%=endpoint.getServerName()%>
 									</td>
-									<td align="center" nowrap="nowrap" style="cursor: pointer" width="40" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+									<td align="center" nowrap="nowrap"  width="40" >
 										<%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "" %>
 										<%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%>
 
 									</td>
-									<td style="cursor: pointer" align="center" nowrap="nowrap" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+									<td align="center" nowrap="nowrap" >
 											<%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%>
 									</td>
 
