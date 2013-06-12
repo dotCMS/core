@@ -1294,12 +1294,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 srb.setSize(limit);
             if(offset>0)
                 srb.setFrom(offset);
-
-            if(UtilMethods.isSet(sortBy) && !sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
+            
+            if(UtilMethods.isSet(sortBy)) {
             	if(sortBy.equals("random")) {
             		srb.addSort(SortBuilders.scriptSort("Math.random()", "number"));
             	}
-            	else {
+            	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw")) {
             		String[] sortbyArr=sortBy.split(",");
 	            	for (String sort : sortbyArr) {
 	            		String[] x=sort.trim().split(" ");
