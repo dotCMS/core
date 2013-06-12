@@ -518,6 +518,7 @@
 		            var nodeName = getDBFQNLabel(roles[i].DBFQN);
 		            c.innerHTML = nodeName;
 		            c.value = roles[i].id;
+		            c.title = nodeName;
 		            sel.appendChild(c);
 
 		            var alreadyAdded = false;
@@ -858,6 +859,7 @@
 		            var c = win.doc.createElement('option');
 		            c.innerHTML = dbfqnLabel;
 		            c.value = id;
+		            c.title = dbfqnLabel;
 		            select.appendChild(c);
 
 
