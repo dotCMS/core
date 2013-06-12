@@ -136,13 +136,13 @@
 	}
 
 
-	function goToAddEndpoint(environmentId){
+	function goToAddEndpoint(environmentId, isSender){
 		var dialog = new dijit.Dialog({
 			id: 'addEndpoint',
 	        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Add")%>",
 	        style: "width: 800px; ",
 	        content: new dojox.layout.ContentPane({
-	            href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?environmentId="+environmentId
+	            href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?environmentId="+environmentId+"&isSender="+isSender
 	        }),
 	        onHide: function() {
 	        	var dialog=this;
@@ -158,13 +158,13 @@
 	    dojo.style(dialog.domNode,'top','80px');
 	}
 
-	function goToEditEndpoint(identifier){
+	function goToEditEndpoint(identifier, envId, isSender){
 		var dialog = new dijit.Dialog({
 			id: 'addEndpoint',
 	        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Edit")%>",
 	        style: "width: 800px; ",
 	        content: new dojox.layout.ContentPane({
-	            href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?op=edit&id="+identifier
+	            href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?op=edit&id="+identifier+"&environmentId="+envId+"&isSender="+isSender
 	        }),
 	        onHide: function() {
 	        	var dialog=this;
@@ -186,7 +186,7 @@
 
 	}
 
-	function deleteEndpoint(identifier){
+	function deleteEndpoint(identifier, fromEnvironment){
 		if(confirm("Are you sure you want to delete this endpoint?")){
 			var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp?delEp="+identifier;
 
@@ -201,6 +201,10 @@
 
 			myCp.attr("href", url);
 			myCp.refresh();
+
+			if(fromEnvironment) {
+				loadEnvironments();
+			}
 		}
 	}
 
@@ -224,7 +228,7 @@
 		var dialog = new dijit.Dialog({
 			id: 'addEnvironment',
 	        title: "<%= LanguageUtil.get(pageContext, "publisher_Environment_Add")%>",
-	        style: "width: 600px; ",
+	        style: "width: 700px; ",
 	        content: new dojox.layout.ContentPane({
 	            href: "/html/portlet/ext/contentlet/publishing/add_publish_environment.jsp"
 	        }),
@@ -394,10 +398,65 @@
 		refreshAuditList("");
 	}
 
+	var whoCanUse = new Array()
 
+	function addSelectedToWhoCanUse(){
 
+		var select = dijit.byId("whoCanUseSelect");
 
+		var user = select.getValue();
+		var userName = select.attr('displayedValue');
 
+		addToWhoCanUse(user, userName);
+		refreshWhoCanUse();
+	}
+
+	function addToWhoCanUse ( myId, myName){
+		for(i=0;i < this.whoCanUse.length;i++){
+			if(myId == this.whoCanUse[i].id  ||  myId == "user-" + this.whoCanUse[i].id || myId == "role-" + this.whoCanUse[i].id){
+				return;
+			}
+		}
+
+		var entry = {name:myName,id:myId };
+		this.whoCanUse[this.whoCanUse.length] =entry;
+
+	}
+
+	function refreshWhoCanUse(){
+		dojo.empty("whoCanUseTbl");
+		var table = dojo.byId("whoCanUseTbl");
+		var x = "";
+
+		this.whoCanUse = this.whoCanUse.sort(function(a,b){
+			var x = a.name.toLowerCase();
+		    var y = b.name.toLowerCase();
+		    return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+		});
+		for(i=0; i< this.whoCanUse.length ; i++){
+			var what = (this.whoCanUse[i].id.indexOf("user") > -1) ? " (<%=LanguageUtil.get(pageContext, "User")%>)" : "";
+			x = x + this.whoCanUse[i].id + ",";
+			var tr = dojo.create("tr", null, table);
+			dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"removeFromWhoCanUse('" + this.whoCanUse[i].id +"');refreshWhoCanUse()" }, tr);
+			dojo.create("td", { innerHTML: this.whoCanUse[i].name + what}, tr);
+
+		}
+		dojo.byId('whoCanUse').value = x;
+
+	}
+
+	function removeFromWhoCanUse(myId){
+
+		var x=0;
+		var newCanUse = new Array();
+		for(i=0;i < this.whoCanUse.length;i++){
+			if(myId != this.whoCanUse[i].id){
+				newCanUse[x] = this.whoCanUse[i];
+				x++;
+			}
+		}
+		this.whoCanUse= newCanUse;
+	}
 
 
 </script>

@@ -11,12 +11,16 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
 public class PublishingEndpointAjaxAction extends AjaxAction {
 
@@ -52,53 +56,81 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		}
 	}
 
-	public void addEndpoint(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void addEndpoint(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LanguageException {
         try {
         	String identifier = request.getParameter("identifier");
         	if(UtilMethods.isSet(identifier)){
         		editEndpoint(request, response);
         		return;
         	}
+
+        	String serverName = request.getParameter("serverName");
+        	PublishingEndPoint existingServer = APILocator.getPublisherEndPointAPI().findEndPointByName(serverName);
+
+        	if(existingServer!=null) {
+
+        		Logger.info(getClass(), "Can't save EndPoint. An Endpoint with the given name already exists. ");
+        		User user = getUser();
+    			response.getWriter().println("FAILURE: " + LanguageUtil.get(user, "publisher_Endpoint_name_exists"));
+    			return;
+        	}
+
         	PublishingEndPoint endpoint = new PublishingEndPoint();
-			endpoint.setServerName(new StringBuilder(request.getParameter("serverName")));
-			endpoint.setAddress(request.getParameter("address"));
-			endpoint.setPort(request.getParameter("port"));
-			endpoint.setProtocol(request.getParameter("protocol"));
-			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
-			endpoint.setEnabled(null!=request.getParameter("enabled"));
-			endpoint.setSending("receive".equals(request.getParameter("sending")));
-			endpoint.setGroupId(request.getParameter("environmentId"));
-			//Save the endpoint.
-			PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
-			peAPI.saveEndPoint(endpoint);
+        	endpoint.setServerName(new StringBuilder(serverName));
+        	endpoint.setAddress(request.getParameter("address"));
+        	endpoint.setPort(request.getParameter("port"));
+        	endpoint.setProtocol(request.getParameter("protocol"));
+        	endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
+        	endpoint.setEnabled(null!=request.getParameter("enabled"));
+        	String sending = request.getParameter("sending");
+        	endpoint.setSending("true".equals(sending));
+        	endpoint.setGroupId(request.getParameter("environmentId"));
+        	//Save the endpoint.
+        	PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
+        	peAPI.saveEndPoint(endpoint);
+
+
 
 		} catch (DotDataException e) {
-			response.getWriter().println("FAILURE: " + e.getMessage() );
-			//throw new DotRuntimeException(e.getMessage());
+			Logger.info(getClass(), "Error saving EndPoint. Error Message: " +  e.getMessage());
+			response.getWriter().println("FAILURE: " + e.getMessage());
 		}
 	}
 
-	public void editEndpoint(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void editEndpoint(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LanguageException {
 		try {
+
+			String serverName = request.getParameter("serverName");
+			String id = request.getParameter("identifier");
+        	PublishingEndPoint existingServer = APILocator.getPublisherEndPointAPI().findEndPointByName(serverName);
+
+        	if(existingServer!=null && !id.equals(existingServer.getId())) {
+
+        		Logger.info(getClass(), "Can't save EndPoint. An Endpoint with the given name already exists. ");
+        		User user = getUser();
+    			response.getWriter().println("FAILURE: " + LanguageUtil.get(user, "publisher_Endpoint_name_exists"));
+    			return;
+        	}
+
+
 			PublishingEndPoint endpoint = new PublishingEndPoint();
-	        String identifier = request.getParameter("identifier");
-	        endpoint.setId(identifier);
+	        endpoint.setId(id);
 			endpoint.setServerName(new StringBuilder(request.getParameter("serverName")));
 			endpoint.setAddress(request.getParameter("address"));
 			endpoint.setPort(request.getParameter("port"));
 			endpoint.setProtocol(request.getParameter("protocol"));
 			endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
 			endpoint.setEnabled(null!=request.getParameter("enabled"));
-			endpoint.setSending("receive".equals(request.getParameter("sending")));
-			endpoint.setGroupId(request.getParameter("groupId"));
+			endpoint.setSending("true".equals(request.getParameter("sending")));
+			endpoint.setGroupId(request.getParameter("environmentId"));
 			//Update the endpoint.
 			PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
 			peAPI.updateEndPoint(endpoint);
 
 		} catch (DotDataException e) {
-			response.getWriter().println("FAILURE: " + e.getMessage() );
-			//throw new DotRuntimeException(e.getMessage());
+			Logger.info(getClass(), "Error editing EndPoint. Error Message: " +  e.getMessage());
+			response.getWriter().println("FAILURE: " + e.getMessage());
 		}
-	}
 
+	}
 }

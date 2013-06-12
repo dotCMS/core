@@ -5,9 +5,11 @@
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+
 <%
 	String identifier = request.getParameter("id");
 	String environmentId = request.getParameter("environmentId");
+	String isSender = request.getParameter("isSender");
 
 	PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
 	PublishingEndPoint currentEndpoint = peAPI.findEndPointById(identifier);
@@ -37,7 +39,7 @@
 
 		dijit.byId("serverName").setAttribute('required',true);
 		dijit.byId("address").setAttribute('required',true);
-		if(dijit.byId("sendingServer").checked){
+		if(dojo.byId("sending").value=='true'){
 			dijit.byId("port").setAttribute('required',true);
 		}
 		else{
@@ -87,11 +89,9 @@
 
 	}
 
-	var sending=<%=currentEndpoint.isSending()%>;
+	function toggleServerType(sending){
 
-	function toggleServerType(){
-		sending=!sending;
-		if(sending){
+		if(sending=='false'){
 			dojo.style("addressFromSpan", "display", "none");
 			dojo.style("addressToSpan", "display", "");
 			dojo.style("portRow", "display", "table-row");
@@ -107,7 +107,7 @@
 	}
 
 	dojo.ready( function(){
-		toggleServerType();
+		toggleServerType('<%=isSender%>');
 	});
 
 </script>
@@ -153,18 +153,10 @@
 			</tr>
 
 
+
 			<tr>
 				<td align="center" colspan=2>
-
-					<input onClick="toggleServerType()" dojoType="dijit.form.RadioButton" type="radio" name="sending" value="sending" checked="<%=!currentEndpoint.isSending()%>" id="sendingServer" />
-					<label for="sendingServer"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Sending_Server") %></label>
-
-					&nbsp;
-					&nbsp;
-
-
-					<input onClick="toggleServerType()" dojoType="dijit.form.RadioButton" type="radio" name="sending" value="receive"  checked="<%=currentEndpoint.isSending()%>"  id="recivingServer" />
-					<label for="recivingServer"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Receiving_Server") %></label>
+					<input type="hidden" name="sending" id="sending" value="<%=isSender%>">
 				</td>
 			</tr>
 

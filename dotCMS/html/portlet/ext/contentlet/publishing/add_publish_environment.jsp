@@ -4,6 +4,7 @@
 <%@page import="com.dotcms.publisher.environment.business.EnvironmentAPI"%>
 <%@page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.dotmarketing.business.Role"%>
 <%
 	String identifier = request.getParameter("id");
 	EnvironmentAPI eAPI = APILocator.getEnvironmentAPI();
@@ -17,7 +18,11 @@
 %>
 
 <script type="text/javascript">
-	require(["dojo/parser", "dijit/form/SimpleTextarea"]);
+	require(["dojo/parser", "dijit/form/SimpleTextarea", "dotcms/dojo/data/RoleReadStore",  "dijit/form/FilteringSelect"]);
+
+	var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect"});
+
+
 	function saveEnvironment(){
 
 		var form = dijit.byId("formSaveEnvironment");
@@ -64,7 +69,37 @@
 	}
 
 	dojo.ready( function(){
-		toggleServerType();
+
+		var permissionSelect = new dijit.form.FilteringSelect({
+            id: "whoCanUseSelect",
+            name: "whoCanUseSelect",
+            store: myRoleReadStore,
+
+            pageSize:30,
+            searchDelay:300,
+            required:false,
+            onClick:function(){
+            	dijit.byId("whoCanUseSelect").set("displayedValue","");
+            	dijit.byId("whoCanUseSelect").loadDropDown();
+            }
+        },
+        "actionWhoCanUseSelect");
+
+		whoCanUse = new Array()
+
+		<% if(currentEnvironment!=null) {
+
+			Set<Role> roles = APILocator.getPermissionAPI().getReadRoles(currentEnvironment);%>
+			<%for(Role tmpRole :  roles){%>
+				addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>",
+						"<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
+			<% }%>
+
+			refreshWhoCanUse();
+
+		<% }%>
+
+
 	});
 
 </script>
@@ -95,10 +130,29 @@
 							  />
 				</td>
 			</tr>
-
-
 			<tr>
-				<td align="center" colspan=2>
+				<td align="right"><%=LanguageUtil.get(pageContext, "Who-can-use-action")%>:</td>
+				<td>
+					<input id="actionWhoCanUseSelect" />
+					<button dojoType="dijit.form.Button"
+						onClick='addSelectedToWhoCanUse()'
+						iconClass="addIcon">
+						<%=LanguageUtil.get(pageContext, "add")%>
+					</button>
+					<div class="wfWhoCanUseDiv">
+						<table class="listingTable" id="whoCanUseTbl">
+						</table>
+					</div>
+
+					<input type="hidden" name="whoCanUse" id="whoCanUse" value="">
+
+				</td>
+			</tr>
+			<tr>
+				<td align="right" width="40%">
+					<%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>:
+				</td>
+				<td >
 
 					<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToOne" checked="<%=!currentEnvironment.getPushToAll()%>" id="pushToOne" />
 					<label for="pushToOne"><%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %></label>

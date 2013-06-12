@@ -97,4 +97,9 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 			PublishingEndPointFactory publishingEndPointFactory) {
 		this.publishingEndPointFactory = publishingEndPointFactory;
 	}
+
+	@Override
+	public PublishingEndPoint findEndPointByName(String name) throws DotDataException {
+		return publishingEndPointFactory.getEndPointByName(name);
+	}
 }

@@ -30,13 +30,18 @@ public abstract class PublishingEndPointFactory {
 
 	// this query is for delete an end point by id
 	protected static String DELETE_END_POINT_BY_ID				=	"DELETE FROM publishing_end_point " +
-																	"WHERE id = ?";
+			"WHERE id = ?";
+
+	protected static String SELECT_END_POINT_BY_NAME				=	"SELECT * FROM publishing_end_point " +
+																	"WHERE server_name = ?";
 
 	public abstract List<PublishingEndPoint> getEndPoints() throws DotDataException;
 
 	public abstract List<PublishingEndPoint> getReceivingEndPoints() throws DotDataException;
 
 	public abstract PublishingEndPoint getEndPointById(String id) throws DotDataException;
+
+	public abstract PublishingEndPoint getEndPointByName(String name) throws DotDataException;
 
 	public abstract PublishingEndPoint getEnabledSendingEndPointByAddress(String address) throws DotDataException;
 
