@@ -30,6 +30,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.util.Xss;
 
 /**
  * Ensures the proper encoding 
@@ -122,7 +123,12 @@ public class CharsetEncodingFilter implements Filter {
 			        	else
 			        	{
 			        		languageId = request.getParameter("language_id");
-			        	}            
+			        	}
+			        	if(Xss.URLHasXSS(languageId)){
+			        		/*Pull default language*/
+			        		languageId = Long.toString(langAPI.getDefaultLanguage().getId());
+			        		request.setAttribute("language_id", languageId);
+			        	}
 			        	Language currentLang = langAPI.getLanguage(languageId);
 			            Locale locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
 			
