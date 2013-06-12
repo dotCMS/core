@@ -145,14 +145,14 @@ public abstract class Publisher implements IPublisher {
 				x = x.replace("*", "");
 
 
-				if(endsWith && filePath.indexOf(x)!=0){
-					return false;
+				if(endsWith && filePath.startsWith(x)){
+					return true;
 				}
-				else if(startsWith && filePath.contains(x + ".")){
+				else if(startsWith && filePath.indexOf(x)>=0){
 					return true;
 				}
 			}
-			return false; 
+			return false;
 		}
 		if(config.getExcludePatterns() != null){
 			for(String x : config.getExcludePatterns()){

@@ -253,6 +253,7 @@ public class PushPublisher extends Publisher {
     @Override
     public List<Class> getBundlers () {
 
+        boolean buildUsers = false;
         boolean buildCategories = false;
         boolean buildOSGIBundle = false;
         for ( PublishQueueElement element : config.getAssets() ) {
@@ -260,6 +261,8 @@ public class PushPublisher extends Publisher {
                 buildCategories = true;
             } else if ( element.getType().equals( "osgi" ) ) {
                 buildOSGIBundle = true;
+            } else if ( element.getType().equals( "user" ) ) {
+                buildUsers = true;
             }
         }
 
@@ -272,7 +275,9 @@ public class PushPublisher extends Publisher {
          * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
          *
          */
-        if ( buildCategories ) {
+        if ( buildUsers ) {
+            list.add( UserBundler.class );
+        } else if ( buildCategories ) {
             list.add( CategoryBundler.class );
         } else if ( buildOSGIBundle ) {
             list.add( OSGIBundler.class );

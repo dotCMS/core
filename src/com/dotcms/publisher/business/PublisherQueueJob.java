@@ -1,15 +1,5 @@
 package com.dotcms.publisher.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
-
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -17,19 +7,21 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.TrustFactory;
+import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.client.urlconnection.HTTPSProperties;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
+
+import java.util.*;
 
 /**
  * This class read the publishing_queue table and send bundles to some endpoints
@@ -44,10 +36,10 @@ public class PublisherQueueJob implements StatefulJob {
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance(); 
 	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
-	
-	private static final Integer maxNumTries = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 5);
-	
-	@SuppressWarnings("rawtypes")
+
+    private static final Integer maxNumTries = Config.getIntProperty( "PUBLISHER_QUEUE_MAX_TRIES", 3 );
+
+    @SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
 		    Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
@@ -115,14 +107,25 @@ public class PublisherQueueJob implements StatefulJob {
 		
 						pconf.setPublishers(clazz);
 						pconf.setEndpoints(endpoints);
-						
-						if(Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT)
-							pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
-						else
-							pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
-						
-						APILocator.getPublisherAPI().publish(pconf);
-					}
+
+                        if ( Integer.parseInt( bundle.get( "operation" ).toString() ) == PublisherAPI.ADD_OR_UPDATE_ELEMENT ) {
+                            pconf.setOperation( PushPublisherConfig.Operation.PUBLISH );
+                        } else {
+                            pconf.setOperation( PushPublisherConfig.Operation.UNPUBLISH );
+                        }
+
+                        try {
+                            APILocator.getPublisherAPI().publish( pconf );
+                        } catch ( DotPublishingException e ) {
+                            /*
+                            If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
+                            there is something wrong with a bundler or creating the bundle.
+                             */
+                            Logger.error( PublisherQueueJob.class, "Unable to publish Bundle: " + e.getMessage(), e );
+                            pubAuditAPI.updatePublishAuditStatus( pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo );
+                            pubAPI.deleteElementsFromPublishQueueTable( pconf.getId() );
+                        }
+                    }
 					
 				}
 				

@@ -1,10 +1,10 @@
 package com.dotcms.publisher.ajax;
 
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
-import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.PublishThread;
@@ -20,6 +20,8 @@ import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.*;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
@@ -150,6 +152,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentPushPublishTime = request.getParameter( "remotePublishTime" );
             String _contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
             String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
+            String _contentFilterDate = request.getParameter( "remoteFilterDate" );
             String _iWantTo = request.getParameter( "iWantTo" );
 
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
@@ -160,7 +163,21 @@ public class RemotePublishAjaxAction extends AjaxAction {
             try {
 
                 // check for the categories
-                if ( _assetId.equals( "CAT" ) ) {
+                if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
+                    //If we are trying to push users a filter date must be available
+                    if ( _assetId.contains( "users_" ) ) {
+                        Date filteringDate = dateFormat.parse( _contentFilterDate );
+                        //Get users where createdate >= ?
+                        List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
+                        if ( usersIds != null ) {
+                            for ( String id : usersIds ) {
+                                ids.add( "user_" + id );
+                            }
+                        }
+                    } else {
+                        ids.add( _assetId );
+                    }
+                } else if ( _assetId.equals( "CAT" ) ) {
                     ids.add( _assetId );
                 } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
                     ids.add( _assetId );
@@ -206,6 +223,123 @@ public class RemotePublishAjaxAction extends AjaxAction {
         } catch ( DotDataException e ) {
             Logger.error( PushPublishActionlet.class, e.getMessage(), e );
         }
+    }
+
+    /**
+     * Allow the user to send again a failed bundle to que publisher queue job in order to try to republish it again
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotPublisherException
+     */
+    public void retry ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException, DotPublisherException, LanguageException {
+
+        PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
+
+        //Read the parameters
+        String bundlesIds = request.getParameter( "bundlesIds" );
+        String[] ids = bundlesIds.split( "," );
+
+        //Getting the list of receiving end points
+        List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI().getEnabledReceivingEndPoints();
+
+        StringBuilder responseMessage = new StringBuilder();
+
+        for ( String bundleId : ids ) {
+
+            if ( bundleId.trim().isEmpty() ) {
+                continue;
+            }
+
+            PublisherConfig basicConfig = new PublisherConfig();
+            basicConfig.setId( bundleId );
+            File bundleRoot = BundlerUtil.getBundleRoot( basicConfig );
+
+            /*
+            Verify if the bundle exist and was created correctly..., meaning, if there is not a .tar.gz file is because
+            something happened on the creation of the bundle.
+             */
+            File bundle = new File( bundleRoot + File.separator + ".." + File.separator + basicConfig.getId() + ".tar.gz" );
+            if ( !bundle.exists() ) {
+                Logger.error( this.getClass(), "No Bundle with id: " + bundleId + " found." );
+                appendMessage( responseMessage, "publisher_retry.error.not.found", bundleId, true );
+                continue;
+            }
+
+            if ( !BundlerUtil.bundleExists( basicConfig ) ) {
+                Logger.error( this.getClass(), "No Bundle Descriptor for bundle id: " + bundleId + " found." );
+                appendMessage( responseMessage, "publisher_retry.error.not.descriptor.found", bundleId, true );
+                continue;
+            }
+
+            //First we need to verify is this bundle is already in the queue job
+            List<PublishQueueElement> foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
+            if ( foundBundles != null && !foundBundles.isEmpty() ) {
+                appendMessage( responseMessage, "publisher_retry.error.already.in.queue", bundleId, true );
+                continue;
+            }
+
+            try {
+
+                //Get the audit records related to this bundle
+                PublishAuditStatus status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
+                String pojo_string = status.getStatusPojo().getSerialized();
+                PublishAuditHistory auditHistory = PublishAuditHistory.getObjectFromString( pojo_string );
+
+                //ONLY FAILED BUNDLES
+                if ( !status.getStatus().equals( Status.FAILED_TO_PUBLISH ) ) {
+                    appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
+                    continue;
+                }
+
+                //We can not retry Received Bundles, just bundles that we are trying to send
+                Map<String, Map<String, EndpointDetail>> endPoints = auditHistory.getEndpointsMap();
+                Boolean sending = sendingBundle( receivingEndpoints, endPoints );
+                if ( !sending ) {
+                    appendMessage( responseMessage, "publisher_retry.error.cannot.retry.received", bundleId, true );
+                    continue;
+                }
+
+                //Read the bundle to see what kind of configuration we need to apply
+                String bundlePath = ConfigUtils.getBundlePath() + File.separator + basicConfig.getId();
+                File xml = new File( bundlePath + File.separator + "bundle.xml" );
+                PushPublisherConfig config = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
+
+                //Clean the number of tries, we want to try it again
+                auditHistory.setNumTries( 0 );
+                publishAuditAPI.updatePublishAuditStatus( config.getId(), status.getStatus(), auditHistory );
+
+                //Get the identifiers on this bundle
+                List<String> identifiers = new ArrayList<String>();
+                List<PublishQueueElement> assets = config.getAssets();
+                if ( assets == null || assets.isEmpty() ) {
+                    identifiers.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+                } else {
+                    for ( PublishQueueElement asset : assets ) {
+                        identifiers.add( asset.getAsset() );
+                    }
+                }
+
+                //Now depending of the operation lets add it to the queue job
+                if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
+                    publisherAPI.addContentsToPublish( identifiers, bundleId, new Date(), getUser() );
+                } else {
+                    publisherAPI.addContentsToUnpublish( identifiers, bundleId, new Date(), getUser() );
+                }
+
+                //Success...
+                appendMessage( responseMessage, "publisher_retry.success", bundleId, false );
+            } catch ( Exception e ) {
+                Logger.error( this.getClass(), "Error trying to add bundle id: " + bundleId + " to the Publishing Queue.", e );
+                appendMessage( responseMessage, "publisher_retry.error.adding.to.queue", bundleId, true );
+            }
+        }
+
+        response.getWriter().println( responseMessage.toString() );
     }
 
     public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException {
@@ -281,4 +415,52 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		}
 
 	}
+
+    /**
+     * Appends info messages to a main StringBuilder message for an easier display to the user
+     *
+     * @param responseMessage
+     * @param messageKey
+     * @param bundleId
+     * @param failure
+     * @throws LanguageException
+     */
+    private void appendMessage ( StringBuilder responseMessage, String messageKey, String bundleId, Boolean failure ) throws LanguageException {
+
+        String message = LanguageUtil.format( getUser().getLocale(), messageKey, new String[]{bundleId}, false );
+        if ( responseMessage.length() > 0 ) {
+            responseMessage.append( "<br>" );
+        }
+        if ( failure ) {
+            responseMessage.append( "FAILURE: " ).append( message );
+        } else {
+            responseMessage.append( message );
+        }
+    }
+
+    /**
+     * Verifies what we were doing to the current bundle, it was received for this server?, or this server is trying to send it....,
+     * we don't want to retry bundles we received.
+     *
+     * @param receivingEndpoints
+     * @param bundleEndPoints
+     * @return
+     */
+    private Boolean sendingBundle ( List<PublishingEndPoint> receivingEndpoints, Map<String, Map<String, EndpointDetail>> bundleEndPoints ) {
+
+        //If we have no "Send to" end points for sure this is a bundle we received
+        if ( receivingEndpoints == null || receivingEndpoints.isEmpty() ) {
+            return false;
+        }
+
+        //The end point is one or ours "Send to" end points, so it means we are trying to send this bundle
+        for ( PublishingEndPoint endPoint : receivingEndpoints ) {
+            if ( bundleEndPoints.containsKey( endPoint.getId() ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }

@@ -45,6 +45,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -744,4 +745,27 @@ public class PublisherUtil {
 		e.setPushToAll(DbConnectionFactory.isDBTrue(row.get("push_to_all").toString()));
 		return e;
 	}
+    /**
+     * Returns the identifiers for given lucene queries
+     *
+     * @param luceneQueries
+     * @return
+     */
+    public static List<String> getContentIds ( List<String> luceneQueries ) {
+
+        List<String> ret = new ArrayList<String>();
+        List<ContentletSearch> cs = new ArrayList<ContentletSearch>();
+        for ( String luceneQuery : luceneQueries ) {
+            try {
+                cs = APILocator.getContentletAPI().searchIndex( luceneQuery, 0, 0, "moddate", APILocator.getUserAPI().getSystemUser(), false );
+            } catch ( Exception e ) {
+                Logger.error( PublisherUtil.class, e.getMessage(), e );
+            }
+        }
+        for ( ContentletSearch contentletSearch : cs ) {
+            ret.add( contentletSearch.getIdentifier() );
+        }
+        return ret;
+    }
+
 }
