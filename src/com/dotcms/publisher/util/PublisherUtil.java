@@ -18,6 +18,7 @@ import java.util.Set;
 
 import javax.activation.MimetypesFileTypeMap;
 
+import com.dotmarketing.common.model.ContentletSearch;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
@@ -734,5 +735,29 @@ public class PublisherUtil {
 			}
 		}
 		return translateMeta;
-	}	
+	}
+
+    /**
+     * Returns the identifiers for given lucene queries
+     *
+     * @param luceneQueries
+     * @return
+     */
+    public static List<String> getContentIds ( List<String> luceneQueries ) {
+
+        List<String> ret = new ArrayList<String>();
+        List<ContentletSearch> cs = new ArrayList<ContentletSearch>();
+        for ( String luceneQuery : luceneQueries ) {
+            try {
+                cs = APILocator.getContentletAPI().searchIndex( luceneQuery, 0, 0, "moddate", APILocator.getUserAPI().getSystemUser(), false );
+            } catch ( Exception e ) {
+                Logger.error( PublisherUtil.class, e.getMessage(), e );
+            }
+        }
+        for ( ContentletSearch contentletSearch : cs ) {
+            ret.add( contentletSearch.getIdentifier() );
+        }
+        return ret;
+    }
+
 }
