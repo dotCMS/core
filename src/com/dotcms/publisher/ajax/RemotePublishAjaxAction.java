@@ -244,9 +244,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
         String bundlesIds = request.getParameter( "bundlesIds" );
         String[] ids = bundlesIds.split( "," );
 
-        //Getting the list of receiving end points
-        List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI().getEnabledReceivingEndPoints();
-
         StringBuilder responseMessage = new StringBuilder();
 
         for ( String bundleId : ids ) {
@@ -258,6 +255,24 @@ public class RemotePublishAjaxAction extends AjaxAction {
             PublisherConfig basicConfig = new PublisherConfig();
             basicConfig.setId( bundleId );
             File bundleRoot = BundlerUtil.getBundleRoot( basicConfig );
+
+            //Get the audit records related to this bundle
+            PublishAuditStatus status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
+            String pojo_string = status.getStatusPojo().getSerialized();
+            PublishAuditHistory auditHistory = PublishAuditHistory.getObjectFromString( pojo_string );
+
+            //First we need to verify is this bundle is already in the queue job
+            List<PublishQueueElement> foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
+            if ( foundBundles != null && !foundBundles.isEmpty() ) {
+                appendMessage( responseMessage, "publisher_retry.error.already.in.queue", bundleId, true );
+                continue;
+            }
+
+            //ONLY FAILED BUNDLES
+            if ( !status.getStatus().equals( Status.FAILED_TO_PUBLISH ) ) {
+                appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
+                continue;
+            }
 
             /*
             Verify if the bundle exist and was created correctly..., meaning, if there is not a .tar.gz file is because
@@ -276,38 +291,19 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 continue;
             }
 
-            //First we need to verify is this bundle is already in the queue job
-            List<PublishQueueElement> foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
-            if ( foundBundles != null && !foundBundles.isEmpty() ) {
-                appendMessage( responseMessage, "publisher_retry.error.already.in.queue", bundleId, true );
-                continue;
-            }
-
             try {
-
-                //Get the audit records related to this bundle
-                PublishAuditStatus status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
-                String pojo_string = status.getStatusPojo().getSerialized();
-                PublishAuditHistory auditHistory = PublishAuditHistory.getObjectFromString( pojo_string );
-
-                //ONLY FAILED BUNDLES
-                if ( !status.getStatus().equals( Status.FAILED_TO_PUBLISH ) ) {
-                    appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
-                    continue;
-                }
-
-                //We can not retry Received Bundles, just bundles that we are trying to send
-                Map<String, Map<String, EndpointDetail>> endPoints = auditHistory.getEndpointsMap();
-                Boolean sending = sendingBundle( receivingEndpoints, endPoints );
-                if ( !sending ) {
-                    appendMessage( responseMessage, "publisher_retry.error.cannot.retry.received", bundleId, true );
-                    continue;
-                }
 
                 //Read the bundle to see what kind of configuration we need to apply
                 String bundlePath = ConfigUtils.getBundlePath() + File.separator + basicConfig.getId();
                 File xml = new File( bundlePath + File.separator + "bundle.xml" );
                 PushPublisherConfig config = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
+
+                //We can not retry Received Bundles, just bundles that we are trying to send
+                Boolean sending = sendingBundle( request, config );
+                if ( !sending ) {
+                    appendMessage( responseMessage, "publisher_retry.error.cannot.retry.received", bundleId, true );
+                    continue;
+                }
 
                 //Clean the number of tries, we want to try it again
                 auditHistory.setNumTries( 0 );
@@ -442,25 +438,40 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * Verifies what we were doing to the current bundle, it was received for this server?, or this server is trying to send it....,
      * we don't want to retry bundles we received.
      *
-     * @param receivingEndpoints
-     * @param bundleEndPoints
+     * @param request
+     * @param config
      * @return
      */
-    private Boolean sendingBundle ( List<PublishingEndPoint> receivingEndpoints, Map<String, Map<String, EndpointDetail>> bundleEndPoints ) {
+    private Boolean sendingBundle ( HttpServletRequest request, PushPublisherConfig config ) throws DotDataException {
 
-        //If we have no "Send to" end points for sure this is a bundle we received
-        if ( receivingEndpoints == null || receivingEndpoints.isEmpty() ) {
-            return false;
+        //Get the local address
+        String remoteIP = request.getRemoteHost();
+        int port = request.getLocalPort();
+        String protocol = request.getProtocol();
+        if ( !UtilMethods.isSet( remoteIP ) ) {
+            remoteIP = request.getRemoteAddr();
         }
 
-        //The end point is one or ours "Send to" end points, so it means we are trying to send this bundle
-        for ( PublishingEndPoint endPoint : receivingEndpoints ) {
-            if ( bundleEndPoints.containsKey( endPoint.getId() ) ) {
-                return true;
+        /*
+         Getting the bundle end points in order to compare if this current server it is an end point or not.
+         If it is is because we received this bundle as we were a targeted end point server.
+         */
+        List<PublishingEndPoint> endPoints = config.getEndpoints();//List of end points for Remote Publishing this bundle
+        for ( PublishingEndPoint endPoint : endPoints ) {
+
+            //Getting the end point details
+            String endPointAddress = endPoint.getAddress();
+            String endPointPort = endPoint.getPort();
+            String endPointProtocol = endPoint.getProtocol();
+
+            if ( endPointAddress.equals( remoteIP )
+                    && endPointPort.equals( String.valueOf( port ) )
+                    && endPointProtocol.equals( protocol ) ) {
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 
 }
