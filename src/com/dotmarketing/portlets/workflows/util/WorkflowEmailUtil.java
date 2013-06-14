@@ -83,8 +83,8 @@ public class WorkflowEmailUtil {
 		
 			
 			String serverPort = Config.CONTEXT.getAttribute("WEB_SERVER_HTTP_PORT").toString();			
-			
-			String link = "http://" + host.getHostname() +":"+serverPort+ "/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id=EXT_21&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_21_struts_action=/ext/workflows/edit_workflow_task&_EXT_21_cmd=view&_EXT_21_taskId="
+			String serverScheme = Config.CONTEXT.getAttribute("WEB_SERVER_SCHEME").toString();
+			String link = serverScheme +"://" + host.getHostname() +":"+serverPort+ "/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id=EXT_21&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_21_struts_action=/ext/workflows/edit_workflow_task&_EXT_21_cmd=view&_EXT_21_taskId="
 					+ processor.getTask().getId();			
 
 			InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
