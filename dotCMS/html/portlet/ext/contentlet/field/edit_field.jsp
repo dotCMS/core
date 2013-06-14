@@ -61,7 +61,7 @@
 <style>
 .dijitTree {
 	width: 100% !important;
-	max-height: 150px !important;
+    max-height: 100% !important;
 	overflow: auto;
 }
 </style>
