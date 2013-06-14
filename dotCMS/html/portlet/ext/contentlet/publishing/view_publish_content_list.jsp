@@ -307,7 +307,7 @@
 						<a href="#" onclick="filterStructure('<%=c.getStructure().getVelocityVarName() %>')" style="color:silver"><%=c.getStructure().getName() %></a>
 					</div>
 				</td>
-				<td nowrap="nowrap" style="width:200px"><%=UtilMethods.isSet(c.getModDate())?UtilMethods.dateToHTMLDate(c.getModDate(),"MM/dd/yyyy hh:mma"):""%></a></td>
+				<td nowrap="nowrap" style="width:200px"><%=UtilMethods.isSet(c.getModDate())?UtilMethods.dateToHTMLDate(c.getModDate(),"MM/dd/yyyy hh:mma"):""%></td>
 			</tr>
 		<%}%>
 	</table>
