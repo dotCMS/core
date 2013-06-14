@@ -145,8 +145,14 @@
 	    			}
 	    			
 	    			if(!trovato) {
-	   					identifiers.add(value[0]);
-	   					processedCounter++;
+                        /*
+                         Lets avoid to add multiple times the same identifier (Can happen if it is selected multiple languages of the same content)
+                         as the Push Publishing API will push all the versions of a given identifier.
+                         */
+                        if ( !identifiers.contains( value[0] ) ) {
+                            identifiers.add( value[0] );
+                        }
+                        processedCounter++;
 	    			} else {
 	    				errorCounter++;
 	    				trovato = false;
