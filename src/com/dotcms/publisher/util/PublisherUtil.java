@@ -495,7 +495,7 @@ public class PublisherUtil {
 	/**
 	 * Validate if a FieldVariable is present in a FieldVariable List
 	 * @param list List<FieldVariable>
-	 * @param fieldVariableName List<FieldVariable> variable names
+	 * @param fieldVariableNames List<FieldVariable> variable names
 	 * @return boolean
 	 */
 	public static boolean containsFieldVariable(List<FieldVariable> list, List<String> fieldVariableNames){
@@ -755,7 +755,9 @@ public class PublisherUtil {
             }
         }
         for ( ContentletSearch contentletSearch : cs ) {
-            ret.add( contentletSearch.getIdentifier() );
+            if ( !ret.contains( contentletSearch.getIdentifier() ) ) {
+                ret.add( contentletSearch.getIdentifier() );
+            }
         }
         return ret;
     }
