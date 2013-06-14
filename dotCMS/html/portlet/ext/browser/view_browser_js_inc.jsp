@@ -1727,18 +1727,13 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
         form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>';
         form.<portlet:namespace />subcmd.value = operation;
-        form.<portlet:namespace />cmd.value = "<%= Constants.ADD %>";
+        form.cmd.value = "<%= Constants.ADD %>";
         dijit.byId('saveButton').setAttribute('disabled', true);
         if (dijit.byId('savePublishButton') != null) {
             dijit.byId('savePublishButton').setAttribute('disabled', true);
         }
 
-        if (dojo.isIE) {
-            uploaderHandler(uploader, referer);
-            uploader.submit(form);
-        } else {
-            submitForm(form);
-        }
+        submitForm(form);
 
         return true;
     }

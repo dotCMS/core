@@ -134,7 +134,7 @@ if(request.getParameter("in_frame")!=null){
 			 <html:form action="/ext/files/upload_multiple" method="POST"  styleId="fm" enctype="multipart/form-data" onsubmit="return false;">
 	             
 					<input type="hidden" name="selectedStructure" value="<%=selectedStructure%>">
-					<input type="hidden" name="<portlet:namespace />cmd" value="<%=Constants.ADD%>">
+					<input type="hidden" name="cmd" value="<%=Constants.ADD%>">
 					<input type="hidden" name="<portlet:namespace />subcmd" value="">
 					<input type="hidden" name="<portlet:namespace />redirect" value="<portlet:renderURL><portlet:param name="struts_action" value="/ext/files/view_files" /></portlet:renderURL>">
 			 		<input type="hidden" name="<portlet:namespace />categories" value="">
@@ -157,7 +157,7 @@ if(request.getParameter("in_frame")!=null){
 					<input type="hidden" name="friendlyNames" id="friendlyNames" value=""/>
 					<input type="hidden" name="fileNames" id="fileNames" value=""/>
 					<input type="hidden" name="userId" value="<%= user.getUserId() %>">
-					<input name="<portlet:namespace />referer" type="hidden" value="<%= referer %>">
+					<input name="referer" type="hidden" value="<%= referer %>">
 					
 					<table border="0">
 						<tr>
@@ -217,7 +217,7 @@ if(request.getParameter("in_frame")!=null){
 					</script>
                 </button>
                 <%if(!scheme.isMandatory()) {%>
-           		<button dojoType="dijit.form.Button" onClick="doUpload('publish')" iconClass="publishIcon" id="savePublishButton" type="button">
+           		<button dojoType="dijit.form.Button" iconClass="publishIcon" id="savePublishButton" type="button">
                 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 					<script type="dojo/method" event="onClick" args="evt">
 
