@@ -284,29 +284,28 @@
 						String identifier = c.getAsset();
 						String assetType = c.getType();
 						String structureName = "";
-						String title = PublishAuditUtil.getInstance().getTitle(assetType, identifier);
+						String title = "";
 						String inode = "";
-						
 
-
-						if(assetType.equals("contentlet")) {
-						%>
-						<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
-						<%=StringEscapeUtils.escapeHtml(title)%></a>
-						
-						<% } else { %>
+                        if ( assetType.equals( "contentlet" ) ) {
+                            //Searches and returns for a this Identifier a Contentlet using the default language
+                            Contentlet contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
+                            title = contentlet.getTitle();
+                            inode = contentlet.getInode();
+                        %>
+						    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
+						        <%=StringEscapeUtils.escapeHtml(title)%>
+                            </a>
+						<% } else {
+                            title = PublishAuditUtil.getInstance().getTitle(assetType, identifier);
+                        %>
 							<%=StringEscapeUtils.escapeHtml(title)%>
 						<% } %>
-						
-						
+
 						<div style="float:right;color:silver">
 							<%=structureName %>
-						
 					    </div>
-						
-					
-					
-					
+
 					<%}catch(Exception e){nastyError=e.getMessage();%>
 						<%= LanguageUtil.get(pageContext, "publisher_No_Title") %>
 					<%} %>
