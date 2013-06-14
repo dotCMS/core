@@ -447,7 +447,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
         //Get the local address
         String remoteIP = request.getRemoteHost();
         int port = request.getLocalPort();
-        String protocol = request.getProtocol();
         if ( !UtilMethods.isSet( remoteIP ) ) {
             remoteIP = request.getRemoteAddr();
         }
@@ -462,11 +461,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
             //Getting the end point details
             String endPointAddress = endPoint.getAddress();
             String endPointPort = endPoint.getPort();
-            String endPointProtocol = endPoint.getProtocol();
 
             if ( endPointAddress.equals( remoteIP )
-                    && endPointPort.equals( String.valueOf( port ) )
-                    && endPointProtocol.equals( protocol ) ) {
+                    && endPointPort.equals( String.valueOf( port ) ) ) {
                 return false;
             }
         }
