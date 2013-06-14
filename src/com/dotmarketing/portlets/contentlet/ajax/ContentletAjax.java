@@ -1483,7 +1483,7 @@ public class ContentletAjax {
 					for (Field field : reqs) {
 						String errorString = LanguageUtil.get(user,"message.contentlet.maxlength");
 						errorString = errorString.replace("{0}", field.getFieldName());
-						errorString = errorString.replace("{1}", "225");
+						errorString = errorString.replace("{1}", "255");
 						saveContentErrors.add(errorString);
 					}
 				}
@@ -1744,7 +1744,7 @@ public class ContentletAjax {
 					for (Field field : reqs) {
 						String errorString = LanguageUtil.get(user,"message.contentlet.maxlength");
 						errorString = errorString.replace("{0}", field.getFieldName());
-						errorString = errorString.replace("{1}", "225");
+						errorString = errorString.replace("{1}", "255");
 						saveContentErrors.add(errorString);
 					}
 				}
