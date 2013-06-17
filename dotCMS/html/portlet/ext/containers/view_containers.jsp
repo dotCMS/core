@@ -173,7 +173,7 @@ function handleDepResponse(data, arg1) {
 }
 
 function processDelete(inode, referer) {
-	top.location="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&inode=" + objId + '&referer=' + referer;
+	top.location="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&inode=" + inode + '&referer=' + referer;
 }
 
 </script>
