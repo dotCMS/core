@@ -282,8 +282,8 @@ td.dijitMenuArrowCell{width:30px;}
 tr.pop_divider{border-top:1px dotted silver;}
 
 /* FAKE BUTTON STYLE 2.0 */
-a.fakeDojoButton{background:#FFFFFF url(images/buttonEnabled.png) repeat-x scroll left bottom;border-color:#C0C0C0 #C0C0C0 #9B9B9B;border-style:solid;border-width:1px;padding:0.2em 0.5em 0.4em 0.4em;text-decoration:none;color:#555555;line-height:17px;vertical-align:middle;text-align:left;margin:0 4px;}
-a.fakeDojoButton:hover{background:#FFFFFF url(images/buttonHover.png) repeat-x scroll left bottom;}
+a.fakeDojoButton{background:#FFFFFF url(/html/js/dojo/release/dojo/dijit/themes/dmundra/images/buttonEnabled.png) repeat-x scroll left bottom;border-color:#C0C0C0 #C0C0C0 #9B9B9B;border-style:solid;border-width:1px;padding:0.2em 0.5em 0.4em 0.4em;text-decoration:none;color:#555555;line-height:17px;vertical-align:middle;text-align:left;margin:0 4px;}
+a.fakeDojoButton:hover{background:#FFFFFF url(/html/js/dojo/release/dojo/dijit/themes/dmundra/images/buttonHover.png) repeat-x scroll left bottom;}
 a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 
 /* NAV MENU ICONS 2.0 */
