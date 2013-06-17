@@ -161,6 +161,7 @@ function processDelete(inode, referer) {
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-templates-all") %>' />
 
 <form id="fm" method="post" >
+<div class="yui-gc portlet-toolbar">
 <table style="width:100%">
 	<tr>
 		<td style="white-space: nowrap;">
@@ -210,7 +211,6 @@ function processDelete(inode, referer) {
 	<div class="yui-u" style="text-align:right; white-space:nowrap" >
 
 	</div>
-</div>
 </form>
 
 <form id="fm_publish" method="post">
