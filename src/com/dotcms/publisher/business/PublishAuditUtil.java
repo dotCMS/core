@@ -1,6 +1,9 @@
 package com.dotcms.publisher.business;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -43,6 +46,22 @@ public class PublishAuditUtil {
             sw.append( assetType );
         }
         return sw.toString();
+    }
+
+    /**
+     * Searches and returns for a given Identifier a Contentlet using the default language
+     *
+     * @param identifier
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public Contentlet findContentletByIdentifier ( String identifier ) throws DotSecurityException, DotDataException {
+
+        User user = APILocator.getUserAPI().getSystemUser();
+
+        //Get the Contentlet for the default language
+        return APILocator.getContentletAPI().findContentletByIdentifier( identifier, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false );
     }
 
     public static PublishAuditUtil getInstance () {
