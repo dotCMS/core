@@ -3,6 +3,7 @@ package com.dotcms.publisher.pusher;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -10,11 +11,23 @@ import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
-import com.dotcms.enterprise.publishing.remote.bundler.*;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.HTMLPageBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.LinkBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.StructureBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -22,12 +35,14 @@ import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -115,55 +130,61 @@ public class PushPublisher extends Publisher {
 	        for ( String group : endpointsMap.keySet()) {
 	        	List<PublishingEndPoint> groupList = endpointsMap.get(group);
 
+	        	Collections.shuffle(groupList); // randomize the endpoints of the group
+
 	        	boolean sent = false;
-				for (PublishingEndPoint endpoint : groupList) {
-					EndpointDetail detail = new EndpointDetail();
-					try {
-						FormDataMultiPart form = new FormDataMultiPart();
-				        form.field("AUTH_TOKEN",
-				        		retriveKeyString(
-				        				PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
 
-				        form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
+	        	Environment env = APILocator.getEnvironmentAPI().findEnvironmentById(group);
 
-				        form.field("ENDPOINT_ID", endpoint.getId());
-				        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+	        	for (PublishingEndPoint endpoint : groupList) {
+	        		EndpointDetail detail = new EndpointDetail();
+	        		try {
+	        			FormDataMultiPart form = new FormDataMultiPart();
+	        			form.field("AUTH_TOKEN",
+	        					retriveKeyString(
+	        							PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
 
-						//Sending bundle to endpoint
-				        WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
+	        			form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
 
-				        ClientResponse response =
-				        		resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
+	        			form.field("ENDPOINT_ID", endpoint.getId());
+	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 
+	        			//Sending bundle to endpoint
+	        			WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
 
-				        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK)
-				        {
-				        	detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
-				        	detail.setInfo("Everything ok");
-				        	sent = true;
-				        } else {
-				        	detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-				        	detail.setInfo(
-				        			"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
-				        					"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
-				        }
-					} catch(Exception e) {
-						hasError = true;
-						detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-
-						String error = 	"An error occured for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
+	        			ClientResponse response =
+	        					resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
 
 
-						detail.setInfo(error);
+	        			if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK)
+	        			{
+	        				detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+	        				detail.setInfo("Everything ok");
+	        				sent = true;
+	        			} else {
+	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
+	        				detail.setInfo(
+	        						"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
+	        								"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
+	        			}
+	        		} catch(Exception e) {
+	        			hasError = true;
+	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 
-			        	Logger.error(this.getClass(), error);
-					}
+	        			String error = 	"An error occured for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
 
-			        currentStatusHistory.addOrUpdateEndpoint(group, endpoint.getId(), detail);
 
-			        if(sent)
-			        	break;
-				}
+	        			detail.setInfo(error);
+
+	        			Logger.error(this.getClass(), error);
+	        		}
+
+	        		currentStatusHistory.addOrUpdateEndpoint(group, endpoint.getId(), detail);
+
+	        		if(sent && !env.getPushToAll())
+	        			break;
+	        	}
+
 
 				if(!sent) {
 					hasError = true;

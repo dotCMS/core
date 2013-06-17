@@ -753,6 +753,12 @@ CREATE TABLE publishing_end_point (
 	auth_key text,
 	sending bool);
 
+create table publishing_environment(
+	id varchar(36) NOT NULL  primary key,
+	name varchar(255) NOT NULL unique,
+	push_to_all bool NOT NULL
+);
+
 create table sitesearch_audit (
     job_id varchar(36),
     job_name varchar(255) not null,

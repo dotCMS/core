@@ -713,6 +713,12 @@ CREATE TABLE publishing_end_point (
 	auth_key text,
 	sending tinyint DEFAULT 0);
 
+create table publishing_environment(
+	id varchar(36) NOT NULL  primary key,
+	name varchar(255) NOT NULL unique,
+	push_to_all tinyint NOT NULL
+);
+
 
 create table sitesearch_audit (
     job_id varchar(36),
