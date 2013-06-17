@@ -13,6 +13,8 @@ public interface EnvironmentAPI {
 
 	public Environment findEnvironmentByName(String name) throws DotDataException;
 
+	public List<Environment> findEnvironmentsByRole(String roleId) throws DotDataException;
+
 	public void saveEnvironment(Environment e, List<Permission> perms) throws DotDataException, DotSecurityException;
 
 	public List<Environment> findAllEnvironments() throws DotDataException;

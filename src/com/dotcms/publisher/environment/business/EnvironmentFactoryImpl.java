@@ -113,5 +113,22 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 		return e;
 	}
 
+	@Override
+	public List<Environment> getEnvironmentsByRole(String roleId)
+			throws DotDataException {
+		List<Environment> environments = new ArrayList<Environment>();
+		DotConnect dc = new DotConnect();
+		dc.setSQL(SELECT_ENVIRONMENTS_BY_ROLE_ID);
+		dc.addParam(roleId);
+		List<Map<String, Object>> res = dc.loadObjectResults();
+
+		for(Map<String, Object> row : res){
+			Environment environment = PublisherUtil.getEnvironmentByMap(row);
+			environments.add(environment);
+		}
+
+		return environments;
+	}
+
 
 }

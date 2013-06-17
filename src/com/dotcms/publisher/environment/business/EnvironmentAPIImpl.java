@@ -2,6 +2,7 @@ package com.dotcms.publisher.environment.business;
 
 import java.util.List;
 
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -44,6 +45,12 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 
 	@Override
 	public void deleteEnvironment(String id) throws DotDataException {
+		List<PublishingEndPoint> endPoints = APILocator.getPublisherEndPointAPI().findSendingEndPointByEnvironment(id);
+
+		for (PublishingEndPoint ep : endPoints) {
+			APILocator.getPublisherEndPointAPI().deleteEndPointById(ep.getId());
+		}
+
 		environmentFactory.deleteEnvironmentById(id);
 
 	}
@@ -57,6 +64,11 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 	@Override
 	public Environment findEnvironmentByName(String name) throws DotDataException {
 		return environmentFactory.getEnvironmentByName(name);
+	}
+
+	@Override
+	public List<Environment> findEnvironmentsByRole(String roleId) throws DotDataException {
+		return environmentFactory.getEnvironmentsByRole(roleId);
 	}
 
 }

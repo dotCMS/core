@@ -29,7 +29,16 @@
 
 		dijit.byId("environmentName").setAttribute('required',true);
 
+		dijit.byId("whoCanUseSelect").setAttribute('required',true);
+
+
+
 		if (form.validate()) {
+
+			if(whoCanUse.length==0) {
+				alert('<%=LanguageUtil.get(pageContext, "publisher_Environment_Mandatory_Who_Can_Send")%>');
+				return;
+			}
 
 			var xhrArgs = {
 				url: "/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment",
@@ -131,7 +140,7 @@
 				</td>
 			</tr>
 			<tr>
-				<td align="right"><%=LanguageUtil.get(pageContext, "Who-can-use-action")%>:</td>
+				<td align="right"><%=LanguageUtil.get(pageContext, "publisher_Environment_Who_Can_Send_To_Env")%>:</td>
 				<td>
 					<input id="actionWhoCanUseSelect" />
 					<button dojoType="dijit.form.Button"
