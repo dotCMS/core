@@ -4,7 +4,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -818,10 +817,18 @@ public class DotWebdavHelper {
 				workingFile = fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD);
 				destinationFile = APILocator.getFileAssetAPI().fromContentlet(fileAssetCont);
 				parent = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), host, user, false);
+				
+				if(fileAssetCont.isArchived()) {
+				    APILocator.getContentletAPI().unarchive(fileAssetCont, user, false);
+				}
 			}else if(identifier!=null && InodeUtils.isSet(identifier.getId())){
 				destinationFile = fileAPI.getFileByURI(path, host, false, user, false);
 				// inode{1}/inode{2}/inode.file_extension
 				workingFile = fileAPI.getAssetIOFile((File)destinationFile);
+				
+				if(destinationFile.isArchived()) {
+				    WebAssetFactory.unArchiveAsset((File)destinationFile);
+				}
 			}
 
 			//http://jira.dotmarketing.net/browse/DOTCMS-1873
@@ -1219,7 +1226,6 @@ public class DotWebdavHelper {
 			    Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
 			    try{
 			        APILocator.getContentletAPI().archive(fileAssetCont, user, false);
-			        APILocator.getContentletAPI().delete(fileAssetCont, user, false);
 			    }catch (Exception e) {
 			        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			        throw new DotDataException(e.getMessage(), e);
@@ -1234,7 +1240,6 @@ public class DotWebdavHelper {
 			    // This line delete the assets (no archive)
 			    try{
 			        WebAssetFactory.archiveAsset(webAsset, user);
-			        WebAssetFactory.deleteAsset(webAsset, user);
 			    }catch (Exception e) {
 			        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			        throw new DotDataException(e.getMessage(), e);
