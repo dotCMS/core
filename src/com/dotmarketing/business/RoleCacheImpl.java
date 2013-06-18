@@ -180,7 +180,7 @@ public class RoleCacheImpl extends RoleCache {
 		cache.put(key, layouts, layoutGroup);		
 		List<String> l = null;
 		try {
-			l = (List<String>)cache.get(key, userGroup);
+			l = (List<String>)cache.get(key, layoutGroup);
 		} catch (DotCacheException e) {
 			Logger.warn(this, "Cache not find roleIds for user in cache after adding", e);
 		}
