@@ -122,7 +122,9 @@ public class RoleCacheImpl extends RoleCache {
 		String key = userGroup + userId;
 		try {
 		    cache.remove(key, userGroup);
-			return (List<String>)cache.get(key,primaryGroup);
+			List<String> roles = (List<String>)cache.get(key,userGroup);
+			roles.add(roleId);
+			return roles;
 		} catch (DotCacheException e) {
 			Logger.warn(this,"Cache Entry not found after adding", e);
 			return null;
