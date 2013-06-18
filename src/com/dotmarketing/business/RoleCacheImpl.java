@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.dotmarketing.util.Logger;
@@ -123,6 +124,9 @@ public class RoleCacheImpl extends RoleCache {
 		try {
 		    cache.remove(key, userGroup);
 			List<String> roles = (List<String>)cache.get(key,userGroup);
+			if(roles == null){
+				roles = new ArrayList<String>();
+			}
 			roles.add(roleId);
 			return roles;
 		} catch (DotCacheException e) {
