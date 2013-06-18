@@ -122,7 +122,6 @@ public class RoleCacheImpl extends RoleCache {
 	protected List<String> addRoleToUser(String userId, String roleId) {
 		String key = userGroup + userId;
 		try {
-		    cache.remove(key, userGroup);
 			List<String> roles = (List<String>)cache.get(key,userGroup);
 			if(roles == null){
 				roles = new ArrayList<String>();
