@@ -105,6 +105,11 @@ public class TimeMachineFilter implements Filter {
 		    
 		    // if we need to redirect to the index page
 		    if(file.isDirectory()) {
+		    	if(!uri.endsWith("/")){
+		    		uri+="/";
+		    	}
+		    	
+		    	
 		        uri+="index."+pageEXT;
 		        file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 			            "tm_"+date.getTime()+java.io.File.separator+
