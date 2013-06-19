@@ -1450,7 +1450,8 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function previewHTMLPage (objId, referer) {
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+		var y = Math.floor(Math.random()*1123213213);
+		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer + '&random=' + y;
 	}
 
 	function editHTMLPage (objId, referer) {
