@@ -370,18 +370,19 @@ dojo.require("dojox.layout.ContentPane");
 	   			
 	   	});
 		var maxSize = document.getElementById("maxSizeFileLimit");
-		size = maxSize.value;
-		
-		if(size>maxSizeForAlert*1024*1024){
-			alertFileAssetSize=true;
-		}
+		if(maxSize) {
+			size = maxSize.value;
 			
-	   	if(alertFileAssetSize){
-	   		document.getElementById('maxSizeFileAlert').innerHTML='<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "alert-file-too-large-takes-lot-of-time"))%>'
-	   	}else{
-	   		document.getElementById('maxSizeFileAlert').innerHTML='';
-	   	}
-	   	
+			if(size>maxSizeForAlert*1024*1024){
+				alertFileAssetSize=true;
+			}
+				
+		   	if(alertFileAssetSize){
+		   		document.getElementById('maxSizeFileAlert').innerHTML='<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "alert-file-too-large-takes-lot-of-time"))%>'
+		   	}else{
+		   		document.getElementById('maxSizeFileAlert').innerHTML='';
+		   	}
+		}
 	   	if(isAjaxFileUploading){
 	   		showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-wait-until-all-files-are-uploaded")) %>');
 	       return false;
