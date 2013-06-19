@@ -307,7 +307,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    else {
             // add a commit listener to index the contentlet if the entire
             // transaction finish clean
-            HibernateUtil.addCommitListener(indexAction);
+            HibernateUtil.addCommitListener(content.getIdentifier(),indexAction);
 	    }	    
 	}
 
@@ -316,24 +316,29 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		for(Contentlet con : contentToIndex) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+            Map<String,Object> mapping=null;
             if(con.isWorking()) {
+                mapping=mappingAPI.toMap(con);
+                
                 if(!reindexOnly)
                     req.add(new IndexRequest(info.working, "content", id)
-                                .source(mappingAPI.toMap(con)));
+                                .source(mapping));
                 if(info.reindex_working!=null)
                     req.add(new IndexRequest(info.reindex_working, "content", id)
-                                .source(mappingAPI.toMap(con)));
+                                .source(mapping));
             }
 
             if(con.isLive()) {
+                if(mapping==null)
+                    mapping=mappingAPI.toMap(con);
+                
                 if(!reindexOnly)
                     req.add(new IndexRequest(info.live, "content", id)
-                            .source(mappingAPI.toMap(con)));
+                            .source(mapping));
                 if(info.reindex_live!=null)
                     req.add(new IndexRequest(info.reindex_live, "content", id)
-                            .source(mappingAPI.toMap(con)));
+                            .source(mapping));
             }
-            ESMappingMemory.INSTANCE.removeFromMap(con.getIdentifier());
         }
 		
 	}
@@ -419,7 +424,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	        	    }
 	            }
 	        };
-	        HibernateUtil.addCommitListener(indexRunner);
+	        HibernateUtil.addCommitListener(content.getIdentifier(),indexRunner);
 	}
 	
 	public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotHibernateException {

@@ -11,6 +11,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -29,7 +31,7 @@ public class TikaUtils {
 	 *
 	 * May 31, 2013 - 12:27:19 PM
 	 */
-	public Map<String, String> getMetaDataMap(File binFile, String mimeType) {
+	public Map<String, String> getMetaDataMap(String inode, File binFile, String mimeType) {
 		Map<String, String> metaMap = new HashMap<String, String>();
 		Tika t = new Tika();
 		Metadata met = new Metadata();
@@ -67,9 +69,13 @@ public class TikaUtils {
 						for (String y : x)
 							metaMap.put(y, met.get(name));
 					}
-				}				
+				}
+				
+				// store content metadata on disk
+				File content=new File(APILocator.getFileAPI().getRealAssetsRootPath());
+				
+				
 				metaMap.put(FileAssetAPI.CONTENT_FIELD, IOUtils.toString(fulltext));
-				System.gc();
 			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " +e.getMessage());
@@ -96,8 +102,8 @@ public class TikaUtils {
 	 * @param binFile
 	 * @return
 	 */
-	public Map<String, String> getMetaDataMap(File binFile) {
-		return getMetaDataMap(binFile, null);
+	public Map<String, String> getMetaDataMap(String inode,File binFile) {
+		return getMetaDataMap(inode,binFile, null);
 	}
 
 //	/**

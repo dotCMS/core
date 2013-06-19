@@ -232,8 +232,29 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public String toJson(Contentlet con) throws DotMappingException {
 
 		try {
-			Map<String,String> m = new HashMap<String,String>();
+			Map<String,Object> m = toMap(con);
+			return mapper.writeValueAsString(m);
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotMappingException(e.getMessage(), e);
+		}
+	}
 
+	/**
+	 * This method is the same of the toJson except that it returns directly the mlowered map.
+	 * 
+	 * It checks first if this contentlet is already into the temporarily memory otherwise it recreate.
+	 * 
+	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+	 *
+	 * Jun 7, 2013 - 3:47:26 PM
+	 */
+	public Map<String,Object> toMap(Contentlet con) throws DotMappingException {
+		try {
+		    long time=System.currentTimeMillis();
+		    
+			Map<String,String> m = new HashMap<String,String>();
+			Map<String,Object> mlowered=new HashMap<String,Object>();
 			loadCategories(con, m);
 			loadFields(con, m);
 			loadPermissions(con, m);
@@ -242,7 +263,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Identifier ident = APILocator.getIdentifierAPI().find(con);
 			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
 			Structure st=StructureCache.getStructureByInode(con.getStructureInode());
-
+			
 			m.put("title", con.getTitle());
 			m.put("structureName", st.getVelocityVarName());
             m.put("structureType", st.getStructureType() + "");
@@ -285,95 +306,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             	Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
             	throw new DotRuntimeException(urlMap, e);
             }
-
-
-            Map<String,Object> mlowered=new HashMap<String,Object>();
+            
             for(Entry<String,String> entry : m.entrySet()){
                 mlowered.put(entry.getKey().toLowerCase(), entry.getValue().toLowerCase());
                 mlowered.put(entry.getKey().toLowerCase() + "_dotraw", entry.getValue().toLowerCase());
             }
-            //mlowered.put("versionts", cvi.getVersionTs());
-			String x = mapper.writeValueAsString(mlowered);
-			return x;
-		} catch (Exception e) {
-			Logger.error(this.getClass(), e.getMessage(), e);
-			throw new DotMappingException(e.getMessage(), e);
-		}
-	}
-
-	/**
-	 * This method is the same of the toJson except that it returns directly the mlowered map.
-	 * 
-	 * It checks first if this contentlet is already into the temporarily memory otherwise it recreate.
-	 * 
-	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
-	 *
-	 * Jun 7, 2013 - 3:47:26 PM
-	 */
-	public Map<String,Object> toMap(Contentlet con) throws DotMappingException {
-		try {
-			Map<String,String> m = new HashMap<String,String>();
-			Map<String,Object> mlowered=ESMappingMemory.INSTANCE.getFromMap(con.getIdentifier());
-			if(null==mlowered){
-				mlowered=new HashMap<String,Object>();
-				loadCategories(con, m);
-				loadFields(con, m);
-				loadPermissions(con, m);
-				loadRelationshipFields(con, m);
-	
-				Identifier ident = APILocator.getIdentifierAPI().find(con);
-				ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
-				Structure st=StructureCache.getStructureByInode(con.getStructureInode());
-				
-				m.put("title", con.getTitle());
-				m.put("structureName", st.getVelocityVarName());
-	            m.put("structureType", st.getStructureType() + "");
-	            m.put("inode", con.getInode());
-	            m.put("type", "content");
-	            m.put("modDate", datetimeFormat.format(con.getModDate()));
-	            m.put("owner", con.getOwner()==null ? "0" : con.getOwner());
-	            m.put("modUser", con.getModUser());
-	            m.put("live", Boolean.toString(con.isLive()));
-	            m.put("working", Boolean.toString(con.isWorking()));
-	            m.put("locked", Boolean.toString(con.isLocked()));
-	            m.put("deleted", Boolean.toString(con.isArchived()));
-	            m.put("languageId", Long.toString(con.getLanguageId()));
-	            m.put("identifier", ident.getId());
-	            m.put("conHost", ident.getHostId());
-	            m.put("conFolder", con.getFolder());
-	            m.put("parentPath", ident.getParentPath());
-	            m.put("path", ident.getPath());
-	            
-	            if(UtilMethods.isSet(ident.getSysPublishDate()))
-	                m.put("pubdate", datetimeFormat.format(ident.getSysPublishDate()));
-	            else
-	                m.put("pubdate", datetimeFormat.format(cvi.getVersionTs()));
-	            
-	            if(UtilMethods.isSet(ident.getSysExpireDate()))
-	                m.put("expdate", datetimeFormat.format(ident.getSysExpireDate()));
-	            else
-	                m.put("expdate", "29990101000000");
-	            
-	            m.put("versionTs", datetimeFormat.format(cvi.getVersionTs()));
-	            
-	            String urlMap = null;
-	            try{
-	            	urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
-	                if(urlMap != null){
-	                	m.put("urlMap",urlMap );	
-	                }
-	            }
-	            catch(Exception e){
-	            	Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
-	            	throw new DotRuntimeException(urlMap, e);
-	            }
-	            
-	            for(Entry<String,String> entry : m.entrySet()){
-	                mlowered.put(entry.getKey().toLowerCase(), entry.getValue().toLowerCase());
-	                mlowered.put(entry.getKey().toLowerCase() + "_dotraw", entry.getValue().toLowerCase());
-	            }
-	            ESMappingMemory.INSTANCE.insertIntoMap(mlowered, con.getIdentifier());
-			}
+	        
+            Logger.warn(this, "toMap time: "+(System.currentTimeMillis()-time),new RuntimeException());
+            
             return mlowered;
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
