@@ -121,57 +121,56 @@ public abstract class Publisher implements IPublisher {
 	}
 
 
+    /**
+     * This method verifies if a given file should be process it in order to be add it to a site search index or not.
+     *
+     * @param assetFile
+     * @return
+     * @throws IOException
+     * @throws DotPublishingException
+     */
+    protected boolean shouldProcess ( File assetFile ) throws IOException, DotPublishingException {
 
-	protected boolean shouldProcess(File f) throws IOException, DotPublishingException{
-		if(f.isDirectory()){
-			return false;
-		}else if(config.getStartDate() != null && f.lastModified() <  config.getStartDate().getTime()){
-			return false;
-		}
+        if ( assetFile.isDirectory() ) {
+            return false;
+        } else if ( config.getStartDate() != null && assetFile.lastModified() < config.getStartDate().getTime() ) {
+            return false;
+        }
 
+        String filePath = getUriFromFilePath( assetFile );
 
+        filePath = filePath.replace( File.pathSeparatorChar, '/' );
+        if ( config.getIncludePatterns() != null && !config.getIncludePatterns().isEmpty() ) {
+            for ( String x : config.getIncludePatterns() ) {
+                boolean startsWith = x.startsWith( "*" );
+                boolean endsWith = x.endsWith( "*" );
+                x = x.replace( "*", "" );
 
-		String filePath = getUriFromFilePath(f);
+                if ( endsWith && filePath.startsWith( x ) ) {
+                    return true;
+                } else if ( startsWith && filePath.indexOf( x ) >= 0 ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if ( config.getExcludePatterns() != null && !config.getExcludePatterns().isEmpty() ) {
+            for ( String x : config.getExcludePatterns() ) {
+                boolean startsWith = x.startsWith( "*" );
+                boolean endsWith = x.endsWith( "*" );
+                x = x.replace( "*", "" );
 
+                if ( endsWith && filePath.indexOf( x ) == 0 ) {
+                    return false;
+                } else if ( startsWith && filePath.contains( x + "." ) ) {
+                    return false;
+                }
 
+            }
+        }
 
-
-
-		filePath = filePath.replace(File.pathSeparatorChar, '/');
-		if(config.getIncludePatterns() != null){
-			for(String x : config.getIncludePatterns()){
-				boolean startsWith = x.startsWith("*");
-				boolean endsWith = x.endsWith("*");
-				x = x.replace("*", "");
-
-
-				if(endsWith && filePath.indexOf(x)!=0){
-					return false;
-				}
-				else if(startsWith && filePath.contains(x + ".")){
-					return true;
-				}
-			}
-			return false; 
-		}
-		if(config.getExcludePatterns() != null){
-			for(String x : config.getExcludePatterns()){
-				boolean startsWith = x.startsWith("*");
-				boolean endsWith = x.endsWith("*");
-				x = x.replace("*", "");
-
-				if(endsWith && filePath.indexOf(x)==0){
-					return false;
-				}
-				else if(startsWith && filePath.contains(x + ".")){
-					return false;
-				}
-
-			}
-		}
-
-		return true;
-	}
+        return true;
+    }
 
 
 }
