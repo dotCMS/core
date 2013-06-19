@@ -885,6 +885,7 @@ public class ContentletAjax {
 			searchResult.put("inode", con.getInode());
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
+			searchResult.put("__title__", con.getTitle());
 			Structure s = StructureCache.getStructureByInode(con.getStructureInode());
 			String spanClass = (s.getStructureType() ==1)
 			        ? "contentIcon"
