@@ -87,7 +87,6 @@ public class PushPublisher extends Publisher {
 			PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
 
 			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(config.getId());
-//			Map<String, List<PublishingEndPoint>> endpointsMap = new HashMap<String, List<PublishingEndPoint>>();
 
 			ClientConfig cc = new DefaultClientConfig();
 
@@ -170,91 +169,6 @@ public class PushPublisher extends Publisher {
 
 			}
 
-
-
-			//Retriving enpoints and init client
-//			List<PublishingEndPoint> endpoints = ((PushPublisherConfig)config).getEndpoints();
-//			List<PublishingEndPoint> buffer = null;
-//			//Organize the endpoints grouping them by groupId
-//			for (PublishingEndPoint pEndPoint : endpoints) {
-//
-//				String gid = UtilMethods.isSet(pEndPoint.getGroupId()) ? pEndPoint.getGroupId() : pEndPoint.getId();
-//
-//				if(endpointsMap.get(gid) == null)
-//					buffer = new ArrayList<PublishingEndPoint>();
-//				else
-//					buffer = endpointsMap.get(gid);
-//
-//				buffer.add(pEndPoint);
-//
-//				// put in map with either the group key or the id if no group is set
-//				endpointsMap.put(gid, buffer);
-//
-//			}
-
-
-
-//	        for ( String group : endpointsMap.keySet()) {
-//	        	List<PublishingEndPoint> groupList = endpointsMap.get(group);
-//
-//	        	boolean sent = false;
-//
-//	        	for (PublishingEndPoint endpoint : groupList) {
-//	        		EndpointDetail detail = new EndpointDetail();
-//	        		try {
-//	        			FormDataMultiPart form = new FormDataMultiPart();
-//	        			form.field("AUTH_TOKEN",
-//	        					retriveKeyString(
-//	        							PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
-//
-//	        			form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
-//
-//	        			form.field("ENDPOINT_ID", endpoint.getId());
-//	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
-//
-//	        			//Sending bundle to endpoint
-//	        			WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
-//
-//	        			ClientResponse response =
-//	        					resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
-//
-//
-//	        			if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK)
-//	        			{
-//	        				detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
-//	        				detail.setInfo("Everything ok");
-//	        				sent = true;
-//	        			} else {
-//	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-//	        				detail.setInfo(
-//	        						"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
-//	        								"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
-//	        			}
-//	        		} catch(Exception e) {
-//	        			hasError = true;
-//	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-//
-//	        			String error = 	"An error occured for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
-//
-//
-//	        			detail.setInfo(error);
-//
-//	        			Logger.error(this.getClass(), error);
-//	        		}
-//
-//	        		currentStatusHistory.addOrUpdateEndpoint(group, endpoint.getId(), detail);
-//
-////	        		if(sent && !env.getPushToAll())
-////	        			break;
-//	        	}
-//
-//
-//				if(!sent) {
-//					hasError = true;
-//					errorCounter++;
-//				}
-//	        }
-
 			if(!hasError) {
 				//Updating audit table
 		        currentStatusHistory.setPublishEnd(new Date());
@@ -288,11 +202,6 @@ public class PushPublisher extends Publisher {
 
 		}
 	}
-
-
-
-
-
 
 	private String retriveKeyString(String token) throws IOException {
 		String key = null;
