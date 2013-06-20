@@ -9,6 +9,8 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
+import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.publisher.bundle.business.BundleAPIImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPIImpl;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
@@ -295,7 +297,10 @@ public class APILocator extends Locator<APIIndex>{
 	    return (SiteSearchAuditAPI)getInstance(APIIndex.SITE_SEARCH_AUDIT_API);
 	}
 	public static EnvironmentAPI getEnvironmentAPI() {
-	    return (EnvironmentAPI)getInstance(APIIndex.ENVIRONMENT_API);
+		return (EnvironmentAPI)getInstance(APIIndex.ENVIRONMENT_API);
+	}
+	public static BundleAPI getBundleAPI() {
+	    return (BundleAPI)getInstance(APIIndex.BUNDLE_API);
 	}
 
 	private static Object getInstance(APIIndex index) {
@@ -378,7 +383,8 @@ enum APIIndex
 	PUBLISHER_ENDPOINT_API,
 	STRUCTURE_API,
 	SITE_SEARCH_AUDIT_API,
-	ENVIRONMENT_API;
+	ENVIRONMENT_API,
+	BUNDLE_API;
 
 	Object create() {
 		switch(this) {
@@ -428,6 +434,7 @@ enum APIIndex
 		case STRUCTURE_API: return new StructureAPIImpl();
 		case SITE_SEARCH_AUDIT_API: return new SiteSearchAuditAPIImpl();
 		case ENVIRONMENT_API: return new EnvironmentAPIImpl();
+		case BUNDLE_API: return new BundleAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

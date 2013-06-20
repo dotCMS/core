@@ -86,7 +86,7 @@
 									String id = request.getParameter("delEp");
 									pepAPI.deleteEndPointById(id);
 								}
-								List<PublishingEndPoint> endpoints = pepAPI.findSendingEndPointByEnvironment(environment.getId());
+								List<PublishingEndPoint> endpoints = pepAPI.findSendingEndPointsByEnvironment(environment.getId());
 								boolean hasRow = false;
 								for(PublishingEndPoint endpoint : endpoints){
 									if(endpoint.isSending()){

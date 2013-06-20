@@ -17,7 +17,7 @@ GregorianCalendar cal = new GregorianCalendar();
 %>
 
 <!--  DOTCMS-7085 -->
-<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>"> 
+<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>">
 
 <div style="width:430px;" dojoType="dijit.form.Form" id="publishForm">
 
@@ -38,7 +38,7 @@ GregorianCalendar cal = new GregorianCalendar();
         <%--DATE FILTERING BOX--%>
 
 		<div class="fieldWrapper">
-			<div class="fieldName" style="width:80px">
+			<div class="fieldName" style="width:120px">
 				<%= LanguageUtil.get(pageContext, "I-want-to") %>:
 			</div>
 			<div class="fieldValue">
@@ -48,53 +48,73 @@ GregorianCalendar cal = new GregorianCalendar();
 			</div>
 			<div class="clear"></div>
 		</div>
-		
+
 
 		<%
 			String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
 			String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
 		%>
-		<br>
 		<div class="fieldWrapper" id="publishTimeDiv">
-			
-			<div class="fieldName" style="width:80px">
+
+			<div class="fieldName" style="width:120px">
 				<%= LanguageUtil.get(pageContext, "Publish") %>:
 			</div>
 			<div class="fieldValue">
-				<input 
-					type="text" 
-					dojoType="dijit.form.DateTextBox" 
-					validate="return false;" 
-					invalidMessage=""  
+				<input
+					type="text"
+					dojoType="dijit.form.DateTextBox"
+					validate="return false;"
+					invalidMessage=""
 					id="wfPublishDateAux"
 					name="wfPublishDateAux" value="now" style="width: 110px;">
-								
-									
+
+
 				<input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value="now"
 				 	data-dojo-type="dijit.form.TimeTextBox"
 					required="true" style="width: 100px;"/>
 			</div>
 			<div class="clear"></div>
 		</div>
-		
+
 		<div class="fieldWrapper" id="expireTimeDiv" style="display:none">
-			<div class="fieldName" style="width:80px"><%= LanguageUtil.get(pageContext, "publisher_Expire") %> :
+			<div class="fieldName" style="width:120px"><%= LanguageUtil.get(pageContext, "publisher_Expire") %> :
 			</div>
 			<div class="fieldValue">
-			<input 
-				type="text" 
-				dojoType="dijit.form.DateTextBox" 
-				validate="return false;"   
+			<input
+				type="text"
+				dojoType="dijit.form.DateTextBox"
+				validate="return false;"
 				id="wfExpireDateAux" name="wfExpireDateAux" value="now" style="width: 110px;">
-							
-							
+
+
 			<input type="text" name="wfExpireTimeAux" id="wfExpireTimeAux" value="now"
-			    data-dojo-type="dijit.form.TimeTextBox"	
+			    data-dojo-type="dijit.form.TimeTextBox"
 				style="width: 100px;" />
 			</div>
 			<div class="clear"></div>
 		</div>
-		
+
+		<div class="fieldWrapper">
+			<div class="fieldName" style="width:120px">
+				<%= LanguageUtil.get(pageContext, "publisher_dialog_choose_environment") %>:
+			</div>
+			<div class="fieldValue">
+				<input data-dojo-type="dijit/form/FilteringSelect" data-dojo-props="store:pushHandler.environmentStore, searchAttr:'name'"
+			    name="environmentSelect" id="environmentSelect" />
+				<button dojoType="dijit.form.Button"
+					onClick='pushHandler.addSelectedToWhereToSend()'
+					iconClass="addIcon">
+					<%=LanguageUtil.get(pageContext, "add")%>
+				</button>
+				<div class="wfWhoCanUseDiv">
+					<table class="listingTable" id="whereToSendTable">
+					</table>
+				</div>
+				<input type="hidden" name="whereToSend" id="whereToSend" value="">
+			</div>
+			<div class="clear"></div>
+		</div>
+
 		<div class="buttonRow">
 			<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="pushHandler.remotePublish()" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
@@ -102,7 +122,9 @@ GregorianCalendar cal = new GregorianCalendar();
 			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('remotePublisherDia').hide()" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 			</button>
-		
+
 		</div>
+
+		<input id="whereToSendRequired" type="hidden" value="<%=LanguageUtil.get(pageContext, "publisher_dialog_environment_mandatory")%>" />
 
 </div>

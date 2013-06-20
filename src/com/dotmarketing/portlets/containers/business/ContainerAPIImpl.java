@@ -27,11 +27,9 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -290,7 +288,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			if(local){
 				HibernateUtil.rollbackTransaction();
 			}
-			throw new DotWorkflowException(e.getMessage());
+			throw new DotDataException(e.getMessage());
 
 		}finally{
 			if(local){
@@ -459,6 +457,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	public boolean delete(Container container, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		if(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+			deleteContainerStructuresByContainer(container);
 			return deleteAsset(container);
 		} else {
 			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
@@ -490,4 +489,16 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan,"containers");
     }
+
+	@Override
+	public void deleteContainerStructuresByContainer(Container container)
+			throws DotStateException, DotDataException, DotSecurityException {
+
+		if(container==null || !UtilMethods.isSet(container.getIdentifier()))
+			return;
+
+		HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure where container_id = '" + container.getIdentifier() + "'");
+
+	}
+
 }

@@ -26,15 +26,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class StructureAPIImpl implements StructureAPI {
-    
+
     @Override
     public void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
-        
+
         // check for write permissions
         PermissionAPI perAPI=APILocator.getPermissionAPI();
-        if(!perAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_WRITE, user)) 
+        if(!perAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_WRITE, user))
             throw new DotSecurityException("User doesn't have permission to delete the structure");
-        
+
      // checking if there is containers using this structure
      		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(st.getInode());
      		Map<String, String> containersInUse = new HashMap<String, String>();
@@ -50,17 +50,17 @@ public class StructureAPIImpl implements StructureAPI {
      			names.append(title).append("</br>");
      		}
      		if(UtilMethods.isSet(names.toString()))
-     			throw new DotStateException("Structure " + st.getName() + 
+     			throw new DotStateException("Structure " + st.getName() +
                          " can't be deleted because the following containers are using it: " + names);
-        
+
         // default structure can't be deleted
         if(st.isDefaultStructure())
             throw new DotStateException("Can't delete default structure");
-        
-        // deleting fields 
+
+        // deleting fields
         for(Field field : FieldFactory.getFieldsByStructure(st.getInode()))
             FieldFactory.deleteField(field);
-        
+
         // delete related contentlets
         int limit = 200;
         int offset = 0;
@@ -70,7 +70,7 @@ public class StructureAPIImpl implements StructureAPI {
             contentlets = conAPI.findByStructure(st, user, false, limit, offset);
             conAPI.delete(contentlets, user, false);
         } while(contentlets.size()>0);
-        
+
         // delete Forms entry if it is a form structure
         if (st.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
             Structure sf = StructureCache.getStructureByVelocityVarName(
@@ -78,16 +78,16 @@ public class StructureAPIImpl implements StructureAPI {
             if (UtilMethods.isSet(sf) && UtilMethods.isSet(sf.getInode())) {
                 Field field = st.getFieldVar(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME);
                 conAPI.delete( conAPI.search(
-                        "+structureInode:" + sf.getInode() + 
+                        "+structureInode:" + sf.getInode() +
                         " +structureInode:" + st.getInode(), 0, 0,
                         "", user, false), user, false);
             }
         }
-        
+
         // make sure folders don't refer to this structure as default fileasset structure
         if (st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET)
             StructureFactory.updateFolderFileAssetReferences(st);
-        
+
         // delete relationships where the structure is child or parent
         List<Relationship> relationships = RelationshipFactory.getRelationshipsByParent(st);
         for (Relationship rel : relationships)
@@ -95,13 +95,13 @@ public class StructureAPIImpl implements StructureAPI {
         relationships = RelationshipFactory.getRelationshipsByChild(st);
         for (Relationship rel : relationships)
             RelationshipFactory.deleteRelationship(rel);
-        
+
         // remove structure permissions
         perAPI.removePermissions(st);
-        
+
         // remove structure itself
         StructureFactory.deleteStructure(st);
-        
+
         // flushing cache
         FieldsCache.removeFields(st);
         StructureCache.removeStructure(st);
@@ -115,12 +115,12 @@ public class StructureAPIImpl implements StructureAPI {
 			throw new DotSecurityException("User " + user + " does not have permission to struct " +inode);
 		}
 		return s;
-				
-		
+
+
 	}
-    
-    
-    
-    
-    
+
+
+
+
+
 }

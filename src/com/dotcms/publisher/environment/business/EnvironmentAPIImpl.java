@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 
 public class EnvironmentAPIImpl implements EnvironmentAPI {
 
@@ -20,11 +21,18 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 
 	@Override
 	public Environment findEnvironmentById(String id) throws DotDataException {
+		if(!UtilMethods.isSet(id))
+			return null;
+
 		return environmentFactory.getEnvironmentById(id);
 	}
 
 	@Override
 	public void saveEnvironment(Environment environment, List<Permission> perms) throws DotDataException, DotSecurityException {
+
+		if(!UtilMethods.isSet(environment))
+			return;
+
 		environmentFactory.save(environment);
 		APILocator.getPermissionAPI().removePermissions(environment);
 
@@ -34,8 +42,6 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 				APILocator.getPermissionAPI().save(p, environment, APILocator.getUserAPI().getSystemUser(), false);
 			}
 		}
-
-
 	}
 
 	@Override
@@ -45,14 +51,21 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 
 	@Override
 	public void deleteEnvironment(String id) throws DotDataException {
-		List<PublishingEndPoint> endPoints = APILocator.getPublisherEndPointAPI().findSendingEndPointByEnvironment(id);
+
+		if(!UtilMethods.isSet(id))
+			return;
+
+		List<PublishingEndPoint> endPoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(id);
 
 		for (PublishingEndPoint ep : endPoints) {
 			APILocator.getPublisherEndPointAPI().deleteEndPointById(ep.getId());
 		}
 
-		environmentFactory.deleteEnvironmentById(id);
+		Environment e = findEnvironmentById(id);
 
+		APILocator.getPermissionAPI().removePermissions(e);
+
+		environmentFactory.deleteEnvironmentById(id);
 	}
 
 	@Override
@@ -69,6 +82,11 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 	@Override
 	public List<Environment> findEnvironmentsByRole(String roleId) throws DotDataException {
 		return environmentFactory.getEnvironmentsByRole(roleId);
+	}
+
+	@Override
+	public List<Environment> findEnvironmentsByBundleId(String bundleId) throws DotDataException {
+		return environmentFactory.getEnvironmentsByBundleId(bundleId);
 	}
 
 }

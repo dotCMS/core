@@ -752,9 +752,19 @@ CREATE TABLE publishing_queue (
       bundle_id VARCHAR(256)
 );
 
-create table publishing_bundle(id varchar(36) NOT NULL  primary key,name varchar(255) NOT NULL unique,publish_date DATETIME, owner varchar(100));
+create table publishing_bundle(
+	id varchar(36) NOT NULL  primary key,
+	name varchar(255) NOT NULL unique,
+	publish_date DATETIME,
+	expire_date DATETIME,
+	owner varchar(100)
+);
 
-create table publishing_bundle_environment(id varchar(36) NOT NULL primary key,bundle_id varchar(36) NOT NULL, environment_id varchar(36) NOT NULL);
+create table publishing_bundle_environment(
+	id varchar(36) NOT NULL primary key,
+	bundle_id varchar(36) NOT NULL,
+	environment_id varchar(36) NOT NULL
+);
 
 alter table publishing_bundle_environment add constraint FK_bundle_id foreign key (bundle_id) references publishing_bundle(id);
 alter table publishing_bundle_environment add constraint FK_environment_id foreign key (environment_id) references publishing_environment(id);
