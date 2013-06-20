@@ -144,7 +144,9 @@ public class RoleFactoryImpl extends RoleFactory {
 						h.setInherited(true);
 					}
 					helpers.add(h);
-					roles.add(r);
+					if(includeImplicitRoles || rids.contains(r.getId())){
+						roles.add(r);
+					}
 					if(r.getRoleChildren() != null && includeImplicitRoles)
 						for(String roleId: r.getRoleChildren()) {
 							rolesToProcess.add(getRoleById(roleId));
@@ -152,6 +154,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				}
 				rc.addRoleListForUser(helpers, userId);
 			}
+			
 			return roles;
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage() + " Unable to load the user roles for user " + userId == null? "not passed in":userId, e);
