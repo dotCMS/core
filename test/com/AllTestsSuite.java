@@ -8,6 +8,7 @@ import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
 import com.dotmarketing.business.PermissionAPITest;
+import com.dotmarketing.business.RoleAPITest;
 import com.dotmarketing.portlets.categories.business.CategoryAPITest;
 import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
@@ -53,7 +54,8 @@ import org.junit.runners.Suite;
     ESIndexSpeedTest.class,
     PluginMergerTest.class,
     WebDavTest.class,
-    ContentResourceTest.class
+    ContentResourceTest.class,
+    RoleAPITest.class
 })
 public class AllTestsSuite {
 
