@@ -6,13 +6,16 @@ package com.dotmarketing.business;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 import org.apache.commons.beanutils.BeanUtils;
 
+import com.dotmarketing.business.RoleCache.UserRoleCacheHelper;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -90,38 +93,68 @@ public class RoleFactoryImpl extends RoleFactory {
 	}
 
 	@Override
-	protected List<Role> loadRolesForUser(String userId) throws DotDataException {
+	protected List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException {
 		try {
 			List<Role> roles = new ArrayList<Role>();
-			List<String> usersRoleIds = rc.getRoleIdsForUser(userId);
-			if(usersRoleIds != null){
-				for (String roleId : usersRoleIds) {
-					Role r = getRoleById(roleId);
-					if(r != null){
-						roles.add(r);
+			List<UserRoleCacheHelper> helpers = rc.getRoleIdsForUser(userId);
+			if(helpers != null){
+				for (UserRoleCacheHelper h : helpers) {
+					if(includeImplicitRoles || !h.isInherited()){
+						Role r = getRoleById(h.getRoleId());
+						if(r != null){
+							roles.add(r);
+						}
 					}
+				}	
+			}else{
+				helpers = new ArrayList<RoleCache.UserRoleCacheHelper>();
+				LinkedList<Role> rolesToProcess = new LinkedList<Role>();
+				Set<String> rids = new HashSet<String>();
+				StringBuffer buffy = new StringBuffer();
+				buffy.append("select distinct role_id ");
+				buffy.append("from users_cms_roles ");
+				buffy.append("where users_cms_roles.user_id  = ? ");
+				DotConnect dc = new DotConnect();
+				dc.setSQL(buffy.toString());
+				dc.addParam(userId);
+				List<Map<String,Object>> rows = dc.loadObjectResults();
+				for (Map<String, Object> map : rows) {
+					Role r = null;
+					try{
+						r = getRoleById(map.get("role_id").toString());
+					}catch (Exception e) {
+						Logger.error(this, e.getMessage() + " While loading the user with id " + userId == null? "not passed in":userId + " Unable to load role with roleid " + map.get("role_id").toString() == null? "null":map.get("role_id").toString(), e);
+					}
+					rids.add(r.getId());
+					rolesToProcess.add(r);
 				}
-				return roles;
-			}
-			StringBuffer buffy = new StringBuffer();
-			buffy.append("select {cms_role.*} ");
-			buffy.append("from cms_role, users_cms_roles ");
-			buffy.append("where users_cms_roles.role_id = cms_role.id ");
-			buffy.append("and users_cms_roles.user_id  = ? ");
-			HibernateUtil hu = new HibernateUtil(Role.class);
-			hu.setSQLQuery(buffy.toString());
-			hu.setParam(userId);
-			roles = hu.list();
-			populatChildrenForRoles(roles);
-			for (Role role : roles) {
-				if(role == null) continue;
-				translateFQNFromDB(role);
-				HibernateUtil.evict(role);
-				rc.addRoleToUser(userId, role.getId());
-				rc.add(role);
+	
+				if(APILocator.getUserAPI().getAnonymousUser().getUserId().equals(userId) 
+						&& !rolesToProcess.contains(APILocator.getRoleAPI().loadCMSAnonymousRole())){
+					rolesToProcess.add(APILocator.getRoleAPI().loadCMSAnonymousRole());
+				}
+				while(!rolesToProcess.isEmpty()) {
+					Role r = rolesToProcess.poll();
+					if(r ==null) continue;
+					UserRoleCacheHelper h = rc.new UserRoleCacheHelper();
+					h.setRoleId(r.getId());
+					if(rids.contains(r.getId())){
+						h.setInherited(false);
+					}else{
+						h.setInherited(true);
+					}
+					helpers.add(h);
+					roles.add(r);
+					if(r.getRoleChildren() != null && includeImplicitRoles)
+						for(String roleId: r.getRoleChildren()) {
+							rolesToProcess.add(getRoleById(roleId));
+						}
+				}
+				rc.addRoleListForUser(helpers, userId);
 			}
 			return roles;
 		} catch (Exception e) {
+			Logger.error(this,e.getMessage() + " Unable to load the user roles for user " + userId == null? "not passed in":userId, e);
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
@@ -208,7 +241,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		ur.setRoleId(role.getId());
 		ur.setUserId(user.getUserId());
 		HibernateUtil.save(ur);
-		rc.addRoleToUser(user.getUserId(), role.getId());
+		rc.remove(user.getUserId());
 	}
 
 	@Override
@@ -415,26 +448,29 @@ public class RoleFactoryImpl extends RoleFactory {
 			return false;
 		}
 
-		List<String> roles = rc.getRoleIdsForUser(user.getUserId());
-		if(roles == null){
-		    List<Role> rolelist=loadRolesForUser(user.getUserId());
-		    roles=new ArrayList<String>();
-		    List<String> rolesToRecurse=new ArrayList<String>();
-		    for(Role rr : rolelist) {
-		        roles.add(rr.getId());
-		        if(rr.getRoleChildren()!=null)
-		            rolesToRecurse.addAll(rr.getRoleChildren());
-		    }
-		    roles.addAll(rolesToRecurse);
-		    if(!rolesToRecurse.isEmpty())
-		        fillChildrensRecursive(roles, rolesToRecurse);
-		    rc.addRoleListForUser(roles, user.getUserId());
+		List<UserRoleCacheHelper> helpers = rc.getRoleIdsForUser(user.getUserId());
+		List<String> roleIds = null;
+		if(helpers != null){
+			for (UserRoleCacheHelper helper : helpers) {
+				if(roleIds == null){
+					roleIds = new ArrayList<String>();
+				}
+				roleIds.add(helper.getRoleId());
+			}
 		}
-		if(roles != null && roles.contains(role.getId())){
+		if(roleIds == null){
+			List<Role> roles = new ArrayList<Role>();
+		    roles=loadRolesForUser(user.getUserId(),true);
+		    roleIds= new ArrayList<String>();
+		    for (Role r : roles) {
+				roleIds.add(r.getId());
+			}
+		}
+		if(roleIds != null && roleIds.contains(role.getId())){
 			return true;
 		}else{
 			Logger.debug(this,"User ("+user.getUserId()+") does not have the role ("+role.getId()+")");
-			Logger.debug(this, "User ("+user.getUserId()+") has roles: "+roles);
+			Logger.debug(this, "User ("+user.getUserId()+") has roles: "+ roleIds ==null?"null":roleIds.toString());
 			return false;
 		}
 	}

@@ -43,24 +43,7 @@ public class RoleAPIImpl implements RoleAPI {
 
 	public List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles)
 			throws DotDataException {
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		List<Role> rolesToReturn = new ArrayList<Role>();
-		LinkedList<Role> rolesToProcess = new LinkedList<Role>(rf.loadRolesForUser(userId));
-		if(APILocator.getUserAPI().getAnonymousUser().getUserId().equals(userId) 
-				&& !rolesToProcess.contains(loadCMSAnonymousRole())){
-			rolesToProcess.add(loadCMSAnonymousRole());
-		}
-		while(!rolesToProcess.isEmpty()) {
-			Role r = rolesToProcess.poll();
-			if(r ==null) continue;
-			rolesToReturn.add(r);
-			if(r.getRoleChildren() != null && includeImplicitRoles)
-				for(String roleId: r.getRoleChildren()) {
-					rolesToProcess.add(roleAPI.loadRoleById(roleId));
-				}
-		}
-		
-		return rolesToReturn;
+		return rf.loadRolesForUser(userId,includeImplicitRoles);
 	}
 	
     /* (non-Javadoc)

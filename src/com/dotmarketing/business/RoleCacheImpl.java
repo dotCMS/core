@@ -119,22 +119,6 @@ public class RoleCacheImpl extends RoleCache {
 	}
 
 	@Override
-	protected List<String> addRoleToUser(String userId, String roleId) {
-		String key = userGroup + userId;
-		try {
-			List<String> roles = (List<String>)cache.get(key,userGroup);
-			if(roles == null){
-				roles = new ArrayList<String>();
-			}
-			roles.add(roleId);
-			return roles;
-		} catch (DotCacheException e) {
-			Logger.warn(this,"Cache Entry not found after adding", e);
-			return null;
-		}
-	}
-
-	@Override
 	protected void clearRoleCache() {
 		cache.flushGroup(primaryGroup);
 		cache.flushGroup(keyGroup);
@@ -151,23 +135,23 @@ public class RoleCacheImpl extends RoleCache {
 	}
 
 	@Override
-	protected List<String> getRoleIdsForUser(String userId) {
+	protected List<UserRoleCacheHelper> getRoleIdsForUser(String userId) {
 		String key = userGroup + userId;
-		List<String> l = null;
+		List<UserRoleCacheHelper> l = null;
 		try {
-			l = (List<String>)cache.get(key, userGroup);
+			l = (List<UserRoleCacheHelper>)cache.get(key, userGroup);
 		} catch (DotCacheException e) {
 			Logger.debug(this, "Cache not find roleIds for user in cache", e);
 		}
 		return l;
 	}
 
-	protected List<String> addRoleListForUser(List<String> roles, String userId){
+	protected List<UserRoleCacheHelper> addRoleListForUser(List<UserRoleCacheHelper> roles, String userId){
 		String key = userGroup + userId;
 		cache.put(key, roles, userGroup);		
-		List<String> l = null;
+		List<UserRoleCacheHelper> l = null;
 		try {
-			l = (List<String>)cache.get(key, userGroup);
+			l = (List<UserRoleCacheHelper>)cache.get(key, userGroup);
 		} catch (DotCacheException e) {
 			Logger.warn(this, "Cache not find roleIds for user in cache after adding", e);
 		}
