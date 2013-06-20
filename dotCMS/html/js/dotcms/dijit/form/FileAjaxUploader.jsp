@@ -5,7 +5,7 @@
 	<input name="${name}" dojoAttachPoint="fileNameField" type="hidden" value="${fileName}">
 	<div dojoAttachPoint="fileUploadForm" style="float:left">
 		<form enctype="multipart/form-data" method="post" action="/servlets/ajax_file_upload?fieldName=${name}" 
-			dojoAttachPoint="form" target="${id}_target_upload">
+			dojoAttachPoint="form" target="${id}_target_upload" id="${name}_form">
 			<input name="${name}FileUpload" type="file" dojoAttachEvent="onchange:_doFileUpload" dojoAttachPoint="fileInputField" class="form-text" size="30">
 		</form>
 	</div>

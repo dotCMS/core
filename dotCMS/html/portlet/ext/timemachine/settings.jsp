@@ -223,21 +223,23 @@ dojo.ready(function() {
    </td>
    </tr>
    <tr>
-   <td align="right" valign="top">
+   <td align="right" valign="top" nowrap="true">
       <strong><%= LanguageUtil.get(pageContext, "TIMEMACHINE-ALLHOSTS") %>: </strong>
    </td>
    <td>
+      <div style="padding:5px;">
       <input name="allhosts" id="allhosts" dojoType="dijit.form.CheckBox" type="checkbox"
           value="true" <%=!allhosts?"":"checked='true'"%> onclick="indexAll(this.checked)" />
+      </div>
    </td>
    </tr>
    <tr>
-   <td align="right" valign="top">
+   <td align="right" valign="top" nowrap="true">
      <span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "TIMEMACHINE-LANGUAGE") %>:</strong>
    </td>
    <td>
      <% for(Language lang : APILocator.getLanguageAPI().getLanguages()) { %>
-          <div class="langContainer">
+          <div class="langContainer" style="padding:5px;">
             <input type="checkbox" dojoType="dijit.form.CheckBox" id="op_<%=lang.getId()%>"
                    name="lang" value="<%=lang.getId()%>"
                    <%=(langs!=null && langs.contains(lang)) ? "checked='true'" : "" %>/>
