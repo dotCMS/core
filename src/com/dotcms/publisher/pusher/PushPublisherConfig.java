@@ -16,27 +16,27 @@ public class PushPublisherConfig extends PublisherConfig {
 	public static enum AssetTypes {
 		TEMPLATES,
 		HTMLPAGES,
-		CONTAINERS, 
-		CONTENTS, 
+		CONTAINERS,
+		CONTENTS,
 		LINKS,
 		RELATIONSHIPS,
 		CATEGORIES
 	}
-	
+
 	private Operation operation;
 	private List<PublishingEndPoint> endpoints;
-	
+
 	public PushPublisherConfig() {
 		super();
 	}
-	
+
 	boolean switchIndexWhenDone = false;
-	
+
 	public boolean switchIndexWhenDone(){
 		return switchIndexWhenDone;
 	}
-	
-	
+
+
 	public void setSwitchIndexWhenDone(boolean switchIndexWhenDone) {
 		this.switchIndexWhenDone = switchIndexWhenDone;
 	}
@@ -45,13 +45,13 @@ public class PushPublisherConfig extends PublisherConfig {
 	private enum MyConfig {
 		RUN_NOW,INDEX_NAME;
 	};
-	
+
 
 	public boolean runNow(){
 		return this.get(MyConfig.RUN_NOW.toString()) !=null && new Boolean((String) this.get(MyConfig.RUN_NOW.toString()));
-		
+
 	}
-	
+
 	public Operation getOperation() {
 		return operation;
 	}
@@ -74,20 +74,20 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	public void setRunNow(boolean once){
 		this.put(MyConfig.RUN_NOW.toString(), once);
-		
+
 	}
-	
+
 	public String getIndexName(){
 		return (String) this.get(MyConfig.INDEX_NAME.toString());
-		
+
 	}
-	
+
 	public void setIndexName(String name){
 		this.put(MyConfig.INDEX_NAME.toString(), name);
-		
-		
+
+
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	@Override
 	public List<Class> getPublishers(){
@@ -95,7 +95,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		clazz.add(PushPublisher.class);
 		return clazz;
 	}
-	
+
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getContainers() {
@@ -103,9 +103,9 @@ public class PushPublisherConfig extends PublisherConfig {
 			Set<String> containersToBuild =   new HashSet<String>();
 			put(AssetTypes.CONTAINERS.name(), containersToBuild);
 		}
-		
+
 		return (Set<String>) get(AssetTypes.CONTAINERS.name());
-	
+
 	}
 	@SuppressWarnings("unchecked")
 	public Set<String> getTemplates() {
@@ -115,7 +115,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 
 		return (Set<String>) get(AssetTypes.TEMPLATES.name());
-	
+
 	}
 	@SuppressWarnings("unchecked")
 	public Set<String> getHTMLPages() {
@@ -124,8 +124,8 @@ public class PushPublisherConfig extends PublisherConfig {
 			put(AssetTypes.HTMLPAGES.name(), htmlPagesToBuild);
 		}
 
-		
-		
+
+
 		return (Set<String>) get(AssetTypes.HTMLPAGES.name());
 	}
 	@SuppressWarnings("unchecked")
@@ -134,9 +134,9 @@ public class PushPublisherConfig extends PublisherConfig {
 			Set<String> contentletsToBuild =   new HashSet<String>();
 			put(AssetTypes.CONTENTS.name(), contentletsToBuild);
 		}
-		
+
 		return (Set<String>) get(AssetTypes.CONTENTS.name());
-		
+
 	}
 	@SuppressWarnings("unchecked")
 	public Set<String> getLinks() {
@@ -146,7 +146,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 
 		return (Set<String>) get(AssetTypes.LINKS.name());
-	
+
 	}
 //	@SuppressWarnings("unchecked")
 //	public Set<String> getCategories() {
@@ -156,45 +156,45 @@ public class PushPublisherConfig extends PublisherConfig {
 //		}
 //
 //		return (Set<String>) get(AssetTypes.LINKS.name());
-//	
-//	}	
-	@SuppressWarnings("unchecked")	
+//
+//	}
+	@SuppressWarnings("unchecked")
 	public Set<String> getRelationships() {
 		if(get(AssetTypes.RELATIONSHIPS.name()) == null){
 			Set<String> relationshipsToBuild =   new HashSet<String>();
 			put(AssetTypes.RELATIONSHIPS.name(), relationshipsToBuild);
 		}
-		
+
 		return (Set<String>) get(AssetTypes.RELATIONSHIPS.name());
-		
+
 	}
-	
-	public void setHTMLPages(Set<String> htmlPages) {		
+
+	public void setHTMLPages(Set<String> htmlPages) {
 		put(AssetTypes.HTMLPAGES.name(), htmlPages);
 	}
-	
+
 	public void setContainers(Set<String> containers) {
 		put(AssetTypes.CONTAINERS.name(), containers);
 	}
-	
+
 	public void setTemplates(Set<String> templates) {
 		put(AssetTypes.TEMPLATES.name(), templates);
 	}
-	
+
 	public void setContents(Set<String> contents) {
 		put(AssetTypes.CONTENTS.name(), contents);
 	}
-	
+
 	public void setLinks(Set<String> links) {
 		put(AssetTypes.LINKS.name(), links);
 	}
 //	public void setCategories(Set<String> categories){
 //		put(AssetTypes.CATEGORIES.name(),categories);
 //	}
-//	
+//
 	public void setRelationships(Set<String> relationships) {
 		put(AssetTypes.RELATIONSHIPS.name(), relationships);
 	}
-	
-	
+
+
 }
