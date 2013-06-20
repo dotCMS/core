@@ -3,7 +3,6 @@ package com.dotcms.publisher.endpoint.business;
 import java.util.List;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.exception.DotDataException;
 
 /**
@@ -77,7 +76,7 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	 * Returns a single end point configured like sender. Null otherwise.
 	 *
 	 */
-	public List<PublishingEndPoint> findSendingEndPointByEnvironment(String environmentId) throws DotDataException {
+	public List<PublishingEndPoint> findSendingEndPointsByEnvironment(String environmentId) throws DotDataException {
 		return publishingEndPointFactory.getSendingEndPointsByEnvironment(environmentId);
 
 	}

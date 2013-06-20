@@ -13,11 +13,13 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -34,6 +36,45 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		Map<String, String> map = getURIParams();
 		String cmd = map.get("cmd");
 		Method dispatchMethod = null;
+
+		User user = getUser();
+
+		try{
+			// Check permissions if the user has access to the CMS Maintenance Portlet
+			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
+				String userName = map.get("u") !=null
+					? map.get("u")
+						: map.get("user") !=null
+							? map.get("user")
+								: null;
+
+				String password = map.get("p") !=null
+					? map.get("p")
+							: map.get("passwd") !=null
+								? map.get("passwd")
+									: null;
+
+
+
+				LoginFactory.doLogin(userName, password, false, request, response);
+				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+				if(user==null) {
+				    setUser(request);
+	                user = getUser();
+				}
+				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", user)){
+					response.sendError(401);
+					return;
+				}
+			}
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), e.getMessage());
+			response.sendError(401);
+			return;
+		}
+
+
 		if(null!=cmd){
 			try {
 				dispatchMethod = this.getClass().getMethod(cmd, new Class[]{HttpServletRequest.class, HttpServletResponse.class});

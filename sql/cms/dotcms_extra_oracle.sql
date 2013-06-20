@@ -876,9 +876,19 @@ CREATE TABLE publishing_queue (
 CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
 CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on publishing_queue for each row begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;
 
-create table publishing_bundle(id varchar2(36) NOT NULL  primary key,name varchar2(255) NOT NULL unique,publish_date TIMESTAMP, owner varchar2(100));
+create table publishing_bundle(
+	id varchar2(36) NOT NULL  primary key,
+	name varchar2(255) NOT NULL unique,
+	publish_date TIMESTAMP,
+	expire_date TIMESTAMP,
+	owner varchar2(100)
+);
 
-create table publishing_bundle_environment(id varchar2(36) NOT NULL primary key,bundle_id varchar2(36) NOT NULL, environment_id varchar2(36) NOT NULL);
+create table publishing_bundle_environment(
+	id varchar2(36) NOT NULL primary key,
+	bundle_id varchar2(36) NOT NULL,
+	environment_id varchar2(36) NOT NULL
+);
 
 alter table publishing_bundle_environment add constraint FK_bundle_id foreign key (bundle_id) references publishing_bundle(id);
 alter table publishing_bundle_environment add constraint FK_environment_id foreign key (environment_id) references publishing_environment(id);

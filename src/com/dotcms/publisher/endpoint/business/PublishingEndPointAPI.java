@@ -55,7 +55,7 @@ public interface PublishingEndPointAPI {
 	 * @throws DotDataException
 	 */
 
-	public List<PublishingEndPoint> findSendingEndPointByEnvironment(String environmentId) throws DotDataException;
+	public List<PublishingEndPoint> findSendingEndPointsByEnvironment(String environmentId) throws DotDataException;
 
 	/**
 	 * Returns all enabled receiving endPoints.

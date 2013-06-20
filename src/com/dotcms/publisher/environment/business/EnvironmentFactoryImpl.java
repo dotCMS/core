@@ -9,13 +9,11 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Logger;
 
 public class EnvironmentFactoryImpl extends EnvironmentFactory {
 
 	@Override
 	public List<Environment> getEnvironments() throws DotDataException {
-
 		List<Environment> environments = new ArrayList<Environment>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ALL_ENVIRONMENTS);
@@ -30,8 +28,7 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 	}
 
 	@Override
-	public Environment getEnvironmentById(String id)
-			throws DotDataException {
+	public Environment getEnvironmentById(String id) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ENVIRONMENT_BY_ID);
 		dc.addParam(id);
@@ -48,57 +45,36 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 
 	@Override
 	public void save(Environment environment) throws DotDataException {
-		try{
-			environment.setId(UUID.randomUUID().toString());
-			DotConnect dc = new DotConnect();
-			dc.setSQL(INSERT_ENVIRONMENT);
-			dc.addParam(environment.getId());
-			dc.addParam(environment.getName());
-			dc.addParam(environment.getPushToAll().booleanValue());
-			dc.loadResult();
-		}
-		catch(DotDataException e) {
-			Logger.debug(getClass(), "Unexpected DotDataException in save method", e);
-			throw e;
-		}
+		environment.setId(UUID.randomUUID().toString());
+		DotConnect dc = new DotConnect();
+		dc.setSQL(INSERT_ENVIRONMENT);
+		dc.addParam(environment.getId());
+		dc.addParam(environment.getName());
+		dc.addParam(environment.getPushToAll().booleanValue());
+		dc.loadResult();
 
 	}
 
 	@Override
 	public void update(Environment environment) throws DotDataException {
-		try{
-			DotConnect dc = new DotConnect();
-			dc.setSQL(UPDATE_ENVIRONMENT);
-			dc.addParam(environment.getName());
-			dc.addParam(environment.getPushToAll().booleanValue());
-			dc.addParam(environment.getId());
-			dc.loadResult();
-		}
-		catch(DotDataException e) {
-			Logger.debug(getClass(), "Unexpected DotDataException in save method", e);
-			throw e;
-		}
-
+		DotConnect dc = new DotConnect();
+		dc.setSQL(UPDATE_ENVIRONMENT);
+		dc.addParam(environment.getName());
+		dc.addParam(environment.getPushToAll().booleanValue());
+		dc.addParam(environment.getId());
+		dc.loadResult();
 	}
 
 	@Override
 	public void deleteEnvironmentById(String id) throws DotDataException {
-		try{
-			DotConnect dc = new DotConnect();
-			dc.setSQL(DELETE_ENVIRONMENT);
-			dc.addParam(id);
-			dc.loadResult();
-		}
-		catch(DotDataException e) {
-			Logger.debug(getClass(), "Unexpected DotDataException in delete method", e);
-			throw e;
-		}
-
+		DotConnect dc = new DotConnect();
+		dc.setSQL(DELETE_ENVIRONMENT);
+		dc.addParam(id);
+		dc.loadResult();
 	}
 
 	@Override
-	public Environment getEnvironmentByName(String name)
-			throws DotDataException {
+	public Environment getEnvironmentByName(String name) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ENVIRONMENT_BY_NAME);
 		dc.addParam(name);
@@ -114,12 +90,28 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 	}
 
 	@Override
-	public List<Environment> getEnvironmentsByRole(String roleId)
-			throws DotDataException {
+	public List<Environment> getEnvironmentsByRole(String roleId) throws DotDataException {
 		List<Environment> environments = new ArrayList<Environment>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ENVIRONMENTS_BY_ROLE_ID);
 		dc.addParam(roleId);
+		List<Map<String, Object>> res = dc.loadObjectResults();
+
+		for(Map<String, Object> row : res){
+			Environment environment = PublisherUtil.getEnvironmentByMap(row);
+			environments.add(environment);
+		}
+
+		return environments;
+	}
+
+	@Override
+	public List<Environment> getEnvironmentsByBundleId(String bundleId)
+			throws DotDataException {
+		List<Environment> environments = new ArrayList<Environment>();
+		DotConnect dc = new DotConnect();
+		dc.setSQL(SELECT_ENVIRONMENTS_BY_BUNDLE_ID);
+		dc.addParam(bundleId);
 		List<Map<String, Object>> res = dc.loadObjectResults();
 
 		for(Map<String, Object> row : res){
