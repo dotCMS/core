@@ -30,7 +30,7 @@ public abstract class RoleFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract List<Role> loadRolesForUser(String userId) throws DotDataException;
+	protected abstract List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException;
 	
 	protected abstract Role getRoleById(String roleId) throws DotDataException;
 	

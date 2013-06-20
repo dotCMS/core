@@ -3,18 +3,30 @@ package com.dotcms.publisher.pusher;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
-import com.dotcms.enterprise.publishing.remote.bundler.*;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.HTMLPageBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.LinkBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.StructureBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -22,12 +34,14 @@ import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -72,28 +86,7 @@ public class PushPublisher extends Publisher {
 			File bundle = new File(bundleRoot+File.separator+".."+File.separator+config.getId()+".tar.gz");
 			PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
 
-
-
-			//Retriving enpoints and init client
-			List<PublishingEndPoint> endpoints = ((PushPublisherConfig)config).getEndpoints();
-			Map<String, List<PublishingEndPoint>> endpointsMap = new HashMap<String, List<PublishingEndPoint>>();
-			List<PublishingEndPoint> buffer = null;
-			//Organize the endpoints grouping them by groupId
-			for (PublishingEndPoint pEndPoint : endpoints) {
-
-				String gid = UtilMethods.isSet(pEndPoint.getGroupId()) ? pEndPoint.getGroupId() : pEndPoint.getId();
-
-				if(endpointsMap.get(gid) == null)
-					buffer = new ArrayList<PublishingEndPoint>();
-				else
-					buffer = endpointsMap.get(gid);
-
-				buffer.add(pEndPoint);
-
-				// put in map with either the group key or the id if no group is set
-				endpointsMap.put(gid, buffer);
-
-			}
+			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(config.getId());
 
 			ClientConfig cc = new DefaultClientConfig();
 
@@ -112,64 +105,69 @@ public class PushPublisher extends Publisher {
 	        boolean hasError = false;
 	        int errorCounter = 0;
 
-	        for ( String group : endpointsMap.keySet()) {
-	        	List<PublishingEndPoint> groupList = endpointsMap.get(group);
+			for (Environment environment : environments) {
+				List<PublishingEndPoint> endpoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(environment.getId());
 
-	        	boolean sent = false;
-				for (PublishingEndPoint endpoint : groupList) {
+				boolean sent = false;
+
+				if(!environment.getPushToAll()) {
+					Collections.shuffle(endpoints);
+					endpoints = endpoints.subList(0, 1);
+				}
+
+				for (PublishingEndPoint endpoint : endpoints) {
 					EndpointDetail detail = new EndpointDetail();
-					try {
-						FormDataMultiPart form = new FormDataMultiPart();
-				        form.field("AUTH_TOKEN",
-				        		retriveKeyString(
-				        				PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
+	        		try {
+	        			FormDataMultiPart form = new FormDataMultiPart();
+	        			form.field("AUTH_TOKEN",
+	        					retriveKeyString(
+	        							PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
 
-				        form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
+	        			form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
 
-				        form.field("ENDPOINT_ID", endpoint.getId());
-				        form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+	        			form.field("ENDPOINT_ID", endpoint.getId());
+	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 
-						//Sending bundle to endpoint
-				        WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
+	        			//Sending bundle to endpoint
+	        			WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
 
-				        ClientResponse response =
-				        		resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
-
-
-				        if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK)
-				        {
-				        	detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
-				        	detail.setInfo("Everything ok");
-				        	sent = true;
-				        } else {
-				        	detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-				        	detail.setInfo(
-				        			"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
-				        					"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
-				        }
-					} catch(Exception e) {
-						hasError = true;
-						detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-
-						String error = 	"An error occured for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
+	        			ClientResponse response =
+	        					resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
 
 
-						detail.setInfo(error);
+	        			if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK)
+	        			{
+	        				detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
+	        				detail.setInfo("Everything ok");
+	        				sent = true;
+	        			} else {
+	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
+	        				detail.setInfo(
+	        						"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
+	        								"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
+	        			}
+	        		} catch(Exception e) {
+	        			hasError = true;
+	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 
-			        	Logger.error(this.getClass(), error);
-					}
+	        			String error = 	"An error occured for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
 
-			        currentStatusHistory.addOrUpdateEndpoint(group, endpoint.getId(), detail);
 
-			        if(sent)
-			        	break;
+	        			detail.setInfo(error);
+
+	        			Logger.error(this.getClass(), error);
+	        		}
+
+	        		currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
 				}
 
 				if(!sent) {
 					hasError = true;
 					errorCounter++;
 				}
-	        }
+
+
+			}
 
 			if(!hasError) {
 				//Updating audit table
@@ -180,7 +178,7 @@ public class PushPublisher extends Publisher {
 				//Deleting queue records
 				//pubAPI.deleteElementsFromPublishQueueTable(config.getId());
 			} else {
-				if(errorCounter == endpointsMap.size()) {
+				if(errorCounter == environments.size()) {
 					pubAuditAPI.updatePublishAuditStatus(config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
 				} else {
@@ -204,11 +202,6 @@ public class PushPublisher extends Publisher {
 
 		}
 	}
-
-
-
-
-
 
 	private String retriveKeyString(String token) throws IOException {
 		String key = null;

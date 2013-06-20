@@ -173,5 +173,6 @@
 	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
 	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
 	<input name="iWantTo" id=iWantTo type="hidden" value="">
+	<input name="whoToSend" id=whoToSend type="hidden" value="">
 </form>
 

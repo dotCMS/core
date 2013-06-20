@@ -1,8 +1,42 @@
 package com.dotcms.publisher.ajax;
 
-import com.dotcms.publisher.business.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.hadoop.mapred.lib.Arrays;
+
+import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerUtil;
@@ -10,7 +44,6 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -19,25 +52,15 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.hadoop.mapred.lib.Arrays;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 public class RemotePublishAjaxAction extends AjaxAction {
 
@@ -92,11 +115,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			response.sendError(401);
 			return;
 		}
-
-
-
-
-
 
 		if(null!=cmd){
 			try {
@@ -154,69 +172,81 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
             String _contentFilterDate = request.getParameter( "remoteFilterDate" );
             String _iWantTo = request.getParameter( "iWantTo" );
+            String whoToSendTmp = request.getParameter( "whoToSend" );
+            List<String> whoCanUse = Arrays.asList(whoToSendTmp.split(","));
+            List<Environment> envsToSendTo = new ArrayList<Environment>();
+
+            // Lists of Environments to push to
+            for (String envId : whoCanUse) {
+            	Environment e = APILocator.getEnvironmentAPI().findEnvironmentById(envId);
+
+            	if(e!=null) {
+            		envsToSendTo.add(e);
+            	}
+			}
 
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
 
             List<String> ids = new ArrayList<String>();
 
-            try {
-
-                // check for the categories
-                if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
-                    //If we are trying to push users a filter date must be available
-                    if ( _assetId.contains( "users_" ) ) {
-                        Date filteringDate = dateFormat.parse( _contentFilterDate );
-                        //Get users where createdate >= ?
-                        List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
-                        if ( usersIds != null ) {
-                            for ( String id : usersIds ) {
-                                ids.add( "user_" + id );
-                            }
+            // check for the categories
+            if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
+                //If we are trying to push users a filter date must be available
+                if ( _assetId.contains( "users_" ) ) {
+                    Date filteringDate = dateFormat.parse( _contentFilterDate );
+                    //Get users where createdate >= ?
+                    List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
+                    if ( usersIds != null ) {
+                        for ( String id : usersIds ) {
+                            ids.add( "user_" + id );
                         }
-                    } else {
-                        ids.add( _assetId );
                     }
-                } else if ( _assetId.equals( "CAT" ) ) {
+                } else {
                     ids.add( _assetId );
-                } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
+                }
+            } else if ( _assetId.equals( "CAT" ) ) {
+                ids.add( _assetId );
+            } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
+                ids.add( _assetId );
+            } else {
+                // if the asset is a folder put the inode instead of the identifier
+                Folder folder = null;
+                try {
+                    folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
+                }  catch (DotSecurityException e) {
+					Logger.error(getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId);
+				}
+
+                if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
                     ids.add( _assetId );
                 } else {
-                    // if the asset is a folder put the inode instead of the identifier
-                    Folder folder = null;
-                    try {
-                        folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
-                    } catch ( DotDataException e ) {
-                    }
-
-                    if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
-                        ids.add( _assetId );
-                    } else {
-                        // if the asset is not a folder and has identifier, put it, if not, put the inode
-                        Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
-                        ids.add( iden.getId() );
-                    }
+                    // if the asset is not a folder and has identifier, put it, if not, put the inode
+                    Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
+                    ids.add( iden.getId() );
                 }
-            } catch ( DotStateException e ) {
-                ids.add( _assetId );
-            } catch ( DotSecurityException e ) {
-                e.printStackTrace();
             }
 
-            String bundleId = UUID.randomUUID().toString();
+
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
-                publisherAPI.addContentsToPublish( ids, bundleId, publishDate, getUser() );
+            	Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId());
+            	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
+
+            	publisherAPI.addContentsToPublish( ids, bundle.getId(), publishDate, getUser() );
             }
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
                 if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
-                    bundleId = UUID.randomUUID().toString();
                     Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
-                    publisherAPI.addContentsToUnpublish( ids, bundleId, expireDate, getUser() );
+
+                    Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId());
+                	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
+
+                	publisherAPI.addContentsToUnpublish( ids, bundle.getId(), expireDate, getUser() );
                 }
             }
         } catch ( DotPublisherException e ) {
-            Logger.debug( PushPublishActionlet.class, e.getMessage() );
-            throw new WorkflowActionFailureException( e.getMessage() );
+            Logger.debug( PushPublishActionlet.class, e.getMessage(), e );
+            throw new WorkflowActionFailureException( e.getMessage(), e );
         } catch ( ParseException e ) {
             Logger.debug( PushPublishActionlet.class, e.getMessage() );
             throw new WorkflowActionFailureException( e.getMessage() );
