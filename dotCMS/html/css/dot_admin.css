@@ -509,7 +509,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 
 
 
-/* JT Keep the lines below! Don't merge them away */ 
+/* JT Keep the lines below! Don't merge them away */
 .cropIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1780px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .rotateIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1820px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .saveAsIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1840px;width:18px;height:18px;display:inline-block;vertical-align:top;}
@@ -518,7 +518,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .arrowIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1820px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .rotateIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1820px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
-/* you are ok after this */ 
+/* you are ok after this */
 
 /* File Extensions */
 .imageIcon, .jpgIcon, .jpegIcon, .bmpIcon, .pctIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1540px;width:18px;height:18px;display:inline-block;vertical-align:top;}

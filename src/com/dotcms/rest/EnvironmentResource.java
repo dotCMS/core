@@ -1,0 +1,70 @@
+package com.dotcms.rest;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+
+import com.dotcms.publisher.environment.bean.Environment;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
+
+
+@Path("/environment")
+public class EnvironmentResource extends WebResource {
+
+	/**
+	 * <p>Returns a JSON representation of the environments that the Role with the given roleid can push to
+	 * <br>Each Environment node contains: id, name.
+	 *
+	 * Usage: /loadenvironments/{roleid}
+	 *
+	 */
+
+	@GET
+	@Path("/loadenvironments/{params:.*}")
+	@Produces("application/json")
+	public String loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
+		InitDataObject initData = init(params, true, request, true);
+
+		String roleId = initData.getParamsMap().get("roleid");
+
+		StringBuilder json = new StringBuilder();
+
+		json.append("[");
+		int environmentCounter = 0;
+
+		Role role = APILocator.getRoleAPI().loadRoleById(roleId);
+		User user = APILocator.getUserAPI().loadUserById(role.getRoleKey());
+		boolean isAdmin = APILocator.getUserAPI().isCMSAdmin(user);
+
+		List<Environment> environments = isAdmin?APILocator.getEnvironmentAPI().findAllEnvironments():APILocator.getEnvironmentAPI().findEnvironmentsByRole(roleId);
+
+		for(Environment e : environments) {
+
+			json.append("{id: '").append(e.getId()).append("', ");
+			json.append("name: '").append(e.getName()).append("' } ");
+
+			if(environmentCounter+1 < environments.size()) {
+				json.append(", ");
+			}
+
+			environmentCounter++;
+		}
+
+		json.append("]");
+
+
+		return json.toString();
+
+	}
+
+}
