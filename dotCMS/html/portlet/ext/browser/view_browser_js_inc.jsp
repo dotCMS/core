@@ -1450,7 +1450,8 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function previewHTMLPage (objId, referer) {
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+		var y = Math.floor(Math.random()*1123213213);
+		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer + '&random=' + y;
 	}
 
 	function editHTMLPage (objId, referer) {
@@ -1727,18 +1728,13 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
         form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>';
         form.<portlet:namespace />subcmd.value = operation;
-        form.<portlet:namespace />cmd.value = "<%= Constants.ADD %>";
+        form.cmd.value = "<%= Constants.ADD %>";
         dijit.byId('saveButton').setAttribute('disabled', true);
         if (dijit.byId('savePublishButton') != null) {
             dijit.byId('savePublishButton').setAttribute('disabled', true);
         }
 
-        if (dojo.isIE) {
-            uploaderHandler(uploader, referer);
-            uploader.submit(form);
-        } else {
-            submitForm(form);
-        }
+        submitForm(form);
 
         return true;
     }

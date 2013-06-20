@@ -1,5 +1,6 @@
 package com.dotmarketing.webdav;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
 import com.bradmcevoy.http.LockToken;
+import com.bradmcevoy.http.LockableResource;
 import com.bradmcevoy.http.LockingCollectionResource;
 import com.bradmcevoy.http.MakeCollectionableResource;
 import com.bradmcevoy.http.PropFindableResource;
@@ -245,9 +247,16 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		}
 	}
 
-	public LockToken createAndLock(String arg0, LockTimeout arg1, LockInfo arg2)
+	public LockToken createAndLock(String name, LockTimeout arg1, LockInfo arg2)
 			throws NotAuthorizedException {
-		// TODO Auto-generated method stub
+		try {
+            Resource resource = createNew(name, new ByteArrayInputStream(new byte[0]), 0L, null);
+            if(resource instanceof LockableResource) {
+                return ((LockableResource)resource).lock(arg1, arg2).getLockToken();
+            }
+        } catch (Exception e) {
+            Logger.warn(this, "can't createAndLock resource "+name+" on host "+this.getName(),e);
+        } 
 		return null;
 	}
 

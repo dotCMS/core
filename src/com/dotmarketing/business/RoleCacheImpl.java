@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.dotmarketing.util.Logger;
@@ -121,8 +122,12 @@ public class RoleCacheImpl extends RoleCache {
 	protected List<String> addRoleToUser(String userId, String roleId) {
 		String key = userGroup + userId;
 		try {
-		    cache.remove(key, userGroup);
-			return (List<String>)cache.get(key,primaryGroup);
+			List<String> roles = (List<String>)cache.get(key,userGroup);
+			if(roles == null){
+				roles = new ArrayList<String>();
+			}
+			roles.add(roleId);
+			return roles;
 		} catch (DotCacheException e) {
 			Logger.warn(this,"Cache Entry not found after adding", e);
 			return null;
@@ -175,7 +180,7 @@ public class RoleCacheImpl extends RoleCache {
 		cache.put(key, layouts, layoutGroup);		
 		List<String> l = null;
 		try {
-			l = (List<String>)cache.get(key, userGroup);
+			l = (List<String>)cache.get(key, layoutGroup);
 		} catch (DotCacheException e) {
 			Logger.warn(this, "Cache not find roleIds for user in cache after adding", e);
 		}

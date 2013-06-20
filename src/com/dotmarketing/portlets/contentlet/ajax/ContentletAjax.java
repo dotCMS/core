@@ -885,6 +885,7 @@ public class ContentletAjax {
 			searchResult.put("inode", con.getInode());
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
+			searchResult.put("__title__", con.getTitle());
 			Structure s = StructureCache.getStructureByInode(con.getStructureInode());
 			String spanClass = (s.getStructureType() ==1)
 			        ? "contentIcon"
@@ -1199,6 +1200,7 @@ public class ContentletAjax {
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		Config.CONTEXT.setAttribute("WEB_SERVER_HTTP_PORT", Integer.toString(req.getServerPort()));
+		Config.CONTEXT.setAttribute("WEB_SERVER_SCHEME", req.getScheme().toString());
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 
 		// get the struts_action from the form data
@@ -1482,7 +1484,7 @@ public class ContentletAjax {
 					for (Field field : reqs) {
 						String errorString = LanguageUtil.get(user,"message.contentlet.maxlength");
 						errorString = errorString.replace("{0}", field.getFieldName());
-						errorString = errorString.replace("{1}", "225");
+						errorString = errorString.replace("{1}", "255");
 						saveContentErrors.add(errorString);
 					}
 				}
@@ -1743,7 +1745,7 @@ public class ContentletAjax {
 					for (Field field : reqs) {
 						String errorString = LanguageUtil.get(user,"message.contentlet.maxlength");
 						errorString = errorString.replace("{0}", field.getFieldName());
-						errorString = errorString.replace("{1}", "225");
+						errorString = errorString.replace("{1}", "255");
 						saveContentErrors.add(errorString);
 					}
 				}

@@ -162,6 +162,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		dojo.style(this.fileUploadForm, { display: '' });
 		dojo.style(this.fileUploadRemoveButton, { display: 'none' });
 		dojo.style(this.fileUploadInfoButton, { display: 'none' });
+		dojo.byId(this.name+"_form").reset();
 		this.onRemove(this);
 	},
 	

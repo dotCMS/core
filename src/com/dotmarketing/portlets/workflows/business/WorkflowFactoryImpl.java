@@ -856,7 +856,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.isCommentable());
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
-			db.addParam(action.requiresCheckout());
+			db.addParam(action.isRequiresCheckout());
 			db.loadResult();
 		} else {
 			db.setSQL(sql.UPDATE_ACTION);
@@ -870,7 +870,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.isCommentable());
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
-			db.addParam(action.requiresCheckout());
+			db.addParam(action.isRequiresCheckout());
 			db.addParam(action.getId());
 			db.loadResult();
 		}
