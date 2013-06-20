@@ -110,6 +110,19 @@ public interface ContainerAPI {
 	public void saveContainerStructures(List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
+	 *
+	 * deletes the container-structure relationships for the given container
+	 *
+	 * @param container
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 *
+	 */
+	public void deleteContainerStructuresByContainer(Container container) throws DotStateException, DotDataException, DotSecurityException;
+
+	/**
 	 * Retrieves all the containers attached to the given host
 	 * @param parentPermissionable
 	 * @author David H Torres
