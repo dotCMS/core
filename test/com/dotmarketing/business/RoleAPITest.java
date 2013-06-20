@@ -1,10 +1,8 @@
 package com.dotmarketing.business;
 
 import com.dotcms.TestBase;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,7 +19,6 @@ public class RoleAPITest extends TestBase {
 
     private static DotCacheAdministrator cache;
     private static User systemUser;
-    private static Host defaultHost;
 
     //Current group keys
     private String primaryGroup = "dotCMSRoleCache";
@@ -34,11 +31,9 @@ public class RoleAPITest extends TestBase {
     public static void prepare () throws DotSecurityException, DotDataException {
 
         cache = CacheLocator.getCacheAdministrator();
-        HostAPI hostAPI = APILocator.getHostAPI();
 
         //Setting the test user
         systemUser = APILocator.getUserAPI().getSystemUser();
-        defaultHost = hostAPI.findDefaultHost( systemUser, false );
     }
 
     /**
@@ -151,6 +146,7 @@ public class RoleAPITest extends TestBase {
         List<String> rolesIds = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertTrue( rolesIds != null && !rolesIds.isEmpty() );
         assertEquals( rolesIds.size(), 3 );
+        //Verify if we get the implicit roles
         foundRoles = roleAPI.loadRolesForUser( newUser.getUserId(), true );//We know we have 3 levels here: "Publisher/Legal" -> "Reviewer" -> "Contributor" + User role
         assertTrue( foundRoles != null && !foundRoles.isEmpty() );
         assertEquals( foundRoles.size(), 4 );
@@ -158,6 +154,16 @@ public class RoleAPITest extends TestBase {
         foundRoles = roleAPI.loadRolesForUser( newUser.getUserId(), false );
         assertTrue( foundRoles != null && !foundRoles.isEmpty() );
         assertEquals( foundRoles.size(), 2 );
+
+        //Test the doesUserHaveRole(...) method
+        boolean does = roleAPI.doesUserHaveRole( newUser, rootRole.getId() );
+        assertTrue( does );
+        does = roleAPI.doesUserHaveRole( newUser, childRole.getId() );
+        assertTrue( does );
+        does = roleAPI.doesUserHaveRole( newUser, childRole2.getId() );
+        assertTrue( does );
+        does = roleAPI.doesUserHaveRole( newUser, multipleLevelsRole.getId() );
+        assertFalse( does );
     }
 
     /**
