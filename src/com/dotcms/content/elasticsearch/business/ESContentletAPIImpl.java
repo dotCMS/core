@@ -383,12 +383,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
                     Identifier id = APILocator.getIdentifierAPI().find(value);
                     if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
-                    	Contentlet fileAssetCont = null;
-                    	try {
-                    		fileAssetCont = findContentletByIdentifier(id.getId(), true, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false);
-                        } catch(DotContentletStateException se) {
-                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false);
-                        }
+                    	Contentlet fileAssetCont = findBinaryAssociatedContent(id,contentlet.getLanguageId());
                         publish(fileAssetCont, APILocator.getUserAPI().getSystemUser(), false);
                     }else if(InodeUtils.isSet(id.getInode())){
                         File file  = (File) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
@@ -4127,4 +4122,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
 		} catch (Exception e) {}
 		return result;
 	}    
+	
+	/**
+	 * This method is called when I'm publishing a contentlet and one of its fields is an IMAGE or a FILE.
+	 * 
+	 * Unlike the current version, before find the asset with the default language I try to do this by using the languageId of the 
+	 * current contentlet. 
+	 * 
+	 * In this way I can upload an asset into a language different from the default one, publish it and create another contentlet, 
+	 * into the same language, and link them.  
+	 * 
+	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+	 *
+	 * Jun 20, 2013 - 2:32:05 PM
+	 */
+	private Contentlet findBinaryAssociatedContent(Identifier id, long languageId) throws DotContentletStateException, DotSecurityException, DotDataException{
+		Contentlet fileAssetCont = null;
+    	try {
+    		fileAssetCont = findContentletByIdentifier(id.getId(), true, languageId, APILocator.getUserAPI().getSystemUser(), false);
+        } catch(DotContentletStateException se) {
+        	try{
+        		fileAssetCont = findContentletByIdentifier(id.getId(), false, languageId, APILocator.getUserAPI().getSystemUser(), false);
+        	}catch(DotContentletStateException se1) {
+        		/**
+        		 * Finally, if I didn't found the contentlet I do the "findContentletByIdentifier" with the default language, 
+        		 * like the current class version.
+        		 */
+        		fileAssetCont = findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+        	}
+        }
+    	return fileAssetCont;
+	}
 }
