@@ -395,6 +395,22 @@ public class RoleFactoryImpl extends RoleFactory {
 	}
 
 	@Override
+	protected List<String> findUserIdsForRole(Role role, boolean includeInherited) throws DotDataException {
+		List<String> result = new ArrayList<String>();
+		if(!includeInherited){
+			return findUserIdsForRole(role);
+		}
+		DotConnect dc = new DotConnect();
+		dc.setSQL("select distinct user_id from cms_role cr join users_cms_roles ur on (cr.id = ur.role_id) where db_fqn LIKE ?");
+		dc.addParam("%" + role.getId());
+		List<Map<String,Object>> rows = dc.loadObjectResults();
+		for (Map<String, Object> row : rows) {
+			result.add(row.get("user_id").toString());
+		}
+		return result;
+	}
+	
+	@Override
 	protected List<String> findUserIdsForRole(Role role) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
 		hu.setQuery("from " + UsersRoles.class.getName() + " where role_id = ?");
