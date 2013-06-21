@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.TestBase;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
@@ -86,6 +87,8 @@ public class RoleAPITest extends TestBase {
         //ADDING NEW RECORDS
         //-----------------------------------------------
 
+        HibernateUtil.startTransaction();
+
         //Creating a new test user
         String time = String.valueOf( new Date().getTime() );
         User newUser = userAPI.createUser( time + "@test.com", time + "@test.com" );
@@ -147,6 +150,8 @@ public class RoleAPITest extends TestBase {
         List<RoleCache.UserRoleCacheHelper> userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
 
+        HibernateUtil.commitTransaction();
+
         //Verify if we find the implicit roles
         foundRoles = roleAPI.loadRolesForUser( newUser.getUserId(), true );//We know we have too 3 levels here: "Test Root Role" -> "Test Child Role 1" -> "Test Child Role 2" + User role
         assertTrue( foundRoles != null && !foundRoles.isEmpty() );
@@ -175,10 +180,12 @@ public class RoleAPITest extends TestBase {
         //REMOVING RECORDS
         //-----------------------------------------------
         //Delete the childRole2
+        HibernateUtil.startTransaction();
         String key = primaryGroup + childRole2.getId();
         roleAPI.delete( childRole2 );//Should clean up the cache
         Object cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
+        HibernateUtil.commitTransaction();
 
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
@@ -193,10 +200,12 @@ public class RoleAPITest extends TestBase {
 
         //--------
         //Delete the childRole
+        HibernateUtil.startTransaction();
         key = primaryGroup + childRole.getId();
         roleAPI.delete( childRole );//Should clean up the cache
         cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
+        HibernateUtil.commitTransaction();
 
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
@@ -211,10 +220,13 @@ public class RoleAPITest extends TestBase {
 
         //--------
         //Delete the rootRole
+        HibernateUtil.startTransaction();
         key = primaryGroup + rootRole.getId();
         roleAPI.delete( rootRole );//Should clean up the cache
         cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
+        HibernateUtil.commitTransaction();
+
         //Cache
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
