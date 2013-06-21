@@ -57,13 +57,13 @@ public abstract class RoleCache implements Cachable{
 		/**
 		 * @return the roleId
 		 */
-		public String getRoleId() {
+		protected String getRoleId() {
 			return roleId;
 		}
 		/**
 		 * @return the inherited
 		 */
-		public boolean isInherited() {
+		protected boolean isInherited() {
 			return inherited;
 		}
 	}
