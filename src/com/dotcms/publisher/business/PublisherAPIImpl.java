@@ -49,13 +49,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 										"asset, "+
 										"entered_date, "+
 										"language_id, "+
-										"in_error, "+
 										"publish_date, "+
-										"server_id, "+
 										"type, "+
-										"bundle_id, " +
-										"target";
-	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?,?,?,?" ;
+										"bundle_id ";
+	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?" ;
 
 //
 	//"last_results, "+
@@ -162,14 +159,10 @@ public class PublisherAPIImpl extends PublisherAPI{
                     dc.addObject( identifier ); //asset
                     dc.addParam( new Date() ); // entered date
                     dc.addObject( 1 ); // language id
-                    dc.addParam( false );    //in error field
 
-                    //TODO How do I get new columns value?
                     dc.addParam( publishDate );
-                    dc.addObject( null ); // server id
                     dc.addObject( type );
                     dc.addObject( bundleId );
-                    dc.addObject( null ); // target
 
                     dc.loadResult();
 
@@ -272,14 +265,10 @@ public class PublisherAPIImpl extends PublisherAPI{
                     dc.addObject( identifier ); //asset
                     dc.addParam( new Date() );
                     dc.addObject( 1 );
-                    dc.addParam( false );    //in error field
 
-                    //TODO How do I get new columns value?
                     dc.addParam( unpublishDate );
-                    dc.addObject( null );
                     dc.addObject( type );
                     dc.addObject( bundleId );
-                    dc.addObject( null );
 
                     dc.loadResult();
 

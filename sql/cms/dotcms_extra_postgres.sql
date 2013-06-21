@@ -753,6 +753,13 @@ CREATE TABLE publishing_end_point (
 	auth_key text,
 	sending bool);
 
+create table publishing_environment(
+  	id varchar(36) NOT NULL  primary key,
+  	name varchar(255) NOT NULL unique,
+  	push_to_all bool NOT NULL
+);
+
+
 create table sitesearch_audit (
     job_id varchar(36),
     job_name varchar(255) not null,
@@ -771,3 +778,34 @@ create table sitesearch_audit (
     index_name varchar(100) not null,
     primary key(job_id,fire_date)
 );
+
+
+drop table publishing_queue;
+
+CREATE TABLE publishing_queue (
+  id bigserial PRIMARY KEY NOT NULL,
+  operation int8,
+  asset VARCHAR(2000) NOT NULL,
+  language_id  int8 NOT NULL,
+  entered_date TIMESTAMP,
+  publish_date TIMESTAMP,
+  type VARCHAR(256),
+  bundle_id VARCHAR(256)
+);
+
+create table publishing_bundle(
+  id varchar(36) NOT NULL  primary key,
+  name varchar(255) NOT NULL unique,
+  publish_date TIMESTAMP,
+  expire_date TIMESTAMP,
+  owner varchar(100)
+);
+
+create table publishing_bundle_environment(
+  id varchar(36) NOT NULL primary key,
+  bundle_id varchar(36) NOT NULL,
+  environment_id varchar(36) NOT NULL
+);
+
+alter table publishing_bundle_environment add constraint FK_bundle_id foreign key (bundle_id) references publishing_bundle(id);
+alter table publishing_bundle_environment add constraint FK_environment_id foreign key (environment_id) references publishing_environment(id);

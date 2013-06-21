@@ -38,7 +38,7 @@
     <%--DATE FILTERING BOX--%>
 
     <div class="fieldWrapper">
-        <div class="fieldName" style="width:80px">
+        <div class="fieldName" style="width:120px">
             <%= LanguageUtil.get(pageContext, "I-want-to") %>:
         </div>
         <div class="fieldValue">
@@ -57,7 +57,7 @@
     <br>
     <div class="fieldWrapper" id="publishTimeDiv">
 
-        <div class="fieldName" style="width:80px">
+        <div class="fieldName" style="width:120px">
             <%= LanguageUtil.get(pageContext, "Publish") %>:
         </div>
         <div class="fieldValue">
@@ -78,7 +78,7 @@
     </div>
 
     <div class="fieldWrapper" id="expireTimeDiv" style="display:none">
-        <div class="fieldName" style="width:80px"><%= LanguageUtil.get(pageContext, "publisher_Expire") %> :
+        <div class="fieldName" style="width:120px"><%= LanguageUtil.get(pageContext, "publisher_Expire") %> :
         </div>
         <div class="fieldValue">
             <input
@@ -95,7 +95,31 @@
         <div class="clear"></div>
     </div>
 
-    <div class="buttonRow">
+
+	<div class="fieldWrapper">
+		<div class="fieldName" style="width: 120px">
+			<%=LanguageUtil.get(pageContext,
+					"publisher_dialog_choose_environment")%>:
+		</div>
+		<div class="fieldValue">
+			<input data-dojo-type="dijit/form/FilteringSelect"
+				data-dojo-props="store:pushHandler.environmentStore, searchAttr:'name'"
+				name="environmentSelect" id="environmentSelect" />
+			<button dojoType="dijit.form.Button"
+				onClick='pushHandler.addSelectedToWhereToSend()' iconClass="addIcon">
+				<%=LanguageUtil.get(pageContext, "add")%>
+			</button>
+			<div class="wfWhoCanUseDiv">
+				<table class="listingTable" id="whereToSendTable">
+				</table>
+			</div>
+			<input type="hidden" name="whereToSend" id="whereToSend" value="">
+		</div>
+		<div class="clear"></div>
+	</div>
+
+
+	<div class="buttonRow">
         <button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="pushHandler.remotePublish()" type="button">
             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
         </button>
@@ -104,5 +128,7 @@
         </button>
 
     </div>
+
+    <input id="whereToSendRequired" type="hidden" value="<%=LanguageUtil.get(pageContext, "publisher_dialog_environment_mandatory")%>" />
 
 </div>

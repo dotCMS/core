@@ -9,8 +9,12 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
+import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.publisher.bundle.business.BundleAPIImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPIImpl;
+import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.publisher.environment.business.EnvironmentAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -78,7 +82,7 @@ import com.dotmarketing.util.Logger;
 
 
 /**
- * APILocator is a factory method (pattern) to get single(ton) service objects. 
+ * APILocator is a factory method (pattern) to get single(ton) service objects.
  * This is a kind of implementation, and there may be others.
  * @author Carlos Rivas (crivas)
  * @author Jason Tesser
@@ -136,18 +140,18 @@ public class APILocator extends Locator<APIIndex>{
 	public static ContentletAPI getContentletAPIntercepter() {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API_INTERCEPTER);
 	}
-	
+
 	/**
 	 * The actual dotcms contentletAP implementation.  This should only
 	 * be needed if you don't want the pre/post hooks to fire. A pre hook
-	 * that is on the checkin method might need to use this as it doesn't want 
-	 * all the pre hooks to fire. 
+	 * that is on the checkin method might need to use this as it doesn't want
+	 * all the pre hooks to fire.
 	 * @return
 	 */
 	public static ContentletAPI getContentletAPIImpl() {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API);
 	}
-	
+
 	/**
 	 * This is the contentletAPI which an application should use to do ALL
 	 * normal contentletAPI logic
@@ -156,7 +160,7 @@ public class APILocator extends Locator<APIIndex>{
 	public static ContentletAPI getContentletAPI() {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API_INTERCEPTER);
 	}
-	
+
 
 	public static IdentifierAPI getIdentifierAPI() {
 		return (IdentifierAPI)getInstance(APIIndex.IDENTIFIER_API);
@@ -177,7 +181,7 @@ public class APILocator extends Locator<APIIndex>{
 	public static WidgetAPI getWidgetAPI(){
 		return (WidgetAPI)getInstance(APIIndex.WIDGET_API);
 	}
-	
+
 	public static FormAPI getFormAPI(){
 		return (FormAPI)getInstance(APIIndex.FORM_API);
 	}
@@ -185,7 +189,7 @@ public class APILocator extends Locator<APIIndex>{
 	public static CalendarReminderAPI getCalendarReminderAPI(){
 		return (CalendarReminderAPI) getInstance(APIIndex.CALENDAR_REMINDER_API);
 	}
-	
+
 	public static PollsAPI getPollAPI(){
 		return (PollsAPI) getInstance(APIIndex.POLL_API);
 	}
@@ -193,24 +197,24 @@ public class APILocator extends Locator<APIIndex>{
 	public static ChainAPI getChainAPI(){
 		return (ChainAPI) getInstance(APIIndex.CHAIN_API);
 	}
-	
+
 	public static PluginAPI getPluginAPI(){
 		return (PluginAPI) getInstance(APIIndex.PLUGIN_API);
 	}
-	
+
 	public static LanguageAPI getLanguageAPI(){
 		return (LanguageAPI) getInstance(APIIndex.LANGUAGE_API);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static DistributedJournalAPI<String> getDistributedJournalAPI(){
 		return (DistributedJournalAPI<String>) getInstance(APIIndex.DISTRIBUTED_JOURNAL_API);
 	}
-	
+
 	public static FolderAPI getFolderAPI(){
 		return (FolderAPI) getInstance(APIIndex.FOLDER_API);
 	}
-	
+
 	public static HostAPI getHostAPI(){
 		return (HostAPI) getInstance(APIIndex.HOST_API);
 	}
@@ -222,34 +226,34 @@ public class APILocator extends Locator<APIIndex>{
 	public static UserProxyAPI getUserProxyAPI(){
 		return (UserProxyAPI) getInstance(APIIndex.USER_PROXY_API);
 	}
-	
+
 	public static LayoutAPI getLayoutAPI(){
 		return (LayoutAPI) getInstance(APIIndex.LAYOUT_API);
 	}
-	
+
 	public static HostVariableAPI getHostVariableAPI(){
 		return (HostVariableAPI) getInstance(APIIndex.HOST_VARIABLE_API);
 	}
-		
+
 	public static FileAPI getFileAPI(){
 		return (FileAPI) getInstance(APIIndex.FILE_API);
 	}
-	
+
 	public static HTMLPageAPI getHTMLPageAPI(){
 		return (HTMLPageAPI) getInstance(APIIndex.HTMLPAGE_API);
 	}
-	
+
 	public static MenuLinkAPI getMenuLinkAPI(){
 		return (MenuLinkAPI) getInstance(APIIndex.MENULINK_API);
 	}
-	
+
 	public static VirtualLinkAPI getVirtualLinkAPI(){
 		return (VirtualLinkAPI) getInstance(APIIndex.VIRTUALLINK_API);
 	}
 	public static DashboardAPI getDashboardAPI(){
 		return (DashboardAPI) getInstance(APIIndex.DASHBOARD_API);
 	}
-	
+
 	public static SiteSearchAPI getSiteSearchAPI(){
 		return (SiteSearchAPI) getInstance(APIIndex.SITESEARCH_API);
 	}
@@ -262,15 +266,15 @@ public class APILocator extends Locator<APIIndex>{
 	public static WorkflowAPI getWorkflowAPI(){
 		return (WorkflowAPI) getInstance(APIIndex.WORKFLOW_API);
 	}
-	
+
 	public static TagAPI getTagAPI(){
 		return (TagAPI) getInstance(APIIndex.TAG_API);
 	}
-	
+
 	public static IndiciesAPI getIndiciesAPI() {
 	    return (IndiciesAPI) getInstance(APIIndex.INDICIES_API);
 	}
-	
+
 	public static ContentletIndexAPI getContentletIndexAPI() {
 	    return (ContentletIndexAPI) getInstance(APIIndex.CONTENLET_INDEX_API);
 	}
@@ -291,6 +295,12 @@ public class APILocator extends Locator<APIIndex>{
 	}
 	public static SiteSearchAuditAPI getSiteSearchAuditAPI() {
 	    return (SiteSearchAuditAPI)getInstance(APIIndex.SITE_SEARCH_AUDIT_API);
+	}
+	public static EnvironmentAPI getEnvironmentAPI() {
+	    return (EnvironmentAPI)getInstance(APIIndex.ENVIRONMENT_API);
+	}
+	public static BundleAPI getBundleAPI() {
+		return (BundleAPI)getInstance(APIIndex.BUNDLE_API);
 	}
 	private static Object getInstance(APIIndex index) {
 
@@ -325,7 +335,7 @@ public class APILocator extends Locator<APIIndex>{
 }
 
 enum APIIndex
-{ 
+{
 	CATEGORY_API,
 	CONTENTLET_API,
 	CONTENTLET_API_INTERCEPTER,
@@ -371,14 +381,16 @@ enum APIIndex
 	TIME_MACHINE_API,
 	PUBLISHER_ENDPOINT_API,
 	STRUCTURE_API,
-	SITE_SEARCH_AUDIT_API;
-	
+	SITE_SEARCH_AUDIT_API,
+	ENVIRONMENT_API,
+	BUNDLE_API;
+
 	Object create() {
 		switch(this) {
 		case PERMISSION_API: return new PermissionBitAPIImpl(FactoryLocator.getPermissionFactory());
 		case ROLE_API: return new RoleAPIImpl();
 		case USER_API: return new UserAPIImpl();
-		case EVENT_API: return new EventAPIImpl(); 
+		case EVENT_API: return new EventAPIImpl();
 		case CATEGORY_API: return new CategoryAPIImpl();
 		case CONTENTLET_API: return new  ESContentletAPIImpl();
 		case CONTENTLET_API_INTERCEPTER: return new ContentletAPIInterceptor();
@@ -409,7 +421,7 @@ enum APIIndex
 		case SITESEARCH_API: return new ESSiteSearchAPI();
 		case FILEASSET_API: return new FileAssetAPIImpl();
 		case VERSIONABLE_API: return new VersionableAPIImpl();
-		case WORKFLOW_API : return new WorkflowAPIImpl(); 
+		case WORKFLOW_API : return new WorkflowAPIImpl();
 		case TAG_API: return new TagAPIImpl();
 		case INDICIES_API: return new IndiciesAPIImpl();
 		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
@@ -420,6 +432,8 @@ enum APIIndex
 		case PUBLISHER_ENDPOINT_API: return new PublishingEndPointAPIImpl(FactoryLocator.getPublisherEndPointFactory());
 		case STRUCTURE_API: return new StructureAPIImpl();
 		case SITE_SEARCH_AUDIT_API: return new SiteSearchAuditAPIImpl();
+		case ENVIRONMENT_API: return new EnvironmentAPIImpl();
+		case BUNDLE_API: return new BundleAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
