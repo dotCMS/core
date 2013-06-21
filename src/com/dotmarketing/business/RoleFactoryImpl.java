@@ -240,7 +240,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	@Override
 	protected void removeRoleFromUser(Role role, User user)	throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL("delete from users_cms_roles where user_id like ? and role_id like ?");
+		dc.setSQL("delete from users_cms_roles where user_id = ? and role_id = ?");
 		dc.addParam(user.getUserId());
 		dc.addParam(role.getId());
 		dc.loadResult();
@@ -346,14 +346,6 @@ public class RoleFactoryImpl extends RoleFactory {
 
 	@Override
 	protected void delete(Role role) throws DotDataException {
-		
-		DotConnect dc1 = new DotConnect();
-		dc1.setSQL("select distinct user_id from users_cms_roles where users_cms_roles.role_id  = ?");
-		dc1.addParam(role.getId());
-		List<Map<String,Object>> rows = dc1.loadObjectResults();
-		for (Map<String, Object> map : rows) {
-			rc.remove(map.get("user_id").toString());
-		}
 		
 		DotConnect dc = new DotConnect();
 		dc.setSQL("delete from users_cms_roles where role_id = ?");

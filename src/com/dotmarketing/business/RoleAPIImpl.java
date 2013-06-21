@@ -115,7 +115,7 @@ public class RoleAPIImpl implements RoleAPI {
 		rf.save(r);
 		List<User> users = findUsersForRole(r.getId());
 		if(users != null)
-			for(User u: findUsersForRole(r.getId())) {
+			for(User u: users) {
 				removeRoleFromUser(r, u);
 			}
 		PermissionAPI permAPI = APILocator.getPermissionAPI();
