@@ -835,6 +835,13 @@ CREATE TABLE publishing_end_point (
 	auth_key nclob,
 	sending number(1,0) DEFAULT 0);
 
+create table publishing_environment(
+  	id varchar(36) NOT NULL  primary key,
+  	name varchar(255) NOT NULL unique,
+  	push_to_all tinyint NOT NULL
+);
+
+
 create table sitesearch_audit (
     job_id varchar2(36),
     job_name varchar2(255) not null,
@@ -853,3 +860,37 @@ create table sitesearch_audit (
     index_name varchar2(100) not null,
     primary key(job_id,fire_date)
 );
+
+
+drop table publishing_queue;
+
+CREATE TABLE publishing_queue (
+    id INTEGER PRIMARY KEY NOT NULL,
+    operation number(19,0),
+    asset VARCHAR2(2000) NOT NULL,
+    language_id number(19,0) NOT NULL,
+    entered_date TIMESTAMP,
+    publish_date TIMESTAMP,
+    type VARCHAR2(256),
+    bundle_id VARCHAR2(256)
+);
+
+CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
+CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on publishing_queue for each row begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;
+
+create table publishing_bundle(
+	  id varchar2(36) NOT NULL  primary key,
+	  name varchar2(255) NOT NULL unique,
+	  publish_date TIMESTAMP,
+	  expire_date TIMESTAMP,
+	  owner varchar2(100)
+);
+
+create table publishing_bundle_environment(
+	  id varchar2(36) NOT NULL primary key,
+	  bundle_id varchar2(36) NOT NULL,
+	  environment_id varchar2(36) NOT NULL
+);
+
+alter table publishing_bundle_environment add constraint FK_bundle_id foreign key (bundle_id) references publishing_bundle(id);
+alter table publishing_bundle_environment add constraint FK_environment_id foreign key (environment_id) references publishing_environment(id);

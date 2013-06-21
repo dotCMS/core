@@ -8,7 +8,8 @@ public class PushPublishLogger {
 
     private static String filename = "dotcms-pushpublish.log";
 
-    public static void log ( Class cl, String msg ) {
+    @SuppressWarnings("rawtypes")
+	public static void log ( Class cl, String msg ) {
 
         if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
             Logger.info( cl, msg );
@@ -16,7 +17,8 @@ public class PushPublishLogger {
         }
     }
 
-    public static void log ( Class cl, String msg, String bundleId ) {
+    @SuppressWarnings("rawtypes")
+	public static void log ( Class cl, String msg, String bundleId ) {
 
         if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
             Logger.info( cl, " : [BundleID: "+bundleId+"] " + msg  );
@@ -24,7 +26,8 @@ public class PushPublishLogger {
         }
     }
 
-    public static void log ( Class cl, String msg, String bundleId, User user ) {
+    @SuppressWarnings("rawtypes")
+	public static void log ( Class cl, String msg, String bundleId, User user ) {
 
         if ( user == null || user.getUserId() == null ) {
             log( cl, msg , bundleId);
