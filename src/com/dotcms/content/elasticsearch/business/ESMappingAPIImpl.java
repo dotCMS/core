@@ -4,7 +4,10 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,12 +16,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.tika.Tika;
+import org.apache.tika.mime.MimeType;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -251,7 +260,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	public Map<String,Object> toMap(Contentlet con) throws DotMappingException {
 		try {
-		    long time=System.currentTimeMillis();
 		    
 			Map<String,String> m = new HashMap<String,String>();
 			Map<String,Object> mlowered=new HashMap<String,Object>();
@@ -308,12 +316,36 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             }
             
             for(Entry<String,String> entry : m.entrySet()){
-                mlowered.put(entry.getKey().toLowerCase(), entry.getValue().toLowerCase());
-                mlowered.put(entry.getKey().toLowerCase() + "_dotraw", entry.getValue().toLowerCase());
+                final String lcasek=entry.getKey().toLowerCase();
+                final String lcasev=entry.getValue().toLowerCase();
+                mlowered.put(lcasek, lcasev);
+                mlowered.put(lcasek + "_dotraw", lcasev);
+            }
+            
+            if(con.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+                // see if we have content metadata
+                File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(con.getInode());
+                if(contentMeta.exists() && contentMeta.length()>0) {
+                    String type=new Tika().detect(contentMeta);
+                    
+                    InputStream input=new FileInputStream(contentMeta);
+                    
+                    if(type.equals("application/x-gzip")) {
+                        // gzip compression were used
+                        input = new GZIPInputStream(input);
+                    }
+                    else if(type.equals("application/bzip2")) {
+                        // bzip2 compression were used
+                        input = new BZip2CompressorInputStream(input);
+                    }
+                    
+                    String metadata=(String)mlowered.remove("metadata");
+                    Map<String,Object> metamap=KeyValueFieldUtil.JSONValueToHashMap(metadata);
+                    metamap.put("content", IOUtils.toString(input)); // this is the dangerous call! everything in memory!
+                    mlowered.put("metadata", metamap);
+                }
             }
 	        
-            Logger.warn(this, "toMap time: "+(System.currentTimeMillis()-time),new RuntimeException());
-            
             return mlowered;
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
