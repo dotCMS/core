@@ -358,9 +358,16 @@ public class RoleFactoryImpl extends RoleFactory {
 		if(r.getParent().equals(r.getId())){
 			rc.clearRootRoleCache();
 		}
-		rc.remove(r.getId());
-		rc.remove(r.getRoleKey());
+
 		rc.clearRoleCache();
+		
+		DotConnect dc1 = new DotConnect();
+		dc1.setSQL("select distinct user_id from users_cms_roles where users_cms_roles.role_id  = ?");
+		dc1.addParam(r.getId());
+		List<Map<String,Object>> rows = dc1.loadObjectResults();
+		for (Map<String, Object> map : rows) {
+			rc.remove(map.get("user_id").toString());
+		}
 
 		AdminLogger.log(RoleFactoryImpl.class, "delete", "Role deleted Id :"+r.getId());
 
