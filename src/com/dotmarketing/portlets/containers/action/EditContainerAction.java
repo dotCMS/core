@@ -164,11 +164,11 @@ public class EditContainerAction extends DotPortletAction implements
 							return;
 						}
 					}
-					
+
 					Container cont=(Container)req.getAttribute(WebKeys.CONTAINER_EDIT);
 					if(cont.isLocked())
 					    APILocator.getVersionableAPI().setLocked(cont, false, user);
-					
+
 					try{
 
 
@@ -213,6 +213,8 @@ public class EditContainerAction extends DotPortletAction implements
 			{
 				Logger.debug(this,"Calling Full Delete Method");
 				WebAsset webAsset = (WebAsset) req.getAttribute(WebKeys.CONTAINER_EDIT);
+				APILocator.getContainerAPI().deleteContainerStructuresByContainer((Container)webAsset);
+
 				if(WebAssetFactory.deleteAsset(webAsset,user)) {
 					SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
 				} else {
@@ -236,6 +238,7 @@ public class EditContainerAction extends DotPortletAction implements
 				for(String inode  : inodes)
 				{
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Container.class);
+					APILocator.getContainerAPI().deleteContainerStructuresByContainer((Container)webAsset);
 					returnValue &= WebAssetFactory.deleteAsset(webAsset,user);
 				}
 				if(returnValue)
@@ -449,7 +452,7 @@ public class EditContainerAction extends DotPortletAction implements
         if (UtilMethods.isSet(container.getLuceneQuery())) {
             cf.setDynamic(true);
         }
-        
+
 		// BEGIN GRAZIANO issue-12-dnd-template
         if(UtilMethods.isSet(container.getCode())){
 			if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
@@ -535,12 +538,12 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 		container.setStructureInode(currentStructure.getInode());
 		//container.addParent(currentStructure);
-		
+
 		// BEGIN GRAZIANO issue-12-dnd-template
 		if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
 			container.setForMetadata(true);
 		// END GRAZIANO issue-12-dnd-template
-		
+
 		// it saves or updates the asset
 		if (InodeUtils.isSet(currentContainer.getInode())) {
 			Identifier identifier = APILocator.getIdentifierAPI().find(currentContainer);
