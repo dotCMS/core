@@ -48,33 +48,22 @@ public abstract class RoleCache implements Cachable{
 	protected class UserRoleCacheHelper{
 		private String roleId;
 		private boolean inherited;
-		
-		public UserRoleCacheHelper() {
-			// TODO Auto-generated constructor stub
-		}
-		
-		/**
-		 * @param roleId the roleId to set
-		 */
-		public void setRoleId(String roleId) {
+				
+		protected UserRoleCacheHelper(String roleId, boolean inherited){
 			this.roleId = roleId;
-		}
-		/**
-		 * @param inherited the inherited to set
-		 */
-		public void setInherited(boolean inherited) {
 			this.inherited = inherited;
 		}
+		
 		/**
 		 * @return the roleId
 		 */
-		public String getRoleId() {
+		protected String getRoleId() {
 			return roleId;
 		}
 		/**
 		 * @return the inherited
 		 */
-		public boolean isInherited() {
+		protected boolean isInherited() {
 			return inherited;
 		}
 	}
