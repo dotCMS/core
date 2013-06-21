@@ -434,9 +434,11 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
     }
 
-
-
-
-
+    @Override
+    public File getContentMetadataFile(String inode) {
+        return new File(APILocator.getFileAPI().getRealAssetsRootPath()+File.separator+
+                inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+inode+File.separator+
+                "metaData"+File.separator+"content");
+    }
 
 }
