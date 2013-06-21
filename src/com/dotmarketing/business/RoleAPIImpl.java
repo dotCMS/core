@@ -103,6 +103,11 @@ public class RoleAPIImpl implements RoleAPI {
 	
     public void delete(Role role) throws DotDataException, DotStateException, DotSecurityException{
 		Role r = loadRoleById(role.getId());
+		
+		for(String uid : rf.findUserIdsForRole(role, true)){
+			CacheLocator.getRoleCache().remove(uid);
+		}
+		
 		if(r.isLocked()){
 			throw new DotStateException("Cannot delete locked role");
 		}
@@ -113,15 +118,12 @@ public class RoleAPIImpl implements RoleAPI {
 		r.setEditLayouts(true);
 		r.setEditUsers(true);
 		rf.save(r);
+				
 		List<User> users = findUsersForRole(r.getId());
 		if(users != null){
 			for(User u: users) {
 				removeRoleFromUser(r, u);
 			}
-		}
-		
-		for(String uid : rf.findUserIdsForRole(role, true)){
-			CacheLocator.getRoleCache().remove(uid);
 		}
 		
 		PermissionAPI permAPI = APILocator.getPermissionAPI();
