@@ -180,18 +180,16 @@ public class RoleAPITest extends TestBase {
         Object cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
 
-        //TODO: It is failing, should return null or 3??, it is still returning 4!
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
-        //assertNull( userRoles );//FIXME
-        //TODO: It is failing, should return null or 3??, it is still returning 4!
+        assertNull( userRoles );
 
         foundRoles = roleAPI.loadRolesForUser( newUser.getUserId(), true );//2 levels: "Test Root Role" -> "Test Child Role 1" + User role
         assertTrue( foundRoles != null && !foundRoles.isEmpty() );
         assertEquals( foundRoles.size(), 3 );
         //Cache
-        /*userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );//2 levels: "Test Root Role" -> "Test Child Role 1" + User role
+        userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );//2 levels: "Test Root Role" -> "Test Child Role 1" + User role
         assertTrue( userRoles != null && !userRoles.isEmpty() );
-        assertEquals( userRoles.size(), 3 );*/
+        assertEquals( userRoles.size(), 3 );
 
         //--------
         //Delete the childRole
@@ -200,18 +198,16 @@ public class RoleAPITest extends TestBase {
         cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
 
-        //TODO: It is failing, should return null or 2??, it is still returning 4!
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
-        //assertNull( userRoles );//FIXME
-        //TODO: It is failing, should return null or 2??, it is still returning 4!
+        assertNull( userRoles );
 
         foundRoles = roleAPI.loadRolesForUser( newUser.getUserId(), true );//1 level: "Test Root Role" + User role
         assertTrue( foundRoles != null && !foundRoles.isEmpty() );
         assertEquals( foundRoles.size(), 2 );
         //Cache
-        /*userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );//1 level: "Test Root Role" + User role
+        userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );//1 level: "Test Root Role" + User role
         assertTrue( userRoles != null && !userRoles.isEmpty() );
-        assertEquals( userRoles.size(), 2 );*/
+        assertEquals( userRoles.size(), 2 );
 
         //--------
         //Delete the rootRole
