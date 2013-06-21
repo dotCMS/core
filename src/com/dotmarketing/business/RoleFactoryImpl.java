@@ -110,12 +110,8 @@ public class RoleFactoryImpl extends RoleFactory {
 				helpers = new ArrayList<RoleCache.UserRoleCacheHelper>();
 				LinkedList<Role> rolesToProcess = new LinkedList<Role>();
 				Set<String> rids = new HashSet<String>();
-				StringBuffer buffy = new StringBuffer();
-				buffy.append("select distinct role_id ");
-				buffy.append("from users_cms_roles ");
-				buffy.append("where users_cms_roles.user_id  = ? ");
 				DotConnect dc = new DotConnect();
-				dc.setSQL(buffy.toString());
+				dc.setSQL("select distinct role_id from users_cms_roles where users_cms_roles.user_id  = ?");
 				dc.addParam(userId);
 				List<Map<String,Object>> rows = dc.loadObjectResults();
 				for (Map<String, Object> map : rows) {
@@ -136,13 +132,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				while(!rolesToProcess.isEmpty()) {
 					Role r = rolesToProcess.poll();
 					if(r ==null) continue;
-					UserRoleCacheHelper h = rc.new UserRoleCacheHelper();
-					h.setRoleId(r.getId());
-					if(rids.contains(r.getId())){
-						h.setInherited(false);
-					}else{
-						h.setInherited(true);
-					}
+					UserRoleCacheHelper h = rc.new UserRoleCacheHelper(r.getId(),rids.contains(r.getId())?false:true);
 					helpers.add(h);
 					if(includeImplicitRoles || rids.contains(r.getId())){
 						roles.add(r);
@@ -158,7 +148,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			return roles;
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage() + " Unable to load the user roles for user " + userId == null? "not passed in":userId, e);
-			throw new DotDataException(e.getMessage(), e);
+			throw new DotDataException(e.getMessage() + " Unable to load the user roles for user " + userId == null? "not passed in":userId, e);
 		}
 	}
 
