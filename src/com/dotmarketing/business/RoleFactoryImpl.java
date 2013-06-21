@@ -371,7 +371,7 @@ public class RoleFactoryImpl extends RoleFactory {
      * Returns for a given Role the users associated with that role
      *
      * @param role
-     * @param includeInherited Searches for the Inherited users the given role
+     * @param includeInherited Searches for the Inherited users of given role
      * @return
      * @throws DotDataException
      */
@@ -399,22 +399,26 @@ public class RoleFactoryImpl extends RoleFactory {
         List<Map<String, Object>> rows = dc.loadObjectResults();
 
         List<String> roles = new ArrayList<String>();
-        for ( Map<String, Object> row : rows ) {
+        if ( rows != null ) {
+            for ( Map<String, Object> row : rows ) {
 
-            //Parse each role id from this result
-            String fqn = row.get( "db_fqn" ).toString();
-            if ( fqn != null && !fqn.isEmpty() ) {
+                //Parse each role id from this result
+                String fqn = row.get( "db_fqn" ).toString();
+                if ( fqn != null && !fqn.isEmpty() ) {
 
-                String[] rolesIds = fqn.split( "-->" );
-                for ( String id : rolesIds ) {
-                    if ( !roles.contains( id.trim() ) ) {
-                        roles.add( id.trim() );
+                    String[] rolesIds = fqn.split( "-->" );
+                    for ( String id : rolesIds ) {
+                        if ( !roles.contains( id.trim() ) ) {
+                            roles.add( id.trim() );
+                        }
                     }
                 }
             }
         }
         if ( !roles.isEmpty() ) {
 
+            int maxRecords = 100;
+            int current = 0;
             StringBuffer inQuery = new StringBuffer();
             for ( String roleId : roles ) {
                 if ( inQuery.length() > 0 ) {
@@ -422,12 +426,42 @@ public class RoleFactoryImpl extends RoleFactory {
                 } else {
                     inQuery.append( "'" ).append( roleId ).append( "'" );
                 }
+
+                current++;
+                //Another group of 100 roles ids is ready...
+                if ( current >= maxRecords ) {
+                    result.addAll( getUserIdsForRoleIds( inQuery ) );
+                    inQuery = new StringBuffer();
+                    current = 0;
+                }
             }
 
-            dc = new DotConnect();
-            dc.setSQL( "select distinct user_id from users_cms_roles where role_id in ( " + inQuery.toString() + " )" );
-            dc.addParam( inQuery );
-            rows = dc.loadObjectResults();
+            //And if something left..
+            if ( inQuery.length() > 0 ) {
+                result.addAll( getUserIdsForRoleIds( inQuery ) );
+            }
+
+        }
+
+        return result;
+    }
+
+    /**
+     * Returns a list of user ids related to a list of given role ids
+     *
+     * @param inRolesIdsQuery
+     * @return
+     * @throws DotDataException
+     */
+    private List<String> getUserIdsForRoleIds ( StringBuffer inRolesIdsQuery ) throws DotDataException {
+
+        List<String> result = new ArrayList<String>();
+
+        DotConnect dc = new DotConnect();
+        dc.setSQL( "select distinct user_id from users_cms_roles where role_id in ( " + inRolesIdsQuery.toString() + " )" );
+        dc.addParam( inRolesIdsQuery );
+        List<Map<String, Object>> rows = dc.loadObjectResults();
+        if ( rows != null ) {
             for ( Map<String, Object> row : rows ) {
                 result.add( row.get( "user_id" ).toString() );
             }
