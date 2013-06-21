@@ -354,12 +354,6 @@ public class RoleFactoryImpl extends RoleFactory {
 		hu.setQuery("from com.dotmarketing.business.Role where id = ?");
 		hu.setParam(role.getId());
 		Role r = (Role)hu.load();
-		HibernateUtil.delete(r);
-		if(r.getParent().equals(r.getId())){
-			rc.clearRootRoleCache();
-		}
-
-		rc.clearRoleCache();
 		
 		DotConnect dc1 = new DotConnect();
 		dc1.setSQL("select distinct user_id from users_cms_roles where users_cms_roles.role_id  = ?");
@@ -368,7 +362,14 @@ public class RoleFactoryImpl extends RoleFactory {
 		for (Map<String, Object> map : rows) {
 			rc.remove(map.get("user_id").toString());
 		}
+		
+		HibernateUtil.delete(r);
+		if(r.getParent().equals(r.getId())){
+			rc.clearRootRoleCache();
+		}
 
+		rc.clearRoleCache();
+		
 		AdminLogger.log(RoleFactoryImpl.class, "delete", "Role deleted Id :"+r.getId());
 
 	}
