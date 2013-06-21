@@ -62,6 +62,8 @@ public abstract class RoleFactory {
 	 */
 	protected abstract boolean doesUserHaveRole(User user, Role role) throws DotDataException;
 	
+	protected abstract List<String> findUserIdsForRole(Role role,boolean includeInherited) throws DotDataException;
+	
 	protected abstract List<String> findUserIdsForRole(Role role) throws DotDataException;
 	
 	protected abstract List<String> loadLayoutIdsForRole(Role role) throws DotDataException;
