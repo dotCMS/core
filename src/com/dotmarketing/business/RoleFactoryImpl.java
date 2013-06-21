@@ -240,7 +240,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	@Override
 	protected void removeRoleFromUser(Role role, User user)	throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL("delete from users_cms_roles where user_id like ? and role_id like ?");
+		dc.setSQL("delete from users_cms_roles where user_id = ? and role_id = ?");
 		dc.addParam(user.getUserId());
 		dc.addParam(role.getId());
 		dc.loadResult();
@@ -346,6 +346,7 @@ public class RoleFactoryImpl extends RoleFactory {
 
 	@Override
 	protected void delete(Role role) throws DotDataException {
+		
 		DotConnect dc = new DotConnect();
 		dc.setSQL("delete from users_cms_roles where role_id = ?");
 		dc.addParam(role.getId());
@@ -354,14 +355,6 @@ public class RoleFactoryImpl extends RoleFactory {
 		hu.setQuery("from com.dotmarketing.business.Role where id = ?");
 		hu.setParam(role.getId());
 		Role r = (Role)hu.load();
-		
-		DotConnect dc1 = new DotConnect();
-		dc1.setSQL("select distinct user_id from users_cms_roles where users_cms_roles.role_id  = ?");
-		dc1.addParam(r.getId());
-		List<Map<String,Object>> rows = dc1.loadObjectResults();
-		for (Map<String, Object> map : rows) {
-			rc.remove(map.get("user_id").toString());
-		}
 		
 		HibernateUtil.delete(r);
 		if(r.getParent().equals(r.getId())){
@@ -401,6 +394,22 @@ public class RoleFactoryImpl extends RoleFactory {
 		return roles;
 	}
 
+	@Override
+	protected List<String> findUserIdsForRole(Role role, boolean includeInherited) throws DotDataException {
+		List<String> result = new ArrayList<String>();
+		if(!includeInherited){
+			return findUserIdsForRole(role);
+		}
+		DotConnect dc = new DotConnect();
+		dc.setSQL("select distinct user_id from cms_role cr join users_cms_roles ur on (cr.id = ur.role_id) where db_fqn LIKE ?");
+		dc.addParam("%" + role.getId());
+		List<Map<String,Object>> rows = dc.loadObjectResults();
+		for (Map<String, Object> row : rows) {
+			result.add(row.get("user_id").toString());
+		}
+		return result;
+	}
+	
 	@Override
 	protected List<String> findUserIdsForRole(Role role) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
