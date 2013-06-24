@@ -150,17 +150,4 @@ public interface ContainerAPI {
 
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 
-    /**
-    *
-    * deletes the container-structure relationships for the given container
-    *
-    * @param container
-    * @return
-    * @throws DotSecurityException
-    * @throws DotDataException
-    * @throws DotStateException
-    *
-    */
-    public void deleteContainerStructuresByContainer(Container container) throws DotStateException, DotDataException, DotSecurityException;
-
 }

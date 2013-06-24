@@ -213,8 +213,6 @@ public class EditContainerAction extends DotPortletAction implements
 			{
 				Logger.debug(this,"Calling Full Delete Method");
 				WebAsset webAsset = (WebAsset) req.getAttribute(WebKeys.CONTAINER_EDIT);
-				APILocator.getContainerAPI().deleteContainerStructuresByContainer((Container)webAsset);
-
 				if(WebAssetFactory.deleteAsset(webAsset,user)) {
 					SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".full_delete");
 				} else {
@@ -238,7 +236,6 @@ public class EditContainerAction extends DotPortletAction implements
 				for(String inode  : inodes)
 				{
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Container.class);
-					APILocator.getContainerAPI().deleteContainerStructuresByContainer((Container)webAsset);
 					returnValue &= WebAssetFactory.deleteAsset(webAsset,user);
 				}
 				if(returnValue)
