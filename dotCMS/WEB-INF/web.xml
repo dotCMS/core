@@ -287,6 +287,9 @@
     <listener>
     	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
     </listener>
+    <listener>
+    	<listener-class>com.dotcms.content.elasticsearch.business.listeners.ESMappingMemoryListener</listener-class>
+    </listener>    
 	<!-- this must be the last listener -->
 	<listener>
 	  <listener-class>com.dotmarketing.listeners.HibernateSessionsListener</listener-class>
