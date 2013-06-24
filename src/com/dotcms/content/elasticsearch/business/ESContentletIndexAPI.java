@@ -39,6 +39,7 @@ import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.gson.Gson;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 	private static final ESIndexAPI iapi  = new ESIndexAPI();
@@ -316,9 +317,10 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		for(Contentlet con : contentToIndex) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-            Map<String,Object> mapping=null;
+            Gson gson=new Gson();
+            String mapping=null;
             if(con.isWorking()) {
-                mapping=mappingAPI.toMap(con);
+                mapping=gson.toJson(mappingAPI.toMap(con));
                 
                 if(!reindexOnly)
                     req.add(new IndexRequest(info.working, "content", id)
@@ -330,7 +332,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
             if(con.isLive()) {
                 if(mapping==null)
-                    mapping=mappingAPI.toMap(con);
+                    mapping=gson.toJson(mappingAPI.toMap(con));
                 
                 if(!reindexOnly)
                     req.add(new IndexRequest(info.live, "content", id)

@@ -40,8 +40,6 @@ public class TikaUtils {
 		
 		// store content metadata on disk
         File contentM=APILocator.getFileAssetAPI().getContentMetadataFile(inode);
-        if(contentM.exists())
-            contentM.delete();
         
 		Tika t = new Tika();
 		Metadata met = new Metadata();
@@ -82,7 +80,7 @@ public class TikaUtils {
 					}
 				}
 				
-				if(contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
+				if(!contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
     				OutputStream out=new FileOutputStream(contentM);
     				
     				// compressor config

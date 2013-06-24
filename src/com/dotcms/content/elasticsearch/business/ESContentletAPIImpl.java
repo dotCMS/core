@@ -2254,12 +2254,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                java.io.File incomingFile = contentletRaw.getBinary(velocityVarNm);
 			                java.io.File binaryFieldFolder = new java.io.File(newDir.getAbsolutePath() + java.io.File.separator + velocityVarNm);
 
-
+			                java.io.File metadata=null;
+			                if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+			                    metadata=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
+			                }
 
 			                // if the user has removed this  file via the ui
 			                if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
 			                    FileUtil.deltree(binaryFieldFolder);
 			                    contentlet.setBinary(velocityVarNm, null);
+			                    if(metadata!=null && metadata.exists())
+			                        metadata.delete();
 			                	continue;
 			                }
 
@@ -2291,6 +2296,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				                	//FileUtil.deltree(binaryFieldFolder);
 
 			                		FileUtil.copyFile(incomingFile, newFile);
+			                		
+			                		// delete old content metadata if exists
+			                		if(metadata!=null && metadata.exists())
+			                		    metadata.delete();
 
 			                		// what happens is we never clean up the temp directory
 			                		// answer: this happends --> https://github.com/dotCMS/dotCMS/issues/1071
@@ -2309,6 +2318,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	else if (oldFile.exists()) {
 			                		// otherwise, we copy the files as hardlinks
 			                		FileUtil.copyFile(oldFile, newFile);
+			                		
+			                		// try to get the content metadata from the old version
+			                		if(metadata!=null) {
+			                		    java.io.File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
+			                		    if(oldMeta.exists()) {
+			                		        if(metadata.exists()) // unlikely to happend. deleting just in case
+			                		            metadata.delete();
+			                		        metadata.mkdirs();
+			                		        FileUtil.copyFile(oldMeta, metadata);
+			                		    }
+			                		}
 			                	}
 			                	contentlet.setBinary(velocityVarNm, newFile);
 			                }
