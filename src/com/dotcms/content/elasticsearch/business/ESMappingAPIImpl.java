@@ -334,7 +334,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         // gzip compression were used
                         input = new GZIPInputStream(input);
                     }
-                    else if(type.equals("application/bzip2")) {
+                    else if(type.equals("application/x-bzip2")) {
                         // bzip2 compression were used
                         input = new BZip2CompressorInputStream(input);
                     }
