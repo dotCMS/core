@@ -238,16 +238,18 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		dojo.style(this.fileUploadForm, { display: '' });
 		dojo.style(this.fileUploadRemoveButton, { display: 'none' });
 		dojo.style(this.fileUploadInfoButton, { display: 'none' });
-		FileAjax.clearFileUploadStatus(this.name, function () {});
+		FileAjax.clearFileUploadStatus(this.name, function (data) {});
 	},
 
 	_fileUploadFinished: function () {
-
 		dojo.style(this.fileNameDisplayField, { display: '' });
 		dojo.style(this.fileUploadForm, { display: 'none' });
 		dojo.style(this.fileUploadStatus, { display: 'none' });
-		dojo.style(this.fileUploadRemoveButton, { display: '' });
-		FileAjax.clearFileUploadStatus(this.name, function () {});
+		dojo.style(this.fileUploadRemoveButton, { display: '' });	
+		FileAjax.clearFileUploadStatus(this.name, function (data) {
+			var maxSize = document.getElementById("maxSizeFileLimit");
+			maxSize.value=data;			
+		});
 		this.onUploadFinish(this.fileName, this);
 
 	},
@@ -255,7 +257,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	onUploadStart: function (fileName, dijitReference) {
 	},
 
-	onUploadFinish: function (fileName, dijitReference) {
+	onUploadFinish: function (fileName, dijitReference) {		
 	},
 
 	onRemove: function (dijitReference) {
