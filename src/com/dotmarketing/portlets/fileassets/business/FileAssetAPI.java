@@ -215,5 +215,13 @@ public interface FileAssetAPI {
 	public String getRealAssetPath(String inode);
 
 	String getRealAssetPath(String inode, String fileName); 
+	
+	/**
+	 * constructs the file path for content metadata assetpath/inode(0)/inode(1)/inode/metaData/content
+	 * 
+	 * @param inode content inode
+	 * @return
+	 */
+	File getContentMetadataFile(String inode);
 
 }

@@ -23,7 +23,7 @@
 			<%= LanguageUtil.get(pageContext, "info")%>
 		</button>
 	</div>
-	
+	<input type="hidden" id="maxSizeFileLimit" value="" />
 	<div dojoType="dijit.Dialog" dojoAttachPoint="fileInfoDialog" style="width: 500px;"></div>
 	
 </div>
