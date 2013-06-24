@@ -1178,15 +1178,13 @@ public class ContentletAjax {
 	 */
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
-
 	    try {
             HibernateUtil.startTransaction();
         } catch (DotHibernateException e1) {
             Logger.warn(this, e1.getMessage(),e1);
         }
 
-
-		int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
+	    int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
 		String newInode = "";
 
 		String referer = "";
@@ -1204,11 +1202,9 @@ public class ContentletAjax {
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 
 		// get the struts_action from the form data
-		for (Iterator iterator = formData.iterator(); iterator.hasNext();) {
-			String element = (String) iterator.next();
+		for (String element:formData) {
 			if(element!=null) {
     			String elementName = element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));
-
     			if (elementName.startsWith("_EXT") && elementName.endsWith("cmd")) {
     				strutsAction = elementName.substring(0, elementName.indexOf("cmd"));
     				break;
@@ -1217,9 +1213,7 @@ public class ContentletAjax {
 		}
 
 		// Storing form data into map.
-		for (Iterator iterator = formData.iterator(); iterator.hasNext();) {
-			String element = (String) iterator.next();
-
+		for (String element:formData) {
 			if (!com.dotmarketing.util.UtilMethods.isSet(element))
 				continue;
 
@@ -1294,38 +1288,6 @@ public class ContentletAjax {
 				}else{
 					elementValue = null;
 				}
-				//http://jira.dotmarketing.net/browse/DOTCMS-5802
-				/*boolean populate = req.getSession().getAttribute("populateAccept")!=null?
-						((Boolean)req.getSession().getAttribute("populateAccept")).booleanValue():false;
-						if(populate && elementValue!=null){
-							String siblingData = req.getSession().getAttribute(elementName+"-sibling")!=null?
-									(String)req.getSession().getAttribute(elementName+"-sibling"):null;
-									try{
-										if(UtilMethods.isSet(siblingData)){
-											String[] sessData = siblingData.split(",");
-											if(sessData.length>0){
-												File binFile = conAPI.getBinaryFile(sessData[0].trim(), sessData[1].trim(), user);
-												if(binFile != null) {
-													String fieldValue = binFile.getName();
-													File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
-															+ java.io.File.separator + user.getUserId()
-															+ java.io.File.separator + elementName +
-															java.io.File.separator + fieldValue);
-
-														if(!destFile.exists()){
-															destFile.createNewFile();
-														}
-														FileUtil.copyFile(binFile, destFile);
-														elementValue = destFile;
-
-												}
-											}
-										}
-									}catch(Exception e){
-										Logger.error(this.getClass(), e.getMessage(), e);
-									}
-						}*/
-
 			}
 			contentletFormData.put(elementName, elementValue);
 		}
@@ -1365,8 +1327,6 @@ public class ContentletAjax {
 		}
 
 		try {
-
-
 			newInode = contentletWebAPI.saveContent(contentletFormData,isAutoSave,isCheckin,user);
 			Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 			if(contentlet != null){
@@ -1376,15 +1336,12 @@ public class ContentletAjax {
 
 			}
 
-
 			if(publish && contentlet!=null){
 				ContentletAPI capi = APILocator.getContentletAPI();
 				capi.publish(contentlet, user, true);
 				capi.unlock(contentlet, user, true);
 				callbackData.put("contentletLocked", contentlet.isLocked());
 			}
-
-
 
 			if (contentlet!=null && contentlet.getStructure().getVelocityVarName().equalsIgnoreCase("host")) {
 				String copyOptionsStr = (String)contentletFormData.get("copyOptions");
@@ -1455,9 +1412,8 @@ public class ContentletAjax {
 			        }
 			    }
 			}
-			
-
 		}
+		
 		catch (DotContentletValidationException ve) {
 
 			if(ve instanceof FileAssetValidationException){
