@@ -394,23 +394,110 @@ public class RoleFactoryImpl extends RoleFactory {
 		return roles;
 	}
 
-	@Override
-	protected List<String> findUserIdsForRole(Role role, boolean includeInherited) throws DotDataException {
-		List<String> result = new ArrayList<String>();
-		if(!includeInherited){
-			return findUserIdsForRole(role);
-		}
-		DotConnect dc = new DotConnect();
-		dc.setSQL("select distinct user_id from cms_role cr join users_cms_roles ur on (cr.id = ur.role_id) where db_fqn LIKE ?");
-		dc.addParam("%" + role.getId());
-		List<Map<String,Object>> rows = dc.loadObjectResults();
-		for (Map<String, Object> row : rows) {
-			result.add(row.get("user_id").toString());
-		}
-		return result;
-	}
-	
-	@Override
+    /**
+     * Returns for a given Role the users associated with that role
+     *
+     * @param role
+     * @param includeInherited Searches for the Inherited users of given role
+     * @return
+     * @throws DotDataException
+     */
+    @Override
+    protected List<String> findUserIdsForRole ( Role role, boolean includeInherited ) throws DotDataException {
+
+        List<String> result = new ArrayList<String>();
+        if ( !includeInherited ) {
+            return findUserIdsForRole( role );
+        }
+
+        /*
+         At this point we may have a Role that was implicitly added, meaning it have not a direct
+         relation with a user, and for that we should use the db_fqn column to track the parent that
+         have the relationship.
+
+         Lets say our role have this id: 'ca09c3b4-99bd-4d93-87f3-7fd93b354131'
+         And this is its db_fqn: "47984cad-c263-47b8-91de-006f5679d2a1 --> 498c9afa-453c-4a16-a88a-c4acccdc2637 --> ca09c3b4-99bd-4d93-87f3-7fd93b354131"
+         Our role it is at the bottom and it is possible that the root is the only one with a direct relationship
+         with a user and the children are implicit roles.
+         */
+        DotConnect dc = new DotConnect();
+        dc.setSQL( "select db_fqn from cms_role where db_fqn LIKE ?" );
+        dc.addParam( "%" + role.getId() );
+        List<Map<String, Object>> rows = dc.loadObjectResults();
+
+        List<String> roles = new ArrayList<String>();
+        if ( rows != null ) {
+            for ( Map<String, Object> row : rows ) {
+
+                //Parse each role id from this result
+                String fqn = row.get( "db_fqn" ).toString();
+                if ( fqn != null && !fqn.isEmpty() ) {
+
+                    String[] rolesIds = fqn.split( "-->" );
+                    for ( String id : rolesIds ) {
+                        if ( !roles.contains( id.trim() ) ) {
+                            roles.add( id.trim() );
+                        }
+                    }
+                }
+            }
+        }
+        if ( !roles.isEmpty() ) {
+
+            int maxRecords = 100;
+            int current = 0;
+            StringBuffer inQuery = new StringBuffer();
+            for ( String roleId : roles ) {
+                if ( inQuery.length() > 0 ) {
+                    inQuery.append( ",'" ).append( roleId ).append( "'" );
+                } else {
+                    inQuery.append( "'" ).append( roleId ).append( "'" );
+                }
+
+                current++;
+                //Another group of 100 roles ids is ready...
+                if ( current >= maxRecords ) {
+                    result.addAll( getUserIdsForRoleIds( inQuery ) );
+                    inQuery = new StringBuffer();
+                    current = 0;
+                }
+            }
+
+            //And if something left..
+            if ( inQuery.length() > 0 ) {
+                result.addAll( getUserIdsForRoleIds( inQuery ) );
+            }
+
+        }
+
+        return result;
+    }
+
+    /**
+     * Returns a list of user ids related to a list of given role ids
+     *
+     * @param inRolesIdsQuery
+     * @return
+     * @throws DotDataException
+     */
+    private List<String> getUserIdsForRoleIds ( StringBuffer inRolesIdsQuery ) throws DotDataException {
+
+        List<String> result = new ArrayList<String>();
+
+        DotConnect dc = new DotConnect();
+        dc.setSQL( "select distinct user_id from users_cms_roles where role_id in ( " + inRolesIdsQuery.toString() + " )" );
+        dc.addParam( inRolesIdsQuery );
+        List<Map<String, Object>> rows = dc.loadObjectResults();
+        if ( rows != null ) {
+            for ( Map<String, Object> row : rows ) {
+                result.add( row.get( "user_id" ).toString() );
+            }
+        }
+
+        return result;
+    }
+
+    @Override
 	protected List<String> findUserIdsForRole(Role role) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
 		hu.setQuery("from " + UsersRoles.class.getName() + " where role_id = ?");
