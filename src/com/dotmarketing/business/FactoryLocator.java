@@ -8,6 +8,8 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImpl;
+import com.dotcms.publisher.environment.business.EnvironmentFactory;
+import com.dotcms.publisher.environment.business.EnvironmentFactoryImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
@@ -44,9 +46,11 @@ import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactoryImpl;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl;
 import com.dotmarketing.util.Logger;
+import com.dotcms.publisher.bundle.business.BundleFactory;
+import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
 
 /**
- * FactoryLocator is a factory method to get single(ton) service objects. 
+ * FactoryLocator is a factory method to get single(ton) service objects.
  * This is a kind of implementation, and there may be others.
  * @author Carlos Rivas (crivas)
  * @author Jason Tesser
@@ -55,7 +59,7 @@ import com.dotmarketing.util.Logger;
  */
 
 public class FactoryLocator extends Locator<FactoryIndex>{
-	
+
 	private static FactoryLocator instance;
 
 	private FactoryLocator() {
@@ -67,89 +71,89 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 			return;
 		instance = new FactoryLocator();
 	}
-	
+
 	public static PermissionFactory getPermissionFactory() {
 		return (PermissionFactory)getInstance(FactoryIndex.PERMISSION_FACTORY);
 	}
-	
+
     public static EventFactory getEventFactory() {
         return (EventFactory)getInstance(FactoryIndex.CALENDAR_EVENT_FACTORY);
     }
-   
+
     public static CategoryFactory getCategoryFactory() {
         return (CategoryFactory)getInstance(FactoryIndex.CATEGORY_FACTORY);
     }
-    
+
     public static ContentletFactory getContentletFactory(){
     	return (ContentletFactory)getInstance(FactoryIndex.CONTENTLET_FACTORY);
     }
-   
+
     public static ChainFactory getChainFactory(){
     	return (ChainFactory)getInstance(FactoryIndex.CHAIN_FACTORY);
     }
-    
+
     public static PluginFactory getPluginFactory(){
     	return (PluginFactory)getInstance(FactoryIndex.PLUGIN_FACTORY);
     }
-    
+
     public static LanguageFactory getLanguageFactory(){
     	return (LanguageFactory)getInstance(FactoryIndex.LANGUAGE_FACTORY);
     }
-    
+
     public static DistributedJournalFactory<String> getDistributedJournalFactory(){
     	return (DistributedJournalFactory<String>)getInstance(FactoryIndex.DISTRIBUTED_JOURNAL_FACTORY);
     }
-    
+
     public static UserFactory getUserFactory(){
     	return (UserFactory)getInstance(FactoryIndex.USER_FACTORY);
     }
-    
+
     public static CalendarReminderFactory getCalendarReminderFactory(){
     	return (CalendarReminderFactory) getInstance(FactoryIndex.CALENDAR_REMINDER_FACTORY);
-    } 
-    
+    }
+
        public static TemplateFactory getTemplateFactory(){
     	return (TemplateFactory) getInstance(FactoryIndex.TEMPLATE_FACTORY);
-    } 
-    
-    
+    }
+
+
     public static UserProxyFactory getUserProxyFactory(){
     	return (UserProxyFactory) getInstance(FactoryIndex.USER_PROXY_FACTORY);
     }
-    
+
 
     public static RoleFactory getRoleFactory(){
     	return (RoleFactory) getInstance(FactoryIndex.ROLE_FACTORY);
     }
-    
+
     public static HostVariableFactory getHostVariableFactory(){
     	return (HostVariableFactory) getInstance(FactoryIndex.HOST_VARIABLE_FACTORY);
     }
-    
+
     public static LayoutFactory getLayoutFactory(){
     	return (LayoutFactory) getInstance(FactoryIndex.LAYOUT_FACTORY);
     }
-        
+
     public static FileFactory getFileFactory(){
     	return (FileFactory) getInstance(FactoryIndex.FILE_FACTORY);
     }
-    
+
     public static HTMLPageFactory getHTMLPageFactory(){
     	return (HTMLPageFactory) getInstance(FactoryIndex.HTMLPAGE_FACTORY);
     }
-    
+
     public static MenuLinkFactory getMenuLinkFactory(){
     	return (MenuLinkFactory) getInstance(FactoryIndex.MENULINK_FACTORY);
     }
-    
+
     public static ContainerFactory getContainerFactory(){
     	return (ContainerFactory) getInstance(FactoryIndex.CONTAINER_FACTORY);
     }
-    
+
     public static VirtualLinkFactory getVirtualLinkFactory(){
     	return (VirtualLinkFactory) getInstance(FactoryIndex.VIRTUALLINK_FACTORY);
     }
-    
+
     public static DashboardFactory getDashboardFactory(){
     	return (DashboardFactory) getInstance(FactoryIndex.DASHBOARD_FACTORY);
     }
@@ -175,11 +179,19 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 
     public static PublishingEndPointFactory getPublisherEndPointFactory(){
         return (PublishingEndPointFactory) getInstance(FactoryIndex.PUBLISHER_END_POINT_FACTORY);
-
     }
-    
+
+
+    public static EnvironmentFactory getEnvironmentFactory(){
+        return (EnvironmentFactory) getInstance(FactoryIndex.ENVIRONMENT_FACTORY);
+    }
+
+    public static BundleFactory getBundleFactory(){
+            return (BundleFactory) getInstance(FactoryIndex.BUNDLE_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
-	
+
 		if(instance == null){
 			init();
 			if(instance == null){
@@ -193,9 +205,9 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 		Logger.debug(FactoryLocator.class, instance.audit(index));
 
 		return serviceRef;
-		
+
 	 }
-	
+
 	@Override
 	protected Object createService(FactoryIndex enumObj) {
 		return enumObj.create();
@@ -208,8 +220,8 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 
 }
 
-enum FactoryIndex 
-{ 
+enum FactoryIndex
+{
 	PERMISSION_FACTORY,
 	CALENDAR_EVENT_FACTORY,
 	CALENDAR_EVENT_RECURRENCE_FACTORY,
@@ -225,7 +237,7 @@ enum FactoryIndex
 	TEMPLATE_FACTORY,
 	ROLE_FACTORY,
 	LAYOUT_FACTORY,
-	HOST_VARIABLE_FACTORY, 
+	HOST_VARIABLE_FACTORY,
 	HOST_FACTORY,
 	FILE_FACTORY,
 	HTMLPAGE_FACTORY,
@@ -239,9 +251,11 @@ enum FactoryIndex
 	WORKFLOWS_FACTORY,
 	INDICIES_FACTORY,
 	LINKCHECKER_FACTORY,
-	PUBLISHER_END_POINT_FACTORY;
-	
-	
+	PUBLISHER_END_POINT_FACTORY,
+	ENVIRONMENT_FACTORY,
+	BUNDLE_FACTORY;
+
+
 	Object create() {
 		switch(this) {
 			case PERMISSION_FACTORY: return new PermissionBitFactoryImpl(CacheLocator.getPermissionCache());
@@ -272,6 +286,8 @@ enum FactoryIndex
             case INDICIES_FACTORY: return new IndiciesFactoryImpl();
             case LINKCHECKER_FACTORY: return new LinkCheckerFactoryImpl();
             case PUBLISHER_END_POINT_FACTORY: return new PublishingEndPointFactoryImpl();
+            case ENVIRONMENT_FACTORY: return new EnvironmentFactoryImpl();
+            case BUNDLE_FACTORY: return new BundleFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

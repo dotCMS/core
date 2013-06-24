@@ -43,24 +43,7 @@ public class RoleAPIImpl implements RoleAPI {
 
 	public List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles)
 			throws DotDataException {
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		List<Role> rolesToReturn = new ArrayList<Role>();
-		LinkedList<Role> rolesToProcess = new LinkedList<Role>(rf.loadRolesForUser(userId));
-		if(APILocator.getUserAPI().getAnonymousUser().getUserId().equals(userId) 
-				&& !rolesToProcess.contains(loadCMSAnonymousRole())){
-			rolesToProcess.add(loadCMSAnonymousRole());
-		}
-		while(!rolesToProcess.isEmpty()) {
-			Role r = rolesToProcess.poll();
-			if(r ==null) continue;
-			rolesToReturn.add(r);
-			if(r.getRoleChildren() != null && includeImplicitRoles)
-				for(String roleId: r.getRoleChildren()) {
-					rolesToProcess.add(roleAPI.loadRoleById(roleId));
-				}
-		}
-		
-		return rolesToReturn;
+		return rf.loadRolesForUser(userId,includeImplicitRoles);
 	}
 	
     /* (non-Javadoc)
@@ -120,6 +103,11 @@ public class RoleAPIImpl implements RoleAPI {
 	
     public void delete(Role role) throws DotDataException, DotStateException, DotSecurityException{
 		Role r = loadRoleById(role.getId());
+		
+		for(String uid : rf.findUserIdsForRole(role, true)){
+			CacheLocator.getRoleCache().remove(uid);
+		}
+		
 		if(r.isLocked()){
 			throw new DotStateException("Cannot delete locked role");
 		}
@@ -130,11 +118,14 @@ public class RoleAPIImpl implements RoleAPI {
 		r.setEditLayouts(true);
 		r.setEditUsers(true);
 		rf.save(r);
+				
 		List<User> users = findUsersForRole(r.getId());
-		if(users != null)
-			for(User u: findUsersForRole(r.getId())) {
+		if(users != null){
+			for(User u: users) {
 				removeRoleFromUser(r, u);
 			}
+		}
+		
 		PermissionAPI permAPI = APILocator.getPermissionAPI();
 		permAPI.removePermissionsByRole(role.getId());
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();

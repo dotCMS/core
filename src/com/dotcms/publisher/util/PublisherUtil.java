@@ -43,6 +43,7 @@ import org.xml.sax.ContentHandler;
 
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -62,7 +63,7 @@ import edu.emory.mathcs.backport.java.util.Arrays;
  * @author Oswaldo
  *
  */
-public class PublisherUtil {	
+public class PublisherUtil {
 
 	/**
 	 * Adding SolrInputDocument to PublishQueue Index
@@ -72,17 +73,17 @@ public class PublisherUtil {
 	 * @throws SolrServerException
 	 * @throws IOException
 	 */
-	public static void addToPublishQueueIndex(String PublishQueueServerUrl, SolrInputDocument doc) throws SolrServerException, IOException {		
+	public static void addToPublishQueueIndex(String PublishQueueServerUrl, SolrInputDocument doc) throws SolrServerException, IOException {
 		CommonsHttpSolrServer server = new CommonsHttpSolrServer(PublishQueueServerUrl);
 		server.setParser(new XMLResponseParser());
 		/*Add collection to solr index*/
 		Collection<SolrInputDocument> docs = new ArrayList<SolrInputDocument>();
-		docs.add( doc );			
+		docs.add( doc );
 		UpdateResponse rsp = server.add( docs );
 		Logger.debug(PublisherUtil.class, "ADDING TO PUB QUEUE: "+rsp);
 		/*Commit collection to solr index*/
-		UpdateResponse rsp2 = server.commit();		
-		Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);		
+		UpdateResponse rsp2 = server.commit();
+		Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);
 	}
 
 	/**
@@ -99,14 +100,14 @@ public class PublisherUtil {
 		UpdateResponse rsp = server.add( docs );
 		Logger.debug(PublisherUtil.class, "ADDING TO PUB QUEUE: "+rsp);
 		/*Commit collection to solr index*/
-		UpdateResponse rsp2 = server.commit();		
-		Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);		
+		UpdateResponse rsp2 = server.commit();
+		Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);
 	}
 
 	/**
 	 * Deleting document from PublishQueue Index
 	 * @param PublishQueueServerUrl PublishQueue Server Url
-	 * @param id ID of the element to delete 
+	 * @param id ID of the element to delete
 	 * @throws SolrServerException
 	 * @throws IOException
 	 */
@@ -117,14 +118,14 @@ public class PublisherUtil {
 		UpdateResponse rsp = server.deleteById(id);
 		Logger.debug(PublisherUtil.class, "DELETING TO PUB QUEUE: "+rsp);
 		/*Commit collection to solr index*/
-		UpdateResponse rsp2 = server.commit();	
-		Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);		
+		UpdateResponse rsp2 = server.commit();
+		Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);
 	}
 
 	/**
 	 * Deleting document from PublishQueue Index
 	 * @param PublishQueueServerUrl PublishQueue Server Url
-	 * @param ids List od ID's of the elements to delete 
+	 * @param ids List od ID's of the elements to delete
 	 * @throws SolrServerException
 	 * @throws IOException
 	 */
@@ -136,18 +137,18 @@ public class PublisherUtil {
 			UpdateResponse rsp = server.deleteById(ids);
 			Logger.debug(PublisherUtil.class, "DELETING TO PUB QUEUE: "+rsp);
 			/*Commit collection to solr index*/
-			UpdateResponse rsp2 = server.commit();	
+			UpdateResponse rsp2 = server.commit();
 			Logger.debug(PublisherUtil.class, "COMMITING TO PUB QUEUE: "+rsp2);
 			return true;
 		} catch (Exception e) {
 			Logger.error(PublisherUtil.class, e.getMessage(), e);
 			return false;
-		} 
+		}
 	}
 
 	/**
 	 * Print documents and facets
-	 * 
+	 *
 	 * @param response
 	 */
 	@SuppressWarnings("unchecked")
@@ -228,7 +229,7 @@ public class PublisherUtil {
 	}
 
 	/**
-	 * Execute a search in the specified PublishQueue index using a url parameter 
+	 * Execute a search in the specified PublishQueue index using a url parameter
 	 * @param PublishQueueServerUrl PublishQueue Server Url
 	 * @param start initial value to return
 	 * @param rows number of row to return
@@ -380,7 +381,7 @@ public class PublisherUtil {
 	private static final String MSCREATESQL="CREATE TABLE solr_queue (id bigint IDENTITY (1, 1)PRIMARY KEY NOT NULL, solr_operation numeric(19,0), asset_identifier VARCHAR(36) NOT NULL, language_id numeric(19,0) NOT NULL, entered_date DATETIME, last_try DATETIME, num_of_tries numeric(19,0) NOT NULL DEFAULT 0, in_error tinyint DEFAULT 0, last_results TEXT)";
 	private static final String OCLVALIDATETABLESQL="SELECT COUNT(*) as exist FROM user_tables WHERE table_name='SOLR_QUEUE'";
 	private static final String OCLCREATESQL="CREATE TABLE SOLR_QUEUE (id INTEGER NOT NULL, solr_operation number(19,0), asset_identifier VARCHAR(36) NOT NULL, language_id number(19,0) NOT NULL, entered_date DATE, last_try DATE, num_of_tries number(19,0) DEFAULT 0 NOT NULL, in_error number(1,0) DEFAULT 0, last_results NCLOB,PRIMARY KEY (id))";
-	private static final String OCLCREATESEQSQL="CREATE SEQUENCE SOLR_QUEUE_SEQ START WITH 1 INCREMENT BY 1"; 
+	private static final String OCLCREATESEQSQL="CREATE SEQUENCE SOLR_QUEUE_SEQ START WITH 1 INCREMENT BY 1";
 	private static final String OCLCREATETRIGERSQL="CREATE OR REPLACE TRIGGER SOLR_QUEUE_TRIGGER before insert on SOLR_QUEUE for each row begin select SOLR_QUEUE_SEQ.nextval into :new.id from dual; end;";
 
 	/**
@@ -397,11 +398,11 @@ public class PublisherUtil {
 
 				if(existTable == 0){
 					dc.setSQL(PGCREATESQL);
-					dc.loadResult();	
+					dc.loadResult();
 				}
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
 				dc.setSQL(MYCREATESQL);
-				dc.loadResult();				
+				dc.loadResult();
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
 				dc.setSQL(MSVALIDATETABLESQL);
 				int existTable = (Integer)dc.loadObjectResults().get(0).get("exist");
@@ -417,7 +418,7 @@ public class PublisherUtil {
 					dc.setSQL(OCLCREATESEQSQL);
 					dc.loadResult();
 					dc.setSQL(OCLCREATESQL);
-					dc.loadResult();					
+					dc.loadResult();
 					dc.setSQL(OCLCREATETRIGERSQL);
 					dc.loadResult();
 				}
@@ -448,10 +449,10 @@ public class PublisherUtil {
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				dc.setSQL(PGDELETESQL);
-				dc.loadResult();				
+				dc.loadResult();
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
 				dc.setSQL(MYDELETESQL);
-				dc.loadResult();				
+				dc.loadResult();
 			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
 				dc.setSQL(MSDELETESQL);
 				dc.loadResult();
@@ -461,7 +462,7 @@ public class PublisherUtil {
 				dc.setSQL(OCLDELETESEQSQL);
 				dc.loadResult();
 				dc.setSQL(OCLDELETESQL);
-				dc.loadResult();							
+				dc.loadResult();
 			}
 			return true;
 		}catch(Exception e){
@@ -470,7 +471,7 @@ public class PublisherUtil {
 		}finally{
 			DbConnectionFactory.closeConnection();
 		}
-	} 
+	}
 
 	/**
 	 * Validate if a FieldVariable is present in a FieldVariable List
@@ -488,7 +489,7 @@ public class PublisherUtil {
 				containsVariable= true;
 				break;
 			}
-		}		
+		}
 		return containsVariable;
 	}
 
@@ -508,7 +509,7 @@ public class PublisherUtil {
 				containsVariable= true;
 				break;
 			}
-		}		
+		}
 		return containsVariable;
 	}
 
@@ -533,7 +534,7 @@ public class PublisherUtil {
 					}
 				}
 			}
-		}		 
+		}
 		return containsMetadataField;
 	}
 
@@ -573,7 +574,7 @@ public class PublisherUtil {
 				String values = fv.getValue();
 				return values;
 			}
-		}		 
+		}
 		return defaultPublishQueueFieldName;
 	}
 
@@ -615,15 +616,15 @@ public class PublisherUtil {
 					String[]x  = translateKey(name);
 					for(String y : x){
 						if(!UtilMethods.isSet(allowedFields) || allowedFields.contains(y))
-							metaMap.put(y, met.get(name));	
+							metaMap.put(y, met.get(name));
 					}
 				}
 			}
 			if(handler!=null && UtilMethods.isSet(handler.toString())){
-				metaMap.put(FileAssetAPI.CONTENT_FIELD, handler.toString());	
+				metaMap.put(FileAssetAPI.CONTENT_FIELD, handler.toString());
 			}
 		} catch (Exception e) {
-			Logger.error(PublisherUtil.class, "Could not parse file metadata for file : "+ file.getAbsolutePath()); 
+			Logger.error(PublisherUtil.class, "Could not parse file metadata for file : "+ file.getAbsolutePath());
 		} finally{
 			metaMap.put(FileAssetAPI.SIZE_FIELD,  String.valueOf(file.length()));
 			if(fis!=null){
@@ -635,11 +636,11 @@ public class PublisherUtil {
 
 		return metaMap;
 	}
-	
+
 	/**
 	 * Returns an object represent the single row of publishing_end_point table.
 	 * We descrypt the auth_key in this case.
-	 * 
+	 *
 	 * Oct 30, 2012 - 11:21:23 AM
 	 */
 	public static PublishingEndPoint getObjectByMap(Map<String, Object> row){
@@ -650,41 +651,41 @@ public class PublisherUtil {
 		}
 		pep.setAddress(row.get("address").toString());
 		pep.setPort(row.get("port").toString());
-		pep.setProtocol(row.get("protocol").toString());		
+		pep.setProtocol(row.get("protocol").toString());
 		pep.setServerName(new StringBuilder(row.get("server_name").toString()));
 		pep.setAuthKey(new StringBuilder(row.get("auth_key").toString()));
-		
+
 		if(row.get("sending").toString().equals("1") || row.get("sending").toString().equalsIgnoreCase("true")){
 			pep.setSending(true);
 		}else{
 			pep.setSending(false);
 		}
-		
+
 		if(row.get("enabled").toString().equals("1") || row.get("enabled").toString().equalsIgnoreCase("true")){
 			pep.setEnabled(true);
 		}else{
 			pep.setEnabled(false);
 		}
-		
+
 		return pep;
 	}
-	
-	
+
+
 	public static Set<String> getPropertiesSet(List<Map<String, Object>> list, String property) {
 		Set<String> properties = new HashSet<String>();
-		
+
 		for(Map<String, Object> row : list) {
 			properties.add((String) row.get(property));
 		}
-		
+
 		return properties;
 	}
-	
+
 	/**
 	 * normalize metadata from various filetypes
 	 * this method will return an array of metadata keys
 	 * that we can use to normalize the values in our fileAsset metadata
-	 * For example, tiff:ImageLength = "height" for image files, so 
+	 * For example, tiff:ImageLength = "height" for image files, so
 	 * we return {"tiff:ImageLength", "height"} and both metadata
 	 * are written to our metadata field
 	 * @param key
@@ -702,7 +703,7 @@ public class PublisherUtil {
 	private static Map<String, String[]> translateMeta = null;
 
 	/**
-	 * 
+	 *
 	 * @param binFile
 	 * @return
 	 */
@@ -718,11 +719,11 @@ public class PublisherUtil {
 				parserClass = (Class<Parser>)Class.forName(parserClassName);
 				return parserClass.newInstance();
 			} catch(Exception e){
-				Logger.warn(PublisherUtil.class, "A content parser for mime type " + mimeType + " was found but could not be instantiated, using default content parser."); 
+				Logger.warn(PublisherUtil.class, "A content parser for mime type " + mimeType + " was found but could not be instantiated, using default content parser.");
 			}
 		}
 		return  new AutoDetectParser();
-	}	
+	}
 
 	private static Map<String, String[]> getTranslationMap(){
 		if(translateMeta ==null){
@@ -735,6 +736,14 @@ public class PublisherUtil {
 			}
 		}
 		return translateMeta;
+	}
+
+	public static Environment getEnvironmentByMap(Map<String, Object> row){
+		Environment e = new Environment();
+		e.setId(row.get("id").toString());
+		e.setName(row.get("name").toString());
+		e.setPushToAll(DbConnectionFactory.isDBTrue(row.get("push_to_all").toString()));
+		return e;
 	}
 
     /**

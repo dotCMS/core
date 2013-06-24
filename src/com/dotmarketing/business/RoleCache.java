@@ -17,14 +17,12 @@ public abstract class RoleCache implements Cachable{
 	 * @return
 	 */
 	abstract protected Role get(String key);
-
-	abstract protected List<String> addRoleToUser(String userId,String roleId);
 	
 	abstract protected List<String> addLayoutsToRole(List<String> layouts,String roleId);
 
-	abstract protected List<String> addRoleListForUser(List<String> roles, String userId);
+	abstract protected List<UserRoleCacheHelper> addRoleListForUser(List<UserRoleCacheHelper> roles, String userId);
 	
-	abstract protected List<String> getRoleIdsForUser(String userId);
+	abstract protected List<UserRoleCacheHelper> getRoleIdsForUser(String userId);
 	
 	abstract protected List<String> getLayoutsForRole(String roleId);
 	
@@ -47,4 +45,26 @@ public abstract class RoleCache implements Cachable{
 	
 	abstract protected void removeLayoutsOnRole(String roleId);
 	
+	protected class UserRoleCacheHelper{
+		private String roleId;
+		private boolean inherited;
+				
+		protected UserRoleCacheHelper(String roleId, boolean inherited){
+			this.roleId = roleId;
+			this.inherited = inherited;
+		}
+		
+		/**
+		 * @return the roleId
+		 */
+		protected String getRoleId() {
+			return roleId;
+		}
+		/**
+		 * @return the inherited
+		 */
+		protected boolean isInherited() {
+			return inherited;
+		}
+	}
 }

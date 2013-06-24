@@ -3,15 +3,45 @@ dojo.provide("dotcms.dojo.push.PushHandler");
 dojo.require("dijit._Widget");
 dojo.require("dijit.Dialog");
 dojo.require("dotcms.dijit.RemotePublisherDialog");
+dojo.require("dojox.data.JsonRestStore");
 
 dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
     assetIdentifier: "",
     dialog: null,
     title: "",
+    bundleStore : null,
+    environmentStore : null,
+    user : null,
+    whereToSend : new Array(),
 
     constructor: function (title) {
         this.title = title;
+        this.setUser();
+        this.createStores();
+    },
+
+    createStores: function() {
+      this.bundleStore = new dojox.data.JsonRestStore({ target: "/api/bundle/loadbundles/", labelAttribute:"name", urlPreventCache: true});
+      this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
+    },
+
+    setUser: function() {
+      var xhrArgs = {
+          url : "/api/user/getloggedinuser/",
+          handleAs : "json",
+          sync: true,
+          load : dojo.hitch(this, "userLoaded"),
+          error : function(error) {
+            console.log("An unexpected error occurred: " + error);
+          }
+        }
+
+      var def = dojo.xhrGet(xhrArgs);
+    },
+
+    userLoaded: function(data) {
+      this.user = data;
     },
 
     showDialog: function (assetId, displayDateFilter) {
@@ -108,6 +138,11 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
     remotePublish : function(){
 
+    	if(this.whereToSend.length==0) {
+    	      alert(dojo.byId("whereToSendRequired").value);
+    	      return;
+    	 }
+
         // BEGIN: PUSH PUBLISHING ACTIONLET
 
         var publishDate = (dijit.byId("wfPublishDateAux") && dijit.byId("wfPublishDateAux")!='undefined')
@@ -141,6 +176,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             ? dijit.byId("publishForm").attr('value').wfIWantTo
             : "";
 
+        var whereToSend = dojo.byId("whereToSend").value;
+
         // END: PUSH PUBLISHING ACTIONLET
 
 
@@ -154,6 +191,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         if (dojo.byId("remoteFilterDate")) {
             dojo.byId("remoteFilterDate").value = this._getFilterDate();
         }
+        dojo.byId("whoToSend").value = whereToSend;
         // END: PUSH PUBLISHING ACTIONLET
 
         var xhrArgs = {
@@ -173,6 +211,65 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         };
 
         var deferred = dojo.xhrPost(xhrArgs);
+
+    },
+
+    addSelectedToWhereToSend : function (){
+
+    	var select = dijit.byId("environmentSelect");
+
+    	var user = select.getValue();
+    	var userName = select.attr('displayedValue');
+
+    	this.addToWhereToSend(user, userName);
+    	this.refreshWhereToSend();
+    },
+
+    addToWhereToSend: function ( myId, myName){
+    	for(i=0;i < this.whereToSend.length;i++){
+    		if(myId == this.whereToSend[i].id  ||  myId == "user-" + this.whereToSend[i].id || myId == "role-" + this.whereToSend[i].id){
+    			return;
+    		}
+    	}
+
+    	var entry = {name:myName,id:myId };
+    	this.whereToSend[this.whereToSend.length] =entry;
+
+    },
+
+    refreshWhereToSend: function(){
+    	dojo.empty("whereToSendTable");
+    	var table = dojo.byId("whereToSendTable");
+    	var x = "";
+
+    	this.whereToSend = this.whereToSend.sort(function(a,b){
+    		var x = a.name.toLowerCase();
+    		var y = b.name.toLowerCase();
+    		return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+    	});
+    	for(i=0; i< this.whereToSend.length ; i++){
+    		var what = (this.whereToSend[i].id.indexOf("user") > -1) ? " EnvironmentNotLanguaged" : "";
+    		x = x + this.whereToSend[i].id + ",";
+    		var tr = dojo.create("tr", null, table);
+    		dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"pushHandler.removeFromWhereToSend('" + this.whereToSend[i].id +"');pushHandler.refreshWhereToSend()" }, tr);
+    		dojo.create("td", { innerHTML: this.whereToSend[i].name + what}, tr);
+
+    	}
+    	dojo.byId('whereToSend').value = x;
+
+    },
+
+    removeFromWhereToSend: function(myId){
+
+    	var x=0;
+    	var newCanUse = new Array();
+    	for(i=0;i < this.whereToSend.length;i++){
+    		if(myId != this.whereToSend[i].id){
+    			newCanUse[x] = this.whereToSend[i];
+    			x++;
+    		}
+    	}
+    	this.whereToSend= newCanUse;
     }
 
 });
