@@ -27,6 +27,7 @@ import com.dotcms.enterprise.cmis.server.CMISManager;
 import com.dotcms.enterprise.cmis.server.CMISService;
 import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -81,6 +82,8 @@ public class CMISBaseTest extends TestBase {
 
     protected static String createFile ( String fileName , String folderId ) throws Exception {
 
+        boolean localtran=HibernateUtil.startLocalTransactionIfNeeded();
+        
         String testFilesPath = ".." + java.io.File.separator +
                 "test" + java.io.File.separator +
                 "com" + java.io.File.separator +
@@ -111,9 +114,14 @@ public class CMISBaseTest extends TestBase {
         if(!UtilMethods.isSet(folderId))
         	folderId = getdefaultHostId();
         
-		return dotRepo.createDocument(CMISUtils.REPOSITORY_ID, result,
+		String ret= dotRepo.createDocument(CMISUtils.REPOSITORY_ID, result,
 				folderId, contentStream, VersioningState.MAJOR, null, null,
 				null, null);
+		
+		if(localtran)
+		    HibernateUtil.commitTransaction();
+		
+		return ret;
     }
     
     protected static String createFolder( String folderName ) throws Exception {
