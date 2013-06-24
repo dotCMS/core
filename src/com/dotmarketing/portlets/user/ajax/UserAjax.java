@@ -972,7 +972,9 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 				@Override
 				public List<User> getUsers() {
 					try {
-						return userAPI.getUsersByNameOrEmailOrUserID(filter, start, limit);
+						int page = (start/limit)+1;
+						int pageSize = limit;
+						return userAPI.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return new ArrayList<User>();
