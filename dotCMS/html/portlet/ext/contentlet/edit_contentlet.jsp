@@ -465,6 +465,7 @@ var editButtonRow="editContentletButtonRow";
 <%-- http://jira.dotmarketing.net/browse/DOTCMS-2273 --%>
 <!-- To show lightbox effect "Saving Content.."  -->
 <div id="savingContentDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "saving-content") %>" style="display: none;">
+	<div id="maxSizeFileAlert" style="color:red; font-weight:bold; width: 200px; margin-bottom: 8px"></div>
 	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
 </div>
 <script type="text/javascript">
