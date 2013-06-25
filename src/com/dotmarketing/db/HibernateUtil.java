@@ -10,7 +10,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -29,6 +31,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 
 /**
  * 
@@ -54,9 +57,9 @@ public class HibernateUtil {
 
 	private static final boolean useCache = true;
 	
-	private static final ThreadLocal< List<Runnable> > commitListeners=new ThreadLocal<List<Runnable>>() {
-	    protected java.util.List<Runnable> initialValue() {
-	        return new ArrayList<Runnable>();
+	private static final ThreadLocal< Map<String,Runnable> > commitListeners=new ThreadLocal<Map<String,Runnable>>() {
+	    protected java.util.Map<String,Runnable> initialValue() {
+	        return new HashMap<String,Runnable>();
 	    }
 	};
 	
@@ -615,12 +618,18 @@ public class HibernateUtil {
 		}
 	}
 	
-	public static void addCommitListener(Runnable listener) throws DotHibernateException{
+	public static void addCommitListener(Runnable listener) throws DotHibernateException {
+	    addCommitListener(UUIDGenerator.generateUuid(),listener);
+	}
+	
+	public static void addCommitListener(String tag, Runnable listener) throws DotHibernateException { 
 	    try {
     	    if(getSession().connection().getAutoCommit())
     	        listener.run();
-    	    else
-    	        commitListeners.get().add(listener);
+    	    else {
+    	        if(!commitListeners.get().containsKey(tag))
+    	            commitListeners.get().put(tag,listener);
+    	    }
 	    }
 	    catch(Exception ex) {
 	        throw new DotHibernateException(ex.getMessage(),ex);
@@ -666,7 +675,7 @@ public class HibernateUtil {
 						session.connection().commit();
 						session.connection().setAutoCommit(true);
 						if(commitListeners.get().size()>0) {
-    						List<Runnable> r = new ArrayList<Runnable>(commitListeners.get());
+    						List<Runnable> r = new ArrayList<Runnable>(commitListeners.get().values());
     						commitListeners.get().clear();
     						RunnablesExecutor t = new RunnablesExecutor(r);
     						t.run();

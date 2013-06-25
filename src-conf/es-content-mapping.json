@@ -1,5 +1,8 @@
 {
  	"content": {
+ 	     "_source": { 
+ 	       "excludes" : ["metadata.*"] 
+		 },
 	     "dynamic_templates": [
 	          {
 	              "template_1": {
@@ -7,7 +10,7 @@
 					    "indexAnalyzer": "whitespace", 
 					    "searchAnalyzer": "whitespace", 
 					    "store": "false" 
-					}, 
+					},
                     "match": "*_dotraw",
                     "mapping": {
                          "type": "string",
