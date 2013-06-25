@@ -81,8 +81,6 @@ public class CMISBaseTest extends TestBase {
     }
 
     protected static String createFile ( String fileName , String folderId ) throws Exception {
-
-        boolean localtran=HibernateUtil.startLocalTransactionIfNeeded();
         
         String testFilesPath = ".." + java.io.File.separator +
                 "test" + java.io.File.separator +
@@ -114,14 +112,9 @@ public class CMISBaseTest extends TestBase {
         if(!UtilMethods.isSet(folderId))
         	folderId = getdefaultHostId();
         
-		String ret= dotRepo.createDocument(CMISUtils.REPOSITORY_ID, result,
+		return dotRepo.createDocument(CMISUtils.REPOSITORY_ID, result,
 				folderId, contentStream, VersioningState.MAJOR, null, null,
 				null, null);
-		
-		if(localtran)
-		    HibernateUtil.commitTransaction();
-		
-		return ret;
     }
     
     protected static String createFolder( String folderName ) throws Exception {
