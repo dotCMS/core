@@ -308,7 +308,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    else {
             // add a commit listener to index the contentlet if the entire
             // transaction finish clean
-            HibernateUtil.addCommitListener(content.getIdentifier(),indexAction);
+            HibernateUtil.addCommitListener(content.getInode(),indexAction);
 	    }	    
 	}
 
