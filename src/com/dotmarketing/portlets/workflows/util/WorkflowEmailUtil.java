@@ -191,7 +191,7 @@ public class WorkflowEmailUtil {
 			String[] to = (String[]) recipients.toArray(new String[recipients.size()]);
 			// send'em workflows
 
-			sendWorkflowEmail(processor, to, subject, null, true);
+			sendWorkflowEmail(processor, to, subject, emailText, true);
 
 
 		} catch (Exception e) {
