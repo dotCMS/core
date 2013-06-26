@@ -216,7 +216,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
                     folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
                 }  catch (DotSecurityException e) {
 					Logger.error(getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId);
-				}
+				}  catch ( DotDataException e ) {
+                }
 
                 if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
                     ids.add( _assetId );
