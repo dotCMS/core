@@ -845,5 +845,26 @@ public class PublisherAPIImpl extends PublisherAPI{
 			throw new DotPublisherException("Unable to delete elements :"+e.getMessage(), e);
 		}
 	}
+	
+	private static final String MULTI_TREE_CONTAINER_QUERY = "select * from multi_tree where parent1 = ? or parent2 = ? or child = ?";
+	
+	@Override
+	public List<Map<String, Object>> getContainerMultiTreeMatrix(String id) throws DotPublisherException {
+		List<Map<String,Object>> res = null;
+		DotConnect dc=new DotConnect();
+		dc.setSQL(MULTI_TREE_CONTAINER_QUERY);
+		dc.addParam(id);
+		dc.addParam(id);
+		dc.addParam(id);
+
+		try {
+			res = dc.loadObjectResults();
+		} catch (Exception e) {
+			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable find multi tree:" + e.getMessage(), e);
+		}
+
+		return res;
+	}
 
 }
