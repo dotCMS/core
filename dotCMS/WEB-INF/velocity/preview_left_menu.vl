@@ -249,7 +249,7 @@
                 </a>
                 #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
 	                <a href="javascript: remotePublishCall();">
-	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
+	                	<span class="pushIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
 	                </a>
                 #end
             #else
