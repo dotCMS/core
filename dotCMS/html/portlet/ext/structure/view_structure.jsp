@@ -403,6 +403,7 @@ var deleteLabel = "";
 	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
 	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
 	<input name="iWantTo" id=iWantTo type="hidden" value="">
+	<input name="whoToSend" id=whoToSend type="hidden" value="">
 </form>
 <div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:300px;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "message.structure.cantdelete") %>" >
