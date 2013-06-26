@@ -164,6 +164,30 @@ public class MultiTreeFactory {
 		}
 		//return new java.util.ArrayList();
 	}
+	/**
+	 * Get the multi_tree by both parents given a containerId
+	 * 
+	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+	 *
+	 * Jun 26, 2013 - 12:34:29 PM
+	 */
+	@SuppressWarnings("unchecked")
+	public static java.util.List<MultiTree> getContainerMultiTree(String containerIdentifier) {
+		try {
+			HibernateUtil dh = new HibernateUtil(MultiTree.class);
+			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? or parent2 = ? or child = ?");
+			dh.setParam(containerIdentifier);
+			dh.setParam(containerIdentifier);
+			dh.setParam(containerIdentifier);
+
+			return dh.list();
+            
+		} catch (Exception e) {
+            Logger.error(MultiTreeFactory.class, "getContainerMultiTree failed:" + e, e);
+			throw new DotRuntimeException(e.toString());
+		}
+		//return new java.util.ArrayList();
+	}
 	@SuppressWarnings("unchecked")
 	public static java.util.List<MultiTree> getMultiTreeByChild(String contentIdentifier) {
 		try {
