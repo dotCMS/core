@@ -50,6 +50,8 @@ public class Task01055CreatePushPublishEnvironmentTable implements StartupTask {
 			+ "type VARCHAR2(256), "
 			+ "bundle_id VARCHAR2(256))";
 
+	private static final String ORACLE_DROP_QUEUE_SEQ = "DROP SEQUENCE PUBLISHING_QUEUE_SEQ";
+	
 	private static final String ORACLE_CREATE_QUEUE_SEQ = "CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1";
 
 	private static final String ORACLE_CREATE_QUEUE_TRIG =	"CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on publishing_queue for each row begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;";
@@ -58,7 +60,7 @@ public class Task01055CreatePushPublishEnvironmentTable implements StartupTask {
 		if(DbConnectionFactory.isMsSql()) {
 			dc.executeStatement("create table publishing_environment(id varchar(36) NOT NULL  primary key,name varchar(255) NOT NULL unique,push_to_all tinyint NOT NULL);");
 		}else if(DbConnectionFactory.isOracle()) {
-			dc.executeStatement("create table publishing_environment(id varchar2(36) NOT NULL  primary key,name varchar2(255) NOT NULL unique,push_to_all number(1,0) DEFAULT 0 NOT NULL);");
+			dc.executeStatement("create table publishing_environment(id varchar2(36) NOT NULL  primary key,name varchar2(255) NOT NULL unique,push_to_all number(1,0) DEFAULT 0 NOT NULL)");
 		}else if(DbConnectionFactory.isMySql()) {
 			dc.executeStatement("create table publishing_environment(id varchar(36) NOT NULL  primary key,name varchar(255) NOT NULL unique,push_to_all bool NOT NULL);");
 		}else if(DbConnectionFactory.isPostgres()) {
@@ -70,7 +72,7 @@ public class Task01055CreatePushPublishEnvironmentTable implements StartupTask {
 		if(DbConnectionFactory.isMsSql()) {
 			dc.executeStatement("create table publishing_bundle(id varchar(36) NOT NULL  primary key,name varchar(255) NOT NULL unique,publish_date DATETIME, expire_date DATETIME, owner varchar(100));");
 		}else if(DbConnectionFactory.isOracle()) {
-			dc.executeStatement("create table publishing_bundle(id varchar2(36) NOT NULL  primary key,name varchar2(255) NOT NULL unique,publish_date TIMESTAMP, expire_date TIMESTAMP, owner varchar2(100));");
+			dc.executeStatement("create table publishing_bundle(id varchar2(36) NOT NULL  primary key,name varchar2(255) NOT NULL unique,publish_date TIMESTAMP, expire_date TIMESTAMP, owner varchar2(100))");
 		}else if(DbConnectionFactory.isMySql()) {
 			dc.executeStatement("create table publishing_bundle(id varchar(36) NOT NULL  primary key,name varchar(255) NOT NULL unique,publish_date DATETIME, expire_date DATETIME, owner varchar(100));");
 		}else if(DbConnectionFactory.isPostgres()) {
@@ -81,7 +83,7 @@ public class Task01055CreatePushPublishEnvironmentTable implements StartupTask {
 	private void createBundleEnvironmentTable(DotConnect dc) throws SQLException, DotDataException {
 
 		if(DbConnectionFactory.isOracle()) {
-			dc.executeStatement("create table publishing_bundle_environment(id varchar2(36) NOT NULL primary key,bundle_id varchar2(36) NOT NULL, environment_id varchar2(36) NOT NULL);");
+			dc.executeStatement("create table publishing_bundle_environment(id varchar2(36) NOT NULL primary key,bundle_id varchar2(36) NOT NULL, environment_id varchar2(36) NOT NULL)");
 		}else {
 			dc.executeStatement("create table publishing_bundle_environment(id varchar(36) NOT NULL primary key,bundle_id varchar(36) NOT NULL, environment_id varchar(36) NOT NULL);");
 		}
@@ -98,6 +100,7 @@ public class Task01055CreatePushPublishEnvironmentTable implements StartupTask {
 			dc.executeStatement(MSSQL_CREATE_QUEUE_TABLE);
 		}else if(DbConnectionFactory.isOracle()) {
 			dc.executeStatement(ORACLE_CREATE_QUEUE_TABLE);
+			dc.executeStatement(ORACLE_DROP_QUEUE_SEQ);
 			dc.executeStatement(ORACLE_CREATE_QUEUE_SEQ);
 			dc.executeStatement(ORACLE_CREATE_QUEUE_TRIG);
 		}else if(DbConnectionFactory.isMySql()) {
