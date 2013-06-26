@@ -336,7 +336,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	public boolean delete(Container container, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		if(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			deleteContainerStructuresByContainer(container);
 			return deleteAsset(container);
 		} else {
 			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
@@ -369,15 +368,4 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
         return deleteOldVersions(assetsOlderThan,"containers");
     }
 
-
-    @Override
-    public void deleteContainerStructuresByContainer(Container container)
-          throws DotStateException, DotDataException, DotSecurityException {
-
-        if(container==null || !UtilMethods.isSet(container.getIdentifier()))
-          return;
-
-        HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure where container_id = '" + container.getIdentifier() + "'");
-
-    }
 }

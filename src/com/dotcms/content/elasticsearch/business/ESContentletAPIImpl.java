@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.queryParser.ParseException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.json.JSONObject;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
@@ -113,7 +114,8 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONObject;
+import com.google.gson.Gson;
+
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -2247,12 +2249,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                java.io.File incomingFile = contentletRaw.getBinary(velocityVarNm);
 			                java.io.File binaryFieldFolder = new java.io.File(newDir.getAbsolutePath() + java.io.File.separator + velocityVarNm);
 
-
+			                java.io.File metadata=null;
+			                if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+			                    metadata=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
+			                }
 
 			                // if the user has removed this  file via the ui
 			                if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
 			                    FileUtil.deltree(binaryFieldFolder);
 			                    contentlet.setBinary(velocityVarNm, null);
+			                    if(metadata!=null && metadata.exists())
+			                        metadata.delete();
 			                	continue;
 			                }
 
@@ -2284,6 +2291,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				                	//FileUtil.deltree(binaryFieldFolder);
 
 			                		FileUtil.copyFile(incomingFile, newFile);
+			                		
+			                		// delete old content metadata if exists
+			                		if(metadata!=null && metadata.exists())
+			                		    metadata.delete();
 
 			                		// what happens is we never clean up the temp directory
 			                		// answer: this happends --> https://github.com/dotCMS/dotCMS/issues/1071
@@ -2302,6 +2313,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	else if (oldFile.exists()) {
 			                		// otherwise, we copy the files as hardlinks
 			                		FileUtil.copyFile(oldFile, newFile);
+			                		
+			                		// try to get the content metadata from the old version
+			                		if(metadata!=null) {
+			                		    java.io.File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
+			                		    if(oldMeta.exists()) {
+			                		        if(metadata.exists()) // unlikely to happend. deleting just in case
+			                		            metadata.delete();
+			                		        metadata.mkdirs();
+			                		        FileUtil.copyFile(oldMeta, metadata);
+			                		    }
+			                		}
 			                	}
 			                	contentlet.setBinary(velocityVarNm, newFile);
 			                }
@@ -2409,8 +2431,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
 				        if(metaMap!=null){
 				            Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
-				            JSONObject jsonObject = new JSONObject(metaMap);
-				            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, jsonObject.toString());
+				            Gson gson = new Gson();
+				            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
 				            contentlet = conFac.save(contentlet);
 				            if(!isNewContent){
 				                LiveCache.removeAssetFromCache(contentlet);

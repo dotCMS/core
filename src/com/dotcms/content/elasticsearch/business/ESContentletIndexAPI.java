@@ -39,6 +39,7 @@ import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.gson.Gson;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 	private static final ESIndexAPI iapi  = new ESIndexAPI();
@@ -289,9 +290,9 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
                     contentToIndex.add(content);
                     if(deps)
                         contentToIndex.addAll(loadDeps(content));
-
+                    
                     indexContentletList(req, contentToIndex,reindexOnly);
-
+                                        
                     if(bulk==null && req.numberOfActions()>0)
                         req.execute().actionGet();
 
@@ -307,8 +308,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    else {
             // add a commit listener to index the contentlet if the entire
             // transaction finish clean
-            HibernateUtil.addCommitListener(indexAction);
-	    }
+            HibernateUtil.addCommitListener(content.getInode(),indexAction);
+	    }	    
 	}
 
 	private void indexContentletList(BulkRequestBuilder req, List<Contentlet> contentToIndex, boolean reindexOnly) throws DotStateException, DotDataException, DotSecurityException, DotMappingException {
@@ -316,10 +317,11 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		for(Contentlet con : contentToIndex) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+            Gson gson=new Gson();
             String mapping=null;
-
             if(con.isWorking()) {
-                mapping=mappingAPI.toJson(con);
+                mapping=gson.toJson(mappingAPI.toMap(con));
+                
                 if(!reindexOnly)
                     req.add(new IndexRequest(info.working, "content", id)
                                 .source(mapping));
@@ -330,7 +332,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
             if(con.isLive()) {
                 if(mapping==null)
-                    mapping=mappingAPI.toJson(con);
+                    mapping=gson.toJson(mappingAPI.toMap(con));
+                
                 if(!reindexOnly)
                     req.add(new IndexRequest(info.live, "content", id)
                             .source(mapping));
@@ -339,6 +342,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
                             .source(mapping));
             }
         }
+		
 	}
 
 	@SuppressWarnings("unchecked")
@@ -422,7 +426,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	        	    }
 	            }
 	        };
-	        HibernateUtil.addCommitListener(indexRunner);
+	        HibernateUtil.addCommitListener(content.getIdentifier(),indexRunner);
 	}
 	
 	public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotHibernateException {

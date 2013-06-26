@@ -141,7 +141,8 @@ public class ReindexThread extends Thread {
 				                if(toDelete.size()==remoteDelQ.size()) {
 				                    remoteDelQ.clear();
 				                } else {
-				                    for(int i=0;i<toDelete.size();i++)
+				                    final int n=toDelete.size();
+				                    for(int i=0;i<n;i++)
 				                        remoteDelQ.removeFirst();
 				                }
 				            }

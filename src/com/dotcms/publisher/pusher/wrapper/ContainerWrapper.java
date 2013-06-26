@@ -1,5 +1,8 @@
 package com.dotcms.publisher.pusher.wrapper;
 
+import java.util.List;
+import java.util.Map;
+
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -10,6 +13,9 @@ public class ContainerWrapper {
 	private Container container;
 	private VersionInfo cvi;
 	private Operation operation;
+	
+	// ISSUE #80
+	private List<Map<String,Object>> multiTree;
 	
 	public ContainerWrapper(Identifier containerId, Container container) {
 		this.containerId = containerId;
@@ -58,5 +64,13 @@ public class ContainerWrapper {
 	 */
 	public void setOperation(Operation operation) {
 		this.operation = operation;
+	}
+
+	public List<Map<String,Object>> getMultiTree() {
+		return multiTree;
+	}
+
+	public void setMultiTree(List<Map<String,Object>> multiTree) {
+		this.multiTree = multiTree;
 	}
 }

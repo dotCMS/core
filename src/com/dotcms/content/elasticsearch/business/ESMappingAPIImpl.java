@@ -4,7 +4,10 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,12 +16,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.tika.Tika;
+import org.apache.tika.mime.MimeType;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -232,8 +241,28 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public String toJson(Contentlet con) throws DotMappingException {
 
 		try {
-			Map<String,String> m = new HashMap<String,String>();
+			Map<String,Object> m = toMap(con);
+			return mapper.writeValueAsString(m);
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotMappingException(e.getMessage(), e);
+		}
+	}
 
+	/**
+	 * This method is the same of the toJson except that it returns directly the mlowered map.
+	 * 
+	 * It checks first if this contentlet is already into the temporarily memory otherwise it recreate.
+	 * 
+	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+	 *
+	 * Jun 7, 2013 - 3:47:26 PM
+	 */
+	public Map<String,Object> toMap(Contentlet con) throws DotMappingException {
+		try {
+		    
+			Map<String,String> m = new HashMap<String,String>();
+			Map<String,Object> mlowered=new HashMap<String,Object>();
 			loadCategories(con, m);
 			loadFields(con, m);
 			loadPermissions(con, m);
@@ -242,7 +271,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Identifier ident = APILocator.getIdentifierAPI().find(con);
 			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
 			Structure st=StructureCache.getStructureByInode(con.getStructureInode());
-
+			
 			m.put("title", con.getTitle());
 			m.put("structureName", st.getVelocityVarName());
             m.put("structureType", st.getStructureType() + "");
@@ -285,22 +314,44 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             	Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
             	throw new DotRuntimeException(urlMap, e);
             }
-
-
-            Map<String,Object> mlowered=new HashMap<String,Object>();
+            
             for(Entry<String,String> entry : m.entrySet()){
-                mlowered.put(entry.getKey().toLowerCase(), entry.getValue().toLowerCase());
-                mlowered.put(entry.getKey().toLowerCase() + "_dotraw", entry.getValue().toLowerCase());
+                final String lcasek=entry.getKey().toLowerCase();
+                final String lcasev=entry.getValue().toLowerCase();
+                mlowered.put(lcasek, lcasev);
+                mlowered.put(lcasek + "_dotraw", lcasev);
             }
-            //mlowered.put("versionts", cvi.getVersionTs());
-			String x = mapper.writeValueAsString(mlowered);
-			return x;
+            
+            if(con.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+                // see if we have content metadata
+                File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(con.getInode());
+                if(contentMeta.exists() && contentMeta.length()>0) {
+                    String type=new Tika().detect(contentMeta);
+                    
+                    InputStream input=new FileInputStream(contentMeta);
+                    
+                    if(type.equals("application/x-gzip")) {
+                        // gzip compression were used
+                        input = new GZIPInputStream(input);
+                    }
+                    else if(type.equals("application/x-bzip2")) {
+                        // bzip2 compression were used
+                        input = new BZip2CompressorInputStream(input);
+                    }
+                    
+                    String metadata=(String)mlowered.remove("metadata");
+                    Map<String,Object> metamap=KeyValueFieldUtil.JSONValueToHashMap(metadata);
+                    metamap.put("content", IOUtils.toString(input)); // this is the dangerous call! everything in memory!
+                    mlowered.put("metadata", metamap);
+                }
+            }
+	        
+            return mlowered;
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotMappingException(e.getMessage(), e);
 		}
 	}
-
 
 
 	public Object toMappedObj(Contentlet con) throws DotMappingException {
@@ -406,7 +457,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
 	public static final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000");
 	
-	@SuppressWarnings("unchecked")
 	protected void loadFields(Contentlet con, Map<String, String> m) throws DotDataException {
 	    FieldAPI fAPI=APILocator.getFieldAPI();
 	    List<Field> fields = new ArrayList<Field>(FieldsCache.getFieldsByStructureInode(con.getStructureInode()));
