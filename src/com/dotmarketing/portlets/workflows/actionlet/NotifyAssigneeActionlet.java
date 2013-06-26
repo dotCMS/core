@@ -43,7 +43,7 @@ public class NotifyAssigneeActionlet extends WorkFlowActionlet {
 			emailSubject = params.get("emailSubject").getValue();
 		}
 		if(params.get("emailBody") != null && params.get("emailBody").getValue()!=null){
-			emailSubject = params.get("emailBody").getValue();
+			emailBody = params.get("emailBody").getValue();
 		}
 	
 		if(params.get("isHtml") != null && params.get("isHtml").getValue()!=null){
