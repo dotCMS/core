@@ -61,6 +61,13 @@ public abstract class PublisherAPI {
 	public abstract List<Map<String,Object>> getContentMultiTreeMatrix(String id) throws DotPublisherException;
 	
 	/**
+	 * Get multi tree data of a container
+	 * @param id
+	 * @return
+	 */
+	public abstract List<Map<String,Object>> getContainerMultiTreeMatrix(String id) throws DotPublisherException;
+	
+	/**
 	 * Get all elements of the queue table
 	 * @return
 	 * @throws DotPublisherException
