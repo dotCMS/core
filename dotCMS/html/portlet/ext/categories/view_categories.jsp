@@ -66,16 +66,16 @@ td {font-size: 100%;}
 	dojo.require('dotcms.dojo.data.UsersReadStore');
 	dojo.require("dojox.timing._base");
 	dojo.require("dojo.hash");
-	dojo.require("dotcms.dojo.push.PushHandler");	
+	dojo.require("dotcms.dojo.push.PushHandler");
 	dojo.require("dijit.form.ValidationTextBox");
     dojo.require("dojo.parser");
-    
-    
+
+
 	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Syncronization")%>');
-	
+
 	dojo.connect(dojo.global, "onhashchange", refresh);
 
-	
+
     function refresh() {
 
     	var hashValue = decodeURIComponent(dojo.hash());
@@ -106,13 +106,13 @@ td {font-size: 100%;}
 
 	var sortSelectable = function() {
 		var toSel = document.activeElement;
-		document.getElementById(toSel.id).setAttribute("unselectable", "off");			 
+		document.getElementById(toSel.id).setAttribute("unselectable", "off");
 	};
 
-	
+
 	var fixFocus = function() {
-		
-		
+
+
 		var toBlur = document.activeElement;
 
 		if(toBlur.id!="addCatName" &&
@@ -135,7 +135,7 @@ td {font-size: 100%;}
 			value : sort_order,
 			name: inode,
 			maxLength: 15,
-			regExpGen:function(){ return "\\d+" }, 
+			regExpGen:function(){ return "\\d+" },
 			invalidMessage:"Please enter numbers only",
 			type : "text",
 			onChange : sortCat,
@@ -151,7 +151,7 @@ td {font-size: 100%;}
 		myStore = new dojox.data.QueryReadStore({
 			url : '/categoriesServlet'+params
 		});
-		
+
 
 	}
 
@@ -248,10 +248,10 @@ td {font-size: 100%;}
 				dojo.byId("warningDiv").innerHTML = '<br><br>';
 			}
 		});
-		
-		 
-		
-		 
+
+
+
+
 
 	});
 
@@ -697,7 +697,7 @@ td {font-size: 100%;}
 			toFocus.focus();
 		}
 	}
-	
+
 	function remoteSyncronization () {
 		pushHandler.showCategoryDialog();
 	}
@@ -729,6 +729,7 @@ td {font-size: 100%;}
 	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
 	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
 	<input name="iWantTo" id=iWantTo type="hidden" value="">
+	<input name="whoToSend" id=whoToSend type="hidden" value="">
 </form>
 
 
