@@ -19,7 +19,7 @@
 <!--  DOTCMS-7085 -->
 <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>">
 
-<div style="width:430px;" dojoType="dijit.form.Form" id="publishForm">
+<div style="width:500px;" dojoType="dijit.form.Form" id="publishForm">
 
     <%--DATE FILTERING BOX--%>
     <div class="fieldWrapper" id="filterTimeDiv" style="display: none;">
