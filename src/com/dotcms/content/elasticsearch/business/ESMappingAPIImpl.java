@@ -326,22 +326,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 // see if we have content metadata
                 File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(con.getInode());
                 if(contentMeta.exists() && contentMeta.length()>0) {
-                    String type=new Tika().detect(contentMeta);
                     
-                    InputStream input=new FileInputStream(contentMeta);
-                    
-                    if(type.equals("application/x-gzip")) {
-                        // gzip compression were used
-                        input = new GZIPInputStream(input);
-                    }
-                    else if(type.equals("application/x-bzip2")) {
-                        // bzip2 compression were used
-                        input = new BZip2CompressorInputStream(input);
-                    }
+                    String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
                     
                     String metadata=(String)mlowered.remove("metadata");
                     Map<String,Object> metamap=KeyValueFieldUtil.JSONValueToHashMap(metadata);
-                    metamap.put("content", IOUtils.toString(input)); // this is the dangerous call! everything in memory!
+                    metamap.put("content", contentData); // this is the dangerous call! everything in memory!
                     mlowered.put("metadata", metamap);
                 }
             }
