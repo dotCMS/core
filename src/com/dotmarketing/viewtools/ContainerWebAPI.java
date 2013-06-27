@@ -3,7 +3,6 @@ package com.dotmarketing.viewtools;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -20,41 +19,41 @@ import com.liferay.portal.model.User;
 public class ContainerWebAPI implements ViewTool {
 
 	private static HttpServletRequest request;
-    private static HttpServletResponse response;
-    Context ctx;
-    private static User sysUser = null;
+    private Context ctx;
+    private ViewContext viewContext;
 
 	public void init(Object initData) {
-		ViewContext context = (ViewContext) initData;
-		request = context.getRequest();
-        response = context.getResponse();
-        ctx = context.getVelocityContext();
-        try {
-			sysUser = APILocator.getUserAPI().getSystemUser();
-		} catch (DotDataException e) {
-			Logger.error(DotTemplateTool.class,e.getMessage(),e);
-		}
+		viewContext = (ViewContext) initData;
+		request = viewContext.getRequest();
+        ctx = viewContext.getVelocityContext();
 	}
 
 	public String getStructureCode(String containerIdentifier, String structureId) throws Exception {
 
 		try {
-			Container c;
+			Container c = null;
+			User sysUser = null;
+			try {
+				sysUser = APILocator.getUserAPI().getSystemUser();
+			} catch (DotDataException e) {
+				Logger.error(DotTemplateTool.class,e.getMessage(),e);
+			}
 			c = APILocator.getContainerAPI().getWorkingContainerById(containerIdentifier, sysUser, false);
 
 			List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(c);
 
 			for (ContainerStructure cs : csList) {
 				if(cs.getStructureId().equals(structureId)) {
-					org.apache.velocity.context.Context context = VelocityUtil.getWebContext(request, response);
+					if(request.getSession()==null) {
+					}
 					VelocityUtil vu = new VelocityUtil();
-					String parsedCode = vu.parseVelocity(cs.getCode(), context);
+					String parsedCode = vu.parseVelocity(cs.getCode(), ctx);
 					return parsedCode;
 				}
 			}
 
 		} catch (Exception e) {
-			Logger.error(getClass(), e.getMessage());
+			Logger.error(getClass(), e.getMessage(), e);
 			throw e;
 		}
 
