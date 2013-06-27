@@ -223,5 +223,15 @@ public interface FileAssetAPI {
 	 * @return
 	 */
 	File getContentMetadataFile(String inode);
+	
+	/**
+	 * Takes the content metadata file and loads its content in a string.
+	 * It handles compression gzip, bzip2 or none using Tika to detect it 
+	 * based on the file header.
+	 * 
+	 * @param inode
+	 * @return
+	 */
+	String getContentMetadataAsString(File metadataFile) throws Exception;
 
 }
