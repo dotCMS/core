@@ -291,7 +291,7 @@ public class RelationshipFactory {
     		CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
     	}
     	catch(Exception e){
-    		Logger.error(RelationshipFactory.class, e.getMessage());
+    		Logger.error(RelationshipFactory.class, e.getMessage(),e);
     	}
 
     	
@@ -324,7 +324,7 @@ public class RelationshipFactory {
 			CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
 			CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
 		} catch (DotCacheException e) {
-			Logger.error(RelationshipFactory.class, e.getMessage());
+			Logger.error(RelationshipFactory.class, e.getMessage(),e);
 		}
     }
 
