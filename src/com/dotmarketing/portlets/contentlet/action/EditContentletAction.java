@@ -707,6 +707,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
 				contentlet.setIdentifier(identifier.getInode());
 				contentlet.setStructureInode(sibblingContentlet.getStructureInode());
+				
+				// take host field values with it 
+				// https://github.com/dotCMS/dotCMS/issues/3152
+				for(Field ff : FieldsCache.getFieldsByStructureInode(sibblingContentlet.getStructureInode())) {
+				    if(ff.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+				        contentlet.setStringProperty(ff.getVelocityVarName(), sibblingContentlet.getStringProperty(ff.getVelocityVarName()));
+				        contentlet.setHost(sibblingContentlet.getHost());
+				        contentlet.setFolder(sibblingContentlet.getFolder());
+				    }
+				}
 			}
 			String langId = req.getParameter("lang");
 			if(UtilMethods.isSet(langId)){
