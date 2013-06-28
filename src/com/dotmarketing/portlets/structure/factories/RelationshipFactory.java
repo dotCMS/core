@@ -291,7 +291,7 @@ public class RelationshipFactory {
     		CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
     	}
     	catch(Exception e){
-    		Logger.error(RelationshipFactory.class, e.getMessage());
+    		Logger.error(RelationshipFactory.class, e.getMessage(),e);
     	}
 
     	
@@ -320,7 +320,14 @@ public class RelationshipFactory {
     public static void deleteRelationship(Relationship relationship) throws DotHibernateException {
         InodeFactory.deleteInode(relationship);
         CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
-    }
+
+        try {
+			CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
+			CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
+		} catch (DotCacheException e) {
+			Logger.error(RelationshipFactory.class, e.getMessage(),e);
+		}
+	}
 
     @SuppressWarnings("unchecked")
 	public static List<Contentlet> getRelatedContentByParent(String parentInode, String relationType, boolean live, String orderBy) {
