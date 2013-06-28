@@ -105,17 +105,17 @@ public class CMSFilter implements Filter {
 		}
 
 		if(!UtilMethods.decodeURL(request.getQueryString()).equals(null)){
+			//http://jira.dotmarketing.net/browse/DOTCMS-6141
+			if(request.getQueryString() != null && request.getQueryString().contains("\"")){
+				response.sendRedirect(uri+"?"+StringEscapeUtils.escapeHtml(StringEscapeUtils.unescapeHtml(request.getQueryString())));
+				return;
+			}
 			String queryString=UtilMethods.decodeURL(request.getQueryString());
 			if(Xss.URLHasXSS(queryString)){
 				response.sendRedirect(uri);
 				return;
 			}
-
-			//http://jira.dotmarketing.net/browse/DOTCMS-6141
-			if(queryString.contains("\"")){
-				response.sendRedirect(uri+"?"+StringEscapeUtils.escapeHtml(StringEscapeUtils.unescapeHtml(queryString)));
-				return;
-			}
+			
 		}
 
         if (excludeURI(uri)) {
