@@ -49,13 +49,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 										"asset, "+
 										"entered_date, "+
 										"language_id, "+
-										"in_error, "+
 										"publish_date, "+
-										"server_id, "+
 										"type, "+
-										"bundle_id, " +
-										"target";
-	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?,?,?,?" ;
+										"bundle_id ";
+	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?" ;
 
 //
 	//"last_results, "+
@@ -162,14 +159,10 @@ public class PublisherAPIImpl extends PublisherAPI{
                     dc.addObject( identifier ); //asset
                     dc.addParam( new Date() ); // entered date
                     dc.addObject( 1 ); // language id
-                    dc.addParam( false );    //in error field
 
-                    //TODO How do I get new columns value?
                     dc.addParam( publishDate );
-                    dc.addObject( null ); // server id
                     dc.addObject( type );
                     dc.addObject( bundleId );
-                    dc.addObject( null ); // target
 
                     dc.loadResult();
 
@@ -272,14 +265,10 @@ public class PublisherAPIImpl extends PublisherAPI{
                     dc.addObject( identifier ); //asset
                     dc.addParam( new Date() );
                     dc.addObject( 1 );
-                    dc.addParam( false );    //in error field
 
-                    //TODO How do I get new columns value?
                     dc.addParam( unpublishDate );
-                    dc.addObject( null );
                     dc.addObject( type );
                     dc.addObject( bundleId );
-                    dc.addObject( null );
 
                     dc.loadResult();
 
@@ -855,6 +844,27 @@ public class PublisherAPIImpl extends PublisherAPI{
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete elements :"+e.getMessage(), e);
 		}
+	}
+	
+	private static final String MULTI_TREE_CONTAINER_QUERY = "select * from multi_tree where parent1 = ? or parent2 = ? or child = ?";
+	
+	@Override
+	public List<Map<String, Object>> getContainerMultiTreeMatrix(String id) throws DotPublisherException {
+		List<Map<String,Object>> res = null;
+		DotConnect dc=new DotConnect();
+		dc.setSQL(MULTI_TREE_CONTAINER_QUERY);
+		dc.addParam(id);
+		dc.addParam(id);
+		dc.addParam(id);
+
+		try {
+			res = dc.loadObjectResults();
+		} catch (Exception e) {
+			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
+			throw new DotPublisherException("Unable find multi tree:" + e.getMessage(), e);
+		}
+
+		return res;
 	}
 
 }

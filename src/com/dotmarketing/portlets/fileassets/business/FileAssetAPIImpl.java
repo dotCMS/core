@@ -26,13 +26,20 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.tika.Tika;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 /**
  * This class is a bridge impl that will support the older
@@ -199,7 +206,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	public Map<String, String> getMetaDataMap(Contentlet con, File binFile)  {
 
-		return new TikaUtils().getMetaDataMap(binFile);
+		return new TikaUtils().getMetaDataMap(con.getInode(),binFile);
 
 	}
 
@@ -434,9 +441,29 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
     }
 
+    @Override
+    public File getContentMetadataFile(String inode) {
+        return new File(APILocator.getFileAPI().getRealAssetsRootPath()+File.separator+
+                inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+inode+File.separator+
+                "metaData"+File.separator+"content");
+    }
 
-
-
-
+    @Override
+    public String getContentMetadataAsString(File metadataFile) throws Exception {
+        String type=new Tika().detect(metadataFile);
+        
+        InputStream input=new FileInputStream(metadataFile);
+        
+        if(type.equals("application/x-gzip")) {
+            // gzip compression were used
+            input = new GZIPInputStream(input);
+        }
+        else if(type.equals("application/x-bzip2")) {
+            // bzip2 compression were used
+            input = new BZip2CompressorInputStream(input);
+        }
+        
+        return IOUtils.toString(input);
+    }
 
 }

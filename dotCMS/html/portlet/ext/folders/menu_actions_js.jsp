@@ -53,7 +53,7 @@
 	foldersIcons[29] = "/portal/images/icons/folder_show.gif";
 	foldersIcons[30] = "/portal/images/icons/folder_open_red_show.gif";
 	foldersIcons[31] = "/portal/images/icons/unlocked.gif";
-	
+
 	//root icons
 	foldersIcons[32] = "/html/images/icons/world_off.gif";
 	foldersIcons[33] = "/html/images/icons/world_on.gif";
@@ -174,7 +174,7 @@
 		//i am going to test this jsp
 		var divEl = document.getElementById("foldersTreediv" + node);
 		var iconEl = document.getElementById("foldersTreeicon" + node);
-		if (iconEl) 
+		if (iconEl)
 			iconEl.src = foldersIcons[20];	// folder_ani.gif
 
 		if (divEl.style.display == "none") {
@@ -249,7 +249,7 @@
 	function addNode (openNodes,objId) {
 	    //alert(openNodes);
 	    //alert(objId + "|");
-		if (openNodes.indexOf("|" + objId + "|") == -1 && openNodes.indexOf("/" + objId + "|") == -1) 
+		if (openNodes.indexOf("|" + objId + "|") == -1 && openNodes.indexOf("/" + objId + "|") == -1)
 		{
 		    //alert("enter");
 			openNodes += objId + '|';
@@ -336,17 +336,17 @@
 	function editPermissions(objId,openNodes,referer) {
 		window.location.href = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/permissions/edit_permissions" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer + openNodes;
 	}
-	
+
 	function publishFolder(objId,openNodes,referer) {
 		window.location.href = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/publish_folder" /></portlet:actionURL>&cmd=prepublish&inode=' + objId + '&referer=' + referer + openNodes;
 	}
-	
+
 	function selectTreeLeaf(popup,objId,name,folderPath, identifierId) {
 		try {
 			window.opener.document.getElementById(popup).value=objId;
 			window.opener.document.getElementById("selected"+popup).value=name;
 		} catch (e) { }
-		
+
 		if(window.opener.document.getElementById("selectedIdent"+popup) != null){
 			window.opener.document.getElementById("selectedIdent"+popup).value=identifierId + '.' + getFileExtension(name);
 		}
@@ -357,11 +357,11 @@
 			parameter = window.opener.document.getElementById("submitParent").value;
 			window.opener.submitParent(parameter);
 		}
-		
-		try {		
+
+		try {
 			eval('opener.callback' + popup + '(\''+ objId + '\', \''+ identifierId + '\', \'' + name + '\', \'' + folderPath + '\')');
 		} catch (e) { }
-		
+
 		self.close();
 	}
 
@@ -384,7 +384,7 @@
 		try {
 			eval('parent.window.opener.callback'+popup+'(\''+ objId + '\', \''+ identifierId + '\', \'' + name + '\', \'' + folderPath + '\')');
 		} catch (e) { }
-		
+
 		parent.close();
 	}
 
@@ -489,7 +489,7 @@
 		var joinEl = document.getElementById(treeId + "join" + node);
 		var iconEl = document.getElementById(treeId + "icon" + node);
 		var rootIconEl = document.getElementById(treeId + "rootIcon" + node);
-		
+
 		if (divEl!=null) {
 			if (!host)
 				getIcon(divEl.style.display,iconEl,show_on_menu);
@@ -572,8 +572,9 @@
 			top.location = loc;
 		//}
 	}
-	
+
 	function publishContentlet (objId, userId, referer, live, working, write) {
+
 		//if (write=="1") {
 			var loc = '';
 			referer += "&selected_lang=" + getSelectedLanguageId();
@@ -701,13 +702,13 @@
 			top.location = loc;
 		//}
 	}
-	
+
 	function remotePublish (objId) {
-		
+
 		pushHandler.showDialog(objId);
-		
+
 	}
-	
+
 	dojo.require("dotcms.dojo.push.PushHandler");
 	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
@@ -720,5 +721,6 @@
 	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
 	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
 	<input name="iWantTo" id=iWantTo type="hidden" value="">
+	<input name="whoToSend" id=whoToSend type="hidden" value="">
 </form>
 

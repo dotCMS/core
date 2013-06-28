@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.queryParser.ParseException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.json.JSONObject;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
@@ -113,7 +114,8 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONObject;
+import com.google.gson.Gson;
+
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -383,12 +385,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
                     Identifier id = APILocator.getIdentifierAPI().find(value);
                     if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
-                    	Contentlet fileAssetCont = null;
-                    	try {
-                    		fileAssetCont = findContentletByIdentifier(id.getId(), true, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false);
-                        } catch(DotContentletStateException se) {
-                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false);
-                        }
+                    	Contentlet fileAssetCont = findBinaryAssociatedContent(id,contentlet.getLanguageId());
                         publish(fileAssetCont, APILocator.getUserAPI().getSystemUser(), false);
                     }else if(InodeUtils.isSet(id.getInode())){
                         File file  = (File) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
@@ -2252,12 +2249,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                java.io.File incomingFile = contentletRaw.getBinary(velocityVarNm);
 			                java.io.File binaryFieldFolder = new java.io.File(newDir.getAbsolutePath() + java.io.File.separator + velocityVarNm);
 
-
+			                java.io.File metadata=null;
+			                if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+			                    metadata=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
+			                }
 
 			                // if the user has removed this  file via the ui
 			                if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
 			                    FileUtil.deltree(binaryFieldFolder);
 			                    contentlet.setBinary(velocityVarNm, null);
+			                    if(metadata!=null && metadata.exists())
+			                        metadata.delete();
 			                	continue;
 			                }
 
@@ -2289,6 +2291,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				                	//FileUtil.deltree(binaryFieldFolder);
 
 			                		FileUtil.copyFile(incomingFile, newFile);
+			                		
+			                		// delete old content metadata if exists
+			                		if(metadata!=null && metadata.exists())
+			                		    metadata.delete();
 
 			                		// what happens is we never clean up the temp directory
 			                		// answer: this happends --> https://github.com/dotCMS/dotCMS/issues/1071
@@ -2307,6 +2313,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	else if (oldFile.exists()) {
 			                		// otherwise, we copy the files as hardlinks
 			                		FileUtil.copyFile(oldFile, newFile);
+			                		
+			                		// try to get the content metadata from the old version
+			                		if(metadata!=null) {
+			                		    java.io.File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
+			                		    if(oldMeta.exists()) {
+			                		        if(metadata.exists()) // unlikely to happend. deleting just in case
+			                		            metadata.delete();
+			                		        metadata.mkdirs();
+			                		        FileUtil.copyFile(oldMeta, metadata);
+			                		    }
+			                		}
 			                	}
 			                	contentlet.setBinary(velocityVarNm, newFile);
 			                }
@@ -2414,8 +2431,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
 				        if(metaMap!=null){
 				            Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
-				            JSONObject jsonObject = new JSONObject(metaMap);
-				            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, jsonObject.toString());
+				            Gson gson = new Gson();
+				            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
 				            contentlet = conFac.save(contentlet);
 				            if(!isNewContent){
 				                LiveCache.removeAssetFromCache(contentlet);
@@ -4127,4 +4144,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
 		} catch (Exception e) {}
 		return result;
 	}    
+	
+	/**
+	 * This method is called when I'm publishing a contentlet and one of its fields is an IMAGE or a FILE.
+	 * 
+	 * Unlike the current version, before find the asset with the default language I try to do this by using the languageId of the 
+	 * current contentlet. 
+	 * 
+	 * In this way I can upload an asset into a language different from the default one, publish it and create another contentlet, 
+	 * into the same language, and link them.  
+	 * 
+	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+	 *
+	 * Jun 20, 2013 - 2:32:05 PM
+	 */
+	private Contentlet findBinaryAssociatedContent(Identifier id, long languageId) throws DotContentletStateException, DotSecurityException, DotDataException{
+		Contentlet fileAssetCont = null;
+    	try {
+    		fileAssetCont = findContentletByIdentifier(id.getId(), true, languageId, APILocator.getUserAPI().getSystemUser(), false);
+        } catch(DotContentletStateException se) {
+        	try{
+        		fileAssetCont = findContentletByIdentifier(id.getId(), false, languageId, APILocator.getUserAPI().getSystemUser(), false);
+        	}catch(DotContentletStateException se1) {
+        		/**
+        		 * Finally, if I didn't found the contentlet I do the "findContentletByIdentifier" with the default language, 
+        		 * like the current class version.
+        		 */
+        		fileAssetCont = findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+        	}
+        }
+    	return fileAssetCont;
+	}
 }

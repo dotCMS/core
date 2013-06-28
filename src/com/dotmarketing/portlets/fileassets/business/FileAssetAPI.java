@@ -215,5 +215,23 @@ public interface FileAssetAPI {
 	public String getRealAssetPath(String inode);
 
 	String getRealAssetPath(String inode, String fileName); 
+	
+	/**
+	 * constructs the file path for content metadata assetpath/inode(0)/inode(1)/inode/metaData/content
+	 * 
+	 * @param inode content inode
+	 * @return
+	 */
+	File getContentMetadataFile(String inode);
+	
+	/**
+	 * Takes the content metadata file and loads its content in a string.
+	 * It handles compression gzip, bzip2 or none using Tika to detect it 
+	 * based on the file header.
+	 * 
+	 * @param inode
+	 * @return
+	 */
+	String getContentMetadataAsString(File metadataFile) throws Exception;
 
 }

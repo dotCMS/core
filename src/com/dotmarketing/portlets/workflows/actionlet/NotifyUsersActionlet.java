@@ -53,7 +53,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 			emailSubject = params.get("emailSubject").getValue();
 		}
 		if(params.get("emailBody") != null ){
-			emailSubject = params.get("emailBody").getValue();
+			emailBody = params.get("emailBody").getValue();
 		}
 	
 		if(params.get("isHtml") != null ){

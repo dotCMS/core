@@ -2,15 +2,21 @@ package com.dotcms.tika;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -29,8 +35,12 @@ public class TikaUtils {
 	 *
 	 * May 31, 2013 - 12:27:19 PM
 	 */
-	public Map<String, String> getMetaDataMap(File binFile, String mimeType) {
+	public Map<String, String> getMetaDataMap(String inode, File binFile, String mimeType) {
 		Map<String, String> metaMap = new HashMap<String, String>();
+		
+		// store content metadata on disk
+        File contentM=APILocator.getFileAssetAPI().getContentMetadataFile(inode);
+        
 		Tika t = new Tika();
 		Metadata met = new Metadata();
 		int maxStringLenght = Config.getIntProperty("TIKA_PARSE_CHARACTER_LIMIT", -1);
@@ -55,7 +65,8 @@ public class TikaUtils {
 					}
 				}
 				metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
-			}else{ // otherwise I must use the incremental parsing
+			}
+			else { // otherwise I must use the incremental parsing
 				is = TikaInputStream.get(binFile);
 				fulltext = t.parse(is, met);
 				metaMap = new HashMap<String, String>();
@@ -67,12 +78,28 @@ public class TikaUtils {
 						for (String y : x)
 							metaMap.put(y, met.get(name));
 					}
-				}				
-//				LineIterator lines = IOUtils.lineIterator(fulltext);
-//				StringBuffer sb = new StringBuffer();
-//				while(lines.hasNext())
-//					sb.append(lines.nextLine());
-				metaMap.put(FileAssetAPI.CONTENT_FIELD, IOUtils.toString(fulltext));
+				}
+				
+				if(!contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
+    				OutputStream out=new FileOutputStream(contentM);
+    				
+    				// compressor config
+    				String compressor=Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "gzip");
+    				if(compressor.equals("gzip")) {
+    				    out = new GZIPOutputStream(out);
+    				}
+    				else if(compressor.equals("bzip2")) {
+    				    out = new BZip2CompressorOutputStream(out);
+    				}
+    				
+    				try {
+    				    IOUtils.copy(fulltext, out);
+    				}
+    				finally {
+        				IOUtils.closeQuietly(out);
+        				IOUtils.closeQuietly(fulltext);
+    				}
+				}
 			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " +e.getMessage());
@@ -99,8 +126,8 @@ public class TikaUtils {
 	 * @param binFile
 	 * @return
 	 */
-	public Map<String, String> getMetaDataMap(File binFile) {
-		return getMetaDataMap(binFile, null);
+	public Map<String, String> getMetaDataMap(String inode,File binFile) {
+		return getMetaDataMap(inode,binFile, null);
 	}
 
 //	/**

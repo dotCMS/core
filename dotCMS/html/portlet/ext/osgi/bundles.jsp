@@ -45,9 +45,9 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 
 <div class="buttonBoxLeft">
 	<div dojoType="dojo.data.ItemFileReadStore" jsId="test" url="/html/portlet/ext/osgi/available_bundles_json.jsp"></div>
-	<%= LanguageUtil.get(pageContext,"OSGI-AVAIL-BUNDLES") %> : <input dojoType="dijit.form.ComboBox" store="test" searchAttr="label" name="availBundlesCombo" id="availBundlesCombo"> 
+	<%= LanguageUtil.get(pageContext,"OSGI-AVAIL-BUNDLES") %> : <input dojoType="dijit.form.ComboBox" store="test" searchAttr="label" name="availBundlesCombo" id="availBundlesCombo">
 	<button dojoType="dijit.form.Button" onclick="javascript:bundles.deploy()"><%=LanguageUtil.get(pageContext, "OSGI-Load-Bundle")%></button>
-	
+
 </div>
 <div class="buttonBoxRight">
 	<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
@@ -91,7 +91,7 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Name")%></th>
 		<th><%=LanguageUtil.get(pageContext, "OSGI-State")%></th>
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Jar")%></th>
-		<th><%=LanguageUtil.get(pageContext, "OSGI-Actions")%></th>		
+		<th><%=LanguageUtil.get(pageContext, "OSGI-Actions")%></th>
 	</tr>
 	<%boolean hasBundles = false; %>
 	<%  int i = 0;
@@ -145,4 +145,5 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
     <input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
     <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
     <input name="iWantTo" id=iWantTo type="hidden" value="">
+    <input name="whoToSend" id=whoToSend type="hidden" value="">
 </form>

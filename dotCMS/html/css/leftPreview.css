@@ -53,6 +53,7 @@ hr {color: #fff; background-color: #fff; border: 1px solid #ddd; border-style: n
 .statisticsIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -720px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .pagePropIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -900px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .publishIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.pushIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1780px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .templateIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 .disabled{display:block;line-height:18px;padding:3px;color:#aaa;text-decoration:none;}

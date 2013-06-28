@@ -164,11 +164,11 @@ public class EditContainerAction extends DotPortletAction implements
 							return;
 						}
 					}
-					
+
 					Container cont=(Container)req.getAttribute(WebKeys.CONTAINER_EDIT);
 					if(cont.isLocked())
 					    APILocator.getVersionableAPI().setLocked(cont, false, user);
-					
+
 					try{
 
 
@@ -449,7 +449,7 @@ public class EditContainerAction extends DotPortletAction implements
         if (UtilMethods.isSet(container.getLuceneQuery())) {
             cf.setDynamic(true);
         }
-        
+
 		// BEGIN GRAZIANO issue-12-dnd-template
         if(UtilMethods.isSet(container.getCode())){
 			if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
@@ -535,12 +535,12 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 		container.setStructureInode(currentStructure.getInode());
 		//container.addParent(currentStructure);
-		
+
 		// BEGIN GRAZIANO issue-12-dnd-template
 		if(ContainerAjaxUtil.checkMetadataContainerCode(container.getCode()))
 			container.setForMetadata(true);
 		// END GRAZIANO issue-12-dnd-template
-		
+
 		// it saves or updates the asset
 		if (InodeUtils.isSet(currentContainer.getInode())) {
 			Identifier identifier = APILocator.getIdentifierAPI().find(currentContainer);
