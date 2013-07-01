@@ -285,9 +285,15 @@
 						<%int count=0;for(String id : bundleAssets.keySet()) { %>
 							<%if(count > 0){%><br /><%} %>
 							<%if(count > 2){%>...<%=bundleAssets.keySet().size()-3%> <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %><% break;} %>
+
 							<%String assetType = bundleAssets.get(id); %>
 							<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
+                            <%if (assetTitle.equals( assetType )) {%>
+                                <%=assetType %>
+                            <%} else {%>
 								<strong><%= assetType%></strong> : <%=StringEscapeUtils.escapeHtml(assetTitle)%>
+                            <%}%>
+
 						<%count++;} %>
 						</td>
 					<%}else{ %>
