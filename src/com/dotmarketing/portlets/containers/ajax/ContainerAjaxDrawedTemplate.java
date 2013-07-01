@@ -64,7 +64,7 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
         List<Map<String, Object>> list = new LinkedList<Map<String, Object>>();
 
         for ( Container cont : fullListContainers ) {
-
+          if(cont != null && !cont.isArchived()){
             Map<String, Object> contMap = cont.getMap();
             if ( passFilter( contMap, query ) ) {
 
@@ -104,6 +104,7 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
 
                 }
             }
+          }
         }
 
         if ( start >= list.size() ) start = list.size() - 1;
