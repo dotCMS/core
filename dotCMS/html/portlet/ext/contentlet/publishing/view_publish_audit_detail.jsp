@@ -53,8 +53,12 @@
 <table class="listingTable shadowBox">
     <tr>
         <th><%= LanguageUtil.get(pageContext, "title") %></th>
-        <td><b><span><%=assetTitle %></span></b> (<%=assetType %>)
-
+        <td>
+            <%if (assetTitle.equals( assetType )) {%>
+                <%=assetType %>
+            <%} else {%>
+                <b><span><%=assetTitle %></span></b> (<%=assetType %>)
+            <%}%>
             <div style="float:right">
                 <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
 
