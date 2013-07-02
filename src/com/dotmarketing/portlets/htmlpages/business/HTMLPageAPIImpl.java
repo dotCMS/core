@@ -659,7 +659,8 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		}
 
 		responseProxy.setContentType("text/html");
-		requestProxy.setAttribute("idInode", String.valueOf(idInode));
+        responseProxy.setHeader( "User-Agent", "DOTCMS-BROWSER" );
+        requestProxy.setAttribute("idInode", String.valueOf(idInode));
 
 		Logger.debug(HTMLPageAPIImpl.class, "VELOCITY HTML INODE=" + idInode);
 
