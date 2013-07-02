@@ -548,7 +548,7 @@ public class ContentletForm extends ValidatorForm {
                Logger.error( this, "An error has ocurred trying to get the value for the field: " + velocityVariableName );
            }
 
-           if ( Contentlet.isMetadataFieldCached( getStructureInode(), velocityVariableName, value ) ) {
+           if ( InodeUtils.isSet( getInode() ) && Contentlet.isMetadataFieldCached( getStructureInode(), velocityVariableName, value ) ) {
                return Contentlet.lazyMetadataLoad( getInode(), getStructureInode() );
            }
 
