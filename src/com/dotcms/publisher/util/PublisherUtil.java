@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -40,6 +41,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -745,6 +747,17 @@ public class PublisherUtil {
 		e.setPushToAll(DbConnectionFactory.isDBTrue(row.get("push_to_all").toString()));
 		return e;
 	}
+
+	public static Bundle getBundleByMap(Map<String, Object> row){
+		Bundle b = new Bundle();
+		b.setId(row.get("id").toString());
+		b.setName(row.get("name").toString());
+		b.setPublishDate((Date)row.get("publish_date"));
+		b.setPublishDate((Date)row.get("expire_date"));
+		b.setOwner(row.get("owner").toString());
+		return b;
+	}
+
     /**
      * Returns the identifiers for given lucene queries
      *

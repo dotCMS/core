@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -28,7 +27,6 @@ import org.apache.hadoop.mapred.lib.Arrays;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -188,46 +186,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
 
-            List<String> ids = new ArrayList<String>();
-
-            // check for the categories
-            if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
-                //If we are trying to push users a filter date must be available
-                if ( _assetId.contains( "users_" ) ) {
-                    Date filteringDate = dateFormat.parse( _contentFilterDate );
-                    //Get users where createdate >= ?
-                    List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
-                    if ( usersIds != null ) {
-                        for ( String id : usersIds ) {
-                            ids.add( "user_" + id );
-                        }
-                    }
-                } else {
-                    ids.add( _assetId );
-                }
-            } else if ( _assetId.equals( "CAT" ) ) {
-                ids.add( _assetId );
-            } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
-                ids.add( _assetId );
-            } else {
-                // if the asset is a folder put the inode instead of the identifier
-                Folder folder = null;
-                try {
-                    folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
-                } catch (DotSecurityException e) {
-					Logger.error(getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId);
-				} catch (DotDataException e) {
-					Logger.error(getClass(), "FolderAPI.find(): Identifier is null");
-				}
-
-                if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
-                    ids.add( _assetId );
-                } else {
-                    // if the asset is not a folder and has identifier, put it, if not, put the inode
-                    Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
-                    ids.add( iden.getId() );
-                }
-            }
+            List<String> ids = getIdsToPush(_assetId, _contentFilterDate, dateFormat);
 
 
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
@@ -256,6 +215,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             Logger.error( PushPublishActionlet.class, e.getMessage(), e );
         }
     }
+
 
     /**
      * Allow the user to send again a failed bundle to que publisher queue job in order to try to republish it again
@@ -502,5 +462,79 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
         return true;
     }
+
+    public void addToBundle(HttpServletRequest request, HttpServletResponse response) throws DotPublisherException {
+	    PublisherAPI publisherAPI = PublisherAPI.getInstance();
+	    String _assetId = request.getParameter("assetIdentifier");
+	    String _contentFilterDate = request.getParameter( "remoteFilterDate" );
+	    String isNewBundle = request.getParameter("newBundle");
+	    String bundleName = request.getParameter("bundleName");
+        String bundleSelect = request.getParameter("bundleSelect");
+
+        try {
+        	Bundle bundle = null;
+
+        	if(isNewBundle.equals("true")) {
+        		bundle = new Bundle(bundleName, null, null, getUser().getUserId());
+        		APILocator.getBundleAPI().saveBundle(bundle);
+        	} else {
+        		bundle = APILocator.getBundleAPI().getBundleById(bundleSelect);
+        	}
+
+        	List<String> ids = getIdsToPush(_assetId, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ));
+        	publisherAPI.saveBundleAssets(ids, bundle.getId(), getUser());
+
+        } catch ( Exception e) {
+        	Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+		}
+
+	}
+
+    private List<String> getIdsToPush(String _assetId, String _contentFilterDate,
+			SimpleDateFormat dateFormat)
+			throws ParseException, DotDataException {
+
+    	List<String> ids = new ArrayList<String>();
+		// check for the categories
+		if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
+		    //If we are trying to push users a filter date must be available
+		    if ( _assetId.contains( "users_" ) ) {
+		        Date filteringDate = dateFormat.parse( _contentFilterDate );
+		        //Get users where createdate >= ?
+		        List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
+		        if ( usersIds != null ) {
+		            for ( String id : usersIds ) {
+		                ids.add( "user_" + id );
+		            }
+		        }
+		    } else {
+		        ids.add( _assetId );
+		    }
+		} else if ( _assetId.equals( "CAT" ) ) {
+		    ids.add( _assetId );
+		} else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
+		    ids.add( _assetId );
+		} else {
+		    // if the asset is a folder put the inode instead of the identifier
+		    Folder folder = null;
+		    try {
+		        folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
+		    } catch (DotSecurityException e) {
+				Logger.error(getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId);
+			} catch (DotDataException e) {
+				Logger.info(getClass(), "FolderAPI.find(): Identifier is null");
+			}
+
+		    if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
+		        ids.add( _assetId );
+		    } else {
+		        // if the asset is not a folder and has identifier, put it, if not, put the inode
+		        Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
+		        ids.add( iden.getId() );
+		    }
+		}
+
+		return ids;
+	}
 
 }
