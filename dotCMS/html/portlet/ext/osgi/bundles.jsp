@@ -146,4 +146,7 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
     <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
     <input name="iWantTo" id=iWantTo type="hidden" value="">
     <input name="whoToSend" id=whoToSend type="hidden" value="">
+    <input name="newBundle" id=newBundle type="hidden" value="">
+	<input name="bundleName" id=bundleName type="hidden" value="">
+	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
 </form>
