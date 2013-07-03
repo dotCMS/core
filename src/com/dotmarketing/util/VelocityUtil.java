@@ -180,30 +180,26 @@ public class VelocityUtil {
 	
 	
 	public static ChainedContext getWebContext(Context ctx, HttpServletRequest request, HttpServletResponse response) {
-		if(ctx ==null){
-			ctx = getBasicContext();
-		}	
-		
-		
 
-		
-		// http://jira.dotmarketing.net/browse/DOTCMS-2917
+        if ( ctx == null ) {
+            ctx = getBasicContext();
+        }
 
-		
+        // http://jira.dotmarketing.net/browse/DOTCMS-2917
 
 		//get the context from the request if possible
-		ChainedContext context = null;
-		if(request.getAttribute(VelocityServlet.VELOCITY_CONTEXT) != null && request.getAttribute(VelocityServlet.VELOCITY_CONTEXT)  instanceof ChainedContext){
-			return (ChainedContext) request.getAttribute("velocityContext");
-		}else{
-			RequestWrapper rw = new RequestWrapper(request);
-			context = new ChainedContext(ctx, getEngine(), rw, response, Config.CONTEXT);
-		}
-		
-		
+        ChainedContext context;
+        if ( request.getAttribute( VelocityServlet.VELOCITY_CONTEXT ) != null && request.getAttribute( VelocityServlet.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
+            return (ChainedContext) request.getAttribute( "velocityContext" );
+        } else {
+            RequestWrapper rw = new RequestWrapper( request );
+            if ( request.getAttribute( "User-Agent" ) != null && request.getAttribute( "User-Agent" ).equals( Constants.USER_AGENT_DOTCMS_BROWSER ) ) {
+                rw.setCustomUserAgentHeader( Constants.USER_AGENT_DOTCMS_BROWSER );
+            }
+            context = new ChainedContext( ctx, getEngine(), rw, response, Config.CONTEXT );
+        }
 
-
-		context.put("context", context);
+        context.put("context", context);
 		Logger.debug(VelocityServlet.class, "ChainedContext=" + context);
 		/*
 		 * if we have a toolbox manager, get a toolbox from it See

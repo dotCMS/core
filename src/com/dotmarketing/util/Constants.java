@@ -119,4 +119,7 @@ public final class Constants {
     public static final String PROPERTIES_UPDATE_FILE_LOCATION = "com/dotcms/autoupdater/update.properties";
     public static final String PROPERTY_UPDATE_FILE_UPDATE_URL = "update.url";
 
+    //Request Headers
+    public static String USER_AGENT_DOTCMS_BROWSER = "DOTCMS-BROWSER";
+
 }
