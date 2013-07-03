@@ -20,6 +20,7 @@ import com.liferay.util.Xss;
 public class RequestWrapper implements HttpServletRequest{
 
 	private HttpServletRequest _request;
+    private String customUserAgentHeader;
 	
 	public RequestWrapper(HttpServletRequest req) {
 		this._request = req;
@@ -45,9 +46,15 @@ public class RequestWrapper implements HttpServletRequest{
 		return _request.getDateHeader(arg0);
 	}
 
-	public String getHeader(String arg0) {
-		return _request.getHeader(arg0);
-	}
+    public String getHeader ( String arg0 ) {
+
+        if ( arg0 != null
+                && arg0.toLowerCase().equals( "user-agent" )
+                && this.getCustomUserAgentHeader() != null ) {
+            return this.getCustomUserAgentHeader();
+        }
+        return _request.getHeader( arg0 );
+    }
 
 	public Enumeration getHeaderNames() {
 		return _request.getHeaderNames();
@@ -249,5 +256,64 @@ public class RequestWrapper implements HttpServletRequest{
 	public void setCharacterEncoding(String arg0) throws UnsupportedEncodingException {
 		_request.setCharacterEncoding(arg0);
 	}
+
+    public AsyncContext getAsyncContext() {
+        return _request.getAsyncContext();
+    }
+
+    public DispatcherType getDispatcherType() {
+        return _request.getDispatcherType();
+    }
+
+    public ServletContext getServletContext() {
+        return _request.getServletContext();
+    }
+
+    public boolean isAsyncStarted() {
+        return _request.isAsyncStarted();
+    }
+
+    public boolean isAsyncSupported() {
+        return _request.isAsyncStarted();
+    }
+
+    public AsyncContext startAsync() {
+        return _request.startAsync();
+    }
+
+    public AsyncContext startAsync(ServletRequest arg0, ServletResponse arg1) {
+        return _request.startAsync(arg0, arg1);
+    }
+
+    public boolean authenticate(HttpServletResponse arg0) throws IOException,
+            ServletException {
+        return _request.authenticate(arg0);
+    }
+
+    public Part getPart(String arg0) throws IOException, IllegalStateException,
+            ServletException {
+        return _request.getPart(arg0);
+    }
+
+    public Collection<Part> getParts() throws IOException,
+            IllegalStateException, ServletException {
+        return _request.getParts();
+    }
+
+    public void login(String arg0, String arg1) throws ServletException {
+        _request.login(arg0, arg1);
+    }
+
+    public void logout() throws ServletException {
+        _request.logout();
+    }
+
+    public String getCustomUserAgentHeader () {
+        return customUserAgentHeader;
+    }
+
+    public void setCustomUserAgentHeader ( String customUserAgentHeader ) {
+        this.customUserAgentHeader = customUserAgentHeader;
+    }
 
 }
