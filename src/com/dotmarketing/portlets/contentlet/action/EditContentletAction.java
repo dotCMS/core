@@ -926,7 +926,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if (UtilMethods.isSet(defaultValue)) {
 				String typeField = field.getFieldContentlet();
 				if (typeField.startsWith("bool")) {
-					contentlet.setBoolProperty(field.getVelocityVarName(), Boolean.getBoolean(defaultValue));
+					boolean defaultValueBoolean = false;
+					if(defaultValue.equalsIgnoreCase("true") || defaultValue.equalsIgnoreCase("1") || defaultValue.equalsIgnoreCase("yes")
+							|| defaultValue.equalsIgnoreCase("y") || defaultValue.equalsIgnoreCase("on"))
+						defaultValueBoolean = true;
+					contentlet.setBoolProperty(field.getVelocityVarName(), defaultValueBoolean);
 				} else if (typeField.startsWith("date")) {
 				    if(defaultValue.equals("now"))
 				        contentlet.setDateProperty(field.getVelocityVarName(), new Date());
