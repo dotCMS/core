@@ -331,6 +331,28 @@ var editButtonRow="editContentletButtonRow";
 					    			formValue = (List<Category>) formCategoryList;
 					    	  	} else {
 				    				formValue = (Object) contentletForm.getFieldValueByVar(f.getVelocityVarName());
+
+                                    //We need to verify for the metadata field cached data
+                                    if ( Contentlet.isMetadataFieldCached( contentletForm.getStructureInode(), f.getVelocityVarName(), formValue ) ) {
+
+                                        /*
+                                         If we populated the information using another language we should use the contentlet used
+                                         for that language in order to get the cached metadata.
+                                        */
+                                        if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
+                                                && UtilMethods.isSet( request.getSession().getAttribute( "ContentletForm_lastLanguage" ) ) ) {
+
+                                            if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
+                                                    && (UtilMethods.isSet( request.getParameter( "reuseLastLang" ) )
+                                                    && Boolean.parseBoolean( request.getParameter( "reuseLastLang" ) )) ) {
+
+                                                ContentletForm reusedForm = (ContentletForm) request.getSession().getAttribute( "ContentletForm_lastLanguage" );
+                                                //Load its content from cache
+                                                formValue = reusedForm.getFieldValueByVar( f.getVelocityVarName() );
+                                            }
+                                        }
+
+                                    }
 				    	  		}
 				    	  		request.setAttribute("value", formValue);
 

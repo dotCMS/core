@@ -578,46 +578,45 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		else
 			return false;
 	}
-	
-	private static Object lazyMetadataLoad(String inode, String structureInode) {
-         String cachedMetadata=CacheLocator.getContentletCache().getMetadata(inode);
-         if(cachedMetadata==null) {
-             // lazy load from db
-             try {
-                 Structure st=StructureCache.getStructureByInode(structureInode);
-                 Object fieldVal=APILocator.getContentletAPI().loadField(inode, st.getFieldVar(FileAssetAPI.META_DATA_FIELD));
-                 if(fieldVal!=null && UtilMethods.isSet(fieldVal.toString())) {
-                     String loadedMetadata=fieldVal.toString();
-                     CacheLocator.getContentletCache().addMetadata(inode, loadedMetadata);
-                     return loadedMetadata;
-                 }
-                 else
-                     return "";
-             } catch (DotDataException e) {
-                 Logger.error(Contentlet.class, "error lazy loading metadata field",e);
-                 return "";
-             }
-         }
-         else if(cachedMetadata.equals(ContentletCache.EMPTY_METADATA)) {
-             return "";
-         }
-         else {
-             // normal metadata from cache
-             return cachedMetadata;
-         }
-	}
-	
-	private static boolean isMetadataFieldCached(String structureInode, String fieldVelVarName, Object value) {
-	    if(fieldVelVarName instanceof String && fieldVelVarName.equals(FileAssetAPI.META_DATA_FIELD)) {
-    	    Structure st=StructureCache.getStructureByInode(structureInode);
-    	    Field f=st.getFieldVar(FileAssetAPI.META_DATA_FIELD);
-    	    return st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET && UtilMethods.isSet(f.getInode())
-    	            && value!=null && value.equals(ContentletCache.CACHED_METADATA);
-	    }
-	    return false;
-	}
-	
-	/**
+
+    public static Object lazyMetadataLoad ( String inode, String structureInode ) {
+
+        String cachedMetadata = CacheLocator.getContentletCache().getMetadata( inode );
+        if ( cachedMetadata == null ) {
+            // lazy load from db
+            try {
+                Structure st = StructureCache.getStructureByInode( structureInode );
+                Object fieldVal = APILocator.getContentletAPI().loadField( inode, st.getFieldVar( FileAssetAPI.META_DATA_FIELD ) );
+                if ( fieldVal != null && UtilMethods.isSet( fieldVal.toString() ) ) {
+                    String loadedMetadata = fieldVal.toString();
+                    CacheLocator.getContentletCache().addMetadata( inode, loadedMetadata );
+                    return loadedMetadata;
+                } else
+                    return "";
+            } catch ( DotDataException e ) {
+                Logger.error( Contentlet.class, "error lazy loading metadata field", e );
+                return "";
+            }
+        } else if ( cachedMetadata.equals( ContentletCache.EMPTY_METADATA ) ) {
+            return "";
+        } else {
+            // normal metadata from cache
+            return cachedMetadata;
+        }
+    }
+
+    public static boolean isMetadataFieldCached ( String structureInode, String fieldVelVarName, Object value ) {
+
+        if ( fieldVelVarName instanceof String && fieldVelVarName.equals( FileAssetAPI.META_DATA_FIELD ) ) {
+            Structure st = StructureCache.getStructureByInode( structureInode );
+            Field f = st.getFieldVar( FileAssetAPI.META_DATA_FIELD );
+            return st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET && UtilMethods.isSet( f.getInode() )
+                    && value != null && value.equals( ContentletCache.CACHED_METADATA );
+        }
+        return false;
+    }
+
+    /**
 	 * Returns an object from the underlying contentlet Map
 	 * @param key
 	 * @return
