@@ -15,7 +15,7 @@ import com.dotmarketing.plugin.util.PluginFileMerger;
 
 public class PluginMergerTest extends TestBase {
 
-	 @Test 
+	 @Test
 	public void testMergeByAttribute() throws IOException {
 		PluginFileMerger fileMerger = new PluginFileMerger();
 
@@ -25,7 +25,7 @@ public class PluginMergerTest extends TestBase {
 		String newline = System.getProperty("line.separator");
 
 		sb.append("<create creator=\"new\" javascript=\"UserAjax\" scope=\"application\">");
-		sb.append(newline).append("<param name=\"class\" value=\"com.arqiva.plugins.ajax.ArqivaUserAjax\"/>");
+		sb.append(newline).append("<param name=\"class\" value=\"com.mycompany.plugins.ajax.MyCompanyUserAjax\"/>");
 		sb.append(newline).append("</create>");
 
 		String dwr = sb.toString();
@@ -59,7 +59,7 @@ public class PluginMergerTest extends TestBase {
 
 		sb = new StringBuilder("<!-- BEGIN PLUGIN:override-test -->");
 		sb.append(newline).append("<create creator=\"new\" javascript=\"UserAjax\" scope=\"application\">");
-		sb.append(newline).append("<param name=\"class\" value=\"com.arqiva.plugins.ajax.ArqivaUserAjax\"/>");
+		sb.append(newline).append("<param name=\"class\" value=\"com.mycompany.plugins.ajax.MyCompanyUserAjax\"/>");
 		sb.append(newline).append("</create>");
 		sb.append(newline).append("<!-- END PLUGIN:override-test -->");
 
