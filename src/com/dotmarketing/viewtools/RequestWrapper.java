@@ -29,6 +29,7 @@ import com.liferay.util.Xss;
 public class RequestWrapper implements HttpServletRequest{
 
 	private HttpServletRequest _request;
+    private String customUserAgentHeader;
 	
 	public RequestWrapper(HttpServletRequest req) {
 		this._request = req;
@@ -54,9 +55,15 @@ public class RequestWrapper implements HttpServletRequest{
 		return _request.getDateHeader(arg0);
 	}
 
-	public String getHeader(String arg0) {
-		return _request.getHeader(arg0);
-	}
+    public String getHeader ( String arg0 ) {
+
+        if ( arg0 != null
+                && arg0.toLowerCase().equals( "user-agent" )
+                && this.getCustomUserAgentHeader() != null ) {
+            return this.getCustomUserAgentHeader();
+        }
+        return _request.getHeader( arg0 );
+    }
 
 	public Enumeration getHeaderNames() {
 		return _request.getHeaderNames();
@@ -307,6 +314,14 @@ public class RequestWrapper implements HttpServletRequest{
 
     public void logout() throws ServletException {
         _request.logout();
+    }
+
+    public String getCustomUserAgentHeader () {
+        return customUserAgentHeader;
+    }
+
+    public void setCustomUserAgentHeader ( String customUserAgentHeader ) {
+        this.customUserAgentHeader = customUserAgentHeader;
     }
 
 }
