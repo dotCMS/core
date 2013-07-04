@@ -2,19 +2,12 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="java.io.StringWriter"%>
-<%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
-<%@page import="java.text.SimpleDateFormat"%>
-<%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
-<%@page import="com.dotmarketing.portlets.languagesmanager.business.LanguageAPI"%>
-<%@page import="java.util.UUID"%>
 <%@page import="com.dotmarketing.common.model.ContentletSearch"%>
 <%@page import="com.dotmarketing.util.PaginatedArrayList"%>
-<%@page import="java.util.Date"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotcms.publisher.business.PublisherAPI"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -22,6 +15,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <script type="text/javascript">
+
     dojo.require("dijit.form.Button");
     dojo.require("dijit.Menu");
     dojo.require("dijit.MenuItem");
@@ -41,160 +35,68 @@
 </script>
 
 <%
-
     ContentletAPI conAPI = APILocator.getContentletAPI();
-    LanguageAPI languagesAPI = APILocator.getLanguageAPI();
 
     String nastyError = "";
-    long processedCounter=0;
-    long errorCounter=0;
+    long processedCounter = 0;
+    long errorCounter = 0;
 
-    PublisherAPI publisherAPI = PublisherAPI.getInstance();
-    PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
-
-    String sortBy = request.getParameter("sort");
-    if(!UtilMethods.isSet(sortBy)){
-    	sortBy="";
+    String sortBy = request.getParameter( "sort" );
+    if ( !UtilMethods.isSet( sortBy ) ) {
+        sortBy = "";
     }
-    String offset = request.getParameter("offset");
-    if(!UtilMethods.isSet(offset)){
-    	offset="0";
+    String offset = request.getParameter( "offset" );
+    if ( !UtilMethods.isSet( offset ) ) {
+        offset = "0";
     }
 
     // BEGIN https://github.com/dotCMS/dotCMS/issues/2671
-    String limit = Config.getStringProperty("PUSH_PUBLISHING_PAGE_LIMIT");
-    if(!UtilMethods.isSet(limit)){
-    	limit="50";
+    String limit = Config.getStringProperty( "PUSH_PUBLISHING_PAGE_LIMIT" );
+    if ( !UtilMethods.isSet( limit ) ) {
+        limit = "50";
     }
- 	// END https://github.com/dotCMS/dotCMS/issues/2671
+    // END https://github.com/dotCMS/dotCMS/issues/2671
 
-    String query = request.getParameter("query");
-    if(!UtilMethods.isSet(query)){
-    	query="*";
-    	//nastyError=LanguageUtil.get(pageContext, "publisher_Query_required");
+    String query = request.getParameter( "query" );
+    if ( !UtilMethods.isSet( query ) ) {
+        query = "*";
+        //nastyError=LanguageUtil.get(pageContext, "publisher_Query_required");
     }
 
+    List<Contentlet> iresults = null;
+    PaginatedArrayList<ContentletSearch> results;
+    String counter = "0";
 
+    try {
+        if ( UtilMethods.isSet( query ) ) {
 
-  	List<Contentlet> iresults =  null;
-    PaginatedArrayList<ContentletSearch> results =  null;
-    String counter =  "0";
+            // if this is not a lucene query, lets query _all
+            if ( query.indexOf( ":" ) == -1 ) {
 
-    boolean addQueueElements=false;
-    String addQueueElementsStr = request.getParameter("add");
-    String publishDate = request.getParameter("publishDate");
-    String publishTime = request.getParameter("publishTime");
-    if(UtilMethods.isSet(addQueueElementsStr)){
-    	addQueueElements=true;
+                StringWriter sw = new StringWriter();
 
+                String[] terms = query.split( "\\s" );
+                for ( String x : terms ) {
+                    if ( UtilMethods.isSet( x ) ) {
+                        sw.append( "title:" + x + "* " );
+                    }
+                    sw.append( "+_all:" + x + "* " );
+                }
 
-        if(!UtilMethods.isSet(publishDate)){
-        	publishDate="";
-        	nastyError=LanguageUtil.get(pageContext, "publisher_Date_required");
+                query = sw.toString();
+            }
+
+            //Add 'only not archived' condition
+            query += " +deleted:false";
+
+            iresults = conAPI.search( query, new Integer( limit ), new Integer( offset ), sortBy, user, false, PermissionAPI.PERMISSION_PUBLISH );
+            results = (PaginatedArrayList) conAPI.search( query, new Integer( limit ), new Integer( offset ), sortBy, user, false, PermissionAPI.PERMISSION_PUBLISH );
+            counter = "" + results.getTotalResults();
         }
-
-        if(!UtilMethods.isSet(publishTime)){
-        	publishTime="";
-        	nastyError=LanguageUtil.get(pageContext, "publisher_Date_required");
-        }
-
-    }
-    String addOperationType = request.getParameter("action");
-    if(!UtilMethods.isSet(addOperationType)){
-    	addOperationType="";
-    }
-    try{
-    	if(UtilMethods.isSet(query)){
-
-
-    		// if this is not a lucene query, lets query _all
-    		if(query.indexOf(":") == -1){
-
-    			StringWriter sw = new StringWriter();
-
-    			String[] terms = query.split("\\s");
-    			for(String x : terms){
-    				if(UtilMethods.isSet(x))
-    					sw.append("title:" + x + "* ");
-    					sw.append("+_all:" + x + "* ");
-
-    			}
-
-
-    			query = sw.toString();
-    		}
-
-
-
-
-    		//contador de procesados y fallidos
-    		//Add 'only not archived' condition
-    		query+=" +deleted:false";
-
-
-
-
-
-
-	    	if(addQueueElements){
-	    		String bundeId = UUID.randomUUID().toString();
-
-	    		List<String> identifiers = new ArrayList<String>();
-	    		Long operationType = addOperationType.equals("add")? new Long(1): new Long(2);
-	    		for(String item : addQueueElementsStr.split(",")){
-	    			String[] value = item.split("\\$");
-
-	    			List<PublishQueueElement> currentAssets = publisherAPI.getQueueElementsByAsset(value[0]);
-	    			boolean trovato = false;
-	    			for(PublishQueueElement currentAsset: currentAssets) {
-	    				if(currentAsset.getOperation().intValue() == operationType.intValue())
-	    					trovato = true;
-	    			}
-
-	    			if(!trovato) {
-                        /*
-                         Lets avoid to add multiple times the same identifier (Can happen if it is selected multiple languages of the same content)
-                         as the Push Publishing API will push all the versions of a given identifier.
-                         */
-                        if ( !identifiers.contains( value[0] ) ) {
-                            identifiers.add( value[0] );
-                        }
-                        processedCounter++;
-	    			} else {
-	    				errorCounter++;
-	    				trovato = false;
-	    			}
-
-	    		}
-	    		try{
-	    			Date date =
-	    					new SimpleDateFormat("yyyy-MM-dd-H-m").parse(publishDate+"-"+publishTime);
-
-
-	    			if(addOperationType.equals("add")){
-	    				publisherAPI.addContentsToPublish(identifiers, bundeId, date, user);
-	    			} else {
-	    				publisherAPI.addContentsToUnpublish(identifiers, bundeId, date, user);
-	    			}
-
-
-	    		}catch(Exception b){
-   					nastyError += "<br/>Unable to add selected contents";
-   					errorCounter++;
-   					processedCounter = 0;
-   				}
-
-    		}
-
-
-    		iresults = conAPI.search(query,new Integer(limit),new Integer(offset),sortBy,user,false, PermissionAPI.PERMISSION_PUBLISH);
-    		results = (PaginatedArrayList) conAPI.search(query, new Integer(limit),new Integer(offset),sortBy,user,false, PermissionAPI.PERMISSION_PUBLISH);
-    		counter = ""+results.getTotalResults();
-    	}
-    }catch(Exception pe){
-    	iresults = new ArrayList();
-    	results = new PaginatedArrayList();
-    	nastyError = pe.toString();
+    } catch ( Exception pe ) {
+        iresults = new ArrayList();
+        results = new PaginatedArrayList();
+        nastyError = pe.toString();
     }
   %>
 
