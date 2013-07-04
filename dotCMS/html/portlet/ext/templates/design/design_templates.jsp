@@ -439,7 +439,7 @@
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "sidebar")%>:</dt>
 							<dd>
-                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
+                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: if(this.value!=''){addLayout(this.value)}">
 									<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "none")%></option>
 									<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-left")%></option>
 									<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-left")%></option>
@@ -490,7 +490,7 @@
 									        		&nbsp;&nbsp;
 									        	<% } %></td>
 									        <td>
-												<select name="<%=sb.getId()+sb.getIdentifier()%>" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)">
+												<select name="<%=sb.getId()+sb.getIdentifier()%>" dojoType="dijit.form.FilteringSelect" onchange="javascript: if(this.value!=''){addGrid(this.value, 'splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)}">
 													<option value="1" <%if(sb.getValue().equals("")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
 													<option value="yui-g-template" <%if(sb.getValue().equals("yui-g-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
 													<option value="yui-gc-template" <%if(sb.getValue().equals("yui-gc-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
@@ -595,7 +595,7 @@
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "sidebar") %>:</dt>
 							<dd>
-                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: addLayout(this.value)">
+                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: if(this.value!=''){addLayout(this.value)}">
 									<option value="none" selected="selected"><%=LanguageUtil.get(pageContext, "none")%></option>
                                     <option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-20-left") %></option>
 									<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-30-left") %></option>
@@ -639,7 +639,7 @@
 							        <tr id="_selectRow0" class="spaceUnder">
 								        <td style="width: 16px;">&nbsp;&nbsp;</td>
 								        <td>
-											<select name="select_splitBody0" dojoType="dijit.form.FilteringSelect" onchange="javascript: addGrid(this.value, 'splitBody0',0)">
+											<select name="select_splitBody0" dojoType="dijit.form.FilteringSelect" onchange="javascript: if(this.value!=''){addGrid(this.value, 'splitBody0',0)}">
 												<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
 												<option value="yui-g-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
 												<option value="yui-gc-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
