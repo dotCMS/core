@@ -1978,7 +1978,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         synchronized (syncMe) {
             boolean saveWithExistingID=false;
             String existingInode=null, existingIdentifier=null;
-
+            boolean changedURI=false;
+            
         	Contentlet workingContentlet = contentlet;
             try {
 				if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
@@ -2119,6 +2120,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				} else {
 				    Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
 
+				    String oldURI=ident.getURI();
+				    
 				    // make sure the identifier is removed from cache
 				    // because changes here may affect URI then IdentifierCache
 				    // can't remove it
@@ -2140,7 +2143,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    else {
 				        ident.setParentPath("/");
 				    }
-				    APILocator.getIdentifierAPI().save(ident);
+				    ident=APILocator.getIdentifierAPI().save(ident);
+				    
+				    changedURI = ! oldURI.equals(ident.getURI());
 				}
 
 
@@ -2325,7 +2330,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		    if(oldMeta.exists()) {
 			                		        if(metadata.exists()) // unlikely to happend. deleting just in case
 			                		            metadata.delete();
-			                		        metadata.mkdirs();
+			                		        metadata.getParentFile().mkdirs();
 			                		        FileUtil.copyFile(oldMeta, metadata);
 			                		    }
 			                		}
@@ -2465,6 +2470,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    }
 
 				    indexAPI.addContentToIndex(contentlet);
+				}
+				
+				if(structureHasAHostField && changedURI) {
+				    DotConnect dc=new DotConnect();
+				    dc.setSQL("select working_inode,live_inode from contentlet_version_info where identifier=? and lang<>?");
+				    dc.addParam(contentlet.getIdentifier());
+				    dc.addParam(contentlet.getLanguageId());
+				    List<Map<String,Object>> others = dc.loadResults();
+				    for(Map<String,Object> other : others) {
+				        String workingi=(String)other.get("working_inode");
+				        indexAPI.addContentToIndex(find(workingi,user,false));
+				        String livei=(String)other.get("live_inode");
+				        if(UtilMethods.isSet(livei) && !livei.equals(workingi))
+				            indexAPI.addContentToIndex(find(livei,user,false));
+				    }
 				}
 
 				// Set the properties again after the store on DB and before the fire on an Actionlet.

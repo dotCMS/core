@@ -1,6 +1,7 @@
 package com.dotmarketing.viewtools;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -228,12 +229,36 @@ public class BrowserAPI {
                     if ( wfScheme != null && wfScheme.isMandatory() ) {
                         permissions.remove( new Integer( PermissionAPI.PERMISSION_PUBLISH ) );
                     }
-
+                    
+                    // check for multilingual. we don't need to see the item more than once for every language
+                    boolean skip=false;
+                    if(contentlet!=null) {
+                        List<Map<String,Object>> toDelete=new ArrayList<Map<String,Object>>();
+                        for(Map<String,Object> map : returnList) {
+                            if(map.get("identifier").equals(contentlet.getIdentifier())) {
+                                if(contentlet.getLanguageId()!=APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+                                    // if this is no for the default lang and there is another one in the list skip.
+                                    skip=true;
+                                }
+                                else {
+                                    // if this is for def lang then delete any other we find
+                                    toDelete.add(map);
+                                }
+                            }
+                        }
+                        returnList.removeAll(toDelete);
+                    }
+                    
+                    if(skip) continue;
+                    
                     Map<String, Object> fileMap = fileAsset.getMap();
+                    
+                    Identifier ident=APILocator.getIdentifierAPI().find(fileAsset.getVersionId());
 
                     fileMap.put( "permissions", permissions );
                     fileMap.put( "mimeType", APILocator.getFileAPI().getMimeType( fileAsset.getFileName() ) );
-                    fileMap.put( "name", fileAsset.getFileName() );
+                    fileMap.put( "name", ident.getAssetName() );
+                    fileMap.put( "fileName", ident.getAssetName() ); 
                     fileMap.put( "description", fileAsset.getFriendlyName() );
                     fileMap.put( "extension", FileUtil.getIconExtension( fileAsset.getFileName() ) );
                     fileMap.put( "path", fileAsset.getPath() );

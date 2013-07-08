@@ -707,6 +707,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
 				contentlet.setIdentifier(identifier.getInode());
 				contentlet.setStructureInode(sibblingContentlet.getStructureInode());
+				
+				// take host field values with it 
+				// https://github.com/dotCMS/dotCMS/issues/3152
+				for(Field ff : FieldsCache.getFieldsByStructureInode(sibblingContentlet.getStructureInode())) {
+				    if(ff.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+				        contentlet.setStringProperty(ff.getVelocityVarName(), sibblingContentlet.getStringProperty(ff.getVelocityVarName()));
+				        contentlet.setHost(sibblingContentlet.getHost());
+				        contentlet.setFolder(sibblingContentlet.getFolder());
+				    }
+				}
 			}
 			String langId = req.getParameter("lang");
 			if(UtilMethods.isSet(langId)){
@@ -916,7 +926,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if (UtilMethods.isSet(defaultValue)) {
 				String typeField = field.getFieldContentlet();
 				if (typeField.startsWith("bool")) {
-					contentlet.setBoolProperty(field.getVelocityVarName(), Boolean.getBoolean(defaultValue));
+					boolean defaultValueBoolean = false;
+					if(defaultValue.equalsIgnoreCase("true") || defaultValue.equalsIgnoreCase("1") || defaultValue.equalsIgnoreCase("yes")
+							|| defaultValue.equalsIgnoreCase("y") || defaultValue.equalsIgnoreCase("on"))
+						defaultValueBoolean = true;
+					contentlet.setBoolProperty(field.getVelocityVarName(), defaultValueBoolean);
 				} else if (typeField.startsWith("date")) {
 				    if(defaultValue.equals("now"))
 				        contentlet.setDateProperty(field.getVelocityVarName(), new Date());
