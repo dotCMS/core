@@ -322,11 +322,6 @@ public class RoleAPIImpl implements RoleAPI {
 		return role;
 	}
 
-	@Override
-	public List<Role> getRolesByUserId(String userId) throws DotDataException {
-		return rf.loadRolesForUserId(userId);
-	}
-
 
 	
 }

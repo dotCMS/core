@@ -47,7 +47,7 @@ public class EnvironmentResource extends WebResource {
 		User user = APILocator.getUserAPI().loadUserById(role.getRoleKey());
 		boolean isAdmin = APILocator.getUserAPI().isCMSAdmin(user);
 		
-		List<Role> roles = APILocator.getRoleAPI().getRolesByUserId(user.getUserId());
+		List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(),true);
 		Set<Environment> environments = new HashSet<Environment>();
 		if(isAdmin){
 			List<Environment> app = APILocator.getEnvironmentAPI().findAllEnvironments();
