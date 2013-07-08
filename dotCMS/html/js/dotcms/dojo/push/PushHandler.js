@@ -15,9 +15,11 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     environmentStore : null,
     user : null,
     whereToSend : new Array(),
+    isBundle : false,
 
-    constructor: function (title) {
+    constructor: function (title, isBundle) {
         this.title = title;
+        this.isBundle = isBundle;
         this.setUser();
     },
 
@@ -221,8 +223,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dojo.byId("whoToSend").value = whereToSend;
 		// END: PUSH PUBLISHING ACTIONLET
 
+        var urlStr = this.isBundle?"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle":"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish";
+
 		var xhrArgs = {
-			url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish",
+			url: urlStr,
 			form: dojo.byId("remotePublishForm"),
 			handleAs: "text",
 			load: function(data){
@@ -242,19 +246,19 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 	addToBundle : function(){
 
-		console.log(dijit.byId("publishForm").attr('value').newBundle);
+		console.log(dijit.byId("addToBundleForm").attr('value').newBundle);
 
-		if(dijit.byId("publishForm").attr('value').newBundle=='true' && dijit.byId("bundleName").value=='') {
+		if(dijit.byId("addToBundleForm").attr('value').newBundle=='true' && dijit.byId("bundleName").value=='') {
 			alert(dojo.byId("bundleNameRequired").value);
 			return;
-		} else if(dijit.byId("publishForm").attr('value').newBundle=='false' && dijit.byId("bundleSelect").value==''){
+		} else if(dijit.byId("addToBundleForm").attr('value').newBundle=='false' && dijit.byId("bundleSelect").value==''){
 			alert(dojo.byId("bundleRequired").value);
 			return;
 		}
 
 		// BEGIN: PUSH PUBLISHING ACTIONLET
 
-		var newBundle = dijit.byId("publishForm").attr('value').newBundle;
+		var newBundle = dijit.byId("addToBundleForm").attr('value').newBundle;
 		var bundleName = dijit.byId("bundleName").value;
 		var bundleSelect = dijit.byId("bundleSelect").value;
 

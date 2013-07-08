@@ -1,6 +1,9 @@
 package com.dotcms.publisher.bundle.bean;
 
 import java.util.Date;
+import java.util.List;
+
+import com.dotcms.publisher.business.PublishQueueElement;
 
 public class Bundle {
 	private String id;
@@ -8,6 +11,8 @@ public class Bundle {
 	private Date publishDate;
 	private Date expireDate;
 	private String owner;
+	private Integer operation;
+	private List<PublishQueueElement> assets;
 
 	public Bundle() {}
 
@@ -47,6 +52,22 @@ public class Bundle {
 	}
 	public void setOwner(String owner) {
 		this.owner = owner;
+	}
+
+	public Integer getOperation() {
+		return operation;
+	}
+
+	public void setOperation(Integer operation) {
+		this.operation = operation;
+	}
+
+	public List<PublishQueueElement> getAssets() {
+		return assets;
+	}
+
+	public void setAssets(List<PublishQueueElement> assets) {
+		this.assets = assets;
 	}
 
 }

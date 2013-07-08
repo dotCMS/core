@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,13 +36,19 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -171,11 +178,11 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentFilterDate = request.getParameter( "remoteFilterDate" );
             String _iWantTo = request.getParameter( "iWantTo" );
             String whoToSendTmp = request.getParameter( "whoToSend" );
-            List<String> whoCanUse = Arrays.asList(whoToSendTmp.split(","));
+            List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
 
             // Lists of Environments to push to
-            for (String envId : whoCanUse) {
+            for (String envId : whereToSend) {
             	Environment e = APILocator.getEnvironmentAPI().findEnvironmentById(envId);
 
             	if(e!=null) {
@@ -186,8 +193,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
 
-            List<String> ids = getIdsToPush(_assetId, _contentFilterDate, dateFormat);
+            List<String> assetsIds = new ArrayList<String>();
+            assetsIds.add(_assetId);
 
+            List<String> ids = getIdsToPush(assetsIds, _contentFilterDate, dateFormat);
 
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
             	Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId());
@@ -335,6 +344,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		response.setContentType("application/x-tgz");
 
 		String bid = map.get("bid");
+
 		PublisherConfig config = new PublisherConfig();
 		config.setId(bid);
 		File bundleRoot = BundlerUtil.getBundleRoot(config);
@@ -369,6 +379,81 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		}
 		return;
 	}
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void generateBundle ( String bundleId ) throws ServletException, IOException, DotDataException {
+    	PushPublisherConfig pconf = new PushPublisherConfig();
+		PublisherAPI pubAPI = PublisherAPI.getInstance();
+
+		try {
+			List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId(bundleId);
+
+			Map<String, String> assets = new HashMap<String, String>();
+			List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
+
+			for(PublishQueueElement c : tempBundleContents) {
+				assets.put((String) c.getAsset(), c.getType());
+				if(!c.getType().equals("contentlet"))
+					assetsToPublish.add(c);
+			}
+
+			pconf.setPushing(false);
+//			pconf.setOperation(Operation.DOWNLOAD);
+			// all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
+			pconf.setAssets(assetsToPublish);
+			//Queries creation
+			pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
+			pconf.setId(bundleId);
+			pconf.setUser(APILocator.getUserAPI().getSystemUser());
+
+			List<Class> bundlers = new ArrayList<Class>();
+			List<IBundler> confBundlers = new ArrayList<IBundler>();
+
+			Publisher p = new PushPublisher();
+			p.init(pconf);
+
+			for (Class clazz : p.getBundlers()) {
+				if (!bundlers.contains(clazz)) {
+					bundlers.add(clazz);
+				}
+			}
+
+			File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + pconf.getId() + ".tar.gz" );
+            if ( !compressedBundle.exists() ) {
+
+                // Run bundlers
+                File bundleRoot = BundlerUtil.getBundleRoot( pconf );
+
+                BundlerUtil.writeBundleXML( pconf );
+                for ( Class<IBundler> c : bundlers ) {
+
+                    IBundler bundler = c.newInstance();
+                    confBundlers.add( bundler );
+                    bundler.setConfig( pconf );
+                    BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
+                    //Generate the bundler
+                    bundler.generate( bundleRoot, bs );
+                }
+
+                pconf.setBundlers( confBundlers );
+            }
+
+          //Compressing bundle
+			File bundleRoot = BundlerUtil.getBundleRoot(pconf);
+			ArrayList<File> list = new ArrayList<File>(1);
+			list.add(bundleRoot);
+			File bundle = new File(bundleRoot+File.separator+".."+File.separator+pconf.getId()+".tar.gz");
+			PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
+
+
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+
+
 
 	public void uploadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException, FileUploadException {
         FileItemFactory factory = new DiskFileItemFactory();
@@ -481,7 +566,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
         		bundle = APILocator.getBundleAPI().getBundleById(bundleSelect);
         	}
 
-        	List<String> ids = getIdsToPush(_assetId, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ));
+        	List<String> assetsIds = new ArrayList<String>();
+        	assetsIds.add(_assetId);
+
+        	List<String> ids = getIdsToPush(assetsIds, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ));
         	publisherAPI.saveBundleAssets(ids, bundle.getId(), getUser());
 
         } catch ( Exception e) {
@@ -490,49 +578,136 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
 	}
 
-    private List<String> getIdsToPush(String _assetId, String _contentFilterDate,
+    /**
+     * Updates the assets in the given bundle with the publish/expire dates and destination environments and set them ready to be pushed
+     *
+     * @param request
+     * @param response
+     * @throws WorkflowActionFailureException
+     */
+    public void pushBundle ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException {
+
+        try {
+
+            PublisherAPI publisherAPI = PublisherAPI.getInstance();
+
+            //Read the form values
+            String bundleId = request.getParameter( "assetIdentifier" );
+            String _contentPushPublishDate = request.getParameter( "remotePublishDate" );
+            String _contentPushPublishTime = request.getParameter( "remotePublishTime" );
+            String _contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
+            String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
+            String _iWantTo = request.getParameter( "iWantTo" );
+            String whoToSendTmp = request.getParameter( "whoToSend" );
+            List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
+            List<Environment> envsToSendTo = new ArrayList<Environment>();
+
+            // Lists of Environments to push to
+            for (String envId : whereToSend) {
+            	Environment e = APILocator.getEnvironmentAPI().findEnvironmentById(envId);
+
+            	if(e!=null) {
+            		envsToSendTo.add(e);
+            	}
+			}
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
+            Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
+            Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+            APILocator.getBundleAPI().saveBundleEnvironments(bundle, envsToSendTo);
+
+            if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH )) {
+            	bundle.setPublishDate(publishDate);
+             	APILocator.getBundleAPI().updateBundle(bundle);
+
+             	publisherAPI.publishBundleAssets(bundle.getId(), publishDate);
+
+            } else if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE )) {
+            	if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
+                    Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
+                    bundle.setExpireDate(expireDate);
+                	APILocator.getBundleAPI().updateBundle(bundle);
+
+                	publisherAPI.unpublishBundleAssets(bundle.getId(), expireDate);
+                }
+
+            } else if(_iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
+                if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
+                    Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
+                    bundle.setPublishDate(publishDate);
+                    bundle.setExpireDate(expireDate);
+                	APILocator.getBundleAPI().updateBundle(bundle);
+
+                	publisherAPI.publishAndExpireBundleAssets(bundle.getId(), publishDate, expireDate, getUser());
+                }
+            }
+
+
+        } catch ( DotPublisherException e ) {
+            Logger.debug( PushPublishActionlet.class, e.getMessage(), e );
+            throw new WorkflowActionFailureException( e.getMessage(), e );
+        } catch ( ParseException e ) {
+            Logger.debug( PushPublishActionlet.class, e.getMessage() );
+            throw new WorkflowActionFailureException( e.getMessage() );
+        } catch ( DotDataException e ) {
+            Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+        }
+    }
+
+    private List<String> getIdsToPush(List<String> assetIds, String _contentFilterDate,
 			SimpleDateFormat dateFormat)
 			throws ParseException, DotDataException {
 
     	List<String> ids = new ArrayList<String>();
-		// check for the categories
-		if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
-		    //If we are trying to push users a filter date must be available
-		    if ( _assetId.contains( "users_" ) ) {
-		        Date filteringDate = dateFormat.parse( _contentFilterDate );
-		        //Get users where createdate >= ?
-		        List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
-		        if ( usersIds != null ) {
-		            for ( String id : usersIds ) {
-		                ids.add( "user_" + id );
-		            }
-		        }
-		    } else {
-		        ids.add( _assetId );
-		    }
-		} else if ( _assetId.equals( "CAT" ) ) {
-		    ids.add( _assetId );
-		} else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
-		    ids.add( _assetId );
-		} else {
-		    // if the asset is a folder put the inode instead of the identifier
-		    Folder folder = null;
-		    try {
-		        folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
-		    } catch (DotSecurityException e) {
-				Logger.error(getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId);
-			} catch (DotDataException e) {
-				Logger.info(getClass(), "FolderAPI.find(): Identifier is null");
+
+    	for (String _assetId : assetIds) {
+
+
+			// check for the categories
+			if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
+			    //If we are trying to push users a filter date must be available
+			    if ( _assetId.contains( "users_" ) ) {
+			        Date filteringDate = dateFormat.parse( _contentFilterDate );
+			        //Get users where createdate >= ?
+			        List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
+			        if ( usersIds != null ) {
+			            for ( String id : usersIds ) {
+			                ids.add( "user_" + id );
+			            }
+			        }
+			    } else {
+			        ids.add( _assetId );
+			    }
+			} else if ( _assetId.equals( "CAT" ) ) {
+			    ids.add( _assetId );
+			} else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
+			    ids.add( _assetId );
+			} else {
+			    // if the asset is a folder put the inode instead of the identifier
+				try {
+				    Folder folder = null;
+				    try {
+				        folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
+				    } catch (DotSecurityException e) {
+						Logger.error(getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId);
+					} catch (DotDataException e) {
+						Logger.info(getClass(), "FolderAPI.find(): Identifier is null");
+					}
+
+				    if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
+				        ids.add( _assetId );
+				    } else {
+				        // if the asset is not a folder and has identifier, put it, if not, put the inode
+				        Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
+				        ids.add( iden.getId() );
+				    }
+
+				} catch(DotStateException e) {
+					ids.add(_assetId);
+				}
 			}
 
-		    if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
-		        ids.add( _assetId );
-		    } else {
-		        // if the asset is not a folder and has identifier, put it, if not, put the inode
-		        Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
-		        ids.add( iden.getId() );
-		    }
-		}
+    	}
 
 		return ids;
 	}

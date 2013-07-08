@@ -369,6 +369,13 @@
 	    dojo.style(dialog.domNode,'top','80px');
 	}
 
+	dojo.require("dotcms.dojo.push.PushHandler");
+	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish-Bundle")%>', true);
+
+	function remotePublish(objId) {
+		pushHandler.showDialog(objId);
+	}
+
 
    function filterStructure(varName){
 	   var q  = dijit.byId("query").getValue();
@@ -655,4 +662,17 @@
 
 	</form>
 </div>
+
+<form id="remotePublishForm">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="iWantTo" id=iWantTo type="hidden" value="">
+	<input name="whoToSend" id=whoToSend type="hidden" value="">
+	<input name="newBundle" id=newBundle type="hidden" value="">
+	<input name="bundleName" id=bundleName type="hidden" value="">
+	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
+</form>
 

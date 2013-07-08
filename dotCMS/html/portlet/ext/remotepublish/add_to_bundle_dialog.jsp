@@ -21,7 +21,7 @@ Role myRole  = APILocator.getRoleAPI().getUserRole(user);
 <!--  DOTCMS-7085 -->
 <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>">
 
-<div style="width:430px;" dojoType="dijit.form.Form" id="publishForm">
+<div style="width:430px;" dojoType="dijit.form.Form" id="addToBundleForm">
 
 		<div class="fieldWrapper">
 			<div class="fieldName" style="width:120px">

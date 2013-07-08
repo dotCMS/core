@@ -20,7 +20,7 @@ public abstract class BundleFactory {
 
 	protected static String DELETE_BUNDLE = "DELETE FROM publishing_bundle where id = ?";
 
-	protected static String UPDATE_BUNDLE = "UPDATE publishing_bundle SET name = ? where id = ?";
+	protected static String UPDATE_BUNDLE = "UPDATE publishing_bundle SET name = ?, publish_date = ?, expire_date = ? where id = ?";
 
 	protected static String DELETE_ASSET_FROM_BUNDLE = "DELETE from publishing_queue where asset = ? and bundle_id = ?";
 

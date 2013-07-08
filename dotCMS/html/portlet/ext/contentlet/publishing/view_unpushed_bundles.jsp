@@ -46,7 +46,6 @@
 
 %>
 
-
 <div style="padding-top: 5px">
 			<table  class="listingTable">
 				<tr style="line-height:20px; padding-bottom: 15px">
@@ -145,13 +144,13 @@
 							<%}%>
 						</table>
 					</td>
-					<td style="padding-left: 10px; font-size: 12px" width="240px" >
-						<button dojoType="dijit.form.Button" disabled="<%=assets.size()>0?"false":"true" %>"   onClick="remotePublish('<%=bundle.getId()%>');" iconClass="plusIcon">
+					<td style="padding-left: 10px; font-size: 12px" width="120px" >
+						<button dojoType="dijit.form.Button" disabled="<%=assets.size()>0?"false":"true" %>"   onClick="remotePublish('<%=bundle.getId()%>'); loadUnpushedBundles()" iconClass="plusIcon">
 							<%= LanguageUtil.get(pageContext, "Remote-Publish") %>
 						</button>
-						<button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundle.getId()%>';" disabled="<%=assets.size()>0?"false":"true" %>"  iconClass="downloadIcon">
-							<%= LanguageUtil.get(pageContext, "download") %>
-						</button>
+<%-- 						<button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadSerializedBundle/bid/<%=bundle.getId()%>';" disabled="<%=assets.size()>0?"false":"true" %>"  iconClass="downloadIcon"> --%>
+<%-- 							<%= LanguageUtil.get(pageContext, "download") %> --%>
+<!-- 						</button> -->
 					</td>
 
 				</tr>

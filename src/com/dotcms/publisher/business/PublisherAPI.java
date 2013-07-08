@@ -18,6 +18,7 @@ public abstract class PublisherAPI {
 	public static final long PROCESSED_ELEMENT=0;
 	public static final long ADD_OR_UPDATE_ELEMENT=1;
 	public static final long DELETE_ELEMENT=2;
+	public static final long ADD_OR_UPDATE_AND_DELETE=3;
 
 	public static final long TO_PUBLISH_FILTER=1;
 	public static final long TO_UNPUBLISH_FILTER=2;
@@ -36,21 +37,34 @@ public abstract class PublisherAPI {
 
 	/**
 	 * Include in the publishing_queue table the identifier used to get contents to publish
-	 * @param con Contentlet
 	 */
 	public abstract void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user) throws DotPublisherException;
 
 	/**
 	 * Include in the publishing_queue table the identifier used to get contents to UN-publish
-	 * @param con Contentlet
 	 */
 	public abstract void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user) throws DotPublisherException;
 
 	/**
 	 * Persists the relationship between a List of assets and the bundle that they were added to
-	 * @param con Contentlet
 	 */
 	public abstract void saveBundleAssets(List<String> identifiers, String bundleId, User user) throws DotPublisherException;
+
+	/**
+	 * sets the publish date and the publish operation type to the elements of the publishing queue contained in the bundle with the given bundleId
+	 */
+	public abstract void publishBundleAssets(String bundleId, Date publishDate) throws DotPublisherException;
+
+	/**
+	 * sets the expire date and the unpublish operation type to the elements of the publishing queue contained in the bundle with the given bundleId
+	 */
+	public abstract void unpublishBundleAssets(String bundleId, Date expireDate) throws DotPublisherException;
+
+	/**
+	 * sets the publish and expire date and the publish and expire operations types to the elements of the publishing queue contained in the bundle with the given bundleId
+	 */
+	public abstract void publishAndExpireBundleAssets(String bundleId, Date publishDate, Date expireDate, User user) throws DotPublisherException;
+
 
 	/**
 	 * Get tree data of a content

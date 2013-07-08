@@ -1,5 +1,10 @@
 package com.dotcms.publisher.business;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -9,6 +14,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -17,10 +23,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Implement the PublishQueueAPI abstract class methods
@@ -790,6 +792,66 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 
 		return res;
+	}
+	@Override
+	public void publishBundleAssets(String bundleId, Date publishDate)
+			throws DotPublisherException {
+
+		// update the already existing assets in the queue list with the publish operation and publish date
+
+		DotConnect dc = new DotConnect();
+        dc.setSQL( "UPDATE publishing_queue SET operation = ?, publish_date = ? where bundle_id = ?" );
+        dc.addParam(ADD_OR_UPDATE_ELEMENT);
+        dc.addParam(publishDate);
+        dc.addParam(bundleId);
+
+        try {
+			dc.loadResult();
+		} catch (DotDataException e) {
+			Logger.error(getClass(), "Error updating bundles in publishing queue");
+			throw new DotPublisherException("Error updating bundles in publishing queue", e);
+		}
+
+	}
+	@Override
+	public void unpublishBundleAssets(String bundleId, Date expireDate)
+			throws DotPublisherException {
+
+		// update the already existing assets in the queue list with the unpublish operation and expiration date
+
+		DotConnect dc = new DotConnect();
+        dc.setSQL( "UPDATE publishing_queue SET operation = ?, publish_date = ? where bundle_id = ?" );
+        dc.addParam(DELETE_ELEMENT);
+        dc.addParam(expireDate);
+        dc.addParam(bundleId);
+
+        try {
+			dc.loadResult();
+		} catch (DotDataException e) {
+			Logger.error(getClass(), "Error updating bundles in publishing queue");
+			throw new DotPublisherException("Error updating bundles in publishing queue", e);
+		}
+
+	}
+	@Override
+	public void publishAndExpireBundleAssets(String bundleId, Date publishDate,
+			Date expireDate, User user) throws DotPublisherException {
+
+		// update the already existing assets in the queue list with the publish operation and publish date
+
+		publishBundleAssets(bundleId, publishDate);
+
+        // insert a new version of each asset but with the unpublish operation and the expiration date
+
+		List<PublishQueueElement> assets = getQueueElementsByBundleId(bundleId);
+
+		List<String> ids = new ArrayList<String>();
+
+		for (PublishQueueElement asset : assets) {
+			ids.add(asset.getAsset());
+		}
+
+		addAssetsToQueue(ids, bundleId, expireDate, user, DELETE_ELEMENT);
 	}
 
 }

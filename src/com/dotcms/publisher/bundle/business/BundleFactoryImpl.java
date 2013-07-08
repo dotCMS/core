@@ -89,7 +89,10 @@ public class BundleFactoryImpl extends BundleFactory {
 
 		List<Map<String, Object>> res = dc.loadObjectResults();
 
-		return PublisherUtil.getBundleByMap(res.get(0));
+		if(res.size()>0)
+			return PublisherUtil.getBundleByMap(res.get(0));
+		else
+			return null;
 	}
 
 	@Override
@@ -115,6 +118,8 @@ public class BundleFactoryImpl extends BundleFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(UPDATE_BUNDLE);
 		dc.addParam(bundle.getName());
+		dc.addParam(bundle.getPublishDate());
+		dc.addParam(bundle.getExpireDate());
 		dc.addParam(bundle.getId());
 
 		dc.loadResult();
