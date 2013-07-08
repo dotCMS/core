@@ -77,7 +77,7 @@ public interface EnvironmentAPI {
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
 
-	void updateEnvironment(Environment environment) throws DotDataException;
+	void updateEnvironment(Environment environment, List<Permission> perms) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Returns a List of Environment objects to whom the bundle with the given bundleId was sent to,
