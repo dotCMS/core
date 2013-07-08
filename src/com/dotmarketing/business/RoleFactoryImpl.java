@@ -794,34 +794,5 @@ public class RoleFactoryImpl extends RoleFactory {
 		return loadRoleByKey(user.getUserId());
 
 	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	protected List<Role> loadRolesForUserId(String userId) throws DotDataException {
-		List<Role> grantToUser = new ArrayList<Role>();
-		DotConnect dc = new DotConnect();
-		dc.setSQL("select cs.* from cms_role cs JOIN users_cms_roles ucr ON cs.id = ucr.role_id where ucr.user_id = ?");
-		dc.addParam(userId);
-		List<Map<String,String>> sqlResults = dc.loadResults();
-		for(Map<String, String> roleMap : sqlResults){
-			Role r = rc.get(roleMap.get("id"));
-			if(null==r || !UtilMethods.isSet(r.getId())){
-				r = new Role();
-				r.setDBFQN(roleMap.get("db_fqn"));
-				r.setDescription(roleMap.get("description"));
-				r.setEditLayouts(Boolean.parseBoolean(roleMap.get("edit_layouts")));
-				r.setEditPermissions(Boolean.parseBoolean(roleMap.get("edit_permissions")));
-				r.setEditUsers(Boolean.parseBoolean(roleMap.get("edit_users")));
-				r.setId(roleMap.get("id"));
-				r.setName(roleMap.get("role_name"));
-				r.setRoleKey(roleMap.get("role_key"));
-				r.setParent(roleMap.get("parent"));
-				r.setLocked(Boolean.parseBoolean(roleMap.get("locked")));
-				r.setSystem(Boolean.parseBoolean(roleMap.get("system")));
-			}
-			grantToUser.add(r);
-		}
-		return grantToUser;
-	}
 
 }
