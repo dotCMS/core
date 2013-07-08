@@ -91,4 +91,13 @@ public abstract class RoleFactory {
 	protected abstract Role loadRoleByKey(String key) throws DotDataException;
 
 	protected abstract  Role addUserRole(User user) throws DotDataException;
+	
+	/**
+	 * 
+	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+	 * @return The Role list granted to certain user
+	 * @throws DotDataException
+	 * Jul 8, 2013 - 11:33:24 AM
+	 */
+	protected abstract List<Role> loadRolesForUserId(String userId) throws DotDataException;
 }
