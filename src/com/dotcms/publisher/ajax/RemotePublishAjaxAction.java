@@ -183,10 +183,14 @@ public class RemotePublishAjaxAction extends AjaxAction {
             for ( String assetId : assetIds ) {
                 if ( assetId != null && !assetId.trim().isEmpty() ) {
 
+                    if ( ids.contains( assetId ) ) {
+                        continue;
+                    }
+
                     // check for the categories
-                    if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
+                    if ( assetId.contains( "user_" ) || assetId.contains( "users_" ) ) {//Trying to publish users
                         //If we are trying to push users a filter date must be available
-                        if ( _assetId.contains( "users_" ) ) {
+                        if ( assetId.contains( "users_" ) ) {
                             Date filteringDate = dateFormat.parse( _contentFilterDate );
                             //Get users where createdate >= ?
                             List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
@@ -196,29 +200,31 @@ public class RemotePublishAjaxAction extends AjaxAction {
                                 }
                             }
                         } else {
-                            ids.add( _assetId );
+                            ids.add( assetId );
                         }
-                    } else if ( _assetId.equals( "CAT" ) ) {
-                        ids.add( _assetId );
-                    } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
-                        ids.add( _assetId );
+                    } else if ( assetId.equals( "CAT" ) ) {
+                        ids.add( assetId );
+                    } else if ( assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
+                        ids.add( assetId );
                     } else {
                         // if the asset is a folder put the inode instead of the identifier
                         Folder folder = null;
                         try {
-                            folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
-                        } catch (DotSecurityException e) {
-                            Logger.error(getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId);
-                        } catch (DotDataException e) {
-                            Logger.error(getClass(), "FolderAPI.find(): Identifier is null");
+                            folder = APILocator.getFolderAPI().find( assetId, getUser(), false );
+                        } catch ( DotSecurityException e ) {
+                            Logger.error( getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + assetId );
+                        } catch ( DotDataException e ) {
+                            Logger.error( getClass(), "FolderAPI.find(): Identifier is null" );
                         }
 
                         if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
-                            ids.add( _assetId );
+                            ids.add( assetId );
                         } else {
                             // if the asset is not a folder and has identifier, put it, if not, put the inode
-                            Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
-                            ids.add( iden.getId() );
+                            Identifier iden = APILocator.getIdentifierAPI().findFromInode( assetId );
+                            if ( !ids.contains( iden.getId() ) ) {//Multiples languages have the same identifier
+                                ids.add( iden.getId() );
+                            }
                         }
                     }
                 }
