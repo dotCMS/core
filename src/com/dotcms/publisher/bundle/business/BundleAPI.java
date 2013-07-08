@@ -88,7 +88,7 @@ public interface BundleAPI {
 	public void deleteBundle(String id) throws DotDataException;
 
 	/**
-	 * deletes the Bundle with the given id
+	 * updates the Bundle with the given id
 	 *
 	 *
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
