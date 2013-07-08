@@ -53,6 +53,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -63,6 +64,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
@@ -272,6 +274,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
 			Structure st=StructureCache.getStructureByInode(con.getStructureInode());
 			
+			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+			
 			m.put("title", con.getTitle());
 			m.put("structureName", st.getVelocityVarName());
             m.put("structureType", st.getStructureType() + "");
@@ -287,7 +291,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("languageId", Long.toString(con.getLanguageId()));
             m.put("identifier", ident.getId());
             m.put("conHost", ident.getHostId());
-            m.put("conFolder", con.getFolder());
+            m.put("conFolder", conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
             m.put("parentPath", ident.getParentPath());
             m.put("path", ident.getPath());
             

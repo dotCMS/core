@@ -10,6 +10,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -532,23 +533,27 @@ public class ContentletForm extends ValidatorForm {
 	}
 	
 	   /**
-	 * This method returns the value for any of the generic fields
-	 * of the contentlet, given a fieldName using reflection, invoking the
-	 * getter of the field.
-	 * @param fieldName
-	 * @return
-	 */
+        * This method returns the value for any of the generic fields
+        * of the contentlet, given a fieldName using reflection, invoking the
+        * getter of the field.
+        * @param velocityVariableName
+        * @return
+        */
+       public Object getFieldValueByVar ( String velocityVariableName ) {
 
-	public Object getFieldValueByVar(String velocityVariableName) {
+           Object value = null;
+           try {
+               value = map.get( velocityVariableName );
+           } catch ( Exception e ) {
+               Logger.error( this, "An error has ocurred trying to get the value for the field: " + velocityVariableName );
+           }
 
-		Object value = null;
-		try {
-			value = map.get(velocityVariableName);
-		} catch (Exception e) {
-			Logger.error(this,"An error has ocurred trying to get the value for the field: " + velocityVariableName);
-		}
-		return value;
-	}
+           if ( InodeUtils.isSet( getInode() ) && Contentlet.isMetadataFieldCached( getStructureInode(), velocityVariableName, value ) ) {
+               return Contentlet.lazyMetadataLoad( getInode(), getStructureInode() );
+           }
+
+           return value;
+       }
 
 	public String[] getCategories() {
 		return categories;
