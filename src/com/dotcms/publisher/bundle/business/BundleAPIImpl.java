@@ -38,4 +38,37 @@ public class BundleAPIImpl implements BundleAPI {
 		}
 	}
 
+	@Override
+	public List<Bundle> getUnsendBundles(String userId) throws DotDataException {
+		return bundleFactory.findUnsendBundles(userId);
+	}
+
+	@Override
+	public Bundle getBundleByName(String name) throws DotDataException {
+		return bundleFactory.getBundleByName(name);
+	}
+
+	@Override
+	public Bundle getBundleById(String id) throws DotDataException {
+		return bundleFactory.getBundleById(id);
+	}
+
+	@Override
+	public void deleteBundle(String id) throws DotDataException {
+		bundleFactory.deleteBundle(id);
+
+	}
+
+	@Override
+	public void updateBundle(Bundle bundle) throws DotDataException {
+		bundleFactory.updateBundle(bundle);
+	}
+
+	@Override
+	public void deleteAssetFromBundle(String assetId, String bundleId)
+			throws DotDataException {
+		bundleFactory.deleteAssetFromBundle(assetId, bundleId);
+
+	}
+
 }

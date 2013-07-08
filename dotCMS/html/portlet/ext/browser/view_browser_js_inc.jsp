@@ -1490,6 +1490,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 	}
 
+	function addToBundle (objId) {
+
+		pushHandler.showAddToBundleDialog(objId, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+
+	}
+
 	function unpublishHTMLPage (objId, referer) {
 		BrowserAjax.unPublishAsset(objId, unpublishHTMLPageCallback);
 		//top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
