@@ -83,6 +83,11 @@
 				    	strHTML += '<span class="pushIcon"></span>';
 		        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 					strHTML += '</a>';
+
+					strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+						strHTML += '<span class="pushIcon"></span>';
+						strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
+					strHTML += '</a>';
 				}
 			}
 
@@ -213,6 +218,11 @@
 				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
 			    	strHTML += '<span class="pushIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+				strHTML += '</a>';
+
+				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+					strHTML += '<span class="pushIcon"></span>';
+					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}
 
@@ -415,6 +425,11 @@
 			    	strHTML += '<span class="pushIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
+
+				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+					strHTML += '<span class="pushIcon"></span>';
+					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
+				strHTML += '</a>';
 			}
 		}
 
@@ -544,6 +559,11 @@
 			    	strHTML += '<span class="pushIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
+
+				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+					strHTML += '<span class="pushIcon"></span>';
+					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
+				strHTML += '</a>';
 			}
 		}
 
@@ -658,6 +678,11 @@
 				strHTML += '<a href="javascript: remotePublish(\'' + objId + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		    	strHTML += '<span class="pushIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+				strHTML += '</a>';
+
+				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+				strHTML += '<span class="pushIcon"></span>';
+				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}
 
@@ -989,12 +1014,12 @@
 		    		var wfActionId 			= this.wfActionId;
 		    		var wfActionComments 	= "";
 		    		var publishDate			="";
-		    		var publishTime 		= ""; 
-		    		var expireDate 			= ""; 
-		    		var expireTime 			=""; 
+		    		var publishTime 		= "";
+		    		var expireDate 			= "";
+		    		var expireTime 			="";
 		    		var neverExpire 		="";
 					BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-		    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);  
+		    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);
  			}
 
     	},

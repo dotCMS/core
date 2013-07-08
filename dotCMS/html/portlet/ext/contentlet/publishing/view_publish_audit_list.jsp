@@ -21,6 +21,7 @@
 <%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
 
@@ -29,7 +30,7 @@
 
     String nastyError = null;
 
-    
+
    	int deletedCount=0;
     if(request.getParameter("deleteAudit") !=null){
     	String deleteAudit = 	request.getParameter("deleteAudit");
@@ -39,28 +40,28 @@
     			publishAuditAPI.deletePublishAuditStatus(bundleId)	;
     			deletedCount++;
     		}
-    		
-    	}
-    	
 
-    	
+    	}
+
+
+
     }
-    
-    
-    
-    
-    
-    
-    
-    PublisherAPI pubAPI = PublisherAPI.getInstance();  
-    
+
+
+
+
+
+
+
+    PublisherAPI pubAPI = PublisherAPI.getInstance();
+
     int offset = 0;
     try{offset = Integer.parseInt(request.getParameter("offset"));}catch(Exception e){}
     if(offset <0) offset=0;
     int limit = 50;
     try{limit = Integer.parseInt(request.getParameter("limit"));}catch(Exception e){}
     if(limit <0 || limit > 500) limit=50;
-    
+
 
 
     List<PublishAuditStatus> iresults =  null;
@@ -76,29 +77,29 @@
     	iresults = new ArrayList();
     	nastyError = pe.toString();
     }
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
 	long begin=offset;
 	long end = offset+limit;
 	long total = counter;
 	long previous=(begin-limit);
 	if(previous < 0){previous=0;}
-    
-    
-    
-    
-    
+
+
+
+
+
   %>
-  
+
 
 <script type="text/javascript">
    dojo.require("dijit.Tooltip");
-   
+
    function showDetail(bundleId) {
 		var dialog = new dijit.Dialog({
 			id: 'bundleDetail',
@@ -114,31 +115,31 @@
 	        	},200);
 	        },
 	        onLoad: function() {
-	        	
+
 	        }
 	    });
-	    dialog.show();	    
+	    dialog.show();
 	    dojo.style(dialog.domNode,'top','80px');
 	}
 
-   function doAuditPagination(offset,limit) {		
+   function doAuditPagination(offset,limit) {
 		var url="&offset="+offset;
-		url+="&limit="+limit;		
+		url+="&limit="+limit;
 		refreshAuditList(url);
 	}
 
 	function checkAllAudits(){
 		var chk = dijit.byId("chkBoxAllAudits").checked;
-		
+
 		 dojo.query(".chkBoxAudits input").forEach(function(box){
-			 
+
 			 //dijit.byId(box.id).disabled = chk;
 			 dijit.byId(box.id).setValue(chk);
-			 
+
 		})
-	
+
 	}
-	
+
 	function deleteAudits(){
 
 		var deleteMe="";
@@ -147,9 +148,9 @@
 			if(j.checked){
 				deleteMe+=j.getValue()+",";
 			}
-			 
+
 		})
-		var url="&deleteAudit="+deleteMe;		
+		var url="&deleteAudit="+deleteMe;
 		refreshAuditList(url);
 	}
 
@@ -198,17 +199,17 @@
        };
        dojo.xhrPost(xhrArgs);
    };
-	
-	
+
+
 
 
 		//dijit.byId("deleteAuditsBtn").disabled =<%=(iresults.size() ==0)%>;
-	
+
 
 	<%if(deletedCount > 0){%>
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "deleted") + " " + deletedCount  %>");
 	<%} %>
-</script> 
+</script>
 
 <%if(UtilMethods.isSet(nastyError)){%>
 		<dl>
@@ -224,32 +225,33 @@
 
 
 
-				
+
 	<table class="listingTable ">
 		<tr>
 			<th style="text-align:center;">
-				<input dojoType="dijit.form.CheckBox" 
-					type="checkbox" 
-					name="chkBoxAllAudits" 
-					value="true" 
+				<input dojoType="dijit.form.CheckBox"
+					type="checkbox"
+					name="chkBoxAllAudits"
+					value="true"
 					id="chkBoxAllAudits"
 					onclick="checkAllAudits()"/>
-			</th>	
-		
-		
-			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
-			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>	
-			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>	
+			</th>
+
+
+			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>
+			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_dialog_bundle_name") %></strong></th>
+			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
+			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
 			<th style="width:150px" nowrap="nowrap" align="center" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
 		</tr>
 		<% for(PublishAuditStatus c : iresults) {
 			String errorclass="";
-			
+
 			//Check bundle permissions
 			PermissionAPI permAPI = APILocator.getPermissionAPI();
 			Map<String, String> bundleAssets = c.getStatusPojo() == null ? new HashMap<String, String>() : c.getStatusPojo().getAssets();
-			
+
 			PermissionableProxy pp = new PermissionableProxy();
 			for(String key : bundleAssets.keySet()) {
 
@@ -258,42 +260,40 @@
 				pp.setInode(identifier);
 				pp.setIdentifier(identifier);
 				pp.setType(assetType);
-				
+
 
 				break;
 			}
-			
+
 			if(permAPI.doesUserHavePermission(pp, PermissionAPI.PERMISSION_PUBLISH, user) || bundleAssets.keySet().size()==0) {
 		%>
 			<tr <%=errorclass%>>
 				<td style="width:30px;text-align:center;" valign="top">
-					<input dojoType="dijit.form.CheckBox" 
-							type="checkbox" 
-							name="chkBoxAudits" 
+					<input dojoType="dijit.form.CheckBox"
+							type="checkbox"
+							name="chkBoxAudits"
 							class="chkBoxAudits"
-							value="<%=c.getBundleId()%>" 
+							value="<%=c.getBundleId()%>"
 							id="chkBox<%=c.getBundleId()%>"/>
-				</td>	
-			
+				</td>
+
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 					<%=c.getBundleId().split("-")[0]%>...
+				</td>
+				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+					<% Bundle bundle = APILocator.getBundleAPI().getBundleById(c.getBundleId()); %>
+					<%=bundle!=null?bundle.getName():""%>
 				</td>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
 						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-						
+
 						<%int count=0;for(String id : bundleAssets.keySet()) { %>
 							<%if(count > 0){%><br /><%} %>
 							<%if(count > 2){%>...<%=bundleAssets.keySet().size()-3%> <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %><% break;} %>
-
 							<%String assetType = bundleAssets.get(id); %>
 							<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
-                            <%if (assetTitle.equals( assetType )) {%>
-                                <%=assetType %>
-                            <%} else {%>
 								<strong><%= assetType%></strong> : <%=StringEscapeUtils.escapeHtml(assetTitle)%>
-                            <%}%>
-
 						<%count++;} %>
 						</td>
 					<%}else{ %>
@@ -324,7 +324,7 @@
 			<td  width="33%" >&nbsp;</td>
 		<%} %>
 			<td  width="34%"  colspan="2" align="center"><strong> <%=begin+1%> - <%=end < total?end:total%> <%= LanguageUtil.get(pageContext, "publisher_Of") %> <%=total%> </strong></td>
-		<%if(end < total){ 
+		<%if(end < total){
 			long next=(end < total?end:total);
 		%>
 			<td align="right" width="33%" ><button class="solr_right" dojoType="dijit.form.Button" onClick="refreshAuditList('offset=<%=next%>&limit=<%=limit%>');return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
@@ -334,12 +334,12 @@
 	</tr>
 </table>
 <%
-}else{ 
+}else{
 %>
 	<table class="listingTable ">
 		<tr>
-			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>	
-			<th style="width:100px"><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>	
+			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>
+			<th style="width:100px"><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
 			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
 		</tr>
@@ -348,4 +348,3 @@
 		</tr>
 	</table>
 <%} %>
-

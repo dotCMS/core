@@ -41,7 +41,7 @@
     dojo.require('dijit.form.FilteringSelect');
     dojo.require('dojo.data.ItemFileReadStore');
     dojo.require("dojo.fx");
-    
+
 </script>
 
 #if($VTLSERVLET_URI.indexOf("?") > -1)
@@ -141,10 +141,16 @@
             document.getElementById('submitParent').submit();
         }
     }
-    
+
     function remotePublishCall(){
     	parent.remotePublish();
     }
+
+
+    function addToBundleCall(){
+      	parent.addToBundle();
+    }
+
     function editTemplate(){
             //document.getElementById('htmlPage').value='$htmlPageInode';
             document.getElementById('cmd').value="editTemplate";
@@ -240,9 +246,9 @@
 
 <!-- Edit Mode -->
     <div id="editModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Edit")" #if ($EDIT_MODE && $ADMIN_MODE) selected="true" #end>
-        
+
         <div class="pageTools">
-        
+
         	#if($PUBLISH_HTMLPAGE_PERMISSION)
                 <a href="javascript: publishAll();">
                 	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
@@ -251,20 +257,23 @@
 	                <a href="javascript: remotePublishCall();">
 	                	<span class="pushIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
 	                </a>
+	                <a href="javascript: addToBundleCall();">
+                    	<span class="pushIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
+                 	</a>
                 #end
             #else
 				<span class="disabled">
                		<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
                	</span>
             #end
-            
+
             <a href="javascript: editPage();">
             	<span class="pagePropIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Properties")
             </a>
             <a href="javascript: viewStatistics();">
             	<span class="statisticsIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Statistics")
             </a>
-            
+
             #if($EDIT_TEMPLATE_PERMISSION)
                 <a href="javascript: editTemplate();">
                 	<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
@@ -274,22 +283,22 @@
 					<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
 				</span>
             #end
-            
+
             <hr/>
-            
+
             <a href="javascript: addPage();">
     			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
 			</a>
-			
+
         </div>
-        
+
     </div>
 <!-- /Edit Mode -->
 
 <!-- Preview Mode -->
     <div id="previewModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Preview")" #if ($PREVIEW_MODE && $ADMIN_MODE) selected="true" #end>
         <div class="pageTools">
-        
+
         	#if($PUBLISH_HTMLPAGE_PERMISSION)
                 <a href="javascript: publishAll();">
                 	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
@@ -304,11 +313,11 @@
                 	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
                 </span>
             #end
-            
+
             <span class="disabled">
             	<span class="pagePropIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Properties")
             </span>
-            
+
             <span class="disabled">
             	<span class="statisticsIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Statistics")
             </span>
@@ -316,23 +325,23 @@
             <span class="disabled">
             	<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
             </span>
-            
+
             <hr/>
-            
+
             #if($canViewDiff)
                 <a href="javascript: viewDiff();">
                 	<span class="redlineIcon"></span> $languagewebapi.getFromUserLanguage("modes.Whats-Changed")
                 </a>
             #end
-            
+
             <hr/>
-            
+
             <a href="javascript: addPage();">
     			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
 			</a>
-			
+
             <hr/>
-            
+
         </div>
     </div>
 <!-- /Preview Mode -->
@@ -340,31 +349,31 @@
 <!-- Live Mode -->
     <div id="liveModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Live")" #if (!$EDIT_MODE && $ADMIN_MODE) selected="true" #end>
         <div class="pageTools">
-            
+
             <span class="disabled">
             	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
             </span>
-            
+
             <span class="disabled">
             	<span class="pagePropIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Properties")
             </span>
-            
+
             <span class="disabled">
             	<span class="statisticsIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Statistics")
             </span>
-            
+
             <span class="disabled">
             	<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
             </span>
-            
+
             <hr/>
-            
+
             <a href="javascript: addPage();">
     			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
 			</a>
-			
+
             <hr/>
-            
+
         </div>
     </div>
 <!-- /Live Mode -->
@@ -442,7 +451,7 @@
 <!-- End Languages -->
 
     <div class="clear"></div>
-    
+
 <!-- Start Controles -->
 	<div id="buttonRow">
 	    <button dojoType="dijit.form.Button" onClick='backToCMS()' iconClass="cancelIcon" >
@@ -450,7 +459,7 @@
 	    </button>
 	</div>
 	<div class="clear"></div>
-	
+
 	<div class="logout">
 	    <button dojoType="dijit.form.Button" onClick='doLogout()' iconClass="closeIcon">
             $languagewebapi.getFromUserLanguage("Logout")

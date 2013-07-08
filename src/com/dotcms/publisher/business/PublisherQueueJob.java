@@ -1,11 +1,22 @@
 package com.dotcms.publisher.business;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
+
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.business.APILocator;
@@ -17,11 +28,6 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.client.urlconnection.HTTPSProperties;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
-
-import java.util.*;
 
 /**
  * This class read the publishing_queue table and send bundles to some endpoints
@@ -29,9 +35,6 @@ import java.util.*;
  *
  */
 public class PublisherQueueJob implements StatefulJob {
-
-	private static final String IDENTIFIER = "identifier:";
-	private static final int _ASSET_LENGTH_LIMIT = 20;
 
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
@@ -99,13 +102,14 @@ public class PublisherQueueJob implements StatefulJob {
 						pubAuditAPI.insertPublishAuditStatus(status);
 
 						//Queries creation
-						pconf.setLuceneQueries(prepareQueries(tempBundleContents));
+						pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
 						pconf.setId(tempBundleId);
 						pconf.setUser(APILocator.getUserAPI().getSystemUser());
 						pconf.setStartDate(new Date());
 						pconf.runNow();
 
 						pconf.setPublishers(clazz);
+//						pconf.setEndpoints(endpoints);
 
                         if ( Integer.parseInt( bundle.get( "operation" ).toString() ) == PublisherAPI.ADD_OR_UPDATE_ELEMENT ) {
                             pconf.setOperation( PushPublisherConfig.Operation.PUBLISH );
@@ -251,41 +255,5 @@ public class PublisherQueueJob implements StatefulJob {
         	}
         }
 
-	}
-
-	private List<String> prepareQueries(List<PublishQueueElement> bundle) {
-		StringBuilder assetBuffer = new StringBuilder();
-		List<String> assets;
-		assets = new ArrayList<String>();
-
-		if(bundle.size() == 1 && bundle.get(0).getType().equals("contentlet")) {
-			assetBuffer.append("+"+IDENTIFIER+(String) bundle.get(0).getAsset());
-
-			assets.add(assetBuffer.toString() +" +live:true");
-			assets.add(assetBuffer.toString() +" +working:true");
-
-		} else {
-			int counter = 1;
-			PublishQueueElement c = null;
-			for(int ii = 0; ii < bundle.size(); ii++) {
-				c = bundle.get(ii);
-
-				if(!c.getType().equals("contentlet"))
-					continue;
-
-				assetBuffer.append(IDENTIFIER+c.getAsset());
-				assetBuffer.append(" ");
-
-				if(counter == _ASSET_LENGTH_LIMIT || (ii+1 == bundle.size())) {
-					assets.add("+("+assetBuffer.toString()+") +live:true");
-					assets.add("+("+assetBuffer.toString()+") +working:true");
-
-					assetBuffer = new StringBuilder();
-					counter = 0;
-				} else
-					counter++;
-			}
-		}
-		return assets;
 	}
 }

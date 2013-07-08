@@ -1485,9 +1485,11 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function remotePublish (objId) {
-
 		pushHandler.showDialog(objId);
+	}
 
+	function addToBundle (objId) {
+    	pushHandler.showAddToBundleDialog(objId, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
 	}
 
 	function unpublishHTMLPage (objId, referer) {

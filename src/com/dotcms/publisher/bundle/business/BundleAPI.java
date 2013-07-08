@@ -54,4 +54,55 @@ public interface BundleAPI {
 
 	public void saveBundleEnvironments(Bundle b, List<Environment> envs) throws DotDataException;
 
+	/**
+	 * returns a List of bundles that haven't been sent to any Environment
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+
+	public List<Bundle> getUnsendBundles(String userId) throws DotDataException;
+
+	/**
+	 * returns the Bundle object with the given name, if any
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	public Bundle getBundleByName(String name) throws DotDataException;
+
+	/**
+	 * returns the Bundle object with the given id, if any
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	public Bundle getBundleById(String id) throws DotDataException;
+
+	/**
+	 * deletes the Bundle with the given id
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	public void deleteBundle(String id) throws DotDataException;
+
+	/**
+	 * updates the Bundle with the given id
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	public void updateBundle(Bundle bundle) throws DotDataException;
+
+	/**
+	 * deletes the Asset with the given assetId from the Bundle with the given bundleId
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	public void deleteAssetFromBundle(String assetId, String bundleId) throws DotDataException;
+
+
+
 }
