@@ -78,4 +78,20 @@ public class Environment implements Permissionable,Serializable{
 		this.pushToAll = pushToAll;
 	}
 
+	@Override
+	public int hashCode() {		
+		return id.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(!(obj instanceof Environment))
+			return false;
+		else {
+			Environment e = (Environment)obj;
+			return this.id.equalsIgnoreCase(e.getId());
+		}
+	}
+	
+
 }
