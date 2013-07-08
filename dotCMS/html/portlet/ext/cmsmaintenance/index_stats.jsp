@@ -120,14 +120,14 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<table class="listingTable">
 			<thead>
 				<tr>
-					<th style="text-align: center">Status</th>
-					<th>Index Name</th>
-					<th>Created</th>
-					<th style="text-align: center">Count</th>
-					<th style="text-align: center">Shards</th>
-					<th style="text-align: center">Replicas</th>
-					<th style="text-align: center">Size</th>
-					<th style="text-align: center">Health</th>
+					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Status") %></th>
+					<th><%= LanguageUtil.get(pageContext,"Index-Name") %></th>
+					<th><%= LanguageUtil.get(pageContext,"Created") %></th>
+					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Count") %></th>
+					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Shards") %></th>
+					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Replicas") %></th>
+					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Size") %></th>
+					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Health") %></th>
 				</tr>
 			</thead>
 			<%for(String x : indices){%>
