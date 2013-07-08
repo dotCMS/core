@@ -1,9 +1,12 @@
 package com.dotcms.publisher.environment.business;
 
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 
 public abstract class EnvironmentFactory {
 
@@ -23,7 +26,7 @@ public abstract class EnvironmentFactory {
 
 	public abstract Environment getEnvironmentByName(String name) throws DotDataException;
 
-	public abstract List<Environment> getEnvironmentsByRole(String roleId) throws DotDataException;
+	public abstract Set<Environment> getEnvironmentsByRole(String roleId) throws DotDataException, NoSuchUserException, DotSecurityException;
 
 	public abstract void save(Environment environment) throws DotDataException;
 
