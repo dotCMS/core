@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Map;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipInputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -110,12 +108,14 @@ public class ESIndexResource extends WebResource {
    
     }
     
-    public static void create(String indexName, int shards, boolean live) throws DotIndexException, IOException {
+    public static String create(String indexName, int shards, boolean live) throws DotIndexException, IOException {
         if(indexName == null)
             indexName=ESContentletIndexAPI.timestampFormatter.format(new Date());
         indexName = (live) ? "live_" + indexName : "working_" + indexName;
         
         APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
+        
+        return indexName;
     }
     
     public static void activateIndex(String indexName) throws DotDataException {
@@ -151,19 +151,12 @@ public class ESIndexResource extends WebResource {
         try {
             InitDataObject init=auth(params,request);
             
-            InputStream input=inputFile;
-            if(inputFileDetail.getType().equals("application/zip") || inputFileDetail.getType().equals("application/x-zip")) {
-                input = new ZipInputStream(inputFile);
-            } else if(inputFileDetail.getType().equals("application/gzip") || inputFileDetail.getType().equals("application/x-gzip")) {
-                input = new GZIPInputStream(inputFile);
-            }
-            
             String index=init.getParamsMap().get("index");
             String alias=init.getParamsMap().get("alias");
             final boolean clear=init.getParamsMap().containsKey("clear") ? Boolean.parseBoolean(init.getParamsMap().get("clear")) : false;
             
             File file=File.createTempFile("restore", ".json");
-            FileUtils.copyStreamToFile(file, input, null);
+            FileUtils.copyStreamToFile(file, inputFile, null);
             
             restoreIndex(file,alias,index,clear);
             
@@ -205,17 +198,18 @@ public class ESIndexResource extends WebResource {
     
     @PUT
     @Path("/create/{params:.*}")
+    @Produces("text/plain")
     public Response createIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
             
             int shards=Integer.parseInt(init.getParamsMap().get("shards"));
-            boolean live = init.getParamsMap().containsKey("live");
+            boolean live = init.getParamsMap().containsKey("live") ? Boolean.parseBoolean(init.getParamsMap().get("live")) : false;
             String indexName = init.getParamsMap().get("index");
             
-            create(indexName, shards, live);
+            indexName = create(indexName, shards, live);
             
-            return Response.ok().build();
+            return Response.ok(indexName).build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on createIndex from "+request.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
@@ -380,7 +374,7 @@ public class ESIndexResource extends WebResource {
         try {
             InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
-            return Response.ok(indexDocumentCount(indexName)).build();
+            return Response.ok(Long.toString(indexDocumentCount(indexName))).build();
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on getDocumentCount from "+request.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
