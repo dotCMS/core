@@ -46,6 +46,18 @@
 
 %>
 
+<div class="yui-g portlet-toolbar">
+	<div class="yui-u first">
+		<span class="sServerIcon"></span>
+		<span  style="line-height:20px;font-weight: bold;"><%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %></span>
+	</div>
+
+	<div class="yui-u" style="text-align:right;">
+		<button dojoType="dijit.form.Button" onClick="loadUnpushedBundles();" iconClass="resetIcon">
+			<%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
+		</button>
+	</div>
+</div>
 <div style="padding-top: 5px">
 			<table  class="listingTable">
 				<tr style="line-height:20px; padding-bottom: 15px">
@@ -145,7 +157,7 @@
 						</table>
 					</td>
 					<td style="padding-left: 10px; font-size: 12px" width="120px" >
-						<button dojoType="dijit.form.Button" disabled="<%=assets.size()>0?"false":"true" %>"   onClick="remotePublish('<%=bundle.getId()%>'); loadUnpushedBundles()" iconClass="plusIcon">
+						<button dojoType="dijit.form.Button" disabled="<%=assets.size()>0?"false":"true" %>"   onClick="remotePublish('<%=bundle.getId()%>'); " iconClass="plusIcon">
 							<%= LanguageUtil.get(pageContext, "Remote-Publish") %>
 						</button>
 <%-- 						<button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadSerializedBundle/bid/<%=bundle.getId()%>';" disabled="<%=assets.size()>0?"false":"true" %>"  iconClass="downloadIcon"> --%>
