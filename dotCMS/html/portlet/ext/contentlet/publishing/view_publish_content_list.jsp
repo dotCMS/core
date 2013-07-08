@@ -127,11 +127,16 @@
         var nodes = dojo.query('.add_to_queue');
         dojo.forEach(nodes, function (node) {
             if (dijit.getEnclosingWidget(node).checked) {
-                ids += "," + dijit.getEnclosingWidget(node).value;
+
+                var value = dijit.getEnclosingWidget(node).value;
+                if (ids != "") {
+                    ids += ",";
+                }
+                ids += value;
             }
         });
 
-        pushHandler.showDialog( ids );
+        pushHandler.showDialog(ids);
     };
 
 </script>
@@ -177,7 +182,7 @@
 			<tr>
 
 				<td style="width:30px;text-align: center" align="center">
-					<input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"$"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"$"+c.getLanguageId()%>" />
+					<input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getInode()%>" id="add_to_queue_<%=c.getInode()%>" />
 				</td>
 				<td width="100%" nowrap="nowrap">
 					<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
