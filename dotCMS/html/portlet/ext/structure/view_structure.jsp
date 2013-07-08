@@ -182,6 +182,10 @@ function remotePublishStructure (inode) {
 	pushHandler.showDialog(inode);
 }
 
+function addToBundle (objId) {
+	pushHandler.showAddToBundleDialog(objId, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+}
+
 function deleteStructure(structureInode) {
 	currentStructureInode = structureInode;
 
@@ -350,6 +354,7 @@ var deleteLabel = "";
 
 		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
 		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"addToBundle('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"stopIcon\" onClick=\"deleteStructure('<%=structure.getInode()%>');\">"+deleteLabel+"</div>";
 
 		        popupMenus += "</div>";
@@ -404,6 +409,9 @@ var deleteLabel = "";
 	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
 	<input name="iWantTo" id=iWantTo type="hidden" value="">
 	<input name="whoToSend" id=whoToSend type="hidden" value="">
+	<input name="newBundle" id=newBundle type="hidden" value="">
+	<input name="bundleName" id=bundleName type="hidden" value="">
+	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
 </form>
 <div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:300px;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "message.structure.cantdelete") %>" >
