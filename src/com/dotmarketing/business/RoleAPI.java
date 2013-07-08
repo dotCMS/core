@@ -332,7 +332,4 @@ public interface RoleAPI {
 	 */
 	public Role getUserRole(User user) throws DotDataException;
 	
-	
-	public List<Role> getRolesByUserId(String userId) throws DotDataException;
-	
 }
