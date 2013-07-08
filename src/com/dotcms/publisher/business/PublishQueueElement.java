@@ -3,6 +3,7 @@ package com.dotcms.publisher.business;
 import java.util.Date;
 
 public class PublishQueueElement {
+
 	private Integer id;
 	private Integer operation;
 	private String asset;
@@ -11,8 +12,8 @@ public class PublishQueueElement {
 	private String bundleId;
 	private Integer languageId;
 	private String type;
-	
-	
+
+
 	public Integer getId() {
 		return id;
 	}
@@ -61,5 +62,5 @@ public class PublishQueueElement {
 	public void setType(String type) {
 		this.type = type;
 	}
-	
+
 }
