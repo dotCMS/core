@@ -174,6 +174,7 @@ var editButtonRow="editContentletButtonRow";
 	<input name="wfExpireDate" id="wfExpireDate" type="hidden" value="">
 	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
+	<input name="whereToSend" id="whereToSend" type="hidden" value="">
 
 	<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image"  dojoType="dotcms.dijit.FileBrowserDialog"></div>
