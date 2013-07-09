@@ -1,38 +1,8 @@
 package com.dotcms.publisher.ajax;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.hadoop.mapred.lib.Arrays;
-
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
-import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -40,11 +10,7 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publishing.BundlerStatus;
-import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.publishing.IBundler;
-import com.dotcms.publishing.Publisher;
-import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.*;
 import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -57,15 +23,25 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.hadoop.mapred.lib.Arrays;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class RemotePublishAjaxAction extends AjaxAction {
 
@@ -81,7 +57,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map<String, String> map = getURIParams();
-		String cmd = map.get("cmd");
+		String cmd = map.get( "cmd" );
 		Method dispatchMethod = null;
 
 		User user = getUser();
@@ -144,18 +120,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
 	}
 
-	public void unPublish(HttpServletRequest request, HttpServletResponse response) throws DotPublisherException {
-	    PublisherAPI publisherAPI = PublisherAPI.getInstance();
-        String assetId = request.getParameter("assetIdentifier");
-        List<String> identifiers=new ArrayList<String>();
-        if(assetId.contains(","))
-            identifiers.addAll(Arrays.asList(assetId.split(",")));
-        else
-            identifiers.add(assetId);
-
-        publisherAPI.addContentsToUnpublish(identifiers, UUIDGenerator.generateUuid(), new Date(), getUser());
-	}
-
     /**
      * Send to publish a given element
      *
@@ -193,8 +157,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
 
-            List<String> assetsIds = new ArrayList<String>();
-            assetsIds.add(_assetId);
+            String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
+            List<String> assetsIds = Arrays.asList( _assetsIds );
 
             List<String> ids = getIdsToPush(assetsIds, _contentFilterDate, dateFormat);
 
@@ -224,7 +188,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
             Logger.error( PushPublishActionlet.class, e.getMessage(), e );
         }
     }
-
 
     /**
      * Allow the user to send again a failed bundle to que publisher queue job in order to try to republish it again
@@ -350,7 +313,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		File bundleRoot = BundlerUtil.getBundleRoot(config);
 
 		ArrayList<File> list = new ArrayList<File>(1);
-		list.add(bundleRoot);
+		list.add( bundleRoot );
 		File bundle = new File(bundleRoot+File.separator+".."+File.separator+config.getId()+".tar.gz");
 		if(!bundle.exists()){
 			response.sendError(500, "No Bundle Found");
@@ -660,62 +623,69 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
     }
 
-    private List<String> getIdsToPush(List<String> assetIds, String _contentFilterDate,
-			SimpleDateFormat dateFormat)
-			throws ParseException, DotDataException {
+    private List<String> getIdsToPush ( List<String> assetIds, String _contentFilterDate, SimpleDateFormat dateFormat )
+            throws ParseException, DotDataException {
 
-    	List<String> ids = new ArrayList<String>();
+        List<String> ids = new ArrayList<String>();
 
-    	for (String _assetId : assetIds) {
+        for ( String _assetId : assetIds ) {
 
+            if ( _assetId != null && !_assetId.trim().isEmpty() ) {
 
-			// check for the categories
-			if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
-			    //If we are trying to push users a filter date must be available
-			    if ( _assetId.contains( "users_" ) ) {
-			        Date filteringDate = dateFormat.parse( _contentFilterDate );
-			        //Get users where createdate >= ?
-			        List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
-			        if ( usersIds != null ) {
-			            for ( String id : usersIds ) {
-			                ids.add( "user_" + id );
-			            }
-			        }
-			    } else {
-			        ids.add( _assetId );
-			    }
-			} else if ( _assetId.equals( "CAT" ) ) {
-			    ids.add( _assetId );
-			} else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
-			    ids.add( _assetId );
-			} else {
-			    // if the asset is a folder put the inode instead of the identifier
-				try {
-				    Folder folder = null;
-				    try {
-				        folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
-				    } catch (DotSecurityException e) {
-						Logger.error(getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId);
-					} catch (DotDataException e) {
-						Logger.info(getClass(), "FolderAPI.find(): Identifier is null");
-					}
+                if ( ids.contains( _assetId ) ) {
+                    continue;
+                }
 
-				    if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
-				        ids.add( _assetId );
-				    } else {
-				        // if the asset is not a folder and has identifier, put it, if not, put the inode
-				        Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
-				        ids.add( iden.getId() );
-				    }
+                // check for the categories
+                if ( _assetId.contains( "user_" ) || _assetId.contains( "users_" ) ) {//Trying to publish users
+                    //If we are trying to push users a filter date must be available
+                    if ( _assetId.contains( "users_" ) ) {
+                        Date filteringDate = dateFormat.parse( _contentFilterDate );
+                        //Get users where createdate >= ?
+                        List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
+                        if ( usersIds != null ) {
+                            for ( String id : usersIds ) {
+                                ids.add( "user_" + id );
+                            }
+                        }
+                    } else {
+                        ids.add( _assetId );
+                    }
+                } else if ( _assetId.equals( "CAT" ) ) {
+                    ids.add( _assetId );
+                } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
+                    ids.add( _assetId );
+                } else {
+                    // if the asset is a folder put the inode instead of the identifier
+                    try {
+                        Folder folder = null;
+                        try {
+                            folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
+                        } catch ( DotSecurityException e ) {
+                            Logger.error( getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId );
+                        } catch ( DotDataException e ) {
+                            Logger.info( getClass(), "FolderAPI.find(): Identifier is null" );
+                        }
 
-				} catch(DotStateException e) {
-					ids.add(_assetId);
-				}
-			}
+                        if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
+                            ids.add( _assetId );
+                        } else {
+                            // if the asset is not a folder and has identifier, put it, if not, put the inode
+                            Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
+                            if ( !ids.contains( iden.getId() ) ) {//Multiples languages have the same identifier
+                                ids.add( iden.getId() );
+                            }
+                        }
 
-    	}
+                    } catch ( DotStateException e ) {
+                        ids.add( _assetId );
+                    }
+                }
+            }
 
-		return ids;
-	}
+        }
+
+        return ids;
+    }
 
 }
