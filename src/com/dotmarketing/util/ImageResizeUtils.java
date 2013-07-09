@@ -100,7 +100,7 @@ public class ImageResizeUtils {
 		if (thumbRatio < imageRatio) {
 			thumbHeight = (int) Math.ceil((thumbWidth / imageRatio));
 		} else {
-			thumbWidth = (int) (thumbHeight * imageRatio);
+			thumbWidth = (int) Math.ceil((thumbHeight * imageRatio));
 		}
 
 		if (thumbWidth == 0)

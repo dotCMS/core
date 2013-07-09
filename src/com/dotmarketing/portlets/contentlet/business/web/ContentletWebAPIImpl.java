@@ -303,7 +303,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		currentContentlet.setStringProperty("wfExpireDate", (String) contentletFormData.get("wfExpireDate"));
 		currentContentlet.setStringProperty("wfExpireTime", (String) contentletFormData.get("wfExpireTime"));
 		currentContentlet.setStringProperty("wfNeverExpire", (String) contentletFormData.get("wfNeverExpire"));
-
+		currentContentlet.setStringProperty("whereToSend", (String) contentletFormData.get("whereToSend"));
 
 
 

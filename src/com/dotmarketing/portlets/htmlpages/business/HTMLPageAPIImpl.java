@@ -59,6 +59,7 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -658,8 +659,9 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 					"Resource %s not found in Live mode!", uri));
 		}
 
-		responseProxy.setContentType("text/html");
-		requestProxy.setAttribute("idInode", String.valueOf(idInode));
+		responseProxy.setContentType( "text/html" );
+        requestProxy.setAttribute( "User-Agent", Constants.USER_AGENT_DOTCMS_BROWSER );
+        requestProxy.setAttribute("idInode", String.valueOf(idInode));
 
 		Logger.debug(HTMLPageAPIImpl.class, "VELOCITY HTML INODE=" + idInode);
 

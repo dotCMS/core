@@ -206,7 +206,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	public Map<String, String> getMetaDataMap(Contentlet con, File binFile)  {
 
-		return new TikaUtils().getMetaDataMap(con.getInode(),binFile);
+		return new TikaUtils().getMetaDataMap(con.getInode(),binFile,false);
 
 	}
 

@@ -1,6 +1,8 @@
 package com.dotcms.rest;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -8,7 +10,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -45,8 +46,17 @@ public class EnvironmentResource extends WebResource {
 		Role role = APILocator.getRoleAPI().loadRoleById(roleId);
 		User user = APILocator.getUserAPI().loadUserById(role.getRoleKey());
 		boolean isAdmin = APILocator.getUserAPI().isCMSAdmin(user);
-
-		List<Environment> environments = isAdmin?APILocator.getEnvironmentAPI().findAllEnvironments():APILocator.getEnvironmentAPI().findEnvironmentsByRole(roleId);
+		
+		List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(),true);
+		Set<Environment> environments = new HashSet<Environment>();
+		if(isAdmin){
+			List<Environment> app = APILocator.getEnvironmentAPI().findAllEnvironments();
+			for(Environment e:app)
+				environments.add(e);
+		}
+		else
+			for(Role r: roles)
+				environments.addAll(APILocator.getEnvironmentAPI().findEnvironmentsByRole(r.getId()));
 
 		for(Environment e : environments) {
 
