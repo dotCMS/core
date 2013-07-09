@@ -300,7 +300,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 PushPublisherConfig config = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
 
                 //We can not retry Received Bundles, just bundles that we are trying to send
-                Boolean sending = sendingBundle( request, config );
+                Boolean sending = sendingBundle( request, config, bundleId );
                 if ( !sending ) {
                     appendMessage( responseMessage, "publisher_retry.error.cannot.retry.received", bundleId, true );
                     continue;
@@ -519,7 +519,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @param config
      * @return
      */
-    private Boolean sendingBundle ( HttpServletRequest request, PushPublisherConfig config ) throws DotDataException {
+    private Boolean sendingBundle ( HttpServletRequest request, PushPublisherConfig config, String bundleId ) throws DotDataException {
 
         //Get the local address
         String remoteIP = request.getRemoteHost();
@@ -532,17 +532,23 @@ public class RemotePublishAjaxAction extends AjaxAction {
          Getting the bundle end points in order to compare if this current server it is an end point or not.
          If it is is because we received this bundle as we were a targeted end point server.
          */
-        List<PublishingEndPoint> endPoints = config.getEndpoints();//List of end points for Remote Publishing this bundle
-        for ( PublishingEndPoint endPoint : endPoints ) {
 
-            //Getting the end point details
-            String endPointAddress = endPoint.getAddress();
-            String endPointPort = endPoint.getPort();
+        List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleId);
 
-            if ( endPointAddress.equals( remoteIP )
-                    && endPointPort.equals( String.valueOf( port ) ) ) {
-                return false;
-            }
+        for (Environment environment : environments) {
+
+	        List<PublishingEndPoint> endPoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(environment.getId());
+	        for ( PublishingEndPoint endPoint : endPoints ) {
+
+	            //Getting the end point details
+	            String endPointAddress = endPoint.getAddress();
+	            String endPointPort = endPoint.getPort();
+
+	            if ( endPointAddress.equals( remoteIP )
+	                    && endPointPort.equals( String.valueOf( port ) ) ) {
+	                return false;
+	            }
+	        }
         }
 
         return true;
