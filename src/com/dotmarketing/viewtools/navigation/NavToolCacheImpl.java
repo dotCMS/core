@@ -107,7 +107,8 @@ public class NavToolCacheImpl implements NavToolCache {
         Folder folder;
         try {
             folder = APILocator.getFolderAPI().findFolderByPath(path, hostid, APILocator.getUserAPI().getSystemUser(), false);
-            removeNav(hostid,folder.getInode());
+            if(folder != null)
+            	removeNav(hostid,folder.getInode());
         } catch (Exception e) {
             Logger.warn(this, e.getMessage(), e);
         }
