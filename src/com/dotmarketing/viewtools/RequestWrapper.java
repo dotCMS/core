@@ -245,8 +245,7 @@ public class RequestWrapper implements HttpServletRequest{
 	}
 
 	public void removeAttribute(String arg0) {
-		// TODO Auto-generated method stub
-		
+        _request.removeAttribute( arg0 );
 	}
 
 	public void setAttribute(String arg0, Object arg1) {
@@ -256,57 +255,6 @@ public class RequestWrapper implements HttpServletRequest{
 	public void setCharacterEncoding(String arg0) throws UnsupportedEncodingException {
 		_request.setCharacterEncoding(arg0);
 	}
-
-    public AsyncContext getAsyncContext() {
-        return _request.getAsyncContext();
-    }
-
-    public DispatcherType getDispatcherType() {
-        return _request.getDispatcherType();
-    }
-
-    public ServletContext getServletContext() {
-        return _request.getServletContext();
-    }
-
-    public boolean isAsyncStarted() {
-        return _request.isAsyncStarted();
-    }
-
-    public boolean isAsyncSupported() {
-        return _request.isAsyncStarted();
-    }
-
-    public AsyncContext startAsync() {
-        return _request.startAsync();
-    }
-
-    public AsyncContext startAsync(ServletRequest arg0, ServletResponse arg1) {
-        return _request.startAsync(arg0, arg1);
-    }
-
-    public boolean authenticate(HttpServletResponse arg0) throws IOException,
-            ServletException {
-        return _request.authenticate(arg0);
-    }
-
-    public Part getPart(String arg0) throws IOException, IllegalStateException,
-            ServletException {
-        return _request.getPart(arg0);
-    }
-
-    public Collection<Part> getParts() throws IOException,
-            IllegalStateException, ServletException {
-        return _request.getParts();
-    }
-
-    public void login(String arg0, String arg1) throws ServletException {
-        _request.login(arg0, arg1);
-    }
-
-    public void logout() throws ServletException {
-        _request.logout();
-    }
 
     public String getCustomUserAgentHeader () {
         return customUserAgentHeader;
