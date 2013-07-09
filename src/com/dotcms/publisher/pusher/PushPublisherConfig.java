@@ -25,6 +25,7 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	private Operation operation;
 	private List<PublishingEndPoint> endpoints;
+	private boolean pushing = true;
 
 	public PushPublisherConfig() {
 		super();
@@ -196,5 +197,13 @@ public class PushPublisherConfig extends PublisherConfig {
 		put(AssetTypes.RELATIONSHIPS.name(), relationships);
 	}
 
+
+	public boolean isPushing() {
+		return pushing;
+	}
+
+	public void setPushing(boolean pushing) {
+		this.pushing = pushing;
+	}
 
 }
