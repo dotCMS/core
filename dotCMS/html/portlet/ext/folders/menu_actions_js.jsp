@@ -709,6 +709,12 @@
 
 	}
 
+	function addToBundle (objId) {
+
+	    pushHandler.showAddToBundleDialog(objId, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+
+	}
+
 	dojo.require("dotcms.dojo.push.PushHandler");
 	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
@@ -722,5 +728,8 @@
 	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
 	<input name="iWantTo" id=iWantTo type="hidden" value="">
 	<input name="whoToSend" id=whoToSend type="hidden" value="">
+	<input name="newBundle" id=newBundle type="hidden" value="">
+	<input name="bundleName" id=bundleName type="hidden" value="">
+	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
 </form>
 

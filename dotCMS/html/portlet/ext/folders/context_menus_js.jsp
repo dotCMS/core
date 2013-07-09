@@ -105,7 +105,7 @@ function getFilePopUp(i,ctxPath, objId, parentId, openNodes, referer,fileExt,liv
 
 // Container Flyout
 function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
-	
+
 	var strHTML = '';
 	strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
 
@@ -123,12 +123,18 @@ function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,del
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
 			strHTML += '</div>';
 		}
-		
+
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublish(\'' + objId + '\');">';
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 			strHTML += '</div>';
 		}
+
+		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="addToBundle(\'' + objId + '\');">';
+			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
+			strHTML += '</div>';
+	    }
 
 		if ((live!="1") && (working=="1") && (publish=="1")) {
 			if (deleted!="1") {
@@ -207,6 +213,20 @@ function getLinkPopUp(i,ctxPath, objId, parentId, openNodes, referer,live,workin
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish"))%>';
 			strHTML += '</div>';
 		}
+
+
+		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
+		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublish(\'' + objId + '\');">';
+		     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
+		     strHTML += '</div>';
+		}
+
+		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
+		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="addToBundle(\'' + objId + '\');">';
+		     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
+		     strHTML += '</div>';
+		}
+
 		if ((live!="1") && (working=="1") && (publish=="1")) {
 			if (deleted!="1") {
 				strHTML += '<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="deleteLink(\'' + objId + '\',\'' + parentId + '\',\'' + openNodes + '\',\'' + escape(referer) + '\');">';
@@ -257,7 +277,7 @@ function getLinkPopUp(i,ctxPath, objId, parentId, openNodes, referer,live,workin
 
 // Template Flyout
 function getTemplatePopUp(i,ctxPath, objId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
-	
+
 	var strHTML = '';
 	strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
 
@@ -276,6 +296,15 @@ function getTemplatePopUp(i,ctxPath, objId, openNodes, referer,live,working,dele
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 			strHTML += '</div>';
 		}
+
+
+		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="addToBundle(\'' + objId + '\');">';
+			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
+			strHTML += '</div>';
+		}
+
+
 		if ((live!="1") && (working=="1") && (publish=="1")) {
 			if (deleted!="1") {
 				strHTML += '<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="deleteTemplate(\'' + objId + '\',\'' + openNodes + '\',\'' + escape(referer) + '\');">';
@@ -365,6 +394,19 @@ function getHTMLPagePopUp(i,ctxPath, objId, parentId, openNodes, referer,live,wo
    	        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
 			strHTML += '</div>';
 		}
+
+		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
+	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublish(\'' + objId + '\');">';
+	            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
+	      strHTML += '</div>';
+	    }
+
+	    if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
+	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="addToBundle(\'' + objId + '\');">';
+	            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
+	      strHTML += '</div>';
+	    }
+
 
 		if ((live=="1") && (publish=="1")) {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
