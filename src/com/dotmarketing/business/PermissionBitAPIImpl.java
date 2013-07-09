@@ -379,7 +379,38 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				Logger.error(this, "Roleid should be a long : ",e);
 			}
 		}
-
+		String inode ="";
+        List<String> ids= new ArrayList<String>();
+        String s = permissionable.toString();
+        
+        if(s.contains("formId=")){
+                String[] st = s.split(",");
+                for(String str : st){
+                        str = str.trim();
+                        if(str.contains("formId=")){
+                                inode = str.substring(7);
+                        }
+                }
+        }
+        
+        if(inode != ""){
+                PermissionAPI pAPI;
+                pAPI = APILocator.getPermissionAPI();
+                List<Role> role = pAPI.getRoles(inode, PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, "", 0, 10, true);
+                if(role.size() > 0){
+                        int i = 0;
+                        for (Role r : role) {
+                                ids.add(r.getId());
+                                i++;
+                        }
+                }
+        }
+        if(ids.size() > 0){
+                for(String sId : ids){
+                        userRoleIds.contains(sId);
+                        return true;
+                }
+        }
 		return doRolesHavePermission(userRoleIds,getPermissions(permissionable, true),permissionType);
 	}
 
