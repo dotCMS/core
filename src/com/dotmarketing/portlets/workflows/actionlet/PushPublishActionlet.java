@@ -8,9 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.hadoop.mapred.lib.Arrays;
+
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -60,7 +65,18 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 			String _contentPushExpireDate = ref.getStringProperty("wfExpireDate");
 			String _contentPushExpireTime = ref.getStringProperty("wfExpireTime");
 			boolean _contentPushNeverExpire = "on".equals(ref.getStringProperty("wfNeverExpire")) || "true".equals(ref.getStringProperty("wfNeverExpire"))?true:false;
-
+            String whereToSend = ref.getStringProperty( "whereToSend" );
+            List<String> whoCanUse = Arrays.asList(whereToSend.split(","));
+            List<Environment> envsToSendTo = new ArrayList<Environment>();
+            
+            // Lists of Environments to push to
+            for (String envId : whoCanUse) {
+            	Environment e = APILocator.getEnvironmentAPI().findEnvironmentById(envId);
+				
+            	if(e!=null) {
+            		envsToSendTo.add(e);
+            	}
+			}
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 			Date publishDate = dateFormat.parse(_contentPushPublishDate+"-"+_contentPushPublishTime);
 			
@@ -68,10 +84,15 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 			String bundleId = UUID.randomUUID().toString();			
 			identifiers.add(ref.getIdentifier());
 			
+			Bundle bundle = new Bundle(null, publishDate, null, processor.getUser().getUserId());
+        	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
+			
 			publisherAPI.addContentsToPublish(identifiers, bundleId, publishDate, processor.getUser());
 			if(!_contentPushNeverExpire && (!"".equals(_contentPushExpireDate.trim()) && !"".equals(_contentPushExpireTime.trim()))){
 				bundleId = UUID.randomUUID().toString();
 				Date expireDate = dateFormat.parse(_contentPushExpireDate+"-"+_contentPushExpireTime);
+				bundle = new Bundle(null, publishDate, expireDate, processor.getUser().getUserId());
+            	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 				publisherAPI.addContentsToUnpublish(identifiers, bundleId, expireDate, processor.getUser());
 			}
 		} catch (DotPublisherException e) {
@@ -80,7 +101,11 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 		} catch (ParseException e){
 			Logger.debug(PushPublishActionlet.class, e.getMessage());
 			throw new  WorkflowActionFailureException(e.getMessage());			
+		} catch (DotDataException e) {
+			Logger.debug(PushPublishActionlet.class, e.getMessage());
+			throw new  WorkflowActionFailureException(e.getMessage());			
 		}
+
 	}
 
 }
