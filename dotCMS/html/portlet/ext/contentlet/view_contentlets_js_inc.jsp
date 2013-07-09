@@ -2383,7 +2383,7 @@
     			return;
     		}
     		else{
-        		   var wfActionAssign 		= "";
+        		    var wfActionAssign 		= "";
 		    		var selectedItem 		= "";
 		    		var wfConId 			= inode;
 		    		var wfActionId 			= this.wfActionId;
@@ -2393,14 +2393,14 @@
 		    		var expireDate 			= ""; 
 		    		var expireTime 			=""; 
 		    		var neverExpire 		="";
+		    		var whereToSend 		="";
 					BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-		    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);  
+		    				publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback);  
     		}
 
     	},
 
     	saveAssign : function(){
-
 
     		var assignRole = (dijit.byId("taskAssignmentAux"))
 			? dijit.byId("taskAssignmentAux").getValue()
@@ -2458,11 +2458,16 @@
 						? dojo.byId("wfNeverExpire").value
 								: "";
 
+			var whereToSend = (dijit.byId("whereToSend"))
+				? dijit.byId("whereToSend").getValue()
+					: (dojo.byId("whereToSend"))
+						? dojo.byId("whereToSend").value
+								: "";
 			// END: PUSH PUBLISHING ACTIONLET
 
 
     		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);
+    				publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback);
 
     	}
 
