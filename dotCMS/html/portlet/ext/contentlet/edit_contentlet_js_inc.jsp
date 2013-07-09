@@ -704,13 +704,6 @@ dojo.require("dojox.layout.ContentPane");
 					: (dojo.byId("taskCommentsAux")) 
 						? dojo.byId("taskCommentsAux").value
 								: "";
-	
-						
-						
-						
-	
-						
-						
 						
 			// BEGIN: PUSH PUBLISHING ACTIONLET						
 			var publishDate = (dijit.byId("wfPublishDateAux"))			
@@ -742,7 +735,11 @@ dojo.require("dojox.layout.ContentPane");
 					: (dojo.byId("wfNeverExpire"))	
 						? dojo.byId("wfNeverExpire").value
 								: "";
-						
+			var whereToSend = (dijit.byId("whereToSend"))
+				? dijit.byId("whereToSend").getValue()
+					: (dojo.byId("whereToSend"))
+						? dojo.byId("whereToSend").value
+								: "";						
 			// END: PUSH PUBLISHING ACTIONLET
 			
 			dojo.byId("wfActionAssign").value=assignRole;
@@ -755,6 +752,7 @@ dojo.require("dojox.layout.ContentPane");
 			dojo.byId("wfExpireDate").value=expireDate;
 			dojo.byId("wfExpireTime").value=expireTime;
 			dojo.byId("wfNeverExpire").value=neverExpire;
+			dojo.byId("whereToSend").value=whereToSend;
 			// END: PUSH PUBLISHING ACTIONLET
 			
     		var dia = dijit.byId("contentletWfDialog").hide();
