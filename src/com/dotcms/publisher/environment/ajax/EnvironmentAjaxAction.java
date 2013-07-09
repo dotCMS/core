@@ -155,7 +155,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
 		}
 	}
 
-	public void editEnvironment(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LanguageException {
+	public void editEnvironment(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LanguageException, DotSecurityException {
 		try {
 	        String identifier = request.getParameter("identifier");
 
@@ -170,14 +170,34 @@ public class EnvironmentAjaxAction extends AjaxAction {
     			return;
         	}
 
+        	String whoCanUseTmp = request.getParameter("whoCanUse");
 
 	        Environment environment = new Environment();
 	        environment.setId(identifier);
         	environment.setName(name);
         	environment.setPushToAll("pushToAll".equals(request.getParameter("pushType")));
 
+        	List<String> whoCanUse = Arrays.asList(whoCanUseTmp.split(","));
+        	List<Permission> permissions = new ArrayList<Permission>();
+
+			for (String perm : whoCanUse) {
+				if(!UtilMethods.isSet(perm)){
+					continue;
+				}
+
+				Role test = resolveRole(perm);
+				Permission p = new Permission(environment.getPermissionType(), environment.getId(), test.getId(), PermissionAPI.PERMISSION_USE);
+
+				boolean exists=false;
+				for(Permission curr : permissions)
+				    exists=exists || curr.getRoleId().equals(p.getRoleId());
+
+				if(!exists)
+				    permissions.add(p);
+			}
+
         	EnvironmentAPI eAPI = APILocator.getEnvironmentAPI();
-			eAPI.updateEnvironment(environment);
+			eAPI.updateEnvironment(environment, permissions);
 
 		} catch (DotDataException e) {
 			Logger.info(getClass(), e.getMessage());

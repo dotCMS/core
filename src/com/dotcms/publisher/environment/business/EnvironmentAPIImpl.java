@@ -71,8 +71,17 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 	}
 
 	@Override
-	public void updateEnvironment(Environment environment) throws DotDataException {
+	public void updateEnvironment(Environment environment, List<Permission> perms ) throws DotDataException, DotSecurityException {
 		environmentFactory.update(environment);
+
+		APILocator.getPermissionAPI().removePermissions(environment);
+
+		if(perms != null){
+			for (Permission p : perms) {
+				p.setInode(environment.getId());
+				APILocator.getPermissionAPI().save(p, environment, APILocator.getUserAPI().getSystemUser(), false);
+			}
+		}
 
 	}
 

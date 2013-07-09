@@ -296,7 +296,85 @@
 		}
 	}
 
+	function loadUnpushedBundles(){
+		var url = "/html/portlet/ext/contentlet/publishing/view_unpushed_bundles.jsp";
 
+		var myCp = dijit.byId("unpushedBundlesContent");
+
+		if (myCp) {
+			myCp.destroyRecursive(false);
+		}
+		myCp = new dojox.layout.ContentPane({
+			id : "unpushedBundlesContent"
+		}).placeAt("unpushedBundlesDiv");
+
+		myCp.attr("href", url);
+		myCp.refresh();
+	}
+
+	function deleteBundle(identifier){
+		if(confirm("<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles_Delete_Confirm")%>")){
+			var url = "/html/portlet/ext/contentlet/publishing/view_unpushed_bundles.jsp?delBundle="+identifier;
+
+			var myCp = dijit.byId("unpushedBundlesContent");
+
+			if (myCp) {
+				myCp.destroyRecursive(false);
+			}
+			myCp = new dojox.layout.ContentPane({
+				id : "unpushedBundlesContent"
+			}).placeAt("unpushedBundles");
+
+			myCp.attr("href", url);
+			myCp.refresh();
+		}
+	}
+
+	function deleteAsset(assetId, bundleId){
+		if(confirm("<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles_Delete_Asset_Confirm")%>")){
+			var url = "/html/portlet/ext/contentlet/publishing/view_unpushed_bundles.jsp?delAsset="+assetId+"&bundleId="+bundleId;
+
+			var myCp = dijit.byId("unpushedBundlesContent");
+
+			if (myCp) {
+				myCp.destroyRecursive(false);
+			}
+			myCp = new dojox.layout.ContentPane({
+				id : "unpushedBundlesContent"
+			}).placeAt("unpushedBundles");
+
+			myCp.attr("href", url);
+			myCp.refresh();
+		}
+	}
+
+	function goToEditBundle(identifier){
+		var dialog = new dijit.Dialog({
+			id: 'editBundle',
+	        title: "<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles_Edit")%>",
+	        style: "width: 400px; ",
+	        content: new dojox.layout.ContentPane({
+	        	href: "/html/portlet/ext/contentlet/publishing/edit_publish_bundle.jsp?id="+identifier
+	        }),
+	        onHide: function() {
+	        	var dialog=this;
+	        	setTimeout(function() {
+	        		dialog.destroyRecursive();
+	        	},200);
+	        },
+	        onLoad: function() {
+	        }
+	    });
+	    dialog.show();
+	    dojo.style(dialog.domNode,'top','80px');
+	}
+
+	dojo.require("dotcms.dojo.push.PushHandler");
+	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish-Bundle")%>', true);
+
+	function remotePublish(objId) {
+		pushHandler.showDialog(objId);
+	}
 
 
    function filterStructure(varName){
@@ -333,6 +411,9 @@
 			 	selectedTab = tab.selectedChildWidget;
 				  	if(selectedTab.id =="queue"){
 				  		doQueueFilter();
+				  	}
+				  	else if(selectedTab.id =="unpushedBundles"){
+				  		loadUnpushedBundles();
 				  	}
 				  	else if(selectedTab.id =="audit"){
 				  		refreshAuditList("");
@@ -493,10 +574,11 @@
 
 
 
+		<div id="unpushedBundles" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %>" >
+  			<div id="unpushedBundlesDiv">
+			</div>
 
-
-
-
+  		</div>
 
   		<div id="queue" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Queue") %>" >
   		   <div class="buttonRow" >
@@ -580,3 +662,16 @@
 
 	</form>
 </div>
+
+<form id="remotePublishForm">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="iWantTo" id=iWantTo type="hidden" value="">
+	<input name="whoToSend" id=whoToSend type="hidden" value="">
+	<input name="newBundle" id=newBundle type="hidden" value="">
+	<input name="bundleName" id=bundleName type="hidden" value="">
+	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
+</form>
