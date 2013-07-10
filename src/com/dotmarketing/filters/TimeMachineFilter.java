@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
 
 public class TimeMachineFilter implements Filter {
 
@@ -95,13 +96,13 @@ public class TimeMachineFilter implements Filter {
 		    
 		    final String pageEXT=Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"); 
 		    
-
+		     
 
 		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
 		            "live"+java.io.File.separator+
 		            host.getHostname()+java.io.File.separator+langid+
-		            uri);
+		            (java.io.File.separator.equals("/") ? uri : RegEX.replace(uri, java.io.File.separator, "/")));
 		    
 		    // if we need to redirect to the index page
 		    if(file.isDirectory()) {
@@ -115,7 +116,7 @@ public class TimeMachineFilter implements Filter {
 			            "tm_"+date.getTime()+java.io.File.separator+
 			            "live"+java.io.File.separator+
 			            host.getHostname()+java.io.File.separator+langid+
-			            uri);
+			            (java.io.File.separator.equals("/") ? uri : RegEX.replace(uri, java.io.File.separator, "/")));
 		    }
 		    
 		    final String defid=Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -126,7 +127,7 @@ public class TimeMachineFilter implements Filter {
 	                    "tm_"+date.getTime()+java.io.File.separator+
 	                    "live"+java.io.File.separator+
 	                    host.getHostname()+java.io.File.separator+defid+
-	                    uri);
+	                    (java.io.File.separator.equals("/") ? uri : RegEX.replace(uri, java.io.File.separator, "/")));
 		    }
 		    
 		    if(file.exists()) {
