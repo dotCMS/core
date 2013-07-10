@@ -105,7 +105,7 @@ public class TimeMachineFilter implements Filter {
 		            "tm_"+date.getTime()+java.io.File.separator+
 		            "live"+java.io.File.separator+
 		            host.getHostname()+java.io.File.separator+langid+
-		            (java.io.File.separator.equals("/") ? uri : RegEX.replace(uri, java.io.File.separator, "/")));
+		            (java.io.File.separator.equals("/") ? uri : RegEX.replaceAll(uri, java.io.File.separator, "/")));
 		    
 		    // if we need to redirect to the index page
 		    if(file.isDirectory()) {
@@ -119,7 +119,7 @@ public class TimeMachineFilter implements Filter {
 			            "tm_"+date.getTime()+java.io.File.separator+
 			            "live"+java.io.File.separator+
 			            host.getHostname()+java.io.File.separator+langid+
-			            (java.io.File.separator.equals("/") ? uri : RegEX.replace(uri, java.io.File.separator, "/")));
+			            (java.io.File.separator.equals("/") ? uri : RegEX.replaceAll(uri, java.io.File.separator, "/")));
 		    }
 		    
 		    final String defid=Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -130,7 +130,7 @@ public class TimeMachineFilter implements Filter {
 	                    "tm_"+date.getTime()+java.io.File.separator+
 	                    "live"+java.io.File.separator+
 	                    host.getHostname()+java.io.File.separator+defid+
-	                    (java.io.File.separator.equals("/") ? uri : RegEX.replace(uri, java.io.File.separator, "/")));
+	                    (java.io.File.separator.equals("/") ? uri : RegEX.replaceAll(uri, java.io.File.separator, "/")));
 		    }
 		    
 		    if(file.exists()) {
