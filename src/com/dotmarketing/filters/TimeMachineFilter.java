@@ -38,6 +38,9 @@ public class TimeMachineFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse resp = (HttpServletResponse) response;
 		String uri=req.getRequestURI();
+		
+		if(!uri.startsWith("/"))
+		    uri="/"+uri;
 
 		if(uri != null && uri.startsWith("/admin") && req.getSession().getAttribute("tm_date")!=null){
 			req.getSession().removeAttribute(TM_DATE_VAR);
@@ -96,7 +99,7 @@ public class TimeMachineFilter implements Filter {
 		    
 		    final String pageEXT=Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"); 
 		    
-		     
+		    
 
 		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
