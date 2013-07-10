@@ -145,6 +145,7 @@ public class TimeMachineFilter implements Filter {
 		        
 		        
 		        try {
+		            request.setAttribute("file", file.getPath());
 					request.getRequestDispatcher("/html/portlet/ext/timemachine/timemachine_404.jsp").forward(request, response);
 				} catch (Exception e) {
 					Logger.error(TimeMachineFilter.class,e.getMessage(),e);
