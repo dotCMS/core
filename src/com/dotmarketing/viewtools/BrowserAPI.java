@@ -260,7 +260,7 @@ public class BrowserAPI {
                     fileMap.put( "name", ident.getAssetName() );
                     fileMap.put( "fileName", ident.getAssetName() ); 
                     fileMap.put( "description", fileAsset.getFriendlyName() );
-                    fileMap.put( "extension", FileUtil.getIconExtension( fileAsset.getFileName() ) );
+                    fileMap.put( "extension", UtilMethods.getFileExtension( fileAsset.getFileName() ) );
                     fileMap.put( "path", fileAsset.getPath() );
                     fileMap.put( "type", fileAsset.getType() );
                     fileMap.put( "wfActionMapList", wfActionMapList );
