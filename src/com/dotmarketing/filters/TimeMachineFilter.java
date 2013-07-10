@@ -99,13 +99,13 @@ public class TimeMachineFilter implements Filter {
 		    
 		    final String pageEXT=Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"); 
 		    
-		    Logger.info(this, "uri: "+uri+" replaced: "+uri.replaceAll("/", java.io.File.separator));
+		    Logger.info(this, "uri: "+uri+" replaced: "+uri.replaceAll("/", "\\\\"));
 
 		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
 		            "live"+java.io.File.separator+
 		            host.getHostname()+java.io.File.separator+langid+
-		            (java.io.File.separator.equals("/") ? uri : uri.replaceAll("/", java.io.File.separator)));
+		            (java.io.File.separator.equals("\\") ?  uri.replaceAll("/", "\\\\") : uri));
 		    
 		    // if we need to redirect to the index page
 		    if(file.isDirectory()) {
@@ -119,7 +119,7 @@ public class TimeMachineFilter implements Filter {
 			            "tm_"+date.getTime()+java.io.File.separator+
 			            "live"+java.io.File.separator+
 			            host.getHostname()+java.io.File.separator+langid+
-			            (java.io.File.separator.equals("/") ? uri : uri.replaceAll("/", java.io.File.separator)));
+			            (java.io.File.separator.equals("\\") ?  uri.replaceAll("/", "\\\\") : uri));
 		    }
 		    
 		    final String defid=Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -130,7 +130,7 @@ public class TimeMachineFilter implements Filter {
 	                    "tm_"+date.getTime()+java.io.File.separator+
 	                    "live"+java.io.File.separator+
 	                    host.getHostname()+java.io.File.separator+defid+
-	                    (java.io.File.separator.equals("/") ? uri : uri.replaceAll("/", java.io.File.separator)));
+	                    (java.io.File.separator.equals("\\") ?  uri.replaceAll("/", "\\\\") : uri));
 		    }
 		    
 		    if(file.exists()) {
