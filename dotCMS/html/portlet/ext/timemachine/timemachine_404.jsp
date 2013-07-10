@@ -14,7 +14,7 @@
 	<div class="content">
 		<h2><%=LanguageUtil.get(pageContext, "javax.portlet.title.TIMEMACHINE")%></h2>
 		<p><%= LanguageUtil.get(pageContext, "TIMEMACHINE-404") %></p>
-
+		<p>Path: <%= request.getAttribute("file") %></p>
 	</div>
 </div>
 
