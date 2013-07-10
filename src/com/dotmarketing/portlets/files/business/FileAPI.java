@@ -23,6 +23,7 @@ import com.liferay.portal.model.User;
  * Interface for the API to manage Files and Assets.
  */
 
+@Deprecated
 public interface FileAPI {
 	
 	/**
@@ -39,6 +40,7 @@ public interface FileAPI {
 	 * @exception DotDataException
 	 * @exception DotSecurityException
 	 */
+	@Deprecated
 	public File copy(File source, Folder destination, boolean forceOverwrite, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException;
 
@@ -53,6 +55,7 @@ public interface FileAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@Deprecated
 	public File find(String inode, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException;
 	
 	/**
@@ -60,6 +63,7 @@ public interface FileAPI {
 	 * @param inode
 	 * @return
 	 */
+	@Deprecated
     public  String getRelativeAssetPath(Inode inode) ;
 
 	
@@ -73,6 +77,7 @@ public interface FileAPI {
 	 * @throws DotStateException 
 	 * @throws DotSecurityException 
 	 */
+	@Deprecated
 	public File getWorkingFileByFileName(String fileName, Folder folder, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException;
 	
 	/**
@@ -91,6 +96,7 @@ public interface FileAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@Deprecated
 	public File saveFile(File file, java.io.File fileData, Folder folder, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException; 
 	
@@ -100,7 +106,7 @@ public interface FileAPI {
 	 * 
 	 * @return
 	 */
-    public  String getRealAssetsRootPath() ;
+	public  String getRealAssetsRootPath() ;
     
     public  String getRelativeAssetsRootPath() ;
 	
@@ -116,6 +122,7 @@ public interface FileAPI {
 	 * @throws DotSecurityException
 	 * @throws Exception
 	 */
+	@Deprecated
 	public boolean delete(File file, User user, boolean respectFrontendRoles) throws DotSecurityException, Exception;
 	
 	/**
@@ -134,6 +141,7 @@ public interface FileAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@Deprecated
 	public List<File> getAllHostFiles(Host parentHost, boolean live, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
@@ -144,6 +152,7 @@ public interface FileAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@Deprecated
 	public List<File> getFolderFiles(Folder parentFolder, boolean live, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 		/**
@@ -165,6 +174,7 @@ public interface FileAPI {
 	 * @throws DotSecurityException 
 	 * @throws DotDataException 
 	 */
+	@Deprecated
 	public File getWorkingFileById(String fileId, User user,boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	
@@ -179,6 +189,7 @@ public interface FileAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
+	@Deprecated
 	public File get(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotDataException;
 	
 	/**
@@ -188,6 +199,7 @@ public interface FileAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@Deprecated
 	public Folder getFileFolder(File file,Host host,User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 
@@ -207,6 +219,7 @@ public interface FileAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
+	@Deprecated
 	public List<File> findFiles(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 	
 	/**
@@ -214,23 +227,31 @@ public interface FileAPI {
 	 * @param filename
 	 * @return
 	 */
+	@Deprecated
 	public String getMimeType (String filename);
 	
+	@Deprecated
     public  File copyFile(File file, Folder parent, User user, boolean respectFrontEndRoles) throws IOException, DotSecurityException,DotDataException ;
 
+    @Deprecated
     public  File copyFile(File file, Host host, User user, boolean respectFrontEndRoles) throws IOException, DotSecurityException,DotDataException ;
 
+    @Deprecated
 	public  boolean renameFile (File file, String newName, User user, boolean respectFrontEndRoles)  throws DotStateException, DotDataException, DotSecurityException ;
 	
+	@Deprecated
     public  boolean moveFile(File file, Folder parent, User user, boolean respectFrontEndRoles) throws DotStateException, DotDataException, DotSecurityException ;
 
+    @Deprecated
     public  boolean moveFile(File file, Host host, User user, boolean respectFrontEndRoles) throws DotStateException, DotDataException, DotSecurityException ;
 
+    @Deprecated
     void publishFile(File file, User user, boolean respectFrontendRoles) throws WebAssetException, DotSecurityException, DotDataException ;
     
+    @Deprecated
     public File getFileByURI(String uri, Host host, boolean live, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException ;
 
-
+    @Deprecated
     public  File getFileByURI(String uri, String hostId, boolean live, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException ;
 
 	/**
@@ -239,8 +260,10 @@ public interface FileAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+    @Deprecated
     public  void invalidateCache(File file) throws DotDataException, DotSecurityException ;
 
+    @Deprecated
 	boolean fileNameExists(Folder folder, String fileName) throws DotStateException, DotDataException, DotSecurityException;
 
 
@@ -258,14 +281,15 @@ public interface FileAPI {
      * 
      * @return true/false based on the support configured for Old Files 
      */
+    @Deprecated
     public boolean isLegacyFilesSupported();
 
-
+    @Deprecated
     public int deleteOldVersions(Date assetsOlderThan) throws DotDataException, DotHibernateException;
 
-
+    @Deprecated
 	List<String> findUpdatedLegacyFileIds(Host h, Date startDate, Date endDate);
 
-
+	@Deprecated
 	List<String> findUpdatedLegacyFileIds(Host host, String pattern, boolean include, Date startDate, Date endDate);
 }
