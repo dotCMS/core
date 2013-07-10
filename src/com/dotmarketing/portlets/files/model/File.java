@@ -29,6 +29,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /** @author Hibernate CodeGenerator */
+@Deprecated
 public class File extends WebAsset implements Serializable,IFileAsset {
 
 	private static final long serialVersionUID = 1L;
