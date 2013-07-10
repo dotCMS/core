@@ -99,7 +99,7 @@ public class TimeMachineFilter implements Filter {
 		    
 		    final String pageEXT=Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"); 
 		    
-		    
+		    Logger.info(this, "uri: "+uri+" replaced: "+RegEX.replaceAll(uri, java.io.File.separator, "/"));
 
 		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
