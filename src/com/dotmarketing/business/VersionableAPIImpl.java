@@ -3,10 +3,12 @@ package com.dotmarketing.business;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -238,18 +240,34 @@ public class VersionableAPIImpl implements VersionableAPI {
         vfac.saveVersionInfo(ver);
     }
 
-    public void removeLive(String identifier, long lang) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(identifier))
-            throw new DotStateException("invalid identifier");
-        Identifier ident=APILocator.getIdentifierAPI().find(identifier);
-        if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().after( new Date() ) ) {
-            throw new PublishStateException( "message.contentlet.unpublish.expired" );
+    public void removeLive ( String identifier, long lang ) throws DotDataException, DotStateException, DotSecurityException {
+
+        if ( !UtilMethods.isSet( identifier ) ) {
+            throw new DotStateException( "invalid identifier" );
         }
-        ContentletVersionInfo ver = vfac.getContentletVersionInfo(identifier, lang);
-        if(ver ==null || !UtilMethods.isSet(ver.getIdentifier()))
-            throw new DotStateException("No version info. Call setWorking first");
-        ver.setLiveInode(null);
-        vfac.saveContentletVersionInfo(ver);
+        Identifier ident = APILocator.getIdentifierAPI().find( identifier );
+
+        ContentletVersionInfo ver = vfac.getContentletVersionInfo( identifier, lang );
+        if ( ver == null || !UtilMethods.isSet( ver.getIdentifier() ) ) {
+            throw new DotStateException( "No version info. Call setWorking first" );
+        }
+
+        Contentlet liveContentlet = APILocator.getContentletAPI().find( ver.getLiveInode(), APILocator.getUserAPI().getSystemUser(), false );
+        if ( liveContentlet == null || !UtilMethods.isSet( liveContentlet.getIdentifier() ) ) {
+            throw new DotStateException( "No live version Contentlet. Call setWorking first" );
+        }
+
+        //Get the structure for this contentlet
+        Structure structure = StructureCache.getStructureByInode( liveContentlet.getStructureInode() );
+
+        if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
+            if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().after( new Date() ) ) {
+                throw new PublishStateException( "message.contentlet.unpublish.expired" );
+            }
+        }
+
+        ver.setLiveInode( null );
+        vfac.saveContentletVersionInfo( ver );
     }
 
     public void setDeleted(Versionable ver, boolean deleted) throws DotDataException, DotStateException, DotSecurityException {
@@ -273,34 +291,47 @@ public class VersionableAPIImpl implements VersionableAPI {
         }
     }
 
-    public void setLive(Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(versionable) || !UtilMethods.isSet(versionable.getVersionId()))
-            throw new DotStateException("invalid identifier");
-        Identifier ident = APILocator.getIdentifierAPI().find(versionable);
-        if(ident.getAssetType().equals("contentlet")) {
-            Contentlet cont = (Contentlet)versionable;
-            ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
-            if(info ==null ||!UtilMethods.isSet(info.getIdentifier()))
-                throw new DotStateException("No version info. Call setWorking first");
+    public void setLive ( Versionable versionable ) throws DotDataException, DotStateException, DotSecurityException {
 
-            if ( UtilMethods.isSet( ident.getSysPublishDate() ) && ident.getSysPublishDate().after( new Date() ) ) {
-                throw new PublishStateException( "message.contentlet.publish.future.date" );
-            }
-            if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().before( new Date() ) ) {
-                throw new PublishStateException( "message.contentlet.expired" );
-            }
-            
-            info.setLiveInode(versionable.getInode());
-            vfac.saveContentletVersionInfo(info);
+        if ( !UtilMethods.isSet( versionable ) || !UtilMethods.isSet( versionable.getVersionId() ) ) {
+            throw new DotStateException( "invalid identifier" );
         }
-        else {
-            VersionInfo info = vfac.getVersionInfo(versionable.getVersionId());
-            if(!UtilMethods.isSet(info.getIdentifier()))
-                throw new DotStateException("No version info. Call setWorking first");
-            info.setLiveInode(versionable.getInode());
-            vfac.saveVersionInfo(info);
+
+        Identifier ident = APILocator.getIdentifierAPI().find( versionable );
+        if ( ident.getAssetType().equals( "contentlet" ) ) {
+
+            Contentlet cont = (Contentlet) versionable;
+            ContentletVersionInfo info = vfac.getContentletVersionInfo( cont.getIdentifier(), cont.getLanguageId() );
+            if ( info == null || !UtilMethods.isSet( info.getIdentifier() ) ) {
+                throw new DotStateException( "No version info. Call setWorking first" );
+            }
+
+            //Get the structure for this contentlet
+            Structure structure = StructureCache.getStructureByInode( cont.getStructureInode() );
+
+            if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
+                if ( UtilMethods.isSet( ident.getSysPublishDate() ) && ident.getSysPublishDate().after( new Date() ) ) {
+                    throw new PublishStateException( "message.contentlet.publish.future.date" );
+                }
+            }
+            if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
+                if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().before( new Date() ) ) {
+                    throw new PublishStateException( "message.contentlet.expired" );
+                }
+            }
+
+            info.setLiveInode( versionable.getInode() );
+            vfac.saveContentletVersionInfo( info );
+        } else {
+            VersionInfo info = vfac.getVersionInfo( versionable.getVersionId() );
+            if ( !UtilMethods.isSet( info.getIdentifier() ) ) {
+                throw new DotStateException( "No version info. Call setWorking first" );
+            }
+            info.setLiveInode( versionable.getInode() );
+            vfac.saveVersionInfo( info );
         }
     }
+
     public void setLocked(Versionable ver, boolean locked, User user) throws DotDataException, DotStateException, DotSecurityException {
         if(!UtilMethods.isSet(ver.getVersionId()))
             throw new DotStateException("invalid identifier");
