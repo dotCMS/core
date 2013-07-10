@@ -21,8 +21,13 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         this.title = title;
         this.isBundle = isBundle;
         this.setUser();
+        this.createStore();
     },
-
+    
+    createStore: function() {
+        this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
+    },
+    
     setUser: function() {
     	var xhrArgs = {
     			url : "/api/user/getloggedinuser/",
