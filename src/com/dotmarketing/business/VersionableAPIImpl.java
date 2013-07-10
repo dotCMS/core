@@ -249,12 +249,16 @@ public class VersionableAPIImpl implements VersionableAPI {
 
         ContentletVersionInfo ver = vfac.getContentletVersionInfo( identifier, lang );
         if ( ver == null || !UtilMethods.isSet( ver.getIdentifier() ) ) {
-            throw new DotStateException( "No version info. Call setWorking first" );
+            throw new DotStateException( "No version info. Call setLive first" );
+        }
+
+        if ( !UtilMethods.isSet( ver.getLiveInode() ) ) {
+            throw new DotStateException( "No live version Contentlet. Call setLive first" );
         }
 
         Contentlet liveContentlet = APILocator.getContentletAPI().find( ver.getLiveInode(), APILocator.getUserAPI().getSystemUser(), false );
         if ( liveContentlet == null || !UtilMethods.isSet( liveContentlet.getIdentifier() ) ) {
-            throw new DotStateException( "No live version Contentlet. Call setWorking first" );
+            throw new DotStateException( "No live version Contentlet. Call setLive first" );
         }
 
         //Get the structure for this contentlet
