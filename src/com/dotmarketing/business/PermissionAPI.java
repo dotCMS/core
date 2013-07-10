@@ -255,6 +255,14 @@ public interface PermissionAPI {
 	 */
 	List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException;
 
+    /**
+     * For new Permissionables adds its permissions to cache.
+     *
+     * @param permissionable
+     * @throws DotDataException
+     */
+    void addPermissionsToCache ( Permissionable permissionable ) throws DotDataException;
+
 	/**
 	 * Retrieves the list of permission that could be inherited from the given parent permissionable,
 	 * @param permissionable
