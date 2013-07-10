@@ -1247,11 +1247,25 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Getting a known contentlet
         Contentlet contentlet = contentlets.iterator().next();
 
+        //Verify if it is published
+        Boolean isLive = APILocator.getVersionableAPI().isLive( contentlet );
+        if ( !isLive ) {
+            //Publish the test contentlet
+            contentletAPI.publish( contentlet, user, false );
+
+            //Verify if it was published
+            isLive = APILocator.getVersionableAPI().isLive( contentlet );
+
+            //Validations
+            assertNotNull( isLive );
+            assertTrue( isLive );
+        }
+
         //Unpublish the test contentlet
         contentletAPI.unpublish( contentlet, user, false );
 
         //Verify if it was unpublished
-        Boolean isLive = APILocator.getVersionableAPI().isLive( contentlet );
+        isLive = APILocator.getVersionableAPI().isLive( contentlet );
 
         //Validations
         assertNotNull( isLive );
