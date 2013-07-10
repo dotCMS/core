@@ -2,302 +2,187 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="java.io.StringWriter"%>
-<%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
-<%@page import="java.text.SimpleDateFormat"%>
-<%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
-<%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
-<%@page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException"%>
-<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotmarketing.portlets.languagesmanager.business.LanguageAPI"%>
-<%@page import="java.util.UUID"%>
 <%@page import="com.dotmarketing.common.model.ContentletSearch"%>
 <%@page import="com.dotmarketing.util.PaginatedArrayList"%>
-<%@page import="com.dotmarketing.util.URLEncoder"%>
-<%@page import="java.util.Date"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotcms.publisher.business.DotPublisherException"%>
-<%@page import="java.util.Map"%>
-<%@page import="com.dotcms.publisher.business.PublisherAPI"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <script type="text/javascript">
-   dojo.require("dijit.form.Button");
-   dojo.require("dijit.Menu");
-   dojo.require("dijit.MenuItem");
-</script>  
-<%
 
+    dojo.require("dijit.form.Button");
+    dojo.require("dijit.Menu");
+    dojo.require("dijit.MenuItem");
+
+    dojo.require("dotcms.dojo.push.PushHandler");
+    var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+
+    <% Boolean enterprise = (LicenseUtil.getLevel() > 199); %>
+    var enterprise = <%=enterprise%>;
+    <%
+    PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();
+    Boolean endPoints = UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty();
+    %>
+    var sendingEndpoints = <%=endPoints%>;
+
+</script>
+
+<%
     ContentletAPI conAPI = APILocator.getContentletAPI();
-    LanguageAPI languagesAPI = APILocator.getLanguageAPI();
 
     String nastyError = "";
-    long processedCounter=0;
-    long errorCounter=0;
+    long processedCounter = 0;
+    long errorCounter = 0;
 
-    PublisherAPI publisherAPI = PublisherAPI.getInstance();
-    PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
+    String sortBy = request.getParameter( "sort" );
+    if ( !UtilMethods.isSet( sortBy ) ) {
+        sortBy = "";
+    }
+    String offset = request.getParameter( "offset" );
+    if ( !UtilMethods.isSet( offset ) ) {
+        offset = "0";
+    }
 
-    String sortBy = request.getParameter("sort");
-    if(!UtilMethods.isSet(sortBy)){
-    	sortBy="";
-    }
-    String offset = request.getParameter("offset");
-    if(!UtilMethods.isSet(offset)){
-    	offset="0";
-    }
-    
     // BEGIN https://github.com/dotCMS/dotCMS/issues/2671
-    String limit = Config.getStringProperty("PUSH_PUBLISHING_PAGE_LIMIT");
-    if(!UtilMethods.isSet(limit)){
-    	limit="50";
-    }    
- 	// END https://github.com/dotCMS/dotCMS/issues/2671
- 	
-    String query = request.getParameter("query");
-    if(!UtilMethods.isSet(query)){
-    	query="*";
-    	//nastyError=LanguageUtil.get(pageContext, "publisher_Query_required");
+    String limit = Config.getStringProperty( "PUSH_PUBLISHING_PAGE_LIMIT" );
+    if ( !UtilMethods.isSet( limit ) ) {
+        limit = "50";
+    }
+    // END https://github.com/dotCMS/dotCMS/issues/2671
+
+    String query = request.getParameter( "query" );
+    if ( !UtilMethods.isSet( query ) ) {
+        query = "*";
+        //nastyError=LanguageUtil.get(pageContext, "publisher_Query_required");
     }
 
+    List<Contentlet> iresults = null;
+    PaginatedArrayList<ContentletSearch> results;
+    String counter = "0";
 
+    try {
+        if ( UtilMethods.isSet( query ) ) {
 
-  	List<Contentlet> iresults =  null;
-    PaginatedArrayList<ContentletSearch> results =  null;
-    String counter =  "0";
+            // if this is not a lucene query, lets query _all
+            if ( query.indexOf( ":" ) == -1 ) {
 
-    boolean addQueueElements=false;
-    String addQueueElementsStr = request.getParameter("add");
-    String publishDate = request.getParameter("publishDate");
-    String publishTime = request.getParameter("publishTime");
-    if(UtilMethods.isSet(addQueueElementsStr)){
-    	addQueueElements=true;	
-    	
-        
-        if(!UtilMethods.isSet(publishDate)){
-        	publishDate="";
-        	nastyError=LanguageUtil.get(pageContext, "publisher_Date_required");
+                StringWriter sw = new StringWriter();
+
+                String[] terms = query.split( "\\s" );
+                for ( String x : terms ) {
+                    if ( UtilMethods.isSet( x ) ) {
+                        sw.append( "title:" + x + "* " );
+                    }
+                    sw.append( "+_all:" + x + "* " );
+                }
+
+                query = sw.toString();
+            }
+
+            //Add 'only not archived' condition
+            query += " +deleted:false";
+
+            iresults = conAPI.search( query, new Integer( limit ), new Integer( offset ), sortBy, user, false, PermissionAPI.PERMISSION_PUBLISH );
+            results = (PaginatedArrayList) conAPI.search( query, new Integer( limit ), new Integer( offset ), sortBy, user, false, PermissionAPI.PERMISSION_PUBLISH );
+            counter = "" + results.getTotalResults();
         }
-        
-        if(!UtilMethods.isSet(publishTime)){
-        	publishTime="";
-        	nastyError=LanguageUtil.get(pageContext, "publisher_Date_required");
-        }
-    	
-    }
-    String addOperationType = request.getParameter("action");
-    if(!UtilMethods.isSet(addOperationType)){
-    	addOperationType="";
-    }
-    try{
-    	if(UtilMethods.isSet(query)){
-    		
-    		
-    		// if this is not a lucene query, lets query _all
-    		if(query.indexOf(":") == -1){
-    			
-    			StringWriter sw = new StringWriter();
-    			
-    			String[] terms = query.split("\\s");
-    			for(String x : terms){
-    				if(UtilMethods.isSet(x))
-    					sw.append("title:" + x + "* ");
-    					sw.append("+_all:" + x + "* ");
-    					
-    			}
-    			
-    			
-    			query = sw.toString();
-    		}
-    		
-    		
-    		
-    		
-    		//contador de procesados y fallidos
-    		//Add 'only not archived' condition
-    		query+=" +deleted:false";
-    		
-    		
-    		
-    		
-    		
-    		
-	    	if(addQueueElements){
-	    		String bundeId = UUID.randomUUID().toString();
-		    		    		
-	    		List<String> identifiers = new ArrayList<String>();
-	    		Long operationType = addOperationType.equals("add")? new Long(1): new Long(2);
-	    		for(String item : addQueueElementsStr.split(",")){
-	    			String[] value = item.split("\\$");
-	    			
-	    			List<PublishQueueElement> currentAssets = publisherAPI.getQueueElementsByAsset(value[0]);
-	    			boolean trovato = false;
-	    			for(PublishQueueElement currentAsset: currentAssets) {
-	    				if(currentAsset.getOperation().intValue() == operationType.intValue())
-	    					trovato = true;
-	    			}
-	    			
-	    			if(!trovato) {
-                        /*
-                         Lets avoid to add multiple times the same identifier (Can happen if it is selected multiple languages of the same content)
-                         as the Push Publishing API will push all the versions of a given identifier.
-                         */
-                        if ( !identifiers.contains( value[0] ) ) {
-                            identifiers.add( value[0] );
-                        }
-                        processedCounter++;
-	    			} else {
-	    				errorCounter++;
-	    				trovato = false;
-	    			}
-	    			
-	    		}
-	    		try{
-	    			Date date = 
-	    					new SimpleDateFormat("yyyy-MM-dd-H-m").parse(publishDate+"-"+publishTime);
-	    			
-	    			
-	    			if(addOperationType.equals("add")){
-	    				publisherAPI.addContentsToPublish(identifiers, bundeId, date, user);
-	    			} else {
-	    				publisherAPI.addContentsToUnpublish(identifiers, bundeId, date, user);
-	    			}
-	    			
-	    			
-	    		}catch(Exception b){
-   					nastyError += "<br/>Unable to add selected contents";
-   					errorCounter++;
-   					processedCounter = 0;	
-   				}
-		    	
-    		}
-    		
-    		
-    		iresults = conAPI.search(query,new Integer(limit),new Integer(offset),sortBy,user,false, PermissionAPI.PERMISSION_PUBLISH);
-    		results = (PaginatedArrayList) conAPI.search(query, new Integer(limit),new Integer(offset),sortBy,user,false, PermissionAPI.PERMISSION_PUBLISH);
-    		counter = ""+results.getTotalResults();
-    	}
-    }catch(Exception pe){
-    	iresults = new ArrayList();
-    	results = new PaginatedArrayList();
-    	nastyError = pe.toString();
+    } catch ( Exception pe ) {
+        iresults = new ArrayList();
+        results = new PaginatedArrayList();
+        nastyError = pe.toString();
     }
   %>
-  
-  
+
+
 <script type="text/javascript">
- function solrAddCheckUncheckAll(){
-	   var check=false;
-	   if(dijit.byId("add_all").checked){
-		   check=true;
-	   } 
-	   var nodes = dojo.query('.add_to_queue');
-	   dojo.forEach(nodes, function(node) {
-		    dijit.getEnclosingWidget(node).set("checked",check);
-	   }); 
-   }
-   function doLucenePagination(offset,limit) {		
-		var url="layout=<%=layout%>&query=<%=UtilMethods.encodeURIComponent(query)%>&sort=<%=sortBy%>";
-		url+="&offset="+offset;
-		url+="&limit="+limit;		
-		refreshLuceneList(url);
-	}
-   
-   function addToPublishQueueQueue(action){
-	   var url="layout=<%=layout%>&query=<%=UtilMethods.encodeURIComponent(query)%>&sort=<%=sortBy%>&offset=0&limit=<%=limit%>";	
 
-			var ids="";
-			var nodes = dojo.query('.add_to_queue');
-			   dojo.forEach(nodes, function(node) {
-				   if(dijit.getEnclosingWidget(node).checked){
-					   ids+=","+dijit.getEnclosingWidget(node).value; 
-				   }
-			   });
-			if(ids != ""){   
-				url+="&add="+ids.substring(1);
-			}
-		//}
-		url+="&action="+action;
-		
-		if(dijit.byId('publishDate').get('value') != null) {
-			var dateValue = 
-					dojo.date.locale.format(dijit.byId('publishDate').get('value'),
-					{datePattern: "yyyy-MM-dd", selector: "date"});
-			
-			url+="&publishDate="+dateValue;
-		}
-		
-		if(dijit.byId('publishTime').get('value') != null) {
-			var timeValue = 
-					dojo.date.locale.format(dijit.byId('publishTime').get('value'),
-					{timePattern: "H-m", selector: "time"});
-			url+="&publishTime="+timeValue;
-		}
-		
-		
-		refreshLuceneList(url);	   
-   }
-   
-   
+    function solrAddCheckUncheckAll() {
+        var check = false;
+        if (dijit.byId("add_all").checked) {
+            check = true;
+        }
+        var nodes = dojo.query('.add_to_queue');
+        dojo.forEach(nodes, function (node) {
+            dijit.getEnclosingWidget(node).set("checked", check);
+        });
+    }
 
-   
+    function doLucenePagination(offset, limit) {
+        var url = "layout=<%=layout%>&query=<%=UtilMethods.encodeURIComponent(query)%>&sort=<%=sortBy%>";
+        url += "&offset=" + offset;
+        url += "&limit=" + limit;
+        refreshLuceneList(url);
+    }
+
+    var remotePublish = function () {
+
+        var ids = "";
+        var nodes = dojo.query('.add_to_queue');
+        dojo.forEach(nodes, function (node) {
+            if (dijit.getEnclosingWidget(node).checked) {
+
+                var value = dijit.getEnclosingWidget(node).value;
+                if (ids != "") {
+                    ids += ",";
+                }
+                ids += value;
+            }
+        });
+
+        pushHandler.showDialog(ids);
+    };
+
 </script>
+
 <%if(UtilMethods.isSet(nastyError) && errorCounter == 0){%>
 		<dl>
 			<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Query_Error") %> </dt>
 			<dd><%=nastyError %></dd>
 		</dl>
-<%}else if(iresults.size() >0){ %>	
-  	<%if( processedCounter > 0 || errorCounter > 0){ %>
+<%} else { %>
+
+    <%
+        Boolean emptyResults = iresults == null || iresults.isEmpty();
+        String disabled = emptyResults? "disabled=\"disabled\"" : "";
+    %>
+
+    <%if ( processedCounter > 0 || errorCounter > 0 ) { %>
 	  	<dl>
 			<dt>&nbsp;</dt><dd><span style='color:green;'><%= LanguageUtil.get(pageContext, "publisher_Processed_message") %> <%=processedCounter %></span>
 			<span style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Error_Message") %> <%=errorCounter %></span></dd>
-		</dl>	
-	<%}%>		
-	<%if(UtilMethods.isSet(nastyError)){%>
+		</dl>
+	<%}%>
+    <%if ( UtilMethods.isSet( nastyError ) ) {%>
 		<dl>
 			<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_Query_Error") %> </dt>
 			<dd><%=nastyError %></dd>
 		</dl>
-	<%}%>						
+	<%}%>
 	<table class="listingTable shadowBox">
 		<tr>
-		
-			<th style="width:30px;text-align: center" align="center">
-				<input dojoType="dijit.form.CheckBox" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" />
-			</th>		
-			<th colspan="2">
 
-					<input 
-					type="text" 
-					dojoType="dijit.form.DateTextBox" 
-					validate="return false;" 
-					invalidMessage=""  
-					id="publishDate"
-					name="publishDate" value="now">
-					&nbsp;
-					<input type="text" name="publishDate" id="publishTime" value="now" style="width:100px;"
-					  data-dojo-type="dijit.form.TimeTextBox"
-					  onChange="dojo.byId('val').value=arguments[0].toString().replace(/.*1970\s(\S+).*/,'T$1')"
-					  required="true" />
-				&nbsp;
-			
-				<div id="addPublishQueueMenu" style="display: inline-block;"></div>
-			</th>	
-					
+			<th style="width:30px;text-align: center" align="center">
+				<input dojoType="dijit.form.CheckBox" type="checkbox" <%=disabled%> name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" />
+			</th>
+			<th colspan="2">
+                <% if (enterprise && endPoints) {%>
+                    <button dojoType="dijit.form.Button" type="button" <%=disabled%> onclick="remotePublish()" iconClass="pushIcon"><%= LanguageUtil.get(pageContext, "Remote-Publish") %></button>
+                <%}%>
+			</th>
+
 		</tr>
 		<% for(Contentlet c : iresults) {%>
 			<tr>
-		
+
 				<td style="width:30px;text-align: center" align="center">
-					<input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getIdentifier()+"$"+c.getLanguageId() %>" id="add_to_queue_<%=c.getIdentifier()+"$"+c.getLanguageId()%>" />
+					<input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getInode()%>" id="add_to_queue_<%=c.getInode()%>" />
 				</td>
 				<td width="100%" nowrap="nowrap">
 					<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
@@ -318,10 +203,10 @@
 			long begin=Long.parseLong(offset);
 			long end = Long.parseLong(offset)+Long.parseLong(limit);
 			long total = Long.parseLong(counter);
-			if(begin > 0){ 
+			if(begin > 0){
 				long previous=(begin-Long.parseLong(limit));
 				if(previous < 0){
-					previous=0;					
+					previous=0;
 				}
 			%>
 				<td width="33%" ><button dojoType="dijit.form.Button" onClick="doLucenePagination(<%=previous%>,<%=limit%>);return false;" iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "publisher_Previous") %></button></td>
@@ -329,7 +214,7 @@
 				<td  width="33%" >&nbsp;</td>
 			<%} %>
 				<td  width="34%"  colspan="2" align="center"><strong> <%=begin+1%> - <%=end < total?end:total%> <%= LanguageUtil.get(pageContext, "publisher_Of") %> <%=total%> </strong></td>
-			<%if(end < total){ 
+			<%if(end < total){
 				long next=(end < total?end:total);
 			%>
 				<td align="right" width="33%" ><button class="solr_right" dojoType="dijit.form.Button" onClick="doLucenePagination(<%=next%>,<%=limit%>);return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
@@ -338,108 +223,15 @@
 			<%} %>
 		</tr>
 	</table>
-	
-	<script type="text/javascript">
-		dojo.ready(function() {
-	       var menu = new dijit.Menu({
-	           style: "display: none;"
-	       });
-	       var menuItem1 = new dijit.MenuItem({
-	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
-	                       iconClass: "addIcon",
-	                       onClick: function() {
-	                    	   addToPublishQueueQueue('add');
-	           }
-	       });
-	       menu.addChild(menuItem1);
 
-	       var menuItem2 = new dijit.MenuItem({
-	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_remove_publish_queue" )) %>",
-	                       iconClass: "closeIcon",
-	                       onClick: function() {
-	                    	   addToPublishQueueQueue('remove');
-	           }
-	       });
-	       menu.addChild(menuItem2);
-	       
-	       var button = new dijit.form.ComboButton({
-	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
-	                        iconClass: "addIcon",
-	                        dropDown: menu,
-	                        onClick: function() {
-	                        	addToPublishQueueQueue('add');
-	            }
-	        });
+    <form id="remotePublishForm">
+        <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+        <input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+        <input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+        <input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+        <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+        <input name="iWantTo" id=iWantTo type="hidden" value="">
+        <input name="whoToSend" id=whoToSend type="hidden" value="">
+    </form>
 
-	      dojo.byId("addPublishQueueMenu").appendChild(button.domNode);
-	   });
-	</script>
-<% }else{ %>
-	<table class="listingTable shadowBox">
-		<tr>
-		<tr>
-			<th style="width:30px">
-				<input dojoType="dijit.form.CheckBox" disabled="disabled" type="checkbox" name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" />
-			</th>		
-			<th colspan="2">
-
-					<input 
-					type="text" 
-					dojoType="dijit.form.DateTextBox" 
-					validate="return false;" 
-					invalidMessage=""  
-					id="publishDate"
-					name="publishDate" value="now" disabled="disabled">
-					&nbsp;
-					<input type="text" name="publishDate" id="publishTime" value="now"
-					  data-dojo-type="dijit.form.TimeTextBox"
-					  onChange="dojo.byId('val').value=arguments[0].toString().replace(/.*1970\s(\S+).*/,'T$1')"
-					  required="false"  disabled="disabled" />
-				&nbsp;
-			
-				<div id="addPublishQueueMenu" style="display: inline-block;"></div>
-			</th>	
-					
-		</tr>
-		</tr>
-		<tr>
-			<td colspan="33" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
-		</tr>
-	</table>
-	<script type="text/javascript">
-	dojo.ready(function() {
-	       var menu = new dijit.Menu({
-	           style: "display: none;"
-	       });
-	       var menuItem1 = new dijit.MenuItem({
-	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
-	                       iconClass: "plusIcon",
-	                       onClick: function() {
-	                    	   addToPublishQueueQueue('add');
-	           }
-	       });
-	       menu.addChild(menuItem1);
-
-	       var menuItem2 = new dijit.MenuItem({
-	           label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_remove_publish_queue" )) %>",
-	                       iconClass: "closeIcon",
-	                       onClick: function() {
-	                    	   addToPublishQueueQueue('remove');
-	           }
-	       });
-	       menu.addChild(menuItem2);
-	       
-	       var button = new dijit.form.ComboButton({
-	            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_add_publish_queue" )) %>",
-	                        iconClass: "plusIcon",
-	                        dropDown: menu,
-	                        onClick: function() {
-	                        	addToPublishQueueQueue('add');
-	            },
-	            disabled:true
-	        });
-
-	      dojo.byId("addPublishQueueMenu").appendChild(button.domNode);
-	   });
-	</script>
-<%} %>
+<% }%>
