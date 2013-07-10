@@ -38,7 +38,7 @@
 <%
 
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
-	Contentlet contentlet 	= APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(),false,APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
+	Contentlet contentlet = APILocator.getContentletAPI().search("+identifier: "+task.getWebasset(), 0, -1, null, user, true).get(0);
 	Structure structure = contentlet.getStructure();
 
 	Role createdBy 		= APILocator.getRoleAPI().loadRoleById(task.getCreatedBy());
@@ -551,4 +551,5 @@
 	<input name="wfExpireDate" id="wfExpireDate" type="hidden" value="">
 	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
+	<input name="whereToSend" id="whereToSend" type="hidden" value="">
 </form>
