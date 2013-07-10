@@ -1164,6 +1164,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		return getPermissions(permissionable, bitPermissions, false);
 	}
 
+    @Override
+    protected void addPermissionsToCache ( Permissionable permissionable ) throws DotDataException {
+
+        //Checking individual permissions
+        List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache( permissionable.getPermissionId() );
+        if ( bitPermissionsList == null ) {//Already in cache
+            bitPermissionsList = loadPermissions( permissionable );
+            permissionCache.addToPermissionCache( permissionable.getPermissionId(), bitPermissionsList );
+        }
+    }
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionFactory#getPermissions(com.dotmarketing.beans.Inode)
 	 */
