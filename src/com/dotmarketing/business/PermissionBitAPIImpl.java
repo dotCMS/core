@@ -553,6 +553,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return permissionFactory.getPermissions(permissionable, bitPermissions, onlyIndividualPermissions, forceLoadFromDB);
 	}
 
+    public void addPermissionsToCache ( Permissionable permissionable ) throws DotDataException {
+        permissionFactory.addPermissionsToCache( permissionable );
+    }
+
 	/**
 	 * @param Permission to save
 	 * Saves passed in permission

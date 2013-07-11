@@ -12,7 +12,7 @@ div.maxmin{position:absolute;top:0px;right:0px;width:10px;bottom:0px;height:100%
 
 hr {color: #fff; background-color: #fff; border: 1px solid #ddd; border-style: none none solid; }
 
-.dmundra #mainTabContainer{border:0;border-bottom:1px solid #ddd;}
+.dmundra #mainTabContainer{border:0;}
 .dmundra .dijitLayoutContainer{position:relative;background: #eee url(/html/images/skin/previewTab_bg.gif) repeat-x;padding:0;}
 .dmundra .dijitTabContainerTop-dijitContentPane{background-color:#eee;padding:0;margin:0;border:none;}
 .dmundra .dijitTabPaneWrapper {absolute;background:#eee;border:none;}
@@ -22,25 +22,26 @@ hr {color: #fff; background-color: #fff; border: 1px solid #ddd; border-style: n
 .dmundra .dijitTabContainerBottom-spacer, .dmundra .dijitTabContainerTop-spacer{background:#eee;}
 .dmundra .dijitTabContainerTop-tabs .dijitTabChecked {border-bottom-color:#eee;}
 .dmundra .dijitTabPaneWrapper {background:none;border-style:none;border-width:0px;border:none;}
-.dmundra .dijitTabListWrapper {top:5px;}
+.dmundra .dijitTabListWrapper {}
 .dmundra .dijitTabContainerTop-dijitContentPane{padding-bottom:10px;}
 
-.dmundra .dijitButtonText {display:inline-block;width:160px;text-align:left;overflow: hidden;}
+.dmundra .dijitButtonText {display:inline-block;width:155px;text-align:left;overflow: hidden;}
+.dmundra .dijitTabContainerTop-tabs {margin-top:3px;}
 
-.dijitButtonNode button{width:175px;text-align:left;}
+.dijitButtonNode button{width:155px;text-align:left;}
 
-.pageTools{border:1px solid #ddd;border-top:1px solid #ccc;border-left:1px solid #ccc;background:#fff;margin:10px 0 10px 6px;padding:5px;width:172px;}
+.pageTools{border:1px solid #ddd;border-top:1px solid #ccc;border-left:1px solid #ccc;background:#fff;margin:10px 0 10px 6px;padding:5px;width:182px;}
 .pageTools a{display:block;line-height:18px;padding:3px;}
 .pageTools a:hover{background-color:#cbe1f2;}
 .pageTools a span, .pageTools .disabled span{margin:0 5px 0 0;}
 
 
-#buttonRow{padding:0 0 12px 5px;border-top:1px solid #fff;border-bottom:1px solid #ccc;}
+#buttonRow{border-top:1px solid #fff;border-bottom:1px solid #ccc;padding:15px 0 15px 10px;margin:0;color:#5b5b5b;}
 .logout{position:absolute;bottom:15px;left:5px;}
 
-.sideMenu{width:210px;overflow:hidden;}
+.sideMenu{width:220px;overflow:hidden;}
 	
-.lang{color:#5b5b5b;border-top:1px solid #fff;border-bottom:1px solid #ccc;padding:5px 0 12px 10px;margin:10px 0 10px 0;}
+.lang{color:#5b5b5b;border-top:1px solid #fff;border-bottom:1px solid #ccc;padding:15px 0 15px 10px;margin:0;}
 .lang a{padding:3px;border-top: solid 1px #fff;border-right: solid 1px #ccc;border-left: solid 1px #FFF;border-bottom: solid 1px #ccc;}
 .lang a:hover{background-color:#E3E3E4;border-top: solid 1px #ccc;border-right: solid 1px #fff;border-left: solid 1px #ccc;border-bottom: solid 1px #ccc;}
 .lang span{padding:0px;background-color:#E3E3E4;border-top: solid 1px #ccc;border-right: solid 1px #fff;border-left: solid 1px #ccc;border-bottom: solid 1px #ccc;}
