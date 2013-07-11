@@ -673,6 +673,7 @@ dojo.require("dojo.cookie");
                 </div>
             </div>
         </div>
+        <%}%>
     <!-- END Auto Updater pop up -->
 	
 	<!-- About pop up -->
@@ -737,4 +738,4 @@ dojo.require("dojo.cookie");
         </script>
     <%}%>
 
-<%}%>
+
