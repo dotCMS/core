@@ -2492,14 +2492,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				boolean localTransaction = false;
 				try{
 					try{
-						localTransaction =	 DbConnectionFactory.getConnection().getAutoCommit();
+						localTransaction =	 HibernateUtil.startLocalTransactionIfNeeded();
 					}
 					catch(Exception e){
 						throw new DotDataException(e.getMessage());
 					}
-					if(localTransaction){
-						HibernateUtil.startTransaction();
-					}
+					
 					DotConnect dc1 = new DotConnect();
 					dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
 					dc1.addParam(permissionable.getPermissionId());
