@@ -15,7 +15,7 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowSearcher"%>
 <%
 
-	WorkflowSearcher searcher = new WorkflowSearcher(request.getParameterMap(), user);
+	WorkflowSearcher searcher = new WorkflowSearcher(UtilMethods.getParameterMap(request), user);
 	session.setAttribute(com.dotmarketing.util.WebKeys.WORKFLOW_SEARCHER, searcher);	
 	WorkflowSearcher fakeSearcher =(WorkflowSearcher) BeanUtils.cloneBean(searcher) ;
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
