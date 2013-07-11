@@ -16,6 +16,7 @@ String actionId=request.getParameter("actionId");
 String inode=request.getParameter("inode");// DOTCMS-7085
 WorkflowAction action = APILocator.getWorkflowAPI().findAction(actionId, user);
 Role role = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());
+
 List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); 
 boolean hasPushPublishActionlet = false; 
 GregorianCalendar cal = new GregorianCalendar();
@@ -106,7 +107,7 @@ function setDates(){
 
 <% if(mustShow){ %>
 	<div id="wfDivWrapperForDojo">
-		<div style="margin:auto;width:<%=(hasPushPublishActionlet) ? "500px;" : "300px;" %>">
+		<div style="margin:auto;width:500px;">
 			<div class="fieldWrapper">
 				<div class="fieldName" style="width: 120px"><%= LanguageUtil.get(pageContext, "Perform-Workflow") %>:</div> 
 				<div class="fieldValue"><%=action.getName() %></div>
@@ -134,7 +135,7 @@ function setDates(){
 									invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
 							</select>
 						<%}else{ %>
-							<%=role.getName() %>
+							<%=APILocator.getRoleAPI().loadCMSAnonymousRole().getId().equals(role.getId())?LanguageUtil.get(pageContext, "current-user"):role.getName()%>
 							<input type="text" dojoType="dijit.form.TextBox" style="display:none" name="taskAssignmentAux" id="taskAssignmentAux" value="<%=role.getId()%>">
 						<%} %>
 					</div>
