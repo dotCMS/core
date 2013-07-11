@@ -118,8 +118,16 @@ public abstract class PermissionFactory {
 	 * @author David H Torres
 	 */
 	abstract List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions) throws DotDataException;
-	
-	/**
+
+    /**
+     * For new Permissionables adds its permissions to cache.
+     *
+     * @param permissionable
+     * @throws DotDataException
+     */
+    abstract void addPermissionsToCache ( Permissionable permissionable ) throws DotDataException;
+
+    /**
 	 * This method returns a list permission of all the permissionables passed as parameter,
 	 * it returns the compressed bit version of permissions, this method returns either the 
 	 * individually assigned permissions if none then it looks for any inherited permissions
