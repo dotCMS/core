@@ -173,18 +173,19 @@ public interface RoleAPI {
 	 * @throws DotDataException 
 	 */
 	public boolean doesUserHaveRole(User user, String roleId) throws DotDataException;
-		
-	
-	/**
-	 * 
-	 * @param role
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 * @throws DotSecurityException 
-	 */
-	public void delete(Role role) throws DotDataException, DotStateException, DotSecurityException;
-		
-	/**
+
+    /**
+     * Removes a given Role.
+     * <br>In order to remove a Role it is required first to remove the association
+     * of this Role with any user under it, remove its permissions and finally remove its layouts.
+     *
+     * @param role
+     * @throws DotDataException
+     * @throws DotStateException
+     */
+    public void delete ( Role role ) throws DotDataException, DotStateException;
+
+    /**
 	 * Loads the CMS Anonymous Role
 	 * @return
 	 * @throws DotDataException
