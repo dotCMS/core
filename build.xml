@@ -642,7 +642,7 @@
 				create user ${db.username} identified by ${db.password};
 				grant dba to ${db.username};
 				grant connect,resource to ${db.username};
-				CREATE OR REPLACE TRIGGER WORKAROUNDORA9965278 AFTER LOGON ON DATABASE BEGIN EXECUTE IMMEDIATE 'ALTER SESSION SET _replace_virtual_columns=FALSE'; END;
+				CREATE OR REPLACE TRIGGER WORKAROUNDORA9965278 AFTER LOGON ON DATABASE BEGIN EXECUTE IMMEDIATE "ALTER SESSION SET '_replace_virtual_columns'=false"; END;
 			</sql>
 	    </then>
 		<elseif>
