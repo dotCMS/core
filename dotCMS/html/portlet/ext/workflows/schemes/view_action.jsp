@@ -24,24 +24,25 @@
 	String stepId = request.getParameter("stepId");
 	String actionId = request.getParameter("actionId");
 
-	WorkflowAction action = new WorkflowAction();
-	Role r = new Role();
-	boolean hideHierarchayControl = true;
-	try{
-		action =wapi.findAction(actionId, APILocator.getUserAPI().getSystemUser());
-		r = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());
-		if(! r.isUser() && ! r.equals(APILocator.getRoleAPI().loadCMSAnonymousRole())){
-			if(action.isAssignable()){
-				hideHierarchayControl = false;
-			}
-		}
-		if(stepId ==null){
-			stepId = action.getStepId();
-		}
-	}
-	catch(Exception e){
-		Logger.debug(this.getClass(), "can't find action");
-	}
+    WorkflowAction action = new WorkflowAction();
+    Role nextAssignRole = new Role();
+    boolean hideHierarchayControl = true;
+    try {
+        action = wapi.findAction( actionId, APILocator.getUserAPI().getSystemUser() );
+        nextAssignRole = APILocator.getRoleAPI().loadRoleById( action.getNextAssign() );
+        if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId() ) ) {
+            if ( !nextAssignRole.isUser() && !nextAssignRole.equals( APILocator.getRoleAPI().loadCMSAnonymousRole() ) ) {
+                if ( action.isAssignable() ) {
+                    hideHierarchayControl = false;
+                }
+            }
+        }
+        if ( stepId == null ) {
+            stepId = action.getStepId();
+        }
+    } catch ( Exception e ) {
+        Logger.debug( this.getClass(), "can't find action" );
+    }
 	WorkflowStep step = wapi.findStep(stepId);
 	String schemeId = step.getSchemeId();
 
@@ -83,9 +84,13 @@
         "actionWhoCanUseSelect");
 
 	    <%
-	    String assignToLabel=r.getName();
-	    if(r.equals(APILocator.getRoleAPI().loadCMSAnonymousRole()))
-	        assignToLabel=LanguageUtil.get(pageContext, "current-user");
+            String assignToLabel=null;
+            if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId() ) ) {
+                assignToLabel = nextAssignRole.getName();
+                if(nextAssignRole.equals(APILocator.getRoleAPI().loadCMSAnonymousRole())) {
+                    assignToLabel=LanguageUtil.get(pageContext, "current-user");
+                }
+            }
 	    %>
 
 		var assignSelect = new dijit.form.FilteringSelect({
@@ -131,7 +136,7 @@
             	dijit.byId("actionIconSelect").displayedValue="";
             },
             required:false,
-            onChange:setIconLabel,
+            onChange:setIconLabel
 
         },
         "actionIconSelect");
@@ -145,10 +150,13 @@
 
 		actionAdmin.whoCanUse = new Array();
 		<% Set<Role> roles = APILocator.getPermissionAPI().getReadRoles(action);%>
-		<%for(Role tmpRole :  roles){%>
-			actionAdmin.addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>", 
-					"<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
-		<% }%>
+		<%for(Role tmpRole :  roles){
+			if (UtilMethods.isSet(tmpRole) && UtilMethods.isSet(tmpRole.getId()) ) {%>
+                actionAdmin.addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>",
+                "<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
+            <%}
+        }%>
+
 
 		actionAdmin.refreshWhoCanUse();
 

@@ -129,7 +129,13 @@
 		</tr>
 	<%} %>
 	<%for(WorkflowTask task : tasks){ %>
-		<%Role r = APILocator.getRoleAPI().loadRoleById(task.getAssignedTo()); %>
+		<%
+            Role assignedRole = APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
+            String assignedRoleName = "";
+            if (UtilMethods.isSet( assignedRole ) && UtilMethods.isSet( assignedRole.getId() )) {
+                assignedRoleName = assignedRole.getName();
+            }
+        %>
 		<%Contentlet contentlet = new Contentlet();
 
 			try{
@@ -176,7 +182,7 @@
 
 			</td>
 
-			<td nowrap="norap" align="center"><%=r.getName() %></td>
+			<td nowrap="norap" align="center"><%=assignedRoleName %></td>
 			<td align="center" nowrap="norap"><%=DateUtil.prettyDateSince(task.getModDate(), user.getLocale()) %></td>
 			
 
