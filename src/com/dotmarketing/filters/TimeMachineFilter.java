@@ -99,7 +99,6 @@ public class TimeMachineFilter implements Filter {
 		    
 		    final String pageEXT=Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"); 
 		    
-		    Logger.info(this, "uri: "+uri+" replaced: "+uri.replaceAll("/", "\\\\"));
 
 		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
@@ -148,7 +147,6 @@ public class TimeMachineFilter implements Filter {
 		        
 		        
 		        try {
-		            request.setAttribute("file", file.getPath());
 					request.getRequestDispatcher("/html/portlet/ext/timemachine/timemachine_404.jsp").forward(request, response);
 				} catch (Exception e) {
 					Logger.error(TimeMachineFilter.class,e.getMessage(),e);
