@@ -115,7 +115,7 @@
 	    		
 	    		this.wfActionId=wfId;
 	    		
-	    		if(assignable || commentable){
+	    		if(assignable || commentable || showpush){
 	    			
 	    			var myCp = dijit.byId("contentletWfCP");
 	    			if (myCp) {
@@ -152,7 +152,7 @@
 							+ "&expireDate=<%=structure!=null?structure.getExpireDateVar():""%>"
 							+ "&structureInode=<%=structure!=null?structure.getInode():""%>"
 							+ "&r=" + r;
-							console.log(url);
+							
 	    			myCp.attr("href", url);
 	    			return;
 	    		}
@@ -164,74 +164,84 @@
 	    		
 	    	},
 	    	
-	    	saveAssign : function(){
-				
-	    		
-	    		var assignRole = (dijit.byId("taskAssignmentAux")) 
-	    			? dijit.byId("taskAssignmentAux").getValue()
-	    				: (dojo.byId("taskAssignmentAux")) 
-	    					? dojo.byId("taskAssignmentAux").value
-	    							: "";
+	    	saveAssign : function(){  		
+	    		var assignRole = (dijit.byId("taskAssignmentAux"))
+				? dijit.byId("taskAssignmentAux").getValue()
+					: (dojo.byId("taskAssignmentAux"))
+						? dojo.byId("taskAssignmentAux").value
+								: "";
 
-	    		if(!assignRole || assignRole.length ==0 ){
-	    			showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Assign-To-Required")%>");
-	    			return;
-	    		}
+				if(!assignRole || assignRole.length ==0 ){
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Assign-To-Required")%>");
+					return;
+				}
 
-	    		var comments = (dijit.byId("taskCommentsAux")) 
-	    			? dijit.byId("taskCommentsAux").getValue()
-	    				: (dojo.byId("taskCommentsAux")) 
-	    					? dojo.byId("taskCommentsAux").value
-	    							: "";
-	    					
-				// BEGIN: PUSH PUBLISHING ACTIONLET						
-				var publishDate = (dijit.byId("wfPublishDateAux"))			
+				var comments = (dijit.byId("taskCommentsAux"))
+					? dijit.byId("taskCommentsAux").getValue()
+						: (dojo.byId("taskCommentsAux"))
+							? dojo.byId("taskCommentsAux").value
+									: "";
+
+	    		var wfActionAssign 		= assignRole;
+	    		var selectedItem 		= "";
+	    		var wfConId 			= dojo.byId("wfConId").value;
+	    		var wfActionId 			= this.wfActionId;
+	    		var wfActionComments 	= comments;
+
+	    		var dia = dijit.byId("contentletWfDialog").hide();
+
+	    		// BEGIN: PUSH PUBLISHING ACTIONLET
+				var publishDate = (dijit.byId("wfPublishDateAux"))
 					? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
-						: (dojo.byId("wfPublishDateAux"))	
+						: (dojo.byId("wfPublishDateAux"))
 							? dojo.date.locale.format(dojo.byId("wfPublishDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"})
 									: "";
-	
-				var publishTime = (dijit.byId("wfPublishTimeAux"))			
+
+				var publishTime = (dijit.byId("wfPublishTimeAux"))
 					? dojo.date.locale.format(dijit.byId("wfPublishTimeAux").getValue(),{timePattern: "H-m", selector: "time"})
-						: (dojo.byId("wfPublishTimeAux"))	
+						: (dojo.byId("wfPublishTimeAux"))
 							? dojo.date.locale.format(dojo.byId("wfPublishTimeAux").value,{timePattern: "H-m", selector: "time"})
 									: "";
-				
-							
-				var expireDate = (dijit.byId("wfExpireDateAux"))			
-					? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("expireDate").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-						: (dojo.byId("wfExpireDateAux"))	
-							? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("expireDate").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
+
+
+				var expireDate = (dijit.byId("wfExpireDateAux"))
+					? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
+						: (dojo.byId("wfExpireDateAux"))
+							? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
 									: "";
-				
-				var expireTime = (dijit.byId("wfExpireTimeAux"))			
-					? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("expireTime").getValue(),{timePattern: "H-m", selector: "time"}) : ""
-						: (dojo.byId("wfExpireTimeAux"))	
-							? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("expireTime").value,{timePattern: "H-m", selector: "time"}) : ""
-									: "";			
-				var neverExpire = (dijit.byId("wfNeverExpire"))			
+
+				var expireTime = (dijit.byId("wfExpireTimeAux"))
+					? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireTimeAux").getValue(),{timePattern: "H-m", selector: "time"}) : ""
+						: (dojo.byId("wfExpireTimeAux"))
+							? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireTimeAux").value,{timePattern: "H-m", selector: "time"}) : ""
+									: "";
+				var neverExpire = (dijit.byId("wfNeverExpire"))
 					? dijit.byId("wfNeverExpire").getValue()
-						: (dojo.byId("wfNeverExpire"))	
+						: (dojo.byId("wfNeverExpire"))
 							? dojo.byId("wfNeverExpire").value
 									: "";
-							
-				// END: PUSH PUBLISHING ACTIONLET
 
-	    		
-	    		dojo.byId("wfActionAssign").value=assignRole;
-    			dojo.byId("wfActionComments").value=comments;
-	    		dojo.byId("wfActionId").value=this.wfActionId;
-	    		
-	    		// BEGIN: PUSH PUBLISHING ACTIONLET
-				dojo.byId("wfPublishDate").value=publishDate;
-				dojo.byId("wfPublishTime").value=publishTime;
-				dojo.byId("wfExpireDate").value=expireDate;
-				dojo.byId("wfExpireTime").value=expireTime;
-				dojo.byId("wfNeverExpire").value=neverExpire;
+				var whereToSend = (dijit.byId("whereToSend"))
+					? dijit.byId("whereToSend").getValue()
+						: (dojo.byId("whereToSend"))
+							? dojo.byId("whereToSend").value
+									: "";
 				// END: PUSH PUBLISHING ACTIONLET
 				
-	    		dijit.byId("contentletWfDialog").hide();
-	    		this.executeWorkflow();
+					dojo.byId("wfActionAssign").value=assignRole;
+     				dojo.byId("wfActionComments").value=comments;
+					dojo.byId("wfActionId").value=this.wfActionId;
+
+					// BEGIN: PUSH PUBLISHING ACTIONLET
+					dojo.byId("wfPublishDate").value=publishDate;
+					dojo.byId("wfPublishTime").value=publishTime;
+					dojo.byId("wfExpireDate").value=expireDate;
+					dojo.byId("wfExpireTime").value=expireTime;
+					dojo.byId("wfNeverExpire").value=neverExpire;
+					dojo.byId("whereToSend").value=whereToSend;
+					// END: PUSH PUBLISHING ACTIONLET
+
+					this.executeWorkflow();
 	    	},
 	    	
 	    	executeWorkflow : function (){

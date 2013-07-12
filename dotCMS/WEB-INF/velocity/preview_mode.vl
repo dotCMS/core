@@ -62,7 +62,7 @@
 		<table style="border:0;padding:0;width:100%" width="100%" cellspacing="0" cellpadding="0" border="0">
 			<tr>
 				<td>
-					<iframe id="frameMenu" name="frameMenu" style="width:210px;border:0;margin:0;" width="210" marginheight="0" marginwidth="0" frameborder="0" scrolling="no" src="${_baseURI}?leftMenu=true&livePage=$livePage&language=$language&host_id=${host.identifier}"></iframe>
+					<iframe id="frameMenu" name="frameMenu" style="width:220px;border:0;margin:0;" width="220" marginheight="0" marginwidth="0" frameborder="0" scrolling="no" src="${_baseURI}?leftMenu=true&livePage=$livePage&language=$language&host_id=${host.identifier}"></iframe>
 				</td>
 				<td>
 					<iframe id="frameMain" name="frameMain" style="border:0;margin:0;" marginheight="0" marginwidth="0" scrolling="auto" frameborder="0" src="${_baseURI}?mainFrame=true&livePage=$livePage&language=$language&host_id=${host.identifier}&$!{queryString}"></iframe>

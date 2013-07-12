@@ -61,7 +61,9 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -975,16 +977,14 @@ public class ContentletAjax {
                 Logger.error( this, "Could not load workflow actions : ", e );
             }
 
-//			List<Map<String, Object>> wfActionMapList = new ArrayList<Map<String, Object>>();
 			JSONArray wfActionMapList = new JSONArray();
 
 			for ( WorkflowAction action : wfActions ) {
-
+				boolean hasPushPublishActionlet = false;
                 if ( action.requiresCheckout() )
                     continue;
 
                 JSONObject wfActionMap = new JSONObject();
-//                Map<String, Object> wfActionMap = new HashMap<String, Object>();
                 try {
 					wfActionMap.put( "name", action.getName() );
 	                wfActionMap.put( "id", action.getId() );
@@ -992,7 +992,14 @@ public class ContentletAjax {
 	                wfActionMap.put( "assignable", action.isAssignable() );
 	                wfActionMap.put( "commentable", action.isCommentable() || UtilMethods.isSet( action.getCondition() ) );
 	                wfActionMap.put( "requiresCheckout", action.requiresCheckout() );
-
+	                
+	                List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); 
+	                for(WorkflowActionClass actionlet : actionlets){ 
+	                	if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ 
+	                		hasPushPublishActionlet = true; 
+	                	}
+	                } 
+	                wfActionMap.put( "hasPushPublishActionlet", hasPushPublishActionlet );
 	                try {
 						wfActionMap.put( "wfActionNameStr", LanguageUtil.get( currentUser, action.getName() ) );
 					} catch (LanguageException e) {

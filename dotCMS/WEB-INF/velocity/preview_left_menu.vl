@@ -324,9 +324,9 @@
             	<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
             </span>
 
-            <hr/>
-
             #if($canViewDiff)
+            	<hr/>
+            	
                 <a href="javascript: viewDiff();">
                 	<span class="redlineIcon"></span> $languagewebapi.getFromUserLanguage("modes.Whats-Changed")
                 </a>
