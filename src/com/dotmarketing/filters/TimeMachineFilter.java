@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
 
 public class TimeMachineFilter implements Filter {
 
@@ -37,6 +38,9 @@ public class TimeMachineFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse resp = (HttpServletResponse) response;
 		String uri=req.getRequestURI();
+		
+		if(!uri.startsWith("/"))
+		    uri="/"+uri;
 
 		if(uri != null && uri.startsWith("/admin") && req.getSession().getAttribute("tm_date")!=null){
 			req.getSession().removeAttribute(TM_DATE_VAR);
@@ -96,12 +100,11 @@ public class TimeMachineFilter implements Filter {
 		    final String pageEXT=Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"); 
 		    
 
-
 		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 		            "tm_"+date.getTime()+java.io.File.separator+
 		            "live"+java.io.File.separator+
 		            host.getHostname()+java.io.File.separator+langid+
-		            uri);
+		            (java.io.File.separator.equals("\\") ?  uri.replaceAll("/", "\\\\") : uri));
 		    
 		    // if we need to redirect to the index page
 		    if(file.isDirectory()) {
@@ -115,7 +118,7 @@ public class TimeMachineFilter implements Filter {
 			            "tm_"+date.getTime()+java.io.File.separator+
 			            "live"+java.io.File.separator+
 			            host.getHostname()+java.io.File.separator+langid+
-			            uri);
+			            (java.io.File.separator.equals("\\") ?  uri.replaceAll("/", "\\\\") : uri));
 		    }
 		    
 		    final String defid=Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -126,7 +129,7 @@ public class TimeMachineFilter implements Filter {
 	                    "tm_"+date.getTime()+java.io.File.separator+
 	                    "live"+java.io.File.separator+
 	                    host.getHostname()+java.io.File.separator+defid+
-	                    uri);
+	                    (java.io.File.separator.equals("\\") ?  uri.replaceAll("/", "\\\\") : uri));
 		    }
 		    
 		    if(file.exists()) {
