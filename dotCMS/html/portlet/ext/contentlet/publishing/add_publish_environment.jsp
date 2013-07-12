@@ -23,45 +23,46 @@
     var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect"});
 
 
-	function saveEnvironment(){
+    function saveEnvironment() {
 
-		var form = dijit.byId("formSaveEnvironment");
+        var form = dijit.byId("formSaveEnvironment");
 
-		dijit.byId("environmentName").setAttribute('required',true);
+        dijit.byId("environmentName").setAttribute('required', true);
+        if (whoCanUse.length == 0) {
+            dijit.byId("whoCanUseSelect").setAttribute('required', true);
+        } else {
+            dijit.byId("whoCanUseSelect").setAttribute('required', false);
+        }
 
-		dijit.byId("whoCanUseSelect").setAttribute('required',true);
-
-		if (form.validate()) {
-
-			if(whoCanUse.length==0) {
-			    alert('<%=LanguageUtil.get(pageContext, "publisher_Environment_Mandatory_Who_Can_Send")%>');
-				return;
-			}
+        if (form.validate()) {
 
 
-			var xhrArgs = {
-				url: "/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment",
-				form: dojo.byId("formSaveEnvironment"),
-				handleAs: "text",
-				load: function(data){
-					if(data.indexOf("FAILURE") > -1){
+            if (whoCanUse.length == 0) {
+                alert('<%=LanguageUtil.get(pageContext, "publisher_Environment_Mandatory_Who_Can_Send")%>');
+                return;
+            }
 
-						alert(data);
-					}
-					else{
-						backToEnvironmentList();
-					}
-				},
-				error: function(error){
-					alert(error);
+            var xhrArgs = {
+                url: "/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment",
+                form: dojo.byId("formSaveEnvironment"),
+                handleAs: "text",
+                load: function (data) {
+                    if (data.indexOf("FAILURE") > -1) {
 
-				}
-			}
+                        alert(data);
+                    }
+                    else {
+                        backToEnvironmentList();
+                    }
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            };
 
-			var deferred = dojo.xhrPost(xhrArgs);
-		}
-
-	}
+            var deferred = dojo.xhrPost(xhrArgs);
+        }
+    }
 
 
 	function enableSave(){
@@ -127,7 +128,7 @@
 							  id="environmentName"
 							  style="width:200px;"
 							  value="<%=UtilMethods.webifyString(String.valueOf(currentEnvironment.getName())) %>"
-							  promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Environment_Validation_Name_Prompt_Message") %>"
+							  promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Environment_name_required") %>"
 							  />
 				</td>
 			</tr>
