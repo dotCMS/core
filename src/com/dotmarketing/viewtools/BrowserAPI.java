@@ -16,7 +16,9 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.FileUtil;
@@ -206,13 +208,14 @@ public class BrowserAPI {
 
             try {
                 if ( permissions.contains( PERMISSION_READ ) ) {
+                	boolean hasPushPublishActionlet = false;
                     if ( !showArchived && file.isArchived() ) {
                         continue;
                     }
                     IFileAsset fileAsset = (IFileAsset) file;
                     List<Map<String, Object>> wfActionMapList = new ArrayList<Map<String, Object>>();
                     for ( WorkflowAction action : wfActions ) {
-
+                    	List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); 
                         if ( action.requiresCheckout() ) {
                             continue;
                         }
@@ -224,6 +227,12 @@ public class BrowserAPI {
                         wfActionMap.put( "commentable", action.isCommentable() || UtilMethods.isSet( action.getCondition() ) );
                         wfActionMap.put( "requiresCheckout", action.requiresCheckout() );
                         wfActionMap.put( "wfActionNameStr", LanguageUtil.get( usr, action.getName() ) );
+                        for(WorkflowActionClass actionlet : actionlets){ 
+                        	if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ 
+                        		hasPushPublishActionlet = true; 
+                        	}
+                        }
+                        wfActionMap.put( "hasPushPublishActionlet", hasPushPublishActionlet );
                         wfActionMapList.add( wfActionMap );
                     }
                     if ( wfScheme != null && wfScheme.isMandatory() ) {
@@ -260,7 +269,7 @@ public class BrowserAPI {
                     fileMap.put( "name", ident.getAssetName() );
                     fileMap.put( "fileName", ident.getAssetName() ); 
                     fileMap.put( "description", fileAsset.getFriendlyName() );
-                    fileMap.put( "extension", FileUtil.getIconExtension( fileAsset.getFileName() ) );
+                    fileMap.put( "extension", UtilMethods.getFileExtension( fileAsset.getFileName() ) );
                     fileMap.put( "path", fileAsset.getPath() );
                     fileMap.put( "type", fileAsset.getType() );
                     fileMap.put( "wfActionMapList", wfActionMapList );

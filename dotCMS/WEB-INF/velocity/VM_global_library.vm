@@ -467,7 +467,7 @@
 			#end
 			
 			#foreach ($identifier in $results)
-				#getContentMapDetailByIdentifier($identifier.identifier)
+				#set($content = $dotcontent.find($identifier.identifier))
 				$!list.add(${math.sub($velocityCount,1)}, $content)
 			#end
 			

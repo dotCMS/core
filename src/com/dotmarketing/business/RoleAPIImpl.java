@@ -1,15 +1,16 @@
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Jason Tesser
@@ -100,40 +101,66 @@ public class RoleAPIImpl implements RoleAPI {
     public Role findRoleByName(String rolename, Role parent) throws DotDataException {
     	return rf.findRoleByName(rolename, parent);
     }
-	
-    public void delete(Role role) throws DotDataException, DotStateException, DotSecurityException{
-		Role r = loadRoleById(role.getId());
-		
-		for(String uid : rf.findUserIdsForRole(role, true)){
-			CacheLocator.getRoleCache().remove(uid);
-		}
-		
-		if(r.isLocked()){
-			throw new DotStateException("Cannot delete locked role");
-		}
-		if(r.isSystem()){
-			throw new DotStateException("Cannot edit a system role");
-		}
-		r.setEditPermissions(true);
-		r.setEditLayouts(true);
-		r.setEditUsers(true);
-		rf.save(r);
-				
-		List<User> users = findUsersForRole(r.getId());
-		if(users != null){
-			for(User u: users) {
-				removeRoleFromUser(r, u);
-			}
-		}
-		
-		PermissionAPI permAPI = APILocator.getPermissionAPI();
-		permAPI.removePermissionsByRole(role.getId());
-		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-		for(Layout l : layoutAPI.loadLayoutsForRole(role)) {
-			removeLayoutFromRole(l, role);
-		}
-		rf.delete(role);
-	}
+
+    public void delete ( Role role ) throws DotDataException, DotStateException {
+
+        Role r = loadRoleById( role.getId() );
+
+        for ( String uid : rf.findUserIdsForRole( role, true ) ) {
+            CacheLocator.getRoleCache().remove( uid );
+        }
+
+        if ( r.isLocked() ) {
+            throw new DotStateException( "Cannot delete locked role" );
+        }
+        if ( r.isSystem() ) {
+            throw new DotStateException( "Cannot edit a system role" );
+        }
+
+        boolean local = false;
+        try {
+            try {
+                local = HibernateUtil.startLocalTransactionIfNeeded();
+            } catch ( DotDataException e ) {
+                Logger.error( this.getClass(), e.getMessage(), e );
+                throw new DotHibernateException( "Unable to start a local transaction " + e.getMessage(), e );
+            }
+
+            r.setEditPermissions( true );
+            r.setEditLayouts( true );
+            r.setEditUsers( true );
+            rf.save( r );
+
+            List<User> users = findUsersForRole( r.getId() );
+            if ( users != null ) {
+                for ( User u : users ) {
+                    removeRoleFromUser( r, u );
+                }
+            }
+
+            PermissionAPI permAPI = APILocator.getPermissionAPI();
+            permAPI.removePermissionsByRole( role.getId() );
+            LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+            for ( Layout l : layoutAPI.loadLayoutsForRole( role ) ) {
+                removeLayoutFromRole( l, role );
+            }
+            rf.delete( role );
+        } catch ( Exception e ) {
+            if ( local ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            if ( role != null ) {
+                Logger.error( this.getClass(), "Error deleting Role: " + role.getName(), e );
+            } else {
+                Logger.error( this.getClass(), "Error deleting Role", e );
+            }
+            throw new DotDataException( e.getMessage() );
+        } finally {
+            if ( local ) {
+                HibernateUtil.commitTransaction();
+            }
+        }
+    }
 
 	public boolean roleExistsByName(String roleName, Role parent) throws DotDataException {
 		Role r = rf.findRoleByName(roleName, parent);
