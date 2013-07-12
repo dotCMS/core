@@ -282,7 +282,9 @@
 				</td>
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 					<% Bundle bundle = APILocator.getBundleAPI().getBundleById(c.getBundleId()); %>
-					<%=bundle!=null?bundle.getName():""%>
+                    <%if ( bundle != null && bundle.getName() != null && (!bundle.getName().equals( bundle.getId() ))) { %>
+                        <%=bundle.getName()%>
+                    <%}%>
 				</td>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
