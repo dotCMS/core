@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.campaigns.model.Recipient;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class RedirectURLServlet extends HttpServlet {
@@ -50,6 +51,10 @@ public class RedirectURLServlet extends HttpServlet {
 			}
 
 			Recipient r = RecipientFactory.getRecipient(request.getParameter("r"));
+			if(r== null || !InodeUtils.isSet(r.getInode())){
+				response.sendError(401);
+				return;
+			}
 			Campaign c = (Campaign) InodeFactory.getParentOfClass(r, Campaign.class);
 			if (InodeUtils.isSet(r.getInode())) {
 
