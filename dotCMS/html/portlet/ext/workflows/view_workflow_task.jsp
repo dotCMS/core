@@ -70,6 +70,11 @@
 	WebAsset asset = null;
 	request.setAttribute("contentletId", contentlet.getInode());
 
+    String assignedRoleName = "";
+    if (UtilMethods.isSet( assignedTo ) && UtilMethods.isSet( assignedTo.getId() )) {
+        assignedRoleName = assignedTo.getName();
+    }
+
 %>
 
 <!-- Include the associated contentlet action scripts -->
@@ -268,7 +273,7 @@
 			<tr>
 				<td>
 					<strong><%= LanguageUtil.get(pageContext, "Assigned-To") %>:</strong>
-					<%= assignedTo.getName()%>
+					<%= assignedRoleName%>
 
 				</td>
 
