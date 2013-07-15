@@ -35,7 +35,7 @@ public class TikaUtils {
 	 *
 	 * May 31, 2013 - 12:27:19 PM
 	 */
-	public Map<String, String> getMetaDataMap(String inode, File binFile, String mimeType) {
+	public Map<String, String> getMetaDataMap(String inode, File binFile, String mimeType, boolean forceMemory) {
 		Map<String, String> metaMap = new HashMap<String, String>();
 		
 		// store content metadata on disk
@@ -51,7 +51,7 @@ public class TikaUtils {
 		// if the limit is not "unlimited"
 		// I can use the faster parseToString
 		try {
-			if(maxStringLenght>0 && maxStringLenght<=defaultMaxStringLenght){
+			if(forceMemory || (maxStringLenght>0 && maxStringLenght<=defaultMaxStringLenght)){
 				// no worry about the limit and less time to process.
 				String content = t.parseToString(new FileInputStream(binFile), met);
 				metaMap = new HashMap<String, String>();
@@ -126,8 +126,8 @@ public class TikaUtils {
 	 * @param binFile
 	 * @return
 	 */
-	public Map<String, String> getMetaDataMap(String inode,File binFile) {
-		return getMetaDataMap(inode,binFile, null);
+	public Map<String, String> getMetaDataMap(String inode,File binFile, boolean forceMemory) {
+		return getMetaDataMap(inode,binFile, null, forceMemory);
 	}
 
 //	/**

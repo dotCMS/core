@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.util.WebKeys"%>
+<%@ include file="/html/common/auth_backend_check.jsp" %><%@page import="com.dotmarketing.util.WebKeys"%>
 <%@page import="java.util.StringTokenizer"%>
 <%
 	session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, request.getParameter("host_id"));

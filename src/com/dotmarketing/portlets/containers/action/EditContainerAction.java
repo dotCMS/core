@@ -15,8 +15,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.struts.Globals;
+import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -79,7 +82,9 @@ public class EditContainerAction extends DotPortletAction implements
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		if ((referer != null) && (referer.length() != 0)) {
-			referer = URLDecoder.decode(referer, "UTF-8");
+			while(referer.startsWith("%")){
+				referer = URLDecoder.decode(referer, "UTF-8");
+			}
 		}
 
 		Logger.debug(this, "EditContainerAction cmd=" + cmd);
@@ -146,8 +151,8 @@ public class EditContainerAction extends DotPortletAction implements
 		 */
 		if ((cmd != null) && cmd.equals(Constants.ADD)) {
 			try {
-
-				if (Validator.validate(req, form, mapping)) {
+				String note = fm.getNotes();
+				if (Validator.validate(req, form, mapping) && note.length()<=255) {
 
 					Logger.debug(this, "Calling Save Method");
 					_saveWebAsset(req, res, config, form, user);
@@ -187,6 +192,12 @@ public class EditContainerAction extends DotPortletAction implements
 
 					}
 				}
+				if(note.length()>255){
+					ActionErrors ae = new ActionErrors();
+					ae.add(Globals.ERROR_KEY, new ActionMessage("Note field Contains more than 255 characters"));
+					req.setAttribute(Globals.ERROR_KEY, ae);
+				}
+				_editWebAsset(req, res, config, form, user);
 
 			} catch (Exception ae) {
 				_handleException(ae, req);

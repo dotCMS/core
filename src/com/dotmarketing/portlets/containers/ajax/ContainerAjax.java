@@ -77,18 +77,20 @@ public class ContainerAjax {
 		List<Map<String, Object>> list = new LinkedList<Map<String, Object>> ();
 
 		for(Container cont : fullListContainers) {
-			Map<String, Object> contMap = cont.getMap();
-			if(passFilter(contMap, query)) {
-				Host parentHost = containerAPI.getParentHost(cont, user, respectFrontendRoles);
-				if(parentHost != null) {
-					contMap.put("hostName", parentHost.getHostname());
-					contMap.put("hostId", parentHost.getIdentifier());
-					contMap.put("fullTitle", parentHost.getHostname() + ": " + contMap.get("title"));
-				} else {
-					contMap.put("fullTitle", contMap.get("title"));
-				}
+			if(cont != null && !cont.isArchived()){
+				Map<String, Object> contMap = cont.getMap();
+				if(passFilter(contMap, query)) {
+					Host parentHost = containerAPI.getParentHost(cont, user, respectFrontendRoles);
+					if(parentHost != null) {
+						contMap.put("hostName", parentHost.getHostname());
+						contMap.put("hostId", parentHost.getIdentifier());
+						contMap.put("fullTitle", parentHost.getHostname() + ": " + contMap.get("title"));
+					} else {
+						contMap.put("fullTitle", contMap.get("title"));
+					}
 
-				list.add(contMap);
+					list.add(contMap);
+				}
 			}
 		}
 

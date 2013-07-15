@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -89,6 +90,9 @@ public class ContentTool implements ViewTool {
 	 */
 	public ContentMap find(String inodeOrIdentifier){
 		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE);
+		if(c== null || !InodeUtils.isSet(c.getInode())){
+			return null;
+		}
 		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
 	}
 	

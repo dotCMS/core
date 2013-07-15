@@ -77,6 +77,7 @@ public class SiteSearchJobImpl {
         List<String> paths = new ArrayList<String>();
         if(path != null){
             path = path.replace(',', '\r');
+            path = path.replace('\n', '\r');
             for(String x : path.split("\r")){
                 if(UtilMethods.isSet(x)){
                     paths.add(x);

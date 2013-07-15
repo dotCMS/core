@@ -12,7 +12,7 @@ import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 
-public class Task01040CreateContainertStructures implements StartupTask{
+public class Task01300CreateContainertStructures implements StartupTask{
 
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
@@ -52,6 +52,7 @@ public class Task01040CreateContainertStructures implements StartupTask{
 			dc.executeStatement(createIndex);
 
 			dc.setSQL(container_structures_relations);
+			@SuppressWarnings("unchecked")
 			List<Map<String, String>> relations = dc.loadResults();
 
 			for(Map<String,String> relation : relations){

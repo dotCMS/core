@@ -16,6 +16,9 @@ THIS FILE AND ITS INCLUDES
 		response.sendError(500, "No dojo path variable (path.to.dojo) set in the property file");
 	}
 	String agent = request.getHeader("User-Agent");
+	response.setHeader("Cache-Control","no-store");
+	response.setHeader("Pragma","no-cache");
+	response.setHeader("Expires","01 Jan 2000 00:00:00 GMT");
 
 %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

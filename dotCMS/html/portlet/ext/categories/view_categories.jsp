@@ -730,6 +730,9 @@ td {font-size: 100%;}
 	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
 	<input name="iWantTo" id=iWantTo type="hidden" value="">
 	<input name="whoToSend" id=whoToSend type="hidden" value="">
+	<input name="newBundle" id=newBundle type="hidden" value="">
+	<input name="bundleName" id=bundleName type="hidden" value="">
+	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
 </form>
 
 
@@ -846,20 +849,20 @@ td {font-size: 100%;}
 					<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
 					<dd><input id="addCatName" type="text" tabindex="1" required="true" onblur="fillVelocityVarName(); " invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
 					<dt><%= LanguageUtil.get(pageContext, "Key") %>:</dt>
-					<dd><input id="addCatKey" type="text" dojoType="dijit.form.TextBox" /></dd>
+					<dd><input id="addCatKey" type="text" tabindex="2" dojoType="dijit.form.TextBox" /></dd>
 					<dt>
 						<%= LanguageUtil.get(pageContext, "keywords") %>:
 					</dt>
 					<dd>
-						<textarea id="addCatKeywords" dojoType="dijit.form.Textarea"  style="width:250px; min-height:40px;"></textarea>
+						<textarea id="addCatKeywords" tabindex="3" dojoType="dijit.form.Textarea"  style="width:250px; min-height:40px;"></textarea>
 					</dd>
 				</dl>
 			</form>
 		</div>
 		<div class="clear"></div>
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" onclick="saveOrUpdateCategory(true)" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
-			<button dojoType="dijit.form.Button"  onclick="dijit.byId('add_category_dialog').hide()" type="button" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+			<button dojoType="dijit.form.Button" tabindex="4" onclick="saveOrUpdateCategory(true)" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
+			<button dojoType="dijit.form.Button" tabindex="5" onclick="dijit.byId('add_category_dialog').hide()" type="button" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
    		</div>
    	</div>
 </div>
