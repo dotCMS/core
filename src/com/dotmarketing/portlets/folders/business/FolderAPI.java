@@ -664,17 +664,4 @@ import com.liferay.portal.model.User;
 	 */
 	public abstract List<Contentlet> getLiveContent(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Will move a folder to a new folder with all it contains.
-	 *
-	 * @param folderToMove
-	 * @param newParentFolder
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public abstract boolean updateIdentifierUrl(Folder folderToMove, Folder newParentFolder,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException;
-
 }
