@@ -913,6 +913,7 @@ public class PermissionAPITest extends TestBase {
      * @see <a href="https://github.com/dotCMS/dotCMS/issues/3117">github#3117</a>
      * @see PermissionAPI
      */
+    /*
     @Test
     public void issue3117 () throws Exception {
 
@@ -986,6 +987,6 @@ public class PermissionAPITest extends TestBase {
         assertTrue( perm.doesUserHavePermission( template, PermissionAPI.PERMISSION_WRITE, adminUser ) );
         assertTrue( perm.doesUserHavePermission( template, PermissionAPI.PERMISSION_READ, newUser ) );
         assertTrue( perm.doesUserHavePermission( template, PermissionAPI.PERMISSION_WRITE, newUser ) );
-    }
+    }*/
 
 }
