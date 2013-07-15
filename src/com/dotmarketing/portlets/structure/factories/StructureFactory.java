@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -377,10 +378,16 @@ public class StructureFactory {
 		return list;
 	}
 
-	public static List<Structure> getStructures(String condition, String orderBy,int limit,int offset,String direction)
-	{
-		List<Structure> list = new ArrayList<Structure>();
-		list = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class,condition,orderBy,limit,offset,direction);
+	public static List<Structure> getStructures(String condition, String orderBy,int limit,int offset,String direction) {
+
+        //Forms are an enterprise feature...
+        if ( LicenseUtil.getLevel() <= 100 ) {
+            if ( condition.equals( "" ) ) {
+                condition += "structuretype not in(" + Structure.STRUCTURE_TYPE_FORM + ") ";
+            }
+        }
+
+		List<Structure> list = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class,condition,orderBy,limit,offset,direction);
 		return list;
 	}
 
