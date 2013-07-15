@@ -10,11 +10,9 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%><script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 
 <%
-	java.util.Map params = new java.util.HashMap();
-	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(
-			request, WindowState.MAXIMIZED.toString(), params);
-	List structures = (List) request
-			.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
+    java.util.Map params = new java.util.HashMap();
+    String referer = com.dotmarketing.util.PortletURLUtil.getActionURL( request, WindowState.MAXIMIZED.toString(), params );
+    List structures = (List) request.getAttribute( com.dotmarketing.util.WebKeys.Structure.STRUCTURES );
 
 	int pageNumber = 1;
 	if (request.getParameter("pageNumber") != null) {
@@ -29,9 +27,8 @@
 	params.put("pageNumber", new String[] { pageNumber + "" });
 
 
-	java.text.DateFormat modDateFormat = java.text.DateFormat
-			.getDateTimeInstance(java.text.DateFormat.SHORT,
-					java.text.DateFormat.SHORT, locale);
+	java.text.DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,
+            java.text.DateFormat.SHORT, locale);
 	modDateFormat.setTimeZone(timeZone);
 
 	String query = (request.getParameter("query") != null) ? request
@@ -48,7 +45,9 @@
     List<Integer> structureTypes = new ArrayList<Integer>();
     structureTypes.add(STRUCTURE_TYPE_CONTENT);
     structureTypes.add(STRUCTURE_TYPE_WIDGET);
-    structureTypes.add(STRUCTURE_TYPE_FORM);
+    if ( LicenseUtil.getLevel() > 100 ) {
+        structureTypes.add( STRUCTURE_TYPE_FORM );
+    }
     structureTypes.add(STRUCTURE_TYPE_FILEASSET);
     int structureType = 0;
     try {
