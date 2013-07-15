@@ -1,9 +1,11 @@
 package com.dotcms.publisher.environment.business;
 
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
@@ -38,7 +40,7 @@ public interface EnvironmentAPI {
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
 
-	public List<Environment> findEnvironmentsByRole(String roleId) throws DotDataException;
+	public Set<Environment> findEnvironmentsByRole(String roleId) throws DotDataException, NoSuchUserException, DotSecurityException;
 
 	/**
 	 * persists the given Environment object, and its permissions, to the underlying data layer
@@ -75,7 +77,7 @@ public interface EnvironmentAPI {
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
 
-	void updateEnvironment(Environment environment) throws DotDataException;
+	void updateEnvironment(Environment environment, List<Permission> perms) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Returns a List of Environment objects to whom the bundle with the given bundleId was sent to,

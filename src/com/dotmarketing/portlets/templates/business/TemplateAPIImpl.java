@@ -293,7 +293,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		List<Container> containers = getContainersInTemplate(template, user, respectFrontendRoles);
 		associateContainers(containers, template);
 
-
+        //Adding the permissions for this Permissionable to cache
+        permissionAPI.addPermissionsToCache( template );
 
 		return template;
 	}

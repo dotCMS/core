@@ -8,6 +8,7 @@ public class Bundle {
 	private Date publishDate;
 	private Date expireDate;
 	private String owner;
+	private Integer operation;
 
 	public Bundle() {}
 
@@ -47,6 +48,14 @@ public class Bundle {
 	}
 	public void setOwner(String owner) {
 		this.owner = owner;
+	}
+
+	public Integer getOperation() {
+		return operation;
+	}
+
+	public void setOperation(Integer operation) {
+		this.operation = operation;
 	}
 
 }

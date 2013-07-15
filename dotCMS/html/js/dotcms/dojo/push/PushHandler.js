@@ -3,6 +3,7 @@ dojo.provide("dotcms.dojo.push.PushHandler");
 dojo.require("dijit._Widget");
 dojo.require("dijit.Dialog");
 dojo.require("dotcms.dijit.RemotePublisherDialog");
+dojo.require("dotcms.dijit.AddToBundleDialog");
 dojo.require("dojox.data.JsonRestStore");
 
 dojo.declare("dotcms.dojo.push.PushHandler", null, {
@@ -14,18 +15,19 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     environmentStore : null,
     user : null,
     whereToSend : new Array(),
+    isBundle : false,
 
-    constructor: function (title) {
+    constructor: function (title, isBundle) {
         this.title = title;
+        this.isBundle = isBundle;
         this.setUser();
-        this.createStores();
+        this.createStore();
     },
-
-    createStores: function() {
-    	this.bundleStore = new dojox.data.JsonRestStore({ target: "/api/bundle/loadbundles/", labelAttribute:"name", urlPreventCache: true});
-    	this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
+    
+    createStore: function() {
+        this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
     },
-
+    
     setUser: function() {
     	var xhrArgs = {
     			url : "/api/user/getloggedinuser/",
@@ -35,7 +37,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     			error : function(error) {
     				console.log("An unexpected error occurred: " + error);
     			}
-    		}
+    		};
 
     	var def = dojo.xhrGet(xhrArgs);
     },
@@ -45,6 +47,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     },
 
     showDialog: function (assetId, displayDateFilter) {
+    	if(this.environmentStore==null) {
+    		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
+    	}
 
         var dateFilter = false;
         if (displayDateFilter != undefined && displayDateFilter != null) {
@@ -58,32 +63,27 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.show();
     },
 
+    showAddToBundleDialog: function (assetId, title) {
+    	if(this.bundleStore==null) {
+    		this.bundleStore = new dojox.data.JsonRestStore({ target: "/api/bundle/getunsendbundles/userid/"+this.user.userId, labelAttribute:"name", urlPreventCache: true});
+    	}
+
+        this.assetIdentifier = assetId;
+        dialog = new dotcms.dijit.AddToBundleDialog();
+        dialog.title = title;
+        dialog.show();
+    },
+
     showCategoryDialog: function () {
+    	if(this.environmentStore==null) {
+    		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
+    	}
+
         this.assetIdentifier = "CAT";
         dialog = new dotcms.dijit.RemotePublisherDialog();
         dialog.title = this.title;
         dialog.dateFilter = false;
         dialog.show();
-    },
-
-    remoteUnPublish: function (assetId) {
-        var xhrArgs = {
-            url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/unPublish",
-            content: {
-                'assetIdentifier': assetId
-            },
-            handleAs: "text",
-            load: function (data) {
-                if (data.indexOf("FAILURE") > -1) {
-                    alert(data);
-                }
-            },
-            error: function (error) {
-                alert(error);
-            }
-        };
-
-        var deferred = dojo.xhrPost(xhrArgs);
     },
 
     togglePublishExpireDivs: function () {
@@ -106,6 +106,19 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         else {
             dojo.style("publishTimeDiv", "display", "none");
             dojo.style("expireTimeDiv", "display", "");
+        }
+    },
+
+    toggleNewExistingBundle: function () {
+
+        if (dijit.byId("newBundle").getValue()) {
+            dojo.style("bundleNameDiv", "display", "");
+            dojo.style("bundleSelectDiv", "display", "none");
+            dijit.byId("bundleName").focus();
+        }
+        else {
+            dojo.style("bundleNameDiv", "display", "none");
+            dojo.style("bundleSelectDiv", "display", "");
         }
     },
 
@@ -195,8 +208,78 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dojo.byId("whoToSend").value = whereToSend;
 		// END: PUSH PUBLISHING ACTIONLET
 
+        var urlStr = this.isBundle?"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle":"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish";
+
 		var xhrArgs = {
-			url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish",
+			url: urlStr,
+			form: dojo.byId("remotePublishForm"),
+			handleAs: "text",
+			load: function(data){
+				if(data.indexOf("FAILURE") > -1){
+					alert(data);
+				}
+				dialog.hide();
+			},
+			error: function(error){
+				alert(error);
+				dialog.hide();
+			}
+		};
+
+		var deferred = dojo.xhrPost(xhrArgs);
+	},
+
+	addToBundle : function(){
+
+		console.log(dijit.byId("addToBundleForm").attr('value').newBundle);
+
+		if(dijit.byId("addToBundleForm").attr('value').newBundle=='true' && dijit.byId("bundleName").value=='') {
+			alert(dojo.byId("bundleNameRequired").value);
+			return;
+		} else if(dijit.byId("addToBundleForm").attr('value').newBundle=='false' && dijit.byId("bundleSelect").value==''){
+			alert(dojo.byId("bundleRequired").value);
+			return;
+		}
+
+		// BEGIN: PUSH PUBLISHING ACTIONLET
+
+		var newBundle = dijit.byId("addToBundleForm").attr('value').newBundle;
+		var bundleName = dijit.byId("bundleName").value;
+		var bundleSelect = dijit.byId("bundleSelect").value;
+
+
+		// END: PUSH PUBLISHING ACTIONLET
+
+
+		// BEGIN: PUSH PUBLISHING ACTIONLET
+        dojo.byId("assetIdentifier").value = this.assetIdentifier;
+        if (dojo.byId("remoteFilterDate")) {
+            dojo.byId("remoteFilterDate").value = this._getFilterDate();
+        }
+        dojo.byId("newBundle").value = newBundle;
+        dojo.byId("bundleName").value = bundleName;
+        dojo.byId("bundleSelect").value = bundleSelect;
+		// END: PUSH PUBLISHING ACTIONLET
+
+
+        // verify that a bundle with the given name does not exist
+        var xhrArgs = {
+    			url : "/api/bundle/doesbundleexist/name/" + bundleName,
+    			handleAs : "json",
+    			sync: true,
+    			load : function(data) {
+    				if(data=="true") {
+						alert(dojo.byId("existingBundleName").value);
+						return;
+    				}
+    			},
+    			error : function(error) {
+    				targetNode.innerHTML = "An unexpected error occurred: " + error;
+    			}
+    		}
+
+		var xhrArgs = {
+			url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle",
 			form: dojo.byId("remotePublishForm"),
 			handleAs: "text",
 			load: function(data){

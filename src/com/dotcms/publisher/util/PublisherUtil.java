@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -40,7 +41,9 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
@@ -745,6 +748,17 @@ public class PublisherUtil {
 		e.setPushToAll(DbConnectionFactory.isDBTrue(row.get("push_to_all").toString()));
 		return e;
 	}
+
+	public static Bundle getBundleByMap(Map<String, Object> row){
+		Bundle b = new Bundle();
+		b.setId(row.get("id").toString());
+		b.setName(row.get("name").toString());
+		b.setPublishDate((Date)row.get("publish_date"));
+		b.setPublishDate((Date)row.get("expire_date"));
+		b.setOwner(row.get("owner").toString());
+		return b;
+	}
+
     /**
      * Returns the identifiers for given lucene queries
      *
@@ -769,5 +783,44 @@ public class PublisherUtil {
         }
         return ret;
     }
+
+    private static final String IDENTIFIER = "identifier:";
+	private static final int _ASSET_LENGTH_LIMIT = 20;
+
+    public static List<String> prepareQueries(List<PublishQueueElement> bundle) {
+		StringBuilder assetBuffer = new StringBuilder();
+		List<String> assets;
+		assets = new ArrayList<String>();
+
+		if(bundle.size() == 1 && bundle.get(0).getType().equals("contentlet")) {
+			assetBuffer.append("+"+IDENTIFIER+(String) bundle.get(0).getAsset());
+
+			assets.add(assetBuffer.toString() +" +live:true");
+			assets.add(assetBuffer.toString() +" +working:true");
+
+		} else {
+			int counter = 1;
+			PublishQueueElement c = null;
+			for(int ii = 0; ii < bundle.size(); ii++) {
+				c = bundle.get(ii);
+
+				if(!c.getType().equals("contentlet"))
+					continue;
+
+				assetBuffer.append(IDENTIFIER+c.getAsset());
+				assetBuffer.append(" ");
+
+				if(counter == _ASSET_LENGTH_LIMIT || (ii+1 == bundle.size())) {
+					assets.add("+("+assetBuffer.toString()+") +live:true");
+					assets.add("+("+assetBuffer.toString()+") +working:true");
+
+					assetBuffer = new StringBuilder();
+					counter = 0;
+				} else
+					counter++;
+			}
+		}
+		return assets;
+	}
 
 }

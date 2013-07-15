@@ -16,6 +16,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
+import com.dotcms.rest.ESIndexResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -224,7 +225,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
     public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
     	    Map<String, String> map = getURIParams();
-    	    String indexName = getIndexNameOrAlias(map);
+    	    String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
     	    response.setContentType("text/plain");
             response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().site_search.equals(indexName) ? "default" : "inactive");
 	    }

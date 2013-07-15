@@ -217,6 +217,9 @@ function addGrid(gridId, yuiBId, rowCount){
 
 	var mainDiv = document.getElementById("yui-main-template");
 	var yuiBDiv = document.getElementById(yuiBId);
+	var first = document.getElementById(rowCount+"_yui-u-grid-1");
+    var second = document.getElementById(rowCount+"_yui-u-grid-2");
+    var third = document.getElementById(rowCount+"_yui-u-grid-3");
 	if(null==yuiBDiv){ // create
 		yuiBDiv = document.createElement("div");
 		yuiBDiv.setAttribute("class","yui-b-template");
@@ -247,17 +250,29 @@ function addGrid(gridId, yuiBId, rowCount){
 
 		yuiUFirst.setAttribute("class","yui-u-template first");
 		yuiUFirst.setAttribute("id",rowCount+"_yui-u-grid-1");
-		yuiUFirst.innerHTML=getAddContainer(rowCount+"_yui-u-grid-1")+"<h1>Body</h1>";
+		if(first!= null){
+            yuiUFirst.innerHTML=first.innerHTML;
+    	}else{
+			yuiUFirst.innerHTML=getAddContainer(rowCount+"_yui-u-grid-1")+"<h1>Body</h1>";
+    	}
 		yuiU2.setAttribute("class","yui-u-template");
 		yuiU2.setAttribute("id",rowCount+"_yui-u-grid-2");
-		yuiU2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-2")+"<h1>Body</h1>";
+		if(second!= null){
+            yuiU2.innerHTML=second.innerHTML;
+    	}else{
+			yuiU2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-2")+"<h1>Body</h1>";
+    	}
 		gridDiv.appendChild(yuiUFirst);
 		gridDiv.appendChild(yuiU2);
 
 		if("yui-gb-template"==gridId){
 			yuiU3.setAttribute("class","yui-u-template");
 			yuiU3.setAttribute("id",rowCount+"_yui-u-grid-3");
-			yuiU3.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
+			if(third!= null){
+				yuiU3.innerHTML=third.innerHTML;
+        	}else{
+				yuiU3.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
+        	}
 			gridDiv.appendChild(yuiU3);
 		}
 		if("yui-js-template"==gridId){
@@ -272,7 +287,11 @@ function addGrid(gridId, yuiBId, rowCount){
 
 			yuiUFirst_2.setAttribute("class","yui-u-template first");
 			yuiUFirst_2.setAttribute("id",rowCount+"_yui-u-grid-3");
-			yuiUFirst_2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
+			if(third!= null){
+				yuiUFirst_2.innerHTML=third.innerHTML;
+        	}else{
+				yuiUFirst_2.innerHTML=getAddContainer(rowCount+"_yui-u-grid-3")+"<h1>Body</h1>";
+        	}
 			gridDiv_2.appendChild(yuiUFirst_2);
 
 			yuiU2_2.setAttribute("class","yui-u-template");

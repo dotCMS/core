@@ -23,7 +23,7 @@ public class PublishAuditUtil {
             if ( "contentlet".equals( assetType ) || "host".equals( assetType ) ) {
                 sw.append( APILocator.getContentletAPI().findContentletByIdentifier( id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false ).getTitle() );
             } else if ( "folder".equals( assetType ) ) {
-                sw.append( APILocator.getFolderAPI().find( id, user, false ).getTitle() );
+                sw.append( APILocator.getFolderAPI().find( id, user, false ).getName() );
             } else if ( "osgi".equals( assetType ) ) {
                 sw.append( id );
             } else if ( "user".equals( assetType ) ) {

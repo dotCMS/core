@@ -14,9 +14,9 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowTask"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowSearcher"%>
 <%
+
 	WorkflowSearcher searcher = new WorkflowSearcher(UtilMethods.getParameterMap(request), user);
-	session.setAttribute(com.dotmarketing.util.WebKeys.WORKFLOW_SEARCHER, searcher);
-	
+	session.setAttribute(com.dotmarketing.util.WebKeys.WORKFLOW_SEARCHER, searcher);	
 	WorkflowSearcher fakeSearcher =(WorkflowSearcher) BeanUtils.cloneBean(searcher) ;
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
 
@@ -130,11 +130,18 @@
 		</tr>
 	<%} %>
 	<%for(WorkflowTask task : tasks){ %>
-		<%Role r = APILocator.getRoleAPI().loadRoleById(task.getAssignedTo()); %>
+		<%
+            Role assignedRole = APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
+            String assignedRoleName = "";
+            if (UtilMethods.isSet( assignedRole ) && UtilMethods.isSet( assignedRole.getId() )) {
+                assignedRoleName = assignedRole.getName();
+            }
+        %>
 		<%Contentlet contentlet = new Contentlet();
 
 			try{
-			 contentlet 	= APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(),false,APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true);
+			 //contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(),false,lang, user, true);
+			 contentlet = APILocator.getContentletAPI().search("+identifier: "+task.getWebasset(), 0, -1, null, user, true).get(0);
 			}
 			catch(Exception e){
 				Logger.error(this.getClass(), e.getMessage());	
@@ -176,7 +183,7 @@
 
 			</td>
 
-			<td nowrap="norap" align="center"><%=r.getName() %></td>
+			<td nowrap="norap" align="center"><%=assignedRoleName %></td>
 			<td align="center" nowrap="norap"><%=DateUtil.prettyDateSince(task.getModDate(), user.getLocale()) %></td>
 			
 

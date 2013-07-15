@@ -1,12 +1,14 @@
 package com.dotcms.publisher.environment.business;
 
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
@@ -69,8 +71,17 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 	}
 
 	@Override
-	public void updateEnvironment(Environment environment) throws DotDataException {
+	public void updateEnvironment(Environment environment, List<Permission> perms ) throws DotDataException, DotSecurityException {
 		environmentFactory.update(environment);
+
+		APILocator.getPermissionAPI().removePermissions(environment);
+
+		if(perms != null){
+			for (Permission p : perms) {
+				p.setInode(environment.getId());
+				APILocator.getPermissionAPI().save(p, environment, APILocator.getUserAPI().getSystemUser(), false);
+			}
+		}
 
 	}
 
@@ -80,7 +91,7 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 	}
 
 	@Override
-	public List<Environment> findEnvironmentsByRole(String roleId) throws DotDataException {
+	public Set<Environment> findEnvironmentsByRole(String roleId) throws DotDataException, NoSuchUserException, DotSecurityException {
 		return environmentFactory.getEnvironmentsByRole(roleId);
 	}
 
