@@ -173,9 +173,9 @@ public class CommentsForm extends ValidatorForm
 		ActionErrors errors = new ActionErrors(); 
 		Contentlet parentContentlet = new Contentlet();	
 		HttpSession session = request.getSession();
-		Captcha captcha = (Captcha) session.getAttribute(Captcha.NAME);
-        String captchaSession=captcha!=null ? captcha.getAnswer() : null;
-		try{
+        Captcha captchaSession = (Captcha) session.getAttribute(Captcha.NAME);
+
+        try{
 			parentContentlet = conAPI.find(contentInode, APILocator.getUserAPI().getSystemUser(), true);
 		}catch(DotDataException e){
 			Logger.error(this, "Unable to look up contentlet with inode " + contentInode, e);
@@ -220,15 +220,13 @@ public class CommentsForm extends ValidatorForm
 			errors.add(ActionErrors.GLOBAL_ERROR, new ActionError("message.contentlet.required","Accept"));
 		}
 
-		if(commentUseCaptcha)
-		{
-			if(!UtilMethods.isSet(captcha) || !UtilMethods.isSet(captchaSession) || !captcha.equals(captchaSession))
-			{
-				errors.add(ActionErrors.GLOBAL_ERROR, new ActionError("message.contentlet.required","Validation Image"));
-			}
-		}
-		
-		if(commentUseAudioCaptcha && !UtilMethods.isSet(captchaSession)){
+        if ( commentUseCaptcha ) {
+            if ( !UtilMethods.isSet( captcha ) || !UtilMethods.isSet( captchaSession ) || !captcha.equals( captchaSession.getAnswer() ) ) {
+                errors.add( ActionErrors.GLOBAL_ERROR, new ActionError( "message.contentlet.required", "Validation Image" ) );
+            }
+        }
+
+        if(commentUseAudioCaptcha && !UtilMethods.isSet(captchaSession)){
          
 			Boolean isResponseCorrect =Boolean.FALSE;
 			String captchaId = request.getSession().getId();  
