@@ -836,7 +836,7 @@
                 }
 
                 var showDeleted = false;
-                if (document.getElementById("showDeletedCB").checked) {
+                if (dijit.byId("showingSelect").getValue() == "archived") { 
                         showDeleted = true;
                 }
 
@@ -2019,8 +2019,9 @@
                     eval("totalContents=" + num + ";");
 
                         div = document.getElementById("matchingResultsDiv")
+                        var structureInode = dijit.byId('structure_inode').value;
                         var strbuff = "<div class=\"yui-gb portlet-toolbar\"><div class=\"yui-u first\"><%= LanguageUtil.get(pageContext, "showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div><div id=\"tablemessage\" class=\"yui-u\" style=\"text-align:center;\">&nbsp</div><div class=\"yui-u\" style=\"text-align:right;\">";
-                        if(num >0){
+                        if(num >0 && structureInode != "_all"){
                                 strbuff+= "<a href='javascript:donwloadToExcel();'><%= LanguageUtil.get(pageContext, "Export") %></a> <a href='javascript:donwloadToExcel();'><img src='/icon?i=csv.xls' border='0' alt='export results' align='absbottom'></a>";
                         }
                         strbuff+= "</div></div>";
