@@ -901,6 +901,22 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
 		CacheLocator.getFolderCache().removeFolder(folder, ident);
+		
+		final ArrayList<String> childIdents=new ArrayList<String>();
+		DotConnect dc=new DotConnect();
+		dc.setSQL("select id from identifier where parent_path like ? and host_inode=?");
+		dc.addParam(ident.getPath()+"%");
+		dc.addParam(ident.getHostId());
+		for(Map<String,Object> rr : (List<Map<String,Object>>)dc.loadResults()) {
+		    childIdents.add((String)rr.get("id"));
+		}
+		HibernateUtil.addCommitListener(new Runnable() {
+            public void run() {
+                for(String id : childIdents) {
+                    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(id);
+                }
+            }
+		});
 
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
 		ff.setName(newName);
@@ -911,81 +927,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		HibernateUtil.getSession().clear();
 
 		return true;
-	}
-
-	@SuppressWarnings("unchecked")
-	private boolean updateIdentifierUrl(Folder folder, Object destination) throws DotDataException, DotStateException, DotSecurityException {
-
-		IdentifierAPI identAPI = APILocator.getIdentifierAPI();
-		User systemUser = APILocator.getUserAPI().getSystemUser();
-		boolean contains = false;
-		String newParentPath;
-		String newParentHostId;
-		if (destination instanceof Folder) {
-			contains = folderContains(folder.getName(), (Folder) destination);
-			Identifier destinationId = identAPI.find(((Folder) destination).getIdentifier());
-			newParentPath = destinationId.getPath();
-			newParentHostId = destinationId.getHostId();
-		} else {
-			contains = APILocator.getHostAPI().doesHostContainsFolder((Host) destination, folder.getName());
-			newParentPath = "/";
-			newParentHostId = ((Host)destination).getIdentifier();
-		}
-		if (contains)
-			return false;
-
-		List<Folder> subFolders = getSubFolders(folder);
-		List htmlPages = getChildrenClass(folder, HTMLPage.class);
-		List files = getChildrenClass(folder, File.class);
-		List links = getChildrenClass(folder, Link.class);
-		List<FileAsset> fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
-		List<Contentlet> contentlets = APILocator.getContentletAPI().findContentletsByFolder(folder, systemUser, false);
-
-		Identifier folderId = identAPI.find(folder.getIdentifier());
-		folderId.setParentPath(newParentPath);
-		folderId.setHostId(newParentHostId);
-		identAPI.save(folderId);
-
-		for (Object page : htmlPages) {
-			APILocator.getIdentifierAPI().updateIdentifierURI((Versionable) page, folder);
-		}
-
-		for (Object file : files) {
-			APILocator.getIdentifierAPI().updateIdentifierURI((Versionable) file, folder);
-		}
-
-		for (Object link : links) {
-			if (((Link) link).isWorking()) {
-				APILocator.getIdentifierAPI().updateIdentifierURI((Versionable) link, folder);
-			}
-		}
-
-		for(FileAsset fa : fileAssets){
-			APILocator.getIdentifierAPI().updateIdentifierURI((Versionable) fa, folder);
-		}
-
-		for(Contentlet cont : contentlets){
-			boolean isLive = cont.isLive();
-			cont.setFolder(folder.getInode());
-			cont.setInode(null);
-			Contentlet newCont = APILocator.getContentletAPI().checkin(cont, systemUser, false);
-			if(isLive){
-				APILocator.getIdentifierAPI().updateIdentifierURI((Versionable) cont, folder);
-			}
-		}
-
-		for(Folder subFolder : subFolders){
-			updateIdentifierUrl(subFolder, (Object)folder);
-		}
-
-		CacheLocator.getIdentifierCache().clearCache();
-		CacheLocator.getFolderCache().clearCache();
-
-		return true;
-	}
-
-	protected boolean updateIdentifierUrl(Folder folder, Folder destination) throws DotDataException, DotSecurityException {
-		return updateIdentifierUrl(folder, (Object) destination);
 	}
 
 	protected boolean matchFilter(Folder folder, String fileName) {

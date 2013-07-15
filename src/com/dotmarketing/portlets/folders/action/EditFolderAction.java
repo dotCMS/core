@@ -349,14 +349,6 @@ public class EditFolderAction extends DotPortletAction {
 				
 				folderAPI.save(f,user,false);
 				
-				if (InodeUtils.isSet(f.getInode()) && !folderForm.getName().equals(f.getName())) {
-					folderAPI.updateIdentifierUrl(old, f, user, false);
-				}
-				else if(!isNew) {
-    				CacheLocator.getIdentifierCache().clearCache();
-    				CacheLocator.getFolderCache().clearCache();
-				}
-				
 				if (!(!previousShowMenu && !f.isShowOnMenu())) 
 				{
 					//if the not, doesn't show before and doesn't show now, delete the menus
