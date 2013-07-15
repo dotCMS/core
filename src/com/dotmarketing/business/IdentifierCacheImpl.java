@@ -134,7 +134,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		}
 	}
 	
-	protected void removeFromCacheByIdentifier(String ident) {
+	public void removeFromCacheByIdentifier(String ident) {
 		
 		Identifier id = getIdentifier(ident);
 		if(id==null){
