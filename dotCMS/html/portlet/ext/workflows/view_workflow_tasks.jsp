@@ -205,7 +205,8 @@
 		    required:false,
 		    value:"<%=assignedTo.getId()%>",
 		    onClick:function(){
-		    	dijit.byId("assignedTo").displayedValue="";
+		    	dijit.byId("assignedTo").set("displayedValue","");
+		        dijit.byId("assignedTo").loadDropDown();
 
 		    },
 		    onChange:doFilter
@@ -318,11 +319,11 @@
 		window.location=url;
 	}
 
-	dojo.ready(function(){
+/*	dojo.ready(function(){
 		
 	updateSteps();
 	})
-	
+*/	
 	
 
 
