@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPITest;
 import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
+import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
@@ -55,7 +56,8 @@ import org.junit.runners.Suite;
     ESIndexSpeedTest.class,
     PluginMergerTest.class,
     WebDavTest.class,
-    RoleAPITest.class
+    RoleAPITest.class,
+    FolderAPITest.class
 })
 public class AllTestsSuite {
 
