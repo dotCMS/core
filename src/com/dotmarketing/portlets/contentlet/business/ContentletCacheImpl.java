@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -22,11 +23,32 @@ public class ContentletCacheImpl extends ContentletCache {
 	
 	private String primaryGroup = "ContentletCache";
 	private String metadataGroup = "FileAssetMetadataCache";
+	private String translatedQueryGroup = "TranslatedQueryCache";
     // region's name for the cache
-    private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup};
+    private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup,translatedQueryGroup};
 
 	public ContentletCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
+	}
+	
+	@Override
+	public void addTranslatedQuery(String key, TranslatedQuery translatedQuery) {
+		cache.put(key, translatedQuery, translatedQueryGroup);
+	}
+	
+	@Override
+	public TranslatedQuery getTranslatedQuery(String key) {
+		Object o = null;
+		try {
+			o = cache.get(key, translatedQueryGroup);
+		} catch (DotCacheException e) {
+			Logger.error(ContentletCacheImpl.class,e.getMessage(),e);
+		}
+		if(o==null){
+			return null;
+		}else{
+			return (TranslatedQuery)o;	
+		} 
 	}
 	
 	@Override

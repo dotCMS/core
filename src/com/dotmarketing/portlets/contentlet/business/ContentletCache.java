@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
@@ -16,8 +17,12 @@ public abstract class ContentletCache implements Cachable {
 
 	public abstract void remove(String key);
 
-    public abstract void addMetadata(String key, Contentlet content);
+	public abstract void addMetadata(String key, Contentlet content);
+	
+    public abstract void addTranslatedQuery(String key, TranslatedQuery translatedQuery);
 
+    public abstract TranslatedQuery getTranslatedQuery(String key);
+    
     public abstract String getMetadata(String key);
 
     public abstract void addMetadata(String key, String metadata);

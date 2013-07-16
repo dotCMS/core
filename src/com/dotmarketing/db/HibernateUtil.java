@@ -703,6 +703,8 @@ public class HibernateUtil {
 		 * 
 		 */
 			getSession().connection().setAutoCommit(false);
+			rollbackListeners.get().clear();
+			commitListeners.get().clear();
 			Logger.debug(HibernateUtil.class, "Starting Transaction!");
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to set AutoCommit to false on Hibernate Session ", e);
