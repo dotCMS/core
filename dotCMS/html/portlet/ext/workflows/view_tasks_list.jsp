@@ -15,7 +15,7 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowSearcher"%>
 <%
 
-	WorkflowSearcher searcher = new WorkflowSearcher(request.getParameterMap(), user);
+	WorkflowSearcher searcher = new WorkflowSearcher(UtilMethods.getParameterMap(request), user);
 	session.setAttribute(com.dotmarketing.util.WebKeys.WORKFLOW_SEARCHER, searcher);	
 	WorkflowSearcher fakeSearcher =(WorkflowSearcher) BeanUtils.cloneBean(searcher) ;
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -130,7 +130,13 @@
 		</tr>
 	<%} %>
 	<%for(WorkflowTask task : tasks){ %>
-		<%Role r = APILocator.getRoleAPI().loadRoleById(task.getAssignedTo()); %>
+		<%
+            Role assignedRole = APILocator.getRoleAPI().loadRoleById(task.getAssignedTo());
+            String assignedRoleName = "";
+            if (UtilMethods.isSet( assignedRole ) && UtilMethods.isSet( assignedRole.getId() )) {
+                assignedRoleName = assignedRole.getName();
+            }
+        %>
 		<%Contentlet contentlet = new Contentlet();
 
 			try{
@@ -177,7 +183,7 @@
 
 			</td>
 
-			<td nowrap="norap" align="center"><%=r.getName() %></td>
+			<td nowrap="norap" align="center"><%=assignedRoleName %></td>
 			<td align="center" nowrap="norap"><%=DateUtil.prettyDateSince(task.getModDate(), user.getLocale()) %></td>
 			
 

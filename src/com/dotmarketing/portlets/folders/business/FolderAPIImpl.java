@@ -928,16 +928,4 @@ public class FolderAPIImpl implements FolderAPI  {
 		List list = ffac.getChildrenClass(parent, File.class, cond, null);
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
-
-	public boolean updateIdentifierUrl(Folder folderToUpdate, Folder newParentFolder,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException {
-		if (!papi.doesUserHavePermission(folderToUpdate, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user + " does not have permission to read " + folderToUpdate.getName());
-		}
-
-		if (!papi.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user + " does not have permission to add to " + newParentFolder.getName());
-		}
-		return ffac.updateIdentifierUrl(folderToUpdate, newParentFolder);
-	}
-
 }

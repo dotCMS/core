@@ -335,7 +335,8 @@ public class EditFolderAction extends DotPortletAction {
 				
 				//set hostId to folder to persist in Identifier table.
 				f.setHostId(parentHost.getIdentifier());
-				if(!UtilMethods.isSet(f.getIdentifier())) {
+				final boolean isNew=!UtilMethods.isSet(f.getIdentifier());
+				if(isNew) {
 					Treeable parent;
 					if(UtilMethods.isSet(parentFolder))
 						parent=parentFolder;
@@ -348,11 +349,6 @@ public class EditFolderAction extends DotPortletAction {
 				
 				folderAPI.save(f,user,false);
 				
-				if (InodeUtils.isSet(f.getInode()) && !folderForm.getName().equals(f.getName())) {
-					folderAPI.updateIdentifierUrl(old, f, user, false);
-				}
-				CacheLocator.getIdentifierCache().clearCache();
-				CacheLocator.getFolderCache().clearCache();
 				if (!(!previousShowMenu && !f.isShowOnMenu())) 
 				{
 					//if the not, doesn't show before and doesn't show now, delete the menus

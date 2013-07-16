@@ -134,7 +134,7 @@ function setDates(){
 									store="myRoleReadStore" searchDelay="300" pageSize="30" labelAttr="name" 
 									invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
 							</select>
-						<%}else{ %>
+						<%} else if (UtilMethods.isSet( role ) && UtilMethods.isSet( role.getId() )) { %>
 							<%=APILocator.getRoleAPI().loadCMSAnonymousRole().getId().equals(role.getId())?LanguageUtil.get(pageContext, "current-user"):role.getName()%>
 							<input type="text" dojoType="dijit.form.TextBox" style="display:none" name="taskAssignmentAux" id="taskAssignmentAux" value="<%=role.getId()%>">
 						<%} %>

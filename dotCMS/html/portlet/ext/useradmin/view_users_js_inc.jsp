@@ -884,6 +884,7 @@
 		    if(option.selected) {
 		    	select.options[j] = null;
 		    	rolesAdded.splice(rolesAdded.indexOf(option.value), 1);
+		    	j--;
 		    }
 
 		}
