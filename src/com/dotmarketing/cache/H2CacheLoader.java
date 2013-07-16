@@ -266,7 +266,7 @@ public class H2CacheLoader implements CacheLoader{
 				try{
 					Connection conn = createConnection(true,x,true);
 					try{
-						conn.createStatement().execute("SHUTDOWN IMMEDIATELY");
+						conn.createStatement().execute(Config.getBooleanProperty("H2_SHUTDOWN_IMEDIATELY",true) ? "SHUTDOWN IMMEDIATELY" : "SHUTDOWN");
 					}catch(org.h2.jdbc.JdbcSQLException ac){
 						if(ac.getMessage().contains("already closed")){
 							//ignore
