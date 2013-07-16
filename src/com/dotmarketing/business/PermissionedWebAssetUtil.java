@@ -68,7 +68,7 @@ public class PermissionedWebAssetUtil {
 			List<Contentlet> list = null;
 			try {
 				list = APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + 
-						" +working:true +" + hostNameField.getFieldContentlet() + ":" + hostName + "*", 0, 0, null, user, respectFrontEndPermissions);
+						" +working:true +" + hostNameField.getFieldContentlet() + ":" + hostName, 0, 0, null, user, respectFrontEndPermissions);
 			} catch (Exception e) {
 				Logger.error(PermissionedWebAssetUtil.class,e.getMessage(),e);
 			}
