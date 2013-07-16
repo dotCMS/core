@@ -412,6 +412,7 @@ var deleteLabel = "";
 	<input name="newBundle" id=newBundle type="hidden" value="">
 	<input name="bundleName" id=bundleName type="hidden" value="">
 	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
+	<input name="forcePush" id=forcePush type="hidden" value="">
 </form>
 <div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:300px;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "message.structure.cantdelete") %>" >

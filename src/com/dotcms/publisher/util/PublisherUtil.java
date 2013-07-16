@@ -41,6 +41,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
+import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishQueueElement;
@@ -756,6 +757,17 @@ public class PublisherUtil {
 		b.setPublishDate((Date)row.get("publish_date"));
 		b.setPublishDate((Date)row.get("expire_date"));
 		b.setOwner(row.get("owner").toString());
+		b.setForcePush(DbConnectionFactory.isDBTrue(row.get("force_push").toString()));
+		return b;
+	}
+
+	public static PushedAsset getPushedAssetByMap(Map<String, Object> row){
+		PushedAsset b = new PushedAsset();
+		b.setBundleId(row.get("bundle_id").toString());
+		b.setAssetId(row.get("asset_id").toString());
+		b.setAssetType(row.get("asset_type").toString());
+		b.setPushDate((Date)row.get("push_date"));
+		b.setEnvironmentId(row.get("environment_id").toString());
 		return b;
 	}
 
