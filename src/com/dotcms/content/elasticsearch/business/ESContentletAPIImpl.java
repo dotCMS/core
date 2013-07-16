@@ -2071,7 +2071,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    contentlet.setLanguageId(defaultLanguage.getId());
 				}
 
-				contentlet.setModDate(new Date());
 				contentlet.setModUser(user != null ? user.getUserId() : "");
 
 				if (contentlet.getOwner() == null || contentlet.getOwner().length() < 1) {
@@ -2088,7 +2087,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				}
 
 				Contentlet contentletRaw=contentlet;
-				contentlet.setModDate(new Date());
+
+                if ( contentlet.getMap().get( "_use_mod_date" ) != null ) {
+                    /*
+                     When a content is sent using the remote push publishing we want to respect the modification
+                     dates the content already had.
+                     */
+                    contentlet.setModDate( (Date) contentlet.getMap().get( "_use_mod_date" ) );
+                } else {
+                    contentlet.setModDate( new Date() );
+                }
 
 				// Keep the 5 properties BEFORE store the contentlet on DB.
 				String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
