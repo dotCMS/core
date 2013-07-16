@@ -1483,10 +1483,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
 	    }
 
-	    protected static LRUMap translatedQueryCache = new LRUMap(5000);
+//	    protected static LRUMap translatedQueryCache = new LRUMap(5000);
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
 
-	        TranslatedQuery result = (TranslatedQuery) translatedQueryCache.get(query + " --- " + sortBy);
+	        TranslatedQuery result = CacheLocator.getContentletCache().getTranslatedQuery(query + " --- " + sortBy);
 	        if(result != null)
 	            return result;
 
@@ -1629,9 +1629,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	        result.setQuery(query.trim());
 
-	        synchronized (translatedQueryCache) {
-	            translatedQueryCache.put(originalQuery + " --- " + sortBy, result);
-	        }
+	        CacheLocator.getContentletCache().addTranslatedQuery(originalQuery + " --- " + sortBy, result);
 
 	        return result;
 	    }
