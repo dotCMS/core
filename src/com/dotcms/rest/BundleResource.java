@@ -100,4 +100,28 @@ public class BundleResource extends WebResource {
 
 	}
 
+	@GET
+	@Path("/deletepushhistory/{params:.*}")
+	@Produces("application/json")
+	public String deletePushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+		InitDataObject initData = init(params, true, request, true);
+		String assetId = initData.getParamsMap().get("assetid");
+
+		try {
+
+			if(!UtilMethods.isSet(assetId)) {
+				return "false";
+			}
+
+			APILocator.getPushedAssetsAPI().deletePushedAssets(assetId);
+
+		} catch (DotDataException e) {
+			Logger.error(getClass(), "Error trying to update Bundle. Bundle ID: " + bundleId);
+			return "false";
+		}
+
+		return "true";
+
+	}
+
 }

@@ -313,6 +313,22 @@ function doDeleteContentlets(){
 		}
 }
 
+function doDeletePushedAssets(){
+	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-delete-assets") %>")){
+		 	$("deletePushedAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-deleting-pushed-assets") %></b></font>';
+		 	$("deleteContentletButton").disabled = true;
+			CMSMaintenanceAjax.deletePushedAssets(doDeletePushedAssetsCallback);
+		}
+}
+
+function doDeletePushedAssetsCallback(result) {
+	if(result!=null && result=="success") {
+		document.getElementById("deletePushedAssetsMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"pushed-assets-were-succesfully-deleted")) %>';
+	} else {
+		document.getElementById("deletePushedAssetsMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"push-assets-could-not-be-deleted")) %>';
+	}
+}
+
 function doDeleteContentletsCallback(contentlets){
 
     var message="";
@@ -358,7 +374,7 @@ function doDeleteContentletsCallback(contentlets){
 
 function doDropAssets(){
    var dateInput = dijit.byId('removeassetsdate');
-      
+
    if(dateInput.get('value')==null || !dateInput.validate()){
      alert("<%= LanguageUtil.get(pageContext,"Please,-enter-a-valid-date") %>");
      return false;
@@ -391,7 +407,7 @@ var doCleanAssets = function () {
     if (confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.confirmation")) %>")) {
         $("cleanAssetsMessage").innerHTML = '<span style="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress")) %></b></span>';
         dijit.byId('cleanAssetsButton').attr('disabled', true);
-        
+
         var files=false;
         var binaries=false;
         var whatclean=dijit.byId('whatClean').attr('value')
@@ -402,7 +418,7 @@ var doCleanAssets = function () {
         } else if(whatclean=='file_asset') {
         	files=true; binaries=false;
         }
-        
+
         CMSMaintenanceAjax.cleanAssets(files,binaries,doCleanAssetsCallback);
     }
 };
@@ -418,15 +434,15 @@ function doCleanAssetsCallback() {
 function getCleanAssetsStatusCallback(status) {
 	if(!dijit.byId('cleanAssetsButton').attr('disabled') && status['running']=='false')
 		return;
-	
-    document.getElementById("cleanAssetsMessage").innerHTML = 
+
+    document.getElementById("cleanAssetsMessage").innerHTML =
      	                      '<table> <tr><td>Deleted</td><td>'+status['deleted']+'</td></tr>'+
      	                              '<tr><td>Analized</td><td>'+status['currentFiles']+'</td></tr>'+
      	                              '<tr><td>Total Files</td><td>'+status['totalFiles']+'</td></tr>'+
      	                              ((status['running']=='true' && parseInt(status['totalFiles'])>0) ?
      	                              ('<tr><td>Progress</td><td>'+Math.round(100*(parseInt(status['currentFiles'])/parseInt(status['totalFiles'])))+'%</td></tr>') : '')+
      	                              '<tr><td>Status</td><td>'+status['status']+'</td></tr></table>';
-    if (status['running']=='true') 
+    if (status['running']=='true')
        setTimeout("doCleanAssetsCallback()", 1000);
     else
        dijit.byId('cleanAssetsButton').attr('disabled',false);
@@ -444,7 +460,7 @@ function indexStructureChanged(){
 }
 
 function cleanReindexStructure(){
-	 if(confirm("<%= LanguageUtil.get(pageContext,"are-you-sure-delete-reindex") %>")){ 
+	 if(confirm("<%= LanguageUtil.get(pageContext,"are-you-sure-delete-reindex") %>")){
 		var strInode = dojo.byId('structure').value;
 		CMSMaintenanceAjax.cleanReindexStructure(strInode,showDotCMSSystemMessage);
 	 }
@@ -514,9 +530,9 @@ function doDownloadIndex(indexName){
 function doReindex(){
 	var shards;
     if(dojo.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
-    	
+
 		var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-		
+
 		if(!number){
 			return;
 		}
@@ -1007,7 +1023,7 @@ function loadUsers() {
 						html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
 						html+=" <button id='invalidateButtonNode-"+session.sessionId+"'></button>";
 					}
-	                
+
 					html+=" </td>";
 
                     //Creating the row and adding it to the table
@@ -1053,17 +1069,17 @@ function selectAll(id){
 	 	r1.setStartBefore(document.getElementById(id));
 	 	r1.setEndAfter(document.getElementById(id));
 	 	s.removeAllRanges();
-	 	s.addRange(r1);	 	
+	 	s.addRange(r1);
 	}
 	if (document.selection){
 		var rangeToSelect = document.selection.createRange ();
         rangeToSelect.moveToElementText(document.getElementById(id));
         rangeToSelect.select ();
-    }	 
+    }
 }
 
 function showIndexClusterStatus(indexName) {
-	
+
 	var dialog = new dijit.Dialog({
 		title: "Index Store",
 		style: "width: 400px;",
@@ -1071,7 +1087,7 @@ function showIndexClusterStatus(indexName) {
 			href: "/html/portlet/ext/cmsmaintenance/index_cluster_status.jsp?indexName="+indexName
 		})
 	});
-	
+
 	dialog.show();
 }
 
@@ -1089,7 +1105,7 @@ function enableDisableRadio(elem){
 		dijit.byId('assetType').set('value','');
 		dijit.byId('selectAssetHostInode').setDisabled(true);
 	}
-}    
+}
 
 function enableDisableCheckbox(elem){
 	if(elem.checked){
@@ -1120,17 +1136,17 @@ function validateSearchAndReplace(){
 	    		urlPath = urlPath+"/replaceByIds/"+assetIdentifier;
 	    	}
 	    	urlPath = urlPath+"/hosts/"+assetHost+"/user/"+user+"/generateNewAssetVersion/"+newAssetVersion+"/publish/"+autoPublish;
-	    	
-	    	var xhrArgs = {	    		
-	    	    url: urlPath, 
+
+	    	var xhrArgs = {
+	    	    url: urlPath,
 	    	    handleAs: "text",
-	    	    load: function(response, ioArgs) { 
+	    	    load: function(response, ioArgs) {
 	    	    	var results = response;
-	    	    	assetsSearchAndReplace(response); 
+	    	    	assetsSearchAndReplace(response);
 	    	    },
-	    	    error: function(response, ioArgs) {  
-	    	          console.error("HTTP status code: ", ioArgs.xhr.status); 
-	    	          document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error")) %>'+response; //  
+	    	    error: function(response, ioArgs) {
+	    	          console.error("HTTP status code: ", ioArgs.xhr.status);
+	    	          document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error")) %>'+response; //
 	    	    }
 	    	};
     		dojo.xhrPost( xhrArgs );
@@ -1149,7 +1165,7 @@ function assetsSearchAndReplace(assetsToProcess){
     	var newAssetVersion = dijit.byId('newAssetVersion').checked;
     	var autoPublish = dijit.byId('autoPublish').checked;
     	if( (assetSearchType != '' || assetIdentifier != '') && assetHost != '' && searchString != '' && replaceString != ''){
-    		
+
 	    	//alert("is Here:"+assetSearchType+" - "+assetIdentifier+" - "+assetHost+" - "+searchString+" - "+replaceString+" - "+newAssetVersion+autoPublish);
 	    	var urlPath = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.AssetsSearchAndReplaceAjax/searchText/"+searchString+"/replaceText/"+replaceString;
 	    	if(dijit.byId('assetSearchType').checked){
@@ -1158,16 +1174,16 @@ function assetsSearchAndReplace(assetsToProcess){
 	    		urlPath = urlPath+"/replaceByIds/"+assetIdentifier;
 	    	}
 	    	urlPath = urlPath+"/hosts/"+assetHost+"/user/"+user+"/generateNewAssetVersion/"+newAssetVersion+"/publish/"+autoPublish;
-	    	var xhrArgs = {	    		
-	    	    url: urlPath, 
+	    	var xhrArgs = {
+	    	    url: urlPath,
 	    	    handleAs: "text",
-	    	    load: function(response, ioArgs) { 
+	    	    load: function(response, ioArgs) {
 	    	    	var results = response.split('|');
-	    	    	document.getElementById("asar_message").innerHTML = '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_to_process"))%> '+results[0]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_processed"))%> '+results[1]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Assets_modified"))%> '+results[2]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_not_processed"))%> '+results[3]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_error_messages"))%> '+results[4]; 
+	    	    	document.getElementById("asar_message").innerHTML = '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_to_process"))%> '+results[0]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_processed"))%> '+results[1]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Assets_modified"))%> '+results[2]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_not_processed"))%> '+results[3]+'<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Assets_error_messages"))%> '+results[4];
 	    	    },
-	    	    error: function(response, ioArgs) {  
-	    	          console.error("HTTP status code: ", ioArgs.xhr.status); 
-	    	          document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error")) %>'+response; //  
+	    	    error: function(response, ioArgs) {
+	    	          console.error("HTTP status code: ", ioArgs.xhr.status);
+	    	          document.getElementById("asar_message").innerHTML = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ASSETS_SEARCH_AND_REPLACE_Error")) %>'+response; //
 	    	    }
 	    	};
     		dojo.xhrPost( xhrArgs );
@@ -1177,7 +1193,7 @@ function assetsSearchAndReplace(assetsToProcess){
     	}
 	}
 }
-function updateHostList(inode, name, selectval){	
+function updateHostList(inode, name, selectval){
 	var f=dijit.byId(selectval).attr('value');
 	var c=dojo.byId(name).value.indexOf(dojo.byId(selectval).value);
 
@@ -1558,7 +1574,7 @@ dd.leftdl {
                       </button>
                     </td>
                 </tr>
-                
+
                 <tr>
                    <td>
                       <p><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.explanation") %></p>
@@ -1571,7 +1587,7 @@ dd.leftdl {
                             <option value="binary"><%= LanguageUtil.get(pageContext,"Clean-only-bin") %></option>
                             <option value="file_asset"><%= LanguageUtil.get(pageContext,"Clean-only-fileasset") %></option>
                       </select>
-                      <button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon"> 
+                      <button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon">
                            <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.label") %>
                       </button>
                    </td>
@@ -1605,7 +1621,28 @@ dd.leftdl {
                 </tr>
 
             </table>
-            
+
+            <div style="height:20px">&nbsp;</div>
+
+            <table class="listingTable">
+                <tr>
+                    <th><%= LanguageUtil.get(pageContext,"Delete-Pushed-Assets") %></th>
+                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                </tr>
+                <tr>
+                    <td>
+                        <p><%= LanguageUtil.get(pageContext,"This-utility-will-remove-all-pushed-assets") %></p>
+                         <div align="center"  id="deletePushedAssetsMessage"></div>
+                    </td>
+                    <td align="center">
+                      <button dojoType="dijit.form.Button" onClick="doDeletePushedAssets();"  id="deletePushAssetsButton" iconClass="deleteIcon">
+                         <%= LanguageUtil.get(pageContext,"Execute") %>
+                      </button>
+                    </td>
+                </tr>
+
+            </table>
+
             <div style="height:20px">&nbsp;</div>
             <%
             	  List<Host> hosts = new ArrayList<Host>();
@@ -1613,7 +1650,7 @@ dd.leftdl {
             		hosts = APILocator.getHostAPI().getHostsWithPermission(PermissionAPI.PERMISSION_READ,user,false);
             	}
             	catch(Exception e){
-            		Logger.error(this.getClass(), "Unable to list Hosts: " + e.getMessage());	
+            		Logger.error(this.getClass(), "Unable to list Hosts: " + e.getMessage());
             	}
                   String validFileExtensions = Config.getStringProperty("ASSETS_SEARCH_AND_REPLACE_ALLOWED_FILE_TYPES");
             %>
@@ -1628,19 +1665,19 @@ dd.leftdl {
 		               	<table class="listingTable">
 			               	<tr>
 			               		<td>
-			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Host") %> 
-		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid host name"  onChange='updateHostList("assetHost","assetHostNames","selectAssetHostInode")'>   
+			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Host") %>
+		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid host name"  onChange='updateHostList("assetHost","assetHostNames","selectAssetHostInode")'>
 										<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_All") %></option>
 										<%	String hostNames="";
 											String hostIdentifier="";
-											for(Host h : hosts){ 
+											for(Host h : hosts){
 	                            			if(!h.isSystemHost()){
 	                            				hostNames=hostNames+","+h.getHostname();
 	                            				hostIdentifier=hostIdentifier+","+h.getIdentifier();
 	                            		%>
 	                                			<option value="<%=h.getHostname()+","+h.getIdentifier()%>"><%= h.getHostname() %></option>
-	                            		<%  }  
-	                            	  	} 
+	                            		<%  }
+	                            	  	}
 										%>
 									</select>
 									<input type="hidden" name="assetHost" id="assetHost" value="all"/>
@@ -1687,13 +1724,13 @@ dd.leftdl {
 	               	<td style="text-align:center;white-space:nowrap;">
 	               		<button dojoType="dijit.form.Button" onclick="validateSearchAndReplace();" iconClass="reorderIcon">
 	               		     <%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Execute") %>
-	                    </button>   
+	                    </button>
 					</td>
 	            </tr>
 	            <tr>
 	               	<td colspan="3"><span id="asar_message"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Warning") %></span></td>
-	            </tr>   	    
-	        </table>            
+	            </tr>
+	        </table>
         </div>
 
     </html:form>
@@ -1706,7 +1743,7 @@ dd.leftdl {
         <div style="margin-bottom:10px;height:700px;border:0px solid red">
             <%@ include file="/html/portlet/ext/cmsmaintenance/tail_log.jsp"%>
         </div>
-   
+
     </div>
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
@@ -1724,14 +1761,14 @@ dd.leftdl {
 	                <%= LanguageUtil.get(pageContext, "Value") %>
 	            </th>
 	            </thead>
-	
+
 	            <%Map<String,String> s = System.getenv();%>
 	            <%for(Object key : s.keySet()){ %>
 	            <tr>
 	                <td valign="top"><%=key %></td>
 	                <td style="white-space: normal;word-wrap: break-word;"><%=s.get(key) %></td>
 	            </tr>
-	
+
 	            <%} %>
 	        </table>
 		<br>&nbsp;<br>
@@ -1744,7 +1781,7 @@ dd.leftdl {
 	                <%= LanguageUtil.get(pageContext, "Value") %>
 	            </th>
 	            </thead>
-	
+
 	            <%Properties p = System.getProperties();%>
 	            <% RuntimeMXBean b = ManagementFactory.getRuntimeMXBean(); %>
 	            <tr>
@@ -1755,9 +1792,9 @@ dd.leftdl {
 	                    <%} %>
 	                </td>
 	            </tr>
-	
+
 	            <%for(Object key : p.keySet()){ %>
-	
+
 	            <tr>
 	                <td valign="top"><%=key %></td>
 	                <td>
@@ -1766,7 +1803,7 @@ dd.leftdl {
 	                </div>
 	                </td>
 	            </tr>
-	
+
 	            <%} %>
 	        </table>
 	        <br>&nbsp;<br>

@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 
 public abstract class BundleFactory {
 
-	protected static String INSERT_BUNDLE = "INSERT INTO publishing_bundle VALUES (?,?,?,?,?)";
+	protected static String INSERT_BUNDLE = "INSERT INTO publishing_bundle VALUES (?,?,?,?,?,?)";
 
 	protected static String INSERT_BUNDLE_ENVIRONMENT = "INSERT INTO publishing_bundle_environment VALUES (?,?,?)";
 
