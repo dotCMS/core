@@ -266,6 +266,12 @@ table.workflowInfo td{vertical-align:top;width:100%;}
 .tagsBox{height:50px;width:180px;margin-top:10px;padding:5px;border:1px solid #ccc;overflow:auto;}
 .tagsBox a{font-size: 93%;color:#999;}
 .tagsCaption{display:block;font-size: 93%;color:#999;line-height:140%;font-size:80%;margin:3px 0 0 5px;}
+.suggestHeading{padding:7px 10px;font-size:12px;font-weight:bold;color:#555;background: url("/html/images/skin/skin-sprite.png") repeat-x scroll 0 -325px transparent;border-bottom: 1px solid #b3b3b3;}
+.suggestedTagsWrapper{position:absolute;left:505px;z-index:9999;background:#fff;border: 1px solid #b3b3b3;box-shadow: 0 1px 3px rgba(150, 150, 150, 0.5);width:400px;}
+.suggestedTags{padding:10px;color: #999999;}
+.suggestedTagsWrapper a{color:#333;letter-spacing:1px;text-decoration:none;display:inline-block;padding:2px 5px 4px 5px;line-height:18px;margin:0 8px 8px 0;background:#eee;border-radius: 5px;}
+.suggestedTagsWrapper a:hover{background:#568FBE;color:#fff;}
+.tagsWrapper{width:600px;}
 
 .fieldAlert{color:#cc0000;}
 .width-equals-200{width:200px}

@@ -162,23 +162,24 @@
 	
 		if (result.length > 0) {
 
-			html = "<fieldset style='padding: 0px; border: 0px;'>";
+			html = "<div class'suggestedTagsLinks'>";
 			
 			for (var i = 0; i < result.length; i++) {
 				var tagName = result[i]["tagName"];
 				tagName = RTrim(tagName);
 				tagName = LTrim(tagName);
 				var tagNameParam = tagName.replace("'", "\\\'");
-				html += "<a style='font-family: Verdana,Arial,Helvetica; color: #000000; font-size: 12px; font-weight: normal;' href=\"javascript: useThisTagForSearch('"+tagNameParam+"');\">" + tagName + "</a>";
-				if (i+1 < result.length) {
+				html += "<a href=\"javascript: useThisTagForSearch('"+tagNameParam+"');\">" + tagName + "</a>";
+				/* if (i+1 < result.length) {
 					html += ", ";
-				}
+				}*/
 			}
-			html += "</fieldset>";
+			html += "</div>";
 
 			if ((suggestedTag != null) && (suggestedTag != "")) {
 				var tagDiv = document.getElementById(suggestedDiv);
 				tagDiv.innerHTML = html;
+				dojo.style("tagssuggestedTagsWrapper", "display", "block");
 			}
 		}
 		else {
@@ -191,6 +192,7 @@
 			tagDiv.innerHTML = "";
 			suggestedTag = "";
 			suggestedDiv = "";
+			dojo.style("tagssuggestedTagsWrapper", "display", "none");
 		}
 	}
 	function useThisTagForSearch(tagSuggested) {
