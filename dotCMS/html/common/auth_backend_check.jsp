@@ -1,6 +1,7 @@
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%
-if(!WebAPILocator.getUserWebAPI().isLoggedToBackend(request)){
+boolean onLoginPage = request.getRequestURI().trim().equalsIgnoreCase("/c/portal_public/login") || request.getRequestURI().trim().equalsIgnoreCase("c/portal_public/login") || request.getRequestURI().trim().equalsIgnoreCase("html/portal/login.jsp") || request.getRequestURI().trim().equalsIgnoreCase("/html/portal/login.jsp"); 
+if(!onLoginPage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(request)){
 	response.sendError(401);
 	return;	
 }
