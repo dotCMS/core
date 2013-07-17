@@ -143,7 +143,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _iWantTo = request.getParameter( "iWantTo" );
             String whoToSendTmp = request.getParameter( "whoToSend" );
             String forcePushStr = request.getParameter( "forcePush" );
-            boolean forcePush = (forcePushStr!=null && forcePushStr.equals("on"));
+            boolean forcePush = (forcePushStr!=null && forcePushStr.equals("true"));
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
 

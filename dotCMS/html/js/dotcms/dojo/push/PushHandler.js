@@ -191,7 +191,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		var whereToSend = dojo.byId("whereToSend").value;
 
-		var forcePush = dijit.byId("forcePush").value;
+		var forcePush = dijit.byId("forcePush").checked;
 
 
 		// END: PUSH PUBLISHING ACTIONLET

@@ -59,6 +59,7 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 	@Override
 	public void deleteAllPushedAssets() throws DotDataException {
 		pushedAssetsFactory.deleteAllPushedAssets();
+		CacheLocator.getPushedAssetsCache().clearCache();
 
 	}
 

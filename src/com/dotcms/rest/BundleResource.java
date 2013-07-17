@@ -116,7 +116,7 @@ public class BundleResource extends WebResource {
 			APILocator.getPushedAssetsAPI().deletePushedAssets(assetId);
 
 		} catch (DotDataException e) {
-			Logger.error(getClass(), "Error trying to update Bundle. Bundle ID: " + assetId);
+			Logger.error(getClass(), "Error trying to delete Pushed Assets for asset Id: " + assetId);
 			return "false";
 		}
 
