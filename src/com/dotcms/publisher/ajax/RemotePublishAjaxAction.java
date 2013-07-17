@@ -344,7 +344,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 	}
 
     /**
-     * Generates and flush an Unpublish bundle for a given bundle id.
+     * Generates and flush an Unpublish bundle for a given bundle id and operation (publish/unpublish)
      *
      * @param request
      * @param response
@@ -358,15 +358,23 @@ public class RemotePublishAjaxAction extends AjaxAction {
         //Read the parameters
         Map<String, String> map = getURIParams();
         String bundleId = map.get( "bundleId" );
+        String paramOperation = map.get( "operation" );
         if ( bundleId == null || bundleId.isEmpty() ) {
             Logger.error( this.getClass(), "No Bundle Found with id: " + bundleId );
             response.sendError( 500, "No Bundle Found with id: " + bundleId );
             return;
         }
 
+        //What we want to do with this bundle
+        PushPublisherConfig.Operation operation = PushPublisherConfig.Operation.PUBLISH;
+        if ( paramOperation != null && paramOperation.equalsIgnoreCase( "unpublish" ) ) {
+            operation = PushPublisherConfig.Operation.UNPUBLISH;
+        }
+
         File bundle;
         try {
-            bundle = generateBundle( bundleId );
+            //Generate the bundle file for this given operation
+            bundle = generateBundle( bundleId, operation );
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
             response.sendError( 500, "Error trying to generate bundle with id: " + bundleId );
@@ -397,9 +405,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
     }
 
     /**
-     * Generates an Unpublish bundle for a given bundle id.
+     * Generates an Unpublish bundle for a given bundle id  operation (publish/unpublish)
      *
      * @param bundleId
+     * @param operation Download for publish or unpublish
      * @return
      * @throws DotPublisherException
      * @throws DotDataException
@@ -410,7 +419,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @throws IOException
      */
     @SuppressWarnings ("unchecked")
-    public File generateBundle ( String bundleId ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
+    public File generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
 
         PushPublisherConfig pconf = new PushPublisherConfig();
         PublisherAPI pubAPI = PublisherAPI.getInstance();
@@ -426,12 +435,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
         pconf.setPushing( false );
         pconf.setDownloading( true );
-
-        //TODO: Remove!!!
-        //TODO: Remove!!!
-        pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
-        //TODO: Remove!!!
-        //TODO: Remove!!!
+        pconf.setOperation(operation);
 
         // all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
         pconf.setAssets( assetsToPublish );
@@ -454,28 +458,31 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
         }
 
+        //We want to clean the bundle files as the assets could changed or could be created for another operation
+        File bundleRoot = BundlerUtil.getBundleRoot( pconf );
         File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + pconf.getId() + ".tar.gz" );
-        if ( !compressedBundle.exists() ) {
-
-            // Run bundlers
-            File bundleRoot = BundlerUtil.getBundleRoot( pconf );
-
-            BundlerUtil.writeBundleXML( pconf );
-            for ( Class<IBundler> c : bundlers ) {
-
-                IBundler bundler = c.newInstance();
-                confBundlers.add( bundler );
-                bundler.setConfig( pconf );
-                BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
-                //Generate the bundler
-                bundler.generate( bundleRoot, bundlerStatus );
+        if ( compressedBundle.exists() ) {
+            compressedBundle.delete();
+            if ( bundleRoot.exists() ) {
+                com.liferay.util.FileUtil.deltree( bundleRoot );
             }
-
-            pconf.setBundlers( confBundlers );
         }
 
+        // Run bundlers
+        BundlerUtil.writeBundleXML( pconf );
+        for ( Class<IBundler> c : bundlers ) {
+
+            IBundler bundler = c.newInstance();
+            confBundlers.add( bundler );
+            bundler.setConfig( pconf );
+            BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
+            //Generate the bundler
+            bundler.generate( bundleRoot, bundlerStatus );
+        }
+
+        pconf.setBundlers( confBundlers );
+
         //Compressing bundle
-        File bundleRoot = BundlerUtil.getBundleRoot( pconf );
         ArrayList<File> list = new ArrayList<File>();
         list.add( bundleRoot );
         File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz" );
