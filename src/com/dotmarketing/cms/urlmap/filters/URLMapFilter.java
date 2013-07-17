@@ -44,6 +44,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -80,7 +81,6 @@ public class URLMapFilter implements Filter {
 		HttpSession session = request.getSession();
 		String uri = request.getRequestURI();
 		uri = URLDecoder.decode(uri, "UTF-8");
-		String lId = request.getParameter("language_id");
 		if(CMSFilter.excludeURI(uri)){
 			chain.doFilter(req, res);
 			return;
@@ -181,7 +181,7 @@ public class URLMapFilter implements Filter {
 					List<String> fieldMatches = pc.getFieldMatches();
 					structure = StructureCache.getStructureByInode(pc.getStructureInode());
 					List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
-					query.append("+structureName:" + structure.getVelocityVarName() + " +deleted:false ");
+					query.append("+structureName:").append(structure.getVelocityVarName()).append(" +deleted:false ");
 					if (EDIT_MODE || ADMIN_MODE) {
 						query.append("+working:true ");
 					} else {
@@ -206,10 +206,8 @@ public class URLMapFilter implements Filter {
 							//query.append("+conhost:" + host.getIdentifier() + " ");
 							//} else {
 							try {
-								query.append("+(conhost:" + host.getIdentifier() + " "
-										+ "conhost:"
-										+ whostAPI.findSystemHost(wuserAPI.getSystemUser(), true).getIdentifier()
-										+ ") ");
+								query.append("+(conhost:").append(host.getIdentifier()).append(" ")
+								     .append("conhost:").append(whostAPI.findSystemHost(wuserAPI.getSystemUser(), true).getIdentifier()).append(") ");
 							} catch (Exception e) {
 								Logger.error(URLMapFilter.class, e.getMessage()
 										+ " : Unable to build host in query : ", e);
@@ -225,18 +223,36 @@ public class URLMapFilter implements Filter {
 						if (value.endsWith("/")) {
 							value = value.substring(0, value.length() - 1);
 						}
-						query.append("+" + structure.getVelocityVarName() + "." + fieldMatches.get(counter) + ":"
-								+ value + " ");
+						query.append("+").append(structure.getVelocityVarName()).append(".").append(fieldMatches.get(counter)).append(":")
+								.append(value).append(" ");
 						counter++;
 					}
-					if(lId!=null && lId != "")
-                    {
-						query.append("+languageId:"+ lId + " ");
-                    }
 					
 					try {
-						cons = conAPI.searchIndex(query.toString(), 1, 0, (hostIsRequired?"conhost, modDate": "modDate"), user, true);
-						ContentletSearch c = cons.get(0);
+					    long sessionLang=WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+					    long defaultLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
+					    
+					    boolean checkIndex=false;
+					  
+                        if(request.getParameter("language_id")==null && Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false)) {
+                            // consider default language. respecting language_id in parameters
+                            query.append(" +(languageId:").append(defaultLang).append(" languageId:").append(sessionLang).append(") ");
+                            checkIndex=true;
+                        }
+                        else {
+                            // respect session language
+                            query.append(" +languageId:").append(sessionLang).append(" ");
+                        }
+					    
+						cons = conAPI.searchIndex(query.toString(), 2, 0, (hostIsRequired?"conhost, modDate": "modDate"), user, true);
+						int idx = 0;
+						if(checkIndex && cons.size()==2) {
+						    // prefer session setting
+						    Contentlet second=conAPI.find(cons.get(1).getInode(), user, true);
+						    if(second.getLanguageId()==sessionLang)
+						        idx=1;
+						}
+						ContentletSearch c = cons.get(idx);
 						session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,String.valueOf(conAPI.find(c.getInode(), user, true).getLanguageId()));
 						request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
 						request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
