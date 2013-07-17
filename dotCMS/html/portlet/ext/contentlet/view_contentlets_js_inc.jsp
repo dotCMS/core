@@ -1254,7 +1254,7 @@
 		
 
         function doSearch1 (page, sortBy) {
-                var structureInode = dijit.byId('structure_inode').value;
+                var structureInode = dijit.byId('structure_inode').getValue();
 
                 if(structureInode ==""){
                         dijit.byId('structure_inode').focus() ;
