@@ -73,7 +73,7 @@ GregorianCalendar cal = new GregorianCalendar();
 				 	data-dojo-type="dijit.form.TimeTextBox"
 					required="true" style="width: 100px;"/>
 
-					<input type="checkbox" data-dojo-type="dijit/form/CheckBox"  name="forcePush" id="forcePush" ><label for="forcePush"><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %></label>
+					<input type="checkbox" data-dojo-type="dijit/form/CheckBox"  name="forcePush" id="forcePush" value="true"><label for="forcePush"><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %></label>
 			</div>
 			<div class="clear"></div>
 		</div>
