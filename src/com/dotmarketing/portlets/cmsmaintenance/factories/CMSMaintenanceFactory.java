@@ -26,11 +26,6 @@ public class CMSMaintenanceFactory {
 		int counter = 0;
 		int auxCount = 0;
 
-		try {
-			HibernateUtil.startTransaction();
-		} catch (DotHibernateException e) {
-			Logger.error(CMSMaintenanceFactory.class, e.getMessage());
-		}
 		
 		
 		/*
@@ -44,6 +39,7 @@ public class CMSMaintenanceFactory {
 
 		while(runDate.getTime().before(assetsOlderThan) || runDate.getTime().equals(assetsOlderThan)){
 			try	{			
+				HibernateUtil.startTransaction();
 				Logger.info(CMSMaintenanceFactory.class, "Starting deleteOldAssetVersions for date: "+ UtilMethods.dateToHTMLDate(runDate.getTime(),"yyyy-MM-dd"));
 	
 				ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -84,6 +80,19 @@ public class CMSMaintenanceFactory {
 				if(counter>0){
 				    CacheLocator.getCacheAdministrator().flushAll();
 				}
+				
+				// This is the last run, break
+				if(runDate.getTime().equals(assetsOlderThan)){
+					break;
+				}
+				runDate.add(Calendar.SECOND, Config.getIntProperty("DROP_OLD_ASSET_ITERATE_BY_SECONDS", 60 * 60 * 24 * 30));
+
+				// we should never go past the date the user entered
+				if(runDate.getTime().after(assetsOlderThan)){
+					runDate.setTime(assetsOlderThan);	
+
+				}
+				
 			}catch(Exception ex){
 				try {
 					HibernateUtil.rollbackTransaction();
@@ -95,24 +104,23 @@ public class CMSMaintenanceFactory {
 				Logger.error(ViewCMSMaintenanceAction.class,ex.toString(), ex);
 				return -1;
 			}
-			// This is the last run, break
-			if(runDate.getTime().equals(assetsOlderThan)){
-				break;
+			finally {
+				try {
+					HibernateUtil.commitTransaction();
+				} catch (DotHibernateException e) {
+					Logger.error(CMSMaintenanceFactory.class, e.getMessage());
+					try {
+						HibernateUtil.rollbackTransaction();
+					} catch (DotHibernateException ex) {
+						Logger.error(CMSMaintenanceFactory.class, e.getMessage());
+					}
+					Logger.debug(CMSMaintenanceFactory.class,"There was a problem deleting old asset versions",e);
+					Logger.warn(CMSMaintenanceFactory.class,"There  was a problem deleting old asset versions",e);
+					Logger.error(ViewCMSMaintenanceAction.class,e.toString(), e);
+					return -1;
+				}
+				
 			}
-			runDate.add(Calendar.SECOND, Config.getIntProperty("DROP_OLD_ASSET_ITERATE_BY_SECONDS", 60 * 60 * 24 * 30));
-
-			// we should never go past the date the user entered
-			if(runDate.getTime().after(assetsOlderThan)){
-				runDate.setTime(assetsOlderThan);	
-
-			}
-
-		}
-		
-		try {
-			HibernateUtil.commitTransaction();
-		} catch (DotHibernateException e) {
-			Logger.error(CMSMaintenanceFactory.class, e.getMessage());
 		}
 		return counter;
 
