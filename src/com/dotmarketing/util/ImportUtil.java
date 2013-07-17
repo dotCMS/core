@@ -562,7 +562,7 @@ public class ImportUtil {
 				}
 				else if (field.getFieldType().equals(Field.FieldType.TEXT.toString())) {
 					if (value.length() > 255)
-						value = value.substring(0, 255);
+						valueObj = value.substring(0, 255);
 					//valueObj = UtilMethods.escapeUnicodeCharsForHTML(value);
 				}//http://jira.dotmarketing.net/browse/DOTCMS-3232
 				else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
@@ -678,7 +678,7 @@ public class ImportUtil {
 						}	}
 				}
 				else {
-					valueObj = UtilMethods.escapeUnicodeCharsForHTML(value);
+					valueObj = Config.getBooleanProperty("IMPORT_TOOL_ESCAPE_HTML_TEXTAREA",true) ? UtilMethods.escapeUnicodeCharsForHTML(value) : value;
 				}
 				values.put(column, valueObj);
 
