@@ -154,12 +154,13 @@ public class BundlePublisher extends Publisher {
             //Get the identifiers on this bundle
             assetsDetails = new HashMap<String, String>();
             List<PublishQueueElement> bundlerAssets = readConfig.getAssets();
-            if ( bundlerAssets == null || bundlerAssets.isEmpty() ) {
+            if ( readConfig.getLuceneQueries() != null && !readConfig.getLuceneQueries().isEmpty() ) {
                 List<String> assets = com.dotcms.publisher.util.PublisherUtil.getContentIds( readConfig.getLuceneQueries() );
                 for ( String identifier : assets ) {
                     assetsDetails.put( identifier, identifier );
                 }
-            } else {
+            }
+            if ( bundlerAssets != null && !bundlerAssets.isEmpty() ) {
                 for ( PublishQueueElement asset : bundlerAssets ) {
                     assetsDetails.put( asset.getAsset(), asset.getType() );
                 }

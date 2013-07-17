@@ -276,9 +276,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 //Get the identifiers on this bundle
                 List<String> identifiers = new ArrayList<String>();
                 List<PublishQueueElement> assets = config.getAssets();
-                if ( assets == null || assets.isEmpty() ) {
+                if ( config.getLuceneQueries() != null && !config.getLuceneQueries().isEmpty() ) {
                     identifiers.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
-                } else {
+                }
+                if ( assets != null && !assets.isEmpty() ) {
                     for ( PublishQueueElement asset : assets ) {
                         identifiers.add( asset.getAsset() );
                     }
