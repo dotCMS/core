@@ -754,6 +754,10 @@ function radioValid(element, radios, text) {
     text = Trim(text);
 	radios=radios-1;
 	var varChecked=false;
+	if(element.length == undefined){
+		element[0]=element;
+		radios = 0;
+	}
 	for(var radiostoCheck=0;radiostoCheck<=radios;radiostoCheck++)
 	{
 		if(element[radiostoCheck].checked)
