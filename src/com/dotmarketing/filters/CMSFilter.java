@@ -648,7 +648,7 @@ public class CMSFilter implements Filter {
                 exclusion = exclusion.substring( 0, exclusion.lastIndexOf( "/" ) );
             }
 
-            exclusion += "(/).*";
+            exclusion += "\\b(/|)";
             if ( RegEX.contains( uri, exclusion ) ) {
                 return true;
             }
