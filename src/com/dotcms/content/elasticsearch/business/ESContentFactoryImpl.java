@@ -13,7 +13,6 @@ import java.util.StringTokenizer;
 
 import net.sf.hibernate.ObjectNotFoundException;
 
-import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.io.FileUtils;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.count.CountRequestBuilder;
@@ -637,8 +636,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.addParam(date);
         dc.loadResult();
         
-        String deleteOrphanInodes="delete from inode where type='contentlet' and inode not in (select inode from contentlet)";
+        String deleteOrphanInodes="delete from inode where type='contentlet' and idate < ? and inode not in (select inode from contentlet)";
         dc.setSQL(deleteOrphanInodes);
+        dc.addParam(date);
         dc.loadResult();
         
         dc.setSQL(countSQL);
