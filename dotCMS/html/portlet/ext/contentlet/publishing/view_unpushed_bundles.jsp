@@ -80,11 +80,13 @@
 				hasBundles=true;%>
 
 				<tr style="line-height:20px; padding-bottom: 15px">
-					<td nowrap="nowrap" style="padding-left: 10px; width: 53px">
+					<td nowrap="nowrap" style="padding-left: 10px; width: 79px">
 						<a style="cursor: pointer" onclick="deleteBundle('<%=bundle.getId()%>')" >
 						<span class="deleteIcon"></span></a>&nbsp;
 						<a style="cursor: pointer" onclick="goToEditBundle('<%=bundle.getId()%>')" >
-						<span class="editIcon"></span></a>
+						<span class="editIcon"></span></a>&nbsp;
+						<a style="cursor: pointer" onclick="downloadUnpushedBundle('<%=bundle.getId()%>')" >
+						<span class="downloadIcon"></span></a>
 					</td>
 					<td style="padding-left: 10px; font-size: 12px;" >
 						<%=bundle.getName()%>
