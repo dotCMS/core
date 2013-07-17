@@ -4,13 +4,16 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -319,34 +322,21 @@ public class URLMapTest extends TestBase  {
 		Integer serverPort = request.getServerPort();
 
 		URL urlE = new URL("http://"+serverName+":"+serverPort+"/newstest/the-gas-price/");
+		assertTrue(IOUtils.toString(urlE.openStream()).contains("the-gas-price"));
 
-		StringBuilder contentE = new StringBuilder(2048);
-		BufferedReader brE = null;
-		brE = new BufferedReader(new InputStreamReader(urlE.openStream()));
-		String lineE = "";
-
-		while (lineE != null)
-		{
-			lineE = brE.readLine();
-			contentE.append(lineE);
+		try {
+		    URL urlS = new URL("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas/");
+		    urlS.openStream();
+		    
+		    Assert.fail(); // the previus line should throw an exception
 		}
-
-
-		assertTrue(contentE.toString().contains("the-gas-price"));
-
-		URL urlS = new URL("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas/");
-
-		StringBuilder contentS = new StringBuilder(2048);
-		BufferedReader brS = new BufferedReader(new InputStreamReader(urlS.openStream()));
-		String lineS = "";
-
-		while (lineS != null)
-		{
-			lineS = brS.readLine();
-			contentS.append(lineS);
+		catch(FileNotFoundException ex) {
+		    // fine
 		}
-
-		assertTrue(contentS.toString().contains("el-precio-del-gas"));
+		
+		// for spanish it should load of language_id=2
+		URL urlS = new URL("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas?language_id=2");
+		assertTrue(IOUtils.toString(urlS.openStream()).contains("el-precio-del-gas"));
 	}
 
 	@After
