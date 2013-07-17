@@ -88,7 +88,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 	public Language getLanguage(HttpServletRequest req) {
 
 		checkSessionLocale(req);
-		return APILocator.getLanguageAPI().getLanguage((String) req.getAttribute((String) req.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)));
+		return APILocator.getLanguageAPI().getLanguage((String) req.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
 
 	}
 	

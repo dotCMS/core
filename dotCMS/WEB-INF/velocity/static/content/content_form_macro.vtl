@@ -295,6 +295,10 @@ var theme = 'dmundra';
 		      	}
 		    </script>
 	        #foreach($field in $fields)
+	        
+	        	#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && $field.isRequired())
+                	#set($reqFieldMsg = "Required fields are can not be hidden")
+                #end
 
 				#if($field.fieldType == 'tab_divider' && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
 
@@ -361,7 +365,7 @@ var theme = 'dmundra';
 					#set($fieldAux = $field)
 				    <div class="group">
 				    <dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
-	    			#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+	    			#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired()) || $structures.isFieldConstant($field)))
 	    				<label for="${field.velocityVarName}FieldLabel">
 	    				#if($UtilMethods.isSet($field.hint))
 	    					<a href="#" id="tip-$field.getVelocityVarName()"><span class="hintIcon"></span></a>
@@ -391,7 +395,7 @@ var theme = 'dmundra';
 	            	    #if($action == 'editContent')
 	            	    	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 	            	    #end	
-	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/text_field_render.vtl')
@@ -416,7 +420,7 @@ var theme = 'dmundra';
 	            	    #if($action == 'editContent') 
 	            	    	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 	            	    #end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/textarea_field_render.vtl')
@@ -441,7 +445,7 @@ var theme = 'dmundra';
 	            	    #if($action == 'editContent') 
 	            	    	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 	            	    #end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/keyvalue_field_render.vtl')
@@ -465,7 +469,7 @@ var theme = 'dmundra';
 	            	    #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/wysiwyg_field_render.vtl')
@@ -489,7 +493,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/tag_field_render.vtl')
@@ -514,7 +518,7 @@ var theme = 'dmundra';
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectedValues())
 						#end							
 						#set($fieldAux = $field)
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/checkbox_field_render.vtl')
@@ -538,7 +542,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectValue())
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/radio_field_render.vtl')
@@ -562,7 +566,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectValue())
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/select_field_render.vtl')
@@ -586,7 +590,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
                         	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectedValues())
                         #end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/multiselect_field_render.vtl')
@@ -610,7 +614,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/date_field_render.vtl')
@@ -636,7 +640,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/time_field_render.vtl')
@@ -663,7 +667,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/datetime_field_render.vtl')
@@ -687,7 +691,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/file_field_render.vtl')
@@ -711,7 +715,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/image_field_render.vtl')
@@ -735,7 +739,7 @@ var theme = 'dmundra';
                         #if($action == 'editContent')
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/binary_field_render.vtl')
@@ -755,7 +759,7 @@ var theme = 'dmundra';
 		            	    #end
 		            	    
 							
-		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            				#parse('/static/content/hidden_field_render.vtl')
 	            		    #else
 	            				#parse('/static/content/custom_field_render.vtl')
@@ -774,7 +778,7 @@ var theme = 'dmundra';
 		            	    #end
 		            	    
 							
-		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            				#parse('/static/content/hidden_field_render.vtl') 
 	            		    #else
 		            		    #if(!$UtilMethods.isSet($user))
@@ -799,7 +803,7 @@ var theme = 'dmundra';
 							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
 						#end	
 						#set($fieldAux = $field)
-	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName))
+	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
 	            			#parse('/static/content/hidden_field_render.vtl')
 	            		#else
 	            			#parse('/static/content/category_field_render.vtl')
@@ -813,6 +817,12 @@ var theme = 'dmundra';
 
 				#end
 			#end
+			
+			#if($reqFieldMsg)
+            	<div align="center" style="color: red;">
+                	<label> $reqFieldMsg </label>
+                </div>        
+            #end
 
 			#if($contentUseCaptcha)
 				<div class="group">
