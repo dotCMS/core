@@ -787,40 +787,46 @@ public class PublisherUtil {
     private static final String IDENTIFIER = "identifier:";
 	private static final int _ASSET_LENGTH_LIMIT = 20;
 
-    public static List<String> prepareQueries(List<PublishQueueElement> bundle) {
-		StringBuilder assetBuffer = new StringBuilder();
-		List<String> assets;
-		assets = new ArrayList<String>();
+    public static List<String> prepareQueries ( List<PublishQueueElement> bundle ) {
 
-		if(bundle.size() == 1 && bundle.get(0).getType().equals("contentlet")) {
-			assetBuffer.append("+"+IDENTIFIER+(String) bundle.get(0).getAsset());
+        StringBuilder assetBuffer = new StringBuilder();
+        List<String> assets;
+        assets = new ArrayList<String>();
 
-			assets.add(assetBuffer.toString() +" +live:true");
-			assets.add(assetBuffer.toString() +" +working:true");
+        if ( bundle.size() == 1 && bundle.get( 0 ).getType().equals( "contentlet" ) ) {
+            assetBuffer.append( "+" + IDENTIFIER ).append( bundle.get( 0 ).getAsset() );
 
-		} else {
-			int counter = 1;
-			PublishQueueElement c = null;
-			for(int ii = 0; ii < bundle.size(); ii++) {
-				c = bundle.get(ii);
+            assets.add( assetBuffer.toString() + " +live:true" );
+            assets.add( assetBuffer.toString() + " +working:true" );
 
-				if(!c.getType().equals("contentlet"))
-					continue;
+        } else {
+            int counter = 1;
+            PublishQueueElement c;
+            for ( int ii = 0; ii < bundle.size(); ii++ ) {
+                c = bundle.get( ii );
 
-				assetBuffer.append(IDENTIFIER+c.getAsset());
-				assetBuffer.append(" ");
+                if ( !c.getType().equals( "contentlet" ) ) {
+                    if ( (counter == _ASSET_LENGTH_LIMIT || (ii + 1 == bundle.size())) && !assetBuffer.toString().isEmpty() ) {
+                        assets.add( "+(" + assetBuffer.toString() + ") +live:true" );
+                        assets.add( "+(" + assetBuffer.toString() + ") +working:true" );
+                    }
+                    continue;
+                }
 
-				if(counter == _ASSET_LENGTH_LIMIT || (ii+1 == bundle.size())) {
-					assets.add("+("+assetBuffer.toString()+") +live:true");
-					assets.add("+("+assetBuffer.toString()+") +working:true");
+                assetBuffer.append( IDENTIFIER ).append( c.getAsset() );
+                assetBuffer.append( " " );
 
-					assetBuffer = new StringBuilder();
-					counter = 0;
-				} else
-					counter++;
-			}
-		}
-		return assets;
-	}
+                if ( counter == _ASSET_LENGTH_LIMIT || (ii + 1 == bundle.size()) ) {
+                    assets.add( "+(" + assetBuffer.toString() + ") +live:true" );
+                    assets.add( "+(" + assetBuffer.toString() + ") +working:true" );
+
+                    assetBuffer = new StringBuilder();
+                    counter = 0;
+                } else
+                    counter++;
+            }
+        }
+        return assets;
+    }
 
 }
