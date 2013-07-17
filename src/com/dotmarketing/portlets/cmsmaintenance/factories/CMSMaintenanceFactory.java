@@ -33,7 +33,11 @@ public class CMSMaintenanceFactory {
 		}
 		
 		
-		
+		/*
+		 * Run the drop tasks interativly, moving forward in time 
+		 * DROP_OLD_ASSET_ITERATE_BY_DAYS controls how many days to
+		 * move forward in time for each interation
+		 */
 		Calendar runDate = Calendar.getInstance();
 		runDate.setTime(assetsOlderThan);
 		runDate.add(Calendar.YEAR, -10);
@@ -95,7 +99,7 @@ public class CMSMaintenanceFactory {
 			if(runDate.getTime().equals(assetsOlderThan)){
 				break;
 			}
-			runDate.add(Calendar.DAY_OF_YEAR, Config.getIntProperty("DROP_OLD_ASSET_SEGMENT_BY_DAYS", 21));
+			runDate.add(Calendar.DAY_OF_YEAR, Config.getIntProperty("DROP_OLD_ASSET_ITERATE_BY_DAYS", 30));
 
 			// we should never go past the date the user entered
 			if(runDate.getTime().after(assetsOlderThan)){
