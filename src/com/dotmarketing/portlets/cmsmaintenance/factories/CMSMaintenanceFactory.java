@@ -34,9 +34,9 @@ public class CMSMaintenanceFactory {
 		
 		
 		/*
-		 * Run the drop tasks interativly, moving forward in time 
-		 * DROP_OLD_ASSET_ITERATE_BY_DAYS controls how many days to
-		 * move forward in time for each interation
+		 * Run the drop tasks interatively, moving forward in time 
+		 * DROP_OLD_ASSET_ITERATE_BY_SECONDS controls how many seconds to
+		 * move forward in time for each iteration - default is to iterate by 30 days
 		 */
 		Calendar runDate = Calendar.getInstance();
 		runDate.setTime(assetsOlderThan);
@@ -99,7 +99,7 @@ public class CMSMaintenanceFactory {
 			if(runDate.getTime().equals(assetsOlderThan)){
 				break;
 			}
-			runDate.add(Calendar.DAY_OF_YEAR, Config.getIntProperty("DROP_OLD_ASSET_ITERATE_BY_DAYS", 30));
+			runDate.add(Calendar.SECOND, Config.getIntProperty("DROP_OLD_ASSET_ITERATE_BY_SECONDS", 60 * 60 * 24 * 30));
 
 			// we should never go past the date the user entered
 			if(runDate.getTime().after(assetsOlderThan)){
