@@ -232,6 +232,7 @@
         <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
         <input name="iWantTo" id=iWantTo type="hidden" value="">
         <input name="whoToSend" id=whoToSend type="hidden" value="">
+        <input name="forcePush" id=forcePush type="hidden" value="">
     </form>
 
 <% }%>

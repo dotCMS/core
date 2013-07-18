@@ -9,6 +9,7 @@ public class Bundle {
 	private Date expireDate;
 	private String owner;
 	private Integer operation;
+	private boolean forcePush;
 
 	public Bundle() {}
 
@@ -17,6 +18,14 @@ public class Bundle {
 		this.publishDate = publishDate;
 		this.expireDate = expireDate;
 		this.owner = owner;
+	}
+
+	public Bundle(String name, Date publishDate, Date expireDate, String owner, boolean forcePush) {
+		this.name = name;
+		this.publishDate = publishDate;
+		this.expireDate = expireDate;
+		this.owner = owner;
+		this.forcePush = forcePush;
 	}
 
 	public String getId() {
@@ -56,6 +65,14 @@ public class Bundle {
 
 	public void setOperation(Integer operation) {
 		this.operation = operation;
+	}
+
+	public boolean isForcePush() {
+		return forcePush;
+	}
+
+	public void setForcePush(boolean forcePush) {
+		this.forcePush = forcePush;
 	}
 
 }
