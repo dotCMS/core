@@ -276,9 +276,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 //Get the identifiers on this bundle
                 List<String> identifiers = new ArrayList<String>();
                 List<PublishQueueElement> assets = config.getAssets();
-                if ( assets == null || assets.isEmpty() ) {
+                if ( config.getLuceneQueries() != null && !config.getLuceneQueries().isEmpty() ) {
                     identifiers.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
-                } else {
+                }
+                if ( assets != null && !assets.isEmpty() ) {
                     for ( PublishQueueElement asset : assets ) {
                         identifiers.add( asset.getAsset() );
                     }
@@ -343,80 +344,152 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		return;
 	}
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public void generateBundle ( String bundleId ) throws ServletException, IOException, DotDataException {
-    	PushPublisherConfig pconf = new PushPublisherConfig();
-		PublisherAPI pubAPI = PublisherAPI.getInstance();
+    /**
+     * Generates and flush an Unpublish bundle for a given bundle id and operation (publish/unpublish)
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     * @throws DotDataException
+     * @throws LanguageException
+     */
+    public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException, LanguageException {
 
-		try {
-			List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId(bundleId);
+        //Read the parameters
+        Map<String, String> map = getURIParams();
+        String bundleId = map.get( "bundleId" );
+        String paramOperation = map.get( "operation" );
+        if ( bundleId == null || bundleId.isEmpty() ) {
+            Logger.error( this.getClass(), "No Bundle Found with id: " + bundleId );
+            response.sendError( 500, "No Bundle Found with id: " + bundleId );
+            return;
+        }
 
-			Map<String, String> assets = new HashMap<String, String>();
-			List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
+        //What we want to do with this bundle
+        PushPublisherConfig.Operation operation = PushPublisherConfig.Operation.PUBLISH;
+        if ( paramOperation != null && paramOperation.equalsIgnoreCase( "unpublish" ) ) {
+            operation = PushPublisherConfig.Operation.UNPUBLISH;
+        }
 
-			for(PublishQueueElement c : tempBundleContents) {
-				assets.put((String) c.getAsset(), c.getType());
-				if(!c.getType().equals("contentlet"))
-					assetsToPublish.add(c);
-			}
+        File bundle;
+        try {
+            //Generate the bundle file for this given operation
+            bundle = generateBundle( bundleId, operation );
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
+            response.sendError( 500, "Error trying to generate bundle with id: " + bundleId );
+            return;
+        }
 
-			pconf.setPushing(false);
-//			pconf.setOperation(Operation.DOWNLOAD);
-			// all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
-			pconf.setAssets(assetsToPublish);
-			//Queries creation
-			pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
-			pconf.setId(bundleId);
-			pconf.setUser(APILocator.getUserAPI().getSystemUser());
+        response.setContentType( "application/x-tgz" );
+        response.setHeader( "Content-Disposition", "attachment; filename=" + bundle.getName() );
+        BufferedInputStream in = null;
+        try {
+            in = new BufferedInputStream( new FileInputStream( bundle ) );
+            byte[] buf = new byte[4096];
+            int len;
 
-			List<Class> bundlers = new ArrayList<Class>();
-			List<IBundler> confBundlers = new ArrayList<IBundler>();
-
-			Publisher p = new PushPublisher();
-			p.init(pconf);
-
-			for (Class clazz : p.getBundlers()) {
-				if (!bundlers.contains(clazz)) {
-					bundlers.add(clazz);
-				}
-			}
-
-			File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + pconf.getId() + ".tar.gz" );
-            if ( !compressedBundle.exists() ) {
-
-                // Run bundlers
-                File bundleRoot = BundlerUtil.getBundleRoot( pconf );
-
-                BundlerUtil.writeBundleXML( pconf );
-                for ( Class<IBundler> c : bundlers ) {
-
-                    IBundler bundler = c.newInstance();
-                    confBundlers.add( bundler );
-                    bundler.setConfig( pconf );
-                    BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
-                    //Generate the bundler
-                    bundler.generate( bundleRoot, bs );
-                }
-
-                pconf.setBundlers( confBundlers );
+            while ( (len = in.read( buf, 0, buf.length )) != -1 ) {
+                response.getOutputStream().write( buf, 0, len );
             }
-
-          //Compressing bundle
-			File bundleRoot = BundlerUtil.getBundleRoot(pconf);
-			ArrayList<File> list = new ArrayList<File>(1);
-			list.add(bundleRoot);
-			File bundle = new File(bundleRoot+File.separator+".."+File.separator+pconf.getId()+".tar.gz");
-			PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
-
-
-
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error reading bundle stream for bundle id: " + bundleId, e );
+            response.sendError( 500, "Error reading bundle stream for bundle id: " + bundleId );
+        } finally {
+            try {
+                in.close();
+            } catch ( Exception ex ) {
+                Logger.error( this.getClass(), "Error closing Stream for bundle: " + bundleId, ex );
+            }
+        }
     }
 
+    /**
+     * Generates an Unpublish bundle for a given bundle id  operation (publish/unpublish)
+     *
+     * @param bundleId
+     * @param operation Download for publish or unpublish
+     * @return
+     * @throws DotPublisherException
+     * @throws DotDataException
+     * @throws DotPublishingException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     * @throws DotBundleException
+     * @throws IOException
+     */
+    @SuppressWarnings ("unchecked")
+    public File generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
 
+        PushPublisherConfig pconf = new PushPublisherConfig();
+        PublisherAPI pubAPI = PublisherAPI.getInstance();
+
+        List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId( bundleId );
+        List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
+
+        for ( PublishQueueElement c : tempBundleContents ) {
+            if ( !c.getType().equals( "contentlet" ) ) {
+                assetsToPublish.add( c );
+            }
+        }
+
+        pconf.setPushing( false );
+        pconf.setDownloading( true );
+        pconf.setOperation(operation);
+
+        // all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
+        pconf.setAssets( assetsToPublish );
+        //Queries creation
+        pconf.setLuceneQueries( PublisherUtil.prepareQueries( tempBundleContents ) );
+        pconf.setId( bundleId );
+        pconf.setUser( APILocator.getUserAPI().getSystemUser() );
+
+        //BUNDLERS
+
+        List<Class<IBundler>> bundlers = new ArrayList<Class<IBundler>>();
+        List<IBundler> confBundlers = new ArrayList<IBundler>();
+
+        Publisher publisher = new PushPublisher();
+        publisher.init( pconf );
+        //Add the bundles for this publisher
+        for ( Class clazz : publisher.getBundlers() ) {
+            if ( !bundlers.contains( clazz ) ) {
+                bundlers.add( clazz );
+            }
+        }
+
+        //We want to clean the bundle files as the assets could changed or could be created for another operation
+        File bundleRoot = BundlerUtil.getBundleRoot( pconf );
+        File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + pconf.getId() + ".tar.gz" );
+        if ( compressedBundle.exists() ) {
+            compressedBundle.delete();
+            if ( bundleRoot.exists() ) {
+                com.liferay.util.FileUtil.deltree( bundleRoot );
+            }
+        }
+
+        // Run bundlers
+        BundlerUtil.writeBundleXML( pconf );
+        for ( Class<IBundler> c : bundlers ) {
+
+            IBundler bundler = c.newInstance();
+            confBundlers.add( bundler );
+            bundler.setConfig( pconf );
+            BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
+            //Generate the bundler
+            bundler.generate( bundleRoot, bundlerStatus );
+        }
+
+        pconf.setBundlers( confBundlers );
+
+        //Compressing bundle
+        ArrayList<File> list = new ArrayList<File>();
+        list.add( bundleRoot );
+        File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz" );
+
+        return PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() );
+    }
 
 	public void uploadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException, FileUploadException {
         FileItemFactory factory = new DiskFileItemFactory();
