@@ -316,7 +316,7 @@
 					<dd><textarea dojoType="dijit.form.Textarea" style="width:450px; min-height:150px" name="notes" id="notes"><%= UtilMethods.isSet(form.getNotes()) ? form.getNotes() : "" %></textarea></dd>
 				</dl>
 				<script type="text/javascript">
-					dojo.connect(dijit.byId('notes'), 'onkeydown', function(e) { return catchTab(document.getElementById('notes'), e) });
+					dojo.connect(dijit.byId('notes'), 'onkeydown', function(e) {if(dijit.byId('notes').focused) return catchTab(document.getElementById('notes'), e) });
 				</script>
 			</div>
 
