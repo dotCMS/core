@@ -436,7 +436,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
         }
 
-        pconf.setPushing( false );
         pconf.setDownloading( true );
         pconf.setOperation(operation);
 
