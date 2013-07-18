@@ -28,7 +28,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.queryParser.ParseException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.json.JSONObject;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
@@ -115,7 +114,6 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
-
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -2751,7 +2749,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 Logger.warn(this.getClass(), "unable to get field value " + fld.getVelocityVarName() + " " + e);
             }
         }
-        return "";
+        return contentlet.getIdentifier();
     }
 
     /**
