@@ -8,6 +8,7 @@ public class Bundle {
 	private Date publishDate;
 	private Date expireDate;
 	private String owner;
+	private boolean forcePush;
 
 	public Bundle() {}
 
@@ -17,6 +18,15 @@ public class Bundle {
 		this.expireDate = expireDate;
 		this.owner = owner;
 	}
+
+	public Bundle(String name, Date publishDate, Date expireDate, String owner, boolean forcePush) {
+		  this.name = name;
+		  this.publishDate = publishDate;
+		  this.expireDate = expireDate;
+		  this.owner = owner;
+		  this.forcePush = forcePush;
+	}
+
 
 	public String getId() {
 		return id;
@@ -48,5 +58,14 @@ public class Bundle {
 	public void setOwner(String owner) {
 		this.owner = owner;
 	}
+
+	public boolean isForcePush() {
+		return forcePush;
+	}
+
+	public void setForcePush(boolean forcePush) {
+		this.forcePush = forcePush;
+	}
+
 
 }

@@ -73,6 +73,8 @@
             <input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value="now"
                    data-dojo-type="dijit.form.TimeTextBox"
                    required="true" style="width: 100px;"/>
+
+             <input type="checkbox" data-dojo-type="dijit/form/CheckBox"  name="forcePush" id="forcePush" value="true"><label for="forcePush"><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %></label>
         </div>
         <div class="clear"></div>
     </div>
@@ -117,7 +119,6 @@
 		</div>
 		<div class="clear"></div>
 	</div>
-
 
 	<div class="buttonRow">
         <button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="pushHandler.remotePublish()" type="button">

@@ -15,11 +15,11 @@
 
 
 <%
- 
+
 	PermissionAPI perAPI = APILocator.getPermissionAPI();
 	ContainerAPI containerAPI = APILocator.getContainerAPI();
 	HostAPI hostAPI = APILocator.getHostAPI();
-	
+
 	com.dotmarketing.portlets.templates.model.Template template;
 	if (request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_EDIT)!=null) {
 		template = (com.dotmarketing.portlets.templates.model.Template) request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_EDIT);
@@ -41,7 +41,7 @@
 	else {
 		id = APILocator.getIdentifierAPI().find(template);
 	}
-	
+
 	String referer = "";
 	if (request.getParameter("referer") != null) {
 		referer = URLDecoder.decode(request.getParameter("referer"), "UTF-8");
@@ -50,17 +50,17 @@
 		java.util.Map params = new java.util.HashMap();
 		params.put("struts_action",new String[] {"/ext/templates/view_templates"});
 		if (request.getParameter("pageNumber")!=null) {
-			int pageNumber = Integer.parseInt(request.getParameter("pageNumber")); 
+			int pageNumber = Integer.parseInt(request.getParameter("pageNumber"));
 			params.put("pageNumber",new String[] { pageNumber + "" });
 		}
 		referer = UtilMethods.encodeURL(com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params));
 	}
-	
+
 	TemplateForm form = (TemplateForm)request.getAttribute("TemplateForm");
-	
+
 	//Getting the list of containers for the container selector
 	String hostId = "";
-	if(form.getHostId()!=null) 
+	if(form.getHostId()!=null)
 		hostId = form.getHostId();
 	List<Host> listHosts= (List <Host>) request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_HOSTS);
 	if(!UtilMethods.isSet(hostId)) {
@@ -68,12 +68,12 @@
 			hostId = request.getParameter("host_id");
 		} else {
 			hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
-		}	
+		}
 	}
 	Host host = null;
 	if(UtilMethods.isSet(hostId)) {
 		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false);
-	}	
+	}
 
 %>
 
@@ -81,7 +81,7 @@
 
 	dojo.require('dotcms.dijit.form.FileSelector');
 	dojo.require('dotcms.dojo.data.ContainerReadStore');
-	
+
 	var referer = '<%=referer%>';
 
 	function submitfm(form,subcmd) {
@@ -96,9 +96,9 @@
 		form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
 		form.<portlet:namespace />subcmd.value = subcmd;
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
-		submitForm(form);		
+		submitForm(form);
 	}
-	
+
 	var copyAsset = false;
 
 	function cancelEdit() {
@@ -116,7 +116,7 @@
 		dijit.byId('containersList').attr('value', '');
 		dijit.byId('containerSelector').show();
 	}
-	
+
 	function addContainer() {
 		dijit.byId('containerSelector').hide();
 		var value = dijit.byId('containersList').attr('value');
@@ -239,7 +239,7 @@
 <script language="JavaScript" src="/html/js/cms_ui_utils.js"></script>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
-<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-template\") %>" /> 
+<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-template\") %>" />
 
 	<html:form action='/ext/templates/edit_template' styleId="fm">
 	<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="add">
@@ -248,11 +248,11 @@
 	<input name="<portlet:namespace />subcmd" type="hidden" value="">
 	<input name="userId" type="hidden" value="<%= user.getUserId() %>">
 	<input name="admin_l_list" type="hidden" value="">
-	
-	
+
+
 <!-- START TabContainer-->
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
- 
+
 <!-- START Properties Tab -->
 	<div id="templatePropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>"  onShow="showEditButtonsRow()">
 		<dl>
@@ -263,13 +263,13 @@
 			<% if(host != null) { %>
 				<html:hidden property="hostId" value="<%=hostId%>"/>
 				<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
-				<dd><%= host.getHostname() %></dd>					
+				<dd><%= host.getHostname() %></dd>
 			<%	} else { %>
 				<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
 				<dd>
 				<select id="hostId" name="hostId" dojoType="dijit.form.FilteringSelect" value="<%=hostId%>">
-				<% for(Host h: listHosts) { %>		
-					<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>	
+				<% for(Host h: listHosts) { %>
+					<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>
 				<% } %>1
 				</select>
 				</dd>
@@ -279,41 +279,41 @@
 				<%= LanguageUtil.get(pageContext, "Title") %>:
 			</dt>
 			<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="title" id="titleField" value="<%= UtilMethods.isSet(template.getTitle()) ? template.getTitle() : "" %>" /></dd>
-				
+
 			<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
 			<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="friendlyName" id="friendlyNameField" value="<%= UtilMethods.isSet(template.getFriendlyName()) ? template.getFriendlyName() : "" %>" /></dd>
-			
+
 			<dt><%= LanguageUtil.get(pageContext, "Screen-Capture-Image") %>:</dt>
 			<dd>
-				<input type="text" name="image" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" mimeTypes="image" 
-					value="<%= UtilMethods.isSet(form.getImage())?form.getImage():"" %>" showThumbnail="true" />			
+				<input type="text" name="image" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" mimeTypes="image"
+					value="<%= UtilMethods.isSet(form.getImage())?form.getImage():"" %>" showThumbnail="true" />
 			</dd>
 			<dt><%= LanguageUtil.get(pageContext, "Template") %>:</dt>
-			
+
 			<dd>
 				<button dojoType="dijit.form.Button" onClick="showAddContainerDialog()" type="button">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-container")) %>
 				</button>
-				
+
 				<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
-				</button>                                         
+				</button>
 			</dd>
 			<dd>
 				<div id="textEditorArea" style="border: 0px;  width: 600px; height: 500px;">
 		    		<html:textarea onkeydown="return catchTab(this,event)" style="width:600px; height:500px; font-size: 12px" property="body" styleId="bodyField"></html:textarea>
 				</div>
 	        	<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onClick="codeMirrorColoration();"  checked="checked"  />
-	        	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label> 
+	        	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 			</dd>
 		</dl>
 	</div>
     <script type="text/javascript">
-   
+
 		dojo.addOnLoad(function() {
    			setTimeout('codeMirrorArea()',1); // will not work if called directly!
     	});
-    	
+
       	var editor;
     	function codeMirrorArea(){
 			editor = CodeMirror.fromTextArea("bodyField", {
@@ -323,8 +323,8 @@
 				stylesheet: ["/html/js/codemirror/css/xmlcolors.css", "/html/js/codemirror/css/jscolors.css", "/html/js/codemirror/css/csscolors.css"],
 				path: "/html/js/codemirror/js/"
 			});
-    	} 
-    	
+    	}
+
     	function codeMirrorColoration(){
     		dijit.byId("toggleEditor").disabled=true;
     		if (dijit.byId("toggleEditor").checked) {
@@ -342,11 +342,11 @@
     		}
     		dijit.byId("toggleEditor").disabled=false;
     	}
-    				    	
+
     </script>
-<!-- /Properties -->    
-	
-	
+<!-- /Properties -->
+
+
 <!-- Permissions Tab -->
 <%
 	boolean canEditAsset = perAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
@@ -362,52 +362,62 @@
 	}
 %>
 <!-- /Permissions Tab  -->
-	
-<!-- Versions Tab -->  
+
+<!-- Versions Tab -->
 	<%if(template != null && InodeUtils.isSet(template.getInode())){ %>
 		<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>"  onShow="showEditButtonsRow()">
 			<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 		</div>
 	<%} %>
-<!-- /Versions Tab -->   
-      
+<!-- /Versions Tab -->
+
+<!-- Publishing Status Tab  -->
+  <%if(template != null && InodeUtils.isSet(template.getInode())){ %>
+  <% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, template); %>
+    <div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="showEditButtonsRow()">
+      <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+    </div>
+  <%}%>
+<!-- /Publishing Status Tab  -->
+
+
 </div>
-<!-- /TabContainer-->							
+<!-- /TabContainer-->
 
 <div class="clear"></div>
 
 <!-- Button Row --->
 <div class="buttonRow" id="editTemplateButtonRow">
-	
+
 	<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
 		<% if ( canUserWriteToTemplate ) { %>
 			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" iconClass="saveIcon" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 			</button>
 		<% } %>
-	<% 
+	<%
 	if ( canUserPublishTemplate ) { %>
 		<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" iconClass="publishIcon" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 		</button>
 	<% } %>
-	
+
 	<% } else if (InodeUtils.isSet(template.getInode())) { %>
 		<button dojoType="dijit.form.Button" onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
 		</button>
 	<% } %>
-	
+
 	<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
 		<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
 		</button>
 	<% } %>
-	
+
 	<button dojoType="dijit.form.Button" onClick="cancelEdit()" iconClass="cancelIcon" type="button">
 		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 	</button>
-	
+
 </div>
 </html:form>
 </liferay:box>
@@ -423,14 +433,14 @@
 
 <div dojoType="dijit.Dialog" id="containerSelector" title="<%=LanguageUtil.get(pageContext, "select-a-container")%>">
 	<p>
-		<%=LanguageUtil.get(pageContext, "Container")%> 
-  		<select id="containersList" name="containersList" dojoType="dijit.form.FilteringSelect" 
-        	store="containerStore" searchDelay="300" pageSize="10" labelAttr="fullTitle" searchAttr="title" 
+		<%=LanguageUtil.get(pageContext, "Container")%>
+  		<select id="containersList" name="containersList" dojoType="dijit.form.FilteringSelect"
+        	store="containerStore" searchDelay="300" pageSize="10" labelAttr="fullTitle" searchAttr="title"
             invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
         </select>
     </p>
     <div class="buttonRow">
-		<button dojoType="dijit.form.Button" onclick="addContainer()" type="button"><%=LanguageUtil.get(pageContext, "Add")%></button> 
+		<button dojoType="dijit.form.Button" onclick="addContainer()" type="button"><%=LanguageUtil.get(pageContext, "Add")%></button>
 		<button dojoType="dijit.form.Button" onclick="dijit.byId('containerSelector').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
 	</div>
 </div>
