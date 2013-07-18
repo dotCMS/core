@@ -40,7 +40,7 @@ public class PublisherQueueJob implements StatefulJob {
 	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
 
-    private static final Integer maxNumTries = Config.getIntProperty( "PUBLISHER_QUEUE_MAX_TRIES", 3 );
+    public static final Integer MAX_NUM_TRIES = Config.getIntProperty( "PUBLISHER_QUEUE_MAX_TRIES", 3 );
 
     @SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
@@ -239,7 +239,7 @@ public class PublisherQueueJob implements StatefulJob {
 	        			PublishAuditStatus.Status.SUCCESS,
 	        			localHistory);
 	        	pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
-        	} else if(localHistory.getNumTries() > maxNumTries) {
+        	} else if(localHistory.getNumTries() > MAX_NUM_TRIES) {
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(),
 	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH,
 	        			localHistory);

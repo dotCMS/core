@@ -24,6 +24,7 @@ public class BundleFactoryImpl extends BundleFactory {
 		dc.addParam(bundle.getPublishDate());
 		dc.addParam(bundle.getExpireDate());
 		dc.addParam(bundle.getOwner());
+		dc.addParam(bundle.isForcePush());
 		dc.loadResult();
 	}
 

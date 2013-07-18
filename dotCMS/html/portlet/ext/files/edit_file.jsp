@@ -24,13 +24,13 @@
 	FolderAPI folderAPI = APILocator.getFolderAPI();
 	int showDim = 300;
 	if(request.getAttribute("fileInode") != null){
-		String fileInode = (String) request.getAttribute("fileInode"); 
-		String fileName = (String) request.getAttribute("fileName"); 
+		String fileInode = (String) request.getAttribute("fileInode");
+		String fileName = (String) request.getAttribute("fileName");
 		File myFile = (File)InodeFactory.getInode(fileInode, File.class);
 %>
 	<script language="Javascript">
-	
-	
+
+
 			try {
 				opener.setImage('<%=myFile.getInode()%>','<%=myFile.getFileName()%>');
 			} catch (e) { }
@@ -63,7 +63,7 @@ if (request.getAttribute(com.dotmarketing.util.WebKeys.FILE_EDIT)!=null) {
 	file = (com.dotmarketing.portlets.files.model.File) request.getAttribute(com.dotmarketing.util.WebKeys.FILE_EDIT);
 }
 else {
-	file = (com.dotmarketing.portlets.files.model.File)APILocator.getFileAPI().get(request.getParameter("inode"), user, false); 
+	file = (com.dotmarketing.portlets.files.model.File)APILocator.getFileAPI().get(request.getParameter("inode"), user, false);
 }
 //gets parent identifier to get the categories selected for this file
 com.dotmarketing.beans.Identifier identifier = null;
@@ -104,7 +104,7 @@ if( !InodeUtils.isSet(file.getInode()) && folder != null && InodeUtils.isSet(fol
 // the link to the resource
 StringBuffer resourceLink = new StringBuffer();
 if (identifier!=null && InodeUtils.isSet(identifier.getInode())){
-	if(request.isSecure()){ 
+	if(request.isSecure()){
 		resourceLink.append("https://");
 	}else{
 		resourceLink.append("http://");
@@ -147,7 +147,7 @@ String this_page = java.net.URLEncoder.encode(com.dotmarketing.util.PortletURLUt
 
 String parent = ((request.getParameter("parent") != null )? request.getParameter("parent") : "" );
 
-if(!InodeUtils.isSet(parent)){ // DOTCMS - 3861 
+if(!InodeUtils.isSet(parent)){ // DOTCMS - 3861
 	parent = file.getParent();
 }
 
@@ -165,7 +165,7 @@ java.util.Date publishDate = (file.getPublishDate()!=null) ? file.getPublishDate
 String pageWidth = request.getParameter("page_width");
 
 //This variable controls the name of the struts action used when the form is submitted
-//the normal action is /ext/contentlet/edit_file but that can be changed 
+//the normal action is /ext/contentlet/edit_file but that can be changed
 String formAction = request.getParameter("struts_action") == null?"/ext/files/edit_file":request.getParameter("struts_action");
 
 FileForm fileForm = (FileForm) request.getAttribute("FileForm");
@@ -178,7 +178,7 @@ if(host != null) {
 } else {
 	hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
 }
-	
+
 
 if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 	/*
@@ -202,10 +202,10 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 
 	var subcmd;
 	var filename;
-	
+
     function doUpload(subcmd){
 
-    	
+
         var form = document.getElementById("fm");
 
 		if (form.categorySelect) {
@@ -240,10 +240,10 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
         }
 
     	this.filename = myFileName;
-        
+
         var fileName = this.filename;
         var form = document.getElementById("fm");
-        
+
 		var sdMonth = parseFloat(document.getElementById('calendar_0_month').value) + 1;
 		var sdDay = document.getElementById('calendar_0_day').value;
 		var sdYear = document.getElementById('calendar_0_year').value;
@@ -291,17 +291,17 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 	}
 
 	function submitfmDelete()
-	{	
+	{
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.confirm.delete")) %>'))
-		{		
+		{
 		<%
 			if(!popup){
 		%>
-			self.location = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="full_delete" /><portlet:param name="inode" value="<%=String.valueOf(file.getInode())%>" /></portlet:actionURL>&referer=' + currReferer;			
+			self.location = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="full_delete" /><portlet:param name="inode" value="<%=String.valueOf(file.getInode())%>" /></portlet:actionURL>&referer=' + currReferer;
 		<%
 			}
 		%>
-		
+
 		}
 	}
 
@@ -329,8 +329,8 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 				val = val.replace("  ", " ");
 			}
 
-					
-		
+
+
 		var ele = document.getElementById("titleField");
 		if(ele.value.length ==0 ){
 			ele.value = val;
@@ -361,7 +361,7 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 				myForm.calendar_0_year.selectedIndex = getIndex(myForm.calendar_0_year, year);
 			}
 	}
-	function hideEditButtonsRow() {	
+	function hideEditButtonsRow() {
 		dojo.style('editFileButtonRow', { display: 'none' });
 	}
 
@@ -374,7 +374,7 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 		dojo.style('editFileButtonRow', { display: '' });
 		changesMadeToPermissions=false;
 	}
-			
+
 	function showOnMenuChanged() {
 		var checkBox = document.getElementById('showOnMenu');
 		var sortOrder = document.getElementById('sortOrder');
@@ -391,7 +391,7 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 		window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /></portlet:actionURL>&cmd=edit&inode=' + objId + '&parent=<%=parent%>' + '&referer=' + currReferer;
 	}
 
-   
+
 	<liferay:include page="/html/js/calendar/calendar_js.jsp" flush="true">
 		<liferay:param name="calendar_num" value="1" />
 	</liferay:include>
@@ -468,8 +468,8 @@ function editImage(inode, callingImg){
 
 
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-     
-<!-- Basic Properties -->    
+
+<!-- Basic Properties -->
       <div id="fileBasicTab" dojoType="dijit.layout.ContentPane" onShow="showEditButtonsRow()" title="<%= LanguageUtil.get(pageContext, "Basic-Properties") %>">
 			<dl>
 				<%if(identifier!=null && InodeUtils.isSet(identifier.getInode())){%>
@@ -479,19 +479,19 @@ function editImage(inode, callingImg){
 
 				<dt><%= LanguageUtil.get(pageContext, "Upload-New-File") %>:</dt>
 				<dd><input type="file" class="form-text" style="width:350" name="<portlet:namespace />uploadedFile" id="<portlet:namespace />uploadedFile" onChange="beLazier();"></dd>
-				
+
 
 				 <%if(InodeUtils.isSet(file.getInode())){%>
 					 <dt>&nbsp;</dt>
 					 <dd><%= LanguageUtil.get(pageContext, "must-be-type") %>: <%=file.getMimeType()%></dd>
 				 <% } %>
-				 
+
 				<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
 				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:250px" name="title"  id="titleField" value="<%= UtilMethods.isSet(file.getTitle()) ? file.getTitle() : "" %>" /></dd>
-				 
+
 				<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
 				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:250px" name="friendlyName" id="friendlyNameField" value="<%= UtilMethods.isSet(file.getFriendlyName()) ? file.getFriendlyName() : "" %>" /></dd>
-				
+
 				<dt><%= LanguageUtil.get(pageContext, "Folder") %>:</dt>
 				<dd>
 					<% if(!InodeUtils.isSet(parent)) { %>
@@ -501,18 +501,18 @@ function editImage(inode, callingImg){
 						<input type="text" dojoType="dijit.form.TextBox" readonly="true" style="250px" name="selectedparentPath" id="selectedparentPath" value="<%= UtilMethods.isSet(fileForm.getSelectedparentPath()) ? fileForm.getSelectedparentPath() : "" %>" />
 						<html:hidden styleClass="form-text" property="parent" styleId="parent" />
 					<% } %>
-					
+
 				</dd>
-				
+
 				<%if(InodeUtils.isSet(file.getInode())){%>
-				
+
 					<%if(canUserWriteToFile){%>
 						<dt><%= LanguageUtil.get(pageContext, "Resource-Link") %>:</dt>
 						<dd>
 
 								<a href="<%=resourceLink %>" target="_new">
 
-						
+
 							<%=identifier.getURI()%></a>
 								<% if (file.getMimeType()!=null  && file.getMimeType().indexOf("text")!=-1 || file.getMimeType().indexOf("xml")!=-1) { %>
 									<% if (InodeUtils.isSet(file.getInode()) && canUserWriteToFile && !popup) { %>
@@ -525,21 +525,21 @@ function editImage(inode, callingImg){
 							<% } %>
 						<dd>
 					<% } %>
-                                   
+
 					<%if(com.dotmarketing.util.UtilMethods.isImage(identifier.getURI())){%>
 						<dt><%= LanguageUtil.get(pageContext, "Image") %>:</dt>
 						<dd>
-							
+
 							<%if(("100".equals(System.getProperty("dotcms_level")))){ %>
 								<div style="position:relative;width:<%=showDim+40 %>px;">
-									<img src="/contentAsset/image/<%=file.getInode() %>/?byInode=1&filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>" 
-											class="thumbnailDiv" 
+									<img src="/contentAsset/image/<%=file.getInode() %>/?byInode=1&filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
+											class="thumbnailDiv"
 											onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
 											onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
-											onclick="dijit.byId('fileDia').show()"> 
+											onclick="dijit.byId('fileDia').show()">
 								</div>
-								
-	
+
+
 								<div dojoType="dijit.Dialog" id="fileDia" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:760px;height:500px;display:none;"">
 									<div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
 										<img src="/contentAsset/image/<%=file.getInode() %>/?byInode=1" />
@@ -548,14 +548,14 @@ function editImage(inode, callingImg){
 									<%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
 									</div>
 								</div>
-	
+
 							<%}else{ %>
 								<div  dojoType="dotcms.dijit.image.ImageEditor" editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>" inode="<%= file.getInode()%>" saveAsFileName="<%=file.getFileName() %>">
 								</div>
 							<%} %>
 							<div style="width:<%=showDim %>px;text-align:right">
 								<%if(file.getWidth() > 0){%>
-									<%=file.getWidth() %>x<%=file.getHeight() %> | 
+									<%=file.getWidth() %>x<%=file.getHeight() %> |
 								<%} %>
 								<%
 									int showSize  = file.getSize() /1024;
@@ -564,15 +564,15 @@ function editImage(inode, callingImg){
 								<%=NumberFormat.getInstance().format(showSize) %>k
 							</div>
 						</dd>
-                    <%}%>   
-					             
+                    <%}%>
+
 				<%}%>
 			</dl>
       </div>
 <!-- /Basic Properties -->
-	
-	
-<!-- Advanced Properties -->    
+
+
+<!-- Advanced Properties -->
 	<div id="fileAdvancedTab" refreshOnShow="true" onShow="showEditButtonsRow()" preload="true"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Advanced-Properties") %>">
 		<dl>
 			<dt><%= LanguageUtil.get(pageContext, "Publish-Date") %></dt>
@@ -624,7 +624,7 @@ function editImage(inode, callingImg){
 
 			<dt><%= LanguageUtil.get(pageContext, "Author") %>:</dt>
 			<dd><input type="text" dojoType="dijit.form.TextBox" style="250px" name="author" id="author" value="<%= UtilMethods.isSet(file.getAuthor()) ? file.getAuthor() : "" %>" /></dd>
-			
+
 			<dt><%= LanguageUtil.get(pageContext, "Show-on-Menu") %>:</dt>
 			<dd><input type="checkbox" dojoType="dijit.form.CheckBox" name="showOnMenu" id="showOnMenu" onclick="showOnMenuChanged();" <%= file.isShowOnMenu() ? "checked" : "" %> /></dd>
 
@@ -632,8 +632,8 @@ function editImage(inode, callingImg){
 			<dd><input type="text" dojoType="dijit.form.TextBox" name="sortOrder" id="sortOrder" style="width: 50px;" value="<%= file.getSortOrder() %>" /></dd>
 	</dl>
  </div>
-<!-- /Advanced Properties -->    
-	
+<!-- /Advanced Properties -->
+
 <!-- Permissions Tab -->
 <%
 	boolean canEditAsset = perAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
@@ -649,25 +649,34 @@ function editImage(inode, callingImg){
 	}
 %>
 <!-- /Permissions Tab  -->
-	
-<!-- Versions Tab -->    
+
+<!-- Versions Tab -->
 	<%if(UtilMethods.isSet(file) && InodeUtils.isSet(file.getInode())){ %>
 		<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" onShow="showEditButtonsRow()" title="<%= LanguageUtil.get(pageContext, "Versions") %>">
 			<%@ include file="/html/portlet/ext/common/edit_versions_file_asset_inc.jsp"%>
 		</div>
 	<%} %>
-<!-- /Versions Tab -->    
-      
+<!-- /Versions Tab -->
+
+<!-- Publishing Status Tab  -->
+	<%if(file != null && InodeUtils.isSet(file.getInode())){ %>
+		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, file); %>
+			<div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="showEditButtonsRow()">
+				<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+			</div>
+	<%}%>
+<!-- /Publishing Status Tab  -->
+
 </div>
-<!-- /TabContainer-->  
+<!-- /TabContainer-->
 <div class="clear"></div>
 <!-- Button Row --->
 <div class="buttonRow" id="editFileButtonRow" style="">
-		
-		<%--check permissions to display the save and publish button or not--%> 
-		
+
+		<%--check permissions to display the save and publish button or not--%>
+
 		<% if (!InodeUtils.isSet(file.getInode()) || file.isLive() || file.isWorking()) { %>
-		
+
 			<%  if (canUserPublishFile) {%>
 				<button dojoType="dijit.form.Button"  onClick='doUpload("")' iconClass="saveIcon" type="button">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
@@ -685,7 +694,7 @@ function editImage(inode, callingImg){
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
 			</button>
 		<% } %>
-		
+
 		<% if (InodeUtils.isSet(file.getInode()) && file.isDeleted()) { %>
 			<button dojoType="dijit.form.Button" onClick='submitfmDelete()' iconClass="saveIcon" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-file")) %>
@@ -698,11 +707,11 @@ function editImage(inode, callingImg){
 	</div>
 <!-- /Button Row -->
 
-<!-- Messages --> 
+<!-- Messages -->
 	<div id="messageDiv" style="display: none;show; position:relative; z-index: 100">
 		<%= LanguageUtil.get(pageContext, "File-Uploading") %>  . . .<BR>  <%= LanguageUtil.get(pageContext, "Note") %>: <%=LanguageUtil.get(pageContext, "This-window-will-redirect-you-back-when-the-file-has-been-uploaded") %>
 	</div>
-<!-- /Messages --> 
+<!-- /Messages -->
 
 </html:form>
 </liferay:box>
