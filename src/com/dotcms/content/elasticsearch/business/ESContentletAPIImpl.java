@@ -2727,6 +2727,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentlet == null){
             throw new DotContentletStateException("The contentlet was null");
         }
+        String returnValue = (String) contentlet.getMap().get("__DOTNAME__");
+        if(UtilMethods.isSet(returnValue)){
+        	return returnValue;
+        }
+        
 
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 
@@ -2734,16 +2739,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             try{
 
-                if(fld.isListed()){
-                    String returnValue = contentlet.getMap().get(fld.getVelocityVarName()).toString();
+                if(fld.isListed() && contentlet.getMap().get(fld.getVelocityVarName())!=null){
+                    returnValue = contentlet.getMap().get(fld.getVelocityVarName()).toString();
                     returnValue = returnValue.length() > 250 ? returnValue.substring(0,250) : returnValue;
-                    return returnValue;
+                    if(UtilMethods.isSet(returnValue)){
+                    	contentlet.setStringProperty("__DOTNAME__", returnValue);
+                    	return returnValue;
+                    }
                 }
             }
             catch(Exception e){
                 Logger.warn(this.getClass(), "unable to get field value " + fld.getVelocityVarName() + " " + e);
             }
         }
+        contentlet.setStringProperty("__NAME__", contentlet.getIdentifier());
         return contentlet.getIdentifier();
     }
 
