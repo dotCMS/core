@@ -68,14 +68,14 @@ public class DependencyManager {
 	public DependencyManager(User user, PushPublisherConfig config) {
 		this.config = config;
 		// these ones store the assets that will be sent in the bundle
-		hosts = new DependencySet(config.getId(), "host");
-		folders = new DependencySet(config.getId(), "folder");
-		htmlPages = new DependencySet(config.getId(), "htmlPage");
-		templates = new DependencySet(config.getId(), "template");
-		structures = new DependencySet(config.getId(), "structure");
-		containers = new DependencySet(config.getId(), "container");
-		contents = new DependencySet(config.getId(), "content");
-		relationships = new DependencySet(config.getId(), "relationship");
+		hosts = new DependencySet(config.getId(), "host", config.isDownloading());
+		folders = new DependencySet(config.getId(), "folder", config.isDownloading());
+		htmlPages = new DependencySet(config.getId(), "htmlPage", config.isDownloading());
+		templates = new DependencySet(config.getId(), "template", config.isDownloading());
+		structures = new DependencySet(config.getId(), "structure", config.isDownloading());
+		containers = new DependencySet(config.getId(), "container", config.isDownloading());
+		contents = new DependencySet(config.getId(), "content", config.isDownloading());
+		relationships = new DependencySet(config.getId(), "relationship", config.isDownloading());
 
 		// these ones are for being iterated over to solve the asset's dependencies
 		hostsSet = new HashSet<String>();
