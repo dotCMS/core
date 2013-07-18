@@ -8,6 +8,8 @@ import org.jgroups.JChannel;
 
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.publisher.assets.business.PushedAssetsCache;
+import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotmarketing.cache.FolderCache;
@@ -54,7 +56,7 @@ import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
 
 
 /**
- * FactoryLocator is a factory method to get single(ton) service objects. 
+ * FactoryLocator is a factory method to get single(ton) service objects.
  * This is a kind of implementation, and there may be others.
  * @author Carlos Rivas (crivas)
  * @author Jason Tesser
@@ -63,7 +65,7 @@ import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
  */
 
 public class CacheLocator extends Locator<CacheIndex>{
-	
+
     private static class CommitListenerCacheWrapper implements DotCacheAdministrator {
         DotCacheAdministrator dotcache;
         public CommitListenerCacheWrapper(DotCacheAdministrator dotcache) { this.dotcache=dotcache; }
@@ -86,7 +88,7 @@ public class CacheLocator extends Locator<CacheIndex>{
                     HibernateUtil.addRollbackListener(new Runnable() {
                        public void run() {
                            dotcache.remove(key, group);
-                       } 
+                       }
                     });
                 }
             } catch (Exception e) {
@@ -97,28 +99,28 @@ public class CacheLocator extends Locator<CacheIndex>{
             return dotcache;
         }
     }
-    
+
 	private static CacheLocator instance;
 	private static DotCacheAdministrator adminCache;
-	
+
 	private CacheLocator() {
 		super();
 	}
-	
+
 	public synchronized static void init(){
 		if(instance != null)
 			return;
-		
+
 		String clazz = Config.getStringProperty("cache.locator.class", DotGuavaCacheAdministratorImpl.class.getCanonicalName());
 		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
 		try{
 			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
-			
+
 		}
 		catch(Exception e){
 			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz);
 		}
-		
+
 		instance = new CacheLocator();
 	}
 
@@ -128,23 +130,23 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static RoleCache getRoleCache() {
         return (RoleCache)getInstance(CacheIndex.Role);
     }
-    
+
     public static com.dotmarketing.business.RoleCache getCmsRoleCache() {
         return (com.dotmarketing.business.RoleCache)getInstance(CacheIndex.CMSRole);
     }
-	
+
 	public static CategoryCache getCategoryCache() {
 		return (CategoryCache)getInstance(CacheIndex.Category);
 	}
-	
+
 	public static ContentletCache getContentletCache() {
 		return (ContentletCache)getInstance(CacheIndex.Contentlet);
 	}
-	
+
 	public static DotResourceCache getVeloctyResourceCache(){
 		return (DotResourceCache)getInstance(CacheIndex.Velocity);
 	}
-		
+
 	public static ChainCache getChainCache(){
 		return (ChainCache)getInstance(CacheIndex.Chain);
 	}
@@ -152,31 +154,31 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static LogMapperCache getLogMapperCache () {
         return ( LogMapperCache ) getInstance( CacheIndex.LogMapper );
     }
-	
+
 	public static RelationshipCache getRelationshipCache() {
 		return (RelationshipCache)getInstance(CacheIndex.Relationship);
 	}
-	
+
 	public static PluginCache getPluginCache() {
 		return (PluginCache)getInstance(CacheIndex.Plugin);
 	}
-	
+
 	public static LanguageCache getLanguageCache() {
 		return (LanguageCache)getInstance(CacheIndex.Language);
 	}
-	
+
 	public static UserCache getUserCache() {
 		return (UserCache)getInstance(CacheIndex.User);
 	}
-	
+
 	public static UserProxyCache getUserProxyCache() {
 		return (UserProxyCache)getInstance(CacheIndex.Userproxy);
 	}
-	
+
 	public static LayoutCache getLayoutCache() {
 		return (LayoutCache)getInstance(CacheIndex.Layout);
 	}
-	
+
 	public static FileCache getFileCache() {
 		return (FileCache)getInstance(CacheIndex.File);
 	}
@@ -186,15 +188,15 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static HTMLPageCache getHTMLPageCache() {
 		return (HTMLPageCache)getInstance(CacheIndex.HTMLPage);
 	}
-	
+
 	public static MenuLinkCache getMenuLinkCache() {
 		return (MenuLinkCache)getInstance(CacheIndex.Menulink);
 	}
-	
+
 	public static ContainerCache getContainerCache() {
 		return (ContainerCache)getInstance(CacheIndex.Container);
 	}
-	
+
 	public static TemplateCache getTemplateCache() {
 		return (TemplateCache)getInstance(CacheIndex.Template);
 	}
@@ -214,36 +216,41 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static WorkflowCache getWorkFlowCache() {
 		return (WorkflowCache) getInstance(CacheIndex.WorkflowCache);
 	}
-	
+
 	public static VirtualLinkCache getVirtualLinkCache() {
 		return (VirtualLinkCache) getInstance(CacheIndex.VirtualLinkCache);
 	}
-	
+
 	public static HostVariablesCache getHostVariablesCache() {
 		return (HostVariablesCache)getInstance(CacheIndex.HostVariables);
 	}
-	
+
 	public static IndiciesCache getIndiciesCache() {
 	    return (IndiciesCache)getInstance(CacheIndex.Indicies);
 	}
-	
+
 	public static NavToolCache getNavToolCache() {
 	    return (NavToolCache)getInstance(CacheIndex.NavTool);
 	}
-	
+
 	public static PublishingEndPointCache getPublishingEndPointCache() {
 		return (PublishingEndPointCache)getInstance(CacheIndex.PublishingEndPoint);
 	}
 
+	public static PushedAssetsCache getPushedAssetsCache() {
+		return (PushedAssetsCache)getInstance(CacheIndex.PushedAssets);
+	}
+
+
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
-	 * on a put where the non legacy one will not.  
+	 * on a put where the non legacy one will not.
 	 * @return
 	 */
 	public static DotCacheAdministrator getCacheAdministrator(){
 		return adminCache;
 	}
-	
+
 	private static Object getInstance(CacheIndex index) {
 
 		if(instance == null){
@@ -253,15 +260,15 @@ public class CacheLocator extends Locator<CacheIndex>{
 				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
 			}
 		}
-		
+
 		Object serviceRef = instance.getServiceInstance(index);
 
 		Logger.debug(CacheLocator.class, instance.audit(index));
 
 		return serviceRef;
-		
+
 	 }
-	
+
 	@Override
 	protected Object createService(CacheIndex enumObj) {
 		return enumObj.create();
@@ -275,20 +282,20 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static CacheIndex[] getCacheIndexes(){
 		return CacheIndex.values();
 	}
-	
+
 	public static Cachable getCache (String value) {
-		return (Cachable)getInstance(CacheIndex.getCacheIndex(value)); 
+		return (Cachable)getInstance(CacheIndex.getCacheIndex(value));
 	}
-	
+
 }
 
 
 
-enum CacheIndex 
+enum CacheIndex
 {
-	Permission("Permission"), 
+	Permission("Permission"),
 	CMSRole("CMS Role"),
-	Role("Role"), 
+	Role("Role"),
 	Category("Category"),
 	Contentlet("Contentlet"),
 	Chain("Chain"),
@@ -315,8 +322,9 @@ enum CacheIndex
 	Block_Directive("Block Directive"),
 	Indicies("Indicies"),
 	NavTool("Navigation Tool"),
-	PublishingEndPoint("PublishingEndPoint Cache");
-	
+	PublishingEndPoint("PublishingEndPoint Cache"),
+	PushedAssets("PushedAssets Cache");
+
 	Cachable create() {
 		switch(this) {
 		case Permission: return new PermissionCacheImpl();
@@ -349,20 +357,21 @@ enum CacheIndex
       	case Indicies: return new IndiciesCacheImpl();
       	case NavTool: return new NavToolCacheImpl();
       	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
+      	case PushedAssets: return new PushedAssetsCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
-	
+
 	private String value;
-	
+
 	CacheIndex (String value) {
 		this.value = value;
 	}
-	
+
 	public String toString () {
 		return value;
 	}
-		
+
 	public static CacheIndex getCacheIndex (String value) {
 		CacheIndex[] types = CacheIndex.values();
 		for (CacheIndex type : types) {

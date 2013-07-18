@@ -93,18 +93,18 @@ public class CMSMaintenanceAjax {
     	validateUser();
         return ESReindexationProcessStatus.getProcessIndexationMap();
     }
-    
-    
-    
+
+
+
     public boolean deleteIndex(String indexName){
     	validateUser();
     	ESIndexAPI esapi= new ESIndexAPI();
-    	
+
     	return  APILocator.getContentletIndexAPI().delete(indexName);
     }
-    
-    
-    public boolean validateUser() {    	
+
+
+    public boolean validateUser() {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = null;
         try {
@@ -116,16 +116,16 @@ public class CMSMaintenanceAjax {
         } catch (Exception e) {
             Logger.error(this, e.getMessage());
             throw new DotRuntimeException (e.getMessage());
-        }    	
+        }
     }
-    
-    
+
+
     public Map stopReindexation() throws DotDataException {
     	validateUser();
     	ReindexThread.getInstance().stopFullReindexation();
         return ESReindexationProcessStatus.getProcessIndexationMap();
     }
-    
+
     public String cleanReindexStructure(String inode) throws DotDataException {
     	validateUser();
     	Structure structure = StructureCache.getStructureByInode(inode);
@@ -139,13 +139,30 @@ public class CMSMaintenanceAjax {
 			return "message.cmsmaintenance.cache.indexrebuilt";
 		}
     }
-    
+
     public void optimizeIndices() {
     	validateUser();
         ContentletIndexAPI api=APILocator.getContentletIndexAPI();
         List<String> indices=api.listDotCMSIndices();
         api.optimize(indices);
     }
+
+    public String deletePushedAssets() throws PortalException, SystemException, DotDataException,DotSecurityException {
+
+    	String result = "success";
+
+    	try {
+
+    		APILocator.getPushedAssetsAPI().deleteAllPushedAssets();
+
+    	} catch(Exception e) {
+    		Logger.error(getClass(), e.getMessage(), e);
+    		result = "Could not delete the pushed assets. " + e.getMessage();
+    	}
+
+    	return result;
+    }
+
 
     /**
 	 * The path where tmp files are stored. This gets wiped alot
@@ -216,7 +233,7 @@ public class CMSMaintenanceAjax {
         	Date assetsOlderThan = new SimpleDateFormat("MM/dd/yyyy").parse(date);
         	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
     }
-    
+
     public Map cleanAssets (boolean files, boolean binarys) throws DotDataException {
 
         //Create the thread to clean the assets
@@ -352,7 +369,7 @@ public class CMSMaintenanceAjax {
 		 * @throws IOException
 		 * @author Will
 		 * @throws DotDataException
-		 * @throws DotCacheException 
+		 * @throws DotCacheException
 		 */
 		@SuppressWarnings("unchecked")
 		public void createXMLFiles() throws ServletException, IOException, DotDataException {
@@ -370,7 +387,7 @@ public class CMSMaintenanceAjax {
 				while (it.hasNext()) {
 					Map.Entry pairs = (Map.Entry) it.next();
 					Class x = (Class) pairs.getKey();
-					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x.equals(ClickstreamRequest.class) 
+					if (!x.equals(Inode.class) && !x.equals(Clickstream.class) && !x.equals(ClickstreamRequest.class)
 					        && !x.equals(Plugin.class) && !x.equals(PluginProperty.class))
 						_tablesToDump.add(x);
 
@@ -704,13 +721,13 @@ public class CMSMaintenanceAjax {
 				_bout.close();
 				_list = null;
 				_bout = null;
-				
-				
-				
+
+
+
 				//backup workflow
 				File file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
 				WorkflowImportExportUtil.getInstance().exportWorkflows(file);
-								
+
 			} catch (HibernateException e) {
 				Logger.error(this,e.getMessage(),e);
 			} catch (SystemException e) {
@@ -757,7 +774,7 @@ public class CMSMaintenanceAjax {
 			zout.close();
 			out.close();
 	}
-	    
+
 	    private User getUser(HttpServletRequest req) {
 
 	        // get the user

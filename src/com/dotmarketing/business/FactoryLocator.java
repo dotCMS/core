@@ -6,6 +6,10 @@ import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
+import com.dotcms.publisher.assets.business.PushedAssetsFactory;
+import com.dotcms.publisher.assets.business.PushedAssetsFactoryImpl;
+import com.dotcms.publisher.bundle.business.BundleFactory;
+import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImpl;
 import com.dotcms.publisher.environment.business.EnvironmentFactory;
@@ -46,8 +50,6 @@ import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactoryImpl;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl;
 import com.dotmarketing.util.Logger;
-import com.dotcms.publisher.bundle.business.BundleFactory;
-import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
 
 /**
  * FactoryLocator is a factory method to get single(ton) service objects.
@@ -190,6 +192,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
             return (BundleFactory) getInstance(FactoryIndex.BUNDLE_FACTORY);
     }
 
+    public static PushedAssetsFactory getPushedAssetsFactory(){
+    	return (PushedAssetsFactory) getInstance(FactoryIndex.PUSHED_ASSETS_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -253,7 +259,8 @@ enum FactoryIndex
 	LINKCHECKER_FACTORY,
 	PUBLISHER_END_POINT_FACTORY,
 	ENVIRONMENT_FACTORY,
-	BUNDLE_FACTORY;
+	BUNDLE_FACTORY,
+	PUSHED_ASSETS_FACTORY;
 
 
 	Object create() {
@@ -288,6 +295,7 @@ enum FactoryIndex
             case PUBLISHER_END_POINT_FACTORY: return new PublishingEndPointFactoryImpl();
             case ENVIRONMENT_FACTORY: return new EnvironmentFactoryImpl();
             case BUNDLE_FACTORY: return new BundleFactoryImpl();
+            case PUSHED_ASSETS_FACTORY: return new PushedAssetsFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

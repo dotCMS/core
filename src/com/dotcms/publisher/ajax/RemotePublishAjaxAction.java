@@ -144,6 +144,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String whoToSendTmp = request.getParameter( "whoToSend" );
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
+            String forcePushStr = request.getParameter( "forcePush" );
+            boolean forcePush = (forcePushStr!=null && forcePushStr.equals("true"));
 
             // Lists of Environments to push to
             for (String envId : whereToSend) {
@@ -163,7 +165,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             List<String> ids = getIdsToPush(assetsIds, _contentFilterDate, dateFormat);
 
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
-            	Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId());
+            	 Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId(), forcePush);
             	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
             	publisherAPI.addContentsToPublish( ids, bundle.getId(), publishDate, getUser() );
@@ -172,7 +174,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
                     Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
 
-                    Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId());
+                    Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId(), forcePush);
                 	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
                 	publisherAPI.addContentsToUnpublish( ids, bundle.getId(), expireDate, getUser() );
