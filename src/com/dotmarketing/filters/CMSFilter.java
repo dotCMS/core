@@ -641,14 +641,19 @@ public class CMSFilter implements Filter {
         if(excludeList==null) buildExcludeList();
 
         if(excludeList.contains(uri)) return true;
-        
-    	for(String exclusion:excludeList) {
-    		if(exclusion.endsWith("/"))
-    			exclusion=exclusion.substring(0, exclusion.lastIndexOf("/"));
-    		if(RegEX.contains(uri, exclusion))
-    		    return true;
-    	}
-    	return false;
+
+        for ( String exclusion : excludeList ) {
+
+            if ( exclusion.endsWith( "/" ) ) {
+                exclusion = exclusion.substring( 0, exclusion.lastIndexOf( "/" ) );
+            }
+
+            exclusion += "\\b(/|)";
+            if ( RegEX.contains( uri, exclusion ) ) {
+                return true;
+            }
+        }
+        return false;
    }
 
     private boolean endInTheVelocityPageExtension(String URI) {

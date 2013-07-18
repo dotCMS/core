@@ -26,6 +26,7 @@ public class PushPublisherConfig extends PublisherConfig {
 	private Operation operation;
 	private List<PublishingEndPoint> endpoints;
 	private boolean pushing = true;
+	private boolean downloading = false;
 
 	public PushPublisherConfig() {
 		super();
@@ -205,5 +206,13 @@ public class PushPublisherConfig extends PublisherConfig {
 	public void setPushing(boolean pushing) {
 		this.pushing = pushing;
 	}
+
+    public boolean isDownloading () {
+        return downloading;
+    }
+
+    public void setDownloading ( boolean downloading ) {
+        this.downloading = downloading;
+    }
 
 }

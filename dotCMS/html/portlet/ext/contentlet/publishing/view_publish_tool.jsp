@@ -369,6 +369,15 @@
 	    dojo.style(dialog.domNode,'top','80px');
 	}
 
+    /**
+     * Downloads a selected bundle id. This selected bundle is an Unpushed Bundle
+     * @param bundleId
+     * @param operation publish/unpublish
+     */
+    var downloadUnpushedBundle = function (bundleId, operation) {
+        window.location = '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadUnpushedBundle/bundleId/' + bundleId + '/operation/' + operation;
+    };
+
 	dojo.require("dotcms.dojo.push.PushHandler");
 	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish-Bundle")%>', true);
 
