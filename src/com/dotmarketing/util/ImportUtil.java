@@ -678,7 +678,7 @@ public class ImportUtil {
 						}	}
 				}
 				else {
-					valueObj = Config.getBooleanProperty("IMPORT_TOOL_ESCAPE_HTML_TEXTAREA",true) ? UtilMethods.escapeUnicodeCharsForHTML(value) : value;
+					valueObj = Config.getBooleanProperty("CONTENT_ESCAPE_HTML_TEXT",true) ? UtilMethods.escapeUnicodeCharsForHTML(value) : value;
 				}
 				values.put(column, valueObj);
 
