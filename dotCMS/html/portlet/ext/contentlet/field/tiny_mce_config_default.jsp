@@ -1,4 +1,3 @@
-
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
@@ -20,7 +19,7 @@ var tinyMCEProps = {
 			theme : "advanced", 
 			language:'<%= userb.getLanguageId().substring(0,2) %>',
     		plugins : "validation,table,advhr,advimage,advlink,preview,searchreplace,print,paste,directionality,fullscreen,inlinepopups,style,dotimageclipboard,safari,spellchecker,lists",
-    		spellchecker_languages : "+English=en_US,Español=es_ES",
+    		spellchecker_languages : "+English=en_US,Espaï¿½ol=es_ES",
     		spellchecker_rpc_url : "/servlets/jmyspell-spellchecker",
     		theme_advanced_buttons1 : "cut,copy,paste,pasteword,separator,undo,redo,separator,image,dotimageclipboard,anchor,link,unlink,separator,spellchecker<%= LicenseUtil.getLevel()>=200 ? ",validation":"" %>,",
     		theme_advanced_buttons2 : "bold,italic,underline,strikethrough,separator,formatselect,separator,justifyleft,justifycenter,justifyright,justifyfull,separator,bullist,numlist,outdent,indent,hr,charmap,separator,styleselect,separator,fullscreen,",
@@ -46,7 +45,7 @@ var tinyMCEProps = {
             apply_source_formatting : true,
             valid_elements : "*[*]",
 			file_browser_callback : "cmsFileBrowser",
-			<% if(Config.getBooleanProperty("IMPORT_TOOL_ESCAPE_HTML_TEXTAREA",true)) { %>
+			<% if(Config.getBooleanProperty("CONTENT_ESCAPE_HTML_TEXT",true)) { %>
 			entity_encoding : "named",
 			<% } else { %>
 		    entity_encoding : "raw",
