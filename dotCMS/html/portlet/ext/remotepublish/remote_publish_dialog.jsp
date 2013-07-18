@@ -72,6 +72,8 @@ GregorianCalendar cal = new GregorianCalendar();
 				<input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value="now"
 				 	data-dojo-type="dijit.form.TimeTextBox"
 					required="true" style="width: 100px;"/>
+
+					<input type="checkbox" data-dojo-type="dijit/form/CheckBox"  name="forcePush" id="forcePush" value="true"><label for="forcePush"><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %></label>
 			</div>
 			<div class="clear"></div>
 		</div>
@@ -111,6 +113,16 @@ GregorianCalendar cal = new GregorianCalendar();
 					</table>
 				</div>
 				<input type="hidden" name="whereToSend" id="whereToSend" value="">
+			</div>
+			<div class="clear"></div>
+		</div>
+
+		<div class="fieldWrapper">
+			<div class="fieldName" style="width:120px">
+
+			</div>
+			<div class="fieldValue">
+
 			</div>
 			<div class="clear"></div>
 		</div>
