@@ -33,6 +33,7 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.TrustFactory;
@@ -147,6 +148,12 @@ public class PushPublisher extends Publisher {
 	        								"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
 	        			}
 	        		} catch(Exception e) {
+
+	                    // if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
+	                    if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
+	                      APILocator.getPushedAssetsAPI().deletePushedAssets(config.getId(), environment.getId());
+	                    }
+
 	        			hasError = true;
 	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 

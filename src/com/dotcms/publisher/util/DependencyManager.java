@@ -43,49 +43,121 @@ import com.liferay.portal.model.User;
 
 public class DependencyManager {
 
-	private Set<String> hosts;
-	private Set<String> folders;
-	private Set<String> htmlPages;
-	private Set<String> templates;
-	private Set<String> structures;
-	private Set<String> containers;
-	private Set<String> contents;
-	private Set<String> links;
+	private DependencySet hosts;
+	private DependencySet folders;
+	private DependencySet htmlPages;
+	private DependencySet templates;
+	private DependencySet structures;
+	private DependencySet containers;
+	private DependencySet contents;
+	private DependencySet links;
+	private DependencySet relationships;
 
-	private Set<String> relationships;
+	private Set<String> hostsSet;
+	private Set<String> foldersSet;
+	private Set<String> htmlPagesSet;
+	private Set<String> templatesSet;
+	private Set<String> structuresSet;
+	private Set<String> containersSet;
+	private Set<String> contentsSet;
 
 	private User user;
 
-	public DependencyManager(User user) {
-		hosts = new HashSet<String>();
-		folders = new HashSet<String>();
-		htmlPages = new HashSet<String>();
-		templates = new HashSet<String>();
-		structures = new HashSet<String>();
-		containers = new HashSet<String>();
-		contents = new HashSet<String>();
-		links = new HashSet<String>();
-		relationships = new HashSet<String>();
+	private PushPublisherConfig config;
+
+	public DependencyManager(User user, PushPublisherConfig config) {
+		this.config = config;
+		// these ones store the assets that will be sent in the bundle
+		hosts = new DependencySet(config.getId(), "host");
+		folders = new DependencySet(config.getId(), "folder");
+		htmlPages = new DependencySet(config.getId(), "htmlPage");
+		templates = new DependencySet(config.getId(), "template");
+		structures = new DependencySet(config.getId(), "structure");
+		containers = new DependencySet(config.getId(), "container");
+		contents = new DependencySet(config.getId(), "content");
+		relationships = new DependencySet(config.getId(), "relationship");
+
+		// these ones are for being iterated over to solve the asset's dependencies
+		hostsSet = new HashSet<String>();
+		foldersSet = new HashSet<String>();
+		htmlPagesSet = new HashSet<String>();
+		templatesSet = new HashSet<String>();
+		structuresSet = new HashSet<String>();
+		containersSet = new HashSet<String>();
+		contentsSet = new HashSet<String>();
 		this.user = user;
 	}
 
-	public void setDependencies(PushPublisherConfig config) throws DotDataException, DotBundleException {
+	public void setDependencies() throws DotDataException, DotBundleException {
 		List<PublishQueueElement> assets = config.getAssets();
 
 		for (PublishQueueElement asset : assets) {
 			if(asset.getType().equals("htmlpage")) {
-				htmlPages.add(asset.getAsset());
+			     try {
+			         HTMLPage page = APILocator.getHTMLPageAPI().loadLivePageById(asset.getAsset(), user, false);
+
+			         if(page==null) {
+			           page = APILocator.getHTMLPageAPI().loadWorkingPageById(asset.getAsset(), user, false);
+			         }
+
+			         htmlPages.add(asset.getAsset(), page.getModDate());
+			         htmlPagesSet.add(asset.getAsset());
+			       } catch (Exception e) {
+			         Logger.error(getClass(), "Couldn't add the HtmlPage to the Bundle. Bundle ID: " + config.getId() + ", HTMLPage ID: " + asset.getAsset(), e);
+			       }
+
 			} else if(asset.getType().equals("structure")) {
-				structures.add(asset.getAsset());
+			    try {
+			        Structure st = StructureCache.getStructureByInode(asset.getAsset());
+			        structures.add(asset.getAsset(), st.getModDate());
+			        structuresSet.add(asset.getAsset());
+			      } catch (Exception e) {
+			        Logger.error(getClass(), "Couldn't add the Structure to the Bundle. Bundle ID: " + config.getId() + ", Structure ID: " + asset.getAsset(), e);
+			      }
+
 			} else if(asset.getType().equals("template")) {
-				templates.add(asset.getAsset());
+			      try {
+			          Template t = APILocator.getTemplateAPI().findLiveTemplate(asset.getAsset(), user, false);
+
+			          if(t==null) {
+			            t = APILocator.getTemplateAPI().findWorkingTemplate(asset.getAsset(), user, false);
+			          }
+
+			          templates.add(asset.getAsset(), t.getModDate());
+			          templatesSet.add(asset.getAsset());
+			        } catch (Exception e) {
+			          Logger.error(getClass(), "Couldn't add the Template to the Bundle. Bundle ID: " + config.getId() + ", HTMLPage ID: " + asset.getAsset(), e);
+			        }
 			} else if(asset.getType().equals("containers")) {
-				containers.add(asset.getAsset());
+			     try {
+			         Container c = APILocator.getContainerAPI().getLiveContainerById(asset.getAsset(), user, false);
+
+			         if(c==null) {
+			           c = APILocator.getContainerAPI().getWorkingContainerById(asset.getAsset(), user, false);
+			         }
+
+			         containers.add(asset.getAsset(), c.getModDate());
+			         containersSet.add(asset.getAsset());
+			       } catch (DotSecurityException e) {
+			         Logger.error(getClass(), "Couldn't add the Container to the Bundle. Bundle ID: " + config.getId() + ", Container ID: " + asset.getAsset(), e);
+			       }
 			} else if(asset.getType().equals("folder")) {
-				folders.add(asset.getAsset());
+				   try {
+					     Folder f = APILocator.getFolderAPI().find(asset.getAsset(), user, false);
+					     folders.add(asset.getAsset(), f.getModDate());
+					     foldersSet.add(asset.getAsset());
+					   } catch (DotSecurityException e) {
+					     Logger.error(getClass(), "Couldn't add the Folder to the Bundle. Bundle ID: " + config.getId() + ", Container ID: " + asset.getAsset(), e);
+					   }
 			} else if(asset.getType().equals("host")) {
-				hosts.add(asset.getAsset());
-			}  
+			    try {
+			        Host h = APILocator.getHostAPI().find(asset.getAsset(), user, false);
+			        hosts.add(asset.getAsset(), h.getModDate());
+			        hostsSet.add(asset.getAsset());
+			      } catch (DotSecurityException e) {
+			        Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Container ID: " + asset.getAsset(), e);
+			      }
+			}
 		}
 
 		if(config.getOperation().equals(Operation.PUBLISH)) {
@@ -98,7 +170,7 @@ public class DependencyManager {
     		setContentDependencies(config.getLuceneQueries());
 		}else{
 
-            contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+			contentsSet.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
         }
 
 
@@ -121,13 +193,15 @@ public class DependencyManager {
 				// Template dependencies
 				List<Template> templateList = APILocator.getTemplateAPI().findTemplatesAssignedTo(h);
 				for (Template template : templateList) {
-					templates.add(template.getIdentifier());
+					templates.add(template.getIdentifier(), template.getModDate());
+					templatesSet.add(template.getIdentifier());
 				}
 
 				// Container dependencies
 				List<Container> containerList = APILocator.getContainerAPI().findContainersUnder(h);
 				for (Container container : containerList) {
-					containers.add(container.getIdentifier());
+					containers.add(container.getIdentifier(), container.getModDate());
+					containersSet.add(container.getIdentifier());
 				}
 
 				// Content dependencies
@@ -135,27 +209,30 @@ public class DependencyManager {
 
 				List<Contentlet> contentList = APILocator.getContentletAPI().search(luceneQuery, 0, 0, null, user, false);
 				for (Contentlet contentlet : contentList) {
-					contents.add(contentlet.getIdentifier());
+					contents.add(contentlet.getIdentifier(), contentlet.getModDate());
+					contentsSet.add(contentlet.getIdentifier());
 				}
 
 				// Structure dependencies
 				List<Structure> structuresList = StructureFactory.getStructuresUnderHost(h, user, false);;
 				for (Structure structure : structuresList) {
-					structures.add(structure.getInode());
+					structures.add(structure.getInode(), structure.getModDate());
+					structuresSet.add(structure.getInode());
 				}
 
 				// Folder dependencies
 				List<Folder> folderList = APILocator.getFolderAPI().findFoldersByHost(h, user, false);
 				for (Folder folder : folderList) {
-					folders.add(folder.getInode());
+					folders.add(folder.getInode(), folder.getModDate());
+					foldersSet.add(folder.getInode());
 				}
 			}
 
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
@@ -169,57 +246,61 @@ public class DependencyManager {
 				// Parent folder
 				Folder parent = APILocator.getFolderAPI().findParentFolder(f, user, false);
 				if(UtilMethods.isSet(parent))
-					folders.add(parent.getInode());
+					folders.add(parent.getInode(), parent.getModDate());
 
 				folderList.add(f);
 			}
 
 			setFolderListDependencies(folderList);
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
 
 	private void setFolderListDependencies(List<Folder> folderList) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		for (Folder f : folderList) {
-			
+
 			// Add folder even if empty
-			folders.add(f.getInode());
-			
+			folders.add(f.getInode(), f.getModDate());
+
 			// Host dependency
-			hosts.add(f.getHostId());
+			 Host h = APILocator.getHostAPI().find(f.getHostId(), user, false);
+			 hosts.add(f.getHostId(), h.getModDate());
 
 			// Content dependencies
 			String luceneQuery = "+conFolder:" + f.getInode();
 
 			List<Contentlet> contentList = APILocator.getContentletAPI().search(luceneQuery, 0, 0, null, user, false);
 			for (Contentlet contentlet : contentList) {
-				contents.add(contentlet.getIdentifier());
+				contents.add(contentlet.getIdentifier(), contentlet.getModDate());
+				contentsSet.add(contentlet.getIdentifier());
 			}
 
 			// Menu Link dependencies
 
 			List<Link> linkList = APILocator.getMenuLinkAPI().findFolderMenuLinks(f);
 			for (Link link : linkList) {
-				links.add(link.getIdentifier());
+				links.add(link.getIdentifier(), link.getModDate());
 			}
 
 			// Structure dependencies
 			List<Structure> structureList = APILocator.getFolderAPI().getStructures(f, user, false);
 
 			for (Structure structure : structureList) {
-				structures.add(structure.getInode());
+				structures.add(structure.getInode(), structure.getModDate());
+				structuresSet.add(structure.getInode());
 			}
 
 			// HTML Page dependencies
 			List<HTMLPage> pages = APILocator.getFolderAPI().getHTMLPages(f, user, false);
 
 			for (HTMLPage p : pages) {
-				htmlPages.add(p.getIdentifier());
+				htmlPages.add(p.getIdentifier(), p.getModDate());
+				htmlPagesSet.add(p.getIdentifier());
 			}
 
 			setFolderListDependencies(APILocator.getFolderAPI().findSubFolders(f, user, false));
@@ -234,13 +315,14 @@ public class DependencyManager {
 			FolderAPI folderAPI = APILocator.getFolderAPI();
 			List<Container> containerList = new ArrayList<Container>();
 
-			for (String pageId : htmlPages) {
+			for (String pageId : htmlPagesSet) {
 				Identifier iden = idenAPI.find(pageId);
 
 				// Host dependency
-				hosts.add(iden.getHostId());
+				Host h = APILocator.getHostAPI().find(iden.getHostId(), user, false);
+				hosts.add(iden.getHostId(), h.getModDate());
 				Folder folder = folderAPI.findFolderByPath(iden.getParentPath(), iden.getHostId(), user, false);
-				folders.add(folder.getInode());
+				folders.add(folder.getInode(), folder.getModDate());
 				HTMLPage workingPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false);
 				HTMLPage livePage = APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false);
 
@@ -253,7 +335,8 @@ public class DependencyManager {
 					workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(workingPage.getTemplateId(), user, false);
 					liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(workingPage.getTemplateId(), user, false);
 					// Templates dependencies
-					templates.add(workingPage.getTemplateId());
+					templates.add(workingPage.getTemplateId(), workingTemplateWP.getModDate());
+					templatesSet.add(workingPage.getTemplateId());
 				}
 
 				Template liveTemplateLP = null;
@@ -262,7 +345,8 @@ public class DependencyManager {
 				if(livePage!=null) {
 					liveTemplateLP = APILocator.getTemplateAPI().findLiveTemplate(livePage.getTemplateId(), user, false);
 					// Templates dependencies
-					templates.add(livePage.getTemplateId());
+					templates.add(livePage.getTemplateId(), livePage.getModDate());
+					templatesSet.add(livePage.getTemplateId());
 				}
 
 				// Containers dependencies
@@ -276,23 +360,33 @@ public class DependencyManager {
 					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateLP, user, false));
 
 				for (Container container : containerList) {
-					containers.add(container.getIdentifier());
+					containers.add(container.getIdentifier(), container.getModDate());
+					containersSet.add(container.getIdentifier());
 					// Structure dependencies
-					structures.add(container.getStructureInode());
+					Structure st = StructureCache.getStructureByInode(container.getStructureInode());
+					structures.add(container.getStructureInode(), st.getModDate());
+					structuresSet.add(container.getStructureInode());
+
 					List<MultiTree> treeList = MultiTreeFactory.getMultiTree(workingPage,container);
 
 					for (MultiTree mt : treeList) {
 						String contentIdentifier = mt.getChild();
 						// Contents dependencies
-						contents.add(contentIdentifier);
+						Contentlet content =  APILocator.getContentletAPI().findContentletByIdentifier(contentIdentifier, true, -1, user, false);
+						if(content==null) {
+							content = APILocator.getContentletAPI().findContentletByIdentifier(contentIdentifier, false, -1, user, false);
+						}
+
+						contents.add(contentIdentifier, content.getModDate());
+						contentsSet.add(contentIdentifier);
 					}
 				}
 			}
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
@@ -306,26 +400,28 @@ public class DependencyManager {
 				Template lvT = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
 
 				// Host dependency
-				hosts.add(APILocator.getTemplateAPI().getTemplateHost(wkT).getIdentifier());
+				Host h = APILocator.getHostAPI().find(APILocator.getTemplateAPI().getTemplateHost(wkT).getIdentifier(), user, false);
+				hosts.add(APILocator.getTemplateAPI().getTemplateHost(wkT).getIdentifier(), h.getModDate());
 
 				containerList.clear();
 				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(wkT, user, false));
-				
+
 				if(lvT!=null && InodeUtils.isSet(lvT.getInode())) {
 				    containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(lvT, user, false));
 				}
 
 				for (Container container : containerList) {
 					// Container dependencies
-					containers.add(container.getIdentifier());
+					containers.add(container.getIdentifier(), container.getModDate());
+					containersSet.add(container.getIdentifier());
 				}
 			}
 
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		}
 
@@ -341,7 +437,8 @@ public class DependencyManager {
 				Container c = APILocator.getContainerAPI().getWorkingContainerById(id, user, false);
 
 				// Host Dependency
-				hosts.add(APILocator.getContainerAPI().getParentHost(c, user, false).getIdentifier());
+				Host h = APILocator.getContainerAPI().getParentHost(c, user, false);
+				hosts.add(APILocator.getContainerAPI().getParentHost(c, user, false).getIdentifier(), h.getModDate());
 
 				containerList.clear();
 				containerList.add(APILocator.getContainerAPI().getWorkingContainerById(id, user, false));
@@ -349,13 +446,15 @@ public class DependencyManager {
 
 				for (Container container : containerList) {
 					// Structure dependencies
-					structures.add(container.getStructureInode());
+					Structure st = StructureCache.getStructureByInode(container.getStructureInode());
+					structures.add(container.getStructureInode(), st.getModDate());
+					structuresSet.add(container.getStructureInode());
 				}
 
 			}
 
 		} catch (DotSecurityException e) {
-			
+
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(),e);
@@ -372,8 +471,8 @@ public class DependencyManager {
 		}
 	}
 
-	
-	
+
+
 	private void structureDependencyHelper(String stInode){
 		Structure st = StructureCache.getStructureByInode(stInode);
 		hosts.add(st.getHost()); // add the host dependency
@@ -383,27 +482,30 @@ public class DependencyManager {
 		List<Relationship> relations = RelationshipFactory.getAllRelationshipsByStructure(st);
 
 		for (Relationship r : relations) {
-			relationships.add(r.getInode());
+			relationships.add(r.getInode(), r.getModDate());
 			if(!structures.contains(r.getChildStructureInode())){
-				structures.add(r.getChildStructureInode());
+				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
+				structures.add(r.getChildStructureInode(), struct.getModDate());
 				structureDependencyHelper(r.getChildStructureInode());
 			}
 			if(!structures.contains(r.getParentStructureInode())){
-				structures.add(r.getParentStructureInode());
+				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
+				structures.add(r.getParentStructureInode(), struct.getModDate());
 				structureDependencyHelper(r.getParentStructureInode());
 			}
 		}
 	}
-		
-	
+
+
 	private void processList(List<Contentlet> cons) throws DotDataException, DotSecurityException {
 	    Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
 	    Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
 
         //Getting all related content
-	    
+
         for (Contentlet con : cons) {
-        	hosts.add(con.getHost()); // add the host dependency
+        	Host h = APILocator.getHostAPI().find(con.getHost(), user, false);
+        	hosts.add(con.getHost(), h.getModDate()); // add the host dependency
             contentsToProcess.add(con);
 
             Map<Relationship, List<Contentlet>> contentRel =
@@ -418,20 +520,21 @@ public class DependencyManager {
                  *
                  */
                 if(contentRel.get(rel).size()>0)
-                    relationships.add(rel.getInode());
+                	 relationships.add(rel.getInode(), rel.getModDate());
             }
         }
 
         for (Contentlet con : contentsToProcess) {
-        	hosts.add(con.getHost()); // add the host dependency
+        	Host h = APILocator.getHostAPI().find(con.getHost(), user, false);
+        	hosts.add(con.getHost(), h.getModDate()); // add the host dependency
         	contentsWithDependenciesToProcess.add(con);
 	        //Copy asset files to bundle folder keeping original folders structure
 	        List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
-	
+
 	        for(Field ff : fields) {
 	            if (ff.getFieldType().equals(Field.FieldType.IMAGE.toString())
 	                    || ff.getFieldType().equals(Field.FieldType.FILE.toString())) {
-	
+
 	                try {
 	                    String value = "";
 	                    if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
@@ -449,15 +552,17 @@ public class DependencyManager {
 	                    throw new DotStateException("Problem occured while publishing file");
 	                }
 	            }
-	
+
 	        }
         }
-        
+
         // Adding the Contents (including related) and adding filesAsContent
         for (Contentlet con : contentsWithDependenciesToProcess) {
-        	hosts.add(con.getHost()); // add the host dependency
-            contents.add(con.getIdentifier()); // adding the content (including related)
-            folders.add(con.getFolder()); // adding content folder
+        	Host h = APILocator.getHostAPI().find(con.getHost(), user, false);
+        	hosts.add(con.getHost(), h.getModDate()); // add the host dependency
+        	contents.add(con.getIdentifier(), con.getModDate()); // adding the content (including related)
+        	Folder f = APILocator.getFolderAPI().find(con.getFolder(), user, false);
+        	folders.add(con.getFolder(), f.getModDate()); // adding content folder
 
             try {
                 if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES",false)) {
@@ -466,7 +571,7 @@ public class DependencyManager {
                     folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
                             APILocator.getFolderAPI().find(con.getFolder(), user, false)));
                     for(HTMLPage htmlPage: folderHtmlPages) {
-                        htmlPages.add(htmlPage.getIdentifier());
+                    	 htmlPages.add(htmlPage.getIdentifier(), htmlPage.getModDate());
 
                         // working template working page
                         Template workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(htmlPage.getTemplateId(), user, false);
@@ -474,7 +579,7 @@ public class DependencyManager {
                         Template liveTemplateWP = APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(), user, false);
 
                         // Templates dependencies
-                        templates.add(htmlPage.getTemplateId());
+                        templates.add(htmlPage.getTemplateId(), workingTemplateWP.getModDate());
 
                         // Containers dependencies
                         List<Container> containerList = new ArrayList<Container>();
@@ -482,9 +587,10 @@ public class DependencyManager {
                         containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
 
                         for (Container container : containerList) {
-                            containers.add(container.getIdentifier());
+                        	containers.add(container.getIdentifier(), container.getModDate());
                             // Structure dependencies
-                            structures.add(container.getStructureInode());
+                        	Structure struct = StructureCache.getStructureByInode(container.getStructureInode());
+                        	structures.add(container.getStructureInode(), struct.getModDate());
                         }
                     }
                 }
@@ -493,7 +599,8 @@ public class DependencyManager {
             }
 
             if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES")) {
-                structures.add(con.getStructureInode());
+            	Structure struct = StructureCache.getStructureByInode(con.getStructureInode());
+            	structures.add(con.getStructureInode(), struct.getModDate());
             }
         }
 
@@ -507,7 +614,7 @@ public class DependencyManager {
             for(String id : cons){
                 processList(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
             }
-            
+
     		for(String luceneQuery: luceneQueries) {
     		    List<Contentlet> cs = APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false);
     			processList(cs);

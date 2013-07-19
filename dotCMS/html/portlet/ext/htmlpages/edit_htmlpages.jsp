@@ -35,7 +35,7 @@ if(UtilMethods.isSet(htmlpage.getIdentifier())) {
     htmlTemplate = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(htmlpage);
     if(UtilMethods.isSet(htmlTemplate.getImage())) {
 	    Identifier imageIdentifier = APILocator.getIdentifierAPI().find(htmlTemplate.getImage());
-	
+
 	    if(imageIdentifier != null && imageIdentifier.getAssetType() != null && (fileAsContent = imageIdentifier.getAssetType().equals("contentlet"))) {
 	    	templateImgPreviewContent = TemplateFactory.getImageContentlet(htmlTemplate);
 		} else {
@@ -95,7 +95,7 @@ Host host = null;
 
 try {
 	 host=APILocator.getHostAPI().findParentHost(folder, APILocator.getUserAPI().getSystemUser(), false);
-	 
+
 } catch (Exception e) {
 
 }
@@ -105,16 +105,16 @@ if(host == null || host.getInode() == null){
 
 	if(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID) != null){
 		hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-		
+
 	}else if (session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID) != null){
 		hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
-		
+
 	}else if (request.getParameter("host_id") != null){
 		hostId = request.getParameter("host_id");
-		
+
 	}
 	host = APILocator.getHostAPI().find(hostId, user, false);
-	
+
 }
 
 //This variable controls the name of the struts action used when the form is submitted
@@ -150,7 +150,7 @@ if( !InodeUtils.isSet(htmlpage.getInode()) && folder != null && InodeUtils.isSet
 else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.getInode()))) {
     // in this case we don't even selected a folder
     // we need to show save and publish buttons
-    // the permissions check will happend later as 
+    // the permissions check will happend later as
     // the folder dropdown might show folders where it does
     // have permissions
     canUserWriteToHTMLPage=true;
@@ -354,6 +354,16 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 		</div>
 	<%}%>
 <!-- /Versions Tab -->
+
+
+<!-- Publishing Status Tab  -->
+
+  <%if(htmlpage != null && InodeUtils.isSet(htmlpage.getInode())){ %>
+    <div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" 		  		  onShow="showEditButtonsRow()">
+      <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+    </div>
+  <%}%>
+<!-- /Publishing Status Tab  -->
 
 </div>
 <!-- /TabContainer-->

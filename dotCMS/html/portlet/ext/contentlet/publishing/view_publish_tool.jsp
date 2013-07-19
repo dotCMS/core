@@ -683,4 +683,5 @@
 	<input name="newBundle" id=newBundle type="hidden" value="">
 	<input name="bundleName" id=bundleName type="hidden" value="">
 	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
+	<input name="forcePush" id=forcePush type="hidden" value="">
 </form>

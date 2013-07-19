@@ -23,11 +23,11 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         this.setUser();
         this.createStore();
     },
-    
+
     createStore: function() {
         this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
     },
-    
+
     setUser: function() {
     	var xhrArgs = {
     			url : "/api/user/getloggedinuser/",
@@ -191,6 +191,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		var whereToSend = dojo.byId("whereToSend").value;
 
+		var forcePush = dijit.byId("forcePush").checked;
+
 
 		// END: PUSH PUBLISHING ACTIONLET
 
@@ -206,6 +208,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             dojo.byId("remoteFilterDate").value = this._getFilterDate();
         }
         dojo.byId("whoToSend").value = whereToSend;
+        dojo.byId("forcePush").value = forcePush;
 		// END: PUSH PUBLISHING ACTIONLET
 
         var urlStr = this.isBundle?"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle":"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish";

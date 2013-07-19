@@ -36,7 +36,7 @@
     Identifier id=null;
 	if(!InodeUtils.isSet(contentContainer.getInode())){
 		canUserWriteToContainer = true;
-		canUserPublishContainer = true;		
+		canUserPublishContainer = true;
 	}
 	else {
 		id = APILocator.getIdentifierAPI().find(contentContainer);
@@ -50,13 +50,13 @@
 		params.put("struts_action",new String[] {"/ext/containers/view_containers"});
 		referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
 	}
-	
+
 	String cmd = request.getParameter(Constants.CMD);
 		if( (cmd == null || !cmd.equals(Constants.UPDATE)) && referer != null ) { // Avoiding URL-encoding if reloading (updating) the view itself
 			referer = UtilMethods.encodeURL(referer);
 	}
 
-	
+
 	if (contentContainer.getSortContentletsBy()==null) {
 		contentContainer.setSortContentletsBy("tree_order");
 	}
@@ -81,16 +81,16 @@
 	//http://jira.dotmarketing.net/browse/DOTCMS-2065
 	List<Structure> allStructures = StructureFactory.getStructures();
 	List<Structure> structures = new ArrayList<Structure>();
-	
+
 	for(Structure st : allStructures){
 		if(!st.isWidget()){
 			structures.add(st);
 		}
 	}
 	request.setAttribute("structures", structures);
-	
+
 	String hostId = "";
-	if(form.getHostId()!=null) 
+	if(form.getHostId()!=null)
 		hostId = form.getHostId();
 	List<Host> listHosts= (List <Host>) request.getAttribute(com.dotmarketing.util.WebKeys.CONTAINER_HOSTS);
 	if(!UtilMethods.isSet(hostId)) {
@@ -98,14 +98,14 @@
 			hostId = request.getParameter("host_id");
 		} else {
 			hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
-		}	
+		}
 	}
 	Host host = null;
 	if(UtilMethods.isSet(hostId)) {
 		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false);
 	}
-	
-	
+
+
 %>
 
 
@@ -134,7 +134,7 @@
 
 <!-- START TABS -->
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-		
+
 	<!-- START PROPERTIES TAB -->
 		<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "properties") %>" onShow="showEditButtonsRow()">
 			<dl>
@@ -146,13 +146,13 @@
 				<% if(host != null) { %>
 					<html:hidden property="hostId" value="<%=hostId%>"/>
 					<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
-					<dd><%= host.getHostname() %></dd>					
+					<dd><%= host.getHostname() %></dd>
 				<%	} else { %>
 					<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
 					<dd>
 					<select id="hostId" name="hostId" dojoType="dijit.form.FilteringSelect" value="<%=hostId%>">
-					<% for(Host h: listHosts) { %>		
-						<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>	
+					<% for(Host h: listHosts) { %>
+						<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>
 					<% } %>
 					</select>
 					</dd>
@@ -162,14 +162,14 @@
 					<%= LanguageUtil.get(pageContext, "Title") %>:&nbsp;
 				</dt>
 				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:300" name="title" id="titleField" value="<%= form.getTitle() %>" /></dd>
-				
+
 				<dt><%= LanguageUtil.get(pageContext, "Description") %>:&nbsp;</dt>
 				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:300" name="friendlyName" id="friendlyNameField" value="<%= form.getFriendlyName() %>" /></dd>
-				
+
 				<dt><%= LanguageUtil.get(pageContext, "Max-Contents") %>:&nbsp;</dt>
 				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:30" maxlength="2" name="maxContentlets" id="maxContentlets" onchange="showHideCode()" value="<%= form.getMaxContentlets() %>" /></dd>
 			</dl>
-	
+
 			<dl id="structureControls">
 				<dt><%= LanguageUtil.get(pageContext, "Content-Type") %>:&nbsp;</dt>
 				<dd>
@@ -184,21 +184,21 @@
 					</select>
 				</dd>
 			</dl>
-			
-		
+
+
 
 			<div id="preLoopDiv">
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Pre-Loop") %>:</dt>
 					<dd>
-						
+
 						<div id="preLoopEditorArea" style="border: 0px;">
 							<textarea onkeydown="return catchTab(this,event)" name="preLoopMask" id="preLoopMask"><%=UtilMethods.isSet(form.getPreLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPreLoop()):"" %></textarea>
 							<input type="hidden" id="preLoop" name="preLoop" value=""/>
 						</div>
-						
+
 						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPreLoop" id="toggleEditorPreLoop"  onClick="preLoopEditor=codeMirrorToggler(preLoopEditor, 'preLoopMask','<%=preLoopWidth%>', '<%=preLoopHeight%>' );" );"  checked="checked"  />
-	        	        <label for="toggleEditorPreLoop"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label> 
+	        	        <label for="toggleEditorPreLoop"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 					</dd>
 				</dl>
 			</div>
@@ -206,7 +206,7 @@
 				<dl>
 				</dl>
 			</div>
-			
+
 			<div id="codeButtonDiv">
 				<dl>
 					<dt>
@@ -215,21 +215,21 @@
 					</dt>
 					<dd>
 						<br/>
-						<div id="codeEditorArea">							
-							<textarea onkeydown="return catchTab(this,event)" name="codeMask" id="codeMask"><%=UtilMethods.isSet(form.getCode())?UtilMethods.escapeHTMLSpecialChars(form.getCode()):"" %></textarea>							
+						<div id="codeEditorArea">
+							<textarea onkeydown="return catchTab(this,event)" name="codeMask" id="codeMask"><%=UtilMethods.isSet(form.getCode())?UtilMethods.escapeHTMLSpecialChars(form.getCode()):"" %></textarea>
 							<input type="hidden" name="code" id="code" value=""/>
 						</div>
 						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCode" id="toggleEditorCode"  onClick="codeEditor=codeMirrorToggler(codeEditor, 'codeMask','<%=codeWidth%>', '<%=codeHeight%>' );"  checked="checked"  />
 	        	        <label for="toggleEditorCode"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 					</dd>
-					<dd class="buttonCaption">												
+					<dd class="buttonCaption">
 						<button dojoType="dijit.form.Button"  onClick="addVariable()" iconClass="plusIcon" type="button">
 				        	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-variable")) %>
 				    	</button>
 					</dd>
 				</dl>
 			</div>
-			
+
 			<div id="postLoopDiv">
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Post-Loop") %>:</dt>
@@ -240,11 +240,11 @@
 							<input type="hidden" name="postLoop" id="postLoop" value="" />
 						</div>
 						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPostLoop" id="toggleEditorPostLoop"  onClick="postLoopEditor=codeMirrorToggler(postLoopEditor, 'postLoopMask','<%=postLoopWidth%>', '<%=postLoopHeight%>' );" );"  checked="checked"  />
-	        	    	<label for="toggleEditorPostLoop"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label> 
+	        	    	<label for="toggleEditorPostLoop"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 					</dd>
 				</dl>
 			</div>
-			
+
 			<div id="notesDiv">
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Notes") %>:</dt>
@@ -254,10 +254,10 @@
 					dojo.connect(dijit.byId('notes'), 'onkeydown', function(e) { return catchTab(document.getElementById('notes'), e) });
 				</script>
 			</div>
-			
+
 		</div>
 	<!-- END PROPERTIES TAB -->
-	
+
 	<!-- START PERMISSIONS TAB -->
 <%
 	boolean canEditAsset = perAPI.doesUserHavePermission(contentContainer, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
@@ -267,21 +267,31 @@
 			<%
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentContainer);
 			%>
-			<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>	
+			<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
 		</div>
 <%
 	}
 %>
 	<!-- END PERMISSIONS TAB -->
-				
+
 	<!-- START Versions TAB -->
 		<%if(contentContainer != null && InodeUtils.isSet(contentContainer.getInode())){ %>
-			<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="showEditButtonsRow()">
+			<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="showEditButtonsRow()">
 				<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 			</div>
 		<% } %>
-	<!-- END Versions TAB -->		
-		
+	<!-- END Versions TAB -->
+
+	  <!-- Publishing Status Tab  -->
+    <%if(contentContainer != null && InodeUtils.isSet(contentContainer.getInode())){ %>
+	    <% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentContainer); %>
+	      <div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" 	   onShow="showEditButtonsRow()">
+	        <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+	      </div>
+    <%}%>
+  <!-- /Publishing Status Tab  -->
+
+
 </div>
 <!-- END TABS -->
 
@@ -290,7 +300,7 @@
 <!-- START buttons -->
 <div class="buttonRow" id="editContainerButtonRow">
 
-	<% if(!InodeUtils.isSet(contentContainer.getInode())|| contentContainer.isLive() || contentContainer.isWorking() ) { 
+	<% if(!InodeUtils.isSet(contentContainer.getInode())|| contentContainer.isLive() || contentContainer.isWorking() ) {
 		if( canUserWriteToContainer ) {
 		%>
 			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" iconClass="saveIcon" type="button">
