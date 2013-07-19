@@ -1179,6 +1179,19 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	   			fullName = shortenString(newName, 30) + "." + ext;
 	   		showDotCMSSystemMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-changed")) %>");
 		} else {
+			var asset = inodes[inode];
+            if (asset.type == 'folder') {
+                    inodes[inode].name = lastName;
+            }
+            if (asset.type == 'file_asset') {
+                    inodes[inode].fileName = lastName + "." + ext;
+            }
+            if (asset.type == 'links') {
+                    inodes[inode].title = lastName;
+            }
+            if (asset.type == 'htmlpage') {
+                    inodes[inode].pageUrl = lastName + "." + ext;
+            }
 			if (ext == null || ext == "")
 	   			fullName = shortenString(lastName, 30) + "";
 	   		else
