@@ -7,7 +7,7 @@ package com.dotmarketing.db;import java.sql.Connection;import java.sql.Databa
 
 			return connection;
 		} catch (Exception e) {
-			Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);			Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);			
+			Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);			Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
 			throw new DotRuntimeException(e.toString());
 		}
 	}
@@ -19,8 +19,8 @@ package com.dotmarketing.db;import java.sql.Connection;import java.sql.Databa
 	 */
 	@SuppressWarnings("unchecked")
 	public static ArrayList<String> getAllDataSources()throws NamingException{
-		ArrayList<String> results = new ArrayList<String>();		Context ctx;			ctx = (Context) new InitialContext().lookup("java:comp/env");		NamingEnumeration ne=null;		try{
-			ne = ctx.listBindings("jdbc");		} catch(NamingException e){			ctx = new InitialContext();			ne = ctx.listBindings("jdbc");		}		
+		ArrayList<String> results = new ArrayList<String>();		Context ctx;		ctx = (Context) new InitialContext().lookup("java:comp/env");		NamingEnumeration ne=null;		try{
+			ne = ctx.listBindings("jdbc");		} catch(NamingException e){			ctx = new InitialContext();			ne = ctx.listBindings("jdbc");		}
 		while(ne.hasMore()){
 			Binding binding = (Binding)ne.next();
 			Connection cn = null;
@@ -172,7 +172,7 @@ package com.dotmarketing.db;import java.sql.Connection;import java.sql.Databa
 
 		return _dbType;
 	}
-	public static String getDBDateTimeFunction(){		if(MSSQL.equals(getDBType())){			return "GETDATE()";		}else if(ORACLE.equals(getDBType())){			return "SYSDATE";		}else{			return "now()";		}	}	
+	public static String getDBDateTimeFunction(){		if(MSSQL.equals(getDBType())){			return "GETDATE()";		}else if(ORACLE.equals(getDBType())){			return "SYSDATE";		}else{			return "now()";		}	}
 	public static String getDBTrue() {
 		String x = getDBType();
 
@@ -205,5 +205,5 @@ package com.dotmarketing.db;import java.sql.Connection;import java.sql.Databa
 
 	}
 
-	public static boolean isDBTrue(String value) {		String x = getDBType();		if (MYSQL.equals(x)) {			return value.trim().equals("1");		} else if (POSTGRESQL.equals(x)) {			return value.trim().equals("t") || value.trim().equals("true");		} else if (MSSQL.equals(x)) {			return value.trim().equals("1");		} else if (ORACLE.equals(x)) {			return value.trim().equals("1");		}		return false;	}		public static boolean isOracle(){		return ORACLE.equals(getDBType());	}		public static boolean isMsSql(){		return MSSQL.equals(getDBType());	}	public static boolean isPostgres(){		return POSTGRESQL.equals(getDBType());	}	public static boolean isMySql(){		return MYSQL.equals(getDBType());	}		public static int getDbVersion(){	   int version = 0;	    try {	    	 Connection con = getConnection();	    	 DatabaseMetaData meta = con.getMetaData();	         version = meta.getDatabaseMajorVersion();	        } catch (Exception e) {	        	Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: Error getting DB version " + "---------------", e);				throw new DotRuntimeException(e.toString());	        }		return version;	}
+	public static boolean isDBTrue(String value) {		String x = getDBType();		if (MYSQL.equals(x)) {			return value.trim().equals("1") || value.trim().equals("true");		} else if (POSTGRESQL.equals(x)) {			return value.trim().equals("t") || value.trim().equals("true");		} else if (MSSQL.equals(x)) {			return value.trim().equals("1");		} else if (ORACLE.equals(x)) {			return value.trim().equals("1");		}		return false;	}	public static boolean isOracle(){		return ORACLE.equals(getDBType());	}	public static boolean isMsSql(){		return MSSQL.equals(getDBType());	}	public static boolean isPostgres(){		return POSTGRESQL.equals(getDBType());	}	public static boolean isMySql(){		return MYSQL.equals(getDBType());	}	public static int getDbVersion(){	   int version = 0;	    try {	    	 Connection con = getConnection();	    	 DatabaseMetaData meta = con.getMetaData();	         version = meta.getDatabaseMajorVersion();	        } catch (Exception e) {	        	Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: Error getting DB version " + "---------------", e);				throw new DotRuntimeException(e.toString());	        }		return version;	}
 }
