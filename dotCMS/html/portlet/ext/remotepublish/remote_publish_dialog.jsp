@@ -23,7 +23,7 @@
 
     <%--DATE FILTERING BOX--%>
     <div class="fieldWrapper" id="filterTimeDiv" style="display: none;">
-        <div class="fieldName" style="width:80px">
+        <div class="fieldName" style="width:120px">
             <%= LanguageUtil.get( pageContext, "publish.created.after" ) %>:
         </div>
         <div class="fieldValue">
