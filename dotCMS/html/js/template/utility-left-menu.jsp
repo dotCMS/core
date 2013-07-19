@@ -220,6 +220,7 @@ function addGrid(gridId, yuiBId, rowCount){
 	var first = document.getElementById(rowCount+"_yui-u-grid-1");
     var second = document.getElementById(rowCount+"_yui-u-grid-2");
     var third = document.getElementById(rowCount+"_yui-u-grid-3");
+    var existing=[ ];
 	if(null==yuiBDiv){ // create
 		yuiBDiv = document.createElement("div");
 		yuiBDiv.setAttribute("class","yui-b-template");
@@ -228,6 +229,7 @@ function addGrid(gridId, yuiBId, rowCount){
 	}else{
 		//delete its content
 		while (yuiBDiv.hasChildNodes()) {
+			existing.push(yuiBDiv.lastChild);
 			yuiBDiv.removeChild(yuiBDiv.lastChild);
 		}
 
@@ -255,6 +257,7 @@ function addGrid(gridId, yuiBId, rowCount){
     	}else{
 			yuiUFirst.innerHTML=getAddContainer(rowCount+"_yui-u-grid-1")+"<h1>Body</h1>";
     	}
+		
 		yuiU2.setAttribute("class","yui-u-template");
 		yuiU2.setAttribute("id",rowCount+"_yui-u-grid-2");
 		if(second!= null){
@@ -313,8 +316,28 @@ function addGrid(gridId, yuiBId, rowCount){
 		} else  {
 			yuiBDiv.appendChild(gridDiv);
 		}
-	}else{
-		yuiBDiv.innerHTML=getAddContainer(yuiBId)+"<h1>Body</h1>";
+		
+		// recover containers [single column] -> [many columns]
+		if(existing.length>1) {
+			existing.forEach(function(el){
+				if(el.className=="titleContainerSpan") {
+					var cid=dojo.attr(el,"title").replace("container_","");
+					addDrawedContainer({value:yuiUFirst.id},{title:el.getElementsByTagName("H2")[0].innerHTML.substring(11)},cid)
+				}
+			});
+		}
+	} else {
+		if(second!= null) {
+			// recover containers [many columns] -> [single column]
+			yuiBDiv.innerHTML=getAddContainer(yuiBId)
+			first.getElementsByClassName("titleContainerSpan").forEach(function(el){
+				var cid=dojo.attr(el,"title").replace("container_","");
+				addDrawedContainer({value:yuiBDiv.id},{title:el.getElementsByTagName("H2")[0].innerHTML.substring(11)},cid)
+			});
+		}
+		else {
+			yuiBDiv.innerHTML=getAddContainer(yuiBId)+"<h1>Body</h1>";
+		}
 	}
 
 
@@ -323,6 +346,7 @@ function addGrid(gridId, yuiBId, rowCount){
     //In order to keep a list of the containers used by this template
     parseCurrentContainers();
 }
+
 
 function removeGrid(yuiBId){
 	var childToRemove = document.getElementById(yuiBId);
