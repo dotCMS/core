@@ -757,7 +757,7 @@ public class PublisherUtil {
 		b.setPublishDate((Date)row.get("publish_date"));
 		b.setPublishDate((Date)row.get("expire_date"));
 		b.setOwner(row.get("owner").toString());
-		b.setForcePush(DbConnectionFactory.isDBTrue(row.get("force_push").toString()));
+		b.setForcePush(row.get("force_push") == null ? false :DbConnectionFactory.isDBTrue(row.get("force_push").toString()));
 		return b;
 	}
 
