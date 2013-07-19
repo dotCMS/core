@@ -63,14 +63,22 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.show();
     },
 
-    showAddToBundleDialog: function (assetId, title) {
+    showAddToBundleDialog: function (assetId, title, displayDateFilter) {
     	if(this.bundleStore==null) {
     		this.bundleStore = new dojox.data.JsonRestStore({ target: "/api/bundle/getunsendbundles/userid/"+this.user.userId, labelAttribute:"name", urlPreventCache: true});
     	}
 
+    	var dateFilter = false;
+
+    	if (displayDateFilter != undefined && displayDateFilter != null) {
+    		dateFilter = displayDateFilter;
+    	}
+
+
         this.assetIdentifier = assetId;
         dialog = new dotcms.dijit.AddToBundleDialog();
         dialog.title = title;
+        dialog.dateFilter = dateFilter;
         dialog.show();
     },
 
@@ -127,21 +135,24 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
      * @returns {string}
      * @private
      */
-    _getFilterDate: function () {
+    _getFilterDate: function (atb) {
 
-        var filterDiv = dojo.byId("filterTimeDiv");
-        if (filterDiv && filterDiv.style.display == "") {
-            var filterDate = (dijit.byId("wfFilterDateAux") && dijit.byId("wfFilterDateAux") != 'undefined')
-                ? dojo.date.locale.format(dijit.byId("wfFilterDateAux").getValue(), {datePattern: "yyyy-MM-dd", selector: "date"})
-                    : (dojo.byId("wfFilterDateAux") && dojo.byId("wfFilterDateAux") != 'undefined')
-                        ? dojo.date.locale.format(dojo.byId("wfFilterDateAux").value, {datePattern: "yyyy-MM-dd", selector: "date"})
-                            : "";
+    	var addToBundle = atb!=null?"_atb":"";
 
-            var filterTime = (dijit.byId("wfFilterTimeAux"))
-                ? dojo.date.locale.format(dijit.byId("wfFilterTimeAux").getValue(), {timePattern: "H-m", selector: "time"})
-                    : (dojo.byId("wfFilterTimeAux"))
-                        ? dojo.date.locale.format(dojo.byId("wfFilterTimeAux").value, {timePattern: "H-m", selector: "time"})
-                            : "";
+    	var filterDiv = dojo.byId("filterTimeDiv"+addToBundle);
+
+    	if (filterDiv && filterDiv.style.display == "") {
+    		var filterDate = (dijit.byId("wfFilterDateAux"+addToBundle) && dijit.byId("wfFilterDateAux"+addToBundle) != 'undefined')
+    		? dojo.date.locale.format(dijit.byId("wfFilterDateAux"+addToBundle).getValue(), {datePattern: "yyyy-MM-dd", selector: "date"})
+    				: (dojo.byId("wfFilterDateAux"+addToBundle) && dojo.byId("wfFilterDateAux"+addToBundle) != 'undefined')
+    				? dojo.date.locale.format(dojo.byId("wfFilterDateAux"+addToBundle).value, {datePattern: "yyyy-MM-dd", selector: "date"})
+    						: "";
+
+			var filterTime = (dijit.byId("wfFilterTimeAux"+addToBundle))
+			? dojo.date.locale.format(dijit.byId("wfFilterTimeAux"+addToBundle).getValue(), {timePattern: "H-m", selector: "time"})
+					: (dojo.byId("wfFilterTimeAux"+addToBundle))
+					? dojo.date.locale.format(dojo.byId("wfFilterTimeAux"+addToBundle).value, {timePattern: "H-m", selector: "time"})
+							: "";
 
             return filterDate + "-" + filterTime;
         } else {
@@ -257,7 +268,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		// BEGIN: PUSH PUBLISHING ACTIONLET
         dojo.byId("assetIdentifier").value = this.assetIdentifier;
         if (dojo.byId("remoteFilterDate")) {
-            dojo.byId("remoteFilterDate").value = this._getFilterDate();
+            dojo.byId("remoteFilterDate").value = this._getFilterDate('true');
         }
         dojo.byId("newBundle").value = newBundle;
         dojo.byId("bundleName").value = bundleName;

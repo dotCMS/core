@@ -45,6 +45,7 @@
 
     <% if (enterprise && endPoints) {%>
     <button dojoType="dijit.form.Button" type="button" onclick="remotePublishUsers()" iconClass="pushIcon"><%= LanguageUtil.get(pageContext, "Remote-Publish") %></button>
+    <button dojoType="dijit.form.Button" type="button" onclick="addToBundleUsers()" iconClass="pushIcon"><%= LanguageUtil.get(pageContext, "Add-To-Bundle") %></button>
     <%}%>
 
 </div>
@@ -340,6 +341,7 @@
 
 <div dojoType="dijit.Menu" id="usersGrid_rowMenu" jsId="usersGrid_rowMenu" style="display: none;">
     <div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublishUser"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>
+    <div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="addToBundleUser"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>
 </div>
 
 <script type="text/javascript">
