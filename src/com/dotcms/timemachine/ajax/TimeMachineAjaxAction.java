@@ -37,11 +37,11 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
         Object arglist[] = new Object[] { request, response };
         try {
-            if (getUser() == null ||
-                    !APILocator.getRoleAPI().doesUserHaveRole(getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
-                response.sendError(401);
-                return;
-            }
+//            if (getUser() == null ||
+//                    !APILocator.getRoleAPI().doesUserHaveRole(getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
+//                response.sendError(401);
+//                return;
+//            }
             meth = this.getClass().getMethod(cmd, partypes);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
