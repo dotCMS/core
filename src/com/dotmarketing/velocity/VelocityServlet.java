@@ -566,7 +566,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		context.put("EDIT_HTMLPAGE_PERMISSION", new Boolean(hasWritePermOverHTMLPage));
 		context.put("PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasPublishPermOverHTMLPage));
 		context.put("REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasRemotePublishPermOverHTMLPage));
-
+		context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
 		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(htmlPageAPI.getTemplateForWorkingHTMLPage(htmlPage),
 				PERMISSION_WRITE, user, true);
 		context.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
