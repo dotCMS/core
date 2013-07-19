@@ -5,6 +5,8 @@ import java.util.List;
 import javax.portlet.PortletConfig;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
 import org.apache.struts.action.ActionForm;
@@ -16,14 +18,18 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
+import com.liferay.portlet.RenderRequestImpl;
 
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
@@ -58,6 +64,21 @@ public class ViewContentletAction extends DotPortletAction {
 	 *
 	 */
 	protected void _viewContentlets(RenderRequest req, User user) throws Exception {
+		
+		//GIT-2816
+		RenderRequestImpl reqImpl = (RenderRequestImpl) req;
+		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+		HttpSession ses = httpReq.getSession();
+		ContentletAPI conAPI = APILocator.getContentletAPI();
+
+		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);		
+		if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
+			for(String inode : tempBinaryImageInodes){
+				conAPI.delete(conAPI.find(inode, user, false), user, false, true);
+			}
+			tempBinaryImageInodes.clear();
+		}
+		
 		if (req.getParameter("popup") != null)
 		{
 			if (req.getParameter("container_inode") != null)
