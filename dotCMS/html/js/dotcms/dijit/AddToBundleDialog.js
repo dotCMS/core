@@ -22,6 +22,19 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
             href: "/html/portlet/ext/remotepublish/add_to_bundle_dialog.jsp"
         });
 
+        //Verify if we need to display the date filtering box
+        var dateFilter = this.dateFilter;
+        var connection = dojo.connect(dia, "onLoad", function () {
+        	dojo.disconnect(connection);
+
+        	var filterDiv = dojo.byId("filterTimeDiv_atb");
+        	if (dateFilter) {
+        		filterDiv.style.display = "";
+        	} else {
+        		filterDiv.style.display = "none";
+        	}
+        });
+
 
         dia.set("href", "/html/portlet/ext/remotepublish/add_to_bundle_dialog.jsp");
         dia.show();

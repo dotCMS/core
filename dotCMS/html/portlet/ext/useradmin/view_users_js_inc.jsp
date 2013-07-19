@@ -192,6 +192,17 @@ var remotePublishUsers = function () {
     pushHandler.showDialog( "users_", true );
 };
 
+var addToBundleUser = function () {
+    if (window.selectedUser) {
+        pushHandler.showAddToBundleDialog("user_" + window.selectedUser, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+    }
+};
+
+var addToBundleUsers = function () {
+    pushHandler.showAddToBundleDialog("users_", '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>', true);
+};
+
+
 var filterUsersHandler;
 
 //Event handler then the user types to filter users
