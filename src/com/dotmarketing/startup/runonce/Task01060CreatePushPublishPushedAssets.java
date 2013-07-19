@@ -17,10 +17,10 @@ public class Task01060CreatePushPublishPushedAssets implements StartupTask {
 			dc.executeStatement("CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);");
 			dc.executeStatement("alter table publishing_bundle add force_push tinyint ;");
 		}else if(DbConnectionFactory.isOracle()) {
-			dc.executeStatement("create table publishing_pushed_assets(bundle_id varchar2(36) NOT NULL,asset_id varchar2(36) NOT NULL,asset_type varchar2(255) NOT NULL, push_date TIMESTAMP, environment_id varchar2(36) NOT NULL);");
-			dc.executeStatement("CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);");
-			dc.executeStatement("CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);");
-			dc.executeStatement("alter table publishing_bundle add force_push number(1,0) ;");
+			dc.executeStatement("create table publishing_pushed_assets(bundle_id varchar2(36) NOT NULL, asset_id varchar2(36) NOT NULL, asset_type varchar2(255) NOT NULL, push_date TIMESTAMP, environment_id varchar2(36) NOT NULL)");
+			dc.executeStatement("CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id)");
+			dc.executeStatement("CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id)");
+			dc.executeStatement("alter table publishing_bundle add force_push number(1,0)");
 		}else if(DbConnectionFactory.isMySql()) {
 			dc.executeStatement("create table publishing_pushed_assets(bundle_id varchar(36) NOT NULL,asset_id varchar(36) NOT NULL,asset_type varchar(255) NOT NULL, push_date DATETIME, environment_id varchar(36) NOT NULL);");
 			dc.executeStatement("CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);");
