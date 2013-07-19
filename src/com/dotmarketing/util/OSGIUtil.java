@@ -1,8 +1,21 @@
 package com.dotmarketing.util;
 
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.osgi.OSGIProxyServlet;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.servlet.ServletContextEvent;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.felix.framework.FrameworkFactory;
 import org.apache.felix.framework.util.FelixConstants;
@@ -15,10 +28,9 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 
-import javax.servlet.ServletContextEvent;
-import java.io.*;
-import java.net.URL;
-import java.util.*;
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.osgi.OSGIProxyServlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 
 /**
  * Created by Jonathan Gamba
@@ -26,6 +38,7 @@ import java.util.*;
  */
 public class OSGIUtil {
 
+    private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
     public String FELIX_EXTRA_PACKAGES_FILE;
@@ -104,8 +117,11 @@ public class OSGIUtil {
         hostActivator.setServletContext( context.getServletContext() );
         list.add( hostActivator );
         configProps.put( FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, list );
-
-        configProps.put( "felix.fileinstall.dir", autoLoadDir );
+        
+	String felixFileInstallDirPath = configProps.getProperty(FELIX_FILEINSTALL_DIR);
+	if (felixFileInstallDirPath == null || !new File(felixFileInstallDirPath).isDirectory()) {
+	    configProps.put(FELIX_FILEINSTALL_DIR, autoLoadDir);
+	}
 
         try {
             // (8) Create an instance and initialize the framework.
