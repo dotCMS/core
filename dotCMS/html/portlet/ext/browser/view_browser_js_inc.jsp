@@ -11,6 +11,10 @@
 Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 %>
 <script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
+
+<script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
+<script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
+
 <script language="JavaScript">
 
 dojo.require("dotcms.dojo.data.StructureReadStore");
