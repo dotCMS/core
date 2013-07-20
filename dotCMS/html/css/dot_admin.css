@@ -338,6 +338,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 #menu ul.dropdown li.dotCMS_TIMEMACHINE a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_BROKEN_LINKS a span, .linkCheckIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span, .pushIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1780px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_EXT_CMS_CONFIG_TOOL a span, .editScriptIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -200px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 
 /* BUTTON ICONS 2.0 */
