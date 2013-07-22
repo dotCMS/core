@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -244,6 +246,92 @@ public class CMSConfigAjax extends AjaxAction {
                 jsonResponse.put( "message", e.getMessage() );
             } else {
                 jsonResponse.put( "message", "Error saving basic information for current company." );
+            }
+        }
+
+        response.getWriter().println( jsonResponse.toString() );
+    }
+
+    /**
+     * Deletes a given environment
+     *
+     * @param request
+     * @param response
+     * @throws JSONException
+     * @throws IOException
+     */
+    public void deleteEnvironment ( HttpServletRequest request, HttpServletResponse response ) throws JSONException, IOException {
+
+        EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
+
+        JSONObject jsonResponse = new JSONObject();
+
+        //Read the parameters
+        String environment = request.getParameter( "environment" );
+        //Validate the fields
+        if ( !validate( request, jsonResponse, "environment" ) ) {
+            response.getWriter().println( jsonResponse.toString() );
+            return;
+        }
+
+        try {
+            //Delete the environment
+            environmentAPI.deleteEnvironment( environment );
+
+            //And prepare the response
+            jsonResponse.put( "success", true );
+            jsonResponse.put( "message", LanguageUtil.get( getUser().getLocale(), "publisher_Environment_deleted" ) );
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error deleting Environment: " + environment, e );
+
+            jsonResponse.put( "success", false );
+            if ( e.getMessage() != null ) {
+                jsonResponse.put( "message", e.getMessage() );
+            } else {
+                jsonResponse.put( "message", "Error deleting Environment: " + environment );
+            }
+        }
+
+        response.getWriter().println( jsonResponse.toString() );
+    }
+
+    /**
+     * Deletes a given end point
+     *
+     * @param request
+     * @param response
+     * @throws JSONException
+     * @throws IOException
+     */
+    public void deleteEndpoint ( HttpServletRequest request, HttpServletResponse response ) throws JSONException, IOException {
+
+        PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+
+        JSONObject jsonResponse = new JSONObject();
+
+        //Read the parameters
+        String endPoint = request.getParameter( "endPoint" );
+        //Validate the fields
+        if ( !validate( request, jsonResponse, "endPoint" ) ) {
+            response.getWriter().println( jsonResponse.toString() );
+            return;
+        }
+
+        try {
+            //Delete the end point
+            pepAPI.deleteEndPointById( endPoint );
+
+            //And prepare the response
+            jsonResponse.put( "success", true );
+            jsonResponse.put( "message", LanguageUtil.get( getUser().getLocale(), "publisher_End-Point_deleted" ) );
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error deleting End Point: " + endPoint, e );
+
+            jsonResponse.put( "success", false );
+            if ( e.getMessage() != null ) {
+                jsonResponse.put( "message", e.getMessage() );
+            } else {
+                jsonResponse.put( "message", "Error deleting End Point: " + endPoint );
             }
         }
 
