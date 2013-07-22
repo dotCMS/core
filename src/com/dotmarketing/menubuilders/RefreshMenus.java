@@ -266,20 +266,22 @@ public class RefreshMenus {
 					Logger.error(RefreshMenus.class, e.getMessage(), e);
 					throw new DotRuntimeException(e.getMessage(), e);
 				} 
-				if(host == null){
-					Logger.error(RefreshMenus.class, "Folder id :" + auxFolder.getInode() + " has no host");
-					return;
-				}
 				java.io.File[] files = directory.listFiles();
-				for (int i = 0; i < files.length; i++) 
-				{
-					File file = files[i];
-					String fileName = file.getName();				
-					if(fileName.startsWith(host.getIdentifier()))
-					{
-						file.delete();
+				if(files.length > 0){
+					if(host == null){
+						Logger.error(RefreshMenus.class, "Folder id :" + auxFolder.getInode() + " has no host");
+						return;
 					}				
-				}				
+					for (int i = 0; i < files.length; i++) 
+					{
+						File file = files[i];
+						String fileName = file.getName();				
+						if(fileName.startsWith(host.getIdentifier()))
+						{
+							file.delete();
+						}				
+					}
+				}
 			}			
 		}
 		//http://jira.dotmarketing.net/browse/DOTCMS-1873
