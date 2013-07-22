@@ -546,7 +546,8 @@ public class BrowserAjax {
     	Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
     	if(id!=null && id.getAssetType().equals("contentlet")){
     		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
-    		result.put("lastName", cont.get(FileAssetAPI.FILE_NAME_FIELD));
+    		String lName = (String) cont.get(FileAssetAPI.FILE_NAME_FIELD);
+    		result.put("lastName", lName.substring(0, lName.lastIndexOf(".")));
     		result.put("extension", UtilMethods.getFileExtension(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)));
     		result.put("newName", newName);
     		result.put("inode", inode);
