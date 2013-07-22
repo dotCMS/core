@@ -898,7 +898,11 @@ public class ContentletAjax {
 			                        :  (s.getStructureType() ==3)
 			                        ? "formIcon"
 			                                : "fileIcon";
-			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + s.getName() +"</div>");
+			String typeStringToShow = s.getName() + " - " + s.getVelocityVarName();
+			if(s.getName().trim().replace(" ", "").toLowerCase().equals(s.getVelocityVarName().toLowerCase())){
+				typeStringToShow = s.getName();
+			}
+			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 			
 			String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 
