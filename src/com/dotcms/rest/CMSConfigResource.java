@@ -7,6 +7,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -75,6 +76,8 @@ public class CMSConfigResource extends WebResource {
         }
 
         try {
+            PrincipalThreadLocal.setName( initData.getUser().getUserId() );
+
             //Getting the current company
             Company currentCompany = CompanyManagerUtil.getCompany();
 
@@ -101,6 +104,10 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error saving basic information for current company." );
             }
+            return response( responseMessage.toString(), true );
+        } finally {
+            // Clear the principal associated with this thread
+            PrincipalThreadLocal.setName( null );
         }
 
         return response( responseMessage.toString(), false );
@@ -143,6 +150,7 @@ public class CMSConfigResource extends WebResource {
         }
 
         try {
+            PrincipalThreadLocal.setName( initData.getUser().getUserId() );
 
             //Updating the locale info
             CompanyManagerUtil.updateUsers( languageId, timeZoneId, null, false, false, null );
@@ -161,6 +169,10 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error saving basic information for current company." );
             }
+            return response( responseMessage.toString(), true );
+        } finally {
+            // Clear the principal associated with this thread
+            PrincipalThreadLocal.setName( null );
         }
 
         return response( responseMessage.toString(), false );
@@ -200,6 +212,8 @@ public class CMSConfigResource extends WebResource {
         }
 
         try {
+            PrincipalThreadLocal.setName( initData.getUser().getUserId() );
+
             //Getting the current company
             Company currentCompany = CompanyManagerUtil.getCompany();
 
@@ -222,6 +236,10 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error saving basic information for current company." );
             }
+            return response( responseMessage.toString(), true );
+        } finally {
+            // Clear the principal associated with this thread
+            PrincipalThreadLocal.setName( null );
         }
 
         return response( responseMessage.toString(), false );
@@ -279,6 +297,7 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error deleting Environment: " ).append( environment );
             }
+            return response( responseMessage.toString(), true );
         }
 
         return response( responseMessage.toString(), false );
@@ -336,6 +355,7 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error deleting End Point: " ).append( endPoint );
             }
+            return response( responseMessage.toString(), true );
         }
 
         return response( responseMessage.toString(), false );
