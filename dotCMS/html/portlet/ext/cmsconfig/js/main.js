@@ -30,7 +30,7 @@ var saveCompanyBasicInfo = function () {
     var bgURL = dijit.byId("bgURL").get("value");
 
     var xhrArgs = {
-        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.CMSConfigAjax/cmd/saveCompanyBasicInfo",
+        url: "/api/config/saveCompanyBasicInfo",
         content: {
             'portalURL': companyPortalUrl,
             'mx': companyMX,
@@ -49,7 +49,7 @@ var saveCompanyBasicInfo = function () {
             showDotCMSSystemMessage(data.message, isError);
         },
         error: function (error) {
-            showDotCMSSystemMessage(error, true);
+            showDotCMSSystemMessage(error.responseText, true);
         }
     };
     dojo.xhrPost(xhrArgs);
@@ -65,7 +65,7 @@ var saveCompanyLocaleInfo = function () {
     var companyTimeZoneId = dijit.byId("companyTimeZoneId").get("value");
 
     var xhrArgs = {
-        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.CMSConfigAjax/cmd/saveCompanyLocaleInfo",
+        url: "/api/config/saveCompanyLocaleInfo",
         content: {
             'languageId': companyLanguageId,
             'timeZoneId': companyTimeZoneId
@@ -81,7 +81,7 @@ var saveCompanyLocaleInfo = function () {
             showDotCMSSystemMessage(data.message, isError);
         },
         error: function (error) {
-            showDotCMSSystemMessage(error, true);
+            showDotCMSSystemMessage(error.responseText, true);
         }
     };
     dojo.xhrPost(xhrArgs);
@@ -96,7 +96,7 @@ var saveCompanyAuthTypeInfo = function () {
     var companyAuthType = dijit.byId("companyAuthType").get("value");
 
     var xhrArgs = {
-        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.CMSConfigAjax/cmd/saveCompanyAuthTypeInfo",
+        url: "/api/config/saveCompanyAuthTypeInfo",
         content: {
             'authType': companyAuthType
         },
@@ -111,7 +111,7 @@ var saveCompanyAuthTypeInfo = function () {
             showDotCMSSystemMessage(data.message, isError);
         },
         error: function (error) {
-            showDotCMSSystemMessage(error, true);
+            showDotCMSSystemMessage(error.responseText, true);
         }
     };
     dojo.xhrPost(xhrArgs);

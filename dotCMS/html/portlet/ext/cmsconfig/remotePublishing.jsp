@@ -93,7 +93,7 @@
         if (confirm("Are you sure you want to delete this endpoint?")) {
 
             var xhrArgs = {
-                url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.CMSConfigAjax/cmd/deleteEndpoint",
+                url: "/api/config/deleteEndpoint",
                 content: {
                     'endPoint': identifier
                 },
@@ -109,7 +109,7 @@
                     showDotCMSSystemMessage(data.message, isError);
                 },
                 error: function (error) {
-                    showDotCMSSystemMessage(error, true);
+                    showDotCMSSystemMessage(error.responseText, true);
                 }
             };
             dojo.xhrPost(xhrArgs);
@@ -122,7 +122,7 @@
         if (confirm("<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment_Confirm")%>")) {
 
             var xhrArgs = {
-                url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.CMSConfigAjax/cmd/deleteEnvironment",
+                url: "/api/config/deleteEnvironment",
                 content: {
                     'environment': identifier
                 },
@@ -138,7 +138,7 @@
                     showDotCMSSystemMessage(data.message, isError);
                 },
                 error: function (error) {
-                    showDotCMSSystemMessage(error, true);
+                    showDotCMSSystemMessage(error.responseText, true);
                 }
             };
             dojo.xhrPost(xhrArgs);
