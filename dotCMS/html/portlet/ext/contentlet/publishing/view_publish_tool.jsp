@@ -86,39 +86,6 @@
 
 	}
 
-	function doLuceneFilter () {
-
-		var url="";
-		url="&query="+encodeURIComponent(dijit.byId("luceneQuery").getValue());
-		url+="&sort="+dijit.byId("sort").value;
-
-		url="layout=<%=layout.getId()%>"+url;
-		refreshLuceneList(url);
-		dijit.byId("clearButton").setDisabled(false);
-	}
-
-	var lastLuceneUrlParams ;
-
-	function refreshLuceneList(urlParams){
-		lastLuceneUrlParams = urlParams;
-		var ran=new Date().getTime();
-		var url = "/html/portlet/ext/contentlet/publishing/view_publish_content_list.jsp?v="+ ran + "&" + urlParams;
-
-		var myCp = dijit.byId("searchLuceneContent");
-
-
-		if (myCp) {
-			myCp.destroyRecursive(false);
-		}
-		myCp = new dojox.layout.ContentPane({
-			id : "searchLuceneContent"
-		}).placeAt("lucene_results");
-
-		myCp.attr("href", url);
-
-		myCp.refresh();
-
-	}
 	function loadPublishQueueEndpoints(){
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";
 
@@ -395,24 +362,12 @@
 	   }
    }
 
-	function clearLuceneSearch(){
-		   dijit.byId("luceneQuery").setValue("*");
-		   dojo.byId("lucene_results").innerHTML="";
-		   dijit.byId("clearButton").setDisabled(true);
-		   doLuceneFilter ();
-	}
-
-
-
-
-
-
-
 
 	dojo.ready(function(){
 		//loadPublishQueueEndpoints();
 		//doQueueFilter();
 		//doAuditFilter();
+		loadUnpushedBundles();
 
 		var tab =dijit.byId("mainTabContainer");
 	   	dojo.connect(tab, 'selectChild',
@@ -555,33 +510,6 @@
 
 <div class="portlet-wrapper">
 	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-
-  		<div id="searchLucene" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Search") %>" >
-  			<div>
-				<dl>
-					<dt><strong><%= LanguageUtil.get(pageContext, "Search") %>:</strong></dt>
-					<dd>
-						<textarea onkeydown="doEnterSearch" dojoType="dijit.form.Textarea" name="luceneQuery" style="width:500px;min-height:75px;"  id="luceneQuery" ></textarea>
-					</dd>
-					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Sort") %> </strong></dt><dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="modDate desc" size="10" /></dd>
-
-					<dt></dt>
-					<dd>
-
-						<button dojoType="dijit.form.Button" onclick="doLuceneFilter();" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "publisher_Search_Content") %></button>
-	                    &nbsp;
-	                    <button dojoType="dijit.form.Button" id="clearButton" disabled="true" onClick="clearLuceneSearch();" iconClass="resetIcon">
-	                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
-	                    </button>
-					</dd>
-				</dl>
-			</div>
-			<hr>
-			<div>&nbsp;</div>
-			<div id="lucene_results"></div>
-		</div>
-
-
 
 		<div id="unpushedBundles" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %>" >
   			<div id="unpushedBundlesDiv">
