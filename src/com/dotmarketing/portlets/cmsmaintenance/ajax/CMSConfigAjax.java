@@ -67,7 +67,7 @@ public class CMSConfigAjax extends AjaxAction {
                     setUser( request );
                     user = getUser();
                 }
-                if ( user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "EXT_CMS_CONFIG_TOOL", user ) ) {
+                if ( user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "9", user ) ) {
                     response.sendError( 401 );
                     return;
                 }
