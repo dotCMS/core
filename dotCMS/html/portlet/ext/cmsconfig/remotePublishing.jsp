@@ -18,17 +18,7 @@
     PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
     EnvironmentAPI eAPI = APILocator.getEnvironmentAPI();
 
-    if ( request.getParameter( "delEnv" ) != null ) {
-        String id = request.getParameter( "delEnv" );
-        eAPI.deleteEnvironment( id );
-    }
     List<Environment> environments = eAPI.findAllEnvironments();
-
-
-    if ( request.getParameter( "delEp" ) != null ) {
-        String id = request.getParameter( "delEp" );
-        pepAPI.deleteEndPointById( id );
-    }
     List<PublishingEndPoint> endpoints = pepAPI.getAllEndPoints();
 %>
 
@@ -98,54 +88,62 @@
         dojo.style(dialog.domNode,'top','80px');
     }
 
-    function deleteEndpoint(identifier, fromEnvironment){
+    function deleteEndpoint(identifier, fromEnvironment) {
 
-        //FIXME: AJAX CALL!!!!
-        //FIXME: AJAX CALL!!!!
-        if(confirm("Are you sure you want to delete this endpoint?")){
-            var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp?delEp="+identifier;
+        if (confirm("Are you sure you want to delete this endpoint?")) {
 
-            var myCp = dijit.byId("endpointsContent");
+            var xhrArgs = {
+                url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.CMSConfigAjax/cmd/deleteEndpoint",
+                content: {
+                    'endPoint': identifier
+                },
+                handleAs: "json",
+                load: function (data) {
 
-            if (myCp) {
-                myCp.destroyRecursive(false);
-            }
-            myCp = new dojox.layout.ContentPane({
-                id : "endpointsContent"
-            }).placeAt("endpoint_servers");
+                    var isError = false;
+                    if (data.success == false || data.success == "false") {
+                        isError = true;
+                    }
 
-            myCp.attr("href", url);
-            myCp.refresh();
-
-            if(fromEnvironment) {
-                loadEnvironments();
-            }
+                    loadRemotePublishingTab();
+                    showDotCMSSystemMessage(data.message, isError);
+                },
+                error: function (error) {
+                    showDotCMSSystemMessage(error, true);
+                }
+            };
+            dojo.xhrPost(xhrArgs);
         }
-        //FIXME: AJAX CALL!!!!
-        //FIXME: AJAX CALL!!!!
+
     }
 
-    function deleteEnvironment(identifier){
+    function deleteEnvironment(identifier) {
 
-        //FIXME: AJAX CALL!!!!
-        //FIXME: AJAX CALL!!!!
-        if(confirm("<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment_Confirm")%>")){
-            var url = "/html/portlet/ext/contentlet/publishing/view_publish_environments.jsp?delEnv="+identifier;
+        if (confirm("<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment_Confirm")%>")) {
 
-            var myCp = dijit.byId("environmentsContent");
+            var xhrArgs = {
+                url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.CMSConfigAjax/cmd/deleteEnvironment",
+                content: {
+                    'environment': identifier
+                },
+                handleAs: "json",
+                load: function (data) {
 
-            if (myCp) {
-                myCp.destroyRecursive(false);
-            }
-            myCp = new dojox.layout.ContentPane({
-                id : "environmentsContent"
-            }).placeAt("environmentsDiv");
+                    var isError = false;
+                    if (data.success == false || data.success == "false") {
+                        isError = true;
+                    }
 
-            myCp.attr("href", url);
-            myCp.refresh();
+                    loadRemotePublishingTab();
+                    showDotCMSSystemMessage(data.message, isError);
+                },
+                error: function (error) {
+                    showDotCMSSystemMessage(error, true);
+                }
+            };
+            dojo.xhrPost(xhrArgs);
         }
-        //FIXME: AJAX CALL!!!!
-        //FIXME: AJAX CALL!!!!
+
     }
 
     function goToAddEndpoint(environmentId, isSender) {
@@ -252,6 +250,21 @@
         loadRemotePublishingTab();
     }
 
+    var whoCanUse = new Array()
+
+    function removeFromWhoCanUse(myId) {
+
+        var x = 0;
+        var newCanUse = new Array();
+        for (i = 0; i < this.whoCanUse.length; i++) {
+            if (myId != this.whoCanUse[i].id) {
+                newCanUse[x] = this.whoCanUse[i];
+                x++;
+            }
+        }
+        this.whoCanUse = newCanUse;
+    }
+
 </script>
 
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
@@ -307,10 +320,6 @@
             <td align="right">
                 <table class="listingTable" style="width:100%; border-style:dotted;">
                     <%
-                        if(null!=request.getParameter("delEp")){
-                            String id = request.getParameter("delEp");
-                            pepAPI.deleteEndPointById(id);
-                        }
                         List<PublishingEndPoint> environmentEndPoints = pepAPI.findSendingEndPointsByEnvironment(environment.getId());
                         boolean hasRow = false;
                         for(PublishingEndPoint endpoint : environmentEndPoints){

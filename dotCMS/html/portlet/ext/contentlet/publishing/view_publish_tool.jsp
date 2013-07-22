@@ -1,11 +1,5 @@
-<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
-<%@page import="com.liferay.portal.util.WebKeys"%>
-<%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%
 	String portletId1 = "EXT_CONTENT_PUBLISHING_TOOL";
@@ -19,32 +13,22 @@
 	}
 
 	request.setAttribute(com.dotmarketing.util.WebKeys.DONT_DISPLAY_SUBNAV_ALL_HOSTS, false);
-
-
 %>
 <div class="portlet-wrapper">
 	<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
 </div>
-
-
-
-
 
 <script type="text/javascript">
 	dojo.require("dijit.form.NumberTextBox");
     dojo.require("dojox.layout.ContentPane");
 
 	function doQueueFilter () {
-
-
 		refreshQueueList("");
 	}
 
 	function doAuditFilter() {
-
 		refreshAuditList("");
 	}
-
 
 	var lastUrlParams ;
 
@@ -118,182 +102,6 @@
 
 		myCp.refresh();
 
-	}
-	function loadPublishQueueEndpoints(){
-		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";
-
-		var myCp = dijit.byId("endpointsContent");
-
-		if (myCp) {
-			myCp.destroyRecursive(false);
-		}
-		myCp = new dojox.layout.ContentPane({
-			id : "endpointsContent"
-		}).placeAt("endpoint_servers");
-
-		myCp.attr("href", url);
-		myCp.refresh();
-	}
-
-
-	function goToAddEndpoint(environmentId, isSender){
-		var dialog = new dijit.Dialog({
-			id: 'addEndpoint',
-	        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Add")%>",
-	        style: "width: 800px; ",
-	        content: new dojox.layout.ContentPane({
-	            href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?environmentId="+environmentId+"&isSender="+isSender
-	        }),
-	        onHide: function() {
-	        	var dialog=this;
-	        	setTimeout(function() {
-	        		dialog.destroyRecursive();
-	        	},200);
-	        },
-	        onLoad: function() {
-
-	        }
-	    });
-	    dialog.show();
-	    dojo.style(dialog.domNode,'top','80px');
-	}
-
-	function goToEditEndpoint(identifier, envId, isSender){
-		var dialog = new dijit.Dialog({
-			id: 'addEndpoint',
-	        title: "<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Edit")%>",
-	        style: "width: 800px; ",
-	        content: new dojox.layout.ContentPane({
-	            href: "/html/portlet/ext/contentlet/publishing/add_publish_endpoint.jsp?op=edit&id="+identifier+"&environmentId="+envId+"&isSender="+isSender
-	        }),
-	        onHide: function() {
-	        	var dialog=this;
-	        	setTimeout(function() {
-	        		dialog.destroyRecursive();
-	        	},200);
-	        },
-	        onLoad: function() {
-	        }
-	    });
-	    dialog.show();
-	    dojo.style(dialog.domNode,'top','80px');
-	}
-
-	function backToEndpointsList(){
-
-		dijit.byId("addEndpoint").hide();
-		loadPublishQueueEndpoints();
-
-	}
-
-	function deleteEndpoint(identifier, fromEnvironment){
-		if(confirm("Are you sure you want to delete this endpoint?")){
-			var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp?delEp="+identifier;
-
-			var myCp = dijit.byId("endpointsContent");
-
-			if (myCp) {
-				myCp.destroyRecursive(false);
-			}
-			myCp = new dojox.layout.ContentPane({
-				id : "endpointsContent"
-			}).placeAt("endpoint_servers");
-
-			myCp.attr("href", url);
-			myCp.refresh();
-
-			if(fromEnvironment) {
-				loadEnvironments();
-			}
-		}
-	}
-
-	function loadEnvironments(){
-		var url = "/html/portlet/ext/contentlet/publishing/view_publish_environments.jsp";
-
-		var myCp = dijit.byId("environmentsContent");
-
-		if (myCp) {
-			myCp.destroyRecursive(false);
-		}
-		myCp = new dojox.layout.ContentPane({
-			id : "environmentsContent"
-		}).placeAt("environmentsDiv");
-
-		myCp.attr("href", url);
-		myCp.refresh();
-	}
-
-	function goToAddEnvironment(){
-		var dialog = new dijit.Dialog({
-			id: 'addEnvironment',
-	        title: "<%= LanguageUtil.get(pageContext, "publisher_Environment_Add")%>",
-	        style: "width: 700px; ",
-	        content: new dojox.layout.ContentPane({
-	            href: "/html/portlet/ext/contentlet/publishing/add_publish_environment.jsp"
-	        }),
-	        onHide: function() {
-	        	var dialog=this;
-	        	setTimeout(function() {
-	        		dialog.destroyRecursive();
-	        	},200);
-	        },
-	        onLoad: function() {
-
-	        }
-	    });
-	    dialog.show();
-	    dojo.style(dialog.domNode,'top','80px');
-	}
-
-	function goToEditEnvironment(identifier){
-		var dialog = new dijit.Dialog({
-			id: 'addEnvironment',
-	        title: "<%= LanguageUtil.get(pageContext, "publisher_Edit_Environment_Title")%>",
-	        style: "width: 600px; ",
-	        content: new dojox.layout.ContentPane({
-	        	href: "/html/portlet/ext/contentlet/publishing/add_publish_environment.jsp?op=edit&id="+identifier
-	        }),
-	        onHide: function() {
-	        	var dialog=this;
-	        	setTimeout(function() {
-	        		dialog.destroyRecursive();
-	        	},200);
-	        },
-	        onLoad: function() {
-	        }
-	    });
-	    dialog.show();
-	    dojo.style(dialog.domNode,'top','80px');
-	}
-
-	function backToEnvironmentList(addedEndPoint){
-
-		if(!addedEndPoint) {
-			dijit.byId("addEnvironment").hide();
-		} else {
-			dijit.byId("addEndpoint").hide();
-		}
-		loadEnvironments();
-
-	}
-
-	function deleteEnvironment(identifier){
-		if(confirm("<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment_Confirm")%>")){
-			var url = "/html/portlet/ext/contentlet/publishing/view_publish_environments.jsp?delEnv="+identifier;
-
-			var myCp = dijit.byId("environmentsContent");
-
-			if (myCp) {
-				myCp.destroyRecursive(false);
-			}
-			myCp = new dojox.layout.ContentPane({
-				id : "environmentsContent"
-			}).placeAt("environmentsDiv");
-
-			myCp.attr("href", url);
-			myCp.refresh();
-		}
 	}
 
 	function loadUnpushedBundles(){
@@ -402,17 +210,7 @@
 		   doLuceneFilter ();
 	}
 
-
-
-
-
-
-
-
 	dojo.ready(function(){
-		//loadPublishQueueEndpoints();
-		//doQueueFilter();
-		//doAuditFilter();
 
 		var tab =dijit.byId("mainTabContainer");
 	   	dojo.connect(tab, 'selectChild',
@@ -426,12 +224,6 @@
 				  	}
 				  	else if(selectedTab.id =="audit"){
 				  		refreshAuditList("");
-				  	}
-				  	else if(selectedTab.id =="endpoints"){
-				  		loadPublishQueueEndpoints();
-				  	}
-				  	else if(selectedTab.id =="environments"){
-				  		loadEnvironments();
 				  	}
 			});
 
@@ -481,77 +273,13 @@
 
 	}
 
-
 	function backToBundleList(){
 
 		dijit.byId("uploadBundleDiv").hide();
 		refreshAuditList("");
 	}
 
-	var whoCanUse = new Array()
-
-	function addSelectedToWhoCanUse(){
-
-		var select = dijit.byId("whoCanUseSelect");
-
-		var user = select.getValue();
-		var userName = select.attr('displayedValue');
-
-		addToWhoCanUse(user, userName);
-		refreshWhoCanUse();
-	}
-
-	function addToWhoCanUse ( myId, myName){
-		for(i=0;i < this.whoCanUse.length;i++){
-			if(myId == this.whoCanUse[i].id  ||  myId == "user-" + this.whoCanUse[i].id || myId == "role-" + this.whoCanUse[i].id){
-				return;
-			}
-		}
-
-		var entry = {name:myName,id:myId };
-		this.whoCanUse[this.whoCanUse.length] =entry;
-
-	}
-
-	function refreshWhoCanUse(){
-		dojo.empty("whoCanUseTbl");
-		var table = dojo.byId("whoCanUseTbl");
-		var x = "";
-
-		this.whoCanUse = this.whoCanUse.sort(function(a,b){
-			var x = a.name.toLowerCase();
-		    var y = b.name.toLowerCase();
-		    return ((x < y) ? -1 : ((x > y) ? 1 : 0));
-		});
-		for(i=0; i< this.whoCanUse.length ; i++){
-			var what = (this.whoCanUse[i].id.indexOf("user") > -1) ? " (<%=LanguageUtil.get(pageContext, "User")%>)" : "";
-			x = x + this.whoCanUse[i].id + ",";
-			var tr = dojo.create("tr", null, table);
-			dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"removeFromWhoCanUse('" + this.whoCanUse[i].id +"');refreshWhoCanUse()" }, tr);
-			dojo.create("td", { innerHTML: this.whoCanUse[i].name + what}, tr);
-
-		}
-		dojo.byId('whoCanUse').value = x;
-
-	}
-
-	function removeFromWhoCanUse(myId){
-
-		var x=0;
-		var newCanUse = new Array();
-		for(i=0;i < this.whoCanUse.length;i++){
-			if(myId != this.whoCanUse[i].id){
-				newCanUse[x] = this.whoCanUse[i];
-				x++;
-			}
-		}
-		this.whoCanUse= newCanUse;
-	}
-
-
 </script>
-
-
 
 <div class="portlet-wrapper">
 	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
@@ -581,12 +309,9 @@
 			<div id="lucene_results"></div>
 		</div>
 
-
-
 		<div id="unpushedBundles" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %>" >
   			<div id="unpushedBundlesDiv">
 			</div>
-
   		</div>
 
   		<div id="queue" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Queue") %>" >
@@ -609,8 +334,6 @@
   			<div id="queue_results"></div>
 
   		</div>
-
-
 
   		<div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
 			<div class="buttonRow" >
@@ -638,24 +361,8 @@
   			<div id="audit_results"></div>
   		</div>
 
-  		<div id="environments" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Sending_Server_Short") %>" >
-  			<div id="environmentsDiv">
-			</div>
-
-  		</div>
-
-  		<div id="endpoints" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Receiving_Server_Short") %>" >
-  			<div id="endpoint_servers">
-			</div>
-
-  		</div>
-
-
 	</div>
 </div>
-
-
-
 
 <div dojoType="dijit.Dialog" id="uploadBundleDiv" >
 	<form action="/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle" enctype="multipart/form-data" id="uploadBundleForm" name="uploadBundleForm" method="post">
@@ -684,4 +391,3 @@
 	<input name="bundleName" id=bundleName type="hidden" value="">
 	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
 </form>
-
