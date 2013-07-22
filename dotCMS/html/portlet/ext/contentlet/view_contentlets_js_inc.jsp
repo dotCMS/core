@@ -1538,7 +1538,13 @@
                 var fieldContentlet = field["fieldVelocityVarName"];
                 var fieldName = field["fieldName"];
                 var stVar = field["fieldStructureVarName"];
-                return "<a href=\"javascript: doSearch (1, '" + stVar + "." + fieldContentlet + "')\">" + fieldName + "</a>";
+                if(fieldContentlet == '__title__'){
+                	return "<a href=\"javascript: doSearch (1, 'title')\">" + fieldName + "</a>";
+                }else if(fieldContentlet == '__type__'){
+                	return "<a href=\"javascript: doSearch (1, 'structurename')\">" + fieldName + "</a>";
+                }else{
+                	return "<a href=\"javascript: doSearch (1, '" + stVar + "." + fieldContentlet + "')\">" + fieldName + "</a>";
+                }
         }
 
         function fillResultsTable (headers, data) {
