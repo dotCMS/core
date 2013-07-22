@@ -1,11 +1,5 @@
-<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
-<%@page import="com.liferay.portal.util.WebKeys"%>
-<%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%
 	String portletId1 = "EXT_CONTENT_PUBLISHING_TOOL";
@@ -19,32 +13,22 @@
 	}
 
 	request.setAttribute(com.dotmarketing.util.WebKeys.DONT_DISPLAY_SUBNAV_ALL_HOSTS, false);
-
-
 %>
 <div class="portlet-wrapper">
 	<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
 </div>
-
-
-
-
 
 <script type="text/javascript">
 	dojo.require("dijit.form.NumberTextBox");
     dojo.require("dojox.layout.ContentPane");
 
 	function doQueueFilter () {
-
-
 		refreshQueueList("");
 	}
 
 	function doAuditFilter() {
-
 		refreshAuditList("");
 	}
-
 
 	var lastUrlParams ;
 
@@ -86,6 +70,7 @@
 
 	}
 
+<<<<<<< HEAD
 	function loadPublishQueueEndpoints(){
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_endpoint_list.jsp";
 
@@ -179,11 +164,34 @@
 		var url = "/html/portlet/ext/contentlet/publishing/view_publish_environments.jsp";
 
 		var myCp = dijit.byId("environmentsContent");
+=======
+	function doLuceneFilter () {
+
+		var url="";
+		url="&query="+encodeURIComponent(dijit.byId("luceneQuery").getValue());
+		url+="&sort="+dijit.byId("sort").value;
+
+		url="layout=<%=layout.getId()%>"+url;
+		refreshLuceneList(url);
+		dijit.byId("clearButton").setDisabled(false);
+	}
+
+	var lastLuceneUrlParams ;
+
+	function refreshLuceneList(urlParams){
+		lastLuceneUrlParams = urlParams;
+		var ran=new Date().getTime();
+		var url = "/html/portlet/ext/contentlet/publishing/view_publish_content_list.jsp?v="+ ran + "&" + urlParams;
+
+		var myCp = dijit.byId("searchLuceneContent");
+
+>>>>>>> 5698d7c... #3345
 
 		if (myCp) {
 			myCp.destroyRecursive(false);
 		}
 		myCp = new dojox.layout.ContentPane({
+<<<<<<< HEAD
 			id : "environmentsContent"
 		}).placeAt("environmentsDiv");
 
@@ -261,6 +269,15 @@
 			myCp.attr("href", url);
 			myCp.refresh();
 		}
+=======
+			id : "searchLuceneContent"
+		}).placeAt("lucene_results");
+
+		myCp.attr("href", url);
+
+		myCp.refresh();
+
+>>>>>>> 5698d7c... #3345
 	}
 
 	function loadUnpushedBundles(){
@@ -363,11 +380,14 @@
    }
 
 
+	function clearLuceneSearch(){
+		   dijit.byId("luceneQuery").setValue("*");
+		   dojo.byId("lucene_results").innerHTML="";
+		   dijit.byId("clearButton").setDisabled(true);
+		   doLuceneFilter ();
+	}
+
 	dojo.ready(function(){
-		//loadPublishQueueEndpoints();
-		//doQueueFilter();
-		//doAuditFilter();
-		loadUnpushedBundles();
 
 		var tab =dijit.byId("mainTabContainer");
 	   	dojo.connect(tab, 'selectChild',
@@ -381,12 +401,6 @@
 				  	}
 				  	else if(selectedTab.id =="audit"){
 				  		refreshAuditList("");
-				  	}
-				  	else if(selectedTab.id =="endpoints"){
-				  		loadPublishQueueEndpoints();
-				  	}
-				  	else if(selectedTab.id =="environments"){
-				  		loadEnvironments();
 				  	}
 			});
 
@@ -436,85 +450,45 @@
 
 	}
 
-
 	function backToBundleList(){
 
 		dijit.byId("uploadBundleDiv").hide();
 		refreshAuditList("");
 	}
 
-	var whoCanUse = new Array()
-
-	function addSelectedToWhoCanUse(){
-
-		var select = dijit.byId("whoCanUseSelect");
-
-		var user = select.getValue();
-		var userName = select.attr('displayedValue');
-
-		addToWhoCanUse(user, userName);
-		refreshWhoCanUse();
-	}
-
-	function addToWhoCanUse ( myId, myName){
-		for(i=0;i < this.whoCanUse.length;i++){
-			if(myId == this.whoCanUse[i].id  ||  myId == "user-" + this.whoCanUse[i].id || myId == "role-" + this.whoCanUse[i].id){
-				return;
-			}
-		}
-
-		var entry = {name:myName,id:myId };
-		this.whoCanUse[this.whoCanUse.length] =entry;
-
-	}
-
-	function refreshWhoCanUse(){
-		dojo.empty("whoCanUseTbl");
-		var table = dojo.byId("whoCanUseTbl");
-		var x = "";
-
-		this.whoCanUse = this.whoCanUse.sort(function(a,b){
-			var x = a.name.toLowerCase();
-		    var y = b.name.toLowerCase();
-		    return ((x < y) ? -1 : ((x > y) ? 1 : 0));
-		});
-		for(i=0; i< this.whoCanUse.length ; i++){
-			var what = (this.whoCanUse[i].id.indexOf("user") > -1) ? " (<%=LanguageUtil.get(pageContext, "User")%>)" : "";
-			x = x + this.whoCanUse[i].id + ",";
-			var tr = dojo.create("tr", null, table);
-			dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"removeFromWhoCanUse('" + this.whoCanUse[i].id +"');refreshWhoCanUse()" }, tr);
-			dojo.create("td", { innerHTML: this.whoCanUse[i].name + what}, tr);
-
-		}
-		dojo.byId('whoCanUse').value = x;
-
-	}
-
-	function removeFromWhoCanUse(myId){
-
-		var x=0;
-		var newCanUse = new Array();
-		for(i=0;i < this.whoCanUse.length;i++){
-			if(myId != this.whoCanUse[i].id){
-				newCanUse[x] = this.whoCanUse[i];
-				x++;
-			}
-		}
-		this.whoCanUse= newCanUse;
-	}
-
-
 </script>
-
-
 
 <div class="portlet-wrapper">
 	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
+  		<div id="searchLucene" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Search") %>" >
+  			<div>
+				<dl>
+					<dt><strong><%= LanguageUtil.get(pageContext, "Search") %>:</strong></dt>
+					<dd>
+						<textarea onkeydown="doEnterSearch" dojoType="dijit.form.Textarea" name="luceneQuery" style="width:500px;min-height:75px;"  id="luceneQuery" ></textarea>
+					</dd>
+					<dt><strong><%= LanguageUtil.get(pageContext, "publisher_Sort") %> </strong></dt><dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="modDate desc" size="10" /></dd>
+
+					<dt></dt>
+					<dd>
+
+						<button dojoType="dijit.form.Button" onclick="doLuceneFilter();" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "publisher_Search_Content") %></button>
+	                    &nbsp;
+	                    <button dojoType="dijit.form.Button" id="clearButton" disabled="true" onClick="clearLuceneSearch();" iconClass="resetIcon">
+	                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
+	                    </button>
+					</dd>
+				</dl>
+			</div>
+			<hr>
+			<div>&nbsp;</div>
+			<div id="lucene_results"></div>
+		</div>
+
 		<div id="unpushedBundles" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %>" >
   			<div id="unpushedBundlesDiv">
 			</div>
-
   		</div>
 
   		<div id="queue" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Queue") %>" >
@@ -537,8 +511,6 @@
   			<div id="queue_results"></div>
 
   		</div>
-
-
 
   		<div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
 			<div class="buttonRow" >
@@ -566,24 +538,8 @@
   			<div id="audit_results"></div>
   		</div>
 
-  		<div id="environments" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Sending_Server_Short") %>" >
-  			<div id="environmentsDiv">
-			</div>
-
-  		</div>
-
-  		<div id="endpoints" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Receiving_Server_Short") %>" >
-  			<div id="endpoint_servers">
-			</div>
-
-  		</div>
-
-
 	</div>
 </div>
-
-
-
 
 <div dojoType="dijit.Dialog" id="uploadBundleDiv" >
 	<form action="/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle" enctype="multipart/form-data" id="uploadBundleForm" name="uploadBundleForm" method="post">
@@ -611,5 +567,5 @@
 	<input name="newBundle" id=newBundle type="hidden" value="">
 	<input name="bundleName" id=bundleName type="hidden" value="">
 	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
-	<input name="forcePush" id=forcePush type="hidden" value="">
 </form>
+
