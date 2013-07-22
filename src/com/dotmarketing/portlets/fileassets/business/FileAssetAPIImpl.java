@@ -254,12 +254,11 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		if(id!=null && InodeUtils.isSet(id.getId())){
 			Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles);
 			Folder folder = APILocator.getFolderAPI().findFolderByPath(id.getParentPath(), host, user, respectFrontendRoles);
-			if(!fileNameExists(host, folder, newName, id.getId())){
-			    FileAsset fa = fromContentlet(fileAssetCont);
+			FileAsset fa = fromContentlet(fileAssetCont);
+			String ext = fa.getExtension();
+			if(!fileNameExists(host, folder, newName+ "." +ext, id.getId())){			    
 			    if(fa.isLive())
-					isfileAssetContLive = true;
-
-				String ext = fa.getExtension();
+					isfileAssetContLive = true;				
 				File oldFile = fileAssetCont.getBinary(BINARY_FIELD);
 				File newFile = new File(oldFile.getPath().substring(0,oldFile.getPath().indexOf(oldFile.getName()))+newName+"."+ext);
 				FileUtils.moveFile(oldFile, newFile);
