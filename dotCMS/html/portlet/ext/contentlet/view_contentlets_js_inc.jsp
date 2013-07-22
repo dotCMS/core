@@ -50,9 +50,7 @@
 
         var enterprise = <%=LicenseUtil.getLevel() > 199%>;
 
-		<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
-			List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
-		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
+		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty()%>;
 
         <%
                 List<Role> roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser (user.getUserId());
@@ -939,6 +937,25 @@
                 form.action+= "&structure_id=<%=structure.getInode()%>";
                 form.action += "&selected_lang=" + getSelectedLanguageId();
                 submitForm(form);
+        }
+
+        function pushPublishSelectedContentlets() {
+        	var selectedInodes=dojo.query("input[name='publishInode']")
+                                       .filter(function(x){return x.checked;})
+                                       .map(function(x){return x.value;});
+
+			pushHandler.showDialog(selectedInodes);
+			disableButtonRow();
+        }
+
+        function addToBundleSelectedContentlets() {
+        	var selectedInodes=dojo.query("input[name='publishInode']")
+                                       .filter(function(x){return x.checked;})
+                                       .map(function(x){return x.value;});
+
+			pushHandler.showAddToBundleDialog(selectedInodes, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+
+			disableButtonRow();
         }
 
         function unPublishSelectedContentlets(){
@@ -2184,6 +2201,8 @@
                         enableFields([
                                                 dijit.byId('archiveButton').setAttribute("disabled", false),
                                                 dijit.byId('publishButton').setAttribute("disabled", false),
+                                                dijit.byId('pushPublishButton').setAttribute("disabled", false),
+                                                dijit.byId('addToBundleButton').setAttribute("disabled", false),
                                                 dijit.byId('unPublishButton').setAttribute("disabled", false),
                                                 dijit.byId('unlockButton').setAttribute("disabled", false),
                                                 <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false),":"") %>
@@ -2202,6 +2221,8 @@
                         disableFields([
                                                 dijit.byId('archiveButton').setAttribute("disabled", true),
                                                 dijit.byId('publishButton').setAttribute("disabled", true),
+                                                dijit.byId('pushPublishButton').setAttribute("disabled", true),
+                                                dijit.byId('addToBundleButton').setAttribute("disabled", true),
                                                 dijit.byId('unPublishButton').setAttribute("disabled", true),
                                                 dijit.byId("unlockButton").setAttribute("disabled", true),
                                                 <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true),":"") %>
@@ -2290,6 +2311,12 @@
 
                 if(dijit.byId("publishButton"))
                         dijit.byId("publishButton").attr("disabled", true);
+
+                if(dijit.byId("pushPublishButton"))
+                        dijit.byId("pushPublishButton").attr("disabled", true);
+
+                if(dijit.byId("addToBundleButton"))
+                        dijit.byId("addToBundleButton").attr("disabled", true);
 
                 if(dijit.byId("unPublishButton"))
                         dijit.byId("unPublishButton").attr("disabled", true);
