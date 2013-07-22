@@ -339,19 +339,19 @@ public class RSSWebAPI {
 			return ret;
 		}
 
-        private String extractAttributeData(NodeList nodeList, String attributeName) {
-            String ret="";
-            if (nodeList.getLength() > 0) {
-                Element element = (Element) nodeList.item(0);
-                if (element != null) {
-                    String attributeValue = element.getAttribute(attributeName);
-                    if (attributeValue != null) {
-                        ret = attributeValue;
-                    }
-                }
-            }
-            return ret;
-        }
+		private String extractAttributeData(NodeList nodeList, String attributeName) {
+			String ret="";
+			if (nodeList.getLength() > 0) {
+				Element element = (Element) nodeList.item(0);
+				if (element != null) {
+					String attributeValue = element.getAttribute(attributeName);
+					if (attributeValue != null) {
+						ret = attributeValue;
+					}
+				}
+			}
+			return ret;
+		}
 
 		/**
 		 * ingest
@@ -399,21 +399,21 @@ public class RSSWebAPI {
 								.getElementsByTagName("pubDate");
 						String pubDateValue = extractData(pubDates);
 
-                        // Get the enclosure
-                        NodeList enclosures = item
-                                .getElementsByTagName("enclosure");
-                        String enclosureUrlValue = extractAttributeData(enclosures, "url");
-                        String enclosureLengthValue = extractAttributeData(enclosures, "length");
-                        String enclosureTypeValue = extractAttributeData(enclosures, "type");
+						// Get the enclosure
+						NodeList enclosures = item
+								.getElementsByTagName("enclosure");
+						String enclosureUrlValue = extractAttributeData(enclosures, "url");
+						String enclosureLengthValue = extractAttributeData(enclosures, "length");
+						String enclosureTypeValue = extractAttributeData(enclosures, "type");
 						
 						HashMap<String, String> entry = new HashMap<String, String>();
 						entry.put("title", titleValue);
 						entry.put("link", linkValue);
 						entry.put("description", descriptionValue);
 						entry.put("pubDate", pubDateValue);
-                        entry.put("enclosureUrl", enclosureUrlValue);
-                        entry.put("enclosureLength", enclosureLengthValue);
-                        entry.put("enclosureType", enclosureTypeValue);
+						entry.put("enclosureUrl", enclosureUrlValue);
+						entry.put("enclosureLength", enclosureLengthValue);
+						entry.put("enclosureType", enclosureTypeValue);
 						returnValue.add(entry);
 					} catch (Exception ex) {
 						Logger.error(RSSWebAPI.class, ex.toString());
