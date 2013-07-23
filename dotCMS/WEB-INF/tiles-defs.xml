@@ -115,12 +115,6 @@
 		<put name="portlet_sub_nav" value="/portlet/admin/sub_nav.jsp" />
 	</definition>
 
-	<definition name="portlet.admin.change_company_logo"
-		extends="portlet.admin">
-		<put name="content"
-			value="/portlet/admin/change_company_logo.jsp" />
-	</definition>
-
 	<definition name="portlet.admin.change_user_portrait"
 		extends="portlet.admin">
 		<put name="content"
@@ -137,11 +131,6 @@
 		extends="portlet.admin">
 		<put name="content"
 			value="/portlet/admin/default_groups_and_roles.jsp" />
-	</definition>
-
-	<definition name="portlet.admin.edit_company"
-		extends="portlet.admin">
-		<put name="content" value="/portlet/admin/view.jsp" />
 	</definition>
 
 	<definition name="portlet.admin.edit_group_pages"
@@ -255,11 +244,6 @@
 	<definition name="portlet.admin.server" extends="portlet.admin">
 		<put name="content" value="/portlet/admin/server.jsp" />
 	</definition>
-
-	<definition name="portlet.admin.view" extends="portal">
-		<put name="content" value="/portlet/admin/view.jsp" />
-	</definition>
-
 
 	<!-- My Account -->
 
