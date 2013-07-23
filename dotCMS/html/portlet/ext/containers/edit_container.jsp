@@ -316,7 +316,7 @@
 					<dd><textarea dojoType="dijit.form.Textarea" style="width:450px; min-height:150px" name="notes" id="notes"><%= UtilMethods.isSet(form.getNotes()) ? form.getNotes() : "" %></textarea></dd>
 				</dl>
 				<script type="text/javascript">
-					dojo.connect(dijit.byId('notes'), 'onkeydown', function(e) { return catchTab(document.getElementById('notes'), e) });
+					dojo.connect(dijit.byId('notes'), 'onkeydown', function(e) {if(dijit.byId('notes').focused) return catchTab(document.getElementById('notes'), e) });
 				</script>
 			</div>
 
@@ -341,11 +341,20 @@
 
 	<!-- START Versions TAB -->
 		<%if(contentContainer != null && InodeUtils.isSet(contentContainer.getInode())){ %>
-			<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="showEditButtonsRow()">
+			<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="showEditButtonsRow()">
 				<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 			</div>
 		<% } %>
 	<!-- END Versions TAB -->
+
+	<!-- Publishing Status Tab  -->
+		<%if(contentContainer != null && InodeUtils.isSet(contentContainer.getInode())){ %>
+		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentContainer); %>
+			<div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="showEditButtonsRow()">
+				<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+			</div>
+		<%}%>
+	<!-- /Publishing Status Tab  -->
 
 </div>
 <!-- END TABS -->

@@ -111,11 +111,20 @@ var cmsfile=null;
 	}
 
 	  function removeThumbnail(x, inode) {
+		  
+		    var pDiv = dojo.byId('thumbnailParent'+x);
+	    	if(pDiv != null && pDiv != undefined){
+	    		dojo.destroy(pDiv);
+	    	}
+	    	
 	    	dojo.query(".thumbnailDiv" + x).forEach(function(node, index, arr){
 	    		dojo.destroy(node);
 	    	})
+	    	
 	    	var dt = dojo.byId(x+'dt');
-	    	dt.innerHTML = '';
+	    	if(dt != null && dt != undefined){
+	    		dt.innerHTML = '';
+	    	}
 
 	    	//http://jira.dotmarketing.net/browse/DOTCMS-5802
 	 	    ContentletAjax.removeSiblingBinaryFromSession(x, null);
@@ -125,9 +134,6 @@ var cmsfile=null;
 	    	}
 
 	    }
-
-
-
 
 
 	function isInteger(s)

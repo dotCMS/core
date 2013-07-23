@@ -404,7 +404,7 @@
 						<dl>
 							<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
 							<dd>
-								<select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">                                    
+								<select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
                                     <option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
                                     <option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
 				                    <option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
@@ -413,7 +413,7 @@
 						</dl>
 					</div>
 				</div>
-				
+
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
@@ -569,7 +569,7 @@
 				</div>
 
 				<div class="clear"></div>
-				
+
 				<div class="fieldWrapperSide">
 					<div class="leftProperties">
 						<dl>
@@ -815,11 +815,20 @@
 
 	<!-- Versions Tab -->
 		<%if(template != null && InodeUtils.isSet(template.getInode())){ %>
-			<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" >
+			<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" >
 				<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 			</div>
 		<%} %>
 	<!-- /Versions Tab -->
+
+	<!-- Publishing Status Tab  -->
+		<%if(template != null && InodeUtils.isSet(template.getInode())){ %>
+		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, template); %>
+			<div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="showEditButtonsRow()">
+				<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+			</div>
+		<%}%>
+<!-- /Publishing Status Tab  -->
 </div>
 
 </html:form>

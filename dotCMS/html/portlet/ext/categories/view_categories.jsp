@@ -702,6 +702,10 @@ td {font-size: 100%;}
 		pushHandler.showCategoryDialog();
 	}
 
+	function addToBundle () {
+		pushHandler.showAddToBundleDialog('CAT', '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+	}
+
 </script>
 
 <div class="buttonBoxRight">
@@ -733,6 +737,7 @@ td {font-size: 100%;}
 	<input name="newBundle" id=newBundle type="hidden" value="">
 	<input name="bundleName" id=bundleName type="hidden" value="">
 	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
+	<input name="forcePush" id=forcePush type="hidden" value="">
 </form>
 
 
@@ -758,6 +763,8 @@ td {font-size: 100%;}
 				<div id="catHolder" style="text-align: center; " class="claro"></div>
 				<div style="height: 15px; text-align: right; margin-top: 5px">
 					<button dojoType="dijit.form.Button" type="button" onClick="remoteSyncronization();" iconClass="pushIcon"><%= LanguageUtil.get(pageContext,"Remote-Syncronization") %></button>
+					&nbsp;
+					<button dojoType="dijit.form.Button" type="button" onClick="addToBundle();" iconClass="pushIcon"><%= LanguageUtil.get(pageContext,"Add-To-Bundle") %></button>
 					&nbsp;
 					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
 				</div>

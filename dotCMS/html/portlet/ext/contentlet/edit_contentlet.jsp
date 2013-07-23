@@ -117,10 +117,10 @@
 
 
 	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 0, 100,"asc");
-	
-	
-	
-	
+
+
+
+
 	/*### DRAW THE DYNAMIC FIELDS ###*/
 
 	int counter = 0;
@@ -165,9 +165,9 @@ var editButtonRow="editContentletButtonRow";
 
 <html:form action="<%= formAction %>" styleId="fm" onsubmit="return false;">
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
-	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">	
+	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
-	
+
 	<!-- PUSH PUBLISHING ACTIONLET -->
 	<input name="wfPublishDate" id="wfPublishDate" type="hidden" value="">
 	<input name="wfPublishTime" id="wfPublishTime" type="hidden" value="">
@@ -207,7 +207,7 @@ var editButtonRow="editContentletButtonRow";
 			dojo.ready(function(){
 				dijit.byId("selectStructureDiv").show();
 			});
-			
+
 			function updateSelectedStructAux(){
 				var newloc = window.location.href;
 				console.log(newloc);
@@ -221,7 +221,7 @@ var editButtonRow="editContentletButtonRow";
 					}
 					else{
 						newloc = newloc.replace("selectedStructure=", "selectedStructure=" + struc);
-						
+
 					}
 				}
 				else{
@@ -230,13 +230,13 @@ var editButtonRow="editContentletButtonRow";
 				console.log(newloc);
 				window.location=newloc;
 			}
-			
+
 		</script>
 	<%} %>
 	<!--  FIRST TAB -->
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" >
 
-	
+
 
 
 
@@ -385,13 +385,13 @@ var editButtonRow="editContentletButtonRow";
 						  	    }
 					    	  	if (f.getFieldType().equals(Field.FieldType.BINARY.toString())) {
 					    	  		if(InodeUtils.isSet(contentlet.getHost())) {
-										request.setAttribute("host",contentlet.getHost());										
+										request.setAttribute("host",contentlet.getHost());
 					    	  		} else if(f.isRequired()) {
-					    	  			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);					    	  			
-										request.setAttribute("host", hostId);										
+					    	  			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+										request.setAttribute("host", hostId);
 					    	  		} else if(!f.isRequired()) {
 					    	  			String hostId = (String) APILocator.getHostAPI().findSystemHost().getIdentifier();
-										request.setAttribute("host", hostId);										
+										request.setAttribute("host", hostId);
 					    	  		}
 					    	  	}
 					    	  	request.setAttribute("inode",contentlet.getInode());
@@ -435,7 +435,7 @@ var editButtonRow="editContentletButtonRow";
 
     <%if(InodeUtils.isSet(contentlet.getInode())){ %>
 		<!-- Versions Tab -->
-		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
+		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
 			<div id="contentletVersionsDiv" style="height:600px;">
 
 
@@ -445,6 +445,18 @@ var editButtonRow="editContentletButtonRow";
 
 
 		</div>
+
+		<!-- Publishing Status Tab  -->
+		<%if(contentlet != null && InodeUtils.isSet(contentlet.getInode())){
+			com.dotmarketing.portlets.contentlet.business.Contentlet fatty = new com.dotmarketing.portlets.contentlet.business.Contentlet();
+			APILocator.getContentletAPI().convertContentletToFatContentlet(contentlet, fatty);
+		%>
+			<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, fatty); %>
+				<div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
+					<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+				</div>
+			<%}%>
+		<!-- /Publishing Status Tab  -->
 
 		<!-- References Tab -->
 		<%if(references != null && references.size() > 0){ %>

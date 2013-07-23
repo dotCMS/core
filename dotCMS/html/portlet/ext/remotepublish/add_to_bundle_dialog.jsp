@@ -23,6 +23,22 @@ Role myRole  = APILocator.getRoleAPI().getUserRole(user);
 
 <div style="width:430px;" dojoType="dijit.form.Form" id="addToBundleForm">
 
+		 <%--DATE FILTERING BOX--%>
+        <div class="fieldWrapper" id="filterTimeDiv_atb" style="display: none;">
+            <div class="fieldName" style="width:120px">
+                <%= LanguageUtil.get( pageContext, "publish.created.after" ) %>:
+            </div>
+            <div class="fieldValue">
+                <input type="text" dojoType="dijit.form.DateTextBox" value="now" required="true"
+                       id="wfFilterDateAux_atb" name="wfFilterDateAux_atb" style="width: 110px;">
+
+                <input type="text" data-dojo-type="dijit.form.TimeTextBox" value="now" required="true"
+                       id="wfFilterTimeAux_atb" name="wfFilterTimeAux_atb" style="width: 100px;"/>
+            </div>
+            <div class="clear"></div>
+        </div>
+        <%--DATE FILTERING BOX--%>
+
 		<div class="fieldWrapper">
 			<div class="fieldName" style="width:120px">
 				<%= LanguageUtil.get(pageContext, "Add-br-children") %>:

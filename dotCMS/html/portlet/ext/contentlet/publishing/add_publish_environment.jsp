@@ -28,18 +28,9 @@
         var form = dijit.byId("formSaveEnvironment");
 
         dijit.byId("environmentName").setAttribute('required', true);
-        if (whoCanUse.length == 0) {
-            dijit.byId("whoCanUseSelect").setAttribute('required', true);
-        } else {
-            dijit.byId("whoCanUseSelect").setAttribute('required', false);
-        }
+
 
         if (form.validate()) {
-
-            if (whoCanUse.length == 0) {
-                alert('<%=LanguageUtil.get(pageContext, "publisher_Environment_Mandatory_Who_Can_Send")%>');
-                return;
-            }
 
             var xhrArgs = {
                 url: "/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment",
