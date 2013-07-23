@@ -91,7 +91,10 @@ public class UpdateRatingThread implements StatefulJob {
 						Logger.debug(this,"Cannot update ratings on archived content.  Continuing");
 						continue;
 					}
-					
+					if(c.isLocked()){
+						Logger.debug(this,"Cannot update ratings on locked content.  Continuing");
+						continue;
+					}
 					dbAvg = Float.parseFloat((String) map.get("avg_rating"));
 
 					dbNumberOfVotes = Long.parseLong((String) map.get("votes_number")); 
