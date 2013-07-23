@@ -79,7 +79,7 @@ function deletePushHistory() {
 			<%= pushedAsset.getBundleId() %>
 		</td>
 		<td><%= pushedAsset.getPushDate() %></td>
-		 <td><%= env.getName() %></td>
+		 <td><%= (env != null) ? env.getName() : LanguageUtil.get(pageContext, "deleted") %></td>
 	</tr>
 <% } if (pushedAssets.size() == 0) { %>
 	<tr>
