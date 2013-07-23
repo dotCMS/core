@@ -162,7 +162,7 @@ public class UpdateRatingThread implements StatefulJob {
 							averageRatingField.setSearchable(false);
 							averageRatingField.setIndexed(true);
 							try{
-							averageRatingField.setDefaultValue(Integer.toString(Config.getIntProperty("RATING_MAX_VALUE")));
+							averageRatingField.setDefaultValue(Integer.toString(Config.getIntProperty("RATING_MAX_VALUE", 10)));
 							}
 							catch(Exception e){
 								Logger.error(this.getClass(), "unable to set default value for rating field:" + e);
