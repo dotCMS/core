@@ -67,6 +67,8 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 
 		APILocator.getPermissionAPI().removePermissions(e);
 
+		FactoryLocator.getBundleFactory().deleteBundleEnvironmentByEnvironment(id);
+
 		environmentFactory.deleteEnvironmentById(id);
 	}
 
