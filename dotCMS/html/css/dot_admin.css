@@ -313,7 +313,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 #menu ul.dropdown li.dotCMS_EXT_LUCENE_TOOL a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1180px;}
 #menu ul.dropdown li.dotCMS_25 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1180px;}
 #menu ul.dropdown li.dotCMS_EXT_ECO_ORDER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1200px;}
-#menu ul.dropdown li.dotCMS_9 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1200px;}
+#menu ul.dropdown li.dotCMS_9 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -200px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 #menu ul.dropdown li.dotCMS_EXT_12 a span, .container{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
