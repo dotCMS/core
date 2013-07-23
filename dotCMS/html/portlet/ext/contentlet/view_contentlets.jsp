@@ -15,18 +15,21 @@
 <%@ page import="com.dotmarketing.util.InodeUtils" %>
 <%@page import="com.dotmarketing.cache.StructureCache"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 
 <%
 	List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
 	List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
-	
-	
-	
+
+
+
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets"});
-	
+
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
-	
+
 	Map lastSearch = (Map)session.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_LAST_SEARCH);
 	Structure structure = StructureFactory.getDefaultStructure();
 
@@ -60,7 +63,7 @@
 		                structureSelected = structure.getInode();
 		        }else{
 		                session.removeAttribute("selectedStructure");
-		
+
 		                structureSelected = null;;
 		        }
 		}
@@ -108,16 +111,16 @@
         if (!InodeUtils.isSet(structureSelected) || !structures.contains(StructureCache.getStructureByInode(structureSelected))) {
 
                 structureSelected = "_all";
-            
+
         }
 
-		
+
         List<Field> fields = new ArrayList<Field>();
         try{
         	fields = FieldsCache.getFieldsByStructureInode(structureSelected);
         }
         catch(Exception e){
-        	Logger.debug(this.getClass(), e.getMessage());	
+        	Logger.debug(this.getClass(), e.getMessage());
         }
         boolean hasNoSearcheableHostFolderField = false;
         boolean hasHostFolderField = false;
@@ -159,9 +162,9 @@
                         structureVelocityVarNames+=st.getVelocityVarName();
 
         }
-        
-        
-        
+
+
+
         String _allValue = (UtilMethods.webifyString(fieldsSearch.get("_all")).endsWith("*")) ? UtilMethods.webifyString(fieldsSearch.get("_all")).substring(0,UtilMethods.webifyString(fieldsSearch.get("_all")).length()-1) : UtilMethods.webifyString(fieldsSearch.get("_all"));
 
 		String[] strTypeNames = new String[]{"",LanguageUtil.get(pageContext, "Content"),
@@ -169,7 +172,11 @@
 				LanguageUtil.get(pageContext, "Form"),
 				LanguageUtil.get(pageContext, "File")};
 
+		boolean enterprise = LicenseUtil.getLevel() > 199;
 
+		PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+		List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
+		boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
 
 %>
 
@@ -196,6 +203,8 @@
 
 <script type="text/javascript">
 
+	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+
     var dataItems = {
         identifier: "name",
         label: "label",
@@ -207,7 +216,7 @@
                     textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>"
                 },
                 <%}%>
-                
+
                 <%boolean started = false;%>
                 <%for(Structure s : structures){
                 	String spanClass = (s.getStructureType() ==1)
@@ -333,7 +342,7 @@
 
 <!-- START Button Row -->
         <div class="buttonBoxLeft">
-	        
+
         </div>
 
         <div class="buttonBoxRight">
@@ -346,7 +355,7 @@
 
 <input type="hidden" name="fullCommand" id="fullCommand" value="">
 <input type="hidden" name="expiredInodes" id="expiredInodes" value=""/>
-<input type="hidden" name="expireDateReset" id="expireDateReset" value=""/> 
+<input type="hidden" name="expireDateReset" id="expireDateReset" value=""/>
 <input type="hidden" name="luceneQuery" id="luceneQuery" value="">
 <input type="hidden" name="structureInode" id="structureInode" value="">
 <input type="hidden" name="fieldsValues" id="fieldsValues" value="">
@@ -372,7 +381,7 @@
 <!-- START Left Column -->
         <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 350px;overflow-y:auto; overflow-x:hidden;margin:43px 0 0 5px;" class="lineRight" >
 
-               
+
 
                         <% List<Structure> readStructs = StructureFactory.getStructuresWithReadPermissions(user, true);  %>
                         <% if((readStructs.size() == 0)){%>
@@ -380,20 +389,20 @@
                                         <dt><FONT COLOR="#FF0000"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Structure-Read-Permissions" )) %></FONT></dt>
                                 </div>
                         <%}%>
-					
+
                         <!-- START Advanced Search-->
                         <div id="advancedSearch">
                                 <dl>
 	                        		<dt><%=LanguageUtil.get(pageContext, "Type") %>:</dt>
 	                        		<dd><span id="structSelectBox"></span></dd>
 	                        		<div class="clear"></div>
-	
+
 	                        		<dt><%= LanguageUtil.get(pageContext, "Search") %>:</dt>
 	                        		<dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
                                 </dl>
-                                
+
                                 <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
-	                                
+
 	                                <div class="clear"></div>
 									<%if (languages.size() > 1) { %>
 	                                <!-- Language search fields  --->
@@ -402,7 +411,7 @@
                                         <div id="combo_zone2" style="width:215px; height:20px;">
                                             <input id="language_id"/>
                                         </div>
-                                   
+
                                         <script>
 											<%StringBuffer buff = new StringBuffer();
 											  // http://jira.dotmarketing.net/browse/DOTCMS-6148
@@ -460,35 +469,35 @@
                                     <% long langId = languages.get(0).getId(); %>
                                     <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
                             <% } %>
-                                        
-                                        
+
+
 	                                <!-- Ajax built search fields  --->
 	                                        <div id="search_fields_table"></div>
 											<div class="clear"></div>
 	                                <!-- /Ajax built search fields  --->
-	
+
 	 								<!-- Ajax built Categories   --->
 	                        		<dl id="search_categories_list"></dl>
 									<div class="clear"></div>
 									<!-- /Ajax built Categories   --->
-				
+
 	                                <dl>
 	                                     <dt><%= LanguageUtil.get(pageContext, "Show") %>:</dt>
 	                                     <dd>
-	                                     
+
 	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch();displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
 	                                     		<option value="all"><%= LanguageUtil.get(pageContext, "All") %></option>
 	                                     		<option value="locked"><%= LanguageUtil.get(pageContext, "Locked") %></option>
 	                                     		<option value="unpublished"><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
 	                                     		<option value="archived"><%= LanguageUtil.get(pageContext, "Archived") %></option>
-	                                     	
+
 	                                     	</select>
-	
+
 	                                     </dd>
 	                                </dl>
-	                                
+
 	                                <div class="clear"></div>
-	                                
+
 	                                <dl id="filterSystemHostTable" style="display: ">
 	                                    <dt></dt>
 	                                    <dd>
@@ -496,12 +505,12 @@
 	                                       <%= LanguageUtil.get(pageContext, "Exclude-system-host") %>
 	                                   </dd>
 	                                </dl>
-									
+
 	                                <div id="measureTheHeightOfSearchTools" class="clear"></div>
 								</div>
 
-			                 	
-             
+
+
 
 
                         </div>
@@ -524,22 +533,22 @@
                                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
                                 </button>
                         </div>
-                        
+
 	                   <a href="javascript:toggleAdvancedSearchDiv()" style="display:block;background:#f1f1f1;border-top:1px solid #ddd;padding:8px 10px;text-align:center;text-decoration:none;">
 	                       	<div id="toggleDivText">
-	                       		<%= LanguageUtil.get(pageContext, "Advanced") %> 
+	                       		<%= LanguageUtil.get(pageContext, "Advanced") %>
 	                       	</div>
 	                   </a>
-	                  
 
-                
+
+
         </div>
 <!-- END Left Column -->
 
 
 <!-- START Right Column -->
         <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
-                
+
                         <div id="metaMatchingResultsDiv" style="display:none;padding-top:7px;">
                                 <!-- START Listing Results -->
                                         <input type="hidden" name="referer" value="<%=referer%>">
@@ -573,14 +582,14 @@
                                 </div>
                         <!-- END Pagination -->
                         <div class="clear"></div>
-                
+
 
                 <%boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
                 <div class="clear"></div>
 
-                
+
         </div>
-        
+
         <div dojoType="dijit.layout.ContentPane" splitter="true" region="bottom" id="buttonsWrapper">
           <!-- START Buton Row -->
                         <div class="buttonRow">
@@ -609,6 +618,18 @@
                                         <button dojoType="dijit.form.Button" id="publishButton"  onClick="publishSelectedContentlets()" iconClass="publishIconDis" disabled="true">
                                                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
                                         </button>
+
+										<% if(enterprise && sendingEndpoints) { %>
+
+                                        <button dojoType="dijit.form.Button" id="pushPublishButton"  onClick="pushPublishSelectedContentlets()" iconClass="publishIconDis" disabled="true">
+                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
+                                        </button>
+
+                                        <button dojoType="dijit.form.Button" id="addToBundleButton"  onClick="addToBundleSelectedContentlets()" iconClass="publishIconDis" disabled="true">
+                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
+                                        </button>
+
+                                        <% } %>
 
                                         <button dojoType="dijit.form.Button"  id="unPublishButton" onClick="unPublishSelectedContentlets()" iconClass="unpublishIconDis" disabled="true">
                                                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>
@@ -670,7 +691,7 @@
 </div>
 
 <div dojoType="dijit.Dialog" id="selectStructureDiv"  title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>'>
-	
+
 	<table class="sTypeTable">
 		<tr>
 			<%int stType=0; %>
@@ -692,10 +713,24 @@
 		    </td>
 		</tr>
 	</table>
-	
+
 </div>
 
 
 <script type="text/javascript">
 dojo.ready(resizeBrowser);
 </script>
+
+<form id="remotePublishForm">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="iWantTo" id=iWantTo type="hidden" value="">
+	<input name="whoToSend" id=whoToSend type="hidden" value="">
+	<input name="newBundle" id=newBundle type="hidden" value="">
+	<input name="bundleName" id=bundleName type="hidden" value="">
+	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
+	<input name="forcePush" id=forcePush type="hidden" value="">
+</form>

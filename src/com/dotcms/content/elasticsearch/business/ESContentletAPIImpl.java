@@ -28,7 +28,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.queryParser.ParseException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.json.JSONObject;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
@@ -115,7 +114,6 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
-
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -2734,6 +2732,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentlet == null){
             throw new DotContentletStateException("The contentlet was null");
         }
+        String returnValue = (String) contentlet.getMap().get("__DOTNAME__");
+        if(UtilMethods.isSet(returnValue)){
+        	return returnValue;
+        }
+        
 
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 
@@ -2741,17 +2744,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             try{
 
-                if(fld.isListed()){
-                    String returnValue = contentlet.getMap().get(fld.getVelocityVarName()).toString();
+                if(fld.isListed() && contentlet.getMap().get(fld.getVelocityVarName())!=null){
+                    returnValue = contentlet.getMap().get(fld.getVelocityVarName()).toString();
                     returnValue = returnValue.length() > 250 ? returnValue.substring(0,250) : returnValue;
-                    return returnValue;
+                    if(UtilMethods.isSet(returnValue)){
+                    	contentlet.setStringProperty("__DOTNAME__", returnValue);
+                    	return returnValue;
+                    }
                 }
             }
             catch(Exception e){
                 Logger.warn(this.getClass(), "unable to get field value " + fld.getVelocityVarName() + " " + e);
             }
         }
-        return "";
+        contentlet.setStringProperty("__NAME__", contentlet.getIdentifier());
+        return contentlet.getIdentifier();
     }
 
     /**

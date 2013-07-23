@@ -1,8 +1,37 @@
 package com.dotcms.publisher.ajax;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.hadoop.mapred.lib.Arrays;
+
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.*;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -10,7 +39,13 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -23,25 +58,14 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.hadoop.mapred.lib.Arrays;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 public class RemotePublishAjaxAction extends AjaxAction {
 
@@ -142,6 +166,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentFilterDate = request.getParameter( "remoteFilterDate" );
             String _iWantTo = request.getParameter( "iWantTo" );
             String whoToSendTmp = request.getParameter( "whoToSend" );
+            String forcePushStr = request.getParameter( "forcePush" );
+            boolean forcePush = (forcePushStr!=null && forcePushStr.equals("true"));
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
 
@@ -163,7 +189,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             List<String> ids = getIdsToPush(assetsIds, _contentFilterDate, dateFormat);
 
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
-            	Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId());
+            	Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId(), forcePush);
             	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
             	publisherAPI.addContentsToPublish( ids, bundle.getId(), publishDate, getUser() );
@@ -172,7 +198,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
                     Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
 
-                    Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId());
+                    Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId(), forcePush);
                 	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
                 	publisherAPI.addContentsToUnpublish( ids, bundle.getId(), expireDate, getUser() );
@@ -434,7 +460,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
         }
 
-        pconf.setPushing( false );
         pconf.setDownloading( true );
         pconf.setOperation(operation);
 
@@ -608,8 +633,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
         		bundle = APILocator.getBundleAPI().getBundleById(bundleSelect);
         	}
 
-        	List<String> assetsIds = new ArrayList<String>();
-        	assetsIds.add(_assetId);
+        	String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
+            List<String> assetsIds = Arrays.asList( _assetsIds );
 
         	List<String> ids = getIdsToPush(assetsIds, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ));
         	publisherAPI.saveBundleAssets(ids, bundle.getId(), getUser());

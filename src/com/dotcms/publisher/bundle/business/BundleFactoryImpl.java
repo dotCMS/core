@@ -24,6 +24,7 @@ public class BundleFactoryImpl extends BundleFactory {
 		dc.addParam(bundle.getPublishDate());
 		dc.addParam(bundle.getExpireDate());
 		dc.addParam(bundle.getOwner());
+		dc.addParam(bundle.isForcePush());
 		dc.loadResult();
 	}
 
@@ -129,7 +130,7 @@ public class BundleFactoryImpl extends BundleFactory {
 	@Override
 	public void deleteAssetFromBundle(String assetId, String bundleId)
 			throws DotDataException {
-		if(!UtilMethods.isSet(assetId) || !UtilMethods.isSet(assetId)) {
+		if(!UtilMethods.isSet(assetId) || !UtilMethods.isSet(bundleId)) {
 			return;
 		}
 
@@ -137,6 +138,21 @@ public class BundleFactoryImpl extends BundleFactory {
 		dc.setSQL(DELETE_ASSET_FROM_BUNDLE);
 		dc.addParam(assetId);
 		dc.addParam(bundleId);
+
+		dc.loadResult();
+
+	}
+
+	@Override
+	public void deleteBundleEnvironmentByEnvironment(String environmentId)
+			throws DotDataException {
+		if(!UtilMethods.isSet(environmentId)) {
+			return;
+		}
+
+		DotConnect dc = new DotConnect();
+		dc.setSQL(DELETE_BUNDLE_ENVIRONMENT_BY_ENV);
+		dc.addParam(environmentId);
 
 		dc.loadResult();
 

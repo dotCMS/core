@@ -50,9 +50,7 @@
 
         var enterprise = <%=LicenseUtil.getLevel() > 199%>;
 
-		<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
-			List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
-		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
+		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty()%>;
 
         <%
                 List<Role> roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser (user.getUserId());
@@ -112,7 +110,7 @@
 			var end=dojo.position(dojo.byId("measureTheHeightOfSearchTools")).y - dojo.position(dojo.byId("advancedSearchOptions")).y;
 
 			// resize
-			
+
 			dojo.setStyle(dojo.byId('advancedSearchOptions'),'height', '0px');
 
 			dojo.animateProperty({
@@ -158,7 +156,7 @@
 
 
 		/**
-			focus on search box 
+			focus on search box
 		**/
 		require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
 			dojo.require('dojox.timing');
@@ -169,7 +167,7 @@
 			}
 			t.start();
 		});
-		
+
 
 
 
@@ -186,7 +184,7 @@
         	if(amISearching>0){
         		return;
         	}
-        	
+
             var counters = data[0];
             var hasNext = counters["hasNext"];
             var hasPrevious = counters["hasPrevious"];
@@ -218,7 +216,7 @@
                             dijit.byId("searchButton").attr("disabled", false);
                             //dijit.byId("clearButton").setAttribute("disabled", false);
                     }
-		
+
                     return;
             }
 
@@ -669,7 +667,7 @@
 
 
         function addNewContentlet(structureInode){
-			if(structureInode == undefined || structureInode==""){        
+			if(structureInode == undefined || structureInode==""){
         		structureInode = dijit.byId('structure_inode').value;
         	}
 			if(structureInode == undefined || structureInode == "_all"){
@@ -836,7 +834,7 @@
                 }
 
                 var showDeleted = false;
-                if (dijit.byId("showingSelect").getValue() == "archived") { 
+                if (dijit.byId("showingSelect").getValue() == "archived") {
                         showDeleted = true;
                 }
 
@@ -939,6 +937,23 @@
                 form.action+= "&structure_id=<%=structure.getInode()%>";
                 form.action += "&selected_lang=" + getSelectedLanguageId();
                 submitForm(form);
+        }
+
+        function pushPublishSelectedContentlets() {
+        	var selectedInodes=dojo.query("input[name='publishInode']")
+                                       .filter(function(x){return x.checked;})
+                                       .map(function(x){return x.value;});
+
+			pushHandler.showDialog(selectedInodes);
+        }
+
+        function addToBundleSelectedContentlets() {
+        	var selectedInodes=dojo.query("input[name='publishInode']")
+                                       .filter(function(x){return x.checked;})
+                                       .map(function(x){return x.value;});
+
+			pushHandler.showAddToBundleDialog(selectedInodes, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+
         }
 
         function unPublishSelectedContentlets(){
@@ -1112,9 +1127,9 @@
             	counter_checkbox = 0;
                 var div = document.getElementById("matchingResultsBottomDiv")
                 div.innerHTML = "";
-                
-               
-                
+
+
+
                 initAdvancedSearch();
         }
 
@@ -1245,13 +1260,13 @@
                 if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
                         setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
                 } else {
-                
+
                         doSearch1 (page, sortBy);
                 }
         }
-        
+
 		var amISearching = 0;
-		
+
 
         function doSearch1 (page, sortBy) {
                 var structureInode = dijit.byId('structure_inode').getValue();
@@ -1265,7 +1280,7 @@
                 if(currentStructureFields == undefined){
                         currentStructureFields = Array();
                 }
-                
+
 
 
                 var structureVelraw=dojo.byId("structureVelocityVarNames").value;
@@ -1278,7 +1293,7 @@
 		                 selectedStruct=structureVel[m2];
 	                 }
                  }
-				
+
                 if (hasHostFolderField) {
                         getHostValue();
                 }
@@ -1289,14 +1304,14 @@
                         fieldsValues[fieldsValues.length] = hostValue;
                 }
                 if (isInodeSet(folderValue)) {
-                
+
                         fieldsValues[fieldsValues.length] = "conFolder";
                         fieldsValues[fieldsValues.length] = folderValue;
                 }
                 var allField = dijit.byId("allFieldTB").getValue();
 
 				if (allField != undefined && allField.length>0 ) {
-		
+
                         fieldsValues[fieldsValues.length] = "_all";
                         fieldsValues[fieldsValues.length] = allField + "*";
 				}
@@ -1415,7 +1430,7 @@
                 }
 
                 var filterLocked = false;
-                
+
                 if (dijit.byId("showingSelect").getValue() == "locked") {
                         filterLocked = true;
                 }
@@ -1538,7 +1553,13 @@
                 var fieldContentlet = field["fieldVelocityVarName"];
                 var fieldName = field["fieldName"];
                 var stVar = field["fieldStructureVarName"];
-                return "<a href=\"javascript: doSearch (1, '" + stVar + "." + fieldContentlet + "')\">" + fieldName + "</a>";
+                if(fieldContentlet == '__title__'){
+                	return "<a href=\"javascript: doSearch (1, 'title')\">" + fieldName + "</a>";
+                }else if(fieldContentlet == '__type__'){
+                	return "<a href=\"javascript: doSearch (1, 'structurename')\">" + fieldName + "</a>";
+                }else{
+                	return "<a href=\"javascript: doSearch (1, '" + stVar + "." + fieldContentlet + "')\">" + fieldName + "</a>";
+                }
         }
 
         function fillResultsTable (headers, data) {
@@ -1613,11 +1634,11 @@
                         var cellData = data[i];
                         row.setAttribute("id","tr" + cellData.inode);
 
-                        
+
 
                         var cell = row.insertCell (row.cells.length);
                         cell.style.whiteSpace="nowrap";
-                        
+
                         cell.innerHTML = statusDataCell(cellData, i);
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
@@ -1642,7 +1663,7 @@
                                         cell.innerHTML = locale;
                                         var cell = row.insertCell (row.cells.length);
                                         var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
-                                        
+
                                 } else {
                                         var value = cellData[header["fieldVelocityVarName"]];
                                 }
@@ -1746,8 +1767,9 @@
 						}
 						if(enterprise && sendingEndpoints && !(workflowMandatory=="true")) {
 								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 						}
-						
+
 
 						if (live && (publish=="1") && (!workflowMandatory=="true")){
                           if(selectedStructureVarName == 'calendarEvent'){
@@ -1805,7 +1827,7 @@
         function clearSearch () {
      			dijit.byId("showingSelect").set("value", "all");
      			dijit.byId("allFieldTB").set("value", "");
-     			
+
                 var div = document.getElementById("matchingResultsBottomDiv");
                 div.innerHTML = "";
                 div = document.getElementById("metaMatchingResultsDiv");
@@ -1898,38 +1920,38 @@
 	                  showDeletedCB.setValue(false);
 	                }
 	        }
-	
+
 	        var filterSystemHostCB = dijit.byId("filterSystemHostCB");
 	        if(filterSystemHostCB!=null){
 	                if(filterSystemHostCB.checked) {
 	                  filterSystemHostCB.setValue(false);
 	                }
 	        }
-	
+
 	        var filterLockedCB = dijit.byId("filterLockedCB");
 	        if(filterLockedCB!=null){
 	                if(filterLockedCB.checked) {
 	                  filterLockedCB.setValue(false);
 	                }
 	        }
-	
+
 	        var filterUnpublishCB = dijit.byId("filterUnpublishCB");
 	        if(filterUnpublishCB!=null){
 	               if(filterUnpublishCB.checked) {
 	                 filterUnpublishCB.setValue(false);
 	               }
 	        }
-	
+
 	        dwr.util.removeAllRows("results_table");
 	        document.getElementById("nextDiv").style.display = "none";
 	        document.getElementById("previousDiv").style.display = "none";
-	
-	
-	
+
+
+
 	        hideMatchingResults ();
-	        
+
 	        amISearching =0;
-                
+
         }
 
         function userHasReadPermission (contentlet, userId) {
@@ -2181,6 +2203,8 @@
                         enableFields([
                                                 dijit.byId('archiveButton').setAttribute("disabled", false),
                                                 dijit.byId('publishButton').setAttribute("disabled", false),
+                                                dijit.byId('pushPublishButton').setAttribute("disabled", false),
+                                                dijit.byId('addToBundleButton').setAttribute("disabled", false),
                                                 dijit.byId('unPublishButton').setAttribute("disabled", false),
                                                 dijit.byId('unlockButton').setAttribute("disabled", false),
                                                 <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false),":"") %>
@@ -2199,6 +2223,8 @@
                         disableFields([
                                                 dijit.byId('archiveButton').setAttribute("disabled", true),
                                                 dijit.byId('publishButton').setAttribute("disabled", true),
+                                                dijit.byId('pushPublishButton').setAttribute("disabled", true),
+                                                dijit.byId('addToBundleButton').setAttribute("disabled", true),
                                                 dijit.byId('unPublishButton').setAttribute("disabled", true),
                                                 dijit.byId("unlockButton").setAttribute("disabled", true),
                                                 <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true),":"") %>
@@ -2287,6 +2313,12 @@
 
                 if(dijit.byId("publishButton"))
                         dijit.byId("publishButton").attr("disabled", true);
+
+                if(dijit.byId("pushPublishButton"))
+                        dijit.byId("pushPublishButton").attr("disabled", true);
+
+                if(dijit.byId("addToBundleButton"))
+                        dijit.byId("addToBundleButton").attr("disabled", true);
 
                 if(dijit.byId("unPublishButton"))
                         dijit.byId("unPublishButton").attr("disabled", true);
@@ -2394,13 +2426,13 @@
 		    		var wfActionId 			= this.wfActionId;
 		    		var wfActionComments 	= "";
 		    		var publishDate			="";
-		    		var publishTime 		= ""; 
-		    		var expireDate 			= ""; 
-		    		var expireTime 			=""; 
+		    		var publishTime 		= "";
+		    		var expireDate 			= "";
+		    		var expireTime 			="";
 		    		var neverExpire 		="";
 		    		var whereToSend 		="";
 					BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-		    				publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback);  
+		    				publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback);
     		}
 
     	},

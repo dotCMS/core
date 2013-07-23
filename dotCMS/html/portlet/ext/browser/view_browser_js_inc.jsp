@@ -11,6 +11,10 @@
 Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 %>
 <script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
+
+<script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
+<script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
+
 <script language="JavaScript">
 
 dojo.require("dotcms.dojo.data.StructureReadStore");
@@ -1179,6 +1183,19 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	   			fullName = shortenString(newName, 30) + "." + ext;
 	   		showDotCMSSystemMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-changed")) %>");
 		} else {
+			var asset = inodes[inode];
+            if (asset.type == 'folder') {
+                    inodes[inode].name = lastName;
+            }
+            if (asset.type == 'file_asset') {
+                    inodes[inode].fileName = lastName + "." + ext;
+            }
+            if (asset.type == 'links') {
+                    inodes[inode].title = lastName;
+            }
+            if (asset.type == 'htmlpage') {
+                    inodes[inode].pageUrl = lastName + "." + ext;
+            }
 			if (ext == null || ext == "")
 	   			fullName = shortenString(lastName, 30) + "";
 	   		else
