@@ -129,7 +129,19 @@
         <td valign="middle" align="center" style="border-bottom: none;">
             <img border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0"><br>
             <div class="buttonRow" style="margin-top:30px;">
-                <button type="button" dojoType="dijit.form.Button" onClick="self.location='<%=changeLogoActionPath%>';return false;" iconClass="browseIcon"><%= LanguageUtil.get(pageContext, "change") %></button>
+
+                <form action="/api/config/saveCompanyLogo" enctype="multipart/form-data" id="companyLogoForm" name="companyLogoForm" method="post">
+                    <div style="text-align: center"><%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" id="logoFile" name="logoFile"></div>
+                    <br>
+                    <div>&nbsp;</div>
+                    <div style="text-align: center">
+                        <button  dojoType="dijit.form.Button" onClick="uploadCompanyLogo();" iconClass="saveIcon">
+                            <%= LanguageUtil.get(pageContext, "upload-image") %>
+                        </button>
+                    </div>
+
+                </form>
+
             </div>
         </td>
     </tr>
