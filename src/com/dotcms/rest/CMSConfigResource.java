@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
@@ -82,7 +83,7 @@ public class CMSConfigResource extends WebResource {
             PrincipalThreadLocal.setName( initData.getUser().getUserId() );
 
             //Getting the current company
-            Company currentCompany = CompanyManagerUtil.getCompany();
+            Company currentCompany = PublicCompanyFactory.getDefaultCompany();
 
             //Set the values
             currentCompany.setPortalURL( portalURL );
@@ -218,7 +219,7 @@ public class CMSConfigResource extends WebResource {
             PrincipalThreadLocal.setName( initData.getUser().getUserId() );
 
             //Getting the current company
-            Company currentCompany = CompanyManagerUtil.getCompany();
+            Company currentCompany = PublicCompanyFactory.getDefaultCompany();
 
             //Set the values
             currentCompany.setAuthType( authType );
