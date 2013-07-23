@@ -11,6 +11,8 @@ import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.sun.jersey.multipart.FormDataParam;
 import org.apache.commons.httpclient.HttpStatus;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,6 +20,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -246,6 +249,64 @@ public class CMSConfigResource extends WebResource {
     }
 
     /**
+     * Updates the company logo.
+     *
+     * @param request
+     * @param user
+     * @param password
+     * @param logoFile
+     * @param logoDetail
+     * @return
+     * @throws IOException
+     * @throws JSONException
+     */
+    @POST
+    @Path ("/saveCompanyLogo")
+    @Produces ("text/html")
+    @Consumes (MediaType.MULTIPART_FORM_DATA)
+    public Response saveCompanyLogo ( @Context HttpServletRequest request,
+                                      @FormDataParam ("user") String user, @FormDataParam ("password") String password,
+                                      @FormDataParam ("logoFile") File logoFile,
+                                      @FormDataParam ("logoFile") FormDataContentDisposition logoDetail ) throws IOException, JSONException {
+
+        StringBuilder responseMessage = new StringBuilder();
+
+        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+
+        //Validate the parameters
+        if ( !UtilMethods.isSet( logoFile ) ) {
+            //Prepare a proper response
+            responseMessage.append( "Error: The Logo file is a required Field." );
+            return response( responseMessage.toString(), true );
+        }
+
+        try {
+            PrincipalThreadLocal.setName( initData.getUser().getUserId() );
+
+            //Update the logo
+            CompanyManagerUtil.updateLogo( logoFile );
+
+            //And prepare the response
+            String message = LanguageUtil.get( initData.getUser().getLocale(), "you-have-successfully-updated-the-company-logo" );
+            responseMessage.append( "<html><head></head><body><textarea>{'success':'true', 'message':'" ).append( message ).append( "'}</textarea></body></html>" );
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error the company logo.", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error the company logo." );
+            }
+            return response( responseMessage.toString(), true );
+        } finally {
+            // Clear the principal associated with this thread
+            PrincipalThreadLocal.setName( null );
+        }
+
+        return response( responseMessage.toString(), false, "text/html" );
+    }
+
+    /**
      * Deletes a given environment
      *
      * @param request
@@ -394,13 +455,25 @@ public class CMSConfigResource extends WebResource {
      * @return
      */
     private Response response ( String response, Boolean error ) {
+        return response( response, error, "application/json" );
+    }
+
+    /**
+     * Prepares a Response object with a given response text. The creation depends if it is an error or not.
+     *
+     * @param response
+     * @param error
+     * @param contentType
+     * @return
+     */
+    private Response response ( String response, Boolean error, String contentType ) {
 
         Response.ResponseBuilder responseBuilder;
         if ( error ) {
             responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
             responseBuilder.entity( response );
         } else {
-            responseBuilder = Response.ok( response, "application/json" );
+            responseBuilder = Response.ok( response, contentType );
         }
 
         return responseBuilder.build();

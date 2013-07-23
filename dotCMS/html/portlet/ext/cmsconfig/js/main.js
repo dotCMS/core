@@ -1,3 +1,5 @@
+dojo.require("dojo.io.iframe");
+
 /**
  * Loads the CMS Company Config tab
  */
@@ -116,6 +118,40 @@ var saveCompanyAuthTypeInfo = function () {
     };
     dojo.xhrPost(xhrArgs);
 };
+
+/**
+ * Saves the company logo
+ * @returns {boolean}
+ */
+function uploadCompanyLogo() {
+
+    if (!dojo.byId("logoFile") || dojo.byId("logoFile").value.length == 0) {
+        alert("The Logo Field is a required field.");
+        return false;
+    }
+
+    dojo.io.iframe.send({
+        url: "/api/config/saveCompanyLogo",
+        form: "companyLogoForm",
+        method: "post",
+        preventCache: true,
+        handleAs: "json",
+        load: function (data) {
+
+            var isError = false;
+            if (data.success == false || data.success == "false") {
+                isError = true;
+            } else {
+                loadCompanyTab();
+            }
+
+            showDotCMSSystemMessage(data.message, isError);
+        },
+        error: function (error) {
+            showDotCMSSystemMessage(error.responseText, true);
+        }
+    });
+}
 
 /**
  * Loads the CMS Remote Publishing Config tab
