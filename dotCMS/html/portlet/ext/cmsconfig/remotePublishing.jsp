@@ -402,50 +402,52 @@
     </div>
 </div>
 
-<table class="listingTable">
-    <tr>
-        <th style="width:40px"></th>
-        <th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>
-        <th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "Status") %></th>
+<div style="padding-top: 5px">
+    <table class="listingTable">
+        <tr>
+            <th style="width:40px"></th>
+            <th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>
+            <th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "Status") %></th>
 
-        <th style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_From") %></th>
-    </tr>
-    <%
-        boolean hasRow = false;
-        for(PublishingEndPoint endpoint : endpoints){
-            if(!endpoint.isSending()){
-                continue;
-            }
-            hasRow=true;%>
-    <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
-        <td nowrap="nowrap">
-            <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
-                <span class="deleteIcon"></span></a>&nbsp;
-            <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
-                <span class="editIcon"></span></a>
-        </td>
+            <th style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_From") %></th>
+        </tr>
+        <%
+            boolean hasRow = false;
+            for(PublishingEndPoint endpoint : endpoints){
+                if(!endpoint.isSending()){
+                    continue;
+                }
+                hasRow=true;%>
+        <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
+            <td nowrap="nowrap">
+                <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+                    <span class="deleteIcon"></span></a>&nbsp;
+                <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
+                    <span class="editIcon"></span></a>
+            </td>
 
-        <td style="cursor: pointer" width="50%" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
-            <%=endpoint.getServerName()%>
-        </td>
-        <td align="center" nowrap="nowrap" style="cursor: pointer" width="40" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
-            <%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%>
-        </td>
+            <td style="cursor: pointer" width="50%" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+                <%=endpoint.getServerName()%>
+            </td>
+            <td align="center" nowrap="nowrap" style="cursor: pointer" width="40" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+                <%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%>
+            </td>
 
-        <td style="cursor: pointer" align="center" nowrap="nowrap" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
-            <%=endpoint.getAddress()%>
-        </td>
+            <td style="cursor: pointer" align="center" nowrap="nowrap" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+                <%=endpoint.getAddress()%>
+            </td>
 
-    </tr>
-    <%}%>
+        </tr>
+        <%}%>
 
-    <%if(!hasRow){ %>
+        <%if(!hasRow){ %>
 
-    <tr>
-        <td colspan="100" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
-    </tr>
-    <%}%>
-</table>
+        <tr>
+            <td colspan="100" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+        </tr>
+        <%}%>
+    </table>
+</div>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--END OF END POINTS--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
