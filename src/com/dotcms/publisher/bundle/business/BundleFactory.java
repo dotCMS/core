@@ -24,6 +24,8 @@ public abstract class BundleFactory {
 
 	protected static String DELETE_ASSET_FROM_BUNDLE = "DELETE from publishing_queue where asset = ? and bundle_id = ?";
 
+	protected static String DELETE_BUNDLE_ENVIRONMENT_BY_ENV = "DELETE from publishing_bundle_environment where environment_id = ?";
+
 	public abstract void saveBundle(Bundle bundle) throws DotDataException;
 
 	public abstract void saveBundleEnvironment(Bundle bundle, Environment e) throws DotDataException;
@@ -39,5 +41,7 @@ public abstract class BundleFactory {
 	public abstract void updateBundle(Bundle bundle) throws DotDataException;
 
 	public abstract void deleteAssetFromBundle(String assetId, String bundleId) throws DotDataException;
+
+	public abstract void deleteBundleEnvironmentByEnvironment(String environmentId) throws DotDataException;
 
 }
