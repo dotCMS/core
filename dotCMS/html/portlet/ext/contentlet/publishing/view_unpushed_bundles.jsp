@@ -175,17 +175,15 @@
 
 
 		<%}%>
-			</table><br>
+
 
 		<%if(!hasBundles){ %>
-			<table style="width: 99%; border: 1px solid #D0D0D0">
 				<tr>
 					<td colspan="100" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
 				</tr>
-			</table>
 				<%}%>
 
-
+		</table><br>
 
 
 </div>
