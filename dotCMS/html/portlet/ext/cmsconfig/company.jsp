@@ -2,15 +2,6 @@
 
 <%@page import="com.dotmarketing.business.APILocator"%>
 
-<%
-    String changeLogoActionPath = "/c/portal/layout?p_l_id=" + layoutId +
-            "&p_p_id=9" +
-            "&p_p_action=0" +
-            "&p_p_state=maximized" +
-            "&p_p_mode=view" +
-            "&struts_action=/admin/change_company_logo";
-%>
-
 <script type="text/javascript">
 
     dojo.require("dojox.widget.ColorPicker");
