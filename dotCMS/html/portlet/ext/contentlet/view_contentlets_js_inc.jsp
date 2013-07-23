@@ -945,7 +945,6 @@
                                        .map(function(x){return x.value;});
 
 			pushHandler.showDialog(selectedInodes);
-			disableButtonRow();
         }
 
         function addToBundleSelectedContentlets() {
@@ -955,7 +954,6 @@
 
 			pushHandler.showAddToBundleDialog(selectedInodes, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
 
-			disableButtonRow();
         }
 
         function unPublishSelectedContentlets(){
