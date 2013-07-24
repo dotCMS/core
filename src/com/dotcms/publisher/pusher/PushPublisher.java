@@ -103,13 +103,13 @@ public class PushPublisher extends Publisher {
 			//Increment numTries
 			currentStatusHistory.addNumTries();
 
-	        boolean hasError = false;
+//	        boolean hasError = false;
 	        int errorCounter = 0;
 
 			for (Environment environment : environments) {
 				List<PublishingEndPoint> endpoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(environment.getId());
 
-				boolean sent = false;
+				boolean failedEnvironment = false;
 
 				if(!environment.getPushToAll()) {
 					Collections.shuffle(endpoints);
@@ -140,27 +140,28 @@ public class PushPublisher extends Publisher {
 	        			{
 	        				detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 	        				detail.setInfo("Everything ok");
-	        				sent = true;
 	        			} else {
 	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 	        				detail.setInfo(
 	        						"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
 	        								"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
+	        				failedEnvironment |= true;
+
 	        			}
 	        		} catch(Exception e) {
 
-	                    // if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
-	                    if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
-	                      APILocator.getPushedAssetsAPI().deletePushedAssets(config.getId(), environment.getId());
-	                    }
-
-	        			hasError = true;
+	        			// if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
+	        			if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
+	        				APILocator.getPushedAssetsAPI().deletePushedAssets(config.getId(), environment.getId());
+	        			}
+//	        			hasError = true;
 	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 
 	        			String error = 	"An error occured for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
 
 
 	        			detail.setInfo(error);
+	        			errorCounter++;
 
 	        			Logger.error(this.getClass(), error);
 	        		}
@@ -168,15 +169,15 @@ public class PushPublisher extends Publisher {
 	        		currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
 				}
 
-				if(!sent) {
-					hasError = true;
+				if(failedEnvironment) {
+//					hasError = true;
 					errorCounter++;
 				}
 
 
 			}
 
-			if(!hasError) {
+			if(errorCounter==0) {
 				//Updating audit table
 		        currentStatusHistory.setPublishEnd(new Date());
 				pubAuditAPI.updatePublishAuditStatus(config.getId(),

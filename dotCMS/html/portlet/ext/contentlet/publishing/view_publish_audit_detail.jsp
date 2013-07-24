@@ -8,6 +8,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditHistory"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
+<%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
 
 <%
     String bundleId = request.getParameter("bundle");
@@ -119,23 +120,39 @@
             for(String groupkey : currentEndpointHistory.getEndpointsMap().keySet()) {
                 Map<String, EndpointDetail> groupMap = currentEndpointHistory.getEndpointsMap().get(groupkey);
 
-                for(String key : groupMap.keySet()) {
-                    EndpointDetail ed =  groupMap.get(key);
-                    String serverName = key;
-                    try{
-                        serverName = pepAPI.findEndPointById(key).getServerName().toString();
-                    }
-                    catch(Exception e){
+                Environment env = APILocator.getEnvironmentAPI().findEnvironmentById(groupkey);
 
-                    }
-    %>
-    <tr>
-        <td nowrap="nowrap" valign="top"><%=serverName%></td>
-        <td valign="top"><%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(ed.getStatus()))%></td>
-        <td valign="top"><%=ed.getInfo()%></td>
-    </tr>
-    <%}%>
-    <%}%>
+                if(env!=null) {
+	                %>
+				    <tr>
+				        <td nowrap="nowrap" valign="top" colspan="4" bgcolor="#F7F7F7"><strong><%= LanguageUtil.get(pageContext, "publisher_Environment") %></strong>: <%=env.getName()%>
+					        <div style="float:right;color:silver">
+								 <%= LanguageUtil.get(pageContext, "Push-To-All") %>: <%=env.getPushToAll()%>
+						    </div>
+						</td>
+					</tr>
+				    <%
+
+
+	                for(String key : groupMap.keySet()) {
+	                    EndpointDetail ed =  groupMap.get(key);
+	                    String serverName = key;
+	                    try{
+	                        serverName = pepAPI.findEndPointById(key).getServerName().toString();
+	                    }
+	                    catch(Exception e){
+
+	                    }
+				    %>
+				    <tr>
+				        <td nowrap="nowrap" valign="top"><%=serverName%></td>
+				        <td valign="top"><%= LanguageUtil.get(pageContext, "publisher_status_" + PublishAuditStatus.getStatusByCode(ed.getStatus()))%></td>
+				        <td valign="top"><%=ed.getInfo()%></td>
+				    </tr>
+				    <%}
+
+			    }%>
+    		<%}%>
     <%}else{%>
     <tr>
         <td colspan="5" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>

@@ -522,9 +522,6 @@
 
 
 				<div style="float:right">
-					<button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
-						<%= LanguageUtil.get(pageContext, "publisher_upload") %>
-					</button>
                     <button  dojoType="dijit.form.Button" onClick="retryBundles();" iconClass="repeatIcon">
                         <%= LanguageUtil.get(pageContext, "publisher_retry_bundles") %>
                     </button>

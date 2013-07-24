@@ -47,16 +47,19 @@
 %>
 
 <div class="yui-g portlet-toolbar">
-  <div class="yui-u first">
-    <span class="sServerIcon"></span>
-    <span  style="line-height:20px;font-weight: bold;"><%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %></span>
-  </div>
+	<div class="yui-u first">
+		<span class="sServerIcon"></span>
+		<span  style="line-height:20px;font-weight: bold;"><%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %></span>
+	</div>
 
-  <div class="yui-u" style="text-align:right;">
-    <button dojoType="dijit.form.Button" onClick="loadUnpushedBundles();" iconClass="resetIcon">
-      <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
-    </button>
-  </div>
+	<div class="yui-u" style="text-align:right;">
+		<button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
+						<%= LanguageUtil.get(pageContext, "publisher_upload") %>
+					</button>
+		<button dojoType="dijit.form.Button" onClick="loadUnpushedBundles();" iconClass="resetIcon">
+			<%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
+		</button>
+	</div>
 </div>
 <div style="padding-top: 5px">
 			<table  class="listingTable">
