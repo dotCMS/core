@@ -9,6 +9,7 @@
 <%@page import="com.dotcms.publisher.business.PublishAuditHistory"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
+<%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 
 <%
     String bundleId = request.getParameter("bundle");
@@ -17,6 +18,7 @@
     String assetTitle = null;
     String assetType=null;
 
+    Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
 
     PublishAuditStatus.Status status = null;
     int statusCode = 0;
@@ -98,6 +100,11 @@
     <tr>
         <th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Publish_End") %>: </b></th>
         <td style="background: white"><%=UtilMethods.dateToHTMLDate(currentEndpointHistory.getPublishEnd(),"MM/dd/yyyy hh:mma") %></td>
+
+    </tr>
+    <tr>
+        <th><b><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %>: </b></th>
+        <td style="background: white"><%=bundle.isForcePush() %></td>
 
     </tr>
     <tr>
