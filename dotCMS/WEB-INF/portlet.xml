@@ -235,23 +235,6 @@
 			<role-name>User</role-name>
 		</security-role-ref>
 	</portlet -->
-	<portlet>
-		<portlet-name>9</portlet-name>
-		<display-name>Admin</display-name>
-		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-		<init-param>
-			<name>view-action</name>
-			<value>/admin/view</value>
-		</init-param>
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>Administrator</role-name>
-		</security-role-ref>
-	</portlet>
 	<!--portlet>
 		<portlet-name>10</portlet-name>
 		<display-name>Address Book</display-name>
@@ -3446,6 +3429,24 @@
 		</supports>
 
 	</portlet>
+
+    <portlet>
+        <portlet-name>9</portlet-name>
+        <display-name>CMS Config</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/cmsconfig/main.jsp</value>
+        </init-param>
+        <expiration-cache>0</expiration-cache>
+        <supports>
+            <mime-type>text/html</mime-type>
+        </supports>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+        <security-role-ref>
+            <role-name>CMS Administrator</role-name>
+        </security-role-ref>
+    </portlet>
 
 	<portlet>
 		<portlet-name>EXT_TAG_MANAGER</portlet-name>
