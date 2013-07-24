@@ -91,12 +91,14 @@ public class ReindexThread extends Thread {
 					if(remoteQ.size()==0)
 					    fillRemoteQ();
 					
-					if(remoteQ.size()==0 && ESReindexationProcessStatus.inFullReindexation()) {
+					if(remoteQ.size()==0 && ESReindexationProcessStatus.inFullReindexation() && jAPI.recordsLeftToIndexForServer()==0) {
 					    Connection conn=DbConnectionFactory.getDataSource().getConnection();
 					    try{
 					        conn.setAutoCommit(false);
     					    lockCluster(conn);
     					    
+    					    // we double check again. Only one node will enter this critical region
+    					    // then others will enter just to see that the switchover is done
     					    if(ESReindexationProcessStatus.inFullReindexation(conn)) {
     					        if(jAPI.recordsLeftToIndexForServer(conn)==0) {
     					            Logger.info(this, "Running Reindex Switchover");
