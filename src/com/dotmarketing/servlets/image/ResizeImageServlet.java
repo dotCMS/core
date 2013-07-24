@@ -17,7 +17,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.catalina.connector.ClientAbortException;
 import org.apache.commons.lang.time.FastDateFormat;
 
 import com.dotmarketing.beans.Host;
@@ -526,9 +525,6 @@ public class ResizeImageServlet extends HttpServlet {
                 }
 
             }
-        } 
-        catch(ClientAbortException ex) {
-            Logger.debug(this, "got clientabortexception",ex);
         }
         catch(java.net.SocketException ex) {
             Logger.debug(this, "got socketException",ex);
