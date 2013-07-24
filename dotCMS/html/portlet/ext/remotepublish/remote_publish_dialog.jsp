@@ -89,6 +89,21 @@
                     validate="return false;"
                     id="wfExpireDateAux" name="wfExpireDateAux" value="now" style="width: 110px;">
 
+		<div class="fieldWrapper">
+			<div class="fieldName" style="width:120px">
+				<%= LanguageUtil.get(pageContext, "publisher_dialog_choose_environment") %>:
+			</div>
+			<div class="fieldValue">
+				<input data-dojo-type="dijit/form/FilteringSelect" data-dojo-props="store:pushHandler.environmentStore, searchAttr:'name'"
+			    name="environmentSelect" id="environmentSelect" onChange="pushHandler.addSelectedToWhereToSend()" style="width:250px" />
+				<div class="wfWhoCanUseDiv">
+					<table class="listingTable" id="whereToSendTable">
+					</table>
+				</div>
+				<input type="hidden" name="whereToSend" id="whereToSend" value="">
+			</div>
+			<div class="clear"></div>
+		</div>
 
             <input type="text" name="wfExpireTimeAux" id="wfExpireTimeAux" value="now"
                    data-dojo-type="dijit.form.TimeTextBox"
