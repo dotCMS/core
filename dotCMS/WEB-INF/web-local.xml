@@ -1913,11 +1913,6 @@ description, distributable, and context-param elements.
     </servlet-mapping>
 
     <servlet-mapping>
-        <servlet-name>org.apache.jsp.html.portlet.admin.view_jsp</servlet-name>
-        <url-pattern>/html/portlet/admin/view.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
         <servlet-name>org.apache.jsp.html.portlet.admin.list_005fsession_005fdetails_jsp</servlet-name>
         <url-pattern>/html/portlet/admin/list_session_details.jsp</url-pattern>
     </servlet-mapping>
@@ -1950,11 +1945,6 @@ description, distributable, and context-param elements.
     <servlet-mapping>
         <servlet-name>org.apache.jsp.html.portlet.admin.sub_005fnav_jsp</servlet-name>
         <url-pattern>/html/portlet/admin/sub_nav.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>org.apache.jsp.html.portlet.admin.change_005fcompany_005flogo_jsp</servlet-name>
-        <url-pattern>/html/portlet/admin/change_company_logo.jsp</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
