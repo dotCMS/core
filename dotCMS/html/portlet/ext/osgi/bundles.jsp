@@ -1,3 +1,4 @@
+<%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 <%@page import="java.util.Arrays"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="java.util.List"%>

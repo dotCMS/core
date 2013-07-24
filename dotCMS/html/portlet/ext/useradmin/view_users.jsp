@@ -1,4 +1,5 @@
 <%@ include file="/html/portlet/ext/useradmin/init.jsp" %>
+<%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
 <%@page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
