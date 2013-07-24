@@ -55,7 +55,7 @@ function deletePushHistory() {
 	</div>
 
 	<div class="yui-u" style="text-align:right;">
-		<button dojoType="dijit.form.Button" onClick="deletePushHistory();" iconClass="plusIcon" disabled='<%=pushedAssets.isEmpty()%>'>
+		<button dojoType="dijit.form.Button" onClick="deletePushHistory();" iconClass="deleteIcon" disabled='<%=pushedAssets.isEmpty()%>'>
 			<%= LanguageUtil.get(pageContext, "publisher_delete_asset_history") %>
 		</button>
 	</div>

@@ -57,6 +57,8 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 		if(!UtilMethods.isSet(id))
 			return;
 
+		// remove the endpoints of the environment
+
 		List<PublishingEndPoint> endPoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(id);
 
 		for (PublishingEndPoint ep : endPoints) {
@@ -67,7 +69,13 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 
 		APILocator.getPermissionAPI().removePermissions(e);
 
+		// delete bundle-environment relationships
+
 		FactoryLocator.getBundleFactory().deleteBundleEnvironmentByEnvironment(id);
+
+		// delete related pushed-assets history
+
+		FactoryLocator.getPushedAssetsFactory().deletePushedAssetsByEnvironment(id);
 
 		environmentFactory.deleteEnvironmentById(id);
 	}
