@@ -102,12 +102,7 @@ GregorianCalendar cal = new GregorianCalendar();
 			</div>
 			<div class="fieldValue">
 				<input data-dojo-type="dijit/form/FilteringSelect" data-dojo-props="store:pushHandler.environmentStore, searchAttr:'name'"
-			    name="environmentSelect" id="environmentSelect" />
-				<button dojoType="dijit.form.Button"
-					onClick='pushHandler.addSelectedToWhereToSend()'
-					iconClass="addIcon">
-					<%=LanguageUtil.get(pageContext, "add")%>
-				</button>
+			    name="environmentSelect" id="environmentSelect" onChange="pushHandler.addSelectedToWhereToSend()" style="width:250px" />
 				<div class="wfWhoCanUseDiv">
 					<table class="listingTable" id="whereToSendTable">
 					</table>
