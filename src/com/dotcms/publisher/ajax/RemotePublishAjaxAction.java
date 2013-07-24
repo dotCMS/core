@@ -180,6 +180,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
             	}
 			}
 
+            //Put the selected environments in session in order to have the list of the last selected environments
+            request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS, envsToSendTo );
+
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
 
@@ -615,35 +618,39 @@ public class RemotePublishAjaxAction extends AjaxAction {
         return true;
     }
 
-    public void addToBundle(HttpServletRequest request, HttpServletResponse response) throws DotPublisherException {
-	    PublisherAPI publisherAPI = PublisherAPI.getInstance();
-	    String _assetId = request.getParameter("assetIdentifier");
-	    String _contentFilterDate = request.getParameter( "remoteFilterDate" );
-	    String isNewBundle = request.getParameter("newBundle");
-	    String bundleName = request.getParameter("bundleName");
-        String bundleSelect = request.getParameter("bundleSelect");
+    public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) throws DotPublisherException {
+
+        PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        String _assetId = request.getParameter( "assetIdentifier" );
+        String _contentFilterDate = request.getParameter( "remoteFilterDate" );
+        String isNewBundle = request.getParameter( "newBundle" );
+        String bundleName = request.getParameter( "bundleName" );
+        String bundleSelect = request.getParameter( "bundleSelect" );
 
         try {
-        	Bundle bundle = null;
+            Bundle bundle;
 
-        	if(isNewBundle.equals("true")) {
-        		bundle = new Bundle(bundleName, null, null, getUser().getUserId());
-        		APILocator.getBundleAPI().saveBundle(bundle);
-        	} else {
-        		bundle = APILocator.getBundleAPI().getBundleById(bundleSelect);
-        	}
+            if ( isNewBundle.equals( "true" ) ) {
+                bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
+                APILocator.getBundleAPI().saveBundle( bundle );
+            } else {
+                bundle = APILocator.getBundleAPI().getBundleById( bundleSelect );
+            }
 
-        	String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
+            //Put the selected bundle in session in order to have last one selected
+            request.getSession().setAttribute( WebKeys.SELECTED_BUNDLE, bundle );
+
+            String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
             List<String> assetsIds = Arrays.asList( _assetsIds );
 
-        	List<String> ids = getIdsToPush(assetsIds, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ));
-        	publisherAPI.saveBundleAssets(ids, bundle.getId(), getUser());
+            List<String> ids = getIdsToPush( assetsIds, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
+            publisherAPI.saveBundleAssets( ids, bundle.getId(), getUser() );
 
-        } catch ( Exception e) {
-        	Logger.error( PushPublishActionlet.class, e.getMessage(), e );
-		}
+        } catch ( Exception e ) {
+            Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+        }
 
-	}
+    }
 
     /**
      * Updates the assets in the given bundle with the publish/expire dates and destination environments and set them ready to be pushed
@@ -677,6 +684,11 @@ public class RemotePublishAjaxAction extends AjaxAction {
             		envsToSendTo.add(e);
             	}
 			}
+
+            //Put the selected environments in session in order to have the list of the last selected environments
+            request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS, envsToSendTo );
+            //Clean up the selected bundle
+            request.getSession().removeAttribute( WebKeys.SELECTED_BUNDLE );
 
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );

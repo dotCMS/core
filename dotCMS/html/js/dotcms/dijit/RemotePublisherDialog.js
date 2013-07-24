@@ -10,6 +10,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
     title: "",
     admin: "",
     dateFilter: false,
+    container: null,
 
     show: function () {
 
@@ -34,6 +35,23 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             } else {
                 filterDiv.style.display = "none";
             }
+        });
+
+        var container = this.container;
+        dojo.connect(dia, "onDownloadEnd", function () {
+            if (window.lastSelectedEnvironments) {
+                for (var count = 0; count < window.lastSelectedEnvironments.length; count++) {
+                    container.addToWhereToSend(window.lastSelectedEnvironments[count].id, window.lastSelectedEnvironments[count].name);
+                }
+                container.refreshWhereToSend();
+            }
+        });
+
+        dojo.connect(dia, "onClose", function () {
+            container.clear();
+        });
+        dojo.connect(dia, "onHide", function () {
+            container.clear();
         });
 
         dia.set("href", "/html/portlet/ext/remotepublish/remote_publish_dialog.jsp");
