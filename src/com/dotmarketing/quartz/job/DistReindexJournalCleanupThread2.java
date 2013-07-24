@@ -6,10 +6,12 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -21,6 +23,14 @@ public class DistReindexJournalCleanupThread2 implements Runnable, Job {
 
 
 	public void run() {
+	    
+	    try {
+            if(ESReindexationProcessStatus.inFullReindexation()) return;
+        } catch (DotDataException e2) {
+            Logger.warn(this, "can't determine if we're in full reindex",e2);
+        }
+	    
+	    
 		int minutes = Config.getIntProperty("DIST_REINDEX_JOURNAL_CLEANUP_MINUTES", 30);
 		try 
     	{
