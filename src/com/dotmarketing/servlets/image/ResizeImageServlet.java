@@ -525,7 +525,11 @@ public class ResizeImageServlet extends HttpServlet {
                 }
 
             }
-        } catch (Exception e) {
+        }
+        catch(java.net.SocketException ex) {
+            Logger.debug(this, "got socketException",ex);
+        }
+        catch (Exception e) {
             Logger.error(ResizeImageServlet.class, "Error creating thumbnail from ResizeImage servlet: " + e.getMessage(),e);
         }
         return;

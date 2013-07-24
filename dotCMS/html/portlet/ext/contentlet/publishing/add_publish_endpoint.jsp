@@ -178,6 +178,7 @@
 						   value="<%=UtilMethods.webifyString(currentEndpoint.getAddress()) %>"
 						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>"
 						   />
+						   <div id="addressHelpText" class="small">e.g. 10.0.1.10 or server2.myhost.com</div>
 				</td>
 			</tr>
 
