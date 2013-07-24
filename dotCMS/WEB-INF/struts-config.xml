@@ -254,10 +254,6 @@
 			<forward name="portlet.admin.server" path="portlet.admin.server" />
 		</action>
 
-		<action path="/admin/update_company" type="com.liferay.portlet.admin.action.UpdateCompanyAction">
-			<forward name="portlet.admin.error" path="portlet.admin.error" />
-		</action>
-
 		<action path="/admin/update_default_email_notification" type="com.liferay.portlet.admin.action.UpdateUserConfigAction">
 			<forward name="portlet.admin.edit_user_config" path="portlet.admin.default_email_notification" />
 			<forward name="portlet.admin.error" path="portlet.admin.error" />
@@ -273,19 +269,10 @@
 			<forward name="portlet.admin.error" path="portlet.admin.error" />
 		</action>
 
-		<action path="/admin/upload_logo" type="com.liferay.portlet.admin.action.UploadLogoAction">
-			<forward name="portlet.admin.change_company_logo" path="portlet.admin.change_company_logo" />
-			<forward name="portlet.admin.error" path="portlet.admin.error" />
-		</action>
-
 		<action path="/admin/upload_user_portrait" type="com.liferay.portlet.myaccount.action.UploadPortraitAction">
 			<forward name="portlet.my_account.change_portrait" path="portlet.admin.change_user_portrait" />
 			<forward name="portlet.my_account.error" path="portlet.admin.error" />
 		</action>
-
-		<action path="/admin/view" forward="portlet.admin.view" />
-
-
 
 		<action path="/google/view" forward="portlet.google.view" />
 
