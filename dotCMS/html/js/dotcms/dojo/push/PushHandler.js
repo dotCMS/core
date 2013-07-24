@@ -60,6 +60,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog = new dotcms.dijit.RemotePublisherDialog();
         dialog.title = this.title;
         dialog.dateFilter = dateFilter;
+        dialog.container = this;
         dialog.show();
     },
 
@@ -89,6 +90,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog = new dotcms.dijit.RemotePublisherDialog();
         dialog.title = this.title;
         dialog.dateFilter = false;
+        dialog.container = this;
         dialog.show();
     },
 
@@ -242,8 +244,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 	addToBundle : function(){
 
-		console.log(dijit.byId("addToBundleForm").attr('value').newBundle);
-
 		if(dijit.byId("addToBundleForm").attr('value').newBundle=='true' && dijit.byId("bundleName").value=='') {
 			alert(dojo.byId("bundleNameRequired").value);
 			return;
@@ -258,6 +258,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		var bundleName = dijit.byId("bundleName").value;
 		var bundleSelect = dijit.byId("bundleSelect").value;
 
+        if (window.lastSelectedBundle ==  undefined || window.lastSelectedBundle == null || window.lastSelectedBundle.id == undefined) {
+            window.lastSelectedBundle = new Array();
+            window.lastSelectedBundle = {name: bundleName, id: bundleSelect};
+        }
 
 		// END: PUSH PUBLISHING ACTIONLET
 
@@ -287,7 +291,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     			error : function(error) {
     				targetNode.innerHTML = "An unexpected error occurred: " + error;
     			}
-    		}
+    		};
 
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle",
@@ -320,7 +324,12 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 	},
 
 	addToWhereToSend: function ( myId, myName){
-		for(i=0;i < this.whereToSend.length;i++){
+
+        if (myId == undefined || myId == null || myId == "") {
+            return;
+        }
+
+        for(i=0;i < this.whereToSend.length;i++){
 			if(myId == this.whereToSend[i].id  ||  myId == "user-" + this.whereToSend[i].id || myId == "role-" + this.whereToSend[i].id){
 				return;
 			}
@@ -328,7 +337,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		var entry = {name:myName,id:myId };
 		this.whereToSend[this.whereToSend.length] =entry;
-
 	},
 
 	refreshWhereToSend: function(){
@@ -336,12 +344,23 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		var table = dojo.byId("whereToSendTable");
 		var x = "";
 
+        var setLastSelected = false;
+        if (window.lastSelectedEnvironments ==  undefined || window.lastSelectedEnvironments == null || window.lastSelectedEnvironments.length == 0) {
+            window.lastSelectedEnvironments = new Array();
+            setLastSelected = true;
+        }
+
 		this.whereToSend = this.whereToSend.sort(function(a,b){
 			var x = a.name.toLowerCase();
 		    var y = b.name.toLowerCase();
 		    return ((x < y) ? -1 : ((x > y) ? 1 : 0));
 		});
 		for(i=0; i< this.whereToSend.length ; i++){
+
+            if (setLastSelected) {
+                window.lastSelectedEnvironments[i] = {name: this.whereToSend[i].name, id: this.whereToSend[i].id};
+            }
+
 			var what = (this.whereToSend[i].id.indexOf("user") > -1) ? " EnvironmentNotLanguaged" : "";
 			x = x + this.whereToSend[i].id + ",";
 			var tr = dojo.create("tr", null, table);
@@ -364,8 +383,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 			}
 		}
 		this.whereToSend= newCanUse;
-	}
+	},
 
-
+    clear: function () {
+        this.whereToSend = new Array();
+    }
 
 });
