@@ -4,7 +4,7 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@include file="/html/portlet/ext/categories/init.jsp"%>
-
+<%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
 <%  String dojoPath = Config.getStringProperty("path.to.dojo"); %>
 

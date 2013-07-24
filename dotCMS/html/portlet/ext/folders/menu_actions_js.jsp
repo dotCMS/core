@@ -2,6 +2,7 @@
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <%@ include file="/html/portlet/ext/containers/init.jsp" %>
+<%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
 <script language="Javascript">
 // view_folders.js

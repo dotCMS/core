@@ -7,6 +7,7 @@
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
+<%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%><script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 
 <%
