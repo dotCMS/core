@@ -663,6 +663,9 @@ public final class WebKeys {
 	public static final String DONT_DISPLAY_SUBNAV_ALL_HOSTS = "DONT_DISPLAY_SUBNAV_ALL_HOSTS";
 	public static final String LOCK_SUBNAV_TO_ALL_HOST = "LOCK_SUBNAV_TO_ALL_HOST";
 
+    public static final String SELECTED_ENVIRONMENTS = "SELECTED_ENVIRONMENTS";
+    public static final String SELECTED_BUNDLE = "SELECTED_BUNDLE";
+
 
 	public static final String CONTENT_EDITABLE = "CONTENT_EDITABLE";
 
