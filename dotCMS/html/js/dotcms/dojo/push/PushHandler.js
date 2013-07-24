@@ -321,6 +321,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		this.addToWhereToSend(user, userName);
 		this.refreshWhereToSend();
+
+		select.store = null;
+		select.reset();
+		select.store = this.environmentStore;
 	},
 
 	addToWhereToSend: function ( myId, myName){

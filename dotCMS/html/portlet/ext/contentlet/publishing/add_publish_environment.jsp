@@ -67,6 +67,7 @@
 
 	}
 
+
 	dojo.ready( function(){
 
 		var permissionSelect = new dijit.form.FilteringSelect({
@@ -80,6 +81,9 @@
             onClick:function(){
             	dijit.byId("whoCanUseSelect").set("displayedValue","");
             	dijit.byId("whoCanUseSelect").loadDropDown();
+            },
+            onChange:function() {
+            	addSelectedToWhoCanUse();
             }
         },
         "actionWhoCanUseSelect");
@@ -90,7 +94,7 @@
 
 			Set<Role> roles = APILocator.getPermissionAPI().getReadRoles(currentEnvironment);%>
 			<%for(Role tmpRole :  roles){%>
-				addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>",
+				addToWhoCanUse("<%=tmpRole.getId()%>",
 						"<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
 			<% }%>
 
@@ -133,11 +137,6 @@
 				<td align="right"><%=LanguageUtil.get(pageContext, "publisher_Environment_Who_Can_Send_To_Env")%>:</td>
 				<td>
 					<input id="actionWhoCanUseSelect" />
-					<button dojoType="dijit.form.Button"
-						onClick='addSelectedToWhoCanUse()'
-						iconClass="addIcon">
-						<%=LanguageUtil.get(pageContext, "add")%>
-					</button>
 					<div class="wfWhoCanUseDiv">
 						<table class="listingTable" id="whoCanUseTbl">
 						</table>

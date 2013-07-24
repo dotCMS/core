@@ -53,6 +53,9 @@
 	</div>
 
 	<div class="yui-u" style="text-align:right;">
+		<button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
+						<%= LanguageUtil.get(pageContext, "publisher_upload") %>
+					</button>
 		<button dojoType="dijit.form.Button" onClick="loadUnpushedBundles();" iconClass="resetIcon">
 			<%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
 		</button>

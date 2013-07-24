@@ -10,7 +10,7 @@
 	<!--portlet id="6" struts-path="reverend_fun" narrow="true" /-->
 	<!--portlet id="7" struts-path="bible_gateway" /-->
 	<!-- portlet id="8" struts-path="calendar" scheduler-class="com.liferay.portlet.calendar.job.Scheduler" preferences-sharing-type="user" show-portlet-access-denied="true" show-portlet-inactive="true" ns-4-compatible="false" /-->
-	<portlet id="9" struts-path="admin" narrow="true" />
+	<portlet id="9"/>
 	<!--portlet id="10" struts-path="address_book" /-->
 	<!--portlet id="11" struts-path="directory" /-->
 	<!--portlet id="12" struts-path="stocks" narrow="true" /-->
@@ -129,7 +129,7 @@
 	<portlet id="EXT_DASHBOARD" struts-path="ext/dashboard" />
 	<portlet id="WORKFLOW_SCHEMES"  />
 	<portlet id="OSGI_MANAGER"  />
-	<portlet id="EXT_TAG_MANAGER" struts-path="tag_manager" />
+    <portlet id="EXT_TAG_MANAGER" struts-path="tag_manager" />
 	<portlet id="EXT_EXPCONTENT_TOOL" struts-path="ext/escalation" narrow="true" />
 	<portlet id="EXT_BROKEN_LINKS" struts-path="ext/brokenlinks" narrow="true" />
     <portlet id="TIMEMACHINE" />
