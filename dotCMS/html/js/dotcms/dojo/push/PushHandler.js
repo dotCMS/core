@@ -317,9 +317,14 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		this.addToWhereToSend(user, userName);
 		this.refreshWhereToSend();
+
+		select.store = null;
+		select.reset();
+		select.store = this.environmentStore;
 	},
 
 	addToWhereToSend: function ( myId, myName){
+
 		for(i=0;i < this.whereToSend.length;i++){
 			if(myId == this.whereToSend[i].id  ||  myId == "user-" + this.whereToSend[i].id || myId == "role-" + this.whereToSend[i].id){
 				return;
@@ -363,7 +368,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 				x++;
 			}
 		}
+
 		this.whereToSend= newCanUse;
+
 	}
 
 
