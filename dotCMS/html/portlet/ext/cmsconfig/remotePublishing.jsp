@@ -220,6 +220,11 @@
 
         addToWhoCanUse(user, userName);
         refreshWhoCanUse();
+
+		select.store = null;
+		select.reset();
+		select.store = myRoleReadStore;
+
     }
 
     function addToWhoCanUse(myId, myName) {
