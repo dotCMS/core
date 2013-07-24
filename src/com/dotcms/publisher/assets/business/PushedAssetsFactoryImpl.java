@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.publisher.assets.bean.PushedAsset;
-import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -41,6 +40,16 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		final DotConnect db = new DotConnect();
 		db.setSQL(DELETE_ASSETS_BY_ASSET_ID);
 		db.addParam(assetId);
+		db.loadResult();
+
+	}
+
+	@Override
+	public void deletePushedAssetsByEnvironment(String environmentId)
+			throws DotDataException {
+		final DotConnect db = new DotConnect();
+		db.setSQL(DELETE_ASSETS_BY_ENVIRONMENT_ID);
+		db.addParam(environmentId);
 		db.loadResult();
 
 	}
@@ -91,6 +100,29 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ASSETS_BY_ASSET_ID);
 		dc.addParam(assetId);
+
+		List<Map<String, Object>> res = dc.loadObjectResults();
+
+		for(Map<String, Object> row : res){
+			PushedAsset asset = PublisherUtil.getPushedAssetByMap(row);
+			assets.add(asset);
+		}
+
+		return assets;
+	}
+
+	@Override
+	public List<PushedAsset> getPushedAssetsByEnvironment(String environmentId)
+			throws DotDataException {
+		List<PushedAsset> assets = new ArrayList<PushedAsset>();
+
+		if(!UtilMethods.isSet(environmentId)) {
+			return assets;
+		}
+
+		DotConnect dc = new DotConnect();
+		dc.setSQL(SELECT_ASSETS_BY_ENV_ID);
+		dc.addParam(environmentId);
 
 		List<Map<String, Object>> res = dc.loadObjectResults();
 

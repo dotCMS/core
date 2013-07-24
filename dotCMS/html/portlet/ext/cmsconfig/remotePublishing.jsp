@@ -270,6 +270,23 @@
         this.whoCanUse = newCanUse;
     }
 
+    function deleteEnvPushHistory(envId) {
+
+    	var xhrArgs = {
+    		url : '/api/bundle/deleteenvironmentpushhistory/environmentid/'+envId,
+    		handleAs : "json",
+    		sync: false,
+    		load : function(data) {
+				alert('<%= LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history") %>');
+    		},
+    		error : function(error) {
+    			targetNode.innerHTML = "An unexpected error occurred: " + error;
+    		}
+    	}
+
+    	var deferred = dojo.xhrGet(xhrArgs);
+    }
+
 </script>
 
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
@@ -303,7 +320,8 @@
             <th align="right" style="padding-left: 10px; width: 80px">
                 <%= LanguageUtil.get(pageContext, "Push-To-All") %>
             </th>
-            <th align="right" style="padding-left: 10px; width: 12px">
+            <th style="padding-left: 10px; width: 12px; text-align: center">
+           	 <%= LanguageUtil.get(pageContext, "Actions") %>
             </th>
         </tr>
 
@@ -367,10 +385,13 @@
             <td style="padding-left: 10px; font-size: 12px" align="center" >
                 <%=environment.getPushToAll()%>
             </td>
-            <td style="padding-left: 10px; font-size: 12px" >
+            <td style="padding-left: 10px; font-size: 12px" width="100" align="right">
                 <button dojoType="dijit.form.Button" onClick="goToAddEndpoint('<%=environment.getId()%>', 'false');" iconClass="plusIcon">
                     <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
                 </button>
+                 <button dojoType="dijit.form.Button" onClick="deleteEnvPushHistory('<%=environment.getId()%>');" iconClass="deleteIcon" style="padding-top: 8px" >
+					<%= LanguageUtil.get(pageContext, "publisher_delete_asset_history") %>
+				</button>
             </td>
 
         </tr>

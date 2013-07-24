@@ -122,5 +122,28 @@ public class BundleResource extends WebResource {
 
 	}
 
+	@GET
+	@Path("/deleteenvironmentpushhistory/{params:.*}")
+	@Produces("application/json")
+	public String deleteEnvironmentPushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+		InitDataObject initData = init(params, true, request, true);
+		String environmentId = initData.getParamsMap().get("environmentid");
+
+		try {
+
+			if(!UtilMethods.isSet(environmentId)) {
+				return "false";
+			}
+
+			APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(environmentId);
+
+		} catch (DotDataException e) {
+			Logger.error(getClass(), "Error trying to delete Pushed Assets for environment Id: " + environmentId);
+			return "false";
+		}
+
+		return "true";
+
+	}
 
 }
