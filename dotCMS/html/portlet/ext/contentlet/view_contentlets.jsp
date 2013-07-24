@@ -680,7 +680,7 @@
 <div id="popups"></div>
 
 <%if(UtilMethods.isSet(structureSelected) && structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){ %>
-        <input type="hidden" name="contype" value="3"/>
+        <input type="hidden" name="contentStructureType" value="3"/>
 <% } %>
 
 </form>

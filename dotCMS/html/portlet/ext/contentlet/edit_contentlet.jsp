@@ -446,18 +446,17 @@ var editButtonRow="editContentletButtonRow";
 
 		</div>
 
-		    <!-- Publishing Status Tab  -->
-    <%if(contentlet != null && InodeUtils.isSet(contentlet.getInode())){
-	      com.dotmarketing.portlets.contentlet.business.Contentlet fatty = new com.dotmarketing.portlets.contentlet.business.Contentlet();
-	      APILocator.getContentletAPI().convertContentletToFatContentlet(contentlet, fatty);
-	    %>
-	      <% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, fatty); %>
-	        <div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
-	          <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
-	        </div>
-      <%}%>
-    <!-- /Publishing Status Tab  -->
-
+		<!-- Publishing Status Tab  -->
+		<%if(contentlet != null && InodeUtils.isSet(contentlet.getInode())){
+			com.dotmarketing.portlets.contentlet.business.Contentlet fatty = new com.dotmarketing.portlets.contentlet.business.Contentlet();
+			APILocator.getContentletAPI().convertContentletToFatContentlet(contentlet, fatty);
+		%>
+			<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, fatty); %>
+				<div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
+					<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+				</div>
+			<%}%>
+		<!-- /Publishing Status Tab  -->
 
 		<!-- References Tab -->
 		<%if(references != null && references.size() > 0){ %>

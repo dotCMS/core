@@ -1622,6 +1622,8 @@
                 var popupMenus = "";
                 var workflowMandatory;
                 var wfActionMapList;
+                var structure_id;
+                var contentStructureType;
 
                 //Filling data
                 for (var i = 0; i < data.length; i++) {
@@ -1692,6 +1694,8 @@
                         write = userHasWritePermission (cellData, userId)?"1":"0";
                         publish = userHasPublishPermission (cellData, userId)?"1":"0";
                         workflowMandatory = cellData["workflowMandatory"];
+                        contentStructureType = cellData["contentStructureType"];
+                        structure_id = cellData["structureInode"];
 
                         contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(cellData.identifier,cellData.inode,cellData.languageId);
 
@@ -1750,15 +1754,15 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                             popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
                           }
                         }
 
                         if (working && publish && !deleted && (!workflowMandatory=="true")) {
 				    		if(live) {
-				    			popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"republishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Republish") %></div>";
+				    			popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"republishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Republish") %></div>";
 							} else {
-								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
+								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
 							}
 						}
 						if(enterprise && sendingEndpoints && !(workflowMandatory=="true")) {
@@ -1771,7 +1775,7 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
                           }
                         }
 
@@ -1787,9 +1791,9 @@
                              }
                            }else{
                                 if (!deleted){
-                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"archiveIcon\" onClick=\"deleteContentlet('" + cellData.inode + "','','" + escape('<%= referer %>') + "');\"><%=LanguageUtil.get(pageContext, "Archive") %></div>";
+                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"archiveIcon\" onClick=\"deleteContentlet('" + cellData.inode + "','','" + escape('<%= referer %>') + "'" + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Archive") %></div>";
                                 }else{
-                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unarchiveIcon\" onClick=\"unarchiveContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Un-Archive") %></div>";
+                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unarchiveIcon\" onClick=\"unarchiveContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Un-Archive") %></div>";
                             }
                            }
                         }
@@ -1797,7 +1801,7 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                             popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"copyIcon\" onClick=\"copyEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Copy") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"copyIcon\" onClick=\"copyContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Copy") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"copyIcon\" onClick=\"copyContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Copy") %></div>";
                           }
                         }
 
@@ -1805,11 +1809,11 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                             popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                           }
                         }
                         //if (deleted && (write == "1"))
-                                //popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"deleteIcon\" onClick=\"fullDeleteContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Delete-Contentlet") %></div>";
+                                //popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"deleteIcon\" onClick=\"fullDeleteContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Delete-Contentlet") %></div>";
                         popupMenus += "</div>";
                 }
 
