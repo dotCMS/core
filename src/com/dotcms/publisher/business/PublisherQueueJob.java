@@ -234,17 +234,17 @@ public class PublisherQueueJob implements StatefulJob {
 	        		countPublishing++;
         	}
 
-        	if(countOk == endpointsMap.size()) {
+        	if(countOk == endpointsGroup.size()) {
 	        	pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(),
 	        			PublishAuditStatus.Status.SUCCESS,
 	        			localHistory);
 	        	pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
-        	} else if(localHistory.getNumTries() > MAX_NUM_TRIES) {
+        	} else if(localHistory.getNumTries() >= MAX_NUM_TRIES) {
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(),
 	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH,
 	        			localHistory);
         		pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
-        	} else if(countPublishing == endpointsMap.size()){
+        	} else if(countPublishing == endpointsGroup.size()){
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(),
         				PublishAuditStatus.Status.PUBLISHING_BUNDLE,
 	        			localHistory);
