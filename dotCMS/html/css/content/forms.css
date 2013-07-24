@@ -210,3 +210,6 @@ div.browseFile {
        left:0px;
        z-index: 1;
 }
+input.dijitArrowButtonInner{
+      cursor:pointer;
+}
