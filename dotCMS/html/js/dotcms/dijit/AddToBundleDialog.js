@@ -22,7 +22,7 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
             href: "/html/portlet/ext/remotepublish/add_to_bundle_dialog.jsp"
         });
 
-      //Verify if we need to display the date filtering box
+        //Verify if we need to display the date filtering box
         var dateFilter = this.dateFilter;
         var connection = dojo.connect(dia, "onLoad", function () {
             dojo.disconnect(connection);
@@ -35,6 +35,12 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
             }
         });
 
+        dojo.connect(dia, "onDownloadEnd", function () {
+            if (window.lastSelectedBundle && window.lastSelectedBundle.id) {
+                dojo.byId("bundleName").value = window.lastSelectedBundle.name;
+                dijit.byId('bundleSelect').set('value', window.lastSelectedBundle.id);
+            }
+        });
 
         dia.set("href", "/html/portlet/ext/remotepublish/add_to_bundle_dialog.jsp");
         dia.show();
