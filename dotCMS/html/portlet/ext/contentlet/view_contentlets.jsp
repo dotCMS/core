@@ -2,6 +2,7 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="org.mockito.internal.matchers.EndsWith"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
+<%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
 <%@ page import="java.util.*" %>
 <%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
