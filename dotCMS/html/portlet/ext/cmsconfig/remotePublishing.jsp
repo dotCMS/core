@@ -282,7 +282,7 @@
     		error : function(error) {
     			targetNode.innerHTML = "An unexpected error occurred: " + error;
     		}
-    	}
+    	};
 
     	var deferred = dojo.xhrGet(xhrArgs);
     }
@@ -377,7 +377,9 @@
 
                     <%if(!hasRow){ %>
                         <tr>
-                            <td colspan="100" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Servers") %></td>
+                            <td colspan="100" align="center">
+                                <%= LanguageUtil.get(pageContext, "publisher_No_Servers") %><a href="javascript:goToAddEndpoint('<%=environment.getId()%>', 'false');"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+                            </td>
                         </tr>
                     <%}%>
                 </table>
@@ -400,7 +402,9 @@
 
     <%if(!hasEnvironments){ %>
         <tr>
-            <td colspan="100" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+            <td colspan="100" align="center">
+                <%= LanguageUtil.get(pageContext, "publisher_no_environments") %><a href="javascript:goToAddEnvironment();"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+            </td>
         </tr>
     <%}%>
 
@@ -469,7 +473,10 @@
         <%if(!hasRow){ %>
 
         <tr>
-            <td colspan="100" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
+            <td colspan="100" align="center">
+                <%= LanguageUtil.get(pageContext, "publisher_no_servers_set_up") %><a href="javascript:goToAddEndpoint(null, 'true');"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+            </td>
+
         </tr>
         <%}%>
     </table>
