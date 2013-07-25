@@ -34,7 +34,7 @@ THIS FILE AND ITS INCLUDES
 	<meta name="Expire" content="Now" />
 	
 	<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon" />
-	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
+	<title><%= DOTCMS_PORTAL_PAGE_TITLE %></title>
 	 
 	<style type="text/css">
 		@import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>"; 
