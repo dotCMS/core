@@ -10,11 +10,11 @@
 
     <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
-        <div id="companyTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.9") %>" >
+        <div id="companyTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "configuration_Basic_Config") %>" >
             <div id="companyTabContentDiv"></div>
         </div>
 
-        <div id="remotePublishingTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_CONTENT_PUBLISHING_TOOL") %>" >
+        <div id="remotePublishingTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Publishing_Environment") %>" >
             <div id="remotePublishingTabContentDiv"></div>
         </div>
 
