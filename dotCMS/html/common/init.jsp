@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.business.APILocator"%>
 <%@ include file="/html/common/auth_backend_check.jsp" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
@@ -232,4 +233,21 @@
 	} catch (Exception e) {
 
 	}
+	String DOTCMS_PORTAL_PAGE_TITLE="dotCMS : " + LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management");
+
+	try{
+		if(request.getParameter("p_p_id") != null 
+				&& ! LanguageUtil.get(pageContext, "javax.portlet.title." + request.getParameter("p_p_id")).equals("javax.portlet.title." + request.getParameter("p_p_id")) ){
+			DOTCMS_PORTAL_PAGE_TITLE = LanguageUtil.get(pageContext, "javax.portlet.title." + request.getParameter("p_p_id") ) + " : dotCMS";
+			
+		}
+		
+	}
+	catch(Exception e){
+		
+	}
+
+
+
+
 %>
