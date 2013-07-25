@@ -658,15 +658,6 @@ function editImage(inode, callingImg){
 	<%} %>
 <!-- /Versions Tab -->
 
-<!-- Publishing Status Tab  -->
-  <%if(file != null && InodeUtils.isSet(file.getInode())){ %>
-    <% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, file); %>
-      <div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="showEditButtonsRow()">
-        <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
-      </div>
-  <%}%>
-<!-- /Publishing Status Tab  -->
-
 
 </div>
 <!-- /TabContainer-->

@@ -400,20 +400,12 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 
 <!-- START Versions Tab -->
 	<%if(contentLink != null && InodeUtils.isSet(contentLink.getInode())){ %>
+		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentLink); %>
 		<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="showEditButtonsRow()">
 			<%@ include	file="/html/portlet/ext/common/edit_versions_inc.jsp"%>
 		</div>
 	<% } %>
 <!-- END Versions Tab -->
-
-<!-- Publishing Status Tab  -->
-  <%if(contentLink != null && InodeUtils.isSet(contentLink.getInode())){ %>
-  <% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentLink); %>
-    <div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="showEditButtonsRow()">
-      <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
-    </div>
-  <%}%>
-<!-- /Publishing Status Tab  -->
 
 
 </div>
