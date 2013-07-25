@@ -133,7 +133,7 @@
 		<action path="/portal_public/j_login_error" forward="portal.j_login_error" />
 
 		<action path="/portal_public/login" type="com.liferay.portal.action.LoginAction">
-			<forward name="portal.login" path="portal.login" />
+			<forward name="portal.login" path="/portal/login.jsp" />
 			<forward name="/portal/j_login.jsp" path="/portal/j_login.jsp" />
 			<forward name="/portal/touch_protected.jsp" path="/portal/touch_protected.jsp" />
 		</action>
