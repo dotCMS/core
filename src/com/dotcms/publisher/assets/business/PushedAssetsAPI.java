@@ -45,6 +45,16 @@ public interface PushedAssetsAPI {
 	public void deletePushedAssets(String assetId)  throws DotDataException;
 
 	/**
+	 * deletes the push assets entries for the given environment Id.
+	 *
+	 * @param	environmentId	the id of the environment whose pushed assets records will be deleted
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+
+	public void deletePushedAssetsByEnvironment(String environmentId)  throws DotDataException;
+
+	/**
 	 * returns all the push assets for a given assetId
 	 *
 	 * @param	assetId	the id of the asset
