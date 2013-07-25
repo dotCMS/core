@@ -163,7 +163,7 @@ public abstract class CategoryCache implements Cachable{
      * @throws DotDataException
      * @throws DotCacheException
      */
-    abstract protected void removeParents ( Categorizable child ) throws DotDataException, DotCacheException;
+    abstract public void removeParents ( Categorizable child ) throws DotDataException, DotCacheException;
 
     /**
 	 * Sets the list of parent categories of the given child id/inode
