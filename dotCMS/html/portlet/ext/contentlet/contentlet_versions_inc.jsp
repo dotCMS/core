@@ -18,7 +18,7 @@
 <%@page import="com.dotmarketing.business.Permissionable"%>
 
 <%
-	
+
 	String id=request.getParameter("contentletId");
 	Identifier ident = APILocator.getIdentifierAPI().find(id);
 	boolean isImage = UtilMethods.isImage(ident.getAssetName());
@@ -89,7 +89,7 @@
 		<% if (!working) {  %>
 			<% if(canEdit) {  %>
 				<% if (!live) { %>
-					<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a> - 
+					<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a> -
 				<% } %>
 				<a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
 			<% } %>
@@ -99,7 +99,7 @@
 		</td>
 		<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/></td>
 		<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
-<% 
+<%
 	String modUserName = "";
 	if(UtilMethods.isSet(modUser)){
 		try{
@@ -110,9 +110,9 @@
 		 <td><%= modUserName %></td>
 		<!-- DOTCMS-3813  -->
 		<!-- }  -->
-		
+
 		<!-- Timezone
-		<%= Calendar.getInstance().getTimeZone().getID() %> 
+		<%= Calendar.getInstance().getTimeZone().getID() %>
 		 -->
 		 <%if(isImage){ %>
 			 <td align="center">
@@ -120,7 +120,7 @@
 			 		<a  href="javascript: selectVersion('<%= vinode %>');">
 			 	<%} %>
 			 	<img src="/contentAsset/image/<%=vinode %>/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_h=125&thumbnail_w=125" style="width:150px;height:150px;border:1px solid silver;padding:3px;"></a>
-				
+
 			 </td>
 		 <%} %>
 		<td nowrap="nowrap" style="text-align:center;"><%= UtilMethods.dateToHTMLDate(modDate) %> - <%= UtilMethods.dateToHTMLTime(modDate) %></td>
