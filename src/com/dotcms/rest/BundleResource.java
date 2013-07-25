@@ -9,8 +9,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 
-import bsh.util.Util;
-
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -117,6 +115,30 @@ public class BundleResource extends WebResource {
 
 		} catch (DotDataException e) {
 			Logger.error(getClass(), "Error trying to delete Pushed Assets for asset Id: " + assetId);
+			return "false";
+		}
+
+		return "true";
+
+	}
+
+	@GET
+	@Path("/deleteenvironmentpushhistory/{params:.*}")
+	@Produces("application/json")
+	public String deleteEnvironmentPushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+		InitDataObject initData = init(params, true, request, true);
+		String environmentId = initData.getParamsMap().get("environmentid");
+
+		try {
+
+			if(!UtilMethods.isSet(environmentId)) {
+				return "false";
+			}
+
+			APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(environmentId);
+
+		} catch (DotDataException e) {
+			Logger.error(getClass(), "Error trying to delete Pushed Assets for environment Id: " + environmentId);
 			return "false";
 		}
 
