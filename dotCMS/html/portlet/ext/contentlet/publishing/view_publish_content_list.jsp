@@ -3,6 +3,8 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="java.io.StringWriter"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
+<%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
+
 <%@page import="com.dotmarketing.common.model.ContentletSearch"%>
 <%@page import="com.dotmarketing.util.PaginatedArrayList"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>

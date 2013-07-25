@@ -1,4 +1,5 @@
 <%@ include file="/html/portlet/ext/browser/init.jsp" %>
+<%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.db.DbConnectionFactory"%>
 

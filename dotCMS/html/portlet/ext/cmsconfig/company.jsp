@@ -7,13 +7,6 @@
     dojo.require("dojox.widget.ColorPicker");
     dojo.require("dojo.parser");// scan page for widgets and instantiate them
 
-    function initUserLocale () {
-        var timeZoneSelect = dojo.query('#userTimezoneWrapper select')[0];
-        if (timeZoneSelect) {
-            timeZoneSelect = new dijit.form.Select({ name: 'companyTimeZoneId', value: '<%= company.getTimeZone().getID() %>'}, timeZoneSelect);
-        }
-    }
-
     function styler (val) {
         dojo.byId("colorBlock").style.background = val;
         dojo.byId("bgColor").value = val;
@@ -25,7 +18,6 @@
     }
 
     dojo.addOnLoad(function () {
-        initUserLocale();
         styler('<%= company.getSize() %>');
         imgSwap('<%= company.getHomeURL() %>');
     });
@@ -118,7 +110,7 @@
 
         </td>
         <td valign="middle" align="center" style="border-bottom: none;">
-            <img border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0"><br>
+            <img style="max-width: 300px;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0"><br>
             <div class="buttonRow" style="margin-top:30px;">
 
                 <form action="/api/config/saveCompanyLogo" enctype="multipart/form-data" id="companyLogoForm" name="companyLogoForm" method="post">
@@ -157,7 +149,8 @@
                     <%
                         User defuser=APILocator.getUserAPI().getDefaultUser();
                     %>
-                    <select dojoType="dijit.form.FilteringSelect"  value="<%=defuser.getLocale().getLanguage()+ "_" + defuser.getLocale().getCountry()%>" id="companyLanguageId" name="companyLanguageId">
+                    <select dojoType="dijit.form.FilteringSelect"  value="<%=defuser.getLocale().getLanguage()+ "_" + defuser.getLocale().getCountry()%>"
+                            id="companyLanguageId" name="companyLanguageId" style="width: 250px;">
                         <%
                             Locale[] locales = LanguageUtil.getAvailableLocales();
                             for (int i = 0; i < locales.length; i++) {
@@ -169,16 +162,17 @@
 
                 <dt><%= LanguageUtil.get(pageContext, "time-zone") %></dt>
                 <dd>
-			    <span id="userTimezoneWrapper">
-                    <select dojoType="dijit.form.FilteringSelect" value="<%=company.getTimeZone().getID() %>" id="companyTimeZoneId" name="companyTimeZoneId">
-                        <% String[] ids = TimeZone.getAvailableIDs();
-                            Arrays.sort(ids);
-                            for(String id : ids) {
-                                TimeZone tmz=TimeZone.getTimeZone(id);%>
-                            <option value="<%= id %>"><%= tmz.getDisplayName(locale) %> (<%= tmz.getID() %>) </option>
-                        <% }%>
-                    </select>
-				</span>
+                    <span id="userTimezoneWrapper">
+                        <select dojoType="dijit.form.FilteringSelect" value="<%=company.getTimeZone().getID() %>"
+                                id="companyTimeZoneId" name="companyTimeZoneId" style="width: 250px;">
+                            <% String[] ids = TimeZone.getAvailableIDs();
+                                Arrays.sort(ids);
+                                for(String id : ids) {
+                                    TimeZone tmz=TimeZone.getTimeZone(id);%>
+                                <option value="<%= id %>"><%= tmz.getDisplayName(locale) %> (<%= tmz.getID() %>) </option>
+                            <% }%>
+                        </select>
+                    </span>
                 </dd>
                 <dd>
                     <div class="buttonRow" style="float: left;">
@@ -198,7 +192,7 @@
             <dl>
                 <dt><%= LanguageUtil.get(pageContext, "authentication-type") %></dt>
                 <dd>
-                    <select  dojoType="dijit.form.Select"  value="<%= company.getAuthType()%>"  id="companyAuthType" name="companyAuthType">
+                    <select dojoType="dijit.form.FilteringSelect"  value="<%= company.getAuthType()%>"  id="companyAuthType" name="companyAuthType" style="width: 200px;">
                         <option value="<%= Company.AUTH_TYPE_EA %>"><%= LanguageUtil.get(pageContext, "email-address") %></option>
                         <option value="<%= Company.AUTH_TYPE_ID %>"><%= LanguageUtil.get(pageContext, "user-id") %></option>
                     </select>
