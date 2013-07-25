@@ -212,7 +212,7 @@ public class CategoryCacheImpl extends CategoryCache {
      * @throws DotCacheException
      */
     @Override
-    protected void removeParents ( Categorizable child ) throws DotDataException, DotCacheException {
+    public void removeParents ( Categorizable child ) throws DotDataException, DotCacheException {
         removeParents( child.getCategoryId() );
     }
 
