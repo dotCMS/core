@@ -8,7 +8,7 @@
 
 
 <%
-	
+
 	Contentlet cver = null;
 	boolean isContentlet = false;
  	Versionable v = (Versionable)request.getAttribute(com.dotmarketing.util.WebKeys.VERSIONS_INODE_EDIT);
@@ -19,7 +19,7 @@
 
 	PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 	boolean canEdit = true;
-	
+
 	if(v instanceof Permissionable) {
 		canEdit = permissionAPI.doesUserHavePermission((Permissionable)v, PermissionAPI.PERMISSION_EDIT, user);
 	}
@@ -41,7 +41,7 @@
 		}catch(Exception e){
 			Logger.warn(this,LanguageUtil.get(pageContext, "Unable-to-get-working-contentlet")+ " : " + LanguageUtil.get(pageContext, "Usually-not-a-problem-it-is-probably-because-the-contentlet-is-new"));
 		}
-		//if(working != null) 
+		//if(working != null)
 			//versions.add(0,working);
 	}else if(InodeUtils.isSet(v.getInode())){
 		ident = APILocator.getIdentifierAPI().find(v);
@@ -102,7 +102,7 @@
 			str_style = "class='alternate_2'";
 		}
 		kmod++;
-		
+
 %>
 	<tr  <%=str_style%>>
 		<td nowrap="nowrap" width="50" align="center">
@@ -112,7 +112,7 @@
 		<% if (!working) {  %>
 			<% if(canEdit) {  %>
 				<% if (!live) { %>
-					<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a> - 
+					<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a> -
 				<% } %>
 				<a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
 			<% } %>
@@ -121,10 +121,10 @@
 		<% } %>
 		</td>
 		<% if(isContentlet){ %>
-			<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/></td>		
+			<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/></td>
 		<% } %>
 		<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
-<% 
+<%
 	String modUserName = "";
 	if(UtilMethods.isSet(modUser)){
 		try{
@@ -135,9 +135,9 @@
 		 <td><%= modUserName %></td>
 		<!-- DOTCMS-3813  -->
 		<!-- }  -->
-		
+
 		<!-- Timezone
-		<%= Calendar.getInstance().getTimeZone().getID() %> 
+		<%= Calendar.getInstance().getTimeZone().getID() %>
 		 -->
 		<td nowrap="nowrap" style="text-align:center;"><%= UtilMethods.dateToHTMLDate(modDate) %> - <%= UtilMethods.dateToHTMLTime(modDate) %></td>
 		<td nowrap="nowrap"><%= vinode %></td>
@@ -152,4 +152,5 @@
 
 </table>
 
+<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
 

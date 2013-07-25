@@ -366,17 +366,17 @@ dojo.require("dojox.layout.ContentPane");
 	   	   		if(fileStats!=null){
 		   	   	   isAjaxFileUploading = true;
 		   	   	}
-		   	}, async:false});	   		
-	   			
+		   	}, async:false});
+
 	   	});
 		var maxSize = document.getElementById("maxSizeFileLimit");
 		if(maxSize) {
 			size = maxSize.value;
-			
+
 			if(size>maxSizeForAlert*1024*1024){
 				alertFileAssetSize=true;
 			}
-				
+
 		   	if(alertFileAssetSize){
 		   		document.getElementById('maxSizeFileAlert').innerHTML='<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "alert-file-too-large-takes-lot-of-time"))%>'
 		   	}else{
@@ -601,7 +601,7 @@ dojo.require("dojox.layout.ContentPane");
 		}
 		myCp = new dijit.layout.ContentPane({
 			id : "contentletVersionsCp",
-			style: "height:600px",
+			style: "height:100%",
 			href: "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
 		}).placeAt("contentletVersionsDiv");
     }
@@ -610,16 +610,16 @@ dojo.require("dojox.layout.ContentPane");
 		var fieldRelatedData = {"fieldContentlet" : fieldContentlet,
 								"fieldVarName" : fieldVarName,
 								"fieldInode" : fieldInode,
-								"fileName" : fileName};		
+								"fileName" : fileName};
 		var callMetaData = { callback:saveBinaryFileOnContentCallback, arg: fieldRelatedData };
 		ContentletAjax.saveBinaryFileOnContent(fileName,fieldInode,callMetaData);
 	}
-	
+
 	function saveBinaryFileOnContentCallback(data, fieldRelatedData){
-		
+
 		if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
 			document.getElementsByName(fieldRelatedData['fieldContentlet'])[0].value = data["contentletInode"];
-						
+
 			var thumbnailParentDiv = document.createElement("div");
 			thumbnailParentDiv.setAttribute("id",'thumbnailParent'+fieldRelatedData['fieldVarName']);
 			var fieldDiv = dojo.byId(fieldRelatedData['fieldVarName']+'_field');
@@ -630,32 +630,32 @@ dojo.require("dojox.layout.ContentPane");
 			}
 
 			<% if(LicenseUtil.getLevel() < 199){ %>
-			
+
 				var newFileDialogTitle = "<%=LanguageUtil.get(pageContext,"Image") %>";
-	
+
 				var newFileDialogContent = '<div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">'
 								+ '<img src="/contentAsset/image/'+data["contentletInode"]+'/fileAsset/?byInode=1"/>'
 								+ '</div>'
 								+ '<div class="callOutBox">'
 				                                + '<%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>'
 								+ '</div>';
-			
+
 				var newFileDialog = new dijit.Dialog({
 					id: data['contentletInode']+'_Dialog',
 				    title: newFileDialogTitle,
 				    content: newFileDialogContent,
 				    style: "overflow:auto;width:760px;height:540px;"
 				});
-		
+
 				var thumbNailImg = document.createElement("img");
 				thumbNailImg.setAttribute("src","/contentAsset/image/"+data['contentletInode']+"/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_w=300&thumbnail_h=300");
 				thumbNailImg.setAttribute("onmouseover","dojo.attr(this, 'className', 'thumbnailDivHover');");
 				thumbNailImg.setAttribute("onmouseout","dojo.attr(this, 'className', 'thumbnailDiv');");
 				thumbNailImg.setAttribute("onclick","dijit.byId('"+data['contentletInode']+'_Dialog'+"').show()");
 				thumbnailParentDiv.appendChild(thumbNailImg);
-			
+
 			<%} else { %>
-			
+
 				var newImageEditor = new dotcms.dijit.image.ImageEditor({
 				            editImageText : "<%= LanguageUtil.get(pageContext, "Edit-Image") %>",
 				            inode : data["contentletInode"],
@@ -699,12 +699,12 @@ dojo.require("dojox.layout.ContentPane");
     		this.wfActionId=wfId;
 
     		if(popupable){
-    			
+
     			var myCp = dijit.byId("contentletWfCP");
     			if (myCp) {
     				myCp.destroyRecursive(true);
     			}
-    			
+
     			var dia = dijit.byId("contentletWfDialog");
     			if(dia){
     				dia.destroyRecursive();
@@ -717,7 +717,7 @@ dojo.require("dojox.layout.ContentPane");
     				});
 
 
-  			
+
 
     			myCp = new dojox.layout.ContentPane({
     				id 			: "contentletWfCP",
@@ -725,15 +725,15 @@ dojo.require("dojox.layout.ContentPane");
     			}).placeAt("contentletWfDialog");
 
     			dia.show();
-    			var inode= (currentContentletInode != undefined && currentContentletInode.length > 0) 
+    			var inode= (currentContentletInode != undefined && currentContentletInode.length > 0)
     					? currentContentletInode
    							:workingContentletInode;
 
 
     			var r = Math.floor(Math.random() * 1000000000);
-				var url = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId 
-						+ "&inode=" + inode 
-						+ "&showpush=" + showpush 
+				var url = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId
+						+ "&inode=" + inode
+						+ "&showpush=" + showpush
 						+ "&publishDate=<%=structure.getPublishDateVar()%>"
 						+ "&expireDate=<%=structure.getExpireDateVar()%>"
 						+ "&structureInode=<%=structure.getInode()%>"
@@ -750,9 +750,9 @@ dojo.require("dojox.layout.ContentPane");
     	},
 
     	saveAssign : function(){
-    		var assignRole = (dijit.byId("taskAssignmentAux")) 
+    		var assignRole = (dijit.byId("taskAssignmentAux"))
 			? dijit.byId("taskAssignmentAux").getValue()
-				: (dojo.byId("taskAssignmentAux")) 
+				: (dojo.byId("taskAssignmentAux"))
 					? dojo.byId("taskAssignmentAux").value
 							: "";
 
@@ -760,54 +760,54 @@ dojo.require("dojox.layout.ContentPane");
 				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Assign-To-Required")%>");
 				return;
 			}
-	
-			var comments = (dijit.byId("taskCommentsAux")) 
+
+			var comments = (dijit.byId("taskCommentsAux"))
 				? dijit.byId("taskCommentsAux").getValue()
-					: (dojo.byId("taskCommentsAux")) 
+					: (dojo.byId("taskCommentsAux"))
 						? dojo.byId("taskCommentsAux").value
 								: "";
-						
-			// BEGIN: PUSH PUBLISHING ACTIONLET						
-			var publishDate = (dijit.byId("wfPublishDateAux"))			
+
+			// BEGIN: PUSH PUBLISHING ACTIONLET
+			var publishDate = (dijit.byId("wfPublishDateAux"))
 				? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
-					: (dojo.byId("wfPublishDateAux"))	
+					: (dojo.byId("wfPublishDateAux"))
 						? dojo.date.locale.format(dojo.byId("wfPublishDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"})
 								: "";
 
-			var publishTime = (dijit.byId("wfPublishTimeAux"))			
+			var publishTime = (dijit.byId("wfPublishTimeAux"))
 				? dojo.date.locale.format(dijit.byId("wfPublishTimeAux").getValue(),{timePattern: "H-m", selector: "time"})
-					: (dojo.byId("wfPublishTimeAux"))	
+					: (dojo.byId("wfPublishTimeAux"))
 						? dojo.date.locale.format(dojo.byId("wfPublishTimeAux").value,{timePattern: "H-m", selector: "time"})
 								: "";
-			
-						
-			var expireDate = (dijit.byId("wfExpireDateAux"))			
+
+
+			var expireDate = (dijit.byId("wfExpireDateAux"))
 				? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-					: (dojo.byId("wfExpireDateAux"))	
+					: (dojo.byId("wfExpireDateAux"))
 						? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
 								: "";
-			
-			var expireTime = (dijit.byId("wfExpireTimeAux"))			
+
+			var expireTime = (dijit.byId("wfExpireTimeAux"))
 				? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireTimeAux").getValue(),{timePattern: "H-m", selector: "time"}) : ""
-					: (dojo.byId("wfExpireTimeAux"))	
+					: (dojo.byId("wfExpireTimeAux"))
 						? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireTimeAux").value,{timePattern: "H-m", selector: "time"}) : ""
-								: "";			
-			var neverExpire = (dijit.byId("wfNeverExpire"))			
+								: "";
+			var neverExpire = (dijit.byId("wfNeverExpire"))
 				? dijit.byId("wfNeverExpire").getValue()
-					: (dojo.byId("wfNeverExpire"))	
+					: (dojo.byId("wfNeverExpire"))
 						? dojo.byId("wfNeverExpire").value
 								: "";
 			var whereToSend = (dijit.byId("whereToSend"))
 				? dijit.byId("whereToSend").getValue()
 					: (dojo.byId("whereToSend"))
 						? dojo.byId("whereToSend").value
-								: "";						
+								: "";
 			// END: PUSH PUBLISHING ACTIONLET
-			
+
 			dojo.byId("wfActionAssign").value=assignRole;
 			dojo.byId("wfActionComments").value=comments;
 			dojo.byId("wfActionId").value=this.wfActionId;
-			
+
 			// BEGIN: PUSH PUBLISHING ACTIONLET
 			dojo.byId("wfPublishDate").value=publishDate;
 			dojo.byId("wfPublishTime").value=publishTime;
@@ -816,7 +816,7 @@ dojo.require("dojox.layout.ContentPane");
 			dojo.byId("wfNeverExpire").value=neverExpire;
 			dojo.byId("whereToSend").value=whereToSend;
 			// END: PUSH PUBLISHING ACTIONLET
-			
+
     		var dia = dijit.byId("contentletWfDialog").hide();
 
     		saveContent(false);

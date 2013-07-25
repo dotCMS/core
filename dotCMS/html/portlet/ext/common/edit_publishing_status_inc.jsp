@@ -8,6 +8,8 @@
 <%@page import="com.dotmarketing.factories.WebAssetFactory" %>
 <%@page import="com.dotcms.publisher.assets.bean.PushedAsset" %>
 <%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
+<%@page import="com.dotcms.publisher.bundle.bean.Bundle" %>
+<%@page import="com.liferay.portal.model.User"%>
 
 <%
 	Inode asset = (Inode) request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT);
@@ -49,9 +51,9 @@ function deletePushHistory() {
 <%@page import="com.dotcms.publisher.environment.bean.Environment"%>
 
 
-<div class="yui-g portlet-toolbar">
-	<div class="yui-u first">
-		<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=(asset.getIdentifier()) %>
+<div class="yui-g portlet-toolbar" style="padding-top: 30px">
+	<div class="yui-u first" style="font-weight: bold">
+		<%= LanguageUtil.get(pageContext, "publisher_push_history") %>
 	</div>
 
 	<div class="yui-u" style="text-align:right;">
@@ -63,32 +65,34 @@ function deletePushHistory() {
 
 <table class="listingTable">
 	<tr>
-		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></th>
+		<th width="45%"><%= LanguageUtil.get(pageContext, "publisher_pushed_by") %></th>
 		<th width="45%"><%= LanguageUtil.get(pageContext, "publisher_push_date") %></th>
 		<th width="20%"><%= LanguageUtil.get(pageContext, "publisher_Environment") %></th>
+		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></th>
 	</tr>
 <%
 	for(PushedAsset pushedAsset: pushedAssets) {
 
-	Environment env = APILocator.getEnvironmentAPI().findEnvironmentById(pushedAsset.getEnvironmentId());
+		Environment env = APILocator.getEnvironmentAPI().findEnvironmentById(pushedAsset.getEnvironmentId());
+		Bundle bundle = APILocator.getBundleAPI().getBundleById(pushedAsset.getBundleId());
+		User owner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
 
 
 %>
 	<tr  >
-		<td nowrap="nowrap">
+		<td><%= owner.getFullName() %></td>
+		<td><%= UtilMethods.dateToHTMLDate(pushedAsset.getPushDate()) %> - <%= UtilMethods.dateToHTMLTime(pushedAsset.getPushDate()) %></td>
+		 <td><%= (env != null) ? env.getName() : LanguageUtil.get(pageContext, "deleted") %></td>
+		 <td nowrap="nowrap">
 			<%= pushedAsset.getBundleId() %>
 		</td>
-		<td><%= pushedAsset.getPushDate() %></td>
-		 <td><%= (env != null) ? env.getName() : LanguageUtil.get(pageContext, "deleted") %></td>
 	</tr>
 <% } if (pushedAssets.size() == 0) { %>
 	<tr>
 		<td colspan="5">
-			<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "publisher_status_no_entries") %></div>
+			<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "publisher_status_no_push_history") %></div>
 		</td>
 	</tr>
 <% } %>
 
 </table>
-
-

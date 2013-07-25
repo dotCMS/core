@@ -347,15 +347,6 @@
 		<% } %>
 	<!-- END Versions TAB -->
 
-	<!-- Publishing Status Tab  -->
-		<%if(contentContainer != null && InodeUtils.isSet(contentContainer.getInode())){ %>
-		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentContainer); %>
-			<div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="showEditButtonsRow()">
-				<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
-			</div>
-		<%}%>
-	<!-- /Publishing Status Tab  -->
-
 </div>
 <!-- END TABS -->
 
