@@ -57,6 +57,23 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 	}
 
 	@Override
+	public void deletePushedAssetsByEnvironment(String environmentId)
+			throws DotDataException {
+
+		List<PushedAsset> assets = pushedAssetsFactory.getPushedAssetsByEnvironment(environmentId);
+
+		pushedAssetsFactory.deletePushedAssetsByEnvironment(environmentId);
+
+		// clear the deleted entries from the cache
+		if(assets!=null && assets.size()>0) {
+			for (PushedAsset asset : assets) {
+				CacheLocator.getPushedAssetsCache().removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
+			}
+		}
+
+	}
+
+	@Override
 	public void deleteAllPushedAssets() throws DotDataException {
 		pushedAssetsFactory.deleteAllPushedAssets();
 		CacheLocator.getPushedAssetsCache().clearCache();
