@@ -245,6 +245,11 @@
 	  <appender-ref ref="ASYNC-VELOCITY" />
 	</logger>
 
+    <!-- make Jersey less noisy -->
+    <logger name="com.sun.jersey.spi.container.servlet.WebComponent" additivity="false">
+        <level value="error"/>
+    </logger>
+
     <root>
             <priority value="info"/>
             <appender-ref ref="ASYNC"/>
