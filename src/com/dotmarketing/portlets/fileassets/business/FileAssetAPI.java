@@ -131,6 +131,20 @@ public interface FileAssetAPI {
 	 */
 	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	/**
+	 *
+	 * @param parentHost
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param live
+	 * @param working
+	 * @param archived
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean live, boolean working, boolean archived, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 
 	/**
 	 *
