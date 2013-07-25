@@ -18,6 +18,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.publisher.bundle.business.BundleAPI;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
@@ -262,7 +263,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //ONLY FAILED BUNDLES
-            if ( !status.getStatus().equals( Status.FAILED_TO_PUBLISH ) ) {
+            if ( !(status.getStatus().equals( Status.FAILED_TO_PUBLISH ) || status.getStatus().equals( Status.SUCCESS )) ) {
                 appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
                 continue;
             }
@@ -271,8 +272,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             Verify if the bundle exist and was created correctly..., meaning, if there is not a .tar.gz file is because
             something happened on the creation of the bundle.
              */
-            File bundle = new File( bundleRoot + File.separator + ".." + File.separator + basicConfig.getId() + ".tar.gz" );
-            if ( !bundle.exists() ) {
+            File bundleFile = new File( bundleRoot + File.separator + ".." + File.separator + basicConfig.getId() + ".tar.gz" );
+            if ( !bundleFile.exists() ) {
                 Logger.error( this.getClass(), "No Bundle with id: " + bundleId + " found." );
                 appendMessage( responseMessage, "publisher_retry.error.not.found", bundleId, true );
                 continue;
@@ -296,6 +297,19 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 if ( !sending ) {
                     appendMessage( responseMessage, "publisher_retry.error.cannot.retry.received", bundleId, true );
                     continue;
+                }
+
+                if ( status.getStatus().equals( Status.SUCCESS ) ) {
+
+                    //Get the bundle
+                    Bundle bundle = APILocator.getBundleAPI().getBundleById( bundleId );
+                    if ( bundle == null ) {
+                        Logger.error( this.getClass(), "No Bundle with id: " + bundleId + " found." );
+                        appendMessage( responseMessage, "publisher_retry.error.not.found", bundleId, true );
+                        continue;
+                    }
+                    bundle.setForcePush( true );
+                    APILocator.getBundleAPI().updateBundle( bundle );
                 }
 
                 //Clean the number of tries, we want to try it again
