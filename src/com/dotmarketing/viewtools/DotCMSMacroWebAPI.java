@@ -70,7 +70,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		}
 		else {
 
-			Map<String, Object> resultsMap = browser.getFolderContent(user, folder.getInode(), 0, -1, "", null, null, false, true, true, null, true);
+			Map<String, Object> resultsMap = browser.getFolderContent(user, folder.getInode(), 0, -1, "", null, null, false, false, true, true, null, true);
 			returnList = (List<Map<String, Object>>) resultsMap.get("list");
 		}
 		return returnList;

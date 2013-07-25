@@ -87,6 +87,21 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return assets;
 
 	}
+	
+	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean live, boolean working, boolean archived, boolean respectFrontendRoles) throws DotDataException,
+	DotSecurityException {
+		List<FileAsset> assets = null;
+		try{
+			Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, false);
+			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":"") + (archived? " +deleted:true":""), -1, 0, null , user, respectFrontendRoles),
+					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+		return assets;
+
+	}
 
 	public void createBaseFileAssetFields(Structure structure) throws DotDataException, DotStateException {
 		if (structure == null || !InodeUtils.isSet(structure.getInode())) {
