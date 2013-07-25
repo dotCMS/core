@@ -549,7 +549,7 @@
 					strHTML += '<span class="republishIcon"></span>';
 	            	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
 	            }else{
-					strHTML += '<span class="unpublishIcon"></span>';
+					strHTML += '<span class="publishIcon"></span>';
 	            	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
 				}
 			strHTML += '</a>';
