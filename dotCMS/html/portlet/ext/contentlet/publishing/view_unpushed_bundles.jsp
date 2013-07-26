@@ -48,7 +48,7 @@
 
 <div class="yui-g portlet-toolbar">
 	<div class="yui-u first">
-		<span class="sServerIcon"></span>
+		<span class="bundleIcon"></span>
 		<span  style="line-height:20px;font-weight: bold;"><%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %></span>
 	</div>
 
@@ -62,74 +62,70 @@
 	</div>
 </div>
 <div style="padding-top: 5px">
-			<table  class="listingTable">
-				<tr style="line-height:20px; padding-bottom: 15px">
-					<th style="padding-left: 10px; font-size: 12px" >
-					</th>
-					<th nowrap="nowrap" style="padding-left: 10px; width: 280px">
-						<%= LanguageUtil.get(pageContext, "publisher_dialog_bundle_name") %>
-					</th>
-					<th style="padding-left: 10px; font-size: 12px" >
-						<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles_Assets") %>
-					</th>
-					<th align="right" style="padding-left: 10px; width: 12px">
 
-					</th>
-
-				</tr>
 	<%
 			boolean hasBundles = false;
 			for(Bundle bundle : bundles){
-				hasBundles=true;%>
+				hasBundles=true;
+				if(null!=request.getParameter("delEp")){
+					String id = request.getParameter("delEp");
+					pepAPI.deleteEndPointById(id);
+				}
+				List<PublishingEndPoint> endpoints = pepAPI.findSendingEndPointsByEnvironment(bundle.getId());
 
-				<tr style="line-height:20px; padding-bottom: 15px">
-					<td nowrap="nowrap" style="padding-left: 10px; width: 79px">
-						<a style="cursor: pointer" onclick="deleteBundle('<%=bundle.getId()%>')" >
-						<span class="deleteIcon"></span></a>&nbsp;
-						<a style="cursor: pointer" onclick="goToEditBundle('<%=bundle.getId()%>')" >
-						<span class="editIcon"></span></a>&nbsp;
-						<a style="cursor: pointer" id="download-<%=bundle.getId()%>" >
-						<span class="downloadIcon"></span></a>
-                        <div dojoType="dijit.Menu" id="menuItem-<%=bundle.getId()%>" leftClickToOpen="true" jsId="menuItem-<%=bundle.getId()%>" style="display: none;" targetNodeIds="download-<%=bundle.getId()%>">
-                            <div dojoType="dijit.MenuItem" iconClass="downloadIcon" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish')"><%=LanguageUtil.get(pageContext, "download-for-Publish") %></div>
-                            <div dojoType="dijit.MenuItem" iconClass="downloadIcon" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','unpublish')"><%=LanguageUtil.get(pageContext, "download-for-UnPublish") %></div>
-                        </div>
-					</td>
-					<td style="padding-left: 10px; font-size: 12px;" >
-						<%=bundle.getName()%>
-					</td>
-					<td align="right">
-						<table class="myListingTable" >
-							<%
+				PublisherAPI publisherAPI = PublisherAPI.getInstance();
+				List<PublishQueueElement> assets = publisherAPI.getQueueElementsByBundleId(bundle.getId());%>
+				<table  class="listingTable">
+					<tr>
+						<th width="100%" onclick="goToEditBundle('<%=bundle.getId()%>')" style="cursor:pointer">
+
+							<b><%=bundle.getName()%></b>
+						</th>
+						<th align="right" nowrap="nowrap">
+						
+							<button dojoType="dijit.form.Button" onClick="deleteSavedBundle('<%=bundle.getId()%>')" iconClass="deleteIcon">
+								<%= LanguageUtil.get(pageContext, "Delete") %>
+							</button>
+							
+							
+	                        <button dojoType="dijit.form.ComboButton" disabled="<%=assets.size()>0?"false":"true" %>"  iconClass="downloadIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download")) %>">
+	                            <span><%=LanguageUtil.get(pageContext, "download") %></span>
+		                        <div dojoType="dijit.Menu" id="menuItem-<%=bundle.getId()%>">
+		                            <div dojoType="dijit.MenuItem" iconClass="plusIcon" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish')"><%=LanguageUtil.get(pageContext, "download-for-Publish") %></div>
+		                            <div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','unpublish')"><%=LanguageUtil.get(pageContext, "download-for-UnPublish") %></div>
+		                        </div>
+	                        </button>
+							
+						
+
+							<button dojoType="dijit.form.Button" disabled="<%=assets.size()>0?"false":"true" %>"   onClick="remotePublish('<%=bundle.getId()%>'); " iconClass="sServerIcon">
+								<%= LanguageUtil.get(pageContext, "Remote-Publish") %>
+							</button>
+						</th>
+					</tr>
+					
+					<tr>
 
 
-								if(null!=request.getParameter("delEp")){
-									String id = request.getParameter("delEp");
-									pepAPI.deleteEndPointById(id);
-								}
-								List<PublishingEndPoint> endpoints = pepAPI.findSendingEndPointsByEnvironment(bundle.getId());
-
-								PublisherAPI publisherAPI = PublisherAPI.getInstance();
-								List<PublishQueueElement> assets = publisherAPI.getQueueElementsByBundleId(bundle.getId());
-
-								boolean hasRow = false;
+						<td nowrap="nowrap" valign="top" colspan="2">
+							
+							
+							
+								<%boolean hasRow = false;
 								for(PublishQueueElement asset : assets){
 									hasRow=true;%>
-								<tr >
-									<td nowrap="nowrap" width="20">
-										<a style="cursor: pointer" onclick="deleteAsset('<%=asset.getAsset()%>', '<%=bundle.getId()%>')" >
-										<span class="deleteIcon"></span></a>
-									</td>
+									<div style="padding:4px;margin:3px;border-bottom:1px solid #eeeeee">
+									
 
-
-									<td  >
+										<span class="deleteIcon" style="margin-right:2px; cursor: pointer" onclick="deleteAsset('<%=asset.getAsset()%>', '<%=bundle.getId()%>')"></span>&nbsp;
+	
 										<%
 										String identifier = asset.getAsset();
 										String assetType = asset.getType();
 										String structureName = "";
 										String title = "";
 										String inode = "";
-
+	
 				                        if ( assetType.equals( "contentlet" ) ) {
 				                            //Searches and returns for a this Identifier a Contentlet using the default language
 				                            Contentlet contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
@@ -138,55 +134,37 @@
 				                            structureName = contentlet.getStructure().getName();
 				                        %>
 										    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
-										        <strong><%= assetType%></strong> :<%=StringEscapeUtils.escapeHtml(title)%>
+										        <strong style="text-decoration: underline;"><%=StringEscapeUtils.escapeHtml(title)%></strong>  : <%=structureName %>
 				                            </a>
 										<% } else {
-				                            title = PublishAuditUtil.getInstance().getTitle(assetType, identifier);
-				                        %>
-											<strong><%= assetType%></strong> :<%=StringEscapeUtils.escapeHtml(title)%>
+				                            title = PublishAuditUtil.getInstance().getTitle(assetType, identifier);%>
+											<strong><%=StringEscapeUtils.escapeHtml(title)%></strong> : <%= assetType%>
 										<% } %>
-
-										<div style="float:right;color:silver">
-											<%=structureName %>
-									    </div>
-
-
-									</td>
-
-
-								</tr>
-							<%}%>
-
+		
+								    </div>					
+								<%}%>
+							
 							<%if(!hasRow){ %>
-
-								<tr>
-									<td colspan="100" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Servers") %></td>
-								</tr>
+								<div style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_bundle_is_empty") %></div>
 							<%}%>
-						</table>
-					</td>
-					<td style="padding-left: 10px; font-size: 12px" width="120px" >
-						<button dojoType="dijit.form.Button" disabled="<%=assets.size()>0?"false":"true" %>"   onClick="remotePublish('<%=bundle.getId()%>'); " iconClass="plusIcon">
-							<%= LanguageUtil.get(pageContext, "Remote-Publish") %>
-						</button>
-<%-- 						<button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadSerializedBundle/bid/<%=bundle.getId()%>';" disabled="<%=assets.size()>0?"false":"true" %>"  iconClass="downloadIcon"> --%>
-<%-- 							<%= LanguageUtil.get(pageContext, "download") %> --%>
-<!-- 						</button> -->
-					</td>
 
-				</tr>
-
-
-		<%}%>
+						</td>
+					</tr>
+				</table>
+				<br>
+			<%}%>
 
 
 		<%if(!hasBundles){ %>
+			<table  class="listingTable">
 				<tr>
 					<td colspan="100" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
 				</tr>
-				<%}%>
+			</table>
+			<br>
+		<%}%>
 
-		</table><br>
+		
 
 
 </div>
