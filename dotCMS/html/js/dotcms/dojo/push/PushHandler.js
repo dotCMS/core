@@ -62,6 +62,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.dateFilter = dateFilter;
         dialog.container = this;
         dialog.show();
+
     },
 
     showAddToBundleDialog: function (assetId, title, displayDateFilter) {
@@ -325,14 +326,12 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		this.addToWhereToSend(user, userName);
 		this.refreshWhereToSend();
 
-		select.store = null;
-		select.reset();
-		select.store = this.environmentStore;
+		select.set('value', '0');
 	},
 
 	addToWhereToSend: function ( myId, myName){
 
-        if (myId == undefined || myId == null || myId == "") {
+        if (myId == undefined || myId == null || myId == "" || myId == '0') {
             return;
         }
 
