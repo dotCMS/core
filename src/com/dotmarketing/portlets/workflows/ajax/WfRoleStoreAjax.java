@@ -38,22 +38,22 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		if(searchName ==null) searchName ="";
 		String roleId = request.getParameter("roleId");
 		RoleAPI rapi = APILocator.getRoleAPI();
-		
-		
+
+
 		int start = 0 ;
 		int count = 20;
 		try{
 			start = Integer.parseInt(request.getParameter("start"));
 		}
 		catch(Exception e){
-			
+
 		}
 		try {
 			count = Integer.parseInt(request.getParameter("count"));
 		} catch (Exception e) {
 
 		}
-		
+
 		try {
 			Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
 
@@ -75,24 +75,24 @@ public class WfRoleStoreAjax extends WfBaseAction {
 	        		        roleList.add(r);
 	        			response.getWriter().write(rolesToJson(roleList));
 	        			return;
-	        		}	        		
+	        		}
 	        	}
 	        	catch(Exception e){
-	        		
+
 	        	}
-	        	
-	        }	        
-	        
-			while(roleList.size() < count){				
+
+	        }
+
+			while(roleList.size() < count){
 				List<Role> roles = rapi.findRolesByFilterLeftWildcard(searchName, start, count);
 				if(roles.size() ==0){
 					break;
 				}
 		        for(Role role : roles){
-		        	if(role.isUser()){		        		
-			        	try {		        		
+		        	if(role.isUser()){
+			        	try {
 			        		APILocator.getUserAPI().loadUserById(role.getRoleKey(), APILocator.getUserAPI().getSystemUser(), false);
-						} catch (Exception e) {						
+						} catch (Exception e) {
 							//Logger.error(WfRoleStoreAjax.class,e.getMessage(),e);
 							continue;
 						}
@@ -100,7 +100,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		        	if(role.getId().equals(cmsAnon.getId())){
 		        		role = cmsAnon;
 		        		addSystemUser = false;
-		        	}		        	
+		        	}
 		        	if(role.isSystem() && ! role.isUser() && !role.getId().equals(cmsAnon.getId()) && !role.getId().equals(APILocator.getRoleAPI().loadCMSAdminRole().getId())){
 		        		continue;
 		        	}
@@ -108,8 +108,8 @@ public class WfRoleStoreAjax extends WfBaseAction {
 		        		roleList.add(0,role);
 		        	}
 		        	else{
-		        		roleList.add(role);		        		
-		        	}		        		        
+		        		roleList.add(role);
+		        	}
 		        }
 		        start = start + count;
 			}
@@ -118,18 +118,18 @@ public class WfRoleStoreAjax extends WfBaseAction {
 				roleList.add(0,cmsAnon);
 			}
 
-			
+
 			//x = x.replaceAll("identifier", "x");
             response.getWriter().write(rolesToJson(roleList));
 
 		} catch (Exception e) {
 			Logger.error(WfRoleStoreAjax.class,e.getMessage(),e);
 		}
-		
+
 	}
-	
+
 	public void assignable(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	
+
 		String name = request.getParameter("name");
 
 		try {
@@ -141,7 +141,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 			if(!role.isUser()){
 				if(action.isRoleHierarchyForAssign()){
 			        userList = APILocator.getRoleAPI().findUsersForRole(role, true);
-			        roleList.addAll(APILocator.getRoleAPI().findRoleHierarchy(role));	
+			        roleList.addAll(APILocator.getRoleAPI().findRoleHierarchy(role));
 				}
 				else{
 			        userList = APILocator.getRoleAPI().findUsersForRole(role, false);
@@ -149,13 +149,13 @@ public class WfRoleStoreAjax extends WfBaseAction {
 				}
 			}
 			else{
-				userList.add(APILocator.getUserAPI().loadUserById(role.getRoleKey(), APILocator.getUserAPI().getSystemUser(), false));	
-			
-			}
-			
-			
+				userList.add(APILocator.getUserAPI().loadUserById(role.getRoleKey(), APILocator.getUserAPI().getSystemUser(), false));
 
-	        
+			}
+
+
+
+
 
 			for(User user :userList){
 				Role r =APILocator.getRoleAPI().getUserRole(user);
@@ -164,7 +164,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 				}
 			}
 			if(name != null){
-				
+
 				name = name.toLowerCase().replaceAll("\\*", "");
 				if(UtilMethods.isSet(name)){
 					List<Role> newRoleList = new ArrayList<Role>();
@@ -175,20 +175,20 @@ public class WfRoleStoreAjax extends WfBaseAction {
 					}
 					roleList = newRoleList;
 				}
-				
+
 			}
-			
-			
-			
-			
-			
-			
+
+
+
+
+
+
             response.getWriter().write(rolesToJson(roleList));
 		} catch (Exception e) {
 			Logger.error(WfRoleStoreAjax.class,e.getMessage(),e);
 		}
-		
-		
+
+
 	}
 
     private String rolesToJson ( List<Role> roles ) throws IOException, DotDataException, LanguageException {
@@ -198,7 +198,12 @@ public class WfRoleStoreAjax extends WfBaseAction {
         Map<String, Object> m = new LinkedHashMap<String, Object>();
 
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-        Map<String, Object> map;
+        Map<String, Object> map = new HashMap<String, Object>();
+
+        map.put( "name", "<" + LanguageUtil.get(getUser(),"publisher_Environment_Who_Can_Send_Choose") +">" );
+        map.put( "id", "0" );
+
+        list.add( map );
 
         Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
         for ( Role role : roles ) {
