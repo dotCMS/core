@@ -834,21 +834,15 @@
 
 	<!-- Versions Tab -->
 		<%if(template != null && InodeUtils.isSet(template.getInode())){ %>
-			<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" >
+
+			<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, template); %>
+			<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" >
+
 				<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 			</div>
 		<%} %>
 	<!-- /Versions Tab -->
 
-
-  <!-- Publishing Status Tab  -->
-    <%if(template != null && InodeUtils.isSet(template.getInode())){ %>
-    <% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, template); %>
-      <div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" onShow="showEditButtonsRow()">
-        <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
-      </div>
-    <%}%>
-<!-- /Publishing Status Tab  -->
 </div>
 
 </html:form>

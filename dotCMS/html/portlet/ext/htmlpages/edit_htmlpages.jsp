@@ -349,21 +349,15 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 
 <!-- Versions Tab -->
 	<%if(htmlpage != null && InodeUtils.isSet(htmlpage.getInode())){ %>
-		<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="showEditButtonsRow()">
+
+		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, htmlpage); %>
+		<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="showEditButtonsRow()">
+
 			<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp"%>
 		</div>
 	<%}%>
 <!-- /Versions Tab -->
 
-
-<!-- Publishing Status Tab  -->
-
-  <%if(htmlpage != null && InodeUtils.isSet(htmlpage.getInode())){ %>
-    <div id="publishingStatusTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_status") %>" 		  		  onShow="showEditButtonsRow()">
-      <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
-    </div>
-  <%}%>
-<!-- /Publishing Status Tab  -->
 
 </div>
 <!-- /TabContainer-->

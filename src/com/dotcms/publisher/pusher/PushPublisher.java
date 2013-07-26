@@ -161,7 +161,7 @@ public class PushPublisher extends Publisher {
 
 
 	        			detail.setInfo(error);
-	        			errorCounter++;
+	        			failedEnvironment |= true;
 
 	        			Logger.error(this.getClass(), error);
 	        		}
