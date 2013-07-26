@@ -82,11 +82,13 @@
             	dijit.byId("whoCanUseSelect").set("displayedValue","");
             	dijit.byId("whoCanUseSelect").loadDropDown();
             },
-            onChange:function() {
-            	addSelectedToWhoCanUse();
-            }
+            value : 0
         },
         "actionWhoCanUseSelect");
+
+		dojo.connect(dijit.byId("whoCanUseSelect"), 'onChange', function(event){
+            addSelectedToWhoCanUse();
+     	 });
 
 		whoCanUse = new Array()
 
