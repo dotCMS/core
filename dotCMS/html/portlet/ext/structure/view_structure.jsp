@@ -8,7 +8,11 @@
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
-<%@page import="com.dotcms.enterprise.LicenseUtil"%><script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
+<%@ page import="com.dotmarketing.business.APILocator" %>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
+<script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 
 <%
     java.util.Map params = new java.util.HashMap();
@@ -66,6 +70,11 @@
 			request, WindowState.MAXIMIZED.toString(), params);
 
 
+    boolean enterprise = LicenseUtil.getLevel() > 199;
+
+    PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
+    boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
 %>
 <script language="Javascript">
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
@@ -353,9 +362,15 @@ var deleteLabel = "";
 		    	popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=structure.getInode()%>\">";
 
 		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
-		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
-		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
-		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"stopIcon\" onClick=\"deleteStructure('<%=structure.getInode()%>');\">"+deleteLabel+"</div>";
+
+                <% if ( enterprise ) { %>
+                    <% if ( sendingEndpoints ) { %>
+		    	        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+                    <%}%>
+		    	    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
+                <%}%>
+
+                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"stopIcon\" onClick=\"deleteStructure('<%=structure.getInode()%>');\">"+deleteLabel+"</div>";
 
 		        popupMenus += "</div>";
 

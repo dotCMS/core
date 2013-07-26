@@ -3,8 +3,19 @@
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
+<%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@include file="/html/portlet/ext/categories/init.jsp"%>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
+
+<%
+    boolean enterprise = LicenseUtil.getLevel() > 199;
+
+    PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
+    boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
+%>
 
 <%  String dojoPath = Config.getStringProperty("path.to.dojo"); %>
 
@@ -762,10 +773,15 @@ td {font-size: 100%;}
 				<br/>
 				<div id="catHolder" style="text-align: center; " class="claro"></div>
 				<div style="height: 15px; text-align: right; margin-top: 5px">
-					<button dojoType="dijit.form.Button" type="button" onClick="remoteSyncronization();" iconClass="sServerIcon"><%= LanguageUtil.get(pageContext,"Remote-Syncronization") %></button>
-					&nbsp;
-					<button dojoType="dijit.form.Button" type="button" onClick="addToBundle();" iconClass="bundleIcon"><%= LanguageUtil.get(pageContext,"Add-To-Bundle") %></button>
-					&nbsp;
+
+                    <% if ( enterprise ) { %>
+                        <% if ( sendingEndpoints ) { %>
+                            <button dojoType="dijit.form.Button" type="button" onClick="remoteSyncronization();" iconClass="sServerIcon"><%= LanguageUtil.get(pageContext,"Remote-Syncronization") %></button>
+                            &nbsp;
+                        <%}%>
+                        <button dojoType="dijit.form.Button" type="button" onClick="addToBundle();" iconClass="bundleIcon"><%= LanguageUtil.get(pageContext,"Add-To-Bundle") %></button>
+                        &nbsp;
+                    <%}%>
 					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
 				</div>
 				<input type="hidden" name="fullCommand" id="fullCommand" value="">

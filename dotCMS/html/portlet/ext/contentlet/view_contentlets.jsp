@@ -620,15 +620,16 @@
                                                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
                                         </button>
 
-										<% if(enterprise && sendingEndpoints) { %>
+                                        <% if ( enterprise ) { %>
+                                            <% if ( sendingEndpoints ) { %>
+                                                <button dojoType="dijit.form.Button" id="pushPublishButton"  onClick="pushPublishSelectedContentlets()" iconClass="publishIconDis" disabled="true">
+                                                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
+                                                </button>
+                                            <% } %>
 
-                                        <button dojoType="dijit.form.Button" id="pushPublishButton"  onClick="pushPublishSelectedContentlets()" iconClass="publishIconDis" disabled="true">
-                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
-                                        </button>
-
-                                        <button dojoType="dijit.form.Button" id="addToBundleButton"  onClick="addToBundleSelectedContentlets()" iconClass="publishIconDis" disabled="true">
-                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
-                                        </button>
+                                            <button dojoType="dijit.form.Button" id="addToBundleButton"  onClick="addToBundleSelectedContentlets()" iconClass="publishIconDis" disabled="true">
+                                                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
+                                            </button>
 
                                         <% } %>
 
