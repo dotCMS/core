@@ -58,6 +58,7 @@
 <div style="text-align:center">
 	<button dojoType="dijit.form.Button" id="importAgainButton"  onclick="window.location='<portlet:actionURL>
 		<portlet:param name="struts_action" value="/ext/contentlet/import_contentlets" />
+		<portlet:param name="selectedStructure" value="<%= ((ImportContentletsForm)request.getAttribute(\"ImportContentletsForm\")).getStructure() %>" />
 		</portlet:actionURL>';" iconClass="resetIcon">
 	    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Do-Another-Import")) %>
 	</button>

@@ -262,6 +262,11 @@ public class ImportContentletsAction extends DotPortletAction {
 		}else  if(cmd != null && cmd.equals("downloadCSVTemplate")){
 			_downloadCSVTemplate(req, res,config,form);
 		} else {
+			
+			if(UtilMethods.isSet(req.getParameter("selectedStructure")) && UtilMethods.isSet(req.getAttribute("ImportContentletsForm"))){
+				((ImportContentletsForm)req.getAttribute("ImportContentletsForm")).setStructure(req.getParameter("selectedStructure"));
+			}
+			
 			ImportAuditResults audits = ImportAuditUtil.loadAuditResults(user.getUserId());
 			req.setAttribute("audits", audits);			
 			session.setAttribute("importSession", importSession);
