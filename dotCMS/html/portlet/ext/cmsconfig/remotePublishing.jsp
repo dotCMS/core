@@ -218,12 +218,12 @@
         var user = select.getValue();
         var userName = select.attr('displayedValue');
 
+        if(user=='0') return;
+
         addToWhoCanUse(user, userName);
         refreshWhoCanUse();
 
-		select.store = null;
-		select.reset();
-		select.store = myRoleReadStore;
+        select.set('value', '0');
 
     }
 
@@ -268,6 +268,9 @@
             }
         }
         this.whoCanUse = newCanUse;
+
+        var select = dijit.byId("whoCanUseSelect");
+        select.set('value', '0');
     }
 
     function deleteEnvPushHistory(envId) {
