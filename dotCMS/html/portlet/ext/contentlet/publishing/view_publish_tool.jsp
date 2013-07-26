@@ -88,7 +88,7 @@
         myCp.refresh();
     }
 
-    function deleteBundle(identifier) {
+    function deleteSavedBundle(identifier) {
         if (confirm("<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles_Delete_Confirm")%>")) {
             var url = "/html/portlet/ext/contentlet/publishing/view_unpushed_bundles.jsp?delBundle=" + identifier;
 
