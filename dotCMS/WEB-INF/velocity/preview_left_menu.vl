@@ -252,11 +252,13 @@
                 	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
                 </a>
                 #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
-	                <a href="javascript: remotePublishCall();">
-	                	<span class="pushIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
-	                </a>
+                    #if($REMOTE_PUBLISH_END_POINTS)
+                        <a href="javascript: remotePublishCall();">
+                            <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
+                        </a>
+	                #end
 	                 <a href="javascript: addToBundleCall();">
-	                	<span class="pushIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
+	                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
 	                </a>
                 #end
             #else
@@ -301,9 +303,9 @@
                 <a href="javascript: publishAll();">
                 	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
                 </a>
-                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
+                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION && $REMOTE_PUBLISH_END_POINTS)
 	                <a href="javascript: remotePublishCall();">
-	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
+	                	<span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
 	                </a>
                 #end
             #else
