@@ -559,14 +559,16 @@ public abstract class VelocityServlet extends HttpServlet {
 		PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
 		// to check user has permission to write on this page
-		boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
-		boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, user);
-		boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199 && UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
+        boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_WRITE, user );
+        boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, user );
+        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199;
+        boolean hasEndPoints = UtilMethods.isSet( receivingEndpoints ) && !receivingEndpoints.isEmpty();
 
-		context.put("EDIT_HTMLPAGE_PERMISSION", new Boolean(hasWritePermOverHTMLPage));
-		context.put("PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasPublishPermOverHTMLPage));
-		context.put("REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasRemotePublishPermOverHTMLPage));
-		context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
+        context.put( "EDIT_HTMLPAGE_PERMISSION", new Boolean( hasWritePermOverHTMLPage ) );
+        context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
+        context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
+        context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean( hasEndPoints ) );
+        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
 		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(htmlPageAPI.getTemplateForWorkingHTMLPage(htmlPage),
 				PERMISSION_WRITE, user, true);
 		context.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
@@ -788,12 +790,14 @@ public abstract class VelocityServlet extends HttpServlet {
         boolean hasAddChildrenPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_CAN_ADD_CHILDREN, backendUser );
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_WRITE, backendUser );
         boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, backendUser );
-        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199 && UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
+        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199;
+        boolean hasEndPoints = UtilMethods.isSet( receivingEndpoints ) && !receivingEndpoints.isEmpty();
 
         context.put( "ADD_CHILDREN_HTMLPAGE_PERMISSION", new Boolean( hasAddChildrenPermOverHTMLPage ) );
         context.put( "EDIT_HTMLPAGE_PERMISSION", new Boolean( hasWritePermOverHTMLPage ) );
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
-        context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean(hasRemotePublishPermOverHTMLPage) );
+        context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
+        context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean(hasEndPoints) );
         context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
         context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
 
