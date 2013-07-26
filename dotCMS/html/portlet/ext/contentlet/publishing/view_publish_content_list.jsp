@@ -175,7 +175,7 @@
 			</th>
 			<th colspan="2">
                 <% if (enterprise && endPoints) {%>
-                    <button dojoType="dijit.form.Button" type="button" <%=disabled%> onclick="remotePublish()" iconClass="pushIcon"><%= LanguageUtil.get(pageContext, "Remote-Publish") %></button>
+                    <button dojoType="dijit.form.Button" type="button" <%=disabled%> onclick="remotePublish()" iconClass=sServerIcon><%= LanguageUtil.get(pageContext, "Remote-Publish") %></button>
                 <%}%>
 			</th>
 
