@@ -46,6 +46,12 @@
         pushHandler.showDialog('$htmlPageInode');
     }
 
+    function addToBundle (objId) {
+    	dojo.require("dotcms.dojo.push.PushHandler");
+    	pushHandler = new dotcms.dojo.push.PushHandler();
+		pushHandler.showAddToBundleDialog('$htmlPageInode', '$languagewebapi.getFromUserLanguage("Add-To-Bundle")');
+	}
+
 	function openAddWidget(containerInode) {
 		hideCurrentMenu();
 	   	document.getElementById('container').value = containerInode;
