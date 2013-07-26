@@ -1822,7 +1822,6 @@
 
                 popupMenusDiv.innerHTML = popupMenus;
                 
-                console.log("MENUS ==> " + popupMenus);
 
                 dojo.parser.parse(dojo.byId("results_table_popup_menus"));
                 dojo.parser.parse(dojo.byId("results_table"));
