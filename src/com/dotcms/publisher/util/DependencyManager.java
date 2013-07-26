@@ -169,8 +169,7 @@ public class DependencyManager {
     		setStructureDependencies();
     		setContentDependencies(config.getLuceneQueries());
 		}else{
-
-			contentsSet.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+            contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
         }
 
 
