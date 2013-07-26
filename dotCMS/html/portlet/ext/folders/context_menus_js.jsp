@@ -125,13 +125,13 @@ function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,del
 		}
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublish(\'' + objId + '\');">';
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objId + '\');">';
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 			strHTML += '</div>';
 		}
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="addToBundle(\'' + objId + '\');">';
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objId + '\');">';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 			strHTML += '</div>';
 	    }
@@ -216,13 +216,13 @@ function getLinkPopUp(i,ctxPath, objId, parentId, openNodes, referer,live,workin
 
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublish(\'' + objId + '\');">';
+		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objId + '\');">';
 		     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 		     strHTML += '</div>';
 		}
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="addToBundle(\'' + objId + '\');">';
+		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objId + '\');">';
 		     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 		     strHTML += '</div>';
 		}
@@ -292,14 +292,14 @@ function getTemplatePopUp(i,ctxPath, objId, openNodes, referer,live,working,dele
 			strHTML += '</div>';
 		}
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublish(\'' + objId + '\');">';
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objId + '\');">';
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 			strHTML += '</div>';
 		}
 
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="addToBundle(\'' + objId + '\');">';
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objId + '\');">';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 			strHTML += '</div>';
 		}
@@ -396,13 +396,13 @@ function getHTMLPagePopUp(i,ctxPath, objId, parentId, openNodes, referer,live,wo
 		}
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="remotePublish(\'' + objId + '\');">';
+	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objId + '\');">';
 	            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 	      strHTML += '</div>';
 	    }
 
 	    if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="pushIcon" onClick="addToBundle(\'' + objId + '\');">';
+	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objId + '\');">';
 	            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 	      strHTML += '</div>';
 	    }
