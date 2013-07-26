@@ -40,6 +40,8 @@
 			{"value":"newPageIcon","label":"<span class='iconSelect newPageIcon'></span>newPage"},
 			{"value":"movePageIcon","label":"<span class='iconSelect movePageIcon'></span>movePage"},
 			{"value":"pushIcon","label":"<span class='iconSelect pushIcon'></span>push"},
+			{"value":"sServerIcon","label":"<span class='iconSelect sServerIcon'></span>remoteServer"},
+			{"value":"bundleIcon","label":"<span class='iconSelect bundleIcon'></span>bundle"},
 			{"value":"cutIcon","label":"<span class='iconSelect cutIcon'></span>cut"},
 			{"value":"userIcon","label":"<span class='iconSelect userIcon'></span>user"},
 			{"value":"loginAsIcon","label":"<span class='iconSelect loginAsIcon'></span>loginAs"},

@@ -762,9 +762,9 @@ td {font-size: 100%;}
 				<br/>
 				<div id="catHolder" style="text-align: center; " class="claro"></div>
 				<div style="height: 15px; text-align: right; margin-top: 5px">
-					<button dojoType="dijit.form.Button" type="button" onClick="remoteSyncronization();" iconClass="pushIcon"><%= LanguageUtil.get(pageContext,"Remote-Syncronization") %></button>
+					<button dojoType="dijit.form.Button" type="button" onClick="remoteSyncronization();" iconClass="sServerIcon"><%= LanguageUtil.get(pageContext,"Remote-Syncronization") %></button>
 					&nbsp;
-					<button dojoType="dijit.form.Button" type="button" onClick="addToBundle();" iconClass="pushIcon"><%= LanguageUtil.get(pageContext,"Add-To-Bundle") %></button>
+					<button dojoType="dijit.form.Button" type="button" onClick="addToBundle();" iconClass="bundleIcon"><%= LanguageUtil.get(pageContext,"Add-To-Bundle") %></button>
 					&nbsp;
 					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
 				</div>

@@ -1766,8 +1766,8 @@
 							}
 						}
 						if(enterprise && sendingEndpoints && !(workflowMandatory=="true")) {
-								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
-								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
+								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 						}
 
 
@@ -2184,54 +2184,51 @@
         togglePublish();
     }
 
-    function togglePublish(){
+    function togglePublish() {
         var cbArray = document.getElementsByName("publishInode");
         var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
 
         var cbCount = cbArray.length;
         for(i = 0;i< cbCount ;i++){
             if (cbArray[i].checked) {
-
                 if (showArchive) {
-                        enableFields([
-                                                dijit.byId('unArchiveButton').setAttribute("disabled", false),
-                                                dijit.byId('deleteButton').setAttribute("disabled", false),
-                                                dijit.byId('archiveUnlockButton').setAttribute("disabled", false),
-                                                <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", false),":"") %>
-                    ]);
-                                } else {
-                        enableFields([
-                                                dijit.byId('archiveButton').setAttribute("disabled", false),
-                                                dijit.byId('publishButton').setAttribute("disabled", false),
-                                                dijit.byId('pushPublishButton').setAttribute("disabled", false),
-                                                dijit.byId('addToBundleButton').setAttribute("disabled", false),
-                                                dijit.byId('unPublishButton').setAttribute("disabled", false),
-                                                dijit.byId('unlockButton').setAttribute("disabled", false),
-                                                <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false),":"") %>
-                    ]);
-                                }
-                                break;
-                        }
-                                if (showArchive) {
-                    disableFields([
-                        dijit.byId("unArchiveButton").setAttribute("disabled", true),
-                        dijit.byId("deleteButton").setAttribute("disabled", true),
-                        dijit.byId("archiveUnlockButton").setAttribute("disabled", true),
-                        <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", true),":"") %>
-                    ]);
-                                } else {
-                        disableFields([
-                                                dijit.byId('archiveButton').setAttribute("disabled", true),
-                                                dijit.byId('publishButton').setAttribute("disabled", true),
-                                                dijit.byId('pushPublishButton').setAttribute("disabled", true),
-                                                dijit.byId('addToBundleButton').setAttribute("disabled", true),
-                                                dijit.byId('unPublishButton').setAttribute("disabled", true),
-                                                dijit.byId("unlockButton").setAttribute("disabled", true),
-                                                <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true),":"") %>
-                    ]);
-                                }
-
-                        }
+                    dijit.byId('unArchiveButton').setAttribute("disabled", false);
+                    dijit.byId('deleteButton').setAttribute("disabled", false);
+                    dijit.byId('archiveUnlockButton').setAttribute("disabled", false);
+                    <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", false);":"") %>
+                } else {
+                    dijit.byId('archiveButton').setAttribute("disabled", false);
+                    dijit.byId('publishButton').setAttribute("disabled", false);
+                    if(typeof dijit.byId('addToBundleButton') !== "undefined") {
+                    	dijit.byId('addToBundleButton').setAttribute("disabled", false);
+                    	dijit.byId('pushPublishButton').setAttribute("disabled", false);
+                    }
+                    dijit.byId('unPublishButton').setAttribute("disabled", false);
+                    dijit.byId('unlockButton').setAttribute("disabled", false);
+                    <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false);":"") %>
+                }
+                return;
+            }
+            
+        }
+        
+        // nothing selected
+       	if (showArchive) {
+                    dijit.byId("unArchiveButton").setAttribute("disabled", true);
+                    dijit.byId("deleteButton").setAttribute("disabled", true);
+                    dijit.byId("archiveUnlockButton").setAttribute("disabled", true);
+                    <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", true);":"") %>
+        } else {
+                    dijit.byId('archiveButton').setAttribute("disabled", true);
+                    dijit.byId('publishButton').setAttribute("disabled", true);
+                    if(typeof dijit.byId('addToBundleButton') !== "undefined") { 
+                    	dijit.byId('addToBundleButton').setAttribute("disabled", true);
+                    	dijit.byId('pushPublishButton').setAttribute("disabled", true);
+                    }
+                    dijit.byId('unPublishButton').setAttribute("disabled", true);
+                    dijit.byId("unlockButton").setAttribute("disabled", true);
+                     <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true);":"") %>
+        }
     }
     function displayArchiveButton(){
 

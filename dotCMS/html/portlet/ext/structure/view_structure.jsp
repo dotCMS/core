@@ -353,8 +353,8 @@ var deleteLabel = "";
 		    	popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=structure.getInode()%>\">";
 
 		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
-		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
-		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"addToBundle('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
+		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"stopIcon\" onClick=\"deleteStructure('<%=structure.getInode()%>');\">"+deleteLabel+"</div>";
 
 		        popupMenus += "</div>";
