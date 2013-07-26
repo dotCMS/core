@@ -132,7 +132,7 @@ dojo.ready(function() {
     dojo.declare('dotcms.dojox.grid.DataGrid', dojox.grid.DataGrid, {
         onRowContextMenu: function(e) {
 
-            if(enterprise && sendingEndpoints) {
+                if(enterprise) {
 
                 var selected = e.grid.getItem(e.rowIndex);
                 window.selectedUser = selected.id;
