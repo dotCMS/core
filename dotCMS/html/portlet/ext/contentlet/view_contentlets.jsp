@@ -323,7 +323,7 @@
             label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>",
                         iconClass: "uploadIcon",
                         onClick: function() {
-                window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&_EXT_11_struts_action=/ext/contentlet/import_contentlets';
+               	window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&_EXT_11_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
             }
         });
         menu.addChild(menuItem2);
