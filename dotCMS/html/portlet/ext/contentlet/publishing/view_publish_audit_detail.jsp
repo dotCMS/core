@@ -57,7 +57,7 @@
     <tr>
         <th><%= LanguageUtil.get(pageContext, "title") %></th>
         <td>
-            <%if (assetTitle.equals( assetType )) {%>
+            <%if (assetTitle != null && assetTitle.equals( assetType )) {%>
                 <%=assetType %>
             <%} else {%>
                 <b><span><%=assetTitle %></span></b> (<%=assetType %>)
@@ -104,7 +104,7 @@
     </tr>
     <tr>
         <th><b><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %>: </b></th>
-        <td style="background: white"><%=bundle.isForcePush() %></td>
+        <td style="background: white"><%if ( bundle != null ) {%><%=bundle.isForcePush() %><%}%></td>
 
     </tr>
     <tr>

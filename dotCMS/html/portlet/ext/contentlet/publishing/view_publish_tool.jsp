@@ -88,7 +88,7 @@
         myCp.refresh();
     }
 
-    function deleteBundle(identifier) {
+    function deleteSavedBundle(identifier) {
         if (confirm("<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles_Delete_Confirm")%>")) {
             var url = "/html/portlet/ext/contentlet/publishing/view_unpushed_bundles.jsp?delBundle=" + identifier;
 
@@ -172,8 +172,8 @@
 
     dojo.ready(function () {
 
-        loadUnpushedBundles();
-
+        //loadUnpushedBundles();
+ 		doQueueFilter();
         var tab = dijit.byId("mainTabContainer");
         dojo.connect(tab, 'selectChild',
                 function (evt) {
@@ -244,10 +244,8 @@
 <div class="portlet-wrapper">
     <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
-        <div id="unpushedBundles" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %>" >
-            <div id="unpushedBundlesDiv">
-            </div>
-        </div>
+
+
 
         <div id="queue" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Queue") %>" >
             <div class="buttonRow" >
@@ -269,6 +267,11 @@
             <div id="queue_results"></div>
 
         </div>
+
+
+
+
+
 
         <div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
             <div class="buttonRow" >
@@ -292,7 +295,15 @@
             <div style="height:10px;"></div>
             <div id="audit_results"></div>
         </div>
-
+        
+        
+        
+        
+        
+        <div id="unpushedBundles" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %>" >
+            <div id="unpushedBundlesDiv">
+            </div>
+        </div>
     </div>
 </div>
 
