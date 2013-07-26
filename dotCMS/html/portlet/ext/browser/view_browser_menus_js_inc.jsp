@@ -80,12 +80,12 @@
 
 				if(enterprise && sendingEndpoints) {
 					strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-				    	strHTML += '<span class="pushIcon"></span>';
+				    	strHTML += '<span class="sServerIcon"></span>';
 		        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 					strHTML += '</a>';
 
 					strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-						strHTML += '<span class="pushIcon"></span>';
+						strHTML += '<span class="bundleIcon"></span>';
 						strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 					strHTML += '</a>';
 				}
@@ -216,12 +216,12 @@
 
 			if(enterprise && sendingEndpoints) {
 				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-			    	strHTML += '<span class="pushIcon"></span>';
+			    	strHTML += '<span class="sServerIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
 
 				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-					strHTML += '<span class="pushIcon"></span>';
+					strHTML += '<span class="bundleIcon"></span>';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}
@@ -422,12 +422,12 @@
 
 			if(enterprise && sendingEndpoints && !filesMandatoryWorkflow) {
 				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-			    	strHTML += '<span class="pushIcon"></span>';
+			    	strHTML += '<span class="sServerIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
 
 				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-					strHTML += '<span class="pushIcon"></span>';
+					strHTML += '<span class="bundleIcon"></span>';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}
@@ -556,12 +556,12 @@
 
 			if(enterprise && sendingEndpoints) {
 				strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-			    	strHTML += '<span class="pushIcon"></span>';
+			    	strHTML += '<span class="sServerIcon"></span>';
 	        		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
 
 				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-					strHTML += '<span class="pushIcon"></span>';
+					strHTML += '<span class="bundleIcon"></span>';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}
@@ -676,12 +676,12 @@
 
 			if(enterprise && sendingEndpoints) {
 				strHTML += '<a href="javascript: remotePublish(\'' + objId + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="pushIcon"></span>';
+		    	strHTML += '<span class="sServerIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 				strHTML += '</a>';
 
 				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-				strHTML += '<span class="pushIcon"></span>';
+				strHTML += '<span class="bundleIcon"></span>';
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}

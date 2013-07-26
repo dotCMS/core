@@ -1766,8 +1766,8 @@
 							}
 						}
 						if(enterprise && sendingEndpoints && !(workflowMandatory=="true")) {
-								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
-								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"pushIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
+								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 						}
 
 

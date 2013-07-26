@@ -308,40 +308,42 @@
 
 <div style="padding-top: 5px">
     <table  class="listingTable">
-        <tr style="line-height:20px; padding-bottom: 15px">
-            <th style="padding-left: 10px; font-size: 12px" >
+        <tr>
+            <th>
             </th>
-            <th nowrap="nowrap" style="padding-left: 10px; width: 120px">
+            <th nowrap="nowrap">
                 <%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
             </th>
-            <th style="padding-left: 10px; font-size: 12px" >
+            <th nowrap="nowrap" width="100%" >
                 <%= LanguageUtil.get(pageContext, "Servers") %>
             </th>
-            <th align="right" style="padding-left: 10px; width: 80px">
+            <th nowrap="nowrap">
                 <%= LanguageUtil.get(pageContext, "Push-To-All") %>
             </th>
-            <th style="padding-left: 10px; width: 12px; text-align: center">
+            <th nowrap="nowrap">
            	 <%= LanguageUtil.get(pageContext, "Actions") %>
             </th>
         </tr>
 
         <%
+        	boolean altRow = false;
             boolean hasEnvironments = false;
             for(Environment environment : environments){
                 hasEnvironments=true;%>
 
-        <tr style="line-height:20px; padding-bottom: 15px">
-            <td nowrap="nowrap" style="padding-left: 10px; width: 53px">
+        <tr style="<%=(altRow) ? "background:#f3f3f3" :""%>">
+        	<%altRow=!altRow; %>
+            <td nowrap="nowrap" valign="top">
                 <a style="cursor: pointer" onclick="deleteEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment") %>">
                     <span class="deleteIcon"></span></a>&nbsp;
                 <a style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Environment_Title") %>">
                     <span class="editIcon"></span></a>
             </td>
-            <td style="padding-left: 10px; font-size: 12px;" >
-                <%=environment.getName()%>
+            <td valign="top" nowrap="nowrap">
+                <b><%=environment.getName()%></b>
             </td>
-            <td align="right">
-                <table class="listingTable" style="width:100%; border-style:dotted;">
+            <td style="padding:0px;" valign="top">
+                
                     <%
                         List<PublishingEndPoint> environmentEndPoints = pepAPI.findSendingEndPointsByEnvironment(environment.getId());
                         boolean hasRow = false;
@@ -350,55 +352,46 @@
                                 continue;
                             }
                             hasRow=true;%>
-                    <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
-                        <td nowrap="nowrap" width="50">
-                            <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
-                                <span class="deleteIcon"></span></a>
-                            <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', '<%=environment.getId()%>', 'false')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
-                                <span class="editIcon"></span></a>
-                        </td>
-
-
-                        <td width="200" >
-                            <%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>: <%=endpoint.getServerName()%>
-                        </td>
-                        <td align="center" nowrap="nowrap"  width="100" >
-                            <%= LanguageUtil.get(pageContext, "Status") %>:
-                            <%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "" %>
-                            <%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%>
-
-                        </td>
-                        <td align="center" nowrap="nowrap" >
-                            <%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_To") %>:
-                            <%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%>
-                        </td>
-                    </tr>
+						<div style="padding:10px;border-bottom:1px solid silver;margin-bottom:-1px">
+	                        <div style="float:right">
+		                            <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+		                                <span class="deleteIcon"></span></a>
+		                    </div>
+		                    <div <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%> style="cursor:pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', '<%=environment.getId()%>', 'false')">
+	
+	                            <div >
+	                            	<%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%>
+	                            </div>
+	                            <div>
+									<%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "<span class='shimIcon'></span>" %>
+	                            	<i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
+								</div>
+		                    </div>
+	                    </div>
                     <%}%>
 
                     <%if(!hasRow){ %>
-                        <tr>
-                            <td colspan="100" align="center">
-                                <%= LanguageUtil.get(pageContext, "publisher_No_Servers") %><a href="javascript:goToAddEndpoint('<%=environment.getId()%>', 'false');"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
-                            </td>
-                        </tr>
+                        <div  style="padding:5px;">
+                        	<%= LanguageUtil.get(pageContext, "publisher_No_Servers") %> <a style="text-decoration: underline;" href="javascript:goToAddEndpoint('<%=environment.getId()%>', 'false');"><%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+                     	</div>
                     <%}%>
-                </table>
+                
             </td>
-            <td style="padding-left: 10px; font-size: 12px" align="center" >
+            <td align="center" valign="top" nowrap="nowrap">
                 <%=environment.getPushToAll()%>
             </td>
-            <td style="padding-left: 10px; font-size: 12px" width="100" align="right">
+            <td valign="top" nowrap="nowrap">
                 <button dojoType="dijit.form.Button" onClick="goToAddEndpoint('<%=environment.getId()%>', 'false');" iconClass="plusIcon">
                     <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
                 </button>
-                 <button dojoType="dijit.form.Button" onClick="deleteEnvPushHistory('<%=environment.getId()%>');" iconClass="deleteIcon" style="padding-top: 8px" >
+                 <button dojoType="dijit.form.Button" onClick="deleteEnvPushHistory('<%=environment.getId()%>');" iconClass="deleteIcon" >
 					<%= LanguageUtil.get(pageContext, "publisher_delete_asset_history") %>
 				</button>
             </td>
 
         </tr>
 
-        <%}%>
+    <%}%>
 
     <%if(!hasEnvironments){ %>
         <tr>
@@ -437,9 +430,7 @@
         <tr>
             <th style="width:40px"></th>
             <th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>
-            <th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "Status") %></th>
 
-            <th style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_From") %></th>
         </tr>
         <%
             boolean hasRow = false;
@@ -449,23 +440,20 @@
                 }
                 hasRow=true;%>
         <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
-            <td nowrap="nowrap">
+            <td nowrap="nowrap" valign="top">
                 <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
                     <span class="deleteIcon"></span></a>&nbsp;
                 <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
                     <span class="editIcon"></span></a>
             </td>
 
-            <td style="cursor: pointer" width="50%" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
-                <%=endpoint.getServerName()%>
-            </td>
-            <td align="center" nowrap="nowrap" style="cursor: pointer" width="40" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
-                <%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%>
+            <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+                <b><%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%></b>
+                <br>
+                <i><span class='shimIcon'></span><%=endpoint.getAddress()%></i>
             </td>
 
-            <td style="cursor: pointer" align="center" nowrap="nowrap" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
-                <%=endpoint.getAddress()%>
-            </td>
+
 
         </tr>
         <%}%>
