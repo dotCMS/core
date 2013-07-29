@@ -185,7 +185,6 @@ public class WfRoleStoreAjax extends WfBaseAction {
             defaultUserRole = APILocator.getRoleAPI().getUserRole( defaultUser );
         }
 
-        //Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
         for ( Role role : roles ) {
 
             map = new HashMap<String, Object>();
@@ -200,12 +199,12 @@ public class WfRoleStoreAjax extends WfBaseAction {
                 continue;
             }
 
-            //We need to exclude also the anonymous Role
-            /*if ( role.getId().equals( cmsAnon.getId() ) ) {
+            //We need to exclude also the anonymous user
+            if ( role.getName().equalsIgnoreCase( "anonymous user" ) ) {
                 continue;
-            }*/
+            }
 
-            map.put( "name", role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get( PublicCompanyFactory.getDefaultCompany(), "User" ) + ")" : "") );
+            map.put( "name",  role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get( PublicCompanyFactory.getDefaultCompany(), "User" ) + ")" : ""));
             map.put( "id", role.getId() );
 
             list.add( map );
