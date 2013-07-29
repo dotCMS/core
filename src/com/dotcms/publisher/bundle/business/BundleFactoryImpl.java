@@ -80,7 +80,7 @@ public class BundleFactoryImpl extends BundleFactory {
         DotConnect dc = new DotConnect();
         dc.setSQL( SELECT_UNSEND_BUNDLES_LIKE_NAME );
         dc.addParam( userId );
-        dc.addParam( likeName + "%" );
+        dc.addParam( "%" + likeName + "%" );
         dc.setMaxRows( limit );
         dc.setStartRow( offset );
 
