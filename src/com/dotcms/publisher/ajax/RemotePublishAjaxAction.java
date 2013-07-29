@@ -632,23 +632,35 @@ public class RemotePublishAjaxAction extends AjaxAction {
         return true;
     }
 
+    /**
+     * Adds to an specific given bundle a given asset.
+     * <br/>If the given bundle does not exist a new onw will be created with that name
+     *
+     * @param request
+     * @param response
+     * @throws DotPublisherException
+     */
     public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) throws DotPublisherException {
 
         PublisherAPI publisherAPI = PublisherAPI.getInstance();
         String _assetId = request.getParameter( "assetIdentifier" );
         String _contentFilterDate = request.getParameter( "remoteFilterDate" );
-        String isNewBundle = request.getParameter( "newBundle" );
         String bundleName = request.getParameter( "bundleName" );
-        String bundleSelect = request.getParameter( "bundleSelect" );
+        String bundleId = request.getParameter( "bundleSelect" );
 
         try {
             Bundle bundle;
 
-            if ( isNewBundle.equals( "true" ) ) {
-                bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
-                APILocator.getBundleAPI().saveBundle( bundle );
+            if ( bundleId == null || bundleName.equals( bundleId ) ) {
+
+                //Verify if a bundle exist with this name
+                bundle = APILocator.getBundleAPI().getBundleByName( bundleName );
+                if ( bundle == null ) {//If not create a new one
+                    bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
+                    APILocator.getBundleAPI().saveBundle( bundle );
+                }
             } else {
-                bundle = APILocator.getBundleAPI().getBundleById( bundleSelect );
+                bundle = APILocator.getBundleAPI().getBundleById( bundleId );
             }
 
             //Put the selected bundle in session in order to have last one selected
@@ -663,7 +675,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
         } catch ( Exception e ) {
             Logger.error( PushPublishActionlet.class, e.getMessage(), e );
         }
-
     }
 
     /**

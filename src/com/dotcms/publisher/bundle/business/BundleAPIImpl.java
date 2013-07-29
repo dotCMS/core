@@ -43,6 +43,16 @@ public class BundleAPIImpl implements BundleAPI {
 		return bundleFactory.findUnsendBundles(userId);
 	}
 
+    @Override
+    public List<Bundle> getUnsendBundles ( String userId, int limit, int offset ) throws DotDataException {
+        return bundleFactory.findUnsendBundles( userId, limit, offset );
+    }
+
+    @Override
+    public List<Bundle> getUnsendBundlesByName ( String userId, String likeName, int limit, int offset ) throws DotDataException {
+        return bundleFactory.findUnsendBundlesByName( userId, likeName, limit, offset );
+    }
+
 	@Override
 	public Bundle getBundleByName(String name) throws DotDataException {
 		return bundleFactory.getBundleByName(name);
