@@ -50,7 +50,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     	if(this.environmentStore==null) {
     		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
     	}
-
+    	
+    	this.clear();
+    	
         var dateFilter = false;
         if (displayDateFilter != undefined && displayDateFilter != null) {
             dateFilter = displayDateFilter;
@@ -62,6 +64,17 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.dateFilter = dateFilter;
         dialog.container = this;
         dialog.show();
+        
+        var thes=this;
+        setTimeout(function() {
+	        thes.environmentStore.fetch({
+	    		onComplete:function(items,request) {
+	    			if(items.length==2) {
+	    				thes.addToWhereToSend(items[1].id, items[1].name);
+	    				thes.refreshWhereToSend();
+	    			}
+	    		}
+	    	})},200);
 
     },
 
