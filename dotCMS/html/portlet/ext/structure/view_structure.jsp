@@ -204,8 +204,19 @@ function deleteStructure(structureInode) {
 }
 
 function handleDepResponse(data) {
-	if(data!=null) {
-		dojo.byId("depDiv").innerHTML = "<br />" + data;
+	
+	if(data['size'] != 0) {
+		
+		var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "TITLE")%></th><th><%=LanguageUtil.get(pageContext, "IDENTIFIER")%></th><th><%=LanguageUtil.get(pageContext, "INODE")%></th></tr></thead><tbody>';
+		var containers = data['containers'];
+		
+		for(var i = 0; i < data['size'] ; i++){
+			resultTableStr = resultTableStr + "<tr><td>" + containers[i]['title'] + "</td><td>" + containers[i]['identifier'] + "</td><td>" + containers[i]['inode'] + "</td></tr>";
+		}
+		
+		resultTableStr = resultTableStr + '</tbody></table>';
+		dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
+		
 		dijit.byId("dependenciesDialog").show();
 	} else {
 		processDelete();
@@ -429,7 +440,7 @@ var deleteLabel = "";
 	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
 	<input name="forcePush" id=forcePush type="hidden" value="">
 </form>
-<div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:300px;vertical-align: middle; " draggable="true"
+<div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:1000px;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "message.structure.cantdelete") %>" >
 
 	<span style="color: red; font-weight: bold"><%= LanguageUtil.get(pageContext, "message.structure.notdeletestructure.container") %></span>
