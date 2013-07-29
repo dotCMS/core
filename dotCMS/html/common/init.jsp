@@ -1,5 +1,5 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@ include file="/html/common/auth_backend_check.jsp" %>
+<jsp:include page="/html/common/auth_backend_check.jsp" />
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <%@page import="com.dotmarketing.business.Layout"%>
