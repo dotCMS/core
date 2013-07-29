@@ -1,3 +1,4 @@
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
