@@ -14,7 +14,7 @@
 <%
 	Inode asset = (Inode) request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT);
 
-	List<PushedAsset> pushedAssets = APILocator.getPushedAssetsAPI().getPushedAssets(asset.getIdentifier());
+	List<PushedAsset> pushedAssets = asset!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(asset.getIdentifier()) : new ArrayList<PushedAsset>();
 
 %>
 
@@ -23,7 +23,7 @@
 function deletePushHistory() {
 
 	var xhrArgs = {
-		url : '/api/bundle/deletepushhistory/assetid/<%=(asset.getIdentifier())%>',
+		url : '/api/bundle/deletepushhistory/assetid/<%=(asset!=null ? asset.getIdentifier() : "")%>',
 		handleAs : "json",
 		sync: false,
 		load : function(data) {
