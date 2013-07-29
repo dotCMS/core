@@ -1,3 +1,6 @@
+<%@page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException"%>
+<%@page import="com.dotmarketing.util.PortletURLUtil"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.LanguageAPI"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
 
@@ -114,7 +117,7 @@
 var editButtonRow="editEventButtonRow";
 </script>
 
-<%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
+<jsp:include page="/html/portlet/ext/contentlet/field/edit_field_js.jsp" />
 
 <style media="all" type="text/css">
 	/* @import url(/html/portlet/ext/contentlet/edit_contentlet.css);
@@ -190,7 +193,7 @@ var editButtonRow="editEventButtonRow";
     	  		permissionsTabFieldExists = true;
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);%>
-				<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
+				<jsp:include page="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" />
 			<% } else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
     	   		<%if(counter==0){%>
 					<% relationshipsTabFieldExists =  true; %>                    <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
@@ -247,7 +250,7 @@ var editButtonRow="editEventButtonRow";
 					<%}%>
 				<%}%>
    			<%}%>
-			<%@ include file="/html/portlet/ext/calendar/edit_event_js_inc.jsp" %>
+			<%@include file="/html/portlet/ext/calendar/edit_event_js_inc.jsp" %>
 		</div>
 		<!-- END Right Column -->
 	</div>
@@ -277,14 +280,14 @@ var editButtonRow="editEventButtonRow";
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);
 			%>
-			<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
+			<jsp:include page="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" />
 		</div>
     <% } %>
 	<!-- END Permissions Tab -->
 
 	<!-- Versions Tab -->
 	<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="hideEditButtonsRow()">
-		<%@ include	file="/html/portlet/ext/common/edit_versions_inc.jsp"%>
+		<%@include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 	</div>
 	<!-- END Versions Tab -->
 
@@ -297,7 +300,7 @@ var editButtonRow="editEventButtonRow";
 	<!-- END References Tab -->
 </div>
 
-	<%@ include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
+	<%@include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
 
 	<!--  action buttons -->
 		<% if (InodeUtils.isSet(structure.getInode())) { %>
@@ -309,7 +312,7 @@ var editButtonRow="editEventButtonRow";
 				</div>
 				<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
 				<div id="contentletActionsHanger">
-					<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
+					<%@include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
 				</div>
 
 			</div>
@@ -319,18 +322,6 @@ var editButtonRow="editEventButtonRow";
 
 </html:form>
 
-<%--
-if (!(dateOfStart==null) && !(dateOfEnd==null) && (dateOfStart.getHours() == 0) && (dateOfStart.getMinutes() == 0) && (dateOfEnd.getHours() == 23) && (dateOfEnd.getMinutes() == 59)){
-%>
-
-<script type="text/javascript">
-		document.getElementById('alldayevent').checked=true;
-		setAllDayEvent();
-</script>
-
-
-<% } --%>
-<%-- http://jira.dotmarketing.net/browse/DOTCMS-2273 --%>
 <!-- To show lightbox effect "Saving Content.."  -->
 <div id="savingContentDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "saving-content") %>" style="display: none;">
 	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
