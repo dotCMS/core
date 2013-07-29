@@ -63,6 +63,30 @@ public interface BundleAPI {
 
 	public List<Bundle> getUnsendBundles(String userId) throws DotDataException;
 
+    /**
+     * Returns a list on un-send (haven't been sent to any Environment) bundles filtered by owner
+     *
+     * @param userId
+     * @param limit  -1 for no limit
+     * @param offset
+     * @return
+     * @throws DotDataException
+     */
+    public List<Bundle> getUnsendBundles ( String userId, int limit, int offset ) throws DotDataException;
+
+    /**
+     * Returns a list on un-send bundles (haven't been sent to any Environment) filtered by owner and name.
+     * <br/>This method will return a list of bundles that start by the given name (like (likeName%))
+     *
+     * @param userId
+     * @param likeName
+     * @param limit    -1 for no limit
+     * @param offset
+     * @return
+     * @throws DotDataException
+     */
+    public List<Bundle> getUnsendBundlesByName ( String userId, String likeName, int limit, int offset ) throws DotDataException;
+
 	/**
 	 * returns the Bundle object with the given name, if any
 	 *
