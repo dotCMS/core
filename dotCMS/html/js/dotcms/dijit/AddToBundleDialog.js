@@ -38,7 +38,7 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
         dojo.connect(dia, "onDownloadEnd", function () {
             if (window.lastSelectedBundle && window.lastSelectedBundle.id) {
                 dojo.byId("bundleName").value = window.lastSelectedBundle.name;
-                dijit.byId('bundleSelect').set('value', window.lastSelectedBundle.id);
+                dijit.byId('bundleSelect').set('value', window.lastSelectedBundle.name);
             }
         });
 

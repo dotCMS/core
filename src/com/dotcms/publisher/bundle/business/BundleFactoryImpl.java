@@ -38,45 +38,81 @@ public class BundleFactoryImpl extends BundleFactory {
 		dc.loadResult();
 	}
 
-	@Override
-	public List<Bundle> findUnsendBundles(String userId) throws DotDataException {
-		List<Bundle> bundles = new ArrayList<Bundle>();
+    @Override
+    public List<Bundle> findUnsendBundles ( String userId ) throws DotDataException {
+        return findUnsendBundles( userId, -1, 0 );
+    }
 
-		if(!UtilMethods.isSet(userId)) {
-			return bundles;
-		}
+    @Override
+    public List<Bundle> findUnsendBundles ( String userId, int limit, int offset ) throws DotDataException {
 
-		DotConnect dc = new DotConnect();
-		dc.setSQL(SELECT_UNSEND_BUNDLES);
-		dc.addParam(userId);
+        List<Bundle> bundles = new ArrayList<Bundle>();
 
-		List<Map<String, Object>> res = dc.loadObjectResults();
+        if ( !UtilMethods.isSet( userId ) ) {
+            return bundles;
+        }
 
-		for(Map<String, Object> row : res){
-			Bundle bundle = PublisherUtil.getBundleByMap(row);
-			bundles.add(bundle);
-		}
+        DotConnect dc = new DotConnect();
+        dc.setSQL( SELECT_UNSEND_BUNDLES );
+        dc.addParam( userId );
+        dc.setMaxRows( limit );
+        dc.setStartRow( offset );
 
-		return bundles;
+        List<Map<String, Object>> res = dc.loadObjectResults();
 
-	}
+        for ( Map<String, Object> row : res ) {
+            Bundle bundle = PublisherUtil.getBundleByMap( row );
+            bundles.add( bundle );
+        }
 
-	@Override
-	public Bundle getBundleByName(String bundleName) throws DotDataException {
+        return bundles;
+    }
 
-		if(!UtilMethods.isSet(bundleName)) {
-			return null;
-		}
+    @Override
+    public List<Bundle> findUnsendBundlesByName ( String userId, String likeName, int limit, int offset ) throws DotDataException {
 
-		DotConnect dc = new DotConnect();
-		dc.setSQL(SELECT_BUNDLE_BY_NAME);
-		dc.addParam(bundleName);
+        List<Bundle> bundles = new ArrayList<Bundle>();
 
-		List<Map<String, Object>> res = dc.loadObjectResults();
+        if ( !UtilMethods.isSet( userId ) ) {
+            return bundles;
+        }
 
-		return PublisherUtil.getBundleByMap(res.get(0));
+        DotConnect dc = new DotConnect();
+        dc.setSQL( SELECT_UNSEND_BUNDLES_LIKE_NAME );
+        dc.addParam( userId );
+        dc.addParam( likeName + "%" );
+        dc.setMaxRows( limit );
+        dc.setStartRow( offset );
 
-	}
+        List<Map<String, Object>> res = dc.loadObjectResults();
+
+        for ( Map<String, Object> row : res ) {
+            Bundle bundle = PublisherUtil.getBundleByMap( row );
+            bundles.add( bundle );
+        }
+
+        return bundles;
+    }
+
+    @Override
+    public Bundle getBundleByName ( String bundleName ) throws DotDataException {
+
+        if ( !UtilMethods.isSet( bundleName ) ) {
+            return null;
+        }
+
+        DotConnect dc = new DotConnect();
+        dc.setSQL( SELECT_BUNDLE_BY_NAME );
+        dc.addParam( bundleName );
+
+        List<Map<String, Object>> res = dc.loadObjectResults();
+
+        if ( res != null && !res.isEmpty() ) {
+            return PublisherUtil.getBundleByMap( res.get( 0 ) );
+        }
+
+        return null;
+    }
 
 	@Override
 	public Bundle getBundleById(String id) throws DotDataException {
