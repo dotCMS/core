@@ -76,7 +76,7 @@ public interface BundleAPI {
 
     /**
      * Returns a list on un-send bundles (haven't been sent to any Environment) filtered by owner and name.
-     * <br/>This method will return a list of bundles that start by the given name (like (likeName%))
+     * <br/>This method will return a list of bundles that contains the given words (like (%likeName%))
      *
      * @param userId
      * @param likeName
