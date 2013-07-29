@@ -102,6 +102,8 @@ public class BundleFactoryImpl extends BundleFactory {
 			return;
 		}
 
+		deleteBundleEnvironmentByBundle(id);
+
 		DotConnect dc = new DotConnect();
 		dc.setSQL(DELETE_BUNDLE);
 		dc.addParam(id);
@@ -153,6 +155,21 @@ public class BundleFactoryImpl extends BundleFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(DELETE_BUNDLE_ENVIRONMENT_BY_ENV);
 		dc.addParam(environmentId);
+
+		dc.loadResult();
+
+	}
+
+	@Override
+	public void deleteBundleEnvironmentByBundle(String bundleId)
+			throws DotDataException {
+		if(!UtilMethods.isSet(bundleId)) {
+			return;
+		}
+
+		DotConnect dc = new DotConnect();
+		dc.setSQL(DELETE_BUNDLE_ENVIRONMENT_BY_BUNDLE);
+		dc.addParam(bundleId);
 
 		dc.loadResult();
 
