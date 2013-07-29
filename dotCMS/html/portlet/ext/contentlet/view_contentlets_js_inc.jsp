@@ -1269,7 +1269,12 @@
 
 
         function doSearch1 (page, sortBy) {
-                var structureInode = dijit.byId('structure_inode').getValue();
+
+        		var structureInode = "";
+
+        		if(dijit.byId('structure_inode')!=='undefined') {
+        			structureInode  = dijit.byId('structure_inode').getValue();
+        		}
 
                 if(structureInode ==""){
                         dijit.byId('structure_inode').focus() ;
@@ -1712,7 +1717,7 @@
 
 
                         // NEW CONTEXT MENU
-                        
+
                         if ((live || working) && (read=="1") && (!deleted)) {
                                 if(selectedStructureVarName == 'calendarEvent'){
                                   if (write=="1"){
@@ -1765,7 +1770,7 @@
 								//popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
 							}
 						}
-						
+
 						if(enterprise && sendingEndpoints && workflowMandatory=="false") {
 								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
 								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
@@ -1819,7 +1824,7 @@
                 }
 
                 popupMenusDiv.innerHTML = popupMenus;
-                
+
 
                 dojo.parser.parse(dojo.byId("results_table_popup_menus"));
                 dojo.parser.parse(dojo.byId("results_table"));
@@ -2201,19 +2206,26 @@
                 } else {
                     dijit.byId('archiveButton').setAttribute("disabled", false);
                     dijit.byId('publishButton').setAttribute("disabled", false);
-                    if(typeof dijit.byId('addToBundleButton') !== "undefined") {
-                    	dijit.byId('addToBundleButton').setAttribute("disabled", false);
-                    	dijit.byId('pushPublishButton').setAttribute("disabled", false);
-                    }
+
+                    	<% if ( enterprise ) { %>
+                    		if(typeof dijit.byId('addToBundleButton') !== "undefined") {
+	                    	<% 	if ( sendingEndpoints ) { %>
+	                    			dijit.byId('pushPublishButton').setAttribute("disabled", false);
+	                    	 <% } %>
+							}
+                    		dijit.byId('addToBundleButton').setAttribute("disabled", false);
+
+                    	<% } %>
+
                     dijit.byId('unPublishButton').setAttribute("disabled", false);
                     dijit.byId('unlockButton').setAttribute("disabled", false);
                     <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false);":"") %>
                 }
                 return;
             }
-            
+
         }
-        
+
         // nothing selected
        	if (showArchive) {
                     dijit.byId("unArchiveButton").setAttribute("disabled", true);
@@ -2223,10 +2235,18 @@
         } else {
                     dijit.byId('archiveButton').setAttribute("disabled", true);
                     dijit.byId('publishButton').setAttribute("disabled", true);
-                    if(typeof dijit.byId('addToBundleButton') !== "undefined") { 
-                    	dijit.byId('addToBundleButton').setAttribute("disabled", true);
-                    	dijit.byId('pushPublishButton').setAttribute("disabled", true);
-                    }
+
+                    <% if ( enterprise ) { %>
+                    		if(typeof dijit.byId('addToBundleButton') !== "undefined") {
+	                    	<% 	if ( sendingEndpoints ) { %>
+
+	                    			dijit.byId('pushPublishButton').setAttribute("disabled", true);
+	                    	 <% } %>
+	                    	 }
+                    			dijit.byId('addToBundleButton').setAttribute("disabled", true);
+
+                    	<% } %>
+
                     dijit.byId('unPublishButton').setAttribute("disabled", true);
                     dijit.byId("unlockButton").setAttribute("disabled", true);
                      <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true);":"") %>
