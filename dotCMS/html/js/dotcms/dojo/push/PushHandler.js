@@ -17,6 +17,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     user : null,
     whereToSend : new Array(),
     isBundle : false,
+    inialStateEnvs : new Array(),
 
     constructor: function (title, isBundle) {
         this.title = title;
@@ -51,9 +52,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     	if(this.environmentStore==null) {
     		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
     	}
-    	
+
     	this.clear();
-    	
+
         var dateFilter = false;
         if (displayDateFilter != undefined && displayDateFilter != null) {
             dateFilter = displayDateFilter;
@@ -65,7 +66,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.dateFilter = dateFilter;
         dialog.container = this;
         dialog.show();
-        
+
         var thes=this;
         setTimeout(function() {
 	        thes.environmentStore.fetch({
@@ -339,10 +340,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		var table = dojo.byId("whereToSendTable");
 		var x = "";
 
-        var setLastSelected = false;
         if (window.lastSelectedEnvironments ==  undefined || window.lastSelectedEnvironments == null || window.lastSelectedEnvironments.length == 0) {
             window.lastSelectedEnvironments = new Array();
-            setLastSelected = true;
         }
 
 		this.whereToSend = this.whereToSend.sort(function(a,b){
@@ -350,11 +349,11 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		    var y = b.name.toLowerCase();
 		    return ((x < y) ? -1 : ((x > y) ? 1 : 0));
 		});
+
+
 		for(i=0; i< this.whereToSend.length ; i++){
 
-            if (setLastSelected) {
-                window.lastSelectedEnvironments[i] = {name: this.whereToSend[i].name, id: this.whereToSend[i].id};
-            }
+            window.lastSelectedEnvironments[i] = {name: this.whereToSend[i].name, id: this.whereToSend[i].id};
 
 			var what = (this.whereToSend[i].id.indexOf("user") > -1) ? " EnvironmentNotLanguaged" : "";
 			x = x + this.whereToSend[i].id + ",";
@@ -379,6 +378,13 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		}
 
 		this.whereToSend= newCanUse;
+
+		for(i=0; i< window.lastSelectedEnvironments.length ; i++){
+			if(window.lastSelectedEnvironments[i].id == myId) {
+				window.lastSelectedEnvironments.splice(i,1);
+			}
+		}
+
 	},
     clear: function () {
         this.whereToSend = new Array();
