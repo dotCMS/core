@@ -117,7 +117,7 @@ GregorianCalendar cal = new GregorianCalendar();
 			<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="pushHandler.remotePublish()" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 			</button>
-			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('remotePublisherDia').hide()" type="button">
+			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="window.lastSelectedEnvironments = pushHandler.inialStateEnvs; pushHandler.inialStateEnvs = new Array();dijit.byId('remotePublisherDia').hide()" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 			</button>
 
