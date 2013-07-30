@@ -6,8 +6,8 @@ h2{font-size:11px;font-weight:bold;display:block;padding:5px 0;margin:0;color:#5
 .clear{clear:both;font-size:0;height:0;line-height:0;margin:0;padding:0;}
 
 div.maxmin{position:absolute;top:0px;right:0px;width:10px;bottom:0px;height:100%;background: #e6e9ee;border-left: 1px solid #fff;border-right: 1px solid #aaa;}
-#max_bar{background: #e6e9ee url(/html/images/skin/arrowClose.gif) no-repeat 50% 50%;}
-#min_bar{background: #e6e9ee url(/html/images/skin/arrowOpen.gif) no-repeat 50% 50%;}
+#max_bar{background: #e6e9ee;}
+#min_bar{background: #e6e9ee;}
 #min_bar{display: none;}
 
 hr {color: #fff; background-color: #fff; border: 1px solid #ddd; border-style: none none solid; }
