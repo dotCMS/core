@@ -51,6 +51,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     showDialog: function (assetId, displayDateFilter) {
     	if(this.environmentStore==null) {
     		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
+
     	}
 
     	this.clear();
@@ -358,7 +359,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 			var what = (this.whereToSend[i].id.indexOf("user") > -1) ? " EnvironmentNotLanguaged" : "";
 			x = x + this.whereToSend[i].id + ",";
 			var tr = dojo.create("tr", null, table);
-			dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"pushHandler.removeFromWhereToSend('" + this.whereToSend[i].id +"');pushHandler.refreshWhereToSend()" }, tr);
+			dojo.create("td", { width: 10, innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"pushHandler.removeFromWhereToSend('" + this.whereToSend[i].id +"');pushHandler.refreshWhereToSend()" }, tr);
 			dojo.create("td", { innerHTML: this.whereToSend[i].name + what}, tr);
 
 		}
