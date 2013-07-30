@@ -336,7 +336,6 @@
     <input name="remoteFilterDate" id="remoteFilterDate" type="hidden" value="">
     <input name="iWantTo" id=iWantTo type="hidden" value="">
     <input name="whoToSend" id=whoToSend type="hidden" value="">
-    <input name="newBundle" id=newBundle type="hidden" value="">
 	<input name="bundleName" id=bundleName type="hidden" value="">
 	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
 	<input name="forcePush" id=forcePush type="hidden" value="">
