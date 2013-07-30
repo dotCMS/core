@@ -1,5 +1,6 @@
 {
  	"content": {
+ 	     "date_detection" : false,
  	     "_source": { 
  	       "excludes" : ["metadata.*"] 
 		 },
@@ -9,7 +10,8 @@
 					"_all": { 
 					    "indexAnalyzer": "whitespace", 
 					    "searchAnalyzer": "whitespace", 
-					    "store": "false" 
+					    "store": "false",
+					    "type": "string"
 					},
                     "match": "*_dotraw",
                     "mapping": {
