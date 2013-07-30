@@ -288,7 +288,7 @@ public class SpeedyAssetServlet extends HttpServlet {
            		return;
             }
             
-            response.setHeader("Content-Disposition","filename=" + file.getFileName());
+            response.setHeader("Content-Disposition","filename=\"" + file.getFileName() + "\"");
 
 			/*
 			 * Setting the proper content headers
@@ -298,7 +298,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 				String filename = url.substring(url.lastIndexOf("/") + 1, url.length());
 				filename = file.getFileName();
 				response.setHeader("Content-Type", "application/force-download");
-				response.setHeader("Content-Disposition", "attachment; filename=" + filename);
+				response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
 			} else {
 				boolean _adminMode = false;
 				try {
