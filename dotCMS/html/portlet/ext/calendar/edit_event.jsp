@@ -193,7 +193,7 @@ var editButtonRow="editEventButtonRow";
     	  		permissionsTabFieldExists = true;
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);%>
-				<jsp:include page="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" />
+				<%@include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
 			<% } else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
     	   		<%if(counter==0){%>
 					<% relationshipsTabFieldExists =  true; %>                    <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
@@ -280,7 +280,7 @@ var editButtonRow="editEventButtonRow";
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);
 			%>
-			<jsp:include page="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" />
+			<%@include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
 		</div>
     <% } %>
 	<!-- END Permissions Tab -->
