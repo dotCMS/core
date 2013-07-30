@@ -204,7 +204,7 @@
             var what = (this.whoCanUse[i].id.indexOf("user") > -1) ? " (<%=LanguageUtil.get(pageContext, "User")%>)" : "";
             x = x + this.whoCanUse[i].id + ",";
             var tr = dojo.create("tr", null, table);
-            dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>", className: "wfXBox", onClick: "removeFromWhoCanUse('" + this.whoCanUse[i].id + "');refreshWhoCanUse()" }, tr);
+            dojo.create("td", { width: 10, innerHTML: "<span class='deleteIcon'></span>", className: "wfXBox", onClick: "removeFromWhoCanUse('" + this.whoCanUse[i].id + "');refreshWhoCanUse()" }, tr);
             dojo.create("td", { innerHTML: this.whoCanUse[i].name + what}, tr);
 
         }
@@ -346,7 +346,7 @@
                 <b><%=environment.getName()%></b>
             </td>
             <td style="padding:0px;" valign="top">
-                
+
                     <%
                         List<PublishingEndPoint> environmentEndPoints = pepAPI.findSendingEndPointsByEnvironment(environment.getId());
                         boolean hasRow = false;
@@ -361,7 +361,7 @@
 		                                <span class="deleteIcon"></span></a>
 		                    </div>
 		                    <div <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%> style="cursor:pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', '<%=environment.getId()%>', 'false')">
-	
+
 	                            <div >
 	                            	<%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%>
 	                            </div>
@@ -378,7 +378,7 @@
                         	<%= LanguageUtil.get(pageContext, "publisher_No_Servers") %> <a style="text-decoration: underline;" href="javascript:goToAddEndpoint('<%=environment.getId()%>', 'false');"><%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
                      	</div>
                     <%}%>
-                
+
             </td>
             <td align="center" valign="top" nowrap="nowrap">
                 <%=environment.getPushToAll()%>

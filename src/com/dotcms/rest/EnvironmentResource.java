@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -18,9 +17,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 
@@ -45,24 +42,10 @@ public class EnvironmentResource extends WebResource {
 
 		StringBuilder json = new StringBuilder();
 
-		HttpSession session = request.getSession(false);
-
-		User sysUser = null;
-
-		try {
-            if (session != null && session.getAttribute("USER_ID") != null){
-        		String userId = session.getAttribute("USER_ID").toString();
-        		sysUser = APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);
-
-            }
-        } catch (Exception nsue) {
-            Logger.warn(this, "Exception trying to getUser: " + nsue.getMessage(), nsue);
-        }
-
 		json.append("[");
 
 		json.append("{id: '0', ");
-		json.append("name: '").append("<" + LanguageUtil.get(sysUser,"publisher_dialog_choose_environment_select") +">").append("' }, ");
+		json.append("name: '' }, ");
 
 		int environmentCounter = 0;
 
