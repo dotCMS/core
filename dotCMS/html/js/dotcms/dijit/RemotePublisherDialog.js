@@ -39,9 +39,11 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
         var container = this.container;
         dojo.connect(dia, "onDownloadEnd", function () {
+
             if (window.lastSelectedEnvironments) {
                 for (var count = 0; count < window.lastSelectedEnvironments.length; count++) {
-                    container.addToWhereToSend(window.lastSelectedEnvironments[count].id, window.lastSelectedEnvironments[count].name);
+                	container.addToWhereToSend(window.lastSelectedEnvironments[count].id, window.lastSelectedEnvironments[count].name);
+                	container.inialStateEnvs[count] = {name: window.lastSelectedEnvironments[count].name, id: window.lastSelectedEnvironments[count].id};
                 }
                 container.refreshWhereToSend();
             }
