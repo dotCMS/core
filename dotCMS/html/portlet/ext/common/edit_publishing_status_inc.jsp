@@ -12,9 +12,12 @@
 <%@page import="com.liferay.portal.model.User"%>
 
 <%
-	Inode asset = (Inode) request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT);
+	Object asset = request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT);
+    String assetId = asset==null ? "" :
+                        (asset instanceof Inode ? ((Inode)asset).getIdentifier() :
+                            (asset instanceof Contentlet ? ((Contentlet)asset).getIdentifier() : ""));
 
-	List<PushedAsset> pushedAssets = asset!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(asset.getIdentifier()) : new ArrayList<PushedAsset>();
+	List<PushedAsset> pushedAssets = asset!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(assetId) : new ArrayList<PushedAsset>();
 
 %>
 
@@ -23,7 +26,7 @@
 function deletePushHistory() {
 
 	var xhrArgs = {
-		url : '/api/bundle/deletepushhistory/assetid/<%=(asset!=null ? asset.getIdentifier() : "")%>',
+		url : '/api/bundle/deletepushhistory/assetid/<%=(asset!=null ? assetId : "")%>',
 		handleAs : "json",
 		sync: false,
 		load : function(data) {
