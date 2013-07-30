@@ -60,6 +60,7 @@ public class DependencyManager {
 	private Set<String> structuresSet;
 	private Set<String> containersSet;
 	private Set<String> contentsSet;
+	private Set<String> linksSet;
 
 	private User user;
 
@@ -76,6 +77,7 @@ public class DependencyManager {
 		containers = new DependencySet(config.getId(), "container", config.isDownloading());
 		contents = new DependencySet(config.getId(), "content", config.isDownloading());
 		relationships = new DependencySet(config.getId(), "relationship", config.isDownloading());
+		links = new DependencySet(config.getId(),"links",config.isDownloading());
 
 		// these ones are for being iterated over to solve the asset's dependencies
 		hostsSet = new HashSet<String>();
@@ -85,6 +87,8 @@ public class DependencyManager {
 		structuresSet = new HashSet<String>();
 		containersSet = new HashSet<String>();
 		contentsSet = new HashSet<String>();
+		linksSet = new HashSet<String>();
+		
 		this.user = user;
 	}
 
@@ -126,7 +130,7 @@ public class DependencyManager {
 					templates.add(asset.getAsset(), t.getModDate());
 					templatesSet.add(asset.getAsset());
 				} catch (Exception e) {
-					Logger.error(getClass(), "Couldn't add the Template to the Bundle. Bundle ID: " + config.getId() + ", HTMLPage ID: " + asset.getAsset(), e);
+					Logger.error(getClass(), "Couldn't add the Template to the Bundle. Bundle ID: " + config.getId() + ", Template ID: " + asset.getAsset(), e);
 				}
 			} else if(asset.getType().equals("containers")) {
 				try {
@@ -147,7 +151,7 @@ public class DependencyManager {
 					folders.add(asset.getAsset(), f.getModDate());
 					foldersSet.add(asset.getAsset());
 				} catch (DotSecurityException e) {
-					Logger.error(getClass(), "Couldn't add the Folder to the Bundle. Bundle ID: " + config.getId() + ", Container ID: " + asset.getAsset(), e);
+					Logger.error(getClass(), "Couldn't add the Folder to the Bundle. Bundle ID: " + config.getId() + ", Folder ID: " + asset.getAsset(), e);
 				}
 			} else if(asset.getType().equals("host")) {
 				try {
@@ -155,8 +159,19 @@ public class DependencyManager {
 					hosts.add(asset.getAsset(), h.getModDate());
 					hostsSet.add(asset.getAsset());
 				} catch (DotSecurityException e) {
-					Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Container ID: " + asset.getAsset(), e);
+					Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
 				}
+			} else if(asset.getType().equals("links")) {
+			    try {
+                    Link link = (Link) APILocator.getVersionableAPI().findLiveVersion(asset.getAsset(), user, false);
+                    if(link==null || !InodeUtils.isSet(link.getInode())) {
+                        link = APILocator.getMenuLinkAPI().findWorkingLinkById(asset.getAsset(), user, false);
+                    }
+                    links.add(asset.getAsset(),link.getModDate());
+                    linksSet.add(asset.getAsset());
+                } catch (DotSecurityException e) {
+                    Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
+                }
 			}
 		}
 
@@ -167,6 +182,7 @@ public class DependencyManager {
     		setTemplateDependencies();
     		setContainerDependencies();
     		setStructureDependencies();
+    		setLinkDependencies();
     		setContentDependencies(config.getLuceneQueries());
 		}else{
             contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
@@ -182,6 +198,23 @@ public class DependencyManager {
 		config.setContents(contents);
 		config.setLinks(links);
 		config.setRelationships(relationships);
+	}
+	
+	private void setLinkDependencies() {
+	    for(String linkId : linksSet) {
+	        try {
+                Identifier ident=APILocator.getIdentifierAPI().find(linkId);
+                Folder ff = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), user, false);
+                folders.add(ff.getInode(), ff.getModDate());
+                foldersSet.add(ff.getInode());
+                
+                Host hh=APILocator.getHostAPI().find(ident.getHostId(), user, false);
+                hosts.add(hh.getIdentifier(),hh.getModDate());
+                hostsSet.add(hh.getIdentifier());
+            } catch (Exception e) {
+                Logger.error(this, "can't load menuLink deps "+linkId,e);
+            }
+	    }
 	}
 
 	private void setHostDependencies() {
@@ -244,8 +277,10 @@ public class DependencyManager {
 				Folder f = APILocator.getFolderAPI().find(id, user, false);
 				// Parent folder
 				Folder parent = APILocator.getFolderAPI().findParentFolder(f, user, false);
-				if(UtilMethods.isSet(parent))
+				if(UtilMethods.isSet(parent)) {
 					folders.add(parent.getInode(), parent.getModDate());
+					foldersSet.add(parent.getInode());
+				}
 
 				folderList.add(f);
 			}
@@ -265,10 +300,12 @@ public class DependencyManager {
 
 			// Add folder even if empty
 			folders.add(f.getInode(), f.getModDate());
+			foldersSet.add(f.getInode());
 
 			// Host dependency
 			Host h = APILocator.getHostAPI().find(f.getHostId(), user, false);
 			hosts.add(f.getHostId(), h.getModDate());
+			hostsSet.add(f.getHostId());
 
 			// Content dependencies
 			String luceneQuery = "+conFolder:" + f.getInode();
@@ -284,6 +321,7 @@ public class DependencyManager {
 			List<Link> linkList = APILocator.getMenuLinkAPI().findFolderMenuLinks(f);
 			for (Link link : linkList) {
 				links.add(link.getIdentifier(), link.getModDate());
+				linksSet.add(link.getIdentifier());
 			}
 
 			// Structure dependencies
@@ -321,8 +359,10 @@ public class DependencyManager {
 				// Host dependency
 				Host h = APILocator.getHostAPI().find(iden.getHostId(), user, false);
 				hosts.add(iden.getHostId(), h.getModDate());
+				hostsSet.add(iden.getHostId());
 				Folder folder = folderAPI.findFolderByPath(iden.getParentPath(), iden.getHostId(), user, false);
 				folders.add(folder.getInode(), folder.getModDate());
+				foldersSet.add(folder.getInode());
 				HTMLPage workingPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false);
 				HTMLPage livePage = APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false);
 
@@ -406,7 +446,7 @@ public class DependencyManager {
 				// Host dependency
 				Host h = APILocator.getHostAPI().find(APILocator.getTemplateAPI().getTemplateHost(wkT).getIdentifier(), user, false);
 				hosts.add(APILocator.getTemplateAPI().getTemplateHost(wkT).getIdentifier(), h.getModDate());
-
+				
 				containerList.clear();
 				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(wkT, user, false));
 
