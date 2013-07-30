@@ -178,6 +178,8 @@ public class ReindexThread extends Thread {
 				                }
                                 public void onResponse(BulkResponse resp) {
                                     deleteRecords();
+                                    if(resp.hasFailures())
+                                        Logger.warn(this, resp.buildFailureMessage());
                                 }
                                 public void onFailure(Throwable ex) {
                                     Logger.error(ReindexThread.class,"Error indexing records", ex);
