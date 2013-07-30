@@ -174,7 +174,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
         Map<String, Object> map = new HashMap<String, Object>();
 
-        map.put( "name", "<" + LanguageUtil.get( getUser(), "publisher_Environment_Who_Can_Send_Choose" ) + ">" );
+        map.put( "name", "" );
         map.put( "id", "0" );
 
         list.add( map );
