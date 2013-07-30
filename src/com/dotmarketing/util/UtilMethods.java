@@ -75,6 +75,9 @@ import com.liferay.portal.model.User;
  *
  */
 public class UtilMethods {
+
+    public static String VERSION_PREVIEW = "preview";
+
     private static final java.text.SimpleDateFormat DATE_TO_INT_TIME = new java.text.SimpleDateFormat("Hmm");
 
     private static final java.text.SimpleDateFormat JDBC_TO_DATE = new java.text.SimpleDateFormat("yyyy-M-d H:mm:ss");
@@ -3327,6 +3330,13 @@ public class UtilMethods {
 
 
     public static boolean compareVersions(String v1, String v2){
+
+        v1 = v1.toLowerCase();
+        v2 = v2.toLowerCase();
+
+        v1 = v1.replace( VERSION_PREVIEW, ".0." );
+        v2 = v2.replace( VERSION_PREVIEW, ".0." );
+
     	String[] v1Arr = v1.split("\\.");
     	String[] v2Arr = v2.split("\\.");
     	boolean isMajor = false;
