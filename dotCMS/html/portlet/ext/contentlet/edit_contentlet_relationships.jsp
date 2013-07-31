@@ -702,7 +702,7 @@
 								}
 							}
 						%>
-						if ("<%=pairs.getKey()%>"== formEle[i].id && "<%= v%>" != formEle[i].value && formEle[i].value != "") {
+						if ("<%=pairs.getKey()%>"== formEle[i].id && "<%= UtilMethods.htmlifyString(v)%>" != formEle[i].value && formEle[i].value != "") {
 							return true;
 						}				
 					<%}
