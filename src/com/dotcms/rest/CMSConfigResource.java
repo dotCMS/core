@@ -1,11 +1,13 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.auth.PrincipalThreadLocal;
@@ -23,9 +25,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
 /**
  * @author Jonathan Gamba
@@ -345,6 +345,24 @@ public class CMSConfigResource extends WebResource {
 
             //Delete the environment
             environmentAPI.deleteEnvironment( environment );
+
+            //If it was deleted successfully lets remove it from session
+            if ( UtilMethods.isSet( request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS ) ) ) {
+
+                //Get the selected environments from the session
+                List<Environment> lastSelectedEnvironments = (List<Environment>) request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS );
+                Iterator<Environment> environmentsIterator = lastSelectedEnvironments.iterator();
+
+                while ( environmentsIterator.hasNext() ) {
+
+                    Environment currentEnv = environmentsIterator.next();
+                    //Verify if the current env is on the ones stored in session
+                    if ( currentEnv.getId().equals( environment ) ) {
+                        //If we found it lets remove it
+                        environmentsIterator.remove();
+                    }
+                }
+            }
 
             //And prepare the response
             JSONObject jsonResponse = new JSONObject();

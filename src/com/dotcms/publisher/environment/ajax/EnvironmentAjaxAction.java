@@ -1,16 +1,5 @@
 package com.dotcms.publisher.environment.ajax;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotmarketing.beans.Permission;
@@ -28,6 +17,16 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class EnvironmentAjaxAction extends AjaxAction {
 
@@ -156,19 +155,21 @@ public class EnvironmentAjaxAction extends AjaxAction {
 	}
 
 	public void editEnvironment(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LanguageException, DotSecurityException {
-		try {
-	        String identifier = request.getParameter("identifier");
 
+		try {
+
+            //Reading the parameters
+	        String identifier = request.getParameter("identifier");
 	        String name = request.getParameter("environmentName");
 
-        	Environment existingEnv = APILocator.getEnvironmentAPI().findEnvironmentByName(name);
-
-        	if(existingEnv!=null && !existingEnv.getId().equals(identifier)) {
-        		Logger.info(getClass(), "Can't save Environment. An Environment with the given name already exists. ");
-        		User user = getUser();
-    			response.getWriter().println("FAILURE: " + LanguageUtil.get(user, "publisher_Environment_name_exists"));
-    			return;
-        	}
+            //Verify the environment exist
+            Environment existingEnv = APILocator.getEnvironmentAPI().findEnvironmentByName( name );
+            if ( existingEnv != null && !existingEnv.getId().equals( identifier ) ) {
+                Logger.info( getClass(), "Can't save Environment. An Environment with the given name already exists. " );
+                User user = getUser();
+                response.getWriter().println( "FAILURE: " + LanguageUtil.get( user, "publisher_Environment_name_exists" ) );
+                return;
+            }
 
         	String whoCanUseTmp = request.getParameter("whoCanUse");
 
@@ -198,6 +199,26 @@ public class EnvironmentAjaxAction extends AjaxAction {
 
         	EnvironmentAPI eAPI = APILocator.getEnvironmentAPI();
 			eAPI.updateEnvironment(environment, permissions);
+
+            //If it was updated successfully lets set the session
+            if ( UtilMethods.isSet( request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS ) ) ) {
+
+                //Get the selected environments from the session
+                List<Environment> lastSelectedEnvironments = (List<Environment>) request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS );
+
+                Integer indexToReplace = null;
+                for ( Environment currentEnv : lastSelectedEnvironments ) {
+                    //Verify if the current env is on the ones stored in session
+                    if ( currentEnv.getId().equals( environment.getId() ) ) {
+                        indexToReplace = lastSelectedEnvironments.indexOf( currentEnv );
+                    }
+                }
+
+                //If we found it lets use the updated
+                if ( indexToReplace != null ) {
+                    lastSelectedEnvironments.set( indexToReplace, environment );
+                }
+            }
 
 		} catch (DotDataException e) {
 			Logger.info(getClass(), e.getMessage());
