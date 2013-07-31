@@ -43,6 +43,8 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
         }
 
+        boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
+
         try {
             Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
 
@@ -62,7 +64,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
                             roleList.add( cmsAnon );
                         else
                             roleList.add( r );
-                        response.getWriter().write( rolesToJson( roleList ) );
+                        response.getWriter().write( rolesToJson( roleList, includeFake ) );
                         return;
                     }
                 } catch ( Exception e ) {
@@ -106,7 +108,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }
 
             //x = x.replaceAll("identifier", "x");
-            response.getWriter().write( rolesToJson( roleList ) );
+            response.getWriter().write( rolesToJson( roleList, includeFake ) );
 
         } catch ( Exception e ) {
             Logger.error( WfRoleStoreAjax.class, e.getMessage(), e );
@@ -117,6 +119,8 @@ public class WfRoleStoreAjax extends WfBaseAction {
     public void assignable ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
         String name = request.getParameter( "name" );
+
+        boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
 
         try {
             String actionId = request.getParameter( "actionId" );
@@ -157,7 +161,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
             }
 
-            response.getWriter().write( rolesToJson( roleList ) );
+            response.getWriter().write( rolesToJson( roleList, includeFake ) );
         } catch ( Exception e ) {
             Logger.error( WfRoleStoreAjax.class, e.getMessage(), e );
         }
@@ -165,19 +169,22 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
     }
 
-    private String rolesToJson ( List<Role> roles ) throws IOException, DotDataException, LanguageException {
+    private String rolesToJson ( List<Role> roles, boolean includeFake ) throws IOException, DotDataException, LanguageException {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure( Feature.FAIL_ON_UNKNOWN_PROPERTIES, false );
         Map<String, Object> m = new LinkedHashMap<String, Object>();
 
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-        Map<String, Object> map = new HashMap<String, Object>();
 
-        map.put( "name", "" );
-        map.put( "id", "0" );
+        Map<String, Object> map = null;
 
-        list.add( map );
+        if(includeFake) {
+        	map = new HashMap<String, Object>();
+	        map.put( "name", "" );
+	        map.put( "id", 0 );
+	        list.add( map );
+        }
 
         User defaultUser = APILocator.getUserAPI().getDefaultUser();
         Role defaultUserRole = null;
