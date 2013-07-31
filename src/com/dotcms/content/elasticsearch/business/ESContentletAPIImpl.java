@@ -1272,12 +1272,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         ContentletVersionInfo cinfo=APILocator.getVersionableAPI().getContentletVersionInfo(
                 contentlet.getIdentifier(), contentlet.getLanguageId());
-        
-        if(cinfo.getWorkingInode().equals(contentlet.getInode()) || 
+
+        if(cinfo.getWorkingInode().equals(contentlet.getInode()) ||
                 (InodeUtils.isSet(cinfo.getLiveInode()) && cinfo.getLiveInode().equals(contentlet.getInode())))
             // we remove from index if it is the working or live version
             indexAPI.removeContentFromIndex(contentlet);
-        
+
         CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
         // jira.dotmarketing.net/browse/DOTCMS-1073
@@ -1328,7 +1328,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // Updating lucene index
             indexAPI.addContentToIndex(workingContentlet);
-            
+
             ContentletServices.invalidate(contentlet);
             ContentletMapServices.invalidate(contentlet);
             publishRelatedHtmlPages(contentlet);
@@ -1498,12 +1498,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         indexAPI.addContentToIndex(contentlet);
         indexAPI.removeContentFromLiveIndex(contentlet);
-        
-        
+
+
         ContentletServices.unpublishContentletFile(contentlet);
         ContentletMapServices.unpublishContentletMapFile(contentlet);
         publishRelatedHtmlPages(contentlet);
-        
+
     }
 
     public void unpublish(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,    DotSecurityException, DotContentletStateException {
@@ -1545,7 +1545,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(liveContentlet!=null && UtilMethods.isSet(liveContentlet.getInode())
                 && !liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()))
             indexAPI.addContentToIndex(liveContentlet);
-        
+
         ContentletServices.invalidate(contentlet);
         ContentletMapServices.invalidate(contentlet);
         publishRelatedHtmlPages(contentlet);
@@ -1972,7 +1972,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean saveWithExistingID=false;
             String existingInode=null, existingIdentifier=null;
             boolean changedURI=false;
-            
+
         	Contentlet workingContentlet = contentlet;
             try {
 				if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
@@ -2122,7 +2122,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
 
 				    String oldURI=ident.getURI();
-				    
+
 				    // make sure the identifier is removed from cache
 				    // because changes here may affect URI then IdentifierCache
 				    // can't remove it
@@ -2145,7 +2145,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        ident.setParentPath("/");
 				    }
 				    ident=APILocator.getIdentifierAPI().save(ident);
-				    
+
 				    changedURI = ! oldURI.equals(ident.getURI());
 				}
 
@@ -2302,7 +2302,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				                	//FileUtil.deltree(binaryFieldFolder);
 
 			                		FileUtil.copyFile(incomingFile, newFile);
-			                		
+
 			                		// delete old content metadata if exists
 			                		if(metadata!=null && metadata.exists())
 			                		    metadata.delete();
@@ -2324,7 +2324,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	else if (oldFile.exists()) {
 			                		// otherwise, we copy the files as hardlinks
 			                		FileUtil.copyFile(oldFile, newFile);
-			                		
+
 			                		// try to get the content metadata from the old version
 			                		if(metadata!=null) {
 			                		    java.io.File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
@@ -2472,7 +2472,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				    indexAPI.addContentToIndex(contentlet);
 				}
-				
+
 				if(structureHasAHostField && changedURI) {
 				    DotConnect dc=new DotConnect();
 				    dc.setSQL("select working_inode,live_inode from contentlet_version_info where identifier=? and lang<>?");
@@ -2731,7 +2731,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(UtilMethods.isSet(returnValue)){
         	return returnValue;
         }
-        
+
 
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 
@@ -2749,7 +2749,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
             catch(Exception e){
-                Logger.warn(this.getClass(), "unable to get field value " + fld.getVelocityVarName() + " " + e);
+                Logger.warn(this.getClass(), "unable to get field value " + fld.getVelocityVarName() + " " + e, e);
             }
         }
         contentlet.setStringProperty("__NAME__", contentlet.getIdentifier());
@@ -3062,7 +3062,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         }
-        
+
         boolean hasError = false;
         DotContentletValidationException cve = new DotContentletValidationException("Contentlets' fields are not valid");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
@@ -3841,7 +3841,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return false;
     }
-    
+
     public boolean isInodeIndexed(String inode) {
         return isInodeIndexed(inode,false);
     }
@@ -4117,25 +4117,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         return conFac.indexCount(buffy.toString());
     }
-    
+
 	@Override
 	public List<Map<String, String>> getMostViewedContent(String structureVariableName, String startDateStr, String endDateStr, User user) {
-		
+
 		String[] dateFormats = new String[] { "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm",
                 "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
                 "hh:mm:ss aa", "HH:mm:ss", "yyyy-MM-dd"};
 
 		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
-		
+
 		String structureInode = StructureCache.getStructureByVelocityVarName(structureVariableName).getInode();
 		if(!UtilMethods.isSet(structureInode))
 			return result;
-		
+
 		GregorianCalendar gCal = new GregorianCalendar();
 		Date endDate = gCal.getTime();
 		gCal.add(2, -3);
 		Date startDate = gCal.getTime();// Default interval
-		
+
 		if(!UtilMethods.isSet(startDateStr) && !UtilMethods.isSet(endDateStr)){
 			GregorianCalendar gc = new GregorianCalendar();
 			endDate = gc.getTime();
@@ -4173,7 +4173,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				endDate = DateUtil.convertDate(endDateStr, dateFormats);
 			} catch (java.text.ParseException e) {}
 		}
-		
+
 		try {
 			result = conFac.getMostViewedContent(structureInode, startDate, endDate , user);
 		} catch (Exception e) {}
@@ -4209,5 +4209,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	}
         }
     	return fileAssetCont;
+
 	}
 }
