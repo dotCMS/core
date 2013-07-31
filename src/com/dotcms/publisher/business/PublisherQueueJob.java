@@ -234,7 +234,7 @@ public class PublisherQueueJob implements StatefulJob {
 	        		countPublishing++;
         	}
 
-        	if(countOk == endpointsGroup.size()) {
+        	if(countOk == endpointsMap.size()) {
 	        	pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(),
 	        			PublishAuditStatus.Status.SUCCESS,
 	        			localHistory);
@@ -244,7 +244,7 @@ public class PublisherQueueJob implements StatefulJob {
 	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH,
 	        			localHistory);
         		pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
-        	} else if(countPublishing == endpointsGroup.size()){
+        	} else if(countPublishing == endpointsMap.size()){
         		pubAuditAPI.updatePublishAuditStatus(pendingAudit.getBundleId(),
         				PublishAuditStatus.Status.PUBLISHING_BUNDLE,
 	        			localHistory);
