@@ -265,11 +265,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	public void setStringProperty(String fieldVarName,String stringValue) throws DotRuntimeException {
-		try{
 		map.put(fieldVarName, stringValue);
-		} catch(NullPointerException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public void setLongProperty(String fieldVarName, long longValue) throws DotRuntimeException {
