@@ -186,7 +186,7 @@
 								<span class="<%=action.getIcon()%>"></span>
 								<%=action.getName() %> 
 								<span style="color:#a6a6a6">&#8227; <%=wapi.findStep(action.getNextStep()).getName() %></span>
-								<%if(action.requiresCheckout()){ %><div title="<%=LanguageUtil.get(pageContext, "Save-content")%>: (<%=LanguageUtil.get(pageContext, "Requires-Checkout")%>)" style="float:right;opacity:0.5;"><span class="lockIcon"></span></div><%} %>
+								<%if(action.requiresCheckout()){ %><div title="<%=LanguageUtil.get(pageContext, "Save-content")%>: (<%=LanguageUtil.get(pageContext, "Requires-Checkout")%>)" style="float:right;opacity:0.45;"><span class="saveIcon"></span></div><%} %>
 							</td>
 						</tr>
 					<%} %>
