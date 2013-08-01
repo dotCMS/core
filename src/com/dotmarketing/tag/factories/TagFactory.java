@@ -887,7 +887,7 @@ public class TagFactory {
 
 			HibernateUtil dh = new HibernateUtil(Tag.class);
 			dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where lower(tagname) like ? and (host_id like ? OR host_id like ?)");
-	        dh.setParam(name.toLowerCase() + "%");
+	        dh.setParam("%" + name.toLowerCase() + "%");
 	        /*
 	        if(UtilMethods.isSet(selectedHostId)){
 		        //if structure has a host field, search in selected host
