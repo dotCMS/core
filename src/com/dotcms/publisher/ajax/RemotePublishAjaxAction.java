@@ -1,38 +1,8 @@
 package com.dotcms.publisher.ajax;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.dotcms.publisher.bundle.business.BundleAPI;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.hadoop.mapred.lib.Arrays;
-
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
-import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -40,13 +10,7 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publishing.BundlerStatus;
-import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.publishing.DotBundleException;
-import com.dotcms.publishing.DotPublishingException;
-import com.dotcms.publishing.IBundler;
-import com.dotcms.publishing.Publisher;
-import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.*;
 import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -59,14 +23,28 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.hadoop.mapred.lib.Arrays;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class RemotePublishAjaxAction extends AjaxAction {
 
@@ -146,11 +124,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
 	}
 
     /**
-     * Send to publish a given element
+     * Send to the publisher queue a list of assets for a given Operation (Publish/Unpublish) and {@link Environment Environment}
      *
-     * @param request
-     * @param response
-     * @throws WorkflowActionFailureException
+     * @see com.dotcms.publisher.business.PublisherQueueJob
+     * @see Environment
      */
     public void publish ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException {
 
@@ -220,14 +197,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
     }
 
     /**
-     * Allow the user to send again a failed bundle to que publisher queue job in order to try to republish it again
-     *
-     * @param request
-     * @param response
-     * @throws ServletException
-     * @throws IOException
-     * @throws DotDataException
-     * @throws DotPublisherException
+     * Allow the user to send or try to send again failed and successfully sent bundles, in order to do that<br/>
+     * we send the bundle again to que publisher queue job which will try to remote publish again the bundle.
      */
     public void retry ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException, DotPublisherException, LanguageException {
 
@@ -262,7 +233,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 continue;
             }
 
-            //ONLY FAILED BUNDLES
+            //We will be able to retry failed and successfully bundles
             if ( !(status.getStatus().equals( Status.FAILED_TO_PUBLISH ) || status.getStatus().equals( Status.SUCCESS )) ) {
                 appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
                 continue;
@@ -346,46 +317,49 @@ public class RemotePublishAjaxAction extends AjaxAction {
         response.getWriter().println( responseMessage.toString() );
     }
 
+    /**
+     * Downloads a Bundle file for a given bundle id.
+     */
     public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException {
+
         Map<String, String> map = getURIParams();
-		response.setContentType("application/x-tgz");
+        response.setContentType( "application/x-tgz" );
 
-		String bid = map.get("bid");
+        String bid = map.get( "bid" );
 
-		PublisherConfig config = new PublisherConfig();
-		config.setId(bid);
-		File bundleRoot = BundlerUtil.getBundleRoot(config);
+        PublisherConfig config = new PublisherConfig();
+        config.setId( bid );
+        File bundleRoot = BundlerUtil.getBundleRoot( config );
 
-		ArrayList<File> list = new ArrayList<File>(1);
-		list.add( bundleRoot );
-		File bundle = new File(bundleRoot+File.separator+".."+File.separator+config.getId()+".tar.gz");
-		if(!bundle.exists()){
-			response.sendError(500, "No Bundle Found");
-			return;
-		}
+        ArrayList<File> list = new ArrayList<File>( 1 );
+        list.add( bundleRoot );
+        File bundle = new File( bundleRoot + File.separator + ".." + File.separator + config.getId() + ".tar.gz" );
+        if ( !bundle.exists() ) {
+            response.sendError( 500, "No Bundle Found" );
+            return;
+        }
 
-		response.setHeader("Content-Disposition", "attachment; filename=" + config.getId()+".tar.gz");
-		BufferedInputStream in = null;
-		try{
-			in = new BufferedInputStream(new FileInputStream(bundle));
-			byte[] buf = new byte[4096];
-			int len;
+        response.setHeader( "Content-Disposition", "attachment; filename=" + config.getId() + ".tar.gz" );
+        BufferedInputStream in = null;
+        try {
+            in = new BufferedInputStream( new FileInputStream( bundle ) );
+            byte[] buf = new byte[4096];
+            int len;
 
-			while ((len = in.read(buf, 0, buf.length))!= -1){
-				response.getOutputStream().write(buf, 0, len);
-			}
-		}
-		catch(Exception e){
-
-		}
-		finally{
-			try{
-				in.close();
-			}
-			catch(Exception ex){};
-		}
-		return;
-	}
+            while ( (len = in.read( buf, 0, buf.length )) != -1 ) {
+                response.getOutputStream().write( buf, 0, len );
+            }
+        } catch ( Exception e ) {
+            Logger.warn( this.getClass(), "Error Downloading Bundle.", e );
+        } finally {
+            try {
+                in.close();
+            } catch ( Exception ex ) {
+                Logger.warn( this.getClass(), "Error Closing Stream.", ex );
+            }
+        }
+        return;
+    }
 
     /**
      * Generates and flush an Unpublish bundle for a given bundle id and operation (publish/unpublish)
@@ -533,39 +507,43 @@ public class RemotePublishAjaxAction extends AjaxAction {
         return PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() );
     }
 
-	public void uploadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException, FileUploadException {
+    /**
+     * Publish a given Bundle file
+     */
+    public void uploadBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException, FileUploadException {
+
         FileItemFactory factory = new DiskFileItemFactory();
-        ServletFileUpload upload = new ServletFileUpload(factory);
-        @SuppressWarnings("unchecked")
-		List<FileItem> items = (List<FileItem>) upload.parseRequest(request);
+        ServletFileUpload upload = new ServletFileUpload( factory );
+        @SuppressWarnings ("unchecked")
+        List<FileItem> items = (List<FileItem>) upload.parseRequest( request );
 
-		InputStream bundle = items.get(0).getInputStream();
-		String bundleName = items.get(0).getName();
-		String bundlePath = ConfigUtils.getBundlePath()+File.separator;
-		String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
-		String endpointId = getUser().getUserId();
-		response.setContentType("text/html; charset=utf-8");
-		PrintWriter out = response.getWriter();
+        InputStream bundle = items.get( 0 ).getInputStream();
+        String bundleName = items.get( 0 ).getName();
+        String bundlePath = ConfigUtils.getBundlePath() + File.separator;
+        String bundleFolder = bundleName.substring( 0, bundleName.indexOf( ".tar.gz" ) );
+        String endpointId = getUser().getUserId();
+        response.setContentType( "text/html; charset=utf-8" );
+        PrintWriter out = response.getWriter();
 
-		PublishAuditStatus status;
-		try {
-			status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, null, bundleFolder);
+        PublishAuditStatus status;
+        try {
+            status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, null, bundleFolder );
 
-	//		Write file on FS
-			FileUtil.writeToFile(bundle, bundlePath+bundleName);
+            // Write file on FS
+            FileUtil.writeToFile( bundle, bundlePath + bundleName );
 
-			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
-				new Thread(new PublishThread(bundleName, null, endpointId, status)).start();
-			}
+            if ( !status.getStatus().equals( Status.PUBLISHING_BUNDLE ) ) {
+                new Thread( new PublishThread( bundleName, null, endpointId, status ) ).start();
+            }
 
-			out.print("<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>");
+            out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>" );
 
-		} catch (DotPublisherException e) {
-			// TODO Auto-generated catch block
-			out.print("<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'error'}</textarea></body></html>");
-		}
+        } catch ( DotPublisherException e ) {
+            // TODO Auto-generated catch block
+            out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'error'}</textarea></body></html>" );
+        }
 
-	}
+    }
 
     /**
      * Appends info messages to a main StringBuilder message for an easier display to the user
@@ -758,6 +736,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
     }
 
+    /**
+     * Returns the list of ids the user is trying to remote publish.
+     */
     private List<String> getIdsToPush ( List<String> assetIds, String _contentFilterDate, SimpleDateFormat dateFormat )
             throws ParseException, DotDataException {
 
