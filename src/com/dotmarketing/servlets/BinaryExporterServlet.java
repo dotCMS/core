@@ -209,8 +209,13 @@ public class BinaryExporterServlet extends HttpServlet {
 			}
 
 
-
-			boolean isContent = isContent(uuid, byInode, lang, respectFrontendRoles);
+			boolean isContent = false;
+			try{
+				isContent = isContent(uuid, byInode, lang, respectFrontendRoles);
+			}catch (DotStateException e) {
+				resp.sendError(404);
+				return;
+			}
 
 
 			if(isContent){
@@ -237,12 +242,16 @@ public class BinaryExporterServlet extends HttpServlet {
 				Field field = content.getStructure().getFieldVar(fieldVarName);
 
 				if(field == null){
-					throw new ServletException("Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
+					Logger.debug(this,"Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
+					resp.sendError(404);
+					return;
 				}
 
 				inputFile = contentAPI.getBinaryFile(content.getInode(), field.getVelocityVarName(), user);
 				if(inputFile == null){
-					throw new ServletException("binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
+					Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
+					resp.sendError(404);
+					return;
 				}
 				downloadName = inputFile.getName();
 
@@ -265,18 +274,28 @@ public class BinaryExporterServlet extends HttpServlet {
 
 				// no identifier, no soup!
 				if(id == null || ! UtilMethods.isSet(id.getInode())){
-					throw new DotContentletStateException("Identifier: " + assetIdentifier +"not found");
+					Logger.debug(this,"Identifier: " + assetIdentifier +"not found");
+					resp.sendError(404);
+					return;
 				}
 
 				boolean hasLive = (LiveCache.getPathFromCache(id.getURI(), id.getHostId()) != null);
 
 				// no live version and front end, no soup
 				if(respectFrontendRoles && ! hasLive){
-					throw new DotSecurityException("File :" + id.getInode() +"is not live");
+					Logger.debug(this,"File :" + id.getInode() +"is not live");
+					resp.sendError(404);
+					return;
 				}
 				// no permissions, no soup!
 				if(!APILocator.getPermissionAPI().doesUserHavePermission(id, PermissionAPI.PERMISSION_READ, user)){
-					throw new DotSecurityException("user: " + user + " does not have read on File :" + id.getInode());
+					Logger.debug(this,"user: " + user + " does not have read on File :" + id.getInode());
+					if(WebAPILocator.getUserWebAPI().isLoggedToFrontend(req)){
+						resp.sendError(403);
+					}else{
+						resp.sendError(401);
+					}
+					return;
 				}
 
 
@@ -437,7 +456,6 @@ public class BinaryExporterServlet extends HttpServlet {
             servletOutput.close();
 
 		} catch (DotContentletStateException e) {
-			Logger.error(BinaryExporterServlet.class, e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 		} catch (DotRuntimeException e) {
@@ -457,7 +475,16 @@ public class BinaryExporterServlet extends HttpServlet {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 		} catch (DotSecurityException e) {
-			resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+			try {
+				if(WebAPILocator.getUserWebAPI().isLoggedToFrontend(req)){
+					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+				}else{
+					resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+				}
+			} catch (Exception e1) {
+				Logger.error(BinaryExporterServlet.class,e1.getMessage(),e1);
+				resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+			}
 		} catch (BinaryContentExporterException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
