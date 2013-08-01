@@ -97,7 +97,11 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 	<%boolean hasBundles = false; %>
 	<%  int i = 0;
         for(Bundle b : ba){
-            String jarFile = b.getLocation().contains( File.separator ) ? b.getLocation().substring( b.getLocation().lastIndexOf( File.separator ) + 1 ) : "System";
+            String separator = File.separator;
+            if (b.getLocation().contains( "/" )) {
+                separator = "/";
+            }
+            String jarFile = b.getLocation().contains( separator ) ? b.getLocation().substring( b.getLocation().lastIndexOf( separator ) + 1 ) : "System";
     %>
 		<%if(ignoreBuns.contains(b.getSymbolicName()) ){continue;} %>
 		<% hasBundles = true; %>
@@ -108,12 +112,12 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 			<td>
 				<%if(b.getState() != Bundle.ACTIVE){ %><a href="javascript:bundles.start('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a><% } %>
 				<%if(b.getState() == Bundle.ACTIVE){ %><a href="javascript:bundles.stop('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a><% } %>
-				<%if(b.getLocation().contains(File.separator) && b.getLocation().contains(File.separator + "load" + File.separator)){ %>&nbsp;|&nbsp;<a href="javascript:bundles.undeploy('<%=b.getLocation().substring(b.getLocation().lastIndexOf(File.separatorChar) + 1)%>')"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a><%} %>
+				<%if(b.getLocation().contains(separator) && b.getLocation().contains(separator + "load" + separator)){ %>&nbsp;|&nbsp;<a href="javascript:bundles.undeploy('<%=b.getLocation().substring(b.getLocation().lastIndexOf(separator) + 1)%>')"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a><%} %>
 			</td>
 		</tr>
         <script type="text/javascript">
 
-            <%if(b.getLocation().contains(File.separator) && b.getLocation().contains(File.separator + "load" + File.separator)){ %>
+            <%if(b.getLocation().contains(separator) && b.getLocation().contains(separator + "load" + separator)){ %>
                 if(enterprise && sendingEndpoints) {
                     popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i++%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=jarFile%>\">";
                     popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"javascript:bundles.remotePublishBundle('<%=jarFile%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
