@@ -656,23 +656,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		public Object put(String key, Object value) {
 			 if(value==null) {
-				 return super.put(key, "");
+				 Object oldValue = this.get(key);
+				 this.remove(key);
+				 return oldValue;
 			 }
 			 return super.put(key, value);
 		 }
-
-		public Object get(Object key) {
-	        Object value=super.get(key);
-	        String structureInode=(String)super.get(STRUCTURE_INODE_KEY);
-	        String inode=(String)super.get(INODE_KEY);
-	        if(UtilMethods.isSet(inode) && UtilMethods.isSet(structureInode) &&
-	           isMetadataFieldCached(structureInode, (String)key, value)) {
-	           value=lazyMetadataLoad(inode, structureInode);
-	        }
-	        if(value!=null&&value.equals("")) {
-	        	value = null;
-	        }
-	        return value;
-	    }
 	}
 }
