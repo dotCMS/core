@@ -14,18 +14,18 @@
 			{}
 			if(fullCommand == "true")
 			{
-				if (action == 'add') 
+				if (action == 'add')
 				{
 					TagAjax.addTagFullCommand(tagName, userId);
 					returnAction = 'added';
 				}
-				else if (action == 'remove') 
+				else if (action == 'remove')
 				{
 					TagAjax.deleteTagFullCommand(tagName);
 					returnAction = 'removed';
 				}
 				returnAction = "Tags " + returnAction;
-				displayTagReturn(returnDiv, returnAction, 20);					
+				displayTagReturn(returnDiv, returnAction, 20);
 			}
 			else
 			{
@@ -35,13 +35,13 @@
 	   				for (var i = 0; i < cbUserIdList.length; ++i) {
 	   					if (document.getElementById(cbUserIdList[i]).checked) {
 	   						doAction = true;
-							if (action == 'add') 
+							if (action == 'add')
 							{
 								users++;
 								addTag(tagName, cbUserProxyInodeList[i]);
 								returnAction = 'added';
 							}
-							else if (action == 'remove') 
+							else if (action == 'remove')
 							{
 								users++;
 								deleteTagInode(tagName, cbUserProxyInodeList[i]);
@@ -139,16 +139,16 @@
 		}
 		//in backend, check if structure has host or folder field and dynamically suggest tags for that field's value
 		var selectedHostId  ="";
-		
+
 		if(dojo.byId('hostId')){
 			selectedHostId = dojo.byId('hostId').value;
 		}
-		
+
 		//in frontend, check for hidden field with host identifier
 		if(dojo.byId('currentHostIdForTagSuggestion')){
 			selectedHostId = dojo.byId('currentHostIdForTagSuggestion').value;
 		}
-		
+
 		if (tagName != "" & tagName.length >= 3) {
 			TagAjax.getSuggestedTag(tagName, selectedHostId, showTagsForSearch);
 		}
@@ -159,11 +159,11 @@
 	function showTagsForSearch(result) {
 		var html;
 		DWRUtil.setValues(result);
-	
+
 		if (result.length > 0) {
 
 			html = "<div class'suggestedTagsLinks'>";
-			
+
 			for (var i = 0; i < result.length; i++) {
 				var tagName = result[i]["tagName"];
 				tagName = RTrim(tagName);
@@ -179,7 +179,7 @@
 			if ((suggestedTag != null) && (suggestedTag != "")) {
 				var tagDiv = document.getElementById(suggestedDiv);
 				tagDiv.innerHTML = html;
-				dojo.style("tagssuggestedTagsWrapper", "display", "block");
+				dojo.style(suggestedTag+"suggestedTagsWrapper", "display", "block");
 			}
 		}
 		else {
@@ -211,7 +211,7 @@
 				}
 				tagName += tagSuggested;
 			}
-	
+
 			document.getElementById(suggestedTag).value = tagName;
 			clearSuggestTagsForSearch();
 		}
@@ -227,9 +227,9 @@
 		var div = document.getElementById(element);
 		div.style.display = 'none';
 	}
-	
-	//Utility functions 
-	
+
+	//Utility functions
+
 	/*
 	==================================================================
 	LTrim(string) : Returns a copy of a string without leading spaces.
@@ -242,26 +242,26 @@
 	*/
 	{
 	   var whitespace = new String(" \t\n\r");
-	
+
 	   var s = new String(str);
-	
+
 	   if (whitespace.indexOf(s.charAt(0)) != -1) {
 	      // We have a string with leading blank(s)...
-	
+
 	      var j=0, i = s.length;
-	
+
 	      // Iterate from the far left of string until we
 	      // don't have any more whitespace...
 	      while (j < i && whitespace.indexOf(s.charAt(j)) != -1)
 	         j++;
-	
+
 	      // Get the substring from the first non-whitespace
 	      // character to the end of the string...
 	      s = s.substring(j, i);
 	   }
 	   return s;
 	}
-	
+
 	/*
 	==================================================================
 	RTrim(string) : Returns a copy of a string without trailing spaces.
@@ -271,35 +271,35 @@
 	/*
 	   PURPOSE: Remove trailing blanks from our string.
 	   IN: str - the string we want to RTrim
-	
+
 	*/
 	{
 	   // We don't want to trip JUST spaces, but also tabs,
 	   // line feeds, etc.  Add anything else you want to
 	   // "trim" here in Whitespace
 	   var whitespace = new String(" \t\n\r");
-	
+
 	   var s = new String(str);
-	
+
 	   if (whitespace.indexOf(s.charAt(s.length-1)) != -1) {
 	      // We have a string with trailing blank(s)...
-	
+
 	      var i = s.length - 1;       // Get length of string
-	
+
 	      // Iterate from the far right of string until we
 	      // don't have any more whitespace...
 	      while (i >= 0 && whitespace.indexOf(s.charAt(i)) != -1)
 	         i--;
-	
-	
+
+
 	      // Get the substring from the front of the string to
 	      // where the last non-whitespace character is...
 	      s = s.substring(0, i+1);
 	   }
-	
+
 	   return s;
 	}
-	
+
 	/*
 	=============================================================
 	Trim(string) : Returns a copy of a string without leading or trailing spaces
@@ -309,12 +309,12 @@
 	/*
 	   PURPOSE: Remove trailing and leading blanks from our string.
 	   IN: str - the string we want to Trim
-	
+
 	   RETVAL: A Trimmed string!
 	*/
 	{
 	   return RTrim(LTrim(str));
 	}
-	 
-		
-	
+
+
+
