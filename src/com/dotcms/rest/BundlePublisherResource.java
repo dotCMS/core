@@ -42,9 +42,23 @@ public class BundlePublisherResource extends WebResource {
 	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
 	private PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
 
-	@POST
-	@Path("/publish")
-	@Consumes(MediaType.MULTIPART_FORM_DATA)
+    /**
+     * Method that receives from a server a bundle with the intention of publish it.<br/>
+     * When a Bundle file is received on this end point is required to validate if the sending server is an allowed<br/>
+     * server on this end point and if the security tokens match. If all the validations are correct the bundle will be add it<br/>
+     * to the {@link PublishThread Publish Thread}.
+     *
+     * @param bundle         Bundle file stream
+     * @param fileDetail     Bundle file Details
+     * @param auth_token_enc Authentication token
+     * @param groupId
+     * @param endpointId
+     * @param req
+     * @see PublishThread
+     */
+    @POST
+    @Path ("/publish")
+    @Consumes (MediaType.MULTIPART_FORM_DATA)
 	public Response publish(
 			@FormDataParam("bundle") InputStream bundle,
 			@FormDataParam("bundle") FormDataContentDisposition fileDetail,
@@ -52,6 +66,7 @@ public class BundlePublisherResource extends WebResource {
 			@FormDataParam("GROUP_ID") String groupId,
 			@FormDataParam("ENDPOINT_ID") String endpointId,
 			@Context HttpServletRequest req) {
+
 		String remoteIP = "";
 		try {
 			String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
@@ -74,8 +89,7 @@ public class BundlePublisherResource extends WebResource {
 			
 			//Write file on FS
 			FileUtil.writeToFile(bundle, bundlePath+bundleName);
-			
-			
+
 			//Start thread
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 				new Thread(new PublishThread(bundleName, groupId, endpointId, status)).start();
@@ -91,37 +105,41 @@ public class BundlePublisherResource extends WebResource {
 		
 		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
-	
-	private boolean isValidToken(String token, String remoteIP, PublishingEndPoint mySelf) throws IOException, DotDataException {
-		String clientKey = token;
-		
-		//My key
-		String myKey = null;
-		if(mySelf != null) {
-			myKey = retriveKeyString(
-					PublicEncryptionFactory.decryptString(mySelf.getAuthKey().toString()));
-		} else {
-			return false;
-		}
-		
-		
-		return clientKey.equals(myKey);
-			
-	}
-	
-	private String retriveKeyString(String token) throws IOException {
-		String key = null;
-		if(token.contains(File.separator)) {
-			File tokenFile = new File(token);
-			if(tokenFile != null && tokenFile.exists())
-				key = FileUtils.readFileToString(tokenFile, "UTF-8").trim();
-		} else {
-			key = token;
-		}
-		
-		return key;
-	}
 
-	
-	
+    /**
+     * Validates a received token
+     *
+     * @param token    Token to validate
+     * @param remoteIP Sender IP
+     * @param mySelf   Current end point
+     * @return True if valid
+     */
+    private boolean isValidToken ( String token, String remoteIP, PublishingEndPoint mySelf ) throws IOException, DotDataException {
+
+        //My key
+        String myKey;
+        if ( mySelf != null ) {
+            myKey = retrieveKeyString( PublicEncryptionFactory.decryptString( mySelf.getAuthKey().toString() ) );
+        } else {
+            return false;
+        }
+
+        return token.equals( myKey );
+    }
+
+    private String retrieveKeyString ( String token ) throws IOException {
+
+        String key = null;
+        if ( token.contains( File.separator ) ) {
+            File tokenFile = new File( token );
+            if ( tokenFile != null && tokenFile.exists() ) {
+                key = FileUtils.readFileToString( tokenFile, "UTF-8" ).trim();
+            }
+        } else {
+            key = token;
+        }
+
+        return key;
+    }
+
 }
