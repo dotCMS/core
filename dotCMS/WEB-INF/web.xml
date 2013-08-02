@@ -267,10 +267,7 @@
 	<!-- DOTMARKETING LISTENERS -->
 	<listener>
 		<listener-class>com.dotmarketing.listeners.ContextLifecycleListener</listener-class>
-	</listener>
-	<listener>
-		<listener-class>com.liferay.portal.servlet.PortalSessionListener</listener-class>
-	</listener>
+	</listener>	
 	<listener>
 	    <listener-class>com.dotmarketing.listeners.ClickstreamListener</listener-class>
 	</listener>
