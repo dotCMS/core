@@ -1208,4 +1208,19 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         }
         return list;
     }
+
+    @Override
+    public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException {
+        WorkflowScheme scheme = null;
+        try {
+            final DotConnect db = new DotConnect();
+            db.setSQL(sql.SELECT_SCHEME_NAME);
+            db.addParam(schemaName);
+            List<WorkflowScheme> list = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
+            scheme = list.size()>0 ? (WorkflowScheme)list.get(0) : null;
+        } catch (final Exception e) {
+            throw new DotDataException(e.getMessage(),e);
+        }
+        return scheme;
+    }
 }

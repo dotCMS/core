@@ -10,6 +10,7 @@ public class StructureWrapper {
 	private Structure structure;
 	private List<Field> fields;
 	private String workflowSchemaId;
+	private String workflowSchemaName;
 	private Operation operation;
 	
 	public StructureWrapper() {}
@@ -19,7 +20,15 @@ public class StructureWrapper {
 		this.fields = fields;
 	}
 
-	public Structure getStructure() {
+	public String getWorkflowSchemaName() {
+        return workflowSchemaName;
+    }
+
+    public void setWorkflowSchemaName(String workflowSchemaName) {
+        this.workflowSchemaName = workflowSchemaName;
+    }
+
+    public Structure getStructure() {
 		return structure;
 	}
 
