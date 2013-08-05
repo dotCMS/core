@@ -930,5 +930,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return wfac.findExpiredTasks();
     }
 
+    @Override
+    public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException {
+        return wfac.findSchemeByName(schemaName);
+    }
+
 
 }
