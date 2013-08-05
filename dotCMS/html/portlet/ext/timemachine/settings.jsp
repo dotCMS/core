@@ -204,7 +204,7 @@ dojo.ready(function() {
 
 </script>
 <span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-
+<div style="height:550px; width:580px; overflow:auto;">
 <form id="settingform" dojoType="dijit.form.Form" >
    <table>
    <tr>
@@ -322,5 +322,5 @@ dojo.ready(function() {
    </table>
 
 </form>
-
+</div>
 <%@include file="/html/common/bottom_inc.jsp"%>
