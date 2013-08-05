@@ -256,4 +256,12 @@ public interface WorkflowAPI {
      */
     public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException;
 
+    /**
+     * finds the schema with the specified name.
+     * 
+     * @param schemaName 
+     * @return the schema with the specified name. null if it doesn't exists
+     */
+    public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException;
+
 }
