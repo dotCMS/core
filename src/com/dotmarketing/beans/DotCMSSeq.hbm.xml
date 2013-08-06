@@ -32,6 +32,7 @@
 			<property column="active" name="active" type="boolean" />
 			<property column="keywords" name="keywords" type="string" length="123456789"/>
 			<property column="category_velocity_var_name" name="categoryVelocityVarName" type="string" length="255"/>
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
 		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.files.model.File" table="file_asset">
@@ -272,6 +273,7 @@
 			<property column="files_masks" length="255" name="filesMasks" type="string" />
 			<property column="identifier" length="36" name="identifier" type="string" />
 			<property column="default_file_type" length="36" name="defaultFileType" type="string"/>
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
 		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.templates.model.Template" table="template">
@@ -575,6 +577,7 @@
 			<property column="folder" name="folder" type="string" length="36" not-null="true"/>
 			<property column="expire_date_var" name="expireDateVar" type="string" length="255" not-null="false"/>
 			<property column="publish_date_var" name="publishDateVar" type="string" length="255" not-null="false"/>
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
 		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.structure.model.Relationship" table="relationship">
@@ -616,6 +619,7 @@
 			<property column="read_only" name="readOnly" type="boolean" />
 		    <property column="searchable" name="searchable" type="boolean" />
 		    <property column="unique_" name="unique" type="boolean" />
+		    <property column="mod_date" length="23" name="modDate" type="java.util.Date" />
 		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.user.model.UserComment" table="user_comments">
