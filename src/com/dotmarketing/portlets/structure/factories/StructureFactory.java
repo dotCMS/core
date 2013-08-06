@@ -408,6 +408,7 @@ public class StructureFactory {
 		Date now = new Date();
 		structure.setiDate(now);
 		fixFolderHost(structure);
+		structure.setModDate(now);
 		HibernateUtil.saveOrUpdate(structure);
 		
 		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
@@ -421,6 +422,7 @@ public class StructureFactory {
 		Date now = new Date();
 		structure.setiDate(now);
 		fixFolderHost(structure);
+		structure.setModDate(now);
 		HibernateUtil.saveWithPrimaryKey(structure, existingId);
 	}
 

@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.folders.business;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -516,6 +517,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + user + " does not have permission to add to " + name);
 		}
 
+		folder.setModDate(new Date());
 
 		ffac.save(folder, existingId);
 

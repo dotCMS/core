@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.structure.model;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +50,7 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	private String folder="SYSTEM_FOLDER";
 	private String publishDateVar;
 	private String expireDateVar;
+	private Date modDate;
 
 	public List<Exportable> getDependencies() {
 		// TODO Auto-generated method stub
@@ -350,5 +352,15 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
     public void setExpireDateVar(String expireDateVar) {
         this.expireDateVar = expireDateVar;
     }
+
+
+	public Date getModDate() {
+		return modDate;
+	}
+
+
+	public void setModDate(Date modDate) {
+		this.modDate = modDate;
+	}
 
 }

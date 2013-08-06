@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -33,10 +34,8 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -422,6 +421,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
         Identifier newFolderId = createIdentifierForFolder( newFolder, null );
         newFolder.setIdentifier( newFolderId.getId() );
+        newFolder.setModDate(new Date());
 
         save( newFolder );
 
@@ -446,6 +446,7 @@ public class FolderFactoryImpl extends FolderFactory {
         Identifier parentId = APILocator.getIdentifierAPI().find( destination.getIdentifier() );
         Identifier newFolderId = createIdentifierForFolder( newFolder, parentId.getPath() );
         newFolder.setIdentifier( newFolderId.getId() );
+        newFolder.setModDate(new Date());
 
         save( newFolder );
 
@@ -511,7 +512,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
 			}
 		}
-		
+
 		// issues/1736
 		APILocator.getContentletAPI().refreshContentUnderFolder(newFolder);
 
@@ -519,7 +520,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		Map<String, Link[]> linksCopied;
 		if (copiedObjects.get("Links") == null) {
 			linksCopied = new HashMap<String, Link[]>();
-			copiedObjects.put("Links", linksCopied); 
+			copiedObjects.put("Links", linksCopied);
 		} else {
 			linksCopied = (Map<String, Link[]>) copiedObjects.get("Links");
 		}
@@ -565,11 +566,11 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		IdentifierAPI identAPI = APILocator.getIdentifierAPI();
 		Identifier folderId = identAPI.find(folder.getIdentifier());
-		
+
 		if(folder.isShowOnMenu())
 		    CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 		CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
-		
+
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		boolean contains = false;
 		String newParentPath;
@@ -597,7 +598,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		List links = getChildrenClass(folder, Link.class);
 		List<Contentlet> contentlets = APILocator.getContentletAPI().findContentletsByFolder(folder, systemUser, false);
 
-		
+
 		folderId.setParentPath(newParentPath);
 		folderId.setHostId(newParentHostId);
 		identAPI.save(folderId);
@@ -639,6 +640,10 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		if(folder.isShowOnMenu())
 			RefreshMenus.deleteMenu(folder);
+
+
+		folder.setModDate(new Date());
+		save(folder);
 
 		return true;
 	}
@@ -903,7 +908,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
 		CacheLocator.getFolderCache().removeFolder(folder, ident);
-		
+
 		final ArrayList<String> childIdents=new ArrayList<String>();
 		DotConnect dc=new DotConnect();
 		dc.setSQL("select id from identifier where parent_path like ? and host_inode=?");
@@ -923,6 +928,7 @@ public class FolderFactoryImpl extends FolderFactory {
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
 		ff.setName(newName);
 		ff.setTitle(newName);
+		ff.setModDate(new Date());
 
 		save(ff);
 
@@ -1479,7 +1485,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected void save(Folder folderInode) throws DotDataException {
 		HibernateUtil.saveOrUpdate(folderInode);
 	}
-	
+
 	@Override
 	protected void save(Folder folderInode, String existingId) throws DotDataException {
 		if(existingId==null){
@@ -1500,5 +1506,5 @@ public class FolderFactoryImpl extends FolderFactory {
 			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
 		}
 	}
-	
+
 }
