@@ -306,6 +306,10 @@
 					}
 					ref+=  ">";
 					ref+=  "</td>";
+                }else{
+	                ref+=  "<td style='width:25px;' valign='top'>";
+	                ref+=  "<span class='newTaskIcon'></span>";
+	                ref+=  "</td>";
                 }
 
                 ref+=  "<td valign='top'>"
