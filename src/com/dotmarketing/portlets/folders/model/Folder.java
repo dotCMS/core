@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.folders.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -50,9 +51,12 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
     private String defaultFileType;
 
+    private Date modDate;
+
 
 	public Folder() {
     	this.setType("folder");
+    	modDate = new Date();
     }
 
 	/**
@@ -200,7 +204,15 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		this.defaultFileType = defaultFileType;
 	}
 
-    public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException {
+    public Date getModDate() {
+		return modDate;
+	}
+
+	public void setModDate(Date modDate) {
+		this.modDate = modDate;
+	}
+
+	public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException {
         Map<String, Object> retMap = super.getMap();
         retMap.put("filesMasks", this.filesMasks);
         retMap.put("name", this.name);
