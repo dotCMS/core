@@ -237,19 +237,19 @@
 	}
 
 	function handleDepResponse(data) {
-		
+
 		if(data['size'] != 0) {
-			
+
 			var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "TITLE")%></th><th><%=LanguageUtil.get(pageContext, "IDENTIFIER")%></th><th><%=LanguageUtil.get(pageContext, "INODE")%></th></tr></thead><tbody>';
 			var containers = data['containers'];
-			
+
 			for(var i = 0; i < data['size'] ; i++){
 				resultTableStr = resultTableStr + "<tr><td>" + containers[i]['title'] + "</td><td>" + containers[i]['identifier'] + "</td><td>" + containers[i]['inode'] + "</td></tr>";
 			}
-			
+
 			resultTableStr = resultTableStr + '</tbody></table>';
 			dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
-			
+
 			dijit.byId("dependenciesDialog").show();
 		} else {
 			processDelete();
@@ -902,8 +902,8 @@ function disableFormFields(){
 <%}%>
 <!-- END Permission Tab -->
 
+<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_push_history") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
 
-<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_push_history") %>" onShow="hideEditButtonsRow();">
 	<div>
 	<%
 		request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, structure);

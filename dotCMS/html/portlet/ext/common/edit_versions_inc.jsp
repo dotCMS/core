@@ -151,6 +151,6 @@
 <% } %>
 
 </table>
-
+<br/>
 <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
 
