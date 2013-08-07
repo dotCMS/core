@@ -7,7 +7,6 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TimeZone;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -544,43 +543,45 @@ public class CMSFilter implements Filter {
          Set<String> set=new HashSet<String>();
          
     	 // allow servlets to be called without a 404
-         set.add("^/servlet");
-         //Load some defaults
-         set.add("^/c/portal");
-         set.add("^/portal");
-         set.add("^/icon");
-         set.add("^/dwr");
-         set.add("^/titleServlet");
-         set.add("^/categoriesServlet");
-         set.add("^/xspf");
-         set.add("^/thumbnail");
-         set.add("^/html/skin/");
-         set.add("^/webdav");
-         set.add("^/dotAsset");
-         set.add("^/JSONContentServlet");
-         set.add("^/resize_image");
-         set.add("^/thumbnail");
-         set.add("^/image/company_logo");
+         set.add("^/servlet/");
          set.add("^/servlets/");
-         set.add("^/dotScheduledJobs");
-         set.add("^/dot_slideshow");
-         set.add("^/redirect");
-         set.add("^/imageShim");
-         set.add("^/DotAjaxDirector");
-         set.add("^/cmis");
+         //Load some defaults
+         set.add("^/portal/");
+         set.add("^/icon$");
+         set.add("^/dwr/");
+         set.add("^/titleServlet$");
+         set.add("^/TitleServlet$");
+         set.add("^/categoriesServlet$");
+         set.add("^/xspf$");
+         set.add("^/thumbnail$");
+         set.add("^/html/skin/");
+         set.add("^/webdav/");
+         set.add("^/dotAsset/");
+         set.add("^/JSONContent/");
+         set.add("^/resize_image$");
+         set.add("^/image/company_logo$");
+         set.add("^/dotScheduledJobs$");
+         set.add("^/dot_slideshow$");
+         set.add("^/redirect$");
+         set.add("^/imageShim$");
+         set.add("^/DotAjaxDirector/");
+         set.add("^/cmis/");
+         set.add("^/permalink/");
+         set.add("^/controlGif$");
+         set.add("^/Captcha.jpg$");
+         set.add("^/audioCaptcha.wav$");
          // http://jira.dotmarketing.net/browse/DOTCMS-5187
-         set.add("^/admin");
-         set.add("^/edit");
-         set.add("^/dotTailLogServlet");
+         set.add("^/admin$");
+         set.add("^/admin/");
+         set.add("^/edit$");
+         set.add("^/edit/");
+         set.add("^/dotTailLogServlet/");
          //http://jira.dotmarketing.net/browse/DOTCMS-2178
          set.add("^/contentAsset/");
-         //http://jira.dotmarketing.net/browse/DOTCMS-6079
-         set.add("^/c/portal_public");
          //http://jira.dotmarketing.net/browse/DOTCMS-6753
-         set.add("^/JSONTagsServlet");
-         set.add("^/spring");
-         set.add("^/dynamic");
-         set.add("^/api");
+         set.add("^/JSONTags/");
+         set.add("^/spring/");
+         set.add("^/api/");
 
          //Load exclusions from plugins
          PluginAPI pAPI=APILocator.getPluginAPI();
@@ -643,12 +644,6 @@ public class CMSFilter implements Filter {
         if(excludeList.contains(uri)) return true;
 
         for ( String exclusion : excludeList ) {
-
-            if ( exclusion.endsWith( "/" ) ) {
-                exclusion = exclusion.substring( 0, exclusion.lastIndexOf( "/" ) );
-            }
-
-            exclusion += "\\b(/|)";
             if ( RegEX.contains( uri, exclusion ) ) {
                 return true;
             }
