@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class DependencySet extends HashSet<String> {
 
@@ -57,12 +58,12 @@ public class DependencySet extends HashSet<String> {
 		// if the asset hasn't been sent to at least one environment or an older version was sen't,
 		// we need to add it to the cache
 
-		if(!bundle.isForcePush() && !isDownload) {
+		if(!bundle.isForcePush() && !isDownload ) {
 
 			for (Environment env : envs) {
 				PushedAsset asset = cache.getPushedAsset(assetId, env.getId());
 
-				if(modified |= (asset==null || asset.getPushDate().before(assetModDate))) {
+				if(modified |= (asset==null || !UtilMethods.isSet(assetModDate) || asset.getPushDate().before(assetModDate) )) {
 					try {
 						asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId());
 						APILocator.getPushedAssetsAPI().savePushedAsset(asset);
