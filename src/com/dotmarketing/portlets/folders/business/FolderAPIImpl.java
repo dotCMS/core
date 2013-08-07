@@ -310,7 +310,10 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	public void delete(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
-		if(folder!=null){
+		if(folder==null || !UtilMethods.isSet(folder.getInode()) ){
+			Logger.debug(getClass(), "Cannot delete null folder");
+			return;
+		} else {
 			AdminLogger.log(this.getClass(), "delete", "Deleting folder with name " + (UtilMethods.isSet(folder.getName()) ? folder.getName() + " ": "name not set "), user);
 		}
 		if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
