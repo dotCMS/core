@@ -111,6 +111,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.title = this.title;
         dialog.dateFilter = false;
         dialog.container = this;
+        dialog.cats = true;
         dialog.show();
     },
 
