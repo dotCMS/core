@@ -59,6 +59,7 @@ public class Category extends Inode implements Serializable {
 	/** default constructor */
 	public Category() {
 		super.setType("category");
+		modDate = new Date();
 	}
 
 	/** minimal constructor */

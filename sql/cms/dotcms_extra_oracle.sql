@@ -873,6 +873,7 @@ CREATE TABLE publishing_queue (
     bundle_id VARCHAR2(256)
 );
 
+DROP SEQUENCE PUBLISHING_QUEUE_SEQ;
 CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
 CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on publishing_queue for each row begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;
 
