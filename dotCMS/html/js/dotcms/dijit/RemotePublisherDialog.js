@@ -11,6 +11,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
     admin: "",
     dateFilter: false,
     container: null,
+    cats: false,
 
     show: function () {
 
@@ -26,6 +27,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
         //Verify if we need to display the date filtering box
         var dateFilter = this.dateFilter;
+        var cats = this.cats;
         var connection = dojo.connect(dia, "onLoad", function () {
             dojo.disconnect(connection);
 
@@ -35,6 +37,12 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             } else {
                 filterDiv.style.display = "none";
             }
+
+            if(cats) {
+            	dijit.byId("iwtExpire").set("disabled", true) ;
+            	dijit.byId("iwtPublishExpire").set("disabled", true) ;
+            }
+
         });
 
         var container = this.container;
@@ -57,6 +65,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         });
 
         dia.set("href", "/html/portlet/ext/remotepublish/remote_publish_dialog.jsp");
+
         dia.show();
     },
 
