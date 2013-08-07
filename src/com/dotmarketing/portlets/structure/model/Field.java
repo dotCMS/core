@@ -136,6 +136,7 @@ public class Field extends Inode implements Exportable, Importable
     	setRegexCheck("");
     	setHint("");
     	setDefaultValue("");
+    	modDate = new Date();
     }
 
 	public boolean isDependenciesMet() throws DotDependencyException {

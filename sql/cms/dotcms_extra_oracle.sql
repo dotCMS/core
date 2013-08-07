@@ -864,6 +864,24 @@ create table sitesearch_audit (
     primary key(job_id,fire_date)
 );
 
+
+drop table publishing_queue;
+
+CREATE TABLE publishing_queue (
+    id INTEGER PRIMARY KEY NOT NULL,
+    operation number(19,0),
+    asset VARCHAR2(2000) NOT NULL,
+    language_id number(19,0) NOT NULL,
+    entered_date TIMESTAMP,
+    publish_date TIMESTAMP,
+    type VARCHAR2(256),
+    bundle_id VARCHAR2(256)
+);
+
+DROP SEQUENCE PUBLISHING_QUEUE_SEQ;
+CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
+CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on publishing_queue for each row begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;
+
 create table publishing_bundle(
 	  id varchar2(36) NOT NULL  primary key,
 	  name varchar2(255) NOT NULL,

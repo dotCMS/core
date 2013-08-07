@@ -92,6 +92,7 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 
 	public Structure () {
 		super.setType("structure");
+		modDate = new Date();
 	}
 
 	public boolean isDefaultStructure() {
