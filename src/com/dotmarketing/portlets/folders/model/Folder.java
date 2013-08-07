@@ -56,6 +56,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
 	public Folder() {
     	this.setType("folder");
+    	modDate = new Date();
     }
 
 	/**
