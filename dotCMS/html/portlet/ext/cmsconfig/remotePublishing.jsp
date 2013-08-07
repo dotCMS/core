@@ -450,7 +450,7 @@
                     <span class="editIcon"></span></a>
             </td>
 
-            <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+            <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')">
                 <b><%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%></b>
                 <br>
                 <i><span class='shimIcon'></span><%=endpoint.getAddress()%></i>
