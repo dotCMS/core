@@ -90,8 +90,10 @@ function setDates(){
 		toggleExpire();
 	}
 	else{
-		dijit.byId("wfNeverExpire").setValue(true);
-		toggleExpire();
+		if(dijit.byId("wfNeverExpire")){
+			dijit.byId("wfNeverExpire").setValue(true);
+			toggleExpire();
+		}
 	}
 	if(dijit.byId("<%=conExpireDateVar%>Time")){
 		expireTime= dijit.byId("<%=conExpireDateVar%>Time").getValue();
