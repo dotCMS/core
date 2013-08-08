@@ -493,11 +493,11 @@
     <input type="hidden" name="parentFolder" id="parentFolder" value=""><BR>
 </form>
 </div>
-<iframe name="hidden_iframe" id="hidden_iframe" style="position:absolute;top:-100px;width:0px; height:0px; border: 0px;"></iframe>
+<iframe name="hidden_iframe" id="dot_keep_alive_hidden_iframe" style="position:absolute;top:-100px;width:0px; height:0px; border: 0px;"></iframe>
 <script>
 	function setKeepAlive(){
-		var myId=document.getElementById("hidden_iframe");
-		myId.src ="/html/common/keep_alive.jsp?r=<%=System.currentTimeMillis()%>";
+		var myId=document.getElementById("dot_keep_alive_hidden_iframe");
+		myId.src ="/html/common/keep_alive.jsp?r=" + Math.random();
 	}
 	// 15 minutes
 	setTimeout("setKeepAlive()", 60000 * 15);
