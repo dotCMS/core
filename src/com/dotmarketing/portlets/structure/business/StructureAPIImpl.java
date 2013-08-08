@@ -9,6 +9,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -28,8 +29,7 @@ import com.liferay.portal.model.User;
 public class StructureAPIImpl implements StructureAPI {
     
     @Override
-    public void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
-        
+    public void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {        
         // check for write permissions
         PermissionAPI perAPI=APILocator.getPermissionAPI();
         if(!perAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_WRITE, user)) 
@@ -98,6 +98,8 @@ public class StructureAPIImpl implements StructureAPI {
         
         // remove structure permissions
         perAPI.removePermissions(st);
+
+        HibernateUtil.getSession().clear();
         
         // remove structure itself
         StructureFactory.deleteStructure(st);
