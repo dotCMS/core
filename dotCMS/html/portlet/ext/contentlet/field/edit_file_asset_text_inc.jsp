@@ -12,9 +12,11 @@
     var saveOrCancel = false;
   	function codeMirrorAreaParser(parser,file){
 
+  		var cmHieght = (window.innerHeight * .90 ) -150;
+  		
       codeMirrorEditor = CodeMirror.fromTextArea("file_text", {
-  	  width: "700px",
-  	  height:"350px",
+  	  width: "95%",
+  	  height:cmHieght +"px",
 		parserfile: ["parsedummy.js","parsexml.js", "parsecss.js", "tokenizejavascript.js", "parsejavascript.js","../contrib/php/js/tokenizephp.js", "../contrib/php/js/parsephp.js","../contrib/php/js/parsephphtmlmixed.js","parsehtmlmixed.js"],
 		stylesheet: ["/html/js/codemirror/css/xmlcolors.css", "/html/js/codemirror/css/jscolors.css", "/html/js/codemirror/css/csscolors.css", "/html/js/codemirror/contrib/php/css/phpcolors.css"],
 		path: "/html/js/codemirror/js/",
@@ -122,27 +124,36 @@
 		editTextManager.save();
 		
 	}
+	window.onresize = function() {
+				
+		dojo.query(".CodeMirror-wrapping").forEach(function(node, index, nodelist){
+			var cmHieght = (window.innerHeight * .90 ) -150;
 
+		    dojo.style(node, "height", cmHieght + "px");
+		});
+		
+		
+	};
 	
 </script>
 
-<div dojoType="dijit.Dialog" id="editTextDialog" onCancel="javascript:editTextManager.close();">
+<div dojoType="dijit.Dialog" id="editTextDialog" style="top:5%;left:5%;right:5%;bottom:5%;" onCancel="javascript:editTextManager.close();">
 
- 	<div>
-		<h3><%= LanguageUtil.get(pageContext, "text-editor") %></h3>
-  	</div>
-	<form name="fm" id="fm" method="post" action="">
-		<input type="hidden" name="inode" value="<%= request.getParameter("inode") %>">
-		<input type="hidden" name="<portlet:namespace />referer" value="<%= request.getParameter("referer") %>">
-		<input type="hidden" name="<portlet:namespace />cmd" value="">
-		<div style="padding:10px;">
-			<textarea id="file_text" value="" style="font-size: 12px; height:350px;width:700px;"></textarea>
-		</div>
-		<div class="buttonRow">
-	           <button id="editTextButton" dojoType="dijit.form.Button" iconClass="saveIcon" onClick="javascript:saveText();"><%= LanguageUtil.get(pageContext, "Save") %></button>&nbsp; &nbsp; 
-	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:editTextManager.close();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp; 
-		</div>
-	</form>
+	 	<div>
+			<h3><%= LanguageUtil.get(pageContext, "text-editor") %></h3>
+	  	</div>
+		<form name="fm" id="fm" method="post" action="">
+			<input type="hidden" name="inode" value="<%= request.getParameter("inode") %>">
+			<input type="hidden" name="<portlet:namespace />referer" value="<%= request.getParameter("referer") %>">
+			<input type="hidden" name="<portlet:namespace />cmd" value="">
+			<div style="padding:10px;" id="file_text">
+				
+			</div>
+			<div class="buttonRow">
+		           <button id="editTextButton" dojoType="dijit.form.Button" iconClass="saveIcon" onClick="javascript:saveText();"><%= LanguageUtil.get(pageContext, "Save") %></button>&nbsp; &nbsp; 
+		           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:editTextManager.close();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp; 
+			</div>
+		</form>
 
 </div>
 
