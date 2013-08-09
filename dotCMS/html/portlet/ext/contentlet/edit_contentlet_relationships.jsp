@@ -685,6 +685,7 @@
 							(new tinymce.Editor(formEle[i].id, tinyMCEProps)).render();
 						}
 						formEle[i].value = formEle[i].value.replace(/^\s+|\s+$/g, '');
+						formEle[i].value = formEle[i].value.replace(/\r\n/g, '');
 						formEle[i].value = formEle[i].value.replace(/\n/g, '');
 						<%
 						Iterator it = con.entrySet().iterator();
@@ -693,9 +694,10 @@
 							String v = "";
 							if(pairs.getValue()!=null){
 								v = pairs.getValue().toString();
-								v = v.replaceAll("\'","\\\\'");
-								v = v.replaceAll("\"","\\\\\"");
-								v = v.replaceAll("\n","");
+								v = v.replace("\'","\\\\'");
+								v = v.replace("\"","\\\\\"");
+								v = v.replace("\r\n","");
+								v = v.replace("\n","");
 								if(v.matches("(.*)-(.*)-(.*):(.*):(.*)")){
 									int index = v.lastIndexOf( ':' );
 									v = v.substring(0,index);
