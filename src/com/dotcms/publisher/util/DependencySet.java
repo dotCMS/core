@@ -26,13 +26,15 @@ public class DependencySet extends HashSet<String> {
 	private String bundleId;
 	private Bundle bundle;
 	private boolean isDownload;
+	private boolean isPublish;
 
-	public DependencySet(String bundleId, String assetType, boolean isDownload) {
+	public DependencySet(String bundleId, String assetType, boolean isDownload, boolean isPublish) {
 		super();
 		cache = CacheLocator.getPushedAssetsCache();
 		this.assetType = assetType;
 		this.bundleId = bundleId;
 		this.isDownload = isDownload;
+		this.isPublish = isPublish;
 
 		try {
 			envs = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleId);
@@ -57,8 +59,7 @@ public class DependencySet extends HashSet<String> {
 		// if the asset hasn't been sent to at least one environment or an older version was sen't,
 		// we need to add it to the cache
 
-		if(!bundle.isForcePush() && !isDownload) {
-
+		if(!bundle.isForcePush() && !isDownload && isPublish ) {
 			for (Environment env : envs) {
 				PushedAsset asset = cache.getPushedAsset(assetId, env.getId());
 
@@ -77,7 +78,7 @@ public class DependencySet extends HashSet<String> {
 
 		}
 
-		if(bundle.isForcePush() || isDownload || modified) {
+		if(bundle.isForcePush() || isDownload || !isPublish || modified) {
 			super.add(assetId);
 			return true;
 		}
