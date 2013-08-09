@@ -198,7 +198,7 @@ var theme = 'dmundra';
 		#set($tabCount = 0)
 		#set($titleField = $structures.findFieldByVarName($structure, "formTitle"))
 		#set($firstField = $fields.get(0))
-		#set($firstTabId = "contentTab")
+		#set($firstTabId = "Start")
 		#set($firstFieldSetId = "contentFieldSet")
 		#if($UtilMethods.isSet(${titleField.values}))
 			#set($firstTabName = "${titleField.values}")
