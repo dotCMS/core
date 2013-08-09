@@ -266,7 +266,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 *
 	 */
 	public void saveContainerStructures(List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException  {
-
+	    if(containerStructureList.size()==0) return;
+	    
 		boolean local = false;
 		try{
 			try {
