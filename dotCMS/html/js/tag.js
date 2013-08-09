@@ -179,7 +179,10 @@
 			if ((suggestedTag != null) && (suggestedTag != "")) {
 				var tagDiv = document.getElementById(suggestedDiv);
 				tagDiv.innerHTML = html;
-				dojo.style(suggestedTag+"suggestedTagsWrapper", "display", "block");
+
+				if(dojo.byId(suggestedTag+"suggestedTagsWrapper")) {
+					dojo.style(suggestedTag+"suggestedTagsWrapper", "display", "block");
+				}
 			}
 		}
 		else {
@@ -192,7 +195,10 @@
 			tagDiv.innerHTML = "";
 			suggestedTag = "";
 			suggestedDiv = "";
-			dojo.style("tagssuggestedTagsWrapper", "display", "none");
+
+			if(dojo.byId(suggestedTag+"suggestedTagsWrapper")) {
+				dojo.style(suggestedTag+"suggestedTagsWrapper", "display", "none");
+			}
 		}
 	}
 	function useThisTagForSearch(tagSuggested) {
