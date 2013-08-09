@@ -227,7 +227,7 @@ function getLinkPopUp(i,ctxPath, objId, parentId, openNodes, referer,live,workin
 		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objId + '\');">';
 		     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 		     strHTML += '</div>';
-
+		}
 		if ((live!="1") && (working=="1") && (publish=="1")) {
 			if (deleted!="1") {
 				strHTML += '<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="deleteLink(\'' + objId + '\',\'' + parentId + '\',\'' + openNodes + '\',\'' + escape(referer) + '\');">';
