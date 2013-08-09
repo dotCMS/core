@@ -171,7 +171,7 @@ public class FieldFactory {
 
 		if(InodeUtils.isSet(id)) {
 			try {
-				HibernateUtil.saveOrUpdate(fieldVar);
+				HibernateUtil.update(fieldVar);
 			} catch (DotHibernateException e) {
 				Logger.error(FieldFactory.class, e.getMessage());
 			}
