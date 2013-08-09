@@ -321,6 +321,9 @@ dojo.require("dojox.layout.ContentPane");
 			formData[formDataIndex] = formElements[formElementsIndex].name+nameValueSeparator+formElements[formElementsIndex].value;
 		}
 
+		console.log(formData);
+
+
 		// Categories selected in the Category Dialog
 
 		var catCount = <%=UtilMethods.isSet(catCount)?Integer.parseInt(catCount):0 %>;
@@ -616,9 +619,17 @@ dojo.require("dojox.layout.ContentPane");
 	}
 
 	function saveBinaryFileOnContentCallback(data, fieldRelatedData){
+		alert('sdfsdf');
 
 		if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
-			document.getElementsByName(fieldRelatedData['fieldContentlet'])[0].value = data["contentletInode"];
+
+			var elements = document.getElementsByName(fieldRelatedData['fieldContentlet']);
+
+			for(var i=0; i<elements.length; i++) {
+				if(elements[i].tagName.toLowerCase() =="input") {
+					elements[i].value = data["contentletInode"];
+				}
+			}
 
 			var thumbnailParentDiv = document.createElement("div");
 			thumbnailParentDiv.setAttribute("id",'thumbnailParent'+fieldRelatedData['fieldVarName']);
@@ -663,7 +674,7 @@ dojo.require("dojox.layout.ContentPane");
 				            binaryFieldId : "binary1",
 				            fieldContentletId : "binary1",
 				            saveAsFileName : fieldRelatedData['fileName'],
-				            class : "thumbnailDiv"+fieldRelatedData['fieldVarName'],
+// 				            class : "thumbnailDiv"+fieldRelatedData['fieldVarName'],
 							parentNode: thumbnailParentDiv})
 
 			<%}%>
