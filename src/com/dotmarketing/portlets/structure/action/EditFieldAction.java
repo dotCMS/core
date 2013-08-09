@@ -223,8 +223,6 @@ public class EditFieldAction extends DotPortletAction {
 				throw ae;
 			}
 
-
-
 			String dataType = fieldForm.getDataType();
 
 			if (fieldForm.isSearchable()) {
@@ -237,7 +235,6 @@ public class EditFieldAction extends DotPortletAction {
 			}
 
 			BeanUtils.copyProperties(field, fieldForm);
-
 
 			//To validate values entered for decimal/number type check box field
 			//http://jira.dotmarketing.net/browse/DOTCMS-5516
@@ -395,6 +392,16 @@ public class EditFieldAction extends DotPortletAction {
 				if (field.getFieldType().equalsIgnoreCase(Field.FieldType.CATEGORY.toString())) {
 					field.setValues(req.getParameter("categories"));
 					field.setIndexed(true);
+
+					// validate if a field with the same category already exists
+					List<Field> stFields = FieldsCache.getFieldsByStructureInode(field.getStructureInode());
+					for (Field stField : stFields) {
+						if(stField.getValues().equals(field.getValues())) {
+							SessionMessages.add(httpReq, "message", "message.category.existing.field");
+							return false;
+						}
+					}
+
 					if (UtilMethods.isSet(fieldForm.getDefaultValue())) {
 						List<Category> selectedCategoriesList = new ArrayList<Category>();
 						String[] selectedCategories = fieldForm.getDefaultValue().trim().split("\\|");

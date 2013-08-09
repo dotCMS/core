@@ -902,7 +902,7 @@ function disableFormFields(){
 <%}%>
 <!-- END Permission Tab -->
 
-<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_push_history") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
+<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_push_history") %>" onShow="hideEditButtonsRow();">
 	<div>
 	<%
 		request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, structure);

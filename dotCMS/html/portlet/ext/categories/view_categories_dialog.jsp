@@ -125,10 +125,10 @@
 
 	}
 
-	function addSelectedCat<%=counter%>(inode,name) {
-		addedStore<%=counter%>.newItem({id : inode, name: name});
-        addedGrid<%=counter%>.render();
-        addPreview<%=counter%>(name, inode);
+	function addCat<%=counter%>(index) {
+		    var inode = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'inode');
+		    var name = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_name');
+		    addSelectedCat<%=counter%>(inode,name);
 	}
 
 	function addSelectedCat<%=counter%>(inode,name) {
@@ -138,7 +138,7 @@
 					}else{
 						addedStore<%=counter%>.newItem({id : inode, name: name});
 				        addedGrid<%=counter%>.render();
-				        addPreview<%=counter%>(name, inode);		
+				        addPreview<%=counter%>(name, inode);
 			}}});
 	}
 
