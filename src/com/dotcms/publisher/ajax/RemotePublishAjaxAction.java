@@ -1,38 +1,8 @@
 package com.dotcms.publisher.ajax;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.dotcms.publisher.bundle.business.BundleAPI;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.hadoop.mapred.lib.Arrays;
-
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
-import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -40,13 +10,7 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publishing.BundlerStatus;
-import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.publishing.DotBundleException;
-import com.dotcms.publishing.DotPublishingException;
-import com.dotcms.publishing.IBundler;
-import com.dotcms.publishing.Publisher;
-import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.*;
 import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -59,14 +23,28 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.hadoop.mapred.lib.Arrays;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class RemotePublishAjaxAction extends AjaxAction {
 
@@ -146,11 +124,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
 	}
 
     /**
-     * Send to publish a given element
+     * Send to the publisher queue a list of assets for a given Operation (Publish/Unpublish) and {@link Environment Environment}
      *
-     * @param request
-     * @param response
-     * @throws WorkflowActionFailureException
+     * @param request  HttpRequest
+     * @param response HttpResponse
+     * @throws WorkflowActionFailureException If fails adding the content for Publish
+     * @see com.dotcms.publisher.business.PublisherQueueJob
+     * @see Environment
      */
     public void publish ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException {
 
@@ -167,10 +147,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentFilterDate = request.getParameter( "remoteFilterDate" );
             String _iWantTo = request.getParameter( "iWantTo" );
             String whoToSendTmp = request.getParameter( "whoToSend" );
-            List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
-            List<Environment> envsToSendTo = new ArrayList<Environment>();
             String forcePushStr = request.getParameter( "forcePush" );
             boolean forcePush = (forcePushStr!=null && forcePushStr.equals("true"));
+            List<String> whereToSend = Arrays.asList( whoToSendTmp.split( "," ) );
+            List<Environment> envsToSendTo = new ArrayList<Environment>();
 
             // Lists of Environments to push to
             for (String envId : whereToSend) {
@@ -193,7 +173,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             List<String> ids = getIdsToPush(assetsIds, _contentFilterDate, dateFormat);
 
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
-            	 Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId(), forcePush);
+            	Bundle bundle = new Bundle(null, publishDate, null, getUser().getUserId(), forcePush);
             	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
             	publisherAPI.addContentsToPublish( ids, bundle.getId(), publishDate, getUser() );
@@ -220,16 +200,15 @@ public class RemotePublishAjaxAction extends AjaxAction {
     }
 
     /**
-     * Allow the user to send again a failed bundle to que publisher queue job in order to try to republish it again
-     *
-     * @param request
-     * @param response
-     * @throws ServletException
-     * @throws IOException
-     * @throws DotDataException
-     * @throws DotPublisherException
+     * Allow the user to send or try to send again failed and successfully sent bundles, in order to do that<br/>
+     * we send the bundle again to que publisher queue job which will try to remote publish again the bundle.
+     * @param request  HttpRequest
+     * @param response HttpResponse
+     * @throws IOException If fails sending back to the user a proper response
+     * @throws DotPublisherException If fails retrieving the Bundle related information like elements on it and statuses
+     * @throws LanguageException If fails using i18 messages
      */
-    public void retry ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException, DotPublisherException, LanguageException {
+    public void retry ( HttpServletRequest request, HttpServletResponse response ) throws IOException, DotPublisherException, LanguageException {
 
         PublisherAPI publisherAPI = PublisherAPI.getInstance();
         PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
@@ -262,7 +241,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 continue;
             }
 
-            //ONLY FAILED BUNDLES
+            //We will be able to retry failed and successfully bundles
             if ( !(status.getStatus().equals( Status.FAILED_TO_PUBLISH ) || status.getStatus().equals( Status.SUCCESS )) ) {
                 appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
                 continue;
@@ -346,7 +325,15 @@ public class RemotePublishAjaxAction extends AjaxAction {
         response.getWriter().println( responseMessage.toString() );
     }
 
-    public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException {
+    /**
+     * Downloads a Bundle file for a given bundle id.
+     *
+     * @param request  HttpRequest
+     * @param response HttpResponse
+     * @throws IOException If fails sending back to the user response information
+     */
+    public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
+
         Map<String, String> map = getURIParams();
 		response.setContentType("application/x-tgz");
 
@@ -374,15 +361,14 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			while ((len = in.read(buf, 0, buf.length))!= -1){
 				response.getOutputStream().write(buf, 0, len);
 			}
-		}
-		catch(Exception e){
-
-		}
-		finally{
+        } catch ( Exception e ) {
+            Logger.warn( this.getClass(), "Error Downloading Bundle.", e );
+        } finally {
 			try{
 				in.close();
+            } catch ( Exception ex ) {
+                Logger.warn( this.getClass(), "Error Closing Stream.", ex );
 			}
-			catch(Exception ex){};
 		}
 		return;
 	}
@@ -390,14 +376,11 @@ public class RemotePublishAjaxAction extends AjaxAction {
     /**
      * Generates and flush an Unpublish bundle for a given bundle id and operation (publish/unpublish)
      *
-     * @param request
-     * @param response
-     * @throws ServletException
-     * @throws IOException
-     * @throws DotDataException
-     * @throws LanguageException
+     * @param request  HttpRequest
+     * @param response HttpResponse
+     * @throws IOException If fails sending back to the user response information
      */
-    public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, DotDataException, LanguageException {
+    public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
 
         //Read the parameters
         Map<String, String> map = getURIParams();
@@ -451,16 +434,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
     /**
      * Generates an Unpublish bundle for a given bundle id  operation (publish/unpublish)
      *
-     * @param bundleId
-     * @param operation Download for publish or unpublish
-     * @return
-     * @throws DotPublisherException
-     * @throws DotDataException
-     * @throws DotPublishingException
-     * @throws IllegalAccessException
-     * @throws InstantiationException
-     * @throws DotBundleException
-     * @throws IOException
+     * @param bundleId The Bundle id of the Bundle we want to generate
+     * @param operation Download for publish or un-publish
+     * @return The generated requested Bundle file
+     * @throws DotPublisherException If fails retrieving the Bundle contents
+     * @throws DotDataException If fails finding the system user
+     * @throws DotPublishingException If fails initializing the Publisher
+     * @throws IllegalAccessException If fails creating new Bundlers instances
+     * @throws InstantiationException If fails creating new Bundlers instances
+     * @throws DotBundleException If fails generating the Bundle
+     * @throws IOException If fails compressing the all the Bundle contents into the final Bundle file
      */
     @SuppressWarnings ("unchecked")
     public File generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
@@ -533,7 +516,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
         return PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() );
     }
 
-	public void uploadBundle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException, FileUploadException {
+    /**
+     * Publish a given Bundle file
+     *
+     * @param request  HttpRequest
+     * @param response HttpResponse
+     * @throws FileUploadException If fails uploading the file
+     * @throws IOException         If fails reading the given File content or sending back to the user a response
+     */
+    public void uploadBundle ( HttpServletRequest request, HttpServletResponse response ) throws FileUploadException, IOException{
+
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload(factory);
         @SuppressWarnings("unchecked")
@@ -570,11 +562,11 @@ public class RemotePublishAjaxAction extends AjaxAction {
     /**
      * Appends info messages to a main StringBuilder message for an easier display to the user
      *
-     * @param responseMessage
-     * @param messageKey
-     * @param bundleId
-     * @param failure
-     * @throws LanguageException
+     * @param responseMessage Response message to return to the user
+     * @param messageKey      i18 key
+     * @param bundleId        Current bundle
+     * @param failure         True for failures, false otherwise
+     * @throws LanguageException If fails using the i18 massage key
      */
     private void appendMessage ( StringBuilder responseMessage, String messageKey, String bundleId, Boolean failure ) throws LanguageException {
 
@@ -636,11 +628,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * Adds to an specific given bundle a given asset.
      * <br/>If the given bundle does not exist a new onw will be created with that name
      *
-     * @param request
-     * @param response
-     * @throws DotPublisherException
+     * @param request  HttpRequest
+     * @param response HttpResponse
      */
-    public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) throws DotPublisherException {
+    public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) {
 
         PublisherAPI publisherAPI = PublisherAPI.getInstance();
         String _assetId = request.getParameter( "assetIdentifier" );
@@ -680,9 +671,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
     /**
      * Updates the assets in the given bundle with the publish/expire dates and destination environments and set them ready to be pushed
      *
-     * @param request
-     * @param response
-     * @throws WorkflowActionFailureException
+     * @param request  HttpRequest
+     * @param response HttpResponse
+     * @throws WorkflowActionFailureException If fails trying to Publish the bundle contents
      */
     public void pushBundle ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException {
 
@@ -758,6 +749,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
     }
 
+    /**
+     * Returns the list of ids the user is trying to remote publish.
+     */
     private List<String> getIdsToPush ( List<String> assetIds, String _contentFilterDate, SimpleDateFormat dateFormat )
             throws ParseException, DotDataException {
 
