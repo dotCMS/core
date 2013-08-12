@@ -20,6 +20,7 @@ public interface IBundler {
      *
      * @param bundleRoot Where the Bundle we are creating will live.
      * @param status     Object to keep track of the generation process inside this Bundler
+     * @throws DotBundleException If there is an exception while this Bundles is generating the Bundle content
      */
     public void generate ( File bundleRoot, BundlerStatus status ) throws DotBundleException;
 

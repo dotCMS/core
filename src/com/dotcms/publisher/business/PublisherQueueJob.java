@@ -46,6 +46,8 @@ public class PublisherQueueJob implements StatefulJob {
      * Reads from the publishing queue table and depending of the publish date will send a bundle<br/>
      * to publish ({@link com.dotcms.publishing.PublisherAPI#publish(com.dotcms.publishing.PublisherConfig)}).
      *
+     * @param arg0 Containing the current job context information
+     * @throws JobExecutionException if there is an exception while executing the job.
      * @see PublisherAPI
      * @see PublisherAPIImpl
      */
@@ -160,8 +162,12 @@ public class PublisherQueueJob implements StatefulJob {
     /**
      * Method that updates the status of a Bundle in the job queue. This method also verifies and limit the number<br/>
      * of times a Bundle is allowed to try to be published in case of errors.
+     *
+     * @throws DotPublisherException If fails modifying the Publishing status, retrieving status information or<br/>
+     * removing the current bundle from the Publish queue table
+     * @throws DotDataException If fails retrieving end points
      */
-    private void updateAuditStatus() throws DotPublisherException, DotDataException {
+    private void updateAuditStatus () throws DotPublisherException, DotDataException {
 
 		ClientConfig clientConfig = new DefaultClientConfig();
 		TrustFactory tFactory = new TrustFactory();

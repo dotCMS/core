@@ -13,7 +13,7 @@ public interface PublisherAPI {
      *
      * @param config Class that have the main configuration values for the Bundle we are trying to create
      * @return The status of the Bundle creation process
-     * @throws DotPublishingException
+     * @throws DotPublishingException If there is an exception on the publish process
      * @see IBundler
      * @see Publisher
      * @see com.dotcms.publisher.environment.bean.Environment
@@ -32,7 +32,7 @@ public interface PublisherAPI {
      * @param config Class that have the main configuration values for the Bundle we are trying to create
      * @param status Object that store the status of the Bundle on all of its stages
      * @return The status of the Bundle creation process
-     * @throws DotPublishingException
+     * @throws DotPublishingException If there is an exception on the publish process
      * @see IBundler
      * @see Publisher
      * @see com.dotcms.publisher.environment.bean.Environment
