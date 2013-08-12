@@ -1208,8 +1208,6 @@ public class ContentletAjax {
 		List<String> saveContentErrors = new ArrayList<String>();
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		Config.CONTEXT.setAttribute("WEB_SERVER_HTTP_PORT", Integer.toString(req.getServerPort()));
-		Config.CONTEXT.setAttribute("WEB_SERVER_SCHEME", req.getScheme().toString());
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 
 		// get the struts_action from the form data
