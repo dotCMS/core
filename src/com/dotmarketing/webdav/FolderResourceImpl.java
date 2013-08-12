@@ -370,10 +370,6 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 		this.folder = folder;
 	}
 
-	public String getPath() {
-		return path;
-	}
-
 	public void setPath(String path) {
 		this.path = path;
 	}
