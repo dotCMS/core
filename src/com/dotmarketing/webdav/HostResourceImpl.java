@@ -2,16 +2,9 @@ package com.dotmarketing.webdav;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.io.IOUtils;
 
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.CollectionResource;
@@ -25,7 +18,6 @@ import com.bradmcevoy.http.LockableResource;
 import com.bradmcevoy.http.LockingCollectionResource;
 import com.bradmcevoy.http.MakeCollectionableResource;
 import com.bradmcevoy.http.PropFindableResource;
-import com.bradmcevoy.http.Range;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.Resource;
@@ -33,17 +25,18 @@ import com.bradmcevoy.http.exceptions.BadRequestException;
 import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.LockedException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.bradmcevoy.http.exceptions.NotFoundException;
 import com.bradmcevoy.http.exceptions.PreConditionFailedException;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -119,20 +112,29 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	}
 
 	public Resource child(String childName) {
-		List<Folder> folders = listFolders();
-		for (Folder folder : folders) {
-			if(childName.equalsIgnoreCase(folder.getName())){
-				String folderPath;
-				try {
-					folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
-				} catch (Exception e) {
-					Logger.error(this, e.getMessage(), e);
-					throw new DotRuntimeException(e.getMessage(),e);
-				}
-				FolderResourceImpl fr = new FolderResourceImpl(folder,path + "/" + (folderPath.startsWith("/")?folderPath.substring(1):folderPath));
-				return fr;
-			}
-		}
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
+		String uri="/"+childName;
+		
+		try {
+		    Identifier ident=APILocator.getIdentifierAPI().find(host, uri);
+		    if(ident!=null && InodeUtils.isSet(ident.getInode())) {
+		        if(ident.getAssetType().equals("folder")) {
+		            Folder folder = APILocator.getFolderAPI().findFolderByPath(uri, host, user, false);
+		            if(folder!=null && InodeUtils.isSet(folder.getInode())) {
+		                return new FolderResourceImpl(folder,path+folder.getPath());
+		            }
+		        }
+		        else if(ident.getAssetType().equals("contentlet")) {
+		            Contentlet cont=APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), false, 1, user, false);
+		            if(cont!=null && InodeUtils.isSet(cont.getInode())) {
+		                return new FileResourceImpl(APILocator.getFileAssetAPI().fromContentlet(cont),path+uri);
+		            }
+		        }
+		    }
+        } catch (Exception e) {
+            Logger.error(this, "error loading child '"+childName+"' of host "+host.getHostname(),e);
+        }
+	    
 		return null;
 	} 
 

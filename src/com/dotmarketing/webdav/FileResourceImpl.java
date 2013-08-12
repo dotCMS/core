@@ -196,10 +196,10 @@ public class FileResourceImpl implements FileResource, LockableResource {
 				Logger.error(this, e.getMessage(), e);
 				return;
 			}
-		}else if(collRes instanceof FolderResourceImpl){
-			FolderResourceImpl fr = (FolderResourceImpl)collRes;
+		}
+		else if(collRes instanceof BasicFolderResourceImpl) { 
 			try {
-				String p = fr.getPath();
+			    String p = ((BasicFolderResourceImpl)collRes).getPath();
 				if(!p.endsWith("/"))
 					p = p + "/";
 				try {
