@@ -67,8 +67,8 @@ public class BundlerUtil {
     /**
      * Reads the main bundle.xml file inside a bundle directory in order to create based on that file a PublisherConfig object
      *
-     * @param config
-     * @return
+     * @param config This bundle current configuration
+     * @return The Bundle configuration read from the mail Bundle xml file
      */
     public static PublisherConfig readBundleXml(PublisherConfig config){
 		getBundleRoot(config);

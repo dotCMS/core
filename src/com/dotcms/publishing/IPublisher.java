@@ -9,8 +9,8 @@ public interface IPublisher {
      * Method to configure any required value before to process this Publisher
      *
      * @param config Object that have the main configuration values for the processing of this Publisher
-     * @return
-     * @throws DotPublishingException
+     * @return Object with this Publisher configuration info
+     * @throws DotPublishingException If there is an exception while this publisher is initialized.
      */
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException;
 
@@ -19,7 +19,7 @@ public interface IPublisher {
     /**
      * List fo Bundlers used by this Publisher
      *
-     * @return
+     * @return List of Bundlers classes
      */
     public List<Class> getBundlers ();
 
