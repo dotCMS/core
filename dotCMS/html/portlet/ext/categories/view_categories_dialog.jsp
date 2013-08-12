@@ -125,16 +125,21 @@
 
 	}
 
-	function addSelectedCat<%=counter%>(inode,name) {
-		addedStore<%=counter%>.newItem({id : inode, name: name});
-        addedGrid<%=counter%>.render();
-        addPreview<%=counter%>(name, inode);
+	function addCat<%=counter%>(index) {
+		    var inode = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'inode');
+		    var name = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_name');
+		    addSelectedCat<%=counter%>(inode,name);
 	}
 
-	function addCat<%=counter%>(index) {
-		var inode = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'inode');
-		var name = grid<%=counter%>.store.getValue(grid<%=counter%>.getItem(index), 'category_name');
-		addSelectedCat<%=counter%>(inode,name);
+	function addSelectedCat<%=counter%>(inode,name) {
+		addedStore<%=counter%>.fetch({query: {id:inode}, onComplete:function(items) {
+			if(items.length > 0){
+				showDotCMSErrorMessage( items[0].name.toString() + " : " + "<%= LanguageUtil.get(pageContext, "category-already-added") %>");
+					}else{
+						addedStore<%=counter%>.newItem({id : inode, name: name});
+				        addedGrid<%=counter%>.render();
+				        addPreview<%=counter%>(name, inode);
+			}}});
 	}
 
 	function delCat<%=counter%>(inode) {

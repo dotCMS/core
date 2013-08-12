@@ -186,9 +186,9 @@ function showSettings() {
 	var dialog = new dijit.Dialog({
 		id: 'settingsDialog',
         title: "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>",
-        style: "width: 600px;",
+        style: "width: 600px;height: 600px;",
         content: new dojox.layout.ContentPane({
-        	style: "height:500px;",
+        	style: "height:550px; width: 580px;",
             href: "/html/portlet/ext/timemachine/settings.jsp"
         }),
         onHide: function() {
@@ -205,7 +205,7 @@ function showSettings() {
 	
     dialog.show();
 
-    dojo.style(dialog.domNode,'top','100px');
+    dojo.style(dialog.domNode,'top','10px');
 }
 
 function toggleDatePick() {

@@ -26,6 +26,7 @@ abstract class WorkflowSQL {
 	protected static String SELECT_SCHEMES = "select * from workflow_scheme where (archived = ? or archived = ?) order by name";
 	
 	protected static String SELECT_SCHEME= "select * from workflow_scheme where id = ?";
+	protected static String SELECT_SCHEME_NAME= "select * from workflow_scheme where name = ?";
 
 	
 	

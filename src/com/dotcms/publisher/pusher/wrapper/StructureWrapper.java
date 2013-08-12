@@ -4,22 +4,42 @@ import java.util.List;
 
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
 
 public class StructureWrapper {
 	private Structure structure;
 	private List<Field> fields;
 	private String workflowSchemaId;
+	private String workflowSchemaName;
 	private Operation operation;
+	private List<FieldVariable> fieldVariables;
 	
-	public StructureWrapper() {}
+    public StructureWrapper() {}
 	
-	public StructureWrapper(Structure structure, List<Field> fields) {
+	public StructureWrapper(Structure structure, List<Field> fields, List<FieldVariable> variables) {
 		this.structure = structure;
 		this.fields = fields;
+		this.fieldVariables = variables;
 	}
+	
+	public List<FieldVariable> getFieldVariables() {
+        return fieldVariables;
+    }
 
-	public Structure getStructure() {
+    public void setFieldVariables(List<FieldVariable> fieldVariables) {
+        this.fieldVariables = fieldVariables;
+    }
+
+	public String getWorkflowSchemaName() {
+        return workflowSchemaName;
+    }
+
+    public void setWorkflowSchemaName(String workflowSchemaName) {
+        this.workflowSchemaName = workflowSchemaName;
+    }
+
+    public Structure getStructure() {
 		return structure;
 	}
 

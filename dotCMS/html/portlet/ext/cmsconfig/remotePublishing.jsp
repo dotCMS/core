@@ -321,7 +321,7 @@
                 <%= LanguageUtil.get(pageContext, "Servers") %>
             </th>
             <th nowrap="nowrap">
-                <%= LanguageUtil.get(pageContext, "Push-To-All") %>
+                <%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>
             </th>
             <th nowrap="nowrap">
            	 <%= LanguageUtil.get(pageContext, "Actions") %>
@@ -342,7 +342,7 @@
                 <a style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Environment_Title") %>">
                     <span class="editIcon"></span></a>
             </td>
-            <td valign="top" nowrap="nowrap">
+            <td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')">
                 <b><%=environment.getName()%></b>
             </td>
             <td style="padding:0px;" valign="top">
@@ -381,7 +381,12 @@
 
             </td>
             <td align="center" valign="top" nowrap="nowrap">
-                <%=environment.getPushToAll()%>
+            
+            <%if(environment.getPushToAll()){%>
+            	<%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %>
+            <%}else{ %>
+				<%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %>
+			<%} %>
             </td>
             <td valign="top" nowrap="nowrap">
                 <button dojoType="dijit.form.Button" onClick="goToAddEndpoint('<%=environment.getId()%>', 'false');" iconClass="plusIcon">
@@ -450,7 +455,7 @@
                     <span class="editIcon"></span></a>
             </td>
 
-            <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>')">
+            <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')">
                 <b><%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%></b>
                 <br>
                 <i><span class='shimIcon'></span><%=endpoint.getAddress()%></i>

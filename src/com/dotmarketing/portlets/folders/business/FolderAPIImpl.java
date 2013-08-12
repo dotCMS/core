@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.folders.business;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -309,14 +310,17 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	public void delete(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
-		if(folder!=null){
+		if(folder==null || !UtilMethods.isSet(folder.getInode()) ){
+			Logger.debug(getClass(), "Cannot delete null folder");
+			return;
+		} else {
 			AdminLogger.log(this.getClass(), "delete", "Deleting folder with name " + (UtilMethods.isSet(folder.getName()) ? folder.getName() + " ": "name not set "), user);
 		}
 		if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user + " does not have permission to edit " + folder.getName());
 		}
-		
-		
+
+
 		if(folder != null && FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
 			throw new DotSecurityException("YOU CANNOT DELETE THE SYSTEM FOLDER");
 		}
@@ -432,7 +436,7 @@ public class FolderAPIImpl implements FolderAPI  {
 					papi.removePermissions(link);
 					APILocator.getMenuLinkAPI().delete(link, user, false);
 
-				
+
 			}
 
 			/******** delete possible orphaned identifiers under the folder *********/
@@ -509,17 +513,18 @@ public class FolderAPIImpl implements FolderAPI  {
 				|| !papi.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
 			throw new DotSecurityException("User " + user + " does not have permission to add to " + name);
 		}
-		
-		
+
+		folder.setModDate(new Date());
+
 		ffac.save(folder, existingId);
 
 	}
-	
-	
+
+
 	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
 		save( folder, null,  user,  respectFrontEndPermissions);
-		
+
 	}
 
 
