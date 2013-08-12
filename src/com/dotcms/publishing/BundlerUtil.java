@@ -63,10 +63,12 @@ public class BundlerUtil {
 		objectToXML(config, xml);
 
 	}
+
 	/**
-	 * 
-	 * @param config
-	 * @return
+     * Reads the main bundle.xml file inside a bundle directory in order to create based on that file a PublisherConfig object
+	 *
+     * @param config This bundle current configuration
+     * @return The Bundle configuration read from the mail Bundle xml file
 	 */
 	public static PublisherConfig readBundleXml(PublisherConfig config){
 		getBundleRoot(config);
@@ -80,13 +82,20 @@ public class BundlerUtil {
 		}
 	}
 	
+    /**
+     * Serialize a given object to xml
+     *
+     * @param obj Object to serialize
+     * @param f   File to write to
+     */
 	public static void objectToXML(Object obj, File f){
 		objectToXML(obj, f, true);
 	}
 
 	/**
-	 * 
-	 * @param obj
+     * Serialize a given object to xml
+	 *
+     * @param obj Object to serialize
 	 * @param f File to write to
 	 */
 	public static void objectToXML(Object obj, File f, boolean removeFirst){
@@ -112,9 +121,10 @@ public class BundlerUtil {
 	
 	
 	/**
-	 * 
-	 * @param obj
-	 * @param f File to write to
+     * Deserialize an object back from XML
+	 *
+     * @param f file to deserialize
+     * @return A deserialized object
 	 */
 	public static Object xmlToObject(File f){
 		XStream xstream = new XStream(new DomDriver());

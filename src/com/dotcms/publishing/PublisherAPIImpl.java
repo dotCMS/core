@@ -1,17 +1,15 @@
 package com.dotcms.publishing;
 
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PushPublishLogger;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PushPublishLogger;
-
 public class PublisherAPIImpl implements PublisherAPI {
-
-
 
 	@Override
 	public PublishStatus publish(PublisherConfig config) throws DotPublishingException {
@@ -29,10 +27,6 @@ public class PublisherAPIImpl implements PublisherAPI {
 			List<Publisher> pubs = new ArrayList<Publisher>();
 			List<Class> bundlers = new ArrayList<Class>();
 			List<IBundler> confBundlers = new ArrayList<IBundler>();
-
-
-
-
 
 			// init publishers
 			for (Class<Publisher> c : config.getPublishers()) {
@@ -58,7 +52,6 @@ public class PublisherAPIImpl implements PublisherAPI {
 					else{
 					    config.setStartDate(null);
 						config.setEndDate(new Date());
-
 					}
 				}
 				else{
