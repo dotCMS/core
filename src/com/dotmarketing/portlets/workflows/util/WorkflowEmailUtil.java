@@ -7,11 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.portlet.RenderRequest;
-
-import org.apache.catalina.core.StandardServer;
-import org.apache.velocity.tools.view.context.ChainedContext;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
@@ -19,18 +14,15 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.cmis.proxy.DotInvocationHandler;
 import com.dotmarketing.cmis.proxy.DotRequestProxy;
 import com.dotmarketing.cmis.proxy.DotResponseProxy;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portlet.RenderRequestImpl;
 
 /**
  * @author David
@@ -80,11 +72,14 @@ public class WorkflowEmailUtil {
 					break;
 				}
 			}	
-		
-			
-			String serverPort = Config.CONTEXT.getAttribute("WEB_SERVER_HTTP_PORT").toString();			
-			String serverScheme = Config.CONTEXT.getAttribute("WEB_SERVER_SCHEME").toString();
-			String link = serverScheme +"://" + host.getHostname() +":"+serverPort+ "/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id=EXT_21&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_21_struts_action=/ext/workflows/edit_workflow_task&_EXT_21_cmd=view&_EXT_21_taskId="
+			String link = Config.getStringProperty("WORKFLOW_OVERRIDE_LINK_URL");
+			if(!UtilMethods.isSet(link)){
+				String serverPort = Config.getStringProperty("WEB_SERVER_HTTP_PORT", "80");
+				String serverScheme = Config.getStringProperty("WEB_SERVER_SCHEME", "http");
+				link+=serverScheme +"://" + host.getHostname() +":"+serverPort; 
+				
+			}
+			link+= "/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id=EXT_21&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_21_struts_action=/ext/workflows/edit_workflow_task&_EXT_21_cmd=view&_EXT_21_taskId="
 					+ processor.getTask().getId();			
 
 			InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
