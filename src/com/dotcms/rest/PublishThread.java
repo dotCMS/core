@@ -23,6 +23,12 @@ public class PublishThread implements Runnable {
 		this.groupId = groupId;
 	}
 
+    /**
+     * Sends for processing a given bundle to the {@link BundlePublisher}
+     *
+     * @see PublisherConfig
+     * @see BundlePublisher
+     */
     public void run() {
     	//Configure and Invoke the Publisher
     	Logger.info(PublishThread.class, "Started bundle publish process");

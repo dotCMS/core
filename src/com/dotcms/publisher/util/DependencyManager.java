@@ -66,7 +66,14 @@ public class DependencyManager {
 
 	private PushPublisherConfig config;
 
-	public DependencyManager(User user, PushPublisherConfig config) {
+    /**
+     * Initializes for a given {@link PushPublisherConfig Config} the list of dependencies this manager<br/>
+     * needs to satisfy
+     *
+     * @param user   The user who requested to create this Bundle
+     * @param config Class that have the main configuration values for the Bundle we are trying to create
+     */
+    public DependencyManager(User user, PushPublisherConfig config) {
 		this.config = config;
 		// these ones store the assets that will be sent in the bundle
 		boolean isPublish=config.getOperation().equals(Operation.PUBLISH);
@@ -93,7 +100,14 @@ public class DependencyManager {
 		this.user = user;
 	}
 
-	public void setDependencies() throws DotDataException, DotBundleException {
+    /**
+     * Initial method to start search for dependencies, it start identifying the type of assets the user wants to<br/>
+     * remote publish and base on those types the dependencies will be search and found.
+     *
+     * @throws DotDataException   If fails retrieving dependency objects
+     * @throws DotBundleException If fails trying to set the Contentlets dependencies
+     */
+    public void setDependencies() throws DotDataException, DotBundleException {
 		List<PublishQueueElement> assets = config.getAssets();
 
 		for (PublishQueueElement asset : assets) {
@@ -200,7 +214,14 @@ public class DependencyManager {
 		config.setLinks(links);
 		config.setRelationships(relationships);
 	}
-	
+
+    /**
+     * For given Links adds its dependencies:
+     * <ul>
+     * <li>Hosts</li>
+     * <li>Folders</li>
+     * </ul>
+     */
 	private void setLinkDependencies() {
 	    for(String linkId : linksSet) {
 	        try {
@@ -218,9 +239,19 @@ public class DependencyManager {
 	    }
 	}
 
-	private void setHostDependencies() {
-		try {
-			for (String id : hosts) {
+    /**
+     * For given Host adds its dependencies:
+     * <ul>
+     * <li>Templates</li>
+     * <li>Containers</li>
+     * <li>Contentlets</li>
+     * <li>Structures</li>
+     * <li>Folders</li>
+     * </ul>
+     */
+    private void setHostDependencies () {
+        try {
+            for (String id : hosts) {
 				Host h = APILocator.getHostAPI().find(id, user, false);
 
 				// Template dependencies
@@ -270,6 +301,16 @@ public class DependencyManager {
 		}
 	}
 
+    /**
+     * For given Folders adds its dependencies:
+     * <ul>
+     * <li>Hosts</li>
+     * <li>Contentlets</li>
+     * <li>Links</li>
+     * <li>Structures</li>
+     * <li>HTMLPages</li>
+     * </ul>
+     */
 	private void setFolderDependencies() {
 		try {
 			List<Folder> folderList = new ArrayList<Folder>();
@@ -346,6 +387,17 @@ public class DependencyManager {
 
 	}
 
+    /**
+     * For given HTMLPages adds its dependencies:
+     * <ul>
+     * <li>Hosts</li>
+     * <li>Folders</li>
+     * <li>Templates</li>
+     * <li>Containers</li>
+     * <li>Structures</li>
+     * <li>Contentlet</li>
+     * </ul>
+     */
 	private void setHTMLPagesDependencies() {
 		try {
 
@@ -436,6 +488,13 @@ public class DependencyManager {
 		}
 	}
 
+    /**
+     * For given Templates adds its dependencies:
+     * <ul>
+     * <li>Hosts</li>
+     * <li>Containers</li>
+     * </ul>
+     */
 	private void setTemplateDependencies() {
 		try {
 			List<Container> containerList = new ArrayList<Container>();
@@ -472,6 +531,13 @@ public class DependencyManager {
 
 	}
 
+    /**
+     * For given Containers adds its dependencies:
+     * <ul>
+     * <li>Hosts</li>
+     * <li>Structures</li>
+     * </ul>
+     */
 	private void setContainerDependencies() {
 
 		try {
@@ -511,7 +577,14 @@ public class DependencyManager {
 
 	}
 
-
+    /**
+     * For given Structures adds its dependencies:
+     * <ul>
+     * <li>Hosts</li>
+     * <li>Folders</li>
+     * <li>Relationships</li>
+     * </ul>
+     */
 	private void setStructureDependencies() {
 		Set<String> s = new HashSet<String>();
 		s.addAll(structures);
@@ -660,7 +733,19 @@ public class DependencyManager {
 
 	}
 
-	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
+    /**
+     * For given Contentles adds its dependencies:
+     * <ul>
+     * <li>Hosts</li>
+     * <li>Folders</li>
+     * <li>Structures</li>
+     * <li>Relationships</li>
+     * </ul>
+     *
+     * @param luceneQueries Queries to get the dependency Contentlets from
+     * @throws DotBundleException If fails executing the Lucene queries
+     */
+    private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
 			Set<String> cons = new HashSet<String>(contents);
