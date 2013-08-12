@@ -69,6 +69,9 @@ public class DependencyManager {
     /**
      * Initializes for a given {@link PushPublisherConfig Config} the list of dependencies this manager<br/>
      * needs to satisfy
+     *
+     * @param user   The user who requested to create this Bundle
+     * @param config Class that have the main configuration values for the Bundle we are trying to create
      */
     public DependencyManager(User user, PushPublisherConfig config) {
 		this.config = config;
@@ -101,8 +104,8 @@ public class DependencyManager {
      * Initial method to start search for dependencies, it start identifying the type of assets the user wants to<br/>
      * remote publish and base on those types the dependencies will be search and found.
      *
-     * @throws DotDataException
-     * @throws DotBundleException
+     * @throws DotDataException   If fails retrieving dependency objects
+     * @throws DotBundleException If fails trying to set the Contentlets dependencies
      */
     public void setDependencies() throws DotDataException, DotBundleException {
 		List<PublishQueueElement> assets = config.getAssets();
@@ -738,8 +741,11 @@ public class DependencyManager {
      * <li>Structures</li>
      * <li>Relationships</li>
      * </ul>
+     *
+     * @param luceneQueries Queries to get the dependency Contentlets from
+     * @throws DotBundleException If fails executing the Lucene queries
      */
-	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
+    private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
 			Set<String> cons = new HashSet<String>(contents);

@@ -32,6 +32,8 @@ public class BundlePublisher extends Publisher {
      * Initializes this Publisher adding all the handlers that can interact with a Bundle.
      *
      * @param config Class that have the main configuration values for the Bundle we are trying to publish
+     * @return This bundle configuration ({@link PublisherConfig})
+     * @throws DotPublishingException If fails initializing this Publisher Handlers
      */
     @Override
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
@@ -79,6 +81,10 @@ public class BundlePublisher extends Publisher {
      * Processes a Bundle, in order to do that it: Un-compress the Bundle file, then each handler for this Publisher will check if inside<br/>
      * the bundle there is content it needs to be handle as each {@link IHandler Handler} handles a different type of content, and finally<br/>
      * after the "handle" for each Handler the status are set depending if was a successful operation or not.
+     *
+     * @param status Current status of the Publishing process
+     * @return This bundle configuration ({@link PublisherConfig})
+     * @throws DotPublishingException If fails Handling any on the elements of this bundle
      */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
