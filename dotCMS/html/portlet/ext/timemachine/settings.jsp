@@ -104,10 +104,13 @@ function addEmptyMessage() {
 	var rowCount = table.rows.length;
 	var newRow = table.insertRow(rowCount);
     newRow.id="nohosts";
+    var newdiv = document.createElement("div");
     if(dijit.byId('allhosts').get('value'))
-        newRow.innerHTML = '<td colspan="2"><div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "all-hosts-selected") %></div></td>';
+    	newdiv.innerHTML = '<td colspan="2"><div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "all-hosts-selected") %></div></td>';
     else
-        newRow.innerHTML = '<td colspan="2"><div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "no-hosts-selected") %></div></td>';
+    	newdiv.innerHTML = '<td colspan="2"><div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "no-hosts-selected") %></div></td>';
+
+    newRow.appendChild(newdiv);
 }
 
 function indexAll(checked){
@@ -204,7 +207,7 @@ dojo.ready(function() {
 
 </script>
 <span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-
+<div style="height:550px; width:580px; overflow:auto;">
 <form id="settingform" dojoType="dijit.form.Form" >
    <table>
    <tr>
@@ -322,5 +325,5 @@ dojo.ready(function() {
    </table>
 
 </form>
-
+</div>
 <%@include file="/html/common/bottom_inc.jsp"%>

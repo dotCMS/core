@@ -76,9 +76,9 @@ public class RoleAjax {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		List<Role> rootRoles = roleAPI.findRootRoles();
 
-		String[] rolesIds = null;
+		String[] excludeRolesArray = null;
 		if(UtilMethods.isSet(excludeRoles)){
-			rolesIds = excludeRoles.split(",");
+			excludeRolesArray = excludeRoles.split(",");
 		}
 
 		for(Role r : rootRoles) {
@@ -98,30 +98,7 @@ public class RoleAjax {
 					continue;
 			}
 
-			if(rolesIds!=null){
-				for(String roleId: rolesIds){
-					if(r.getId().equals(roleId.trim())){
-						continue;
-					}
-					List<String> rolesChildren =r.getRoleChildren();
-					List<String> rolesChildrenToSet =new ArrayList <String>();
-					if(rolesChildren!=null){
-						for(String role :rolesChildren){
-							rolesChildrenToSet.add(role);
-						}
-					}
-                    if(rolesChildren!= null && rolesChildren.size()>0){
-						for(String roleChild:rolesChildren){
-							if(roleChild.equals(roleId.trim())){
-								rolesChildrenToSet.remove(roleChild);
-							}
-						}
-						r.setRoleChildren(rolesChildrenToSet);
-                    }
-				}
-			}
-
-			Map<String, Object> roleMap = constructRoleMap(r, onlyUserAssignableRoles);
+			Map<String, Object> roleMap = constructRoleMap(r, excludeRolesArray, onlyUserAssignableRoles);
 			toReturn.add(roleMap);
 
 		}
@@ -129,7 +106,7 @@ public class RoleAjax {
 
 	}
 
-	private Map<String, Object> constructRoleMap(Role role, boolean onlyUserAssignableRoles) throws DotDataException {
+	private Map<String, Object> constructRoleMap(Role role, String[] excludeRoles, boolean onlyUserAssignableRoles) throws DotDataException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Map<String, Object> roleMap = new HashMap<String, Object>();
@@ -154,7 +131,14 @@ public class RoleAjax {
 						continue;
 				}
 
-				Map<String, Object> childMap = constructRoleMap(childRole, onlyUserAssignableRoles);
+				// Exclude roles in the excludeRoles list
+				for(String roleTo: excludeRoles) {
+					if(roleTo.equals(id)) {
+						continue;
+					}
+				}
+
+				Map<String, Object> childMap = constructRoleMap(childRole, excludeRoles, onlyUserAssignableRoles);
 				children.add(childMap);
 			}
 		}

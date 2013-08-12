@@ -398,6 +398,7 @@ public class StructureFactory {
 		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
 		Date now = new Date();
 		structure.setiDate(now);
+		structure.setModDate(now);
 		HibernateUtil.saveOrUpdate(structure);
 
 		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
@@ -410,6 +411,7 @@ public class StructureFactory {
 		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
 		Date now = new Date();
 		structure.setiDate(now);
+		structure.setModDate(now);
 		HibernateUtil.saveWithPrimaryKey(structure, existingId);
 	}
 

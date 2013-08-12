@@ -119,4 +119,6 @@ public interface WorkFlowFactory {
 	// christian escalation
 
     public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException;
+
+    public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException;
 }
