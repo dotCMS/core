@@ -38,9 +38,9 @@ import com.sun.jersey.multipart.FormDataParam;
 
 @Path("/bundlePublisher")
 public class BundlePublisherResource extends WebResource {
+
 	public static String MY_TEMP = "";
 	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
-	private PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
 
     /**
      * Method that receives from a server a bundle with the intention of publish it.<br/>
@@ -51,9 +51,10 @@ public class BundlePublisherResource extends WebResource {
      * @param bundle         Bundle file stream
      * @param fileDetail     Bundle file Details
      * @param auth_token_enc Authentication token
-     * @param groupId
-     * @param endpointId
-     * @param req
+     * @param groupId        Group who sent the Bundle
+     * @param endpointId     End-point who sent the Bundle
+     * @param req            HttpRequest
+     * @return Returns a {@link Response} object with a 200 status code if success or a 500 error code if anything fails on the Publish process
      * @see PublishThread
      */
     @POST
@@ -113,8 +114,9 @@ public class BundlePublisherResource extends WebResource {
      * @param remoteIP Sender IP
      * @param mySelf   Current end point
      * @return True if valid
+     * @throws IOException If fails reading the security token
      */
-    private boolean isValidToken ( String token, String remoteIP, PublishingEndPoint mySelf ) throws IOException, DotDataException {
+    private boolean isValidToken ( String token, String remoteIP, PublishingEndPoint mySelf ) throws IOException {
 
         //My key
         String myKey;
