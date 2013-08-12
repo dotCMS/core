@@ -54,6 +54,11 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	}
 
+    /**
+     * Returns the type of operation we will apply to the bundle (PUBLISH/UNPUBLISH).
+     *
+     * @return
+     */
 	public Operation getOperation() {
 		return operation;
 	}
