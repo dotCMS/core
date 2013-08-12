@@ -30,7 +30,7 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.client.urlconnection.HTTPSProperties;
 
 /**
- * This class read the publishing_queue table and send bundles to some endpoints
+ * This class read the publishing_queue table and send bundles to some environments
  * @author Alberto
  *
  */
@@ -42,9 +42,20 @@ public class PublisherQueueJob implements StatefulJob {
 
     public static final Integer MAX_NUM_TRIES = Config.getIntProperty( "PUBLISHER_QUEUE_MAX_TRIES", 3 );
 
+    /**
+     * Reads from the publishing queue table and depending of the publish date will send a bundle<br/>
+     * to publish ({@link com.dotcms.publishing.PublisherAPI#publish(com.dotcms.publishing.PublisherConfig)}).
+     *
+     * @param arg0 Containing the current job context information
+     * @throws JobExecutionException if there is an exception while executing the job.
+     * @see PublisherAPI
+     * @see PublisherAPIImpl
+     */
     @SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
+
 		try {
+
 		    Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
 		    PublishDateUpdater.updatePublishExpireDates(arg0.getFireTime());
 		    Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
@@ -53,10 +64,10 @@ public class PublisherQueueJob implements StatefulJob {
 			updateAuditStatus();
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - Audit update");
 
-
+            //Verify if we have endpoints where to send the bundles
 			List<PublishingEndPoint> endpoints = endpointAPI.getEnabledReceivingEndPoints();
-
 			if(endpoints != null && endpoints.size() > 0)  {
+
 				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
 				PublisherAPI pubAPI = PublisherAPI.getInstance();
 
@@ -65,10 +76,10 @@ public class PublisherQueueJob implements StatefulJob {
 				clazz.add(PushPublisher.class);
 
 				List<Map<String,Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
-				List<PublishQueueElement> tempBundleContents = null;
-				PublishAuditStatus status = null;
-				PublishAuditHistory historyPojo = null;
-				String tempBundleId = null;
+				List<PublishQueueElement> tempBundleContents;
+				PublishAuditStatus status;
+				PublishAuditHistory historyPojo;
+				String tempBundleId;
 
 				for(Map<String,Object> bundle: bundles) {
 					Date publishDate = (Date) bundle.get("publish_date");
@@ -85,9 +96,10 @@ public class PublisherQueueJob implements StatefulJob {
 						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
 
 						for(PublishQueueElement c : tempBundleContents) {
-							assets.put((String) c.getAsset(), c.getType());
-							if(!c.getType().equals("contentlet"))
+							assets.put( c.getAsset(), c.getType());
+							if(!c.getType().equals("contentlet")) {
 								assetsToPublish.add(c);
+                            }
 						}
 						historyPojo.setAssets(assets);
 
@@ -147,8 +159,16 @@ public class PublisherQueueJob implements StatefulJob {
 
 	}
 
+    /**
+     * Method that updates the status of a Bundle in the job queue. This method also verifies and limit the number<br/>
+     * of times a Bundle is allowed to try to be published in case of errors.
+     *
+     * @throws DotPublisherException If fails modifying the Publishing status, retrieving status information or<br/>
+     * removing the current bundle from the Publish queue table
+     * @throws DotDataException If fails retrieving end points
+     */
+    private void updateAuditStatus () throws DotPublisherException, DotDataException {
 
-	private void updateAuditStatus() throws DotPublisherException, DotDataException {
 		ClientConfig clientConfig = new DefaultClientConfig();
 		TrustFactory tFactory = new TrustFactory();
 
@@ -157,7 +177,7 @@ public class PublisherQueueJob implements StatefulJob {
 				.put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
 		}
         Client client = Client.create(clientConfig);
-        WebResource webResource = null;
+        WebResource webResource;
 
         List<PublishAuditStatus> pendingAudits = pubAuditAPI.getPendingPublishAuditStatus();
 
@@ -179,8 +199,8 @@ public class PublisherQueueJob implements StatefulJob {
 	        		EndpointDetail localDetail = endpointsGroup.get(endpointId);
 
 	        		if(localDetail.getStatus() != PublishAuditStatus.Status.SUCCESS.getCode() &&
-	        			localDetail.getStatus() != PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode())
-	        		{
+	        			localDetail.getStatus() != PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()) {
+
 		        		PublishingEndPoint target = endpointAPI.findEndPointById(endpointId);
 
 		        		if(target != null) {
@@ -201,8 +221,8 @@ public class PublisherQueueJob implements StatefulJob {
 			        			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 			        		}
 		        		}
-	        		}
-	        		else if(localDetail.getStatus() == PublishAuditStatus.Status.SUCCESS.getCode() ){
+	        		} else if(localDetail.getStatus() == PublishAuditStatus.Status.SUCCESS.getCode() ){
+
 	        			Map<String, EndpointDetail> m = new HashMap<String, EndpointDetail>();
 	        			m.put(endpointId, localDetail);
 	        			bufferMap.put(group, m);
