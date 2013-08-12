@@ -110,4 +110,8 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             NotAuthorizedException, BadRequestException, NotFoundException {
         return;
     }
+    
+    public String getPath() {
+        return path;
+    }
 }
