@@ -44,16 +44,20 @@ public class PushPublisherConfig extends PublisherConfig {
 
 
 	private enum MyConfig {
-		RUN_NOW,INDEX_NAME;
-	};
-
+		RUN_NOW,INDEX_NAME
+	}
 
 	public boolean runNow(){
 		return this.get(MyConfig.RUN_NOW.toString()) !=null && new Boolean((String) this.get(MyConfig.RUN_NOW.toString()));
 
 	}
 
-	public Operation getOperation() {
+    /**
+     * Returns the type of operation we will apply to the bundle (PUBLISH/UNPUBLISH).
+     *
+     * @return
+     */
+    public Operation getOperation() {
 		return operation;
 	}
 
