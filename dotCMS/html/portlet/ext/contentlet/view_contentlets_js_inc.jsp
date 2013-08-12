@@ -1264,8 +1264,10 @@
                 if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
                         setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
                 } else {
-
-                        doSearch1 (page, sortBy);
+                		if(dijit.byId('structure_inode'))
+                        	doSearch1 (page, sortBy);
+                        else
+                        	setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
                 }
         }
 
@@ -1276,10 +1278,10 @@
 
         		var structureInode = "";
 
-        		if(dijit.byId('structure_inode')!=='undefined') {
-        			structureInode  = dijit.byId('structure_inode').getValue();
-        		}
 
+	            if(dijit.byId('structure_inode')) {
+	              structureInode  = dijit.byId('structure_inode').getValue();
+	            }
                 if(structureInode ==""){
                         dijit.byId('structure_inode').focus() ;
                         return false;
