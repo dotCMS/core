@@ -107,5 +107,24 @@ public class JSONTool extends ImportSupport implements ViewTool {
 	public JSONObject generate(Object o){
 		return new JSONObject(o);
 	}
-	
+
+    /**
+     * Returns a JSONObject as constructed from the provided string.
+     *
+     * @param s The JSON string.
+     * @return A JSONObject as parsed from the provided string, null in the event of an error.
+     */
+    public JSONObject generate(String s) {
+        JSONObject result;
+        try {
+            result = new JSONObject(s);
+        }
+        catch (Exception e)
+        {
+            Logger.error(JSONObject.class, e.getMessage(), e);
+            result = null;
+        }
+
+        return result;
+    }
 }
