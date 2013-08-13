@@ -422,13 +422,40 @@
 			form.submit();
 		}
 	}
+	
+	function setSelectedStructure(structureInode){
+	 	document.getElementById('selectedStructure').value=structureInode;
+		form = document.getElementById('submitParent');
+		form.cmd.value="newedit";
+		form.submit();
+	}
+
+	require(["dijit/Dialog", "dojo/domReady!"], function(Dialog){
+    	myDialog = new Dialog({
+        title: "$langbackendwebapi.get("Add-New-Content")",
+        content: "",
+        style: "width: 300px"
+    	});
+	});
 
 	function addContentlet(x){
 	 	document.getElementById('container').value=x;
 	 	document.getElementById('contentlet').value=0;
-		form = document.getElementById('submitParent');
-		form.cmd.value="newedit";
-		form.submit();
+	 	ContainerAjax.getContainerStructuresForUser(x, getContainerStructuresCallback);
+	}
+	
+	function getContainerStructuresCallback(data){
+		if(data.length > 1){
+			var content = "<div class=\"sTypeTd\">";
+			for(i = 0; i < data.length; i++){
+				content = content + "<div class=\"sTypeItem\"><a href=\"javascript:setSelectedStructure('"+data[i]['inode']+"')\">"+data[i]['name']+"</a></div>";
+			}
+			content = content + "</div>";
+			myDialog.set("content",content);
+			myDialog.show();
+		} else if(data.length == 1){
+			setSelectedStructure(data[0]['inode']);
+		}
 	}
 
 	function addWidget(structure){
