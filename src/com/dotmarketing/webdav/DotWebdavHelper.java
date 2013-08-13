@@ -100,6 +100,7 @@ public class DotWebdavHelper {
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 	private IdentifierAPI idapi = APILocator.getIdentifierAPI();
 	private FolderCache fc = CacheLocator.getFolderCache();
+	private PermissionAPI perAPI = APILocator.getPermissionAPI();
 	
 	/**
 	 * MD5 message digest provider.
@@ -683,7 +684,7 @@ public class DotWebdavHelper {
 						}
 						//						identifier = idapi.find(actualFile);
 						WebAssetFactory.createAsset(file, user.getUserId(),	folder, identifier, false, false);
-						if(publish){
+						if(publish && perAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_PUBLISH, user)){
 							WebAssetFactory.publishAsset(file);
 						}
 
@@ -764,7 +765,7 @@ public class DotWebdavHelper {
 							}
 						}
 						APILocator.getVersionableAPI().setWorking(file);
-						if(publish)
+						if(publish && perAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_PUBLISH, user))
 							APILocator.getVersionableAPI().setLive(file);
 						WorkingCache.removeAssetFromCache(file);
 						LiveCache.removeAssetFromCache(file);
@@ -870,8 +871,8 @@ public class DotWebdavHelper {
 					fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAsset.setHost(host.getIdentifier());
 					fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
-					if(isAutoPub)
-					    APILocator.getVersionableAPI().setLive(fileAsset);
+					if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user))
+					    APILocator.getContentletAPI().publish(fileAsset, user, false);
 				}
 			}else{
 
@@ -941,8 +942,8 @@ public class DotWebdavHelper {
 						fileAssetCont.setFolder(parent.getInode());
 						fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 						fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
-						if(isAutoPub)
-						    APILocator.getVersionableAPI().setLive(fileAssetCont);
+						if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
+						    APILocator.getContentletAPI().publish(fileAssetCont, user, false);
 					}
 
 					//Wiping out the thumbnails and resized versions
@@ -1097,7 +1098,7 @@ public class DotWebdavHelper {
 					} else {
 						fileAPI.moveFile(f, toParentFolder, user, false);
 					}
-					if (autoPublish) {
+					if (autoPublish && perAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_PUBLISH, user)) {
 
 						PublishFactory.publishAsset(f, user, false);
 
