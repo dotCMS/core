@@ -431,7 +431,7 @@
 	}
 
 	require(["dijit/Dialog", "dojo/domReady!"], function(Dialog){
-    	myDialog = new Dialog({
+    	selectStructureTypeDialog = new Dialog({
         title: "$langbackendwebapi.get("Add-New-Content")",
         content: "",
         style: "width: 300px"
@@ -451,8 +451,8 @@
 				content = content + "<div class=\"sTypeItem\"><a href=\"javascript:setSelectedStructure('"+data[i]['inode']+"')\">"+data[i]['name']+"</a></div>";
 			}
 			content = content + "</div>";
-			myDialog.set("content",content);
-			myDialog.show();
+			selectStructureTypeDialog.set("content",content);
+			selectStructureTypeDialog.show();
 		} else if(data.length == 1){
 			setSelectedStructure(data[0]['inode']);
 		}
