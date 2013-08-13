@@ -71,7 +71,6 @@ public class PublisherQueueJob implements StatefulJob {
 				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
 				PublisherAPI pubAPI = PublisherAPI.getInstance();
 
-				PushPublisherConfig pconf = new PushPublisherConfig();
 				List<Class> clazz = new ArrayList<Class>();
 				clazz.add(PushPublisher.class);
 
@@ -103,6 +102,7 @@ public class PublisherQueueJob implements StatefulJob {
 						}
 						historyPojo.setAssets(assets);
 
+						PushPublisherConfig pconf = new PushPublisherConfig();
 						// all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
 						pconf.setAssets(assetsToPublish);
 
