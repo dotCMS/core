@@ -310,16 +310,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         synchronized (syncMe) {
 
-
             Logger.debug(this, "*****I'm a Contentlet -- Publishing");
-
-            Contentlet workingCon = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
-
-            if (workingCon == null || !InodeUtils.isSet(workingCon.getInode())) {
-                workingCon = contentlet;
-            }
-
-            conFac.save(contentlet);
 
             //Set contentlet to live and unlocked
             APILocator.getVersionableAPI().setLive(contentlet);
