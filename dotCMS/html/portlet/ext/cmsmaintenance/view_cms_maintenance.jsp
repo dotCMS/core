@@ -490,8 +490,7 @@ function refreshCache(){
 	<%}else{%>
 		x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats.jsp?r=" + y  );
 	<%}%>
-	x.style( "height","600px"  );
-	console.log(x);
+	x.style =  "height:600px";
 
 }
 
