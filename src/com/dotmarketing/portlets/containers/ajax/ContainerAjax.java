@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.containers.ajax;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -15,6 +17,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.StructureCache;
@@ -167,6 +170,38 @@ public class ContainerAjax {
 				result.put("inode", cs.getStructureId());
 				result.put("name", st.getName());
 				resultList.add(result);
+			}
+
+		} catch (Exception e) {
+			Logger.error(getClass(), e.getMessage());
+			throw e;
+		}
+
+		return resultList;
+	}
+	
+	public List<Map<String, String>> getContainerStructuresForUser(String containerInode) throws Exception{
+		Container cont = (Container) InodeFactory.getInode(containerInode, Container.class);
+
+		List<Map<String,String>> resultList = new ArrayList<Map<String,String>>();
+		List<ContainerStructure> csList;
+
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User user = userWebAPI.getLoggedInUser(req);
+		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+
+		try {
+			csList = APILocator.getContainerAPI().getContainerStructures(cont);
+
+			for (ContainerStructure cs : csList) {
+				Map<String, String> result = new HashMap<String, String>();
+				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+				if(permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user)){
+					result.put("inode", cs.getStructureId());
+					result.put("name", st.getName());
+					resultList.add(result);
+				}
 			}
 
 		} catch (Exception e) {

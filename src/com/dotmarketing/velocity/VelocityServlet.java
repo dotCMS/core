@@ -597,7 +597,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			for (ContainerStructure cs : APILocator.getContainerAPI().getContainerStructures(c)) {
 				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
 
-				hasWritePermOverTheStructure &= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user, true);
+				hasWritePermOverTheStructure |= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user, true);
 			}
 
 
@@ -843,7 +843,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			for (ContainerStructure cs : APILocator.getContainerAPI().getContainerStructures(c)) {
 				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
 
-				hasWritePermOverTheStructure &= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, backendUser);
+				hasWritePermOverTheStructure |= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, backendUser);
 			}
 
 
