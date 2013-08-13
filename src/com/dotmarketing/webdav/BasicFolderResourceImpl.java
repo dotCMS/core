@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 
+import org.dts.spell.utils.FileUtils;
+
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.FolderResource;
 import com.bradmcevoy.http.HttpManager;
@@ -78,12 +80,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             p = p + "/";
         }
         File f = dotDavHelper.createTempFile("/" + host.getHostname() + p + newName);
-        FileOutputStream fos = new FileOutputStream(f);
-        byte[] buf = new byte[256];
-        int read = -1;
-        while ((read = in.read()) != -1) {
-            fos.write(read);
-        }
+        FileUtils.copyStreamToFile(f, in, null);
         TempFileResourceImpl tr = new TempFileResourceImpl(f, path + newName, isAutoPub);
         return tr;
     }
