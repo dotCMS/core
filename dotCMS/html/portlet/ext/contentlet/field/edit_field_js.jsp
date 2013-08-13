@@ -530,6 +530,10 @@ var cmsfile=null;
 		var ext=file.extension;
 		var ident =file.identifier+'.'+ext;
 		wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/dotAsset/" + ident;
+		if(wysiwyg_win.document.forms[0].title)
+			wysiwyg_win.document.forms[0].title.value = file.title;
+		if(wysiwyg_win.document.forms[0].alt)
+			wysiwyg_win.document.forms[0].alt.value = file.description;		
 		if(wysiwyg_field_name == 'src'){
 			wysiwyg_win.ImageDialog.showPreviewImage("/dotAsset/" + ident);
 		}
