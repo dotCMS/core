@@ -11,9 +11,9 @@
 	RoleAPI roleAPI = APILocator.getRoleAPI();
 	Host systemHost = hostAPI.findSystemHost(user, false);
 	boolean doesHavePermissionToAddHosts = permAPI.doesUserHavePermission(systemHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
-	
+
 	boolean isCMSAdmin = roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
-	
+
 	String showDeleted = (request.getParameter("showDeleted") != null) ? request.getParameter("showDeleted") : (String) session.getAttribute(com.dotmarketing.util.WebKeys.HOST_SHOW_DELETED);
 %>
 
@@ -56,7 +56,7 @@
 	            </div>
 	        </td>
 	    </tr>
-	</tbody>	
+	</tbody>
 </table>
 <div id="hostContextMenues">
 </div>
@@ -85,14 +85,14 @@
 	            <hr/><input type="radio" name="copyHost" dojoType="dijit.form.RadioButton" id="copyHostRadio" <%if(LicenseUtil.getLevel() > 199){%>checked value="on"<% }else{ %>disabled="disabled"<% } %> />
 	           <%if(LicenseUtil.getLevel() >199){%>
 	           		<label for="copyHostRadio" id="copyHostTextId">
-		                <%= LanguageUtil.get(pageContext, "Copy-an-existing-Host") %> 
+		                <%= LanguageUtil.get(pageContext, "Copy-an-existing-Host") %>
 		            </label>
 	           <%}else{ %>
 		            <label for="copyHostRadio" id="copyHostTextId">
 		                <span  style="color:silver"><%= LanguageUtil.get(pageContext, "Copy-an-existing-Host") %></span>
 		                <span class="keyIcon"></span>
 		            </label>
-            		
+
                 	<span dojoType="dijit.Tooltip" connectId="copyHostTextId" id="copyHostTextToolTipId">
                 		<%= LanguageUtil.get(pageContext, "Copy-an-existing-Host-Disabled") %>
                 	</span>
@@ -116,13 +116,13 @@
             </div>
         </div>
     	<!-- Dialog step 2 -->
-		
+
         <div id="addHostStep2" style="display: none">
-         <h2><%= LanguageUtil.get(pageContext, "Select-a-Host-to-copy") %></h2> 
-         <hr/>	
-         <div style="float: left"> 
+         <h2><%= LanguageUtil.get(pageContext, "Select-a-Host-to-copy") %></h2>
+         <hr/>
+         <div style="float: left">
 			<div id="hostTemplateWrapper">
-				<%= LanguageUtil.get(pageContext, "Host-Template") %>: 
+				<%= LanguageUtil.get(pageContext, "Host-Template") %>:
 				<span id="hostToCopyWrapper">
 				</span>
 			</div>
@@ -136,7 +136,7 @@
 				<%= LanguageUtil.get(pageContext, "View-site") %>: <a id="websitePreviewLink" target="_blank" href=""></a>
 			</div>
 		 </div>
-		 
+
 		 <div style="float: right">
 			<b><%= LanguageUtil.get(pageContext, "What-to-copy") %></b><br/>
 			<div class="yui-g buttonRow">
@@ -149,7 +149,7 @@
 			    <div class="yui-u" style="text-align: left">
 			    </div>
 			</div>
-			<div id="otherCheckboxesWrapper">			
+			<div id="otherCheckboxesWrapper">
 				<div class="yui-g buttonRow">
 				    <div class="yui-u first" style="text-align: left">
 				        <input type="checkbox" id="copyTemplatesAndContainers" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
@@ -192,7 +192,7 @@
 	    					<%= LanguageUtil.get(pageContext, "Virtual-Links") %>
 						</label>
 				    </div>
-				</div>	
+				</div>
 				<div class="yui-g buttonRow">
 				    <div class="yui-u first" style="text-align: left">
 						&nbsp;&nbsp;&nbsp;&nbsp;
@@ -207,10 +207,10 @@
 	    					<%= LanguageUtil.get(pageContext, "Host-Variables") %>
 						</label>
 				    </div>
-				</div>	
-			</div>						
-		 </div>	
-		 
+				</div>
+			</div>
+		 </div>
+
             <div class="buttonRow" style="clear: both;">
                 <hr/>
                 <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep1(); dojo.stopEvent(event); return false; " iconClass="previousIcon">
@@ -223,8 +223,21 @@
                     <%= LanguageUtil.get(pageContext, "Cancel") %>
                 </button>
             </div>
-        </div>		
+        </div>
     </form>
 </div>
 
 <%@ include file="/html/portlet/ext/hostadmin/view_host_variables_inc.jsp" %>
+
+<form id="remotePublishForm">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="iWantTo" id=iWantTo type="hidden" value="">
+	<input name="whoToSend" id=whoToSend type="hidden" value="">
+	<input name="bundleName" id=bundleName type="hidden" value="">
+	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
+	<input name="forcePush" id=forcePush type="hidden" value="">
+</form>
