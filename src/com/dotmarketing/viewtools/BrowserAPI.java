@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.ChildrenCondition;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -349,7 +350,8 @@ public class BrowserAPI {
 							.getMimeType(fileAsset.getFileName()));
 					fileMap.put("name", ident.getAssetName());
 					fileMap.put("fileName", ident.getAssetName());
-					fileMap.put("description", fileAsset.getFriendlyName());
+					fileMap.put("title", fileAsset.getFriendlyName());
+					fileMap.put("description", ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION));
 					fileMap.put("extension", UtilMethods
 							.getFileExtension(fileAsset.getFileName()));
 					fileMap.put("path", fileAsset.getPath());
