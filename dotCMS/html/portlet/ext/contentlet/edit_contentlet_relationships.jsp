@@ -687,6 +687,7 @@
 						formEle[i].value = formEle[i].value.replace(/^\s+|\s+$/g, '');
 						formEle[i].value = formEle[i].value.replace(/\r\n/g, '');
 						formEle[i].value = formEle[i].value.replace(/\n/g, '');
+						formEle[i].value = formEle[i].value.replace(/\r/g, '');
 						<%
 						Iterator it = con.entrySet().iterator();
 						while (it.hasNext()) {
@@ -698,6 +699,7 @@
 								v = v.replace("\"","\\\\\"");
 								v = v.replace("\r\n","");
 								v = v.replace("\n","");
+								v = v.replace("\r","");
 								if(v.matches("(.*)-(.*)-(.*):(.*):(.*)")){
 									int index = v.lastIndexOf( ':' );
 									v = v.substring(0,index);
