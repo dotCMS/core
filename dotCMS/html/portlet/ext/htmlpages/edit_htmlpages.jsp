@@ -188,7 +188,7 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
 <!-- START basic properties -->
-	<div id="hostPropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Basic-Properties") %>" onShow="showEditButtonsRow()">
+	<div id="hostPropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="showEditButtonsRow()">
 		<dl>
 			<dt><%= LanguageUtil.get(pageContext, "Page-Menu-Title") %>:</dt>
 			<dd>
@@ -253,11 +253,6 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 <!-- Advanced Properties -->
 	<div id="fileAdvancedTab" refreshOnShow="true" preload="true"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Advanced-Properties") %>" onShow="showEditButtonsRow()">
 		<dl>
-			<%if(identifier!=null && InodeUtils.isSet(identifier.getInode())){%>
-				<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
-				<dd><%= identifier.getInode() %></dd>
-			<%}%>
-
 			<dt><%= LanguageUtil.get(pageContext, "Show-on-Menu") %>:</dt>
 			<dd><input type="checkbox" dojoType="dijit.form.CheckBox" name="showOnMenu" id="showOnMenu" onclick="disableOrder(this)" <%= htmlpage.isShowOnMenu() ? "checked" : "" %>/></dd>
 
@@ -315,19 +310,19 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 
 			<dt><%= LanguageUtil.get(pageContext, "SEO-Description") %>:</dt>
 			<dd>
-				<textarea dojoType="dijit.form.Textarea" wrap="off" style="width:340px; min-height:100px;; font-size: 11px"  cols="40" rows="10" name="seoDescription" ><%= UtilMethods.xmlEscape(UtilMethods.webifyString(htmlpage.getSeoDescription()))%></textarea>
+				<textarea dojoType="dijit.form.Textarea" style="width:400px; min-height:75px;max-height:300px;" name="seoDescription" ><%= UtilMethods.xmlEscape(UtilMethods.webifyString(htmlpage.getSeoDescription()))%></textarea>
 			</dd>
 
 			<dt><%= LanguageUtil.get(pageContext, "SEO-Keywords") %>:</dt>
 			<dd>
-				<textarea dojoType="dijit.form.Textarea" wrap="off" style="width:340px; min-height:100px;; font-size: 11px"  cols="40" rows="10" name="seoKeywords" ><%=UtilMethods.xmlEscape(UtilMethods.webifyString( htmlpage.getSeoKeywords()))%></textarea>
+				<textarea dojoType="dijit.form.Textarea" style="width:400px; min-height:75px;max-height:300px;" name="seoKeywords" ><%=UtilMethods.xmlEscape(UtilMethods.webifyString( htmlpage.getSeoKeywords()))%></textarea>
 			</dd>
 
 			<dt>
 				<%= LanguageUtil.get(pageContext, "Page Metadata") %>:
 			</dt>
 			<dd>
-				<textarea dojoType="dijit.form.Textarea" wrap="off" style="width:340px; min-height:100px;; font-size: 11px"  cols="40" rows="10" name="metadata" ><%= UtilMethods.xmlEscape(htmlpage.getMetadata())%></textarea>
+				<textarea dojoType="dijit.form.Textarea" style="width:400px; min-height:75px;max-height:300px;" name="metadata" ><%= UtilMethods.xmlEscape(htmlpage.getMetadata())%></textarea>
 			</dd>
 		</dl>
  	</div>
