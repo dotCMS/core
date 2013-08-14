@@ -820,16 +820,40 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         vp = dojo.coords(this.iframe.dojo.byId("imageViewPort"));
         sTop = this.iframe.dojo.byId("imageViewPort").scrollTop;
         sLeft = this.iframe.dojo.byId("imageViewPort").scrollLeft;
-        var x = pc.l - vp.l + sLeft;
-        var y = pc.t + sTop;
 
         var sw = parseInt(this.iframe.dojo.byId("displayImageWidth").value);
-        var sh = parseInt(this.iframe.dojo.byId("displayImageHeight").value);
-
-
-        var w = (x + pc.w > sw) ? sw -x-1 : pc.w;
-
-        var h = (y + pc.h > sh) ? sh - y-1: pc.h;
+        var sh = parseInt(this.iframe.dojo.byId("displayImageHeight").value);       
+                
+        var x = 0;
+        var y = 0;
+        var w = pc.w;
+        var h = pc.h;
+        
+        if(pc.l < 0){
+        	w = pc.w + pc.l;
+        }
+        if(pc.t < 0){
+        	h = pc.h + pc.t;
+        }        
+        
+        if(pc.l > 0 && (pc.l+pc.w) < sw){
+        	x = pc.l;
+        	w = pc.w;
+        }
+        if(pc.t > 0 && (pc.t+pc.h) < sh){
+        	y = pc.t;
+        	h = pc.h;
+        }
+        
+        if((pc.l+pc.w) > sw){
+        	x = pc.l;
+        	w = (sw - pc.l) - 1;
+        }
+        if((pc.t+pc.h) > sh){
+        	y = pc.t;
+        	h = (sh - pc.t) - 1;
+        }
+        
         var val ="";
         val+="/crop_w/" + parseInt(w);
         val+="/crop_h/" + parseInt(h) ;
