@@ -25,18 +25,16 @@ package com.liferay.portal.util;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.lucene.analysis.SimpleAnalyzer;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
+import org.apache.lucene.index.*;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
@@ -53,16 +51,14 @@ import com.liferay.util.lucene.KeywordsUtil;
  */
 public class LuceneUtil {
 
-	public static void addTerm(
-			BooleanQuery booleanQuery, String field, String text)
-		throws ParseException {
+	public static void addTerm( BooleanQuery booleanQuery, String field, String text) throws ParseException {
 
 		if (Validator.isNotNull(text)) {
 			if (text.indexOf(StringPool.SPACE) == -1) {
 				text = KeywordsUtil.toWildcard(text);
 			}
 
-			QueryParser parser = new QueryParser(Version.LUCENE_CURRENT, field, new SimpleAnalyzer());
+			QueryParser parser = new QueryParser(Version.LUCENE_CURRENT, field, new SimpleAnalyzer(Version.LUCENE_CURRENT));
 			Query query = parser.parse(text);
 
 			booleanQuery.add(query, BooleanClause.Occur.SHOULD);
@@ -89,21 +85,24 @@ public class LuceneUtil {
 		return IndexReader.open(FSDirectory.open(new File(getLuceneDir(companyId))));
 	}
 
-	public static IndexSearcher getSearcher(String companyId)
-		throws IOException {
+    public static IndexSearcher getSearcher ( String companyId ) throws IOException {
 
-		return new IndexSearcher(FSDirectory.open(new File(getLuceneDir(companyId))));
-	}
+        Directory directory = FSDirectory.open( new File( getLuceneDir( companyId ) ) );
+        DirectoryReader ireader = DirectoryReader.open( directory );
+
+        return new IndexSearcher( ireader );
+    }
 
 	public static IndexWriter getWriter(String companyId) throws IOException {
 		return getWriter(companyId, false);
 	}
 
-	public static IndexWriter getWriter(String companyId, boolean create)
-		throws IOException {
+    public static IndexWriter getWriter ( String companyId, boolean create ) throws IOException {
 
-		return new IndexWriter(
-				FSDirectory.open(new File(getLuceneDir(companyId))), new SimpleAnalyzer(), create,MaxFieldLength.UNLIMITED);
-	}
+        Directory directory = FSDirectory.open( new File( getLuceneDir( companyId ) ) );
+        IndexWriterConfig config = new IndexWriterConfig( Version.LUCENE_CURRENT, new SimpleAnalyzer( Version.LUCENE_CURRENT ) );
+
+        return new IndexWriter( directory, config );
+    }
 
 }

@@ -8,7 +8,6 @@ import java.util.Map;
 
 import javax.mail.MessagingException;
 
-import org.apache.lucene.queryParser.ParseException;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;

@@ -37,7 +37,7 @@ import javax.swing.text.rtf.RTFEditorKit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.document.DateField;
+import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Field;
 import org.apache.poi.hdf.extractor.WordDocument;
 import org.apache.pdfbox.pdfparser.PDFParser;
@@ -91,7 +91,7 @@ public class LuceneFields {
 			return getDate(field);
 		}
 		else {
-			return new Field (field, DateField.dateToString(date), Field.Store.YES, Field.Index.NOT_ANALYZED);
+			return new Field (field, DateTools.dateToString( date, DateTools.Resolution.MILLISECOND ), Field.Store.YES, Field.Index.NOT_ANALYZED);
 		}
 	}
 
