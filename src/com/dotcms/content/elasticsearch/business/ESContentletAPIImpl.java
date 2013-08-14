@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.queryParser.ParseException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 
@@ -481,15 +480,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
-    public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset,String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, ParseException  {
+    public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset,String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         return searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles, PermissionAPI.PERMISSION_READ);
     }
 
-    public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,DotSecurityException, ParseException {
+    public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,DotSecurityException {
     	return searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles, requiredPermission, false);
     }
 
-    public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException, ParseException {
+    public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException {
         PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
         contents.setTotalResults(list.getTotalResults());
@@ -954,7 +953,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         try{
         	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        }catch (ParseException e) {
+        }catch (Exception e) {
             throw new DotDataException("Unable look up related content",e);
         }
 
@@ -979,7 +978,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         try{
         	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        }catch (ParseException e) {
+        }catch (Exception e) {
             throw new DotDataException("Unable look up related content",e);
         }
 
@@ -2551,7 +2550,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return result;
     }
 
-    public List<Contentlet> checkoutWithQuery(String luceneQuery, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, ParseException {
+    public List<Contentlet> checkoutWithQuery(String luceneQuery, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         List<Contentlet> result = new ArrayList<Contentlet>();
         List<Contentlet> cons = search(luceneQuery, 0, -1, "", user, respectFrontendRoles);
         for (Contentlet contentlet : cons) {
@@ -2560,7 +2559,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return result;
     }
 
-    public List<Contentlet> checkout(String luceneQuery, User user,boolean respectFrontendRoles, int offset, int limit) throws DotDataException,DotSecurityException, DotContentletStateException, ParseException {
+    public List<Contentlet> checkout(String luceneQuery, User user,boolean respectFrontendRoles, int offset, int limit) throws DotDataException,DotSecurityException, DotContentletStateException {
         List<Contentlet> result = new ArrayList<Contentlet>();
         List<Contentlet> cons = search(luceneQuery, limit, offset, "", user, respectFrontendRoles);
         for (Contentlet contentlet : cons) {

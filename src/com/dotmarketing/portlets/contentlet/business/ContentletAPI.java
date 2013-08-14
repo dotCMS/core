@@ -8,8 +8,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.queryParser.ParseException;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -254,9 +252,8 @@ public interface ContentletAPI {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 */
-	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException, ParseException;
+	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException;
 
 	/**
 	 * The search here takes a lucene query and pulls LuceneHits for you.  You can pass sortBy as null if you do not 
@@ -270,12 +267,10 @@ public interface ContentletAPI {
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return
-	 * @throws ParseException
 	 * @throws DotSecurityException if user is null and respectFrontendRoles is false
 	 * @throws DotDataException 
 	 */
-
-	public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws ParseException, DotSecurityException, DotDataException;
+	public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
 	
 	/**
 	 * Publishes all related HTMLPage
@@ -833,9 +828,8 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException
-	 * @throws ParseException 
 	 */
-	public List<Contentlet> checkoutWithQuery(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException, ParseException;
+	public List<Contentlet> checkoutWithQuery(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 	
 	/**
 	 * Allows you to checkout contents based on a lucene query so it can be altered and checked in, in a paginated fashion 
@@ -851,9 +845,8 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException
-	 * @throws ParseException 
 	 */
-	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException, DotContentletStateException, ParseException;
+	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException, DotContentletStateException;
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
@@ -1334,9 +1327,8 @@ public interface ContentletAPI {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 */
-	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, ParseException;
+	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
@@ -1353,9 +1345,8 @@ public interface ContentletAPI {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 */
-	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException, ParseException;
+	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException;
 
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
@@ -1374,9 +1365,8 @@ public interface ContentletAPI {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 */
-	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException, ParseException;
+	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException;
 
 	/**
 	 * Will update contents that reference the given folder to point to it's parent folder, if it's a top folder it will set folder to be SYSTEM_FOLDER

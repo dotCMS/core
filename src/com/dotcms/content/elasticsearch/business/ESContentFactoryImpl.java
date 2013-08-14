@@ -750,7 +750,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         SearchResponse response = client.getClient().prepareSearch()
                 .setQuery( builder ).addFields("inode","identifier")
                 .setSize( limit ).setFrom( offset ).execute().actionGet();
-        SearchHits hits = response.hits();
+        SearchHits hits = response.getHits();
         List<Contentlet> cons = new ArrayList<Contentlet>();
 
         for ( SearchHit hit : hits ) {
@@ -840,7 +840,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 			SearchResponse response = request.setIndices((live ? info.live : info.working))
 			        .addFields("inode","identifier").execute().actionGet();
-			SearchHits hits = response.hits();
+			SearchHits hits = response.getHits();
 			Contentlet contentlet = find(hits.getAt(0).field("inode").getValue().toString());
 			return contentlet;
 		}
@@ -973,7 +973,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			        setSize(limit).setFrom(offset).addFields("inode","identifier").execute()
 					.actionGet();
 
-			SearchHits hits = response.hits();
+			SearchHits hits = response.getHits();
 
 			List<Contentlet> cons = new ArrayList<Contentlet>();
 			for (int i = 0; i < hits.getHits().length; i++) {
@@ -1242,7 +1242,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         CountRequestBuilder crb = client.prepareCount();
         crb.setQuery(qb);
         crb.setIndices(indexToHit);
-        return crb.execute().actionGet().count();
+        return crb.execute().actionGet().getCount();
 	}
 	
 	private SearchRequestBuilder createRequest(Client client, String query) {
