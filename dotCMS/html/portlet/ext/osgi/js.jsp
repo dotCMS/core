@@ -36,21 +36,22 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
 		if(!hashValue || hashValue.length ==0){
 			return;
 		}
-		var myCp = dijit.byId(this.baseDiv);
 		var hanger = dojo.byId("osgiMain");
 		if(!hanger){
-			return;
+            return;
 		}
-		if (myCp) {
-			myCp.attr("content","");//myCp.destroyRecursive(true);
-		}else{
-		myCp = new dojox.layout.ContentPane({
-			id : this.baseDiv
-		}).placeAt("osgiMain");
+
+        var myCp = dijit.byId("osgiMainBundles");
+        if (myCp) {
+            myCp.destroyRecursive(false);
 		}
-		myCp.attr("href", hashValue);
-		dojo.parser.parse("osgiMain");
-	
+
+        myCp = new dojox.layout.ContentPane({
+            id: "osgiMainBundles",
+            preventCache: true
+        }).placeAt("osgiMain");
+
+        myCp.attr("href", hashValue );
 	}
 });
 
@@ -86,7 +87,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		};
 		dijit.byId('savingOSGIDialog').show();
 		dojo.xhrPut(xhrArgs);
-		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
 	deploy : function(){
@@ -112,7 +113,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		};
 		dijit.byId('savingOSGIDialog').show();
 		dojo.xhrPut(xhrArgs);
-		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
 	start : function(bundleId){
@@ -132,7 +133,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		};
 		dijit.byId('savingOSGIDialog').show();
 		dojo.xhrPut(xhrArgs);
-		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
 	stop : function(bundleId){
@@ -152,7 +153,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		};
 		dijit.byId('savingOSGIDialog').show();
 		dojo.xhrPut(xhrArgs);
-		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
 	add : function(){
@@ -178,7 +179,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		});
 		dijit.byId('uploadOSGIDialog').hide();
 		dijit.byId('savingOSGIDialog').show();
-		setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
     reboot : function(askForConfirmation){
@@ -206,7 +207,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
             };
             dijit.byId('savingOSGIDialog').show();
             dojo.xhrPut(xhrArgs);
-            setTimeout(function() {mainAdmin.refresh();dijit.byId('savingOSGIDialog').hide();},7000);
+            setTimeout(function() {mainAdmin.refresh();},7000);
         }
 	},
 
