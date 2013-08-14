@@ -205,7 +205,15 @@ var editButtonRow="editEventButtonRow";
     	  		if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
     				CategoryAPI catAPI = APILocator.getCategoryAPI();
     				formValue =  (List<Category>) catAPI.getParents(contentlet, user, false);
-    	  			catCounter++;
+
+    				try {
+	    				Category category = catAPI.find(f.getValues(), user, false);
+		    			if(category != null && catAPI.canUseCategory(category, user, false)) {
+		    				catCounter++;
+		    			}
+	    			} catch(Exception e) {
+	    				Logger.debug(this, "Error in CategoryAPI", e);
+	    			}
     	  		} else {
     				formValue = (Object) contentletForm.getFieldValueByVar(f.getVelocityVarName());
     	  		}
