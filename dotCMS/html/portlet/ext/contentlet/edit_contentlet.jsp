@@ -328,6 +328,7 @@ var editButtonRow="editContentletButtonRow";
 						    				catCounter++;
 						    			}
 					    			} catch(Exception e) {
+					    				Logger.debug(this, "Error in CategoryAPI", e);
 					    			}
 					    			formValue = (List<Category>) formCategoryList;
 					    	  	} else {
