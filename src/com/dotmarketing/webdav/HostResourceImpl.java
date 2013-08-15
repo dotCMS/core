@@ -160,7 +160,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			List<FileAsset> fas = APILocator.getFileAssetAPI().findFileAssetsByHost(host, user, false);
 			for(FileAsset fa:fas){
 			    if(!fa.isArchived()) {
-			        FileResourceImpl fr = new FileResourceImpl(fa, path + host.getHostname() + "/" + fa.getPath());
+			        FileResourceImpl fr = new FileResourceImpl(fa, path + fa.getFileName());
 				    frs.add(fr);
 			    }
 			}
