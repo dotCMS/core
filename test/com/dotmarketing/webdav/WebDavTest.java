@@ -18,12 +18,18 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.ettrema.httpclient.File;
 import com.ettrema.httpclient.Folder;
@@ -31,6 +37,7 @@ import com.ettrema.httpclient.Host;
 import com.ettrema.httpclient.Resource;
 import com.ibm.icu.util.Calendar;
 import com.liferay.portal.model.User;
+import com.liferay.util.Encryptor;
 
 public class WebDavTest extends TestBase {
 	@Test
@@ -129,6 +136,10 @@ public class WebDavTest extends TestBase {
         Assert.assertEquals(newContent,new String(out.toByteArray()));
 	}
 	
+	/**
+	 * https://github.com/dotCMS/dotCMS/issues/3656
+	 * @throws Exception
+	 */
 	@Test
 	public void copy_under_host() throws Exception {
 	    User user=APILocator.getUserAPI().getSystemUser();
@@ -169,6 +180,10 @@ public class WebDavTest extends TestBase {
         Assert.assertEquals("this is a test text", out2.toString());
 	}
 	
+	/**
+	 * https://github.com/dotCMS/dotCMS/issues/3654
+	 * @throws Exception
+	 */
 	@Test
 	public void delete_under_host() throws Exception {
 	    User user=APILocator.getUserAPI().getSystemUser();
@@ -208,6 +223,66 @@ public class WebDavTest extends TestBase {
         
         ContentletVersionInfo vi = APILocator.getVersionableAPI().getContentletVersionInfo(file.getIdentifier(), 1);
         Assert.assertTrue(vi.isDeleted());
+	}
+	
+	/**
+	 * https://github.com/dotCMS/dotCMS/issues/3650
+	 * @throws Exception
+	 */
+	@Test
+	public void autoput_without_pub_permissions() throws Exception {
+	    User user=APILocator.getUserAPI().getSystemUser();
+	    com.dotmarketing.beans.Host demo=APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+	    com.dotmarketing.portlets.folders.model.Folder folder=
+	            APILocator.getFolderAPI().createFolders("/wt/"+System.currentTimeMillis(), demo, user, false);
+	    
+	    User limited=APILocator.getUserAPI().createUser(System.currentTimeMillis()+"", System.currentTimeMillis()+"@dotcms.com");
+	    limited.setPasswordEncrypted(true);
+	    limited.setPassword(Encryptor.digest("123"));
+	    APILocator.getUserAPI().save(limited, user, false);
+	    Role role=APILocator.getRoleAPI().getUserRole(limited);
+	    
+	    HibernateUtil.startTransaction();
+	    try {
+	        APILocator.getPermissionAPI().save(
+	            new Permission(demo.getIdentifier(),role.getId(),
+	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_USE),demo,user,false);
+	    
+	        APILocator.getPermissionAPI().save(
+	            new Permission(PermissionAPI.permissionTypes.get("FOLDERS"),demo.getIdentifier(),role.getId(),
+	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN|PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
+	    
+	        APILocator.getPermissionAPI().save(
+	            new Permission(PermissionAPI.permissionTypes.get("FILES"),demo.getIdentifier(),role.getId(),
+                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
+	    
+	        APILocator.getPermissionAPI().save(
+	            new Permission(PermissionAPI.permissionTypes.get("CONTENTLETS"),demo.getIdentifier(),role.getId(),
+                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
+	        
+	        HibernateUtil.commitTransaction();
+	    }
+	    catch(Exception ex) {
+	        HibernateUtil.rollbackTransaction();
+	        throw ex;
+	    }
+	    
+	        
+	    final HttpServletRequest req=ServletTestRunner.localRequest.get();
+        Folder hh=new Host(req.getServerName(),"/webdav/autopub/demo.dotcms.com/wt/"+folder.getName(),
+                req.getServerPort(),limited.getEmailAddress(),"123",null,null);
+        
+        java.io.File tmp=java.io.File.createTempFile("filetest", ".txt");
+        FileUtils.writeStringToFile(tmp, "this is a test text 888");
+        
+        hh.uploadFile(tmp);
+        
+        Thread.sleep(1000);
+        
+        List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, user, false);
+        Assert.assertEquals(1, files.size());
+        Assert.assertFalse(files.get(0).isLive());
+        
 	}
 }
 

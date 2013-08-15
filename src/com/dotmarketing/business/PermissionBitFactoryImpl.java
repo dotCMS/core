@@ -1809,7 +1809,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		} else {
 			toPersist = findPermissionByInodeAndRole(p.getInode(), p.getRoleId(), p.getType());
 			if (toPersist == null || toPersist.getId()== 0 ) {
-				toPersist = new Permission(p.getInode(), p.getRoleId(), 0);
+				toPersist = new Permission(p.getType(), p.getInode(), p.getRoleId(), 0);
 				newPermission = true;
 			}
 			if((toPersist.getPermission() | p.getPermission()) == toPersist.getPermission() && !newPermission)
