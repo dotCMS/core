@@ -121,11 +121,6 @@ public class SiteSearchWebAPI implements ViewTool {
                 return results;
     	    }
         }
-
-        //https://github.com/elasticsearch/elasticsearch/issues/2980
-        if (query.contains( "/" )) {
-            query = query.replaceAll( "/", "\\\\/" );
-        }
         
         return siteSearchAPI.search(indexName, query, start, rows);
 	}
@@ -134,13 +129,7 @@ public class SiteSearchWebAPI implements ViewTool {
 	
 	public Map<String, Facet> getFacets(String indexName, String query) throws DotDataException{
 
-        //https://github.com/elasticsearch/elasticsearch/issues/2980
-        if ( query.contains( "/" ) ) {
-            query = query.replaceAll( "/", "\\\\\\\\/" );
-        }
-
 		return  siteSearchAPI.getFacets(indexName, query);
-		
 	}
 	
 	/**
