@@ -1603,6 +1603,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	            }
 	        }
 
+            //https://github.com/elasticsearch/elasticsearch/issues/2980
+            if (query.contains( "/" )) {
+                query = query.replaceAll( "/", "\\\\/" );
+            }
+
 	        if (UtilMethods.isSet(sortBy))
 	            result.setSortBy(translateQuerySortBy(sortBy, query));
 
