@@ -685,7 +685,7 @@ dojo.require("dojo.cookie");
 			<% } %>
 		<!-- End Server Info -->
 		<div dojoType="dijit.layout.ContentPane" style="width:400px;height:150px;" class="box" hasShadow="true" id="dotBackEndDialogCP"></div>
-		<div class="copyright">&copy;<%=new GregorianCalendar().get(Calendar.YEAR)%> dotCMS Inc. <%= LanguageUtil.get(pageContext, "All-rights-reserved") %>.</div>
+		<div class="copyright">&copy;<%=new GregorianCalendar().get(Calendar.YEAR)%> dotCMS Software, LLC <%= LanguageUtil.get(pageContext, "All-rights-reserved") %>.</div>
 	</div>
 
 	<!-- Support pop up -->
