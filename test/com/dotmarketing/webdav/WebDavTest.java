@@ -21,6 +21,7 @@ import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.UUIDGenerator;
@@ -166,6 +167,47 @@ public class WebDavTest extends TestBase {
         f2.download(out2, null);
         Assert.assertEquals("this is a test text", out1.toString());
         Assert.assertEquals("this is a test text", out2.toString());
+	}
+	
+	@Test
+	public void delete_under_host() throws Exception {
+	    User user=APILocator.getUserAPI().getSystemUser();
+        String hostid=APILocator.getHostAPI().findByName("demo.dotcms.com", user, false).getIdentifier();
+        String filename="test_"+UUIDGenerator.generateUuid()+".txt";
+        java.io.File tmp=java.io.File.createTempFile("filetest", "folder");
+        tmp.delete();
+        tmp.mkdirs();
+        tmp = new java.io.File(tmp,filename);
+        FileUtils.writeStringToFile(tmp, "this is a test text");
+        
+        Contentlet file = new Contentlet();
+        file.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, filename);
+        file.setStringProperty(FileAssetAPI.TITLE_FIELD, filename);
+        file.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD,hostid);
+        file.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
+        file.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+        file.setLanguageId(1);
+        file.setHost(hostid);
+        file.setFolder("SYSTEM_FOLDER");
+        file = APILocator.getContentletAPI().checkin(file, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(file.getInode());
+        
+        
+        final HttpServletRequest req=ServletTestRunner.localRequest.get();
+        Host hh=new Host(req.getServerName(),"/webdav/autopub",req.getServerPort(),"admin@dotcms.com","admin",null,null);
+        
+        Folder demo=(Folder)hh.child("demo.dotcms.com");
+        File f1=(File)demo.child(filename);
+        f1.delete();
+        
+        for(Resource rr: demo.children()) {
+            if(rr instanceof File) {
+                Assert.assertNotSame(filename, ((File)rr).name);
+            }
+        }
+        
+        ContentletVersionInfo vi = APILocator.getVersionableAPI().getContentletVersionInfo(file.getIdentifier(), 1);
+        Assert.assertTrue(vi.isDeleted());
 	}
 }
 
