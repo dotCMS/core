@@ -267,9 +267,9 @@ dojo.require("dojox.layout.ContentPane");
 		var k = 0;
 		$(document.getElementById(formId)).getElementsBySelector('textarea').each(
 				function (textareaObj) {
-					if ((textareaObj.id != "") && (codeMirrorEditors[textareaObj.id] != null)) {
+					if ((textareaObj.id != "") && (aceEditor != null)) {
 						try {
-							document.getElementById(textareaObj.id).value=codeMirrorEditors[textareaObj.id].getCode();
+							document.getElementById(textareaObj.id).value=aceEditor.getValue();
 						} catch (e) {
 						}
 					}
