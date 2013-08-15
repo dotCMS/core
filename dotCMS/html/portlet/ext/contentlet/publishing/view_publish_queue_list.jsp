@@ -157,7 +157,6 @@
    }
 
    function deleteBundle(url) {
-		alert(url);
 	   var ids="";
 		var nodes = dojo.query('.bundle_to_delete');
 		   dojo.forEach(nodes, function(node) {
