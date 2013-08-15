@@ -3,7 +3,7 @@
 <%@page import="java.util.Calendar"%><table border="0" cellpadding="0" cellspacing="0" width="95%">
 <tr>
 	<td valign="top">
-			<p>Copyright (c) 2000-<%=new GregorianCalendar().get(Calendar.YEAR)%> dotCMS, Inc. All rights reserved.</p>
+			<p>Copyright (c) 2000-<%=new GregorianCalendar().get(Calendar.YEAR)%> dotCMS Software, LLC. All rights reserved.</p>
 	
 			<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 			IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
