@@ -897,7 +897,7 @@
 		var usersStore = new dojo.data.ItemFileWriteStore({data: usersData });
 		usersGrid.setStore(usersStore);
 
-		dojo.style(dijit.byId('removeUsersButton').domNode, { display: '' });
+		dijit.byId("removeUsersButton").setAttribute("disabled", false);
 
 	}
 
