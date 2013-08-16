@@ -506,7 +506,7 @@ bottom="/html/common/box_bottom.jsp">
 					</dd>
 				</dl>
 				<div class="buttonRow">
-					<button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onclick="doFilter()"> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %></button>
+					<button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" type="submit" onclick="doFilter()"> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %></button>
 					<button dojoType="dijit.form.Button" name="resetButton"  iconClass="resetIcon" onclick="resetFilters()"><%=LanguageUtil.get(pageContext, "reset")%></button>    
 				</div>
 			</div>
@@ -536,3 +536,17 @@ bottom="/html/common/box_bottom.jsp">
 dojo.ready(resizeBrowser);
 </script>
 
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("keywords"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script> 

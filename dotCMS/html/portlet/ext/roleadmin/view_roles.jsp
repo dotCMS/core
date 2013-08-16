@@ -105,7 +105,20 @@
 	<input dojoType="dijit.form.TextBox" onkeyup="filterRoles()" trim="true" id="rolesFilter" >
 	<button dojoType="dijit.form.Button" onclick="clearRolesFilter()" iconClass="resetIcon" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 </div>
-
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("rolesFilter"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script>
 
 <div class="buttonBoxRight">
 	<span id="editRoleButtonWrapper" style="display:none;">
