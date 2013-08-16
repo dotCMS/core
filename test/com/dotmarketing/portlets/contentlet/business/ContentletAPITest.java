@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.lucene.queryParser.ParseException;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -510,13 +509,11 @@ public class ContentletAPITest extends ContentletBaseTest {
      *
      * @throws com.dotmarketing.exception.DotSecurityException
      *
-     * @throws org.apache.lucene.queryParser.ParseException
-     *
      * @see ContentletAPI
      * @see Contentlet
      */
     @Test
-    public void searchWithPermissions () throws DotSecurityException, DotDataException, ParseException {
+    public void searchWithPermissions () throws DotSecurityException, DotDataException {
 
         //Getting a known contentlet
         Contentlet contentlet = contentlets.iterator().next();
@@ -538,13 +535,11 @@ public class ContentletAPITest extends ContentletBaseTest {
      *
      * @throws com.dotmarketing.exception.DotSecurityException
      *
-     * @throws org.apache.lucene.queryParser.ParseException
-     *
      * @see ContentletAPI
      * @see Contentlet
      */
     @Test
-    public void searchIndex () throws DotDataException, DotSecurityException, ParseException {
+    public void searchIndex () throws DotDataException, DotSecurityException {
 
         //Getting a known contentlet
         Contentlet contentlet = contentlets.iterator().next();

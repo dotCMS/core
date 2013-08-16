@@ -31,7 +31,6 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.lucene.queryParser.ParseException;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -87,7 +86,6 @@ public class ContentResource extends WebResource {
      * @param limit how many results return
      * @param offset how many results skip 
      * @return json array of objects. each object with inode and identifier
-     * @throws ParseException
      * @throws DotSecurityException
      * @throws DotDataException
      * @throws JSONException
@@ -95,7 +93,7 @@ public class ContentResource extends WebResource {
     @GET
     @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String indexSearch(@Context HttpServletRequest request, @PathParam("query") String query, @PathParam("sortby") String sortBy, @PathParam("limit") int limit, @PathParam("offset") int offset) throws ParseException, DotSecurityException, DotDataException, JSONException {
+    public String indexSearch(@Context HttpServletRequest request, @PathParam("query") String query, @PathParam("sortby") String sortBy, @PathParam("limit") int limit, @PathParam("offset") int offset) throws DotSecurityException, DotDataException, JSONException {
         InitDataObject initData = init(null, true, request, false);
 
         List<ContentletSearch> searchIndex = APILocator.getContentletAPI().searchIndex(query, limit, offset, sortBy, initData.getUser(), true);

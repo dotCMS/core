@@ -8,8 +8,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.queryParser.ParseException;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -1119,9 +1117,8 @@ public interface ContentletAPIPostHook {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 */
-	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, ParseException;
+	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
@@ -1138,9 +1135,8 @@ public interface ContentletAPIPostHook {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 */
-	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException, ParseException;
+	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException;
 
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
@@ -1159,9 +1155,8 @@ public interface ContentletAPIPostHook {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 */
-	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException, DotSecurityException, ParseException;
+	public void searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Reindexes content under a given host + refreshes the content from cache

@@ -21,7 +21,7 @@ NodeStats[] nsArray=ns.getNodes();
 <table class="listingTable">
    <tr>
       <td> <strong>Node name</strong> </td>
-      <td> <%= nsArray[i].node().name() %> <%=nsArray[i].node().isMasterNode() ? "(master)" : ""  %> </td>
+      <td> <%= nsArray[i].getNode().name() %> <%=nsArray[i].getNode().isMasterNode() ? "(master)" : ""  %> </td>
    </tr>
    <tr>
       <td> Host Name </td>
@@ -29,15 +29,15 @@ NodeStats[] nsArray=ns.getNodes();
    </tr>
    <tr>
       <td> Address </td>
-      <td> <%= nsArray[i].node().address() %> </td>
+      <td> <%= nsArray[i].getNode().address() %> </td>
    </tr>
    <tr>
       <td> Store Size </td>
-      <td> <%= nsArray[i].indices().store().getSize().toString() %> </td>
+      <td> <%= nsArray[i].getIndices().getStore().getSize().toString() %> </td>
    </tr>
    <tr>
       <td> Document Count </td>
-      <td> <%= nsArray[i].indices().docs().count() %> </td>
+      <td> <%= nsArray[i].getIndices().getDocs().getCount() %> </td>
    </tr>
 </table>
 <% } %>

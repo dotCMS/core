@@ -26,7 +26,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.queryParser.ParseException;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -270,8 +269,6 @@ public class URLMapFilter implements Filter {
 						Logger.warn(this, "DotDataException", e);
 					} catch (DotSecurityException e) {
 						Logger.warn(this, "DotSecurityException", e);
-					} catch (ParseException e) {
-						Logger.warn(this, "ParseException", e);
 					} catch(java.lang.IndexOutOfBoundsException iob){
 						Logger.warn(this, "No urlmap contentlent found uri:" + url + " query:" + query.toString());
 					}catch(Exception e){

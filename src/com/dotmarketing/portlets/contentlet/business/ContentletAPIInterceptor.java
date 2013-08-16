@@ -7,8 +7,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 
-import org.apache.lucene.queryParser.ParseException;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -335,7 +333,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkout(java.lang.String, com.liferay.portal.model.User, boolean)
 	 */
-	public List<Contentlet> checkoutWithQuery(String luceneQuery, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, ParseException {
+	public List<Contentlet> checkoutWithQuery(String luceneQuery, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkoutWithQuery(luceneQuery, user, respectFrontendRoles);
 			if(!preResult){
@@ -353,7 +351,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkout(java.lang.String, com.liferay.portal.model.User, boolean, int, int)
 	 */
-	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException,	DotContentletStateException, ParseException {
+	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException,	DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkout(luceneQuery, user, respectFrontendRoles, offset, limit);
 			if(!preResult){
@@ -1115,7 +1113,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#indexSearch(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean)
 	 */
-	public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)	throws ParseException, DotSecurityException, DotDataException {
+	public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)	throws DotSecurityException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
 			if(!preResult){
@@ -1515,7 +1513,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#search(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean, int)
 	 */
-	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,	DotSecurityException, ParseException {
+	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
 			if(!preResult){
@@ -2043,7 +2041,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean)
 	 */
-	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException, ParseException {
+	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
 			if(!preResult){
@@ -2061,7 +2059,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean, int)
 	 */
-	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,	DotSecurityException, ParseException {
+	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
 			if(!preResult){
@@ -2079,7 +2077,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean, int, boolean)
 	 */
-	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,	DotSecurityException, ParseException {
+	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
 			if(!preResult){

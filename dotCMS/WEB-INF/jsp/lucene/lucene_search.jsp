@@ -8,7 +8,7 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
-<%@page import="com.liferay.util.cal.CalendarUtil"%><%@page import="org.apache.lucene.queryParser.ParseException"%>
+<%@page import="com.liferay.util.cal.CalendarUtil"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.business.Layout"%>
@@ -73,13 +73,13 @@ if(query == null){
 }else{
 
 	startAPISearchPull = Calendar.getInstance().getTimeInMillis();
-	
-	
+
+
 	try{
-	
+
 		afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
 		startAPIPull = Calendar.getInstance().getTimeInMillis();
-		
+
 
 		if (UtilMethods.isSet(query)) {
 			iresults =  APILocator.getContentletAPI().searchIndex(query,new Integer(limit),new Integer(offset),sortBy,userForPull,true);
@@ -90,7 +90,7 @@ if(query == null){
 			cons = new ArrayList();
 		}
 		afterAPIPull = Calendar.getInstance().getTimeInMillis();
-		
+
 		if(cons.size() > 0 && reindex){
 			for(Contentlet con : cons) {
 				con.setLowIndexPriority(true);
@@ -98,9 +98,9 @@ if(query == null){
 				//APILocator.getDistributedJournalAPI().addContentIndexEntry(con);
 			}
 		}
-		
+
 	}
-	catch(ParseException pe){
+	catch(Exception pe){
 		iresults = new ArrayList();
 		nastyError = pe.toString();
 	}

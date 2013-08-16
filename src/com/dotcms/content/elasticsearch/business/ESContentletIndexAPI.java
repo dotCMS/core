@@ -14,7 +14,7 @@ import java.util.Map;
 
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
@@ -97,7 +97,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 		CreateIndexResponse cir = iapi.createIndex(indexName, null, shards);
 		int i = 0;
-		while(!cir.acknowledged()){
+		while(!cir.isAcknowledged()){
 
 			try {
 				Thread.sleep(100);
@@ -516,7 +516,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
         List<String> existingIndex=new ArrayList<String>();
         for(String idx : indexNames)
-            if(client.admin().indices().exists(new IndicesExistsRequest(idx)).actionGet().exists())
+            if(client.admin().indices().exists(new IndicesExistsRequest(idx)).actionGet().isExists())
                 existingIndex.add(idx);
         indexNames=existingIndex;
 
