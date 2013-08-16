@@ -62,7 +62,7 @@ public class EventAPIImpl implements EventAPI {
 	 * filtering by the events that the given user is able to see, or if the
 	 * given user is null it filters by all the events marked for frontend
 	 * visibility
-	 * 
+	 *
 	 * @param fromDate
 	 * @param endDate
 	 * @param tags
@@ -80,13 +80,13 @@ public class EventAPIImpl implements EventAPI {
 		events = perAPI.filterCollection(events, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 		return events;
 	}
-	
+
 	/**
 	 * Retrieves a list of event filtering by the given parameters, also
 	 * filtering by the events that the given user is able to see, or if the
 	 * given user is null it filters by all the events marked for frontend
 	 * visibility
-	 * 
+	 *
 	 * @param hostId
 	 * @param fromDate
 	 * @param endDate
@@ -109,7 +109,7 @@ public class EventAPIImpl implements EventAPI {
 
 	/**
 	 * Retrieves an event based on its identifier,
-	 * 
+	 *
 	 * @param id
 	 *            Identifier of the event to find
 	 * @param live
@@ -125,7 +125,7 @@ public class EventAPIImpl implements EventAPI {
 		cont = conAPI.find(ev.getInode(), user, respectFrontendRoles);
 		if (!perAPI.doesUserHavePermission(cont, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permissions to access this event");
-	
+
 		if(ev.isRecurrent()) {
 			String[] recDates = RecurrenceUtil.getRecurrenceDates(id);
 			if(recDates!=null && recDates.length==2){
@@ -139,7 +139,7 @@ public class EventAPIImpl implements EventAPI {
 		}
 		return ev;
 	}
-	
+
 	public Event findbyInode(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Event ev = eventFactory.findbyInode(inode, user, respectFrontendRoles);
 		Contentlet cont = new Contentlet();
@@ -223,7 +223,7 @@ public class EventAPIImpl implements EventAPI {
 		Contentlet cont = new Contentlet();
 		cont = conAPI.find(ev.getInode(), user, respectFrontendRoles);
 		conAPI.relateContent(cont, rel, related, user, respectFrontendRoles);
-		
+
 	}
 
 	public Structure getBuildingStructure() throws DotDataException {
@@ -238,9 +238,9 @@ public class EventAPIImpl implements EventAPI {
 		return eventFactory.getLocationStructure();
 	}
 
-	
+
 	public String createVCalendarInfo(Event event, Date recurrenceStartDate, Date recurrenceEndDate, Host host)
-	{					
+	{
 		StringBuilder result = new StringBuilder(512);
 		result.ensureCapacity(128);
 
@@ -249,18 +249,18 @@ public class EventAPIImpl implements EventAPI {
 			SimpleDateFormat timeformat = new SimpleDateFormat("HHmmss");
 
 			java.util.Calendar gcal = new GregorianCalendar();
-			
+
 			Date startDate = event.getStartDate();
 			Date endDate = event.getEndDate();
 
 			if(UtilMethods.isSet(recurrenceStartDate)){
 				startDate = recurrenceStartDate;
 			}
-			
+
 	        if(UtilMethods.isSet(recurrenceEndDate)){
 				endDate = recurrenceEndDate;
 			}
-			
+
 			gcal.setTime(startDate);
 			String startTime = timeformat.format(gcal.getTime());
 
@@ -299,7 +299,7 @@ public class EventAPIImpl implements EventAPI {
 		}
 		return result.toString();
 	}
-	
+
 	public Event disconnectEvent(Event event, User user, Date startDate, Date endDate) throws DotDataException, DotSecurityException{
 		Event newEvent = null;
 		if(event!=null && event.isRecurrent()){
@@ -323,15 +323,18 @@ public class EventAPIImpl implements EventAPI {
 			newEvent.setEndDate(endDate);
 			newEvent.setInode("");
 			event.addDateToIgnore(startDate);
+
+			List<Category> eventCategories =  APILocator.getCategoryAPI().getParents(event, user, true);
+
 			Contentlet oldCont  = conAPI.checkout(event.getInode(), user, true);
 			oldCont.setStringProperty("recurrenceDatesToIgnore", event.getStringProperty("recurrenceDatesToIgnore"));
 			oldCont = conAPI.checkin(oldCont, user, true);
 			if(event.isLive())
 			    APILocator.getVersionableAPI().setLive(oldCont);
-			newEvent = eventFactory.convertToEvent(conAPI.checkin(newEvent, user, true));
+			newEvent = eventFactory.convertToEvent(conAPI.checkin(newEvent, user, true, eventCategories));
 		}
 		return newEvent;
 	}
-	
-	
+
+
 }
