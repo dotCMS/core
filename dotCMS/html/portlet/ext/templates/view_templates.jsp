@@ -168,7 +168,7 @@ function processDelete(inode, referer) {
 			<input type="hidden" name="resetQuery" value="">
 			<input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
 			<input type="text" dojoType="dijit.form.TextBox" style="width:175px;" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
-		    <button dojoType="dijit.form.Button"  onClick="submitfm()" iconClass="searchIcon">
+		    <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
 		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search" )) %>
 		    </button>
 		
@@ -211,6 +211,21 @@ function processDelete(inode, referer) {
 	<div class="yui-u" style="text-align:right; white-space:nowrap" >
 
 	</div>
+	<script language="Javascript">
+		/**
+			focus on search box
+		**/
+		require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+			dojo.require('dojox.timing');
+			t = new dojox.timing.Timer(500);
+			t.onTick = function(){
+			  focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
+			  t.stop();
+			}
+			t.start();
+		});
+    </script>    
+    
 </form>
 
 <form id="fm_publish" method="post">

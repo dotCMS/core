@@ -471,6 +471,20 @@
 		<button dojoType="dijit.form.Button" onClick="clearFilter();" iconClass="closeIcon">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
 		</button>
+        <script language="Javascript">
+			/**
+				focus on search box
+			**/
+			require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+				dojo.require('dojox.timing');
+				t = new dojox.timing.Timer(500);
+				t.onTick = function(){
+				  focusUtil.focus(dom.byId("filter"));
+				  t.stop();
+				}
+				t.start();
+			});
+		</script> 
 	</div>
 </div>
 
