@@ -7,8 +7,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.Searcher;
 import org.apache.lucene.search.TopDocs;
 
 import com.liferay.util.Time;
@@ -51,7 +51,7 @@ public class LuceneHits implements Serializable {
 		recordHits (hits, -1, -1, null, null);
 	}
 
-	public void recordHits(TopDocs hits, int offset, int limit, String sortBy, Searcher searcher)
+	public void recordHits(TopDocs hits, int offset, int limit, String sortBy, IndexSearcher searcher)
 		throws IOException {
 
 		_total = hits.totalHits;

@@ -5,8 +5,6 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import java.util.List;
 
-import org.apache.lucene.queryParser.ParseException;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.Treeable;
@@ -55,26 +53,41 @@ public interface HostAPI {
 	 */
 	public Host findByAlias(String hostName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Marks the given host as archived
-	 * @throws ParseException
-	 * @throws DotContentletStateException
-	 */
-	public void archive(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+    /**
+     * Marks the given host as archived
+     *
+     * @param host
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws DotContentletStateException
+     */
+    public void archive(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 
-	/**
-	 * unmarks the given host as archived
-	 * @throws ParseException
-	 * @throws DotContentletStateException
-	 */
+    /**
+     * unmarks the given host as archived
+     *
+     * @param host
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws DotContentletStateException
+     */
 	public void unarchive(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
-	/**
-	 * Removes the given host plus all assets under it, use with caution
-	 * @throws ParseException
-	 * @throws DotContentletStateException
-	 */
+    /**
+     * Removes the given host plus all assets under it, use with caution
+     *
+     * @param host
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws DotContentletStateException
+     */
 	public void delete(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**

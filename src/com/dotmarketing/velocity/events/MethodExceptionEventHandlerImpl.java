@@ -33,8 +33,8 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		if (e instanceof ParseErrorException) {
 			x = getParseErrorMessage((ParseErrorException) e);
 		}
-		else if(e instanceof org.apache.lucene.queryParser.ParseException){
-			x = getLuceneParseErrorMessage((org.apache.lucene.queryParser.ParseException) e);
+		else if(e instanceof org.apache.lucene.queryparser.classic.ParseException){
+			x = getLuceneParseErrorMessage((org.apache.lucene.queryparser.classic.ParseException) e);
 		}
 		else {
 			x = getErrorMessage( e);
@@ -63,9 +63,9 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		return sw.toString();
 	}
 		
-	private String getLuceneParseErrorMessage(org.apache.lucene.queryParser.ParseException pee) {
+	private String getLuceneParseErrorMessage(org.apache.lucene.queryparser.classic.ParseException pee) {
 		String msg = pee.toString();
-		msg = msg.replaceAll("org.apache.lucene.queryParser.ParseException", "Lucene Parse Error\n");
+		msg = msg.replaceAll("org.apache.lucene.queryparser.classic.ParseException", "Lucene Parse Error\n");
 		java.io.StringWriter sw = new StringWriter();
 		VelocityEngine ve = VelocityUtil.getEngine();
 		VelocityContext context = new VelocityContext();

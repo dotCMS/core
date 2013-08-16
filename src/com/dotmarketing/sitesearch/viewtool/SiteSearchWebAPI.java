@@ -128,9 +128,8 @@ public class SiteSearchWebAPI implements ViewTool {
 	
 	
 	public Map<String, Facet> getFacets(String indexName, String query) throws DotDataException{
-		
+
 		return  siteSearchAPI.getFacets(indexName, query);
-		
 	}
 	
 	/**
