@@ -229,16 +229,16 @@
     <table class="listingTable">
     	<thead>
 	        <tr>
-	            <th width="45" align="center">
+	            <th width="5%" align="center">
 	                <%=LanguageUtil.get(pageContext, "Action") %>
 	            </th>
 	           <!--  <th>
 	                <%=LanguageUtil.get(pageContext, "name") %>
 	            </th>-->
-	            <th width="30%">
+	            <th width="35%">
 	                <%=LanguageUtil.get(pageContext, "Key") %>
 	            </th>
-				<th width="70%">
+				<th width="60%">
 	                <%=LanguageUtil.get(pageContext, "Value") %>
 	            </th>
 	            <!-- <th width="125">
