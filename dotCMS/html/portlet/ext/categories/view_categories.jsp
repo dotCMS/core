@@ -844,7 +844,20 @@ td {font-size: 100%;}
 			<!-- END Permission Tab -->
 			</div>
 		</div>
-
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("catFilter"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script>
 
 
 </liferay:box>

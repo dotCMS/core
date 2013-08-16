@@ -83,7 +83,7 @@ window.location="<portlet:renderURL windowState='<%= WindowState.MAXIMIZED.toStr
 
 
 
-                <button dojoType="dijit.form.Button" iconClass="searchIcon" onClick="submitfm()"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></button>
+                <button dojoType="dijit.form.Button" iconClass="searchIcon" type="submit" onClick="submitfm()"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></button>
                 <button dojoType="dijit.form.Button" iconClass="resetIcon" onClick="resetSearch()"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %></button>
            </div>
 
@@ -170,5 +170,18 @@ window.location="<portlet:renderURL windowState='<%= WindowState.MAXIMIZED.toStr
 	<%} %>
 
 </liferay:box>
-
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("query"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script> 
 </form>

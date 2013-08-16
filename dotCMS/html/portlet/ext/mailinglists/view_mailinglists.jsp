@@ -119,7 +119,7 @@
 		<span style="vertical-align:middle;"><%=LanguageUtil.get(pageContext, "Mailing-List-Title")%>:</span>
 		<span style="vertical-align:middle;"><input type="text" dojoType="dijit.form.TextBox" name="query" id="query" value="<%=com.dotmarketing.util.UtilMethods.isSet(query) ? query : ""%>"></span>
 		<span style="vertical-align:middle;">
-			<button dojoType="dijit.form.Button" onClick="submitSearch()" iconClass="searchIcon">
+			<button dojoType="dijit.form.Button" type="submit" onClick="submitSearch()" iconClass="searchIcon">
 				<%=LanguageUtil.get(pageContext, "Search")%>
 			</button>
 		</span>
@@ -145,7 +145,20 @@
 %>
 </div>
 
-
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("query"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script>
 <input type="hidden" name="<portlet:namespace />cmd" value="">
 <input type="hidden" name="<portlet:namespace />redirect" value="">
 <input type="hidden" name="inode" value="">

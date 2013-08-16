@@ -47,9 +47,23 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 <div class="buttonBoxLeft">
 	<div dojoType="dojo.data.ItemFileReadStore" jsId="test" url="/html/portlet/ext/osgi/available_bundles_json.jsp"></div>
 	<%= LanguageUtil.get(pageContext,"OSGI-AVAIL-BUNDLES") %> : <input dojoType="dijit.form.ComboBox" store="test" searchAttr="label" name="availBundlesCombo" id="availBundlesCombo">
-	<button dojoType="dijit.form.Button" onclick="javascript:bundles.deploy()"><%=LanguageUtil.get(pageContext, "OSGI-Load-Bundle")%></button>
+	<button dojoType="dijit.form.Button" type="submit" onclick="javascript:bundles.deploy()"><%=LanguageUtil.get(pageContext, "OSGI-Load-Bundle")%></button>
 
 </div>
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("availBundlesCombo"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script> 
 <div class="buttonBoxRight">
 	<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
 	<button dojoType="dijit.form.Button" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>

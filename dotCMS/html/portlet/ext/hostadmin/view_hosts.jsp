@@ -29,6 +29,20 @@
             <%=LanguageUtil.get(pageContext, "Reset")%>
         </button>
     </div>
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("filter"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script> 
     <div class="yui-u" style="text-align: right;">
 		<input dojoType="dijit.form.CheckBox" type="checkbox" name="showDeleted" id="showDeleted" onClick="hostAdmin.filterHosts();" <%=(showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : ""%> value="true" />
 		<label for="showDeleted" style="font-size:85%;"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
