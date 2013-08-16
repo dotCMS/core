@@ -125,7 +125,7 @@ function deleteCommunication(inode) {
 			<input type="text" dojoType="dijit.form.TextBox" name="query2" value="<%= com.dotmarketing.util.UtilMethods.isSet(query2) ? query2 : "" %>">
 		</div>
 		
-		<button dojoType="dijit.form.Button" onClick="submitfm()" iconClass="searchIcon">
+		<button dojoType="dijit.form.Button" onClick="submitfm()" type="submit" iconClass="searchIcon">
 			<%=LanguageUtil.get(pageContext, "Search")%>
 		</button>
 
@@ -230,4 +230,20 @@ function deleteCommunication(inode) {
 
 
 </liferay:box>
+
+
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script> 
 </form>

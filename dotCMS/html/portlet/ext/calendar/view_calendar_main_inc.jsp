@@ -217,3 +217,17 @@
 	resizeBrowser();
 </script>
 
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("keywordBox"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script> 
