@@ -95,7 +95,7 @@ public class DependencyManager {
 		containersSet = new HashSet<String>();
 		contentsSet = new HashSet<String>();
 		linksSet = new HashSet<String>();
-		
+
 		this.user = user;
 	}
 
@@ -213,7 +213,7 @@ public class DependencyManager {
 		config.setLinks(links);
 		config.setRelationships(relationships);
 	}
-	
+
     /**
      * For given Links adds its dependencies:
      * <ul>
@@ -228,7 +228,7 @@ public class DependencyManager {
                 Folder ff = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), user, false);
                 folders.add(ff.getInode(), ff.getModDate());
                 foldersSet.add(ff.getInode());
-                
+
                 Host hh=APILocator.getHostAPI().find(ident.getHostId(), user, false);
                 hosts.add(hh.getIdentifier(),hh.getModDate());
                 hostsSet.add(hh.getIdentifier());
@@ -500,7 +500,7 @@ public class DependencyManager {
 				// Host dependency
 				Host h = APILocator.getHostAPI().find(APILocator.getTemplateAPI().getTemplateHost(wkT).getIdentifier(), user, false);
 				hosts.add(APILocator.getTemplateAPI().getTemplateHost(wkT).getIdentifier(), h.getModDate());
-				
+
 				containerList.clear();
 				containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(wkT, user, false));
 
@@ -551,9 +551,11 @@ public class DependencyManager {
 
 				for (Container container : containerList) {
 					// Structure dependencies
-					Structure st = StructureCache.getStructureByInode(container.getStructureInode());
-					structures.add(container.getStructureInode(), st.getModDate());
-					structuresSet.add(container.getStructureInode());
+					if(container!=null) {
+						Structure st = StructureCache.getStructureByInode(container.getStructureInode());
+						structures.add(container.getStructureInode(), st.getModDate());
+						structuresSet.add(container.getStructureInode());
+					}
 				}
 
 			}
