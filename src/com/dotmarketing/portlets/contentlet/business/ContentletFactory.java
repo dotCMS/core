@@ -1,19 +1,10 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.lucene.queryParser.ParseException;
-import org.elasticsearch.search.SearchHits;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
+import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -21,8 +12,13 @@ import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.util.LuceneHits;
 import com.liferay.portal.model.User;
+import org.elasticsearch.search.SearchHits;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public abstract class ContentletFactory {
 
@@ -116,7 +112,6 @@ public abstract class ContentletFactory {
 	 * @param offset
 	 * @param sortBy
 	 * @return
-	 * @throws ParseException
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
@@ -132,7 +127,6 @@ public abstract class ContentletFactory {
 	 * @param offset
 	 * @param sortBy
 	 * @return
-	 * @throws ParseException
 	 */
 	protected abstract SearchHits indexSearch(String luceneQuery, int limit, int offset, String sortBy);
 	

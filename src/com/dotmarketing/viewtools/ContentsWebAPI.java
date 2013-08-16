@@ -13,7 +13,6 @@ import java.util.StringTokenizer;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.lucene.queryParser.ParseException;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 import org.elasticsearch.search.SearchHits;
@@ -156,12 +155,11 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param category
 	 * @param maxResults
 	 * @return
-	 * @throws ParseException
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
-	public List<Contentlet> getLastestContents(Structure structure, Category category, int maxResults) throws DotDataException, DotSecurityException, ParseException {
+	public List<Contentlet> getLastestContents(Structure structure, Category category, int maxResults) throws DotDataException, DotSecurityException {
 		StringBuffer buffy = new StringBuffer();
 		buffy.append("+live:true +deleted:false +structureInode:" + structure.getInode() + " +c" + category.getInode() + "c:on");
 		return conAPI.search(buffy.toString(), maxResults, -1, "mod_date desc", user, true);
@@ -175,10 +173,9 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
-	public List<Contentlet> getLastestContents(String structureType, String categoryName, int maxResults) throws DotDataException, DotSecurityException, ParseException {
+	public List<Contentlet> getLastestContents(String structureType, String categoryName, int maxResults) throws DotDataException, DotSecurityException {
 		Category category = categoryAPI.findByName(categoryName, user, true);
 		Structure structure = StructureCache.getStructureByType(structureType);
 		return getLastestContents(structure, category, maxResults);
@@ -189,11 +186,10 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param structure
 	 * @param category
 	 * @return
-	 * @throws ParseException
 	 * @throws DotSecurityException
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
-	public List<Contentlet> getLastestContents(Structure structure, Category category)throws DotDataException, DotSecurityException, ParseException {
+	public List<Contentlet> getLastestContents(Structure structure, Category category)throws DotDataException, DotSecurityException {
 		StringBuffer buffy = new StringBuffer();
 		buffy.append("+live:true +deleted:false +structureInode:" + structure.getInode() + " +c" + category.getInode() + "c:on");
 		return conAPI.search(buffy.toString(), 0, -1, "mod_date desc", user, true);
@@ -206,10 +202,9 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
-	public List<Contentlet> getLastestContents(String structureType, String categoryName) throws DotDataException, DotSecurityException, ParseException {
+	public List<Contentlet> getLastestContents(String structureType, String categoryName) throws DotDataException, DotSecurityException {
 		Category category = categoryAPI.findByName(categoryName, user, true);
 		Structure structure = StructureCache.getStructureByType(structureType);
 		return getLastestContents(structure, category);
@@ -350,13 +345,12 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param fieldName
 	 * @param fieldValue
 	 * @return
-	 * @throws ParseException
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
-	public List<Contentlet> getContentsByStructureAndFieldValue(Structure structure, String fieldName, String fieldValue) throws DotDataException, DotSecurityException, ParseException {
+	public List<Contentlet> getContentsByStructureAndFieldValue(Structure structure, String fieldName, String fieldValue) throws DotDataException, DotSecurityException {
 		Field field = structure.getField(fieldName);
 		StringBuffer buffy = new StringBuffer();
 		buffy.append("+live:true +deleted:false +structureInode:" + structure.getInode() + " +" + field.getFieldName() + ":" + fieldValue);
@@ -370,14 +364,13 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param direction
 	 * @param rowNumber
 	 * @return
-	 * @throws ParseException
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
 	public List<Contentlet> getContentletsByStructureAndOrder(Structure structure, String orderFieldName,
-			String direction, int rowNumber) throws DotDataException, DotSecurityException, ParseException {
+			String direction, int rowNumber) throws DotDataException, DotSecurityException {
 		StringBuffer buffy = new StringBuffer();
 		buffy.append("+live:true +deleted:false +structureInode:" + structure.getInode());
 		return conAPI.search(buffy.toString(), rowNumber, -1, orderFieldName + " " + direction, user, true);
@@ -390,11 +383,10 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws ParseException
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
-	public List<Contentlet> getContents(String structureType, String categoryName) throws DotDataException, DotSecurityException, ParseException {
+	public List<Contentlet> getContents(String structureType, String categoryName) throws DotDataException, DotSecurityException {
 		Category category = categoryAPI.findByName(categoryName, user, true);
 		Structure structure = StructureCache.getStructureByType(structureType);
 		StringBuffer buffy = new StringBuffer();
@@ -421,11 +413,11 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param rowsPerPage
 	 *            The number of records you want to show per page.
 	 * @return
-	 * @throws ParseException
+	 * @throws DotSecurityException
 	 */
 	@SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
 	public HashMap searchWithLuceneQuery(String structureType, String luceneCondition, String sortBy, String pageStr,
-			String rowsPerPage) throws ParseException,DotSecurityException {
+			String rowsPerPage) throws DotSecurityException {
 
 		String structInode = "";
 		Structure structure = null;
@@ -472,7 +464,7 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	@SuppressWarnings("rawtypes")
-	public HashMap searchWithLuceneQuery(String structureType, String luceneCondition, String sortBy, int maxResults) throws ParseException, DotSecurityException {
+	public HashMap searchWithLuceneQuery(String structureType, String luceneCondition, String sortBy, int maxResults) throws DotSecurityException {
 		int page = 1;
 		int pageSize = -1;
 		return searchWithLuceneQuery(structureType, luceneCondition, sortBy, maxResults, page, pageSize);
@@ -480,7 +472,7 @@ public class ContentsWebAPI implements ViewTool {
 
 	@SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
 	public HashMap searchWithLuceneQuery(String structureType, String luceneCondition, String sortBy, int maxResults,
-			int page, int pageSize) throws ParseException, DotSecurityException {
+			int page, int pageSize) throws DotSecurityException {
 		/*
 		 * We avoid a db hit if we pass the structure inode
 		 */
@@ -846,7 +838,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * #pullContent macro.
 	 */
 	@SuppressWarnings("rawtypes")
-	public List pullContent(String query, String lim, String sortBy) throws ParseException, DotSecurityException, DotDataException {
+	public List pullContent(String query, String lim, String sortBy) throws DotSecurityException, DotDataException {
 		return pullContent(query, lim, sortBy, false);
 	}
 
@@ -857,7 +849,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 
 	@SuppressWarnings("rawtypes")
-	public List pullContent(String query, String lim, String sortBy, Boolean editMode) throws ParseException, DotSecurityException, DotDataException {
+	public List pullContent(String query, String lim, String sortBy, Boolean editMode) throws DotSecurityException, DotDataException {
 		boolean eMode;
 		if(editMode == null){
 			eMode = false;
@@ -928,7 +920,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * #pullPersonalizedContentByCategories macro.
 	 */
 	@SuppressWarnings("rawtypes")
-	public List pullPersonalizedContentByCategories(String query, String lim, String sortBy, List categoryList) throws DotSecurityException, DotDataException, ParseException {
+	public List pullPersonalizedContentByCategories(String query, String lim, String sortBy, List categoryList) throws DotSecurityException, DotDataException {
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		@SuppressWarnings("unchecked")
 		List<HashMap> contents = pullContent(query, lim, sortBy);

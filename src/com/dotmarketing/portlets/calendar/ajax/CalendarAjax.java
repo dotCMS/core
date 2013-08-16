@@ -15,7 +15,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.lucene.queryParser.ParseException;
 import org.directwebremoting.WebContext;
 import org.directwebremoting.WebContextFactory;
 
@@ -470,7 +469,7 @@ public class CalendarAjax {
 		return callbackData;
 	}		
 	
-	public List<Map<String, Object>> findLocations(String filter) throws DotDataException, DotSecurityException, ParseException, PortalException, SystemException {
+	public List<Map<String, Object>> findLocations(String filter) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -510,7 +509,7 @@ public class CalendarAjax {
 		return results;
 	}
 
-	private List<Map<String, Object>> findChildFacilities(List<Contentlet> buildingConts, String filter, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, ParseException {
+	private List<Map<String, Object>> findChildFacilities(List<Contentlet> buildingConts, String filter, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		List<Map<String, Object>> results = new ArrayList<Map<String,Object>>();
 		
 		//Searching for children facilities

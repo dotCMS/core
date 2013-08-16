@@ -161,7 +161,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<td><%=UtilMethods.webifyString(myDate) %></td>
 
 					<td align="center">
-						<%=(status !=null && status.getDocs() != null) ? status.getDocs().numDocs(): "n/a"%>
+						<%=(status !=null && status.getDocs() != null) ? status.getDocs().getNumDocs(): "n/a"%>
 					</td>
 					<td align="center"><%=(status !=null) ? status.getShards().size() : "n/a"%></td>
 					<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
