@@ -12,7 +12,8 @@ var loadCompanyTab = function () {
         content.destroyRecursive(false);
     }
     content = new dojox.layout.ContentPane({
-        id: "companyTabContent"
+        id: "companyTabContent",
+        preventCache: true
     }).placeAt("companyTabContentDiv");
 
     content.attr("href", url);
@@ -165,7 +166,8 @@ var loadRemotePublishingTab = function () {
         content.destroyRecursive(false);
     }
     content = new dojox.layout.ContentPane({
-        id: "remotePublishingTabContent"
+        id: "remotePublishingTabContent",
+        preventCache: true
     }).placeAt("remotePublishingTabContentDiv");
 
     content.attr("href", url);
