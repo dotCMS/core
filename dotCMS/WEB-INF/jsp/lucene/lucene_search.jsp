@@ -132,6 +132,20 @@ String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout.get
 				
 				<dt></dt><dd><button type="submit" id="submitButton" dojoType="dijit.form.Button" value="Submit"><%= LanguageUtil.get(pageContext, "Submit") %></button></dd>
 			</dl>
+            <script language="Javascript">
+				/**
+					focus on search box
+				**/
+				require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+					dojo.require('dojox.timing');
+					t = new dojox.timing.Timer(500);
+					t.onTick = function(){
+					  focusUtil.focus(dom.byId("query"));
+					  t.stop();
+					}
+					t.start();
+				});
+			</script>
 		</form>
 	</div>
 	<hr>

@@ -429,7 +429,20 @@ int periodData = dAPI.checkPeriodData(0,0);
 				</select>
 	    	</td>
 		    	
-		    	
+		    <script language="Javascript">
+				/**
+					focus on search box
+				**/
+				require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+					dojo.require('dojox.timing');
+					t = new dojox.timing.Timer(500);
+					t.onTick = function(){
+					  focusUtil.focus(dom.byId("dahboardHostSelector"));
+					  t.stop();
+					}
+					t.start();
+				});
+			</script>	
 		    	
 			<% int count = 2;
 			   int numTd = 8;
@@ -758,7 +771,7 @@ int periodData = dAPI.checkPeriodData(0,0);
 
 				
 	<div class="buttonRow">
-		<button dojoType="dijit.form.Button" onClick="submitfm();" iconClass="searchIcon">
+		<button dojoType="dijit.form.Button" type="submit" onClick="submitfm();" iconClass="searchIcon">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 		</button>
 		<button dojoType="dijit.form.Button" id="clearButtonHost" onClick="clearHostSearch();" iconClass="resetIcon">

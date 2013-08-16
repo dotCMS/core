@@ -9,7 +9,8 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 
 <%
-Boolean hostChanged = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_HOST_CHANGED);int pageNumber = 1;
+Boolean hostChanged = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_HOST_CHANGED);
+int pageNumber = 1;
 if (!hostChanged && (request.getParameter("pageNumber") != null) && (request.getParameter("resetQuery") == null)) {
 	pageNumber = Integer.parseInt(request.getParameter("pageNumber")); 
 }
@@ -156,7 +157,7 @@ hostId = request.getParameter("host_id");
 		<input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
 		<input type="text" dojoType="dijit.form.TextBox" name="query" value="<%= com.dotmarketing.util.UtilMethods.webifyString(query)  %>">
 	   
-	    <button dojoType="dijit.form.Button" onClick="submitfm()" iconClass="searchIcon">
+	    <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
 	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 	    </button>
 	    
@@ -175,10 +176,26 @@ hostId = request.getParameter("host_id");
 	    </button>
 	</div>
 </div>
+<script language="Javascript">
+/**
+    focus on search box
+**/
+require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+    dojo.require('dojox.timing');
+    t = new dojox.timing.Timer(500);
+    t.onTick = function(){
+      focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
+      t.stop();
+    }
+    t.start();
+});
+</script>
+
 </form>
 
 <form id="fm_publish" method="post">
 <input type="hidden" name="referer" value="<%=referer%>"><input type="hidden" name="cmd" value="prepublish">
+
 
 <table class="listingTable">
 	<tr>

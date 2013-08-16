@@ -136,7 +136,7 @@ value='<%=(com.dotmarketing.util.UtilMethods.isSet(request.getParameter("orderby
 <div class="yui-g portlet-toolbar">
 	<div class="yui-u first">
 		<input type="text" dojoType="dijit.form.TextBox" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>" style="vertical-align:middle;" />
-		<button dojoType="dijit.form.Button" onClick="submitfm();" iconClass="searchIcon" style="vertical-align:middle;"><%=LanguageUtil.get(pageContext, "Search")%></button>
+		<button dojoType="dijit.form.Button" type="submit" onClick="submitfm();" iconClass="searchIcon" style="vertical-align:middle;"><%=LanguageUtil.get(pageContext, "Search")%></button>
 		<button dojoType="dijit.form.Button" onClick="resetSearch();" iconClass="resetIcon" style="vertical-align:middle;"><%=LanguageUtil.get(pageContext, "Reset")%></button>
 	</div>
 	
@@ -171,7 +171,20 @@ value='<%=(com.dotmarketing.util.UtilMethods.isSet(request.getParameter("orderby
 	}
 %>
 </div>
-
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script> 
 <table border="0" cellpadding="0" cellspacing="0" width="100%" class="listingTable" >	
 	<tr>
 		<th width="30" style="text-align:center;"><input type="checkbox" dojoType="dijit.form.CheckBox" name="checkAll" id="checkAll" onclick="checkUncheckAll()"></th>
