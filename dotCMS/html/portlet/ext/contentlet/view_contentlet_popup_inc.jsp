@@ -64,9 +64,11 @@ catch(DotSecurityException dse) {
 }
 
 if(!hasPermissions) {
-    %> <%=LanguageUtil.get(pageContext, "you-do-not-have-the-required-permissions") %> <%
-}
-else {
+    %>
+<div style="padding:20px;text-align: center">
+<%=LanguageUtil.get(pageContext, "you-do-not-have-the-required-permissions") %> 
+</div>
+<%}else {
     
 
 try{
