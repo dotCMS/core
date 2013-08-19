@@ -409,7 +409,7 @@
 			}
 			
 			
-			if(!dijit.byId('recursNever').checked){
+			 if(!$('recursNever').checked){
 				var startDate 	= dojo.byId('<%=startDateField.getVelocityVarName()%>');
 				var endDate 	= dojo.byId('<%=endDateField.getVelocityVarName()%>');
 				var endDateDate 	= dijit.byId('<%=endDateField.getVelocityVarName()%>Date');
