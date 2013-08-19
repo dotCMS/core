@@ -150,7 +150,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
                 } catch ( DotSecurityException e ) {
                     throw new DotSecurityException( e.getMessage() );
                 } catch ( Exception ae ) {
-                    throw new Exception( ae.getMessage() );
+                    throw ae;
                 }
             }
 
@@ -216,8 +216,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				containerParent = (Container) versionableAPI.findWorkingVersion(containerParentId, user, false);
 			}
 			catch(Exception e){
-				SessionMessages.add(req, "message", "User needs 'View' Permissions on container");
-				throw new DotSecurityException("User have no View Permissions on container");
+				if(e instanceof DotSecurityException){
+					SessionMessages.add(req, "message", "User needs 'View' Permissions on container");
+					throw new DotSecurityException("User have no View Permissions on container");
+				}else{
+					throw e;
+				}
 			}
 
 			if(containerParent != null){
