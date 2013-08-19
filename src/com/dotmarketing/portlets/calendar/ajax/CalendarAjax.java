@@ -949,6 +949,8 @@ public class CalendarAjax {
 				String errorString = LanguageUtil.get(user,"message.contentlet.save.error");			
 				saveContentErrors.add(errorString);		
 				SessionMessages.clear(req.getSession());
+			}else{
+				saveContentErrors.add(e.getLocalizedMessage());
 			}
 			
 		}
