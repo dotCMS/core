@@ -49,8 +49,8 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.servlet.UploadServletRequest;
 import com.liferay.util.FileUtil;
+import com.liferay.util.servlet.UploadServletRequest;
 
 /**
  * This Action manage the submit content save procedure
@@ -357,7 +357,12 @@ public class SubmitContentAction extends DispatchAction{
 				{
 					tempBinaryValues=processBinaryTempFileUpload( field.getVelocityVarName(), request, field.getFieldContentlet()) ;
 					binaryvalues.put("field", field);
-					parametersName.add(tempBinaryValues.get("parameterName").toString());
+					
+					//Fix for https://github.com/dotCMS/dotCMS/issues/3171
+					if(null != tempBinaryValues.get("parameterName")) {
+						parametersName.add(tempBinaryValues.get("parameterName").toString());
+					}
+					
 					Object ob = tempBinaryValues.get("parameterValues");
 					if(ob != null){
 						File f = (File)ob;
@@ -465,7 +470,7 @@ public class SubmitContentAction extends DispatchAction{
 		}catch (DotContentletValidationException ve) {
 			HibernateUtil.rollbackTransaction();
 			Logger.debug(this, ve.getMessage());
-			
+
 			Language userlang=langAPI.getLanguage(
             			        (String)request.getSession().getAttribute(
             			                com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
@@ -512,7 +517,7 @@ public class SubmitContentAction extends DispatchAction{
 					}
 				}
 			}
-			
+
 			if(ve.hasRelationshipErrors()){
 				//need to update message to support multiple relationship validation errors
 				errors.add(Globals.ERROR_KEY, new ActionMessage("message.relationship.required", "relationships"));
