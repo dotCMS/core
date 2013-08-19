@@ -72,7 +72,7 @@ import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
 import com.dotmarketing.startup.runonce.Task01055CreatePushPublishEnvironmentTable;
 import com.dotmarketing.startup.runonce.Task01060CreatePushPublishPushedAssets;
-
+import com.dotmarketing.startup.runonce.Task01065IndexOnPublishingQueueAuditStatus;
 
 public class TaskLocatorUtil {
 
@@ -147,7 +147,7 @@ public class TaskLocatorUtil {
         ret.add(Task01050AddPushPublishLogger.class);
         ret.add(Task01055CreatePushPublishEnvironmentTable.class);
         ret.add(Task01060CreatePushPublishPushedAssets.class);
-
+        ret.add(Task01065IndexOnPublishingQueueAuditStatus.class);
         return ret;
     }
 
