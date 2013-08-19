@@ -822,3 +822,6 @@ CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 
 alter table publishing_bundle add force_push bool ;
+
+CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
+
