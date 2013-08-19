@@ -170,7 +170,7 @@
 <!-- END FILTER POPUP -->
 
 <!-- START EVENT DETAIL POPUP -->
-<div id="eventDetail" dojoType="dijit.Dialog" style="display: none">
+<div id="eventDetail" dojoType="dijit.Dialog" style="display: none; padding-top:20px\9;">
 	<div class="eventDetail" style="width: 650px">
 		<div id="eventDetailTitle"></div>
 		<div id="eventDetailDate" style="padding:5px;padding-left:10px;"></div>
