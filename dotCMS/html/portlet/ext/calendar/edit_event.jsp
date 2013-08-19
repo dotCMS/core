@@ -137,6 +137,7 @@ var editButtonRow="editEventButtonRow";
 	<input name="wfExpireDate" id="wfExpireDate" type="hidden" value="">
 	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
+    <input name="whereToSend" id="whereToSend" type="hidden" value="">
 
 	<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-event\") %>" />
@@ -196,7 +197,8 @@ var editButtonRow="editEventButtonRow";
 				<%@include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
 			<% } else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
     	   		<%if(counter==0){%>
-					<% relationshipsTabFieldExists =  true; %>                    <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
+					<% relationshipsTabFieldExists =  true; %>
+                    <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
 				<%}%>
     	    	<%counter++;%>
 			<% } else  {
