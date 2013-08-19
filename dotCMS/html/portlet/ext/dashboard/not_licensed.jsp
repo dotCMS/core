@@ -22,7 +22,10 @@
 <script type="text/javascript">
 dojo.addOnUnload (function(){
 	if(dojo.isIE){//DOTCMS-5302
-		document.getElementById('formHandlerDemoDiv').innerHTML="";
+		var id = document.getElementById('formHandlerDemoDiv');
+		if(id != null){
+			document.getElementById('formHandlerDemoDiv').innerHTML="";
+		}		
 	}	
 });
 </script>
