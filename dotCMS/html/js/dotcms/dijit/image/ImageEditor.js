@@ -160,7 +160,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             dojo.style(ctx.thumbnailImage, "display", "block");
             dojo.removeClass(ctx.thumbnailDiv, "loader");
 
-        }
+        };
 
         //this.thumbnailImage.src =  "#"; // thumbUrl;
         this.thumbnailImage.src =  thumbUrl ;
@@ -198,16 +198,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var frame=dojo.byId("imageToolIframe");
         console.log("frame:" + frame);
 
-        var parent = frame.parentNode;
-
-
-
-        console.log("parent:" + parent);
-
         frame.src = url;
-
-
-
     },
 
     /**
@@ -659,7 +650,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var x =this.cleanUrl(this.currentUrl);
         var aj =this.iframe.dojo.byId("actionJackson");
         var url = (this.ajaxUrl.indexOf("?")>-1) ? this.ajaxUrl + "&"  : this.ajaxUrl + "?";
-        url+=  "&fileName=" + fileName
+        url+=  "&fileName=" + fileName;
         url+=  "&action=saveAs";
         url+=  "&fileUrl=" + x;
         url+=  "&inode=" + this.inode;
@@ -1358,6 +1349,4 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     }
 
 
-})
-
-
+});

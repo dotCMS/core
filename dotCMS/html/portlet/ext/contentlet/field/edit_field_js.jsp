@@ -110,31 +110,23 @@ var cmsfile=null;
 		field.value = dateValue;
 	}
 
-	  function removeThumbnail(x, inode) {
-		  
-		    var pDiv = dojo.byId('thumbnailParent'+x);
-	    	if(pDiv != null && pDiv != undefined){
-	    		dojo.destroy(pDiv);
-	    	}
-	    	
-	    	dojo.query(".thumbnailDiv" + x).forEach(function(node, index, arr){
-	    		dojo.destroy(node);
-	    	})
-	    	
-	    	var dt = dojo.byId(x+'dt');
-	    	if(dt != null && dt != undefined){
-	    		dt.innerHTML = '';
-	    	}
+    function removeThumbnail(x, inode) {
 
-	    	//http://jira.dotmarketing.net/browse/DOTCMS-5802
-	 	    ContentletAjax.removeSiblingBinaryFromSession(x, null);
+        dojo.query(".thumbnailDiv" + x).forEach(function (node, index, arr) {
+            dojo.destroy(node);
+        });
+        var dt = dojo.byId(x + 'dt');
+        if (dt != null && dt != undefined) {
+            dt.innerHTML = '';
+        }
 
-	    	if(inode){
-	    	   FileAssetAjax.removeTempFile(inode, null);
-	    	}
+        //http://jira.dotmarketing.net/browse/DOTCMS-5802
+        ContentletAjax.removeSiblingBinaryFromSession(x, null);
 
-	    }
-
+        if (inode) {
+            FileAssetAjax.removeTempFile(inode, null);
+        }
+    }
 
 	function isInteger(s)
 	   {
