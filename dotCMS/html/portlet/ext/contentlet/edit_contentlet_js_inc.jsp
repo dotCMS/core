@@ -616,7 +616,6 @@ dojo.require("dojox.layout.ContentPane");
 	}
 
 	function saveBinaryFileOnContentCallback(data, fieldRelatedData){
-		alert('sdfsdf');
 
 		if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
 
@@ -670,9 +669,11 @@ dojo.require("dojox.layout.ContentPane");
 				            fieldName : "fileAsset",
 				            binaryFieldId : "binary1",
 				            fieldContentletId : "binary1",
-				            saveAsFileName : fieldRelatedData['fileName'],
-// 				            class : "thumbnailDiv"+fieldRelatedData['fieldVarName'],
-							parentNode: thumbnailParentDiv})
+				            saveAsFileName : fieldRelatedData['fileName']
+ 				            //class : "thumbnailDiv"+fieldRelatedData['fieldVarName'],
+                            //parentNode: thumbnailParentDiv
+                });
+                newImageEditor.placeAt(thumbnailParentDiv);
 
 			<%}%>
 		}
