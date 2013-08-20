@@ -46,7 +46,9 @@
 <%@page import="com.dotmarketing.business.Role"%>
 
 <style type="text/css">
-	@import "/html/portlet/ext/workflows/schemes/workflow.css"; 
+	@import "/html/portlet/ext/workflows/schemes/workflow.css";
+	dt{height:30px;}
+	dd{height:30px;} 
 </style>	
 
 <%
