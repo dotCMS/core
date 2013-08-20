@@ -988,7 +988,7 @@ try {
 </div>
 <!-- Statistics Tabs -->
 	
-<div id="listingWrapper" dojoType="dijit.Dialog" style="display:none;height:420px;width:700px;vertical-align: middle;overflow: auto;" draggable="true" >
+<div id="listingWrapper" dojoType="dijit.Dialog" style="display:none;height:420px;width:700px;vertical-align: middle;overflow: auto;padding-top:15px\9;" draggable="true" >
 	<div style="margin:-34px 0 15px 0;">
 		<span id="listTitle"></span>
 	</div>
