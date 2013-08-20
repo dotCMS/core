@@ -727,28 +727,26 @@
 	</div>
 
 
-	<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;height: 100%; min-height:851px;" title="<%= LanguageUtil.get(pageContext, "Properties") %>">
-
-		<div class="wrapperRight" style="position:relative; height: 500px;">
-			<dl>
-				<%if(id!=null) {%>
-					<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
-					<dd><%= id.getId() %></dd>
-				<%}%>
-				<% if(host != null) { %>
-					<html:hidden property="hostId" value="<%=hostId%>" styleId="hostId"/>
-					<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
-					<dd><%= host.getHostname() %></dd>
-				<%	} else { %>
-					<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
-					<dd>
+	<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>">
+		<dl>
+			<%if(id!=null) {%>
+				<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
+				<dd><%= id.getId() %></dd>
+			<%}%>
+			<% if(host != null) { %>
+				<html:hidden property="hostId" value="<%=hostId%>" styleId="hostId"/>
+				<dt><%= LanguageUtil.get(pageContext, "Host") %>:</dt>
+				<dd><%= host.getHostname() %></dd>
+			<%	} else { %>
+				<dt><%= LanguageUtil.get(pageContext, "Host") %>:</dt>
+				<dd>
 					<select id="hostId" name="hostId" dojoType="dijit.form.FilteringSelect" value="<%=hostId%>">
 					<% for(Host h: listHosts) { %>
 						<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>
 					<% } %>1
 					</select>
-					</dd>
-				<% } %>
+				</dd>
+			<% } %>
 
 				<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
 				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="friendlyName" id="friendlyNameField" value="<%= UtilMethods.isSet(template.getFriendlyName()) ? template.getFriendlyName() : "" %>" /></dd>
@@ -764,8 +762,7 @@
 				<dd>
 	    			<html:textarea style="display: none" property="drawedBody" styleId="drawedBodyField"></html:textarea>
 				</dd>
-			</dl>
-		</div>
+		</dl>		
 	</div>
 
     <div id="previewThemeTab"
