@@ -422,13 +422,13 @@ public class ContentResource extends WebResource {
         
         Contentlet contentlet=new Contentlet();
         try {
-            if(request.getContentType().equals(MediaType.APPLICATION_JSON)) {
+            if(request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
                 processJSON(contentlet, request.getInputStream());
             }
-            else if(request.getContentType().equals(MediaType.APPLICATION_XML)) {
+            else if(request.getContentType().startsWith(MediaType.APPLICATION_XML)) {
                 processXML(contentlet, request.getInputStream());
             }
-            else if(request.getContentType().equals(MediaType.APPLICATION_FORM_URLENCODED)) {
+            else if(request.getContentType().startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
                 processForm(contentlet, request.getInputStream());
             }
         } catch(JSONException e) {
