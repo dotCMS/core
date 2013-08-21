@@ -123,7 +123,7 @@ var cmsfile=null;
 	}
 
 	  function removeThumbnail(x, inode) {
-		  
+
 		    var pDiv = dojo.byId('thumbnailParent'+x);
 	    	if(pDiv != null && pDiv != undefined){
 	    		dojo.destroy(pDiv);
@@ -131,7 +131,7 @@ var cmsfile=null;
 	    	
 	    	dojo.query(".thumbnailDiv" + x).forEach(function(node, index, arr){
 	    		dojo.destroy(node);
-	    	})
+	    	});
 	    	
 	    	var dt = dojo.byId(x+'dt');
 	    	if(dt != null && dt != undefined){
