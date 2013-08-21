@@ -60,7 +60,7 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 		t.onTick = function(){
 		  focusUtil.focus(dom.byId("availBundlesCombo"));
 		  t.stop();
-		}
+		};
 		t.start();
 	});
 </script> 
@@ -132,9 +132,12 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
         <script type="text/javascript">
 
             <%if(b.getLocation().contains(separator) && b.getLocation().contains(separator + "load" + separator)){ %>
-                if(enterprise && sendingEndpoints) {
+                if(enterprise) {
                     popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i++%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=jarFile%>\">";
-                    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"javascript:bundles.remotePublishBundle('<%=jarFile%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+                    if (sendingEndpoints) {
+                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"javascript:bundles.remotePublishBundle('<%=jarFile%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+                    }
+                    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"javascript:bundles.addToBundlePlugin('<%=jarFile%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
                     popupMenus += "</div>";
 
                     popupMenusDiv = document.getElementById("popup_menus");
