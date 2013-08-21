@@ -681,10 +681,10 @@ dojo.require("dojo.cookie");
 		<!-- Server Info -->
 			<%String serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");%>
 			<% if (UtilMethods.isSet(serverId)){ %>
-				<div class="serverID"><strong>Server:</strong> <%=serverId%></div>
+				<div class="serverID"><strong>Server:</strong> <%=serverId%></div><br />
 			<% } %>
 		<!-- End Server Info -->
-		<div dojoType="dijit.layout.ContentPane" style="width:400px;height:150px;" class="box" hasShadow="true" id="dotBackEndDialogCP"></div>
+		<div dojoType="dijit.layout.ContentPane" style="width:450px;height:300px;" class="box" hasShadow="true" id="dotBackEndDialogCP"></div>
 		<div class="copyright">&copy;<%=new GregorianCalendar().get(Calendar.YEAR)%> dotCMS Software, LLC <%= LanguageUtil.get(pageContext, "All-rights-reserved") %>.</div>
 	</div>
 
