@@ -1,23 +1,15 @@
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
 <%@page import="java.util.Set"%>
-<%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotmarketing.business.RoleAPI"%>
-<%@page import="com.dotmarketing.beans.Permission"%>
-<%@page import="com.dotmarketing.business.PermissionSummary"%>
-<%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.util.Logger"%>
-<%@page
-	import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page
-	import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
+<%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
-<%@page
-	import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@page import="java.util.List"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.dotmarketing.business.*" %>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -149,7 +141,7 @@
 
 
 		actionAdmin.whoCanUse = new Array();
-		<% Set<Role> roles = APILocator.getPermissionAPI().getReadRoles(action);%>
+        <% Set<Role> roles = APILocator.getPermissionAPI().getRolesWithPermission(action, PermissionAPI.PERMISSION_USE);%>
 		<%for(Role tmpRole :  roles){
 			if (UtilMethods.isSet(tmpRole) && UtilMethods.isSet(tmpRole.getId()) ) {%>
                 actionAdmin.addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>",
