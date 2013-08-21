@@ -181,6 +181,7 @@
             this.RESULTS_PER_PAGE = 20;
         },
         openAddHostDialog: function(){
+        	dojo.style('addHostDialog', {width: '450px'});
             dojo.style('addHostStep1', {
                 display: ''
             });
