@@ -59,6 +59,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
+import com.sun.jersey.core.header.ContentDisposition;
 import com.sun.jersey.multipart.BodyPart;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.thoughtworks.xstream.XStream;
@@ -356,8 +357,12 @@ public class ContentResource extends WebResource {
         User user=init.getUser();
 
         Contentlet contentlet=new Contentlet();
+        
         for(BodyPart part : multipart.getBodyParts()) {
-            if(part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE)) {
+            ContentDisposition cd=part.getContentDisposition();
+            String name=cd!=null && cd.getParameters().containsKey("name") ? cd.getParameters().get("name") : "";
+            
+            if(part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
                 try {
                     processJSON(contentlet,part.getEntityAs(InputStream.class));
                 } catch (JSONException e) {
@@ -366,14 +371,14 @@ public class ContentResource extends WebResource {
                     return Response.status(Status.INTERNAL_SERVER_ERROR).build();
                 }
             }
-            else if(part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE)) {
+            else if(part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
                 try {
                     processXML(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
                     return Response.status(Status.INTERNAL_SERVER_ERROR).build();
                 }
             }
-            else if(part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE)) {
+            else if(part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE) || name.equals("urlencoded")) {
                 try {
                     processForm(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
