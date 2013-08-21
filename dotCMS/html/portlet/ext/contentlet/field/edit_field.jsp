@@ -392,15 +392,13 @@
                 <%int imageEditors=0; %>
                 <!--  If you are not enterprise -->
                 <%if(LicenseUtil.getLevel() < 199){ %>
-                <div id="thumbnailParent<%=field.getVelocityVarName()%>">
                     <div style="position:relative;width:<%=showDim+40 %>px;">
                         <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=1&filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
-                                class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
-                                onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
-                                onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
-                                onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
+                             class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
+                             onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
+                             onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
+                             onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
                     </div>
-               </div>
 
                     <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:760px;height:500px;display:none;"">
                         <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
@@ -415,18 +413,16 @@
 
 
                 <%}else{ %>
-	                <div id="thumbnailParent<%=field.getVelocityVarName()%>">
-	                        <div dojoType="dotcms.dijit.image.ImageEditor"
-	                            editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
-	                            inode="<%= binInode%>"
-	                            fieldName="<%=field.getVelocityVarName()%>"
-	                            binaryFieldId="<%=field.getFieldContentlet()%>"
-	                            fieldContentletId="<%=field.getFieldContentlet()%>"
-	                            saveAsFileName="<%=fileName %>"
-	                            class="thumbnailDiv<%=field.getVelocityVarName()%>"
-	                        >
-	                    </div>
-					</div>
+                    <div dojoType="dotcms.dijit.image.ImageEditor"
+                         editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
+                         inode="<%= binInode%>"
+                         fieldName="<%=field.getVelocityVarName()%>"
+                         binaryFieldId="<%=field.getFieldContentlet()%>"
+                         fieldContentletId="<%=field.getFieldContentlet()%>"
+                         saveAsFileName="<%=fileName %>"
+                         class="thumbnailDiv<%=field.getVelocityVarName()%>"
+                            >
+                    </div>
                 <%} %>
 
 
@@ -444,16 +440,10 @@
             }%>
             <% com.dotmarketing.portlets.contentlet.model.Contentlet contentlet = (com.dotmarketing.portlets.contentlet.model.Contentlet) request.getAttribute("contentlet"); %>
             <div id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
-               fieldName="<%=field.getVelocityVarName()%>"
-               inode="<%= binInode%>"
-               identifier="<%=field.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')" 
-               dojoType="dotcms.dijit.form.FileAjaxUploader" onUploadFinish="saveBinaryFileOnContent<%=field.getVelocityVarName()%>">
+                 fieldName="<%=field.getVelocityVarName()%>"
+                 inode="<%= binInode%>"
+                 identifier="<%=field.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')" dojoType="dotcms.dijit.form.FileAjaxUploader">
             </div>
-            <script type="text/javascript">
-            function saveBinaryFileOnContent<%=field.getVelocityVarName()%>(fileName, dijitReference){
-            		saveBinaryFileOnContent('<%=field.getInode()%>','<%=field.getVelocityVarName()%>','<%=field.getFieldContentlet()%>', dijitReference.fileNameField.value);
-        	}
-            </script>
 
 
                <%
