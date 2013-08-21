@@ -203,7 +203,7 @@ public class ESIndexAPI {
 			IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 			DeleteIndexRequest req = new DeleteIndexRequest(indexName);
 			DeleteIndexResponse res = iac.delete(req).actionGet();
-			return res.acknowledged();
+			return res.isAcknowledged();
 		} catch (Exception e) {
 			throw new ElasticSearchException(e.getMessage());
 		}
@@ -376,7 +376,7 @@ public class ESIndexAPI {
 
 			try {
 				int w=0;
-				while(!res.acknowledged() && ++w<100)
+				while(!res.isAcknowledged() && ++w<100)
 					Thread.sleep(100);
 			}
 			catch(InterruptedException ex) {
@@ -632,7 +632,7 @@ public class ESIndexAPI {
                     .filterNodes(true)
                     .filteredIndices(indexNames);
             MetaData md=client.admin().cluster().state(clusterStateRequest)
-                                                .actionGet(30000).state().metaData();
+                                                .actionGet(30000).getState().metaData();
 
             for(IndexMetaData imd : md)
                 for(AliasMetaData amd : imd.aliases().values())

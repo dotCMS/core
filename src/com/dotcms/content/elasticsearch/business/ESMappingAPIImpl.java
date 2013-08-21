@@ -88,7 +88,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	
 	/**
 	 * This method takes a mapping string, a type and puts it as the mapping
-	 * @param index
+	 * @param indexName
 	 * @param type
 	 * @param mapping
 	 * @return
@@ -98,12 +98,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     public  boolean putMapping(String indexName, String type, String mapping) throws ElasticSearchException, IOException{
     	
     	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
-    	return lis.actionGet().acknowledged();
+    	return lis.actionGet().isAcknowledged();
     }
     
 	/**
 	 * This method takes a mapping string, a type and puts it as the mapping
-	 * @param index
+	 * @param indexName
 	 * @param type
 	 * @param mapping
 	 * @return
@@ -112,7 +112,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
     public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticSearchException, IOException{
     	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
-    	return lis.actionGet().acknowledged();
+    	return lis.actionGet().isAcknowledged();
     }
     
     public  boolean setSettings(String indexName,   String settings) throws ElasticSearchException, IOException{
@@ -133,7 +133,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     public  String getMapping(String index, String type) throws ElasticSearchException, IOException{
     	
     	return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
-        .actionGet().state().metaData().indices()
+        .actionGet().getState().metaData().indices()
         .get(index).mapping(type).source().string();
     	
     }

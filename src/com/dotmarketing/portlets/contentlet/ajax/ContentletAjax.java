@@ -18,7 +18,6 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.lucene.queryParser.ParseException;
 import org.directwebremoting.WebContextFactory;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
@@ -464,15 +463,8 @@ public class ContentletAjax {
 	 *         the total number of results, ...
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws ParseException
-	 * @throws DotSecurityException
-	 * @throws IllegalArgumentException
-	 * @throws DotContentletStateException
-	 * @throws DotContentletValidationException
-	 * @throws ParseException
 	 */
-	public Map<String, Object> searchFormWidget(String formStructureInode) throws DotDataException, DotSecurityException, ParseException {
+	public Map<String, Object> searchFormWidget(String formStructureInode) throws DotDataException, DotSecurityException {
 		FormAJAXProxy fp = new FormAJAXProxy();
 		return fp.searchFormWidget(formStructureInode);
 	}
@@ -1210,8 +1202,6 @@ public class ContentletAjax {
 		List<String> saveContentErrors = new ArrayList<String>();
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		Config.CONTEXT.setAttribute("WEB_SERVER_HTTP_PORT", Integer.toString(req.getServerPort()));
-		Config.CONTEXT.setAttribute("WEB_SERVER_SCHEME", req.getScheme().toString());
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 
 		// get the struts_action from the form data

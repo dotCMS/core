@@ -435,7 +435,7 @@ td {font-size: 100%;}
 	<div class="yui-g nameHeader">
 		<div class="yu-u first" id="filters">
 	        <input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
-			<input type="text" name="filterBox" value="" dojoType="dijit.form.TextBox" placeHolder="Filter" trim="true" id="filterBox" intermediateChanges="true" onChange="searchTagByName();" onblur="alterFocus(document.activeElement, this);" >
+			<input type="text" name="filterBox" value="" dojoType="dijit.form.TextBox" placeHolder="Filter" trim="true" id="filterBox" intermediateChanges="true" onChange="searchTagByName();" onBlur="alterFocus(document.activeElement, this);" >
 		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 		    </button>
 			<button dojoType="dijit.form.Button" iconclass="resetIcon" id="resetButton" onClick="resetSearch()">
@@ -448,16 +448,16 @@ td {font-size: 100%;}
 
 		<div class="yui-u" style="text-align:right;">
 		<form name="export_form" id="export_form" method="get">
-			<button dojoType="dijit.form.Button" onclick="addNewTag()" type="button" iconClass="plusIcon">
+			<button dojoType="dijit.form.Button" onClick="addNewTag()" type="button" iconClass="plusIcon">
 				<%= LanguageUtil.get(pageContext, "add-tag") %>
 			</button>
-			<button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" onclick="openImportTagsDialog()">
+			<button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" onClick="openImportTagsDialog()">
 				<%= LanguageUtil.get(pageContext, "import-tags") %>
 			</button>
-			<button dojoType="dijit.form.Button" type="button" iconClass="downloadIcon" onclick="exportTags()">
+			<button dojoType="dijit.form.Button" type="button" iconClass="downloadIcon" onClick="exportTags()">
 				<%= LanguageUtil.get(pageContext, "export-tags") %>
 			</button>
-			<button dojoType="dijit.form.Button" type="button" onclick="deleteTagsBatch()" iconClass="deleteIcon">
+			<button dojoType="dijit.form.Button" type="button" onClick="deleteTagsBatch()" iconClass="deleteIcon">
 			<%= LanguageUtil.get(pageContext, "delete-tags") %>
 			</button>
 			<input type="hidden" id="cmd" value="none">
@@ -470,7 +470,20 @@ td {font-size: 100%;}
 		<div id="tagsGrid"></div>
 	</div>
 </div>
-
+<script language="Javascript">
+	/**
+		focus on search box
+	**/
+	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		dojo.require('dojox.timing');
+		t = new dojox.timing.Timer(500);
+		t.onTick = function(){
+		  focusUtil.focus(dom.byId("filterBox"));
+		  t.stop();
+		}
+		t.start();
+	});
+</script>
  <%-- Add Tag Dialog --%>
 
 <div id="addTagDialog" title="<%= LanguageUtil.get(pageContext, "edit-tag") %>" dojoType="dijit.Dialog" style="display: none;width:500px">
@@ -490,7 +503,7 @@ td {font-size: 100%;}
 			<input id="tagId" type="hidden" value=" " />
 			<input id="userId" type="hidden" value=" " />
 			<input id="tagStorage" type="hidden" value=" "/>
-			<select id="tagStorage_dropDown" name="tagStorage_dropDown" dojoType="dijit.form.FilteringSelect" autocomplete="true" invalidMessage="Required." onchange="verifyHiddenFields()">
+			<select id="tagStorage_dropDown" name="tagStorage_dropDown" dojoType="dijit.form.FilteringSelect" autocomplete="true" invalidMessage="Required." onChange="verifyHiddenFields()">
 			<option value="SYSTEM_HOST"><%=LanguageUtil.get(pageContext, "tag-all-hosts") %></option>
 			<%for(Host h: allHosts){
 				if(!h.getIdentifier().equals(Host.SYSTEM_HOST) && h.isLive())
@@ -544,7 +557,7 @@ td {font-size: 100%;}
 		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "upload-csv-with-tags")) %>
 		<br><br>
 		<div style="text-align:center">
-		<a onclick="downloadCSVSampleFile()" href="#"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download-sample-csv-file")) %></a>
+		<a onClick="downloadCSVSampleFile()" href="#"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download-sample-csv-file")) %></a>
 		</div>
 		<br>
 		<div class="buttonRow">

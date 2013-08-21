@@ -1,16 +1,5 @@
 package com.dotmarketing.sitesearch.viewtool;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-import org.elasticsearch.search.facet.Facet;
-
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.beans.Host;
@@ -22,6 +11,19 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
+import org.elasticsearch.search.facet.Facet;
+import org.elasticsearch.search.facet.datehistogram.DateHistogramFacet;
+import org.elasticsearch.search.facet.datehistogram.InternalCountDateHistogramFacet;
+import org.elasticsearch.search.facet.terms.TermsFacet;
+import org.elasticsearch.search.facet.terms.strings.InternalStringTermsFacet;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.*;
 
 public class SiteSearchWebAPI implements ViewTool {
 
@@ -81,7 +83,6 @@ public class SiteSearchWebAPI implements ViewTool {
      * </pre>
 	 * @param indexAlias
 	 * @param query
-	 * @param sort
 	 * @param start
 	 * @param rows
 	 * @return
@@ -125,15 +126,7 @@ public class SiteSearchWebAPI implements ViewTool {
         return siteSearchAPI.search(indexName, query, start, rows);
 	}
 
-	
-	
-	public Map<String, Facet> getFacets(String indexName, String query) throws DotDataException{
-		
-		return  siteSearchAPI.getFacets(indexName, query);
-		
-	}
-	
-	/**
+    /**
 	 * This method will return a list of the site search index names
 	 * @return
 	 */
@@ -148,5 +141,130 @@ public class SiteSearchWebAPI implements ViewTool {
 	public List<String> listSearchIncidies(){
 		return listSearchIndicies();
 	}
-	
+
+    /**
+     * Returns the Facets for a given query
+     *
+     * @param indexName Name of the index where the search will be made, if null the default index will be use if exist
+     * @param query     Query to apply
+     * @return
+     * @throws DotDataException
+     * @throws IllegalAccessException
+     * @throws NoSuchFieldException
+     * @see <a href="http://www.elasticsearch.org/guide/reference/api/search/facets/">http://www.elasticsearch.org/guide/reference/api/search/facets/</a>
+     */
+    public Map<String, Facet> getFacets ( String indexName, String query ) throws DotDataException, IllegalAccessException, NoSuchFieldException {
+
+        //The map we will finally send
+        Map<String, Facet> internalFacets = new HashMap<String, Facet>();
+
+        //Search with the given query
+        Map<String, Facet> facets = siteSearchAPI.getFacets( indexName, query );
+        for ( String key : facets.keySet() ) {
+
+            Facet internalFacet = facets.get( key );
+
+            //Verify the type of the facet in order to be able to create a proper wrapper for it
+            if ( internalFacet instanceof InternalStringTermsFacet ) {
+
+                InternalStringTermsFacet facet = (InternalStringTermsFacet) internalFacet;
+
+                //Getting private fields values required for the proper build of the wrapper
+                Integer requiredSize = (Integer) getFieldValue( InternalStringTermsFacet.class, "requiredSize", facet );
+                TermsFacet.ComparatorType comparatorType = (TermsFacet.ComparatorType) getFieldValue( InternalStringTermsFacet.class, "comparatorType", facet );
+                //New Instance of the wrapper for the String Facet
+                internalFacet = new InternalWrapperStringTermsFacet( facet.getName(), comparatorType, requiredSize, facet.getEntries(), facet.getMissingCount(), facet.getTotalCount() );
+            } else if ( internalFacet instanceof InternalCountDateHistogramFacet ) {
+
+                InternalCountDateHistogramFacet facet = (InternalCountDateHistogramFacet) internalFacet;
+
+                //Getting private fields values required for the proper build of the wrapper
+                DateHistogramFacet.ComparatorType comparatorType = (DateHistogramFacet.ComparatorType) getFieldValue( InternalCountDateHistogramFacet.class, "comparatorType", facet );
+                //New Instance of the wrapper for the Date Facet
+                internalFacet = new InternalWrapperCountDateHistogramFacet( facet.getName(), comparatorType, facet.getEntries() );
+            }
+
+            internalFacets.put( key, internalFacet );
+        }
+
+        return internalFacets;
+    }
+
+    /**
+     * Utility method to get the value of a private field using reflection
+     *
+     * @param clazz
+     * @param fieldName
+     * @param getFrom
+     * @return
+     * @throws NoSuchFieldException
+     * @throws IllegalAccessException
+     */
+    private Object getFieldValue ( Class clazz, String fieldName, Object getFrom ) throws NoSuchFieldException, IllegalAccessException {
+
+        Field field = clazz.getDeclaredField( fieldName );
+        field.setAccessible( true );
+        Object value = field.get( getFrom );
+        field.setAccessible( false );
+
+        return value;
+    }
+
+    /**
+     * Internal wrapper class for backwards compatibility with the new Elastic Search in
+     * Site Search.
+     */
+    public class InternalWrapperCountDateHistogramFacet extends InternalCountDateHistogramFacet {
+
+        public InternalWrapperCountDateHistogramFacet ( String name, ComparatorType comparatorType, List<InternalCountDateHistogramFacet.CountEntry> entries ) {
+            super( name, comparatorType, entries.toArray( new InternalCountDateHistogramFacet.CountEntry[entries.size()] ) );
+        }
+
+        public java.util.List<CountEntry> entries () {
+            return getEntries();
+        }
+    }
+
+    /**
+     * Internal wrapper class for backwards compatibility with the new Elastic Search in
+     * Site Search.
+     */
+    public class InternalWrapperStringTermsFacet extends InternalStringTermsFacet {
+
+        private List<InternalTermEntry> entries;
+
+        public InternalWrapperStringTermsFacet ( String name, ComparatorType comparatorType, int requiredSize, Collection<TermEntry> entries, long missing, long total ) {
+
+            super( name, comparatorType, requiredSize, entries, missing, total );
+
+            this.entries = new ArrayList<InternalTermEntry>();
+            for ( TermEntry entry : getEntries() ) {
+                this.entries.add( new InternalTermEntry( entry.getTerm().toString(), entry.getCount() ) );
+            }
+        }
+
+        public java.util.List<InternalTermEntry> entries () {
+            return entries;
+        }
+
+        public class InternalTermEntry {
+
+            public String term;
+            public int count;
+
+            public InternalTermEntry ( String term, int count ) {
+                this.term = term;
+                this.count = count;
+            }
+
+            public String getTerm () {
+                return term;
+            }
+
+            public int getCount () {
+                return count;
+            }
+        }
+    }
+
 }

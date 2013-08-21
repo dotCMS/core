@@ -22,27 +22,27 @@
 
 package com.liferay.portal.servlet;
 
-import java.io.File;
-import java.io.IOException;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
-import org.apache.lucene.store.FSDirectory;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.util.LuceneIndexer;
 import com.liferay.portal.util.LuceneUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.GetterUtil;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * <a href="LuceneServlet.java.html"><b><i>View Source</i></b></a>
@@ -87,20 +87,21 @@ public class LuceneServlet extends HttpServlet {
 
 				IndexWriter writer = null;
 
-				try {
-					writer = new IndexWriter(
-							FSDirectory.open(new File(luceneDir)), new WhitespaceAnalyzer(), false, MaxFieldLength.LIMITED);
-				}
-				catch (IOException ioe1) {
-					try {
-						writer = new IndexWriter(
-								FSDirectory.open(new File(luceneDir)), new WhitespaceAnalyzer(), true, MaxFieldLength.LIMITED);
-					}
-					catch (IOException ioe2) {
-						Logger.error(this,ioe2.getMessage(),ioe2);
-					}
-				}
-			}
+                try {
+
+                    Directory directory = FSDirectory.open( new File( luceneDir ) );
+                    IndexWriterConfig config = new IndexWriterConfig( Version.LUCENE_CURRENT, new WhitespaceAnalyzer( Version.LUCENE_CURRENT ) );
+                    /*
+                    IndexWriterConfig.OpenMode.CREATE_OR_APPEND if used IndexWriter will create a new index if there is not
+                    already an index at the provided path and otherwise open the existing index.
+                     */
+                    config.setOpenMode( IndexWriterConfig.OpenMode.CREATE_OR_APPEND );
+
+                    writer = new IndexWriter( directory, config );
+                } catch ( IOException e ) {
+                    Logger.error( this, e.getMessage(), e );
+                }
+            }
 		}
 	}
 

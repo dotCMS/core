@@ -16,7 +16,28 @@
 <%@ include file="/html/portlet/ext/containers/init.jsp" %>
 
 <%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
-<script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
+<script src="/html/js/ace-builds-1.1.01/src-noconflict/ace.js" type="text/javascript"></script>
+<style type="text/css">
+    #aceEditor, #preLoopAceEditor, #postLoopAceEditor { 
+        position: relative;
+    }
+    .show{
+    	width: 650px;
+        height: 350px;
+        border:1px solid #C0C0C0;
+    }
+     .pShow{
+    	width: 650px;
+        height: 150px;
+        border:1px solid #C0C0C0;
+    }
+    .hidden{
+		display: none;
+	}
+	.ace_scrollbar {
+    	overflow: auto;
+	}
+</style>
 <%
 
 	PermissionAPI perAPI = APILocator.getPermissionAPI();
@@ -177,11 +198,12 @@
 					<dd>
 
 						<div id="preLoopEditorArea" style="border: 0px;">
-							<textarea onkeydown="return catchTab(this,event)" name="preLoopMask" id="preLoopMask"><%=UtilMethods.isSet(form.getPreLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPreLoop()):"" %></textarea>
+							<div id="preLoopAceEditor" class="pShow"></div>
+							<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="preLoopMask" id="preLoopMask"><%=UtilMethods.isSet(form.getPreLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPreLoop()):"" %></textarea>
 							<input type="hidden" id="preLoop" name="preLoop" value=""/>
 						</div>
 
-						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPreLoop" id="toggleEditorPreLoop"  onClick="preLoopEditor=codeMirrorToggler(preLoopEditor, 'preLoopMask','<%=preLoopWidth%>', '<%=preLoopHeight%>' );" );"  checked="checked"  />
+						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPreLoop" id="toggleEditorPreLoop"  onClick="aceToggler('preLoopAceEditor', 'preLoopMask');"  checked="checked"  />
 	        	        <label for="toggleEditorPreLoop"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 					</dd>
 				</dl>
@@ -245,7 +267,8 @@
 								String code = UtilMethods.escapeHTMLSpecialChars(cs.getCode());
 							%>
 								<div dojoType="dijit.layout.ContentPane" title="<%=st.getName()%>" selected="true" style="padding:0" id="tab_<%=st.getInode()%>" data-dojo-props="closable:true">
-									<textarea style="width:99%; height:300px" onkeydown="return catchTab(this,event)" name="codeMaskMulti<%=st.getInode()%>" id="codeMaskMulti<%=st.getInode()%>"><%=UtilMethods.isSet(cs.getCode())?UtilMethods.escapeHTMLSpecialChars(cs.getCode()):"" %></textarea>
+									<div id="aceMaskMulti<%=st.getInode()%>" style="position: relative;" class="show"></div>
+									<textarea style="width:99%; height:300px; display: none;" onkeydown="return catchTab(this,event)" name="codeMaskMulti<%=st.getInode()%>" id="codeMaskMulti<%=st.getInode()%>"><%=UtilMethods.isSet(cs.getCode())?UtilMethods.escapeHTMLSpecialChars(cs.getCode()):"" %></textarea>
 								</div>
 								<script>
 									addStructureToList('<%=st.getInode()%>');
@@ -262,7 +285,7 @@
 							%>
 							</div>
 						</div>
-						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCodeMultiple" id="toggleEditorCodeMultiple"  onClick="codeMirrorToggler(codeEditor, 'codeMaskMulti','<%=codeWidth%>', '<%=codeHeight%>' );"  checked="checked"  />
+						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCodeMultiple" id="toggleEditorCodeMultiple"  onClick="aceToggler('aceMaskMulti', 'codeMaskMulti');"  checked="checked"  />
 	        	        <label for="toggleEditorCodeMultiple"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 
 					</dd>
@@ -286,10 +309,11 @@
 					<dd>
 						<br/>
 						<div id="codeEditorArea">
-							<textarea onkeydown="return catchTab(this,event)" name="codeMask" id="codeMask"><%=UtilMethods.isSet(form.getCode())?UtilMethods.escapeHTMLSpecialChars(form.getCode()):"" %></textarea>
+							<div id="aceEditor" class="show"></div>
+							<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="codeMask" id="codeMask"><%=UtilMethods.isSet(form.getCode())?UtilMethods.escapeHTMLSpecialChars(form.getCode()):"" %></textarea>
 							<input type="hidden" name="code" id="code" value=""/>
 						</div>
-						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCode" id="toggleEditorCode"  onClick="codeEditor=codeMirrorToggler(codeEditor, 'codeMask','<%=codeWidth%>', '<%=codeHeight%>' );"  checked="checked"  />
+						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCode" id="toggleEditorCode"  onClick="aceToggler('aceEditor', 'codeMask');"  checked="checked"  />
 	        	        <label for="toggleEditorCode"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 					</dd>
 				</dl>
@@ -301,10 +325,11 @@
 					<dd>
 						<br/>
 						<div id="postLoopEditorArea" style="border: 0px;">
-							<textarea onkeydown="return catchTab(this,event)" name="postLoopMask" id="postLoopMask"><%=UtilMethods.isSet(form.getPostLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPostLoop()):"" %></textarea>
+							<div id="postLoopAceEditor" class="pShow"></div>
+							<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="postLoopMask" id="postLoopMask"><%=UtilMethods.isSet(form.getPostLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPostLoop()):"" %></textarea>
 							<input type="hidden" name="postLoop" id="postLoop" value="" />
 						</div>
-						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPostLoop" id="toggleEditorPostLoop"  onClick="postLoopEditor=codeMirrorToggler(postLoopEditor, 'postLoopMask','<%=postLoopWidth%>', '<%=postLoopHeight%>' );" );"  checked="checked"  />
+						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPostLoop" id="toggleEditorPostLoop"  onClick="aceToggler('postLoopAceEditor', 'postLoopMask');"  checked="checked"  />
 	        	    	<label for="toggleEditorPostLoop"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 					</dd>
 				</dl>

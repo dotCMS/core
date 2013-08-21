@@ -267,9 +267,9 @@ dojo.require("dojox.layout.ContentPane");
 		var k = 0;
 		$(document.getElementById(formId)).getElementsBySelector('textarea').each(
 				function (textareaObj) {
-					if ((textareaObj.id != "") && (codeMirrorEditors[textareaObj.id] != null)) {
+					if ((textareaObj.id != "") && (aceEditor != null)) {
 						try {
-							document.getElementById(textareaObj.id).value=codeMirrorEditors[textareaObj.id].getCode();
+							document.getElementById(textareaObj.id).value=aceEditor.getValue();
 						} catch (e) {
 						}
 					}
@@ -616,9 +616,17 @@ dojo.require("dojox.layout.ContentPane");
 	}
 
 	function saveBinaryFileOnContentCallback(data, fieldRelatedData){
+		alert('sdfsdf');
 
 		if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
-			document.getElementsByName(fieldRelatedData['fieldContentlet'])[0].value = data["contentletInode"];
+
+			var elements = document.getElementsByName(fieldRelatedData['fieldContentlet']);
+
+			for(var i=0; i<elements.length; i++) {
+				if(elements[i].tagName.toLowerCase() =="input") {
+					elements[i].value = data["contentletInode"];
+				}
+			}
 
 			var thumbnailParentDiv = document.createElement("div");
 			thumbnailParentDiv.setAttribute("id",'thumbnailParent'+fieldRelatedData['fieldVarName']);
@@ -663,7 +671,7 @@ dojo.require("dojox.layout.ContentPane");
 				            binaryFieldId : "binary1",
 				            fieldContentletId : "binary1",
 				            saveAsFileName : fieldRelatedData['fileName'],
-				            class : "thumbnailDiv"+fieldRelatedData['fieldVarName'],
+// 				            class : "thumbnailDiv"+fieldRelatedData['fieldVarName'],
 							parentNode: thumbnailParentDiv})
 
 			<%}%>
@@ -738,7 +746,6 @@ dojo.require("dojox.layout.ContentPane");
 						+ "&expireDate=<%=structure.getExpireDateVar()%>"
 						+ "&structureInode=<%=structure.getInode()%>"
 						+ "&r=" + r;
-						console.log(url);
     			myCp.attr("href", url);
     			return;
     		}

@@ -63,12 +63,14 @@ public class BundlerUtil {
 		objectToXML(config, xml);
 
 	}
-	/**
-	 * 
-	 * @param config
-	 * @return
-	 */
-	public static PublisherConfig readBundleXml(PublisherConfig config){
+
+    /**
+     * Reads the main bundle.xml file inside a bundle directory in order to create based on that file a PublisherConfig object
+     *
+     * @param config This bundle current configuration
+     * @return The Bundle configuration read from the mail Bundle xml file
+     */
+    public static PublisherConfig readBundleXml(PublisherConfig config){
 		getBundleRoot(config);
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
@@ -79,44 +81,52 @@ public class BundlerUtil {
 			return null;
 		}
 	}
-	
-	public static void objectToXML(Object obj, File f){
-		objectToXML(obj, f, true);
-	}
 
-	/**
-	 * 
-	 * @param obj
-	 * @param f File to write to
-	 */
-	public static void objectToXML(Object obj, File f, boolean removeFirst){
+    /**
+     * Serialize a given object to xml
+     *
+     * @param obj Object to serialize
+     * @param f   File to write to
+     */
+    public static void objectToXML ( Object obj, File f ) {
+        objectToXML( obj, f, true );
+    }
 
-		if ( removeFirst && f.exists() )
-			f.delete();
-		
-		XStream xstream = new XStream(new DomDriver());
+    /**
+     * Serialize a given object to xml
+     *
+     * @param obj Object to serialize
+     * @param f   File to write to
+     */
+    public static void objectToXML ( Object obj, File f, boolean removeFirst ) {
 
-		try {
-			if(!f.exists())f.createNewFile();
-			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
-			xstream.toXML(obj, out);
-			out.close();
-			
-			
-		} catch (FileNotFoundException e) {
-			Logger.error(PublisherUtil.class,e.getMessage(),e);
-		}catch (IOException e) {
-			Logger.error(PublisherUtil.class,e.getMessage(),e);
-		}	
-	}
-	
-	
-	/**
-	 * 
-	 * @param obj
-	 * @param f File to write to
-	 */
-	public static Object xmlToObject(File f){
+        if ( removeFirst && f.exists() )
+            f.delete();
+
+        XStream xstream = new XStream( new DomDriver() );
+
+        try {
+            if ( !f.exists() ) f.createNewFile();
+            BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream( f ) );
+            xstream.toXML( obj, out );
+            out.close();
+
+
+        } catch ( FileNotFoundException e ) {
+            Logger.error( PublisherUtil.class, e.getMessage(), e );
+        } catch ( IOException e ) {
+            Logger.error( PublisherUtil.class, e.getMessage(), e );
+        }
+    }
+
+
+    /**
+     * Deserialize an object back from XML
+     *
+     * @param f file to deserialize
+     * @return A deserialized object
+     */
+    public static Object xmlToObject(File f){
 		XStream xstream = new XStream(new DomDriver());
 
 		 BufferedInputStream input = null;

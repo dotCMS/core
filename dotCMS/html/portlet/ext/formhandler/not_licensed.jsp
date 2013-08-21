@@ -35,13 +35,13 @@
 
 
 
-
 			<div id="formHandlerDemoDiv" style="width:480px;height:300px;background:#eee;border:1px solid gray;margin:10px; padding:0px;">
-				<embed id="formHandlerDemo" src="http://blip.tv/play/he9%2BgffpbgA%2Em4v" type="application/x-shockwave-flash" width="480" height="300" allowscriptaccess="always" allowfullscreen="true"></embed>
+				<iframe id="formHandlerDemo" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" height="100%" width="100%" style="height:100%;*height:565px;width:100%;display:block;"
+				src="http://blip.tv/play/he9%2BgffpbgA%2Em4v?autostart=false" allowfullscreen=""></iframe>
 			</div>
 
 			<%=LanguageUtil.get(pageContext, "watch-easy-form-creation") %>
-			
+
 
 	</div>
 </div>
@@ -49,7 +49,7 @@
 dojo.addOnUnload (function(){
 	if(dojo.isIE){//DOTCMS-5302
 		document.getElementById('formHandlerDemoDiv').innerHTML="";
-	}	
+	}
 });
 </script>
 

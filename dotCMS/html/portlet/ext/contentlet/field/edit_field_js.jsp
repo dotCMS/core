@@ -13,11 +13,23 @@
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
+<style type="text/css">
+    #aceEditor { 
+        position: relative;	  	
+    }
+    .aceClass{
+    	width: 100%;
+        height: 400px;
+        border:1px solid #C0C0C0;
+        text-overflow: clip;
+    	white-space: nowrap;   
+    }
+</style>
 
 <!-- AChecker support -->
 <script type='text/javascript' src='/dwr/interface/ACheckerDWR.js'></script>
 
-<script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
+<script src="/html/js/ace-builds-1.1.01/src-noconflict/ace.js" type="text/javascript"></script>
 <%if(Config.getBooleanProperty("ENABLE_GZIP",true)){ %>
 <script type="text/javascript" src="/html/js/tinymce/jscripts/tiny_mce/tiny_mce_gzip.js"></script>
 <%}else { %>
@@ -212,7 +224,7 @@ var cmsfile=null;
 			dojo.query('#'+id).style({display:''});
 		}
 		else if(enabledCodeAreas[id]){
-			codeMirrorRemover(id);
+			aceRemover(id);
 		}
 		if(!isWYSIWYGEnabled(id))
         {
@@ -248,14 +260,14 @@ var cmsfile=null;
 			disableWYSIWYG(id);
 		}
 		if(!enabledCodeAreas[id])
-			codeMirrorArea(id);
+			aceArea(id);
 	}
 
 	function toWYSIWYG(id) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.switch.wysiwyg")) %>'))
         {
 			if(enabledCodeAreas[id]){
-				codeMirrorRemover(id);
+				aceRemover(id);
 			}
 			enableWYSIWYG(id, false);
 		}
@@ -468,7 +480,8 @@ var cmsfile=null;
 		if(enabledWYSIWYG[glossaryTermId]) {
 			tinymce.EditorManager.get(glossaryTermId).load();
 		} else if (enabledCodeAreas[glossaryTermId]) {
-			codeMirrorEditors[glossaryTermId].setCode(dojo.byId(glossaryTermId).value);
+			editor.setValue(dojo.byId(glossaryTermId).value);
+			editor.clearSelection();
 		}
 		clearGlossaryTerms();
 	}
@@ -501,26 +514,28 @@ var cmsfile=null;
 		}
 	  }
 	}
-	var codeMirrorEditors = [];
+	var editor;
 
-	function codeMirrorArea(textarea){
-		var dim = dojo.coords(textarea);
-		var areaWidth = dim.w - 27;
-		var areaHeight = "400px";
-		codeMirrorEditors[textarea] = CodeMirror.fromTextArea(textarea, {
-			width: areaWidth,
-			height:areaHeight,
-			parserfile: ["parsedummy.js","parsexml.js", "parsecss.js", "tokenizejavascript.js", "parsejavascript.js", "parsehtmlmixed.js"],
-			stylesheet: ["/html/js/codemirror/css/xmlcolors.css", "/html/js/codemirror/css/jscolors.css", "/html/js/codemirror/css/csscolors.css"],
-			path: "/html/js/codemirror/js/",
-			iframeClass: textarea+"_codeMirror"
-		});
+	function aceArea(textarea){
+		document.getElementById(textarea).style.display = "none";
+		var id = document.getElementById(textarea).value;
+		var aceEditor = document.getElementById('aceEditor');
+		var aceClass = aceEditor.className;
+		aceEditor.className = aceClass.replace('classAce', 'aceClass');
+		editor = ace.edit('aceEditor');
+	    editor.setTheme("ace/theme/textmate");
+	    editor.getSession().setMode("ace/mode/html");
+	    editor.getSession().setUseWrapMode(true);
+	    editor.setValue(id);
+    	editor.clearSelection();
 		enabledCodeAreas[textarea]=true;
 	}
 
-	function codeMirrorRemover(textarea){
-	    var editorText=codeMirrorEditors[textarea].getCode();
-	    removeElement(dojo.query('.'+textarea+'_codeMirror')[0].parentNode);
+	function aceRemover(textarea){
+		var editorText=editor.getValue();
+	    var aceEditor = document.getElementById('aceEditor');
+	    var aceClass = aceEditor.className;
+		aceEditor.className = aceClass.replace('aceClass', 'classAce');
 		dojo.query('#'+textarea).style({display:''});
 		dojo.query('#'+textarea)[0].value=editorText;
 		enabledCodeAreas[textarea]=false;

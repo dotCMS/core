@@ -7,12 +7,16 @@
 <%@page import="java.net.URLDecoder"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="javax.portlet.WindowState"%>
+<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
+<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="java.util.List"%>
 
 <%
 
 	Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
 	Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
-	
+
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action",new String[] {"/ext/hostadmin/view_hosts"});
 	String referer = URLDecoder.decode(PortletURLUtil.getRenderURL(request,WindowState.MAXIMIZED.toString(),params));
@@ -31,7 +35,7 @@
 	params.put("copy_virtual_links", new String[] { "{copyVirtualLinks}" });
 	params.put("copy_host_variables", new String[] { "{copyHostVariables}" });
 	params.put("copy_tag_storage", new String[] { "{copyTagStorage}" });
-				
+
 	String copyHostReferer = URLDecoder.decode(PortletURLUtil.getRenderURL(request,WindowState.MAXIMIZED.toString(),params));
 
 %>
@@ -42,9 +46,10 @@
 	dojo.require('dijit.form.FilteringSelect');
     dojo.require('dijit.form.Form');
     dojo.require('dijit.ProgressBar');
-    
+    dojo.require("dotcms.dojo.push.PushHandler");
+
     var isCMSAdmin = <%= isCMSAdmin %>;
-    
+
 	//I18n messages
 	var deleteConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-host-confirm")) %>';
 	var unarchiveConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unarchive-host-confirm")) %>';
@@ -52,11 +57,19 @@
 	var unpublishConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish-host-confirm")) %>';
 	var publishConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-host-confirm")) %>';
 	var makeDefaultConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "make-default-host-confirm")) %>';
-	
 
-    //Object responsible of the interactions with the listing page --> 
+	var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+
+	<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+		List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
+	var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
+
+	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+
+
+    //Object responsible of the interactions with the listing page -->
     dojo.declare("HostAdmin", null, {
-    
+
 		viewHostsReferer: '<%= referer %>',
 
 		copyHostOptions: 'copy_from_host_id:{copyFromHostId};copy_all:{copyAll};copy_templates_containers:{copyTemplatesAndContainers};copy_content_on_pages:{copyContentOnPages};copy_folders:{copyFolders};copy_content_on_host:{copyContentOnHost};copy_files:{copyFiles};copy_files:{copyFiles};copy_pages:{copyPages};copy_virtual_links:{copyVirtualLinks};copy_host_variables:{copyHostVariables};copy_tag_storage:{copyTagStorage}',
@@ -67,21 +80,21 @@
 							<portlet:param name="selectedStructure" value="<%= hostStructure.getInode() %>" />\
 							<portlet:param name="lang" value="<%= Long.toString(lang.getId()) %>" />\
 					  </portlet:actionURL>',
-			
+
 		editHostURL: '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">\
 							<portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" />\
 							<portlet:param name="cmd" value="edit" />\
 							<portlet:param name="selectedStructure" value="<%= hostStructure.getInode() %>" />\
 							<portlet:param name="referer" value="<%=referer%>" />\
 					  </portlet:actionURL>&inode={hostInode}',
-			
+
         tableHeaderRowTemplate: '<tr>\
     				<th>{hostNameHeader}</th>\
     				{headerColumns}\
     			 </tr>',
-        
+
         tableHeaderColumnTemplate: '<th>{fieldName}</th>',
-        
+
         tableRowTemplate: '<tr class="{alternateClass}" id="row{identifier}">\
             		<td width="25%">\
             			<div style="float:left" id="hostName{identifier}">\
@@ -98,61 +111,71 @@
             		</td>\
     				{rowColumns}\
     		    </tr>',
-        
+
         tableRowColumnTemplate: '	<td>{value}</td>',
-        
+
         tableRowMenuTemplate: '<div dojoType="dijit.Menu" class="dotContextMenu" contextMenuForWindow="false" style="display: none;" targetNodeIds="row{identifier}">\
                     {menuesHTML}\
                 </div>',
-				
-		tableEditRowMenuTemplate: 
+
+		tableEditRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="editIcon" onClick="hostAdmin.editHost(\'{identifier}\', \'{inode}\')">\
                         <%= LanguageUtil.get(pageContext, "Edit") %>\
                      </div>\
                      <div dojoType="dijit.MenuItem" iconClass="editScriptIcon" onClick="hostAdmin.editHostVariables(\'{identifier}\', \'{inode}\')">\
                      <%= LanguageUtil.get(pageContext, "Edit-Host-Variables") %>\
                   	 </div>',
-        
-		tablePublishRowMenuTemplate: 
+
+		tablePublishRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="hostIcon" onClick="hostAdmin.publishHost(\'{identifier}\', \'{inode}\')">\
                         <%= LanguageUtil.get(pageContext, "Start-Host") %>\
                     </div>',
-        
-		tableUnpublishRowMenuTemplate: 
+
+		tableUnpublishRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="hostAdmin.unpublishHost(\'{identifier}\', \'{inode}\')">\
                         <%= LanguageUtil.get(pageContext, "Stop-Host") %>\
                     </div>',
-					
-		tableMakeDefaultRowMenuTemplate: 
+
+		tableMakeDefaultRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="hostDefaultIcon" onClick="hostAdmin.makeDefault(\'{identifier}\', \'{inode}\')">\
                         <%= LanguageUtil.get(pageContext, "Make-Default") %>\
                     </div>',
-        
-		tableArchiveRowMenuTemplate: 
+
+		tableArchiveRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="hostAdmin.archiveHost(\'{identifier}\', \'{inode}\')">\
                         <%= LanguageUtil.get(pageContext, "Archive-Host") %>\
                     </div>',
-        
-		tableUnarchiveRowMenuTemplate: 
+
+		tableUnarchiveRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="unarchiveIcon" onClick="hostAdmin.unarchiveHost(\'{identifier}\', \'{inode}\')">\
                         <%= LanguageUtil.get(pageContext, "Unarchive-Host") %>\
                     </div>',
-        
-		tableDeleteRowMenuTemplate: 
+
+		tableDeleteRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="hostAdmin.deleteHost(\'{identifier}\', \'{inode}\')">\
                         <%= LanguageUtil.get(pageContext, "Delete-Host") %>\
                     </div>',
-        
+
         tableResultSummaryTemplate: '<%= LanguageUtil.get(pageContext, "Viewing-Results") %> {startRecord} <%= LanguageUtil.get(pageContext, "to") %> \
             {endRecord} <%= LanguageUtil.get(pageContext, "of") %> {total}',
 
 
-        tableLoadingTemplate: 
+        tableLoadingTemplate:
                  '<div id="loadingContentListing" name="loadingContentListing" align="center" style=""> <br /><br /><font class="bg" size="2"> <b>\
                  <%= LanguageUtil.get(pageContext, "Loading") %>\
                  </b> <br /><img src="/html/images/icons/processing.gif" /></font> <br /> <br />\
 	              </div>',
-        
+
+         tablePushPublishRowMenuTemplate:
+					'<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="hostAdmin.remotePublish(\'{identifier}\', \'{inode}\')">\
+	                   <%= LanguageUtil.get(pageContext, "Remote-Publish") %>\
+	               </div>',
+
+         tableAddToBundleRowMenuTemplate:
+					'<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="hostAdmin.addToBundle(\'{identifier}\', \'{inode}\')">\
+	                   <%= LanguageUtil.get(pageContext, "Add-To-Bundle") %>\
+	               </div>',
+
         constructor: function(){
             this.currentPage = 1;
             this.RESULTS_PER_PAGE = 20;
@@ -171,17 +194,17 @@
             dijit.byId('addHostDialog').hide();
         },
         goToStep2: function(){
-        
+
             if (dijit.byId('startBlankHostRadio').attr('value')) {
                 this.gotoCreateHost();
             }
             else {
 				HostAjax.findAllHostThumbnails(dojo.hitch(this, this.goToStep2Callback));
             }
-            
+
         },
 		goToStep2Callback: function (thumbnails) {
-			
+
 			this.hostThumbnails = thumbnails;
 
 			var hostsList = [];
@@ -189,7 +212,7 @@
 				var host = thumbnails[i];
 				hostsList.push({ id: host.hostId, name: host.hostName, tagStorage: host.tagStorage });
 			}
-			
+
 	        var hostsStore = new dojo.data.ItemFileReadStore({
             	data: {
 					identifier: 'id',
@@ -197,20 +220,20 @@
 					items: hostsList
 				}
         	});
-			
+
 			dijit.registry.remove('hostToCopy');
 			dijit.registry.remove('id');
 			dojo.byId('hostToCopyWrapper').innerHTML = '<div id="hostToCopy"></div>';
-			
+
 			this.hostsSelect = new dijit.form.FilteringSelect({
 				 id: "id",
-				 name: "name", 
+				 name: "name",
 				 value: thumbnails[0].hostId,
 				 onChange: dojo.hitch(this, this.hostChanged),
 				 store: hostsStore,
 				 searchAttr: "name",
 				 labelAttr: "name"
-			}, 
+			},
 			dojo.byId("hostToCopy"));
 
 			dojo.byId('websitePreviewLink').href = "/html/portlet/ext/common/page_preview_popup.jsp?hostname=" + thumbnails[0].hostName + "&host_id=" + thumbnails[0].hostId;
@@ -221,7 +244,7 @@
 				dojo.byId('hostThumbnail').src ='/contentAsset/image-thumbnail/' + thumbnails[0].hostInode + '/hostThumbnail?byInode=true&w=200&h=200';
             } else
             	dojo.style('hostThumbnailWrapper', {display: 'none'});
-        	
+
             dojo.style('addHostStep1', {
                 display: 'none'
             });
@@ -258,14 +281,14 @@
         },
         gotoCreateHost: function(){
 			var url = this.newHostURL;
-			
+
 			if(dijit.byId('startBlankHostRadio').attr('value')) {
 				url += "&referer=" + escape(this.viewHostsReferer);
 				window.location = url;
 			} else {
-				
-				var copyHostOptions = escape(dojo.replace(this.copyHostOptions, 
-					{ 
+
+				var copyHostOptions = escape(dojo.replace(this.copyHostOptions,
+					{
 						copyFromHostId: this.hostsSelect.attr('value'),
 						copyAll: dijit.byId('copyAll').attr('value'),
 						copyTemplatesAndContainers: dijit.byId('copyTemplatesAndContainers').attr('value'),
@@ -296,12 +319,12 @@
 						dojo.byId('hostThumbnail').src ='/contentAsset/image-thumbnail/' + this.hostThumbnails[i].hostInode + '/hostThumbnail?byInode=true&w=200&h=200';
 		            } else
 		            	dojo.style('hostThumbnailWrapper', {display: 'none'});
-	            	
+
 		            document.getElementById('copyTagStorage').value = this.hostThumbnails[i].tagStorage;
 				}
-			}			
+			}
 
-			
+
         },
         refreshHostTable: function(){
             var filter = dijit.byId('filter').attr('value');
@@ -315,25 +338,25 @@
             DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
             DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
             dojo.byId('hostContextMenues').innerHTML = '';
-            
+
             //Data variables
             var total = data.total;
             var list = data.list;
             var structure = data.strucuture;
             var fields = data.fields;
-            
+
             //Adding the headers to the table
             var hostNameField;
             var columnsHTML = '';
             var listedFields = [];
-            
+
             for (var i = 0; i < fields.length; i++) {
                 var field = fields[i];
                 if (field.fieldVelocityVarName == 'hostName') {
                     hostNameField = field;
                     continue;
                 }
-                
+
                 if (field.fieldListed) {
                     columnsHTML += dojo.replace(this.tableHeaderColumnTemplate, field);
                     listedFields.push(field);
@@ -344,13 +367,13 @@
                 headerColumns: columnsHTML
             });
             dojo.place(headersHTML, 'hostsTableHeader', 'last');
-            
+
             //Adding the hosts to the table
             for (var i = 0; i < list.length; i++) {
-            
+
                 var content = list[i];
                 var rowColumnsHTML = '';
-                
+
                 for (var j = 0; j < listedFields.length; j++) {
                     var field = listedFields[j];
                     var value = content[field.fieldVelocityVarName] == null?'':content[field.fieldVelocityVarName];
@@ -360,22 +383,22 @@
                         value: value == null?"":value
                     });
                 }
-                
+
                 content.alternateClass = "alternate_" + ((i % 1) + 1);
                 if(content.isDefault && content.live)
                     content.imgSrc = 'hostDefaultIcon';
-                else if (content.live) 
+                else if (content.live)
                     content.imgSrc = 'hostIcon';
                 else if(content.archived)
 					content.imgSrc = 'hostArchivedIcon';
-                else 
+                else
                     content.imgSrc = 'hostStoppedIcon';
                 if(content.isDefault)
                 	content.hostName = '<b>' + content[hostNameField.fieldVelocityVarName] + ' (<%= LanguageUtil.get(pageContext, "Default") %>)</b>';
                 else
                 	content.hostName = content[hostNameField.fieldVelocityVarName];
                 content.rowColumns = rowColumnsHTML;
-                
+
                 var rowHTML = dojo.replace(this.tableRowTemplate, content);
                 dojo.place(rowHTML, 'hostsTableBody', 'last');
 
@@ -386,7 +409,7 @@
                 	dojo.attr(content.identifier + "SetupProgress",'style','display:block;width:100px;');
                     setTimeout(dojo.hitch(this, this.checkSetupProgress, content.identifier), 1000);
                 }
-                
+
                 //Checking the status and permission to stop, start, edit and delete a host
 				var menuesHTML = '';
                 if (dojo.indexOf(content.userPermissions, 2) > 0  && content.archived == false) {
@@ -396,11 +419,11 @@
                 if (content.live == false && content.archived == false && dojo.indexOf(content.userPermissions, 4) > 0) {
                     menuesHTML += dojo.replace(this.tablePublishRowMenuTemplate, content);
                 }
-                
+
                 if (content.live == true && content.archived == false && dojo.indexOf(content.userPermissions, 4) > 0) {
                     menuesHTML += dojo.replace(this.tableUnpublishRowMenuTemplate, content);
                 }
-                
+
                 if (isCMSAdmin && !content.isDefault && content.live == false && content.archived == false && dojo.indexOf(content.userPermissions, 2) > 0) {
                     menuesHTML += dojo.replace(this.tableArchiveRowMenuTemplate, content);
                 }
@@ -412,43 +435,51 @@
                 if (!content.isDefault && content.live == false && content.archived == true && dojo.indexOf(content.userPermissions, 2) > 0) {
                     menuesHTML += dojo.replace(this.tableDeleteRowMenuTemplate, content);
                 }
-                
+
                 if (!content.isDefault && content.archived == false) {
                     menuesHTML += dojo.replace(this.tableMakeDefaultRowMenuTemplate, content);
                 }
-				
-				
+
+                if (dojo.indexOf(content.userPermissions, 4) > 0 && enterprise && sendingEndpoints) {
+                    menuesHTML += dojo.replace(this.tablePushPublishRowMenuTemplate, content);
+                }
+
+                if (dojo.indexOf(content.userPermissions, 4) > 0 && enterprise ) {
+                    menuesHTML += dojo.replace(this.tableAddToBundleRowMenuTemplate, content);
+                }
+
+
                 var rowMenuHTML = dojo.replace(this.tableRowMenuTemplate, { menuesHTML: menuesHTML, identifier: content.identifier });
                 dojo.place(rowMenuHTML, 'hostContextMenues', 'last');
-                
+
             };
             dojo.parser.parse('hostContextMenues');
-            
+
             //rendering the no results message
-            if (total == 0) 
+            if (total == 0)
                 dojo.style('noResultsSection', {
                     display: ''
                 });
-            else 
+            else
                 dojo.style('noResultsSection', {
                     display: 'none'
                 });
-            
+
             //Rendering the results summary bottom section of the table
             var startRecord = (this.currentPage - 1) * this.RESULTS_PER_PAGE + 1;
-            if (startRecord > total) 
+            if (startRecord > total)
                 startRecord = total;
             var endRecord = startRecord + this.RESULTS_PER_PAGE - 1;
-            if (endRecord > total) 
+            if (endRecord > total)
                 endRecord = total;
-            
+
             var summaryHTML = dojo.replace(this.tableResultSummaryTemplate, {
                 startRecord: startRecord,
                 endRecord: endRecord,
                 total: total
             });
             dojo.byId('resultsSummary').innerHTML = summaryHTML;
-            
+
             //Rendering the next and previous buttons
             dojo.style('buttonNextResultsWrapper', {
                 visibility: 'hidden'
@@ -456,24 +487,24 @@
             dojo.style('buttonPreviousResultsWrapper', {
                 visibility: 'hidden'
             });
-            if (endRecord < total) 
+            if (endRecord < total)
                 dojo.style('buttonNextResultsWrapper', {
                     visibility: 'visible'
                 });
-            if (startRecord > 1) 
+            if (startRecord > 1)
                 dojo.style('buttonPreviousResultsWrapper', {
                     visibility: 'visible'
                 });
-            
-            if (total == 0) 
+
+            if (total == 0)
                 dojo.style('resultsSummary', {
                     visibility: 'hidden'
                 })
-            else 
+            else
                 dojo.style('resultsSummary', {
                     visibility: 'visible'
                 })
-            
+
         },
         checkSetupProgress: function(hostIdentifier){
 			HostAjax.getHostSetupProgress(hostIdentifier, dojo.hitch(this, this.checkSetupProgressCallback, hostIdentifier));
@@ -496,14 +527,14 @@
         filterHosts: function(){
         	DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
 		    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
-		    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;  
+		    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
             clearTimeout(this.filterHandler);
             this.filterHandler = setTimeout(dojo.hitch(this, this.refreshHostTable), 700);
         },
         clearFilter: function(){
         	DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
 		    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
-		    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;  
+		    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
         	dijit.byId('showDeleted').attr('checked', false);
             dijit.byId('filter').attr('value', '');
             this.refreshHostTable();
@@ -518,7 +549,7 @@
         },
 		editHost: function (id, inode) {
 			var href = dojo.replace(this.editHostURL, { hostInode: inode});
-			window.location=href;	
+			window.location=href;
 		},
 		editHostVariables: function (id, inode) {
 			hostVariablesAdmin.showHostVariables(id);
@@ -527,6 +558,12 @@
 			if(confirm(publishConfirmMessage)) {
 				HostAjax.publishHost(id, dojo.hitch(this, this.refreshHostTable));
 			}
+		},
+		remotePublish: function (id) {
+			pushHandler.showDialog(id);
+		},
+		addToBundle: function (id) {
+			pushHandler.showAddToBundleDialog(id, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
 		},
 		unpublishHost: function (id) {
 			if(confirm(unpublishConfirmMessage)) {
@@ -539,7 +576,7 @@
 			}
 		},
 		unarchiveHost: function (id) {
-			if(confirm(unarchiveConfirmMessage)) { 
+			if(confirm(unarchiveConfirmMessage)) {
 				HostAjax.unarchiveHost(id, dojo.hitch(this, this.refreshHostTable));
 			}
 		},
@@ -547,25 +584,25 @@
 			if(confirm(deleteConfirmMessage)) {
 				DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
 			    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
-			    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;  
+			    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
 				HostAjax.deleteHost(id, dojo.hitch(this, this.refreshHostTable));
 			}
 		},
-		
+
 		makeDefault: function (id, inode) {
 			if(confirm(makeDefaultConfirmMessage)) {
 				DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
 			    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
-			    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate; 
+			    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
 				HostAjax.makeDefault(id, dojo.hitch(this, this.refreshHostTable));
 			}
 		}
-        
+
     });
-    
+
     dojo.addOnLoad(dojo.hitch(this, function(){
         hostAdmin = new HostAdmin();
         hostAdmin.refreshHostTable();
     }))
-    
+
 </script>
