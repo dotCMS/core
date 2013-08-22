@@ -595,22 +595,22 @@ public class HostAPIImpl implements HostAPI {
 				}
 				
 				// wipe bad old containers
-                dc.setSQL("delete from containers cc where exists (select * from identifier where host_inode=? and id=cc.identifier) ");
+                dc.setSQL("delete from containers where exists (select * from identifier where host_inode=? and id=containers.identifier) ");
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
                 
                 // wipe bad old templates
-                dc.setSQL("delete from template tt where exists (select * from identifier where host_inode=? and id=tt.identifier) ");
+                dc.setSQL("delete from template where exists (select * from identifier where host_inode=? and id=template.identifier) ");
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
                 
                 // wipe bad old htmlpages
-                dc.setSQL("delete from htmlpage hh where exists (select * from identifier where host_inode=? and id=hh.identifier) ");
+                dc.setSQL("delete from htmlpage where exists (select * from identifier where host_inode=? and id=htmlpage.identifier) ");
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
                 
                 // wipe bad old links
-                dc.setSQL("delete from links ll where exists (select * from identifier where host_inode=? and id=ll.identifier) ");
+                dc.setSQL("delete from links where exists (select * from identifier where host_inode=? and id=links.identifier) ");
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
                 
