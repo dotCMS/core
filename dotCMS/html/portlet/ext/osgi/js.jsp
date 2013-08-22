@@ -266,6 +266,10 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
     remotePublishBundle : function(jarFile){
         pushHandler.showDialog(jarFile);
+    },
+
+    addToBundlePlugin : function (jarFile) {
+        pushHandler.showAddToBundleDialog(jarFile, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
     }
 
 });
