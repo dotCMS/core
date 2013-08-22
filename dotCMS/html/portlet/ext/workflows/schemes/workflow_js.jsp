@@ -691,9 +691,11 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		var user = select.getValue();
 		var userName = select.attr('displayedValue');
 
-		actionAdmin.addToWhoCanUse(user, userName);
-		actionAdmin.refreshWhoCanUse();
-		actionAdmin.doChange();
+        if (actionAdmin.isSet(user) && actionAdmin.isSet(userName)) {
+            actionAdmin.addToWhoCanUse(user, userName);
+            actionAdmin.refreshWhoCanUse();
+            actionAdmin.doChange();
+        }
 	},
 
 	addToWhoCanUse : function ( myId, myName){
@@ -762,7 +764,14 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
       	}else{
        		dojo.style("divRoleHierarchyForAssign", "visibility", "hidden");
       	}
-	}
+	},
+    isSet: function (toValidate) {
+        if (toValidate == null || toValidate == undefined || toValidate == "") {
+            return false;
+        }
+
+        return true;
+    }
 });
 
 

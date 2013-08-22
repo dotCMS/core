@@ -121,23 +121,25 @@ public class WfActionAjax extends WfBaseAction {
 				newAction.setNextAssign(null);
 			}
 			List<Permission> permissions = new ArrayList<Permission>();
-			for (String perm : whoCanUse) {
-				if(!UtilMethods.isSet(perm)){
-					continue;
-				}
+            for ( String perm : whoCanUse ) {
+                if ( !UtilMethods.isSet( perm ) ) {
+                    continue;
+                }
 
-				Role test = resolveRole(perm);
-				Permission p = new Permission(newAction.getPermissionType(), newAction.getId(), test.getId(), PermissionAPI.PERMISSION_USE);
-				
-				boolean exists=false;
-				for(Permission curr : permissions)
-				    exists=exists || curr.getRoleId().equals(p.getRoleId());
-				
-				if(!exists)
-				    permissions.add(p);
-			}
-			
-			wapi.saveAction(newAction, permissions);
+                Role role = resolveRole( perm );
+                Permission p = new Permission( newAction.getId(), role.getId(), PermissionAPI.PERMISSION_USE );
+
+                boolean exists = false;
+                for ( Permission curr : permissions ) {
+                    exists = exists || curr.getRoleId().equals( p.getRoleId() );
+                }
+
+                if ( !exists ) {
+                    permissions.add( p );
+                }
+            }
+
+            wapi.saveAction(newAction, permissions);
 
 			if(isNew){
 				WorkflowActionClass wac = new WorkflowActionClass();

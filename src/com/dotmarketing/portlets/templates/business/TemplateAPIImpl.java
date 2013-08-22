@@ -98,15 +98,15 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	@Override
 	public Template copy(Template sourceTemplate, User user) throws DotDataException, DotSecurityException {
-		
+
 		Identifier id = APILocator.getIdentifierAPI().find(sourceTemplate.getIdentifier());
-		
+
 		Host  h = APILocator.getHostAPI().find(id.getHostId(), user, false);
 
-		
-		
+
+
 		return copy(sourceTemplate, h, false, false, user, false);
-		
+
 	}
 
 	@Override
@@ -143,7 +143,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		updateParseContainerSyntax(newTemplate);
 		newTemplate.setBody(replaceWithNewContainerIds(newTemplate.getBody(), containerMappings));
 		newTemplate.setDrawedBody(replaceWithNewContainerIds(newTemplate.getDrawedBody(), containerMappings));
-		
+
 		if (isNew) {
 			// creates new identifier for this webasset and persists it
 			Identifier newIdentifier = com.dotmarketing.business.APILocator.getIdentifierAPI().createNew(newTemplate, destination);
@@ -164,6 +164,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		APILocator.getVersionableAPI().setWorking(newTemplate);
 		if(sourceTemplate.isLive()){
 		    APILocator.getVersionableAPI().setLive(newTemplate);
+		} else if(sourceTemplate.isArchived()) {
+			APILocator.getVersionableAPI().setDeleted(newTemplate, true);
 		}
 		// Copy permissions
 		permissionAPI.copyPermissions(sourceTemplate, newTemplate);
@@ -214,7 +216,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	private void save(Template template) throws DotDataException {
 		templateFactory.save(template);
 	}
-	
+
 	private void save(Template template, String existingId) throws DotDataException {
         templateFactory.save(template,existingId);
     }
@@ -231,7 +233,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		    Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
 		    existingId = ident==null || !UtilMethods.isSet(ident.getId());
 		}
-	    
+
 	    if(UtilMethods.isSet(template.getInode())) {
     	    try {
     	        Template existing=(Template) HibernateUtil.load(Template.class, template.getInode());
@@ -241,7 +243,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     	        existingInode=true;
     	    }
 	    }
-	    
+
 	    Template oldTemplate = !existingId && UtilMethods.isSet(template.getIdentifier())
 				?findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles)
 						:null;
@@ -285,7 +287,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		    save(template,template.getInode());
 		else
 		    save(template);
-		
+
 		APILocator.getVersionableAPI().setWorking(template);
 
 
@@ -306,8 +308,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
     			throw new DotSecurityException("You don't have permission to read the source file.");
     		}
-    
-    
+
+
     		return templateFactory.getContainersInTemplate(template, user, respectFrontendRoles);
 	    }
 	    else {
@@ -348,12 +350,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 		matcher.appendTail(newBody);
 
-		
+
 		// if we are updating container references
 		if(containerMappings != null && containerMappings.size() > 0){
 			Pattern uuid = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
-	
-			
+
+
 			body = newBody.toString();
 			newBody = new StringBuffer();
 			matcher = uuid.matcher(body);
@@ -368,12 +370,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			}
 			matcher.appendTail(newBody);
 		}
-		
-		
-		
-		
-		
-		
+
+
+
+
+
+
 		return newBody.toString();
 	}
 
@@ -461,19 +463,19 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			DotDataException {
 		return templateFactory.findTemplates(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
-	
+
 	@Override
 	public Template find(String inode, User user,  boolean respectFrontEndRoles) throws DotSecurityException,
 			DotDataException {
 		Template t =  templateFactory.find(inode);
-		if(t!=null && InodeUtils.isSet(t.getInode()) && 
+		if(t!=null && InodeUtils.isSet(t.getInode()) &&
 		      !permissionAPI.doesUserHavePermission(t, PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
 			throw new DotSecurityException("User does not have access to template:" + inode);
 		}
 		return t;
-	
+
 	}
-	
+
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException {
 		templateFactory.associateContainers(containerIdentifiers, template);
 	}
