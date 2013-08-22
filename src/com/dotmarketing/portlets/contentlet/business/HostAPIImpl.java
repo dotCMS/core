@@ -593,6 +593,31 @@ public class HostAPIImpl implements HostAPI {
 					}
 					StructureFactory.deleteStructure(structure);
 				}
+				
+				// wipe bad old containers
+                dc.setSQL("delete from containers cc where exists (select * from identifier where host_inode=? and id=cc.identifier) ");
+                dc.addParam(host.getIdentifier());
+                dc.loadResult();
+                
+                // wipe bad old templates
+                dc.setSQL("delete from template tt where exists (select * from identifier where host_inode=? and id=tt.identifier) ");
+                dc.addParam(host.getIdentifier());
+                dc.loadResult();
+                
+                // wipe bad old htmlpages
+                dc.setSQL("delete from htmlpage hh where exists (select * from identifier where host_inode=? and id=hh.identifier) ");
+                dc.addParam(host.getIdentifier());
+                dc.loadResult();
+                
+                // wipe bad old links
+                dc.setSQL("delete from links ll where exists (select * from identifier where host_inode=? and id=ll.identifier) ");
+                dc.addParam(host.getIdentifier());
+                dc.loadResult();
+                
+                // kill bad identifiers pointing to the host
+                dc.setSQL("delete from identifier where host_inode=?");
+                dc.addParam(host.getIdentifier());
+                dc.loadResult();
 
 				// Remove Host
 				Contentlet c = contentAPI.find(host.getInode(), user, respectFrontendRoles);
