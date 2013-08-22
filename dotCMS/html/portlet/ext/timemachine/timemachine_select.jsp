@@ -188,7 +188,7 @@ function showSettings() {
         title: "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>",
         style: "width: 600px;height: 600px;",
         content: new dojox.layout.ContentPane({
-        	style: "height:550px; width: 580px;",
+        	//style: "height:550px; width: 580px;",
             href: "/html/portlet/ext/timemachine/settings.jsp"
         }),
         onHide: function() {
