@@ -595,7 +595,7 @@ public class HostAPIImpl implements HostAPI {
 				}
 				
 				// wipe bad old containers
-                dc.setSQL("delete from container_structures cs where exists (select * from identifier where host_inode=? and cs.container_id=id");
+                dc.setSQL("delete from container_structures cs where exists (select * from identifier where host_inode=? and cs.container_id=id)");
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
 				dc.setSQL("delete from containers cc where exists (select * from identifier where host_inode=? and id=cc.identifier) ");
