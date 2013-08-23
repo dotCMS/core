@@ -808,7 +808,7 @@ public class H2CacheLoader implements CacheLoader{
 	            ResultSet rs=smt.executeQuery();
 	            while(rs.next()) {
 	                Fqn fqn=Fqn.fromString(rs.getString(1));
-	                keys.add(getKeyName(fqn));
+	                keys.add(fqn.getLastElementAsString());
 	            }
 	            rs.close();
 	        }
