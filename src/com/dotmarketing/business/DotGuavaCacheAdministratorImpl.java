@@ -491,16 +491,26 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		if(group ==null ){
 			return null;
 		}
+		Set<String> keys=new HashSet<String>();
+		
 		group = group.toLowerCase();
 		Cache<String, Object> cache = getCache(group);
 		Map<String, Object> m = cache.asMap();
 		
 		if (m!=null) {
-			return m.keySet();
-
+			keys.addAll(m.keySet());
 		} 
+		
+		if(diskCache!=null && isDiskCache(group)) {
+		    try {
+		        keys.addAll(diskCache.getKeys(group));
+		    }
+		    catch(Exception ex) {
+		        Logger.error(this, "can't get h2 cache keys on group "+group,ex);
+		    }
+		}
 			
-		return null;
+		return keys;
 		
 
 	}

@@ -794,6 +794,35 @@ public class H2CacheLoader implements CacheLoader{
 	private int getDBNumber(Fqn fqn){
 		return (((Math.abs(fqn.hashCode()) % dbsPerSpace)) + 1) + (dbsPerSpace * getSpace(fqn));
 	}
+	
+	public Set<String> getKeys(String group) throws Exception {
+	    Set<String> keys=new HashSet<String>();
+	    Connection conn = null;
+	    PreparedStatement smt = null;
+	    
+	    for(int db : getDBNumbers(new Fqn(group))) {
+	        try {
+	            conn=createConnection(true,db);
+	            smt=conn.prepareStatement("SELECT CACHE_KEY FROM `"+group+"`");
+	            smt.setFetchSize(1000);
+	            ResultSet rs=smt.executeQuery();
+	            while(rs.next()) {
+	                Fqn fqn=Fqn.fromString(rs.getString(1));
+	                keys.add(getKeyName(fqn));
+	            }
+	            rs.close();
+	        }
+	        catch(Exception ex) { 
+	            throw new Exception("couldn't get keys on group "+group+" db number"+db,ex);
+	        }
+	        finally {
+	            if(smt!=null) smt.close();
+	            closeConnection(conn);
+	        }
+	    }
+	    
+	    return keys;
+	}
 
 	public static String getGroupCount(String group){
 		return instance._getGroupCount(group);
