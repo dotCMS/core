@@ -105,7 +105,7 @@ public class RoleFactoryImpl extends RoleFactory {
 							roles.add(r);
 						}
 					}
-				}	
+				}
 			}else{
 				helpers = new ArrayList<RoleCache.UserRoleCacheHelper>();
 				LinkedList<Role> rolesToProcess = new LinkedList<Role>();
@@ -124,15 +124,15 @@ public class RoleFactoryImpl extends RoleFactory {
 					rids.add(r.getId());
 					rolesToProcess.add(r);
 				}
-	
-				if(APILocator.getUserAPI().getAnonymousUser().getUserId().equals(userId) 
+
+				if(APILocator.getUserAPI().getAnonymousUser().getUserId().equals(userId)
 						&& !rolesToProcess.contains(APILocator.getRoleAPI().loadCMSAnonymousRole())){
 					rolesToProcess.add(APILocator.getRoleAPI().loadCMSAnonymousRole());
 				}
 				while(!rolesToProcess.isEmpty()) {
 					Role r = rolesToProcess.poll();
 					if(r ==null) continue;
-					UserRoleCacheHelper h = rc.new UserRoleCacheHelper(r.getId(),rids.contains(r.getId())?false:true);
+					UserRoleCacheHelper h = new UserRoleCacheHelper(r.getId(),rids.contains(r.getId())?false:true);
 					helpers.add(h);
 					if(includeImplicitRoles || rids.contains(r.getId())){
 						roles.add(r);
@@ -144,7 +144,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				}
 				rc.addRoleListForUser(helpers, userId);
 			}
-			
+
 			return roles;
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage() + " Unable to load the user roles for user " + userId == null? "not passed in":userId, e);
@@ -346,7 +346,7 @@ public class RoleFactoryImpl extends RoleFactory {
 
 	@Override
 	protected void delete(Role role) throws DotDataException {
-		
+
 		DotConnect dc = new DotConnect();
 		dc.setSQL("delete from users_cms_roles where role_id = ?");
 		dc.addParam(role.getId());
@@ -355,14 +355,14 @@ public class RoleFactoryImpl extends RoleFactory {
 		hu.setQuery("from com.dotmarketing.business.Role where id = ?");
 		hu.setParam(role.getId());
 		Role r = (Role)hu.load();
-		
+
 		HibernateUtil.delete(r);
 		if(r.getParent().equals(r.getId())){
 			rc.clearRootRoleCache();
 		}
 
 		rc.clearRoleCache();
-		
+
 		AdminLogger.log(RoleFactoryImpl.class, "delete", "Role deleted Id :"+r.getId());
 
 	}
