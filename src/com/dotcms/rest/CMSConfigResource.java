@@ -51,7 +51,7 @@ public class CMSConfigResource extends WebResource {
      */
     @POST
     @Path ("/saveCompanyBasicInfo")
-    @Produces ("application/json")
+    @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveCompanyBasicInfo ( @Context HttpServletRequest request,
                                            @FormParam ("user") String user, @FormParam ("password") String password,
@@ -61,12 +61,8 @@ public class CMSConfigResource extends WebResource {
                                            @FormParam ("size") String size,
                                            @FormParam ("homeURL") String homeURL ) throws IOException, JSONException {
 
-        StringBuilder responseMessage = new StringBuilder();
-
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
         Map<String, String> paramsMap = initData.getParamsMap();
-
-        //Validate the parameters
         if ( paramsMap == null ) {
             paramsMap = new HashMap<String, String>();
         }
@@ -75,8 +71,13 @@ public class CMSConfigResource extends WebResource {
         paramsMap.put( "emailAddress", emailAddress );
         paramsMap.put( "size", size );
         paramsMap.put( "homeURL", homeURL );
-        if ( !validate( paramsMap, responseMessage, "portalURL", "mx", "emailAddress", "size", "homeURL" ) ) {
-            return response( responseMessage.toString(), true );
+
+        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        StringBuilder responseMessage = new StringBuilder();
+
+        //Validate the parameters
+        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size", "homeURL" ) ) {
+            return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
         try {
@@ -108,13 +109,13 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error saving basic information for current company." );
             }
-            return response( responseMessage.toString(), true );
+            return responseResource.responseError( responseMessage.toString() );
         } finally {
             // Clear the principal associated with this thread
             PrincipalThreadLocal.setName( null );
         }
 
-        return response( responseMessage.toString(), false );
+        return responseResource.response( responseMessage.toString() );
     }
 
     /**
@@ -131,26 +132,27 @@ public class CMSConfigResource extends WebResource {
      */
     @POST
     @Path ("/saveCompanyLocaleInfo")
-    @Produces ("application/json")
+    @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveCompanyLocaleInfo ( @Context HttpServletRequest request,
                                             @FormParam ("user") String user, @FormParam ("password") String password,
                                             @FormParam ("languageId") String languageId,
                                             @FormParam ("timeZoneId") String timeZoneId ) throws IOException, JSONException {
 
-        StringBuilder responseMessage = new StringBuilder();
-
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
         Map<String, String> paramsMap = initData.getParamsMap();
-
-        //Validate the parameters
         if ( paramsMap == null ) {
             paramsMap = new HashMap<String, String>();
         }
         paramsMap.put( "languageId", languageId );
         paramsMap.put( "timeZoneId", timeZoneId );
-        if ( !validate( paramsMap, responseMessage, "languageId", "timeZoneId" ) ) {
-            return response( responseMessage.toString(), true );
+
+        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        StringBuilder responseMessage = new StringBuilder();
+
+        //Validate the parameters
+        if ( !responseResource.validate( responseMessage, "languageId", "timeZoneId" ) ) {
+            return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
         try {
@@ -173,13 +175,13 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error saving basic information for current company." );
             }
-            return response( responseMessage.toString(), true );
+            return responseResource.responseError( responseMessage.toString() );
         } finally {
             // Clear the principal associated with this thread
             PrincipalThreadLocal.setName( null );
         }
 
-        return response( responseMessage.toString(), false );
+        return responseResource.response( responseMessage.toString() );
     }
 
     /**
@@ -195,24 +197,25 @@ public class CMSConfigResource extends WebResource {
      */
     @POST
     @Path ("/saveCompanyAuthTypeInfo")
-    @Produces ("application/json")
+    @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveCompanyAuthTypeInfo ( @Context HttpServletRequest request,
                                               @FormParam ("user") String user, @FormParam ("password") String password,
                                               @FormParam ("authType") String authType ) throws IOException, JSONException {
 
-        StringBuilder responseMessage = new StringBuilder();
-
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
         Map<String, String> paramsMap = initData.getParamsMap();
-
-        //Validate the parameters
         if ( paramsMap == null ) {
             paramsMap = new HashMap<String, String>();
         }
         paramsMap.put( "authType", authType );
-        if ( !validate( paramsMap, responseMessage, "authType" ) ) {
-            return response( responseMessage.toString(), true );
+
+        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        StringBuilder responseMessage = new StringBuilder();
+
+        //Validate the parameters
+        if ( !responseResource.validate( responseMessage, "authType" ) ) {
+            return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
         try {
@@ -240,13 +243,13 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error saving basic information for current company." );
             }
-            return response( responseMessage.toString(), true );
+            return responseResource.responseError( responseMessage.toString() );
         } finally {
             // Clear the principal associated with this thread
             PrincipalThreadLocal.setName( null );
         }
 
-        return response( responseMessage.toString(), false );
+        return responseResource.response( responseMessage.toString() );
     }
 
     /**
@@ -263,22 +266,23 @@ public class CMSConfigResource extends WebResource {
      */
     @POST
     @Path ("/saveCompanyLogo")
-    @Produces ("text/html")
+    @Produces (MediaType.TEXT_HTML)
     @Consumes (MediaType.MULTIPART_FORM_DATA)
     public Response saveCompanyLogo ( @Context HttpServletRequest request,
                                       @FormDataParam ("user") String user, @FormDataParam ("password") String password,
                                       @FormDataParam ("logoFile") File logoFile,
                                       @FormDataParam ("logoFile") FormDataContentDisposition logoDetail ) throws IOException, JSONException {
 
-        StringBuilder responseMessage = new StringBuilder();
-
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+
+        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
         if ( !UtilMethods.isSet( logoFile ) ) {
             //Prepare a proper response
             responseMessage.append( "Error: The Logo file is a required Field." );
-            return response( responseMessage.toString(), true );
+            return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
         try {
@@ -298,13 +302,13 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error the company logo." );
             }
-            return response( responseMessage.toString(), true );
+            return responseResource.responseError( responseMessage.toString() );
         } finally {
             // Clear the principal associated with this thread
             PrincipalThreadLocal.setName( null );
         }
 
-        return response( responseMessage.toString(), false, "text/html" );
+        return responseResource.response( responseMessage.toString() );
     }
 
     /**
@@ -320,24 +324,26 @@ public class CMSConfigResource extends WebResource {
      */
     @POST
     @Path ("/deleteEnvironment")
-    @Produces ("application/json")
+    @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response deleteEnvironment ( @Context HttpServletRequest request,
                                         @FormParam ("user") String user, @FormParam ("password") String password,
                                         @FormParam ("environment") String environment ) throws JSONException, IOException {
 
-        StringBuilder responseMessage = new StringBuilder();
-
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
         Map<String, String> paramsMap = initData.getParamsMap();
-
         //Validate the parameters
         if ( paramsMap == null ) {
             paramsMap = new HashMap<String, String>();
         }
         paramsMap.put( "environment", environment );
-        if ( !validate( paramsMap, responseMessage, "environment" ) ) {
-            return response( responseMessage.toString(), true );
+
+        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        StringBuilder responseMessage = new StringBuilder();
+
+        //Validate the parameters
+        if ( !responseResource.validate( responseMessage, "environment" ) ) {
+            return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
         try {
@@ -377,10 +383,10 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error deleting Environment: " ).append( environment );
             }
-            return response( responseMessage.toString(), true );
+            return responseResource.responseError( responseMessage.toString() );
         }
 
-        return response( responseMessage.toString(), false );
+        return responseResource.response( responseMessage.toString() );
     }
 
     /**
@@ -396,24 +402,25 @@ public class CMSConfigResource extends WebResource {
      */
     @POST
     @Path ("/deleteEndpoint")
-    @Produces ("application/json")
+    @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response deleteEndpoint ( @Context HttpServletRequest request,
                                      @FormParam ("user") String user, @FormParam ("password") String password,
                                      @FormParam ("endPoint") String endPoint ) throws JSONException, IOException {
 
-        StringBuilder responseMessage = new StringBuilder();
-
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
         Map<String, String> paramsMap = initData.getParamsMap();
-
-        //Validate the parameters
         if ( paramsMap == null ) {
             paramsMap = new HashMap<String, String>();
         }
         paramsMap.put( "endPoint", endPoint );
-        if ( !validate( paramsMap, responseMessage, "endPoint" ) ) {
-            return response( responseMessage.toString(), true );
+
+        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        StringBuilder responseMessage = new StringBuilder();
+
+        //Validate the parameters
+        if ( !responseResource.validate( responseMessage, "endPoint" ) ) {
+            return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
         try {
@@ -435,67 +442,10 @@ public class CMSConfigResource extends WebResource {
             } else {
                 responseMessage.append( "Error deleting End Point: " ).append( endPoint );
             }
-            return response( responseMessage.toString(), true );
+            return responseResource.responseError( responseMessage.toString() );
         }
 
-        return response( responseMessage.toString(), false );
-    }
-
-    /**
-     * Validates a Collection or string parameters.
-     *
-     * @param paramsMap
-     * @param responseMessage
-     * @param args
-     * @return True if all the params are present, false otherwise
-     * @throws JSONException
-     */
-    private Boolean validate ( Map<String, String> paramsMap, StringBuilder responseMessage, String... args ) throws JSONException {
-
-        for ( String param : args ) {
-
-            //Validate the given param
-            if ( !UtilMethods.isSet( paramsMap.get( param ) ) ) {
-
-                //Prepare a proper response
-                responseMessage.append( "Error: " ).append( param ).append( " is a required Field." );
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Prepares a Response object with a given response text. The creation depends if it is an error or not.
-     *
-     * @param response
-     * @param error
-     * @return
-     */
-    private Response response ( String response, Boolean error ) {
-        return response( response, error, "application/json" );
-    }
-
-    /**
-     * Prepares a Response object with a given response text. The creation depends if it is an error or not.
-     *
-     * @param response
-     * @param error
-     * @param contentType
-     * @return
-     */
-    private Response response ( String response, Boolean error, String contentType ) {
-
-        Response.ResponseBuilder responseBuilder;
-        if ( error ) {
-            responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-            responseBuilder.entity( response );
-        } else {
-            responseBuilder = Response.ok( response, contentType );
-        }
-
-        return responseBuilder.build();
+        return responseResource.response( responseMessage.toString() );
     }
 
 }
