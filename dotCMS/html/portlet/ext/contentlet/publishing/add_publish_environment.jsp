@@ -5,6 +5,7 @@
 <%@page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.Role"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%
 	String identifier = request.getParameter("id");
 	EnvironmentAPI eAPI = APILocator.getEnvironmentAPI();
@@ -94,7 +95,7 @@
 
 		<% if(currentEnvironment!=null) {
 
-			Set<Role> roles = APILocator.getPermissionAPI().getReadRoles(currentEnvironment);%>
+			Set<Role> roles = APILocator.getPermissionAPI().getRolesWithPermission(currentEnvironment, PermissionAPI.PERMISSION_READ);%>
 			<%for(Role tmpRole :  roles){%>
 				addToWhoCanUse("<%=tmpRole.getId()%>",
 						"<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
