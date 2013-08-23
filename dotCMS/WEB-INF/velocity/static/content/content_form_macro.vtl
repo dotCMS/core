@@ -1047,13 +1047,20 @@ var theme = 'dmundra';
     return true;
 }
 
+var captcha_audio_play;
+
 	function playAudioCaptcha(){
-		document.getElementById('captcha-audio-play').setAttribute("class","captcha-audio-playing");
+		captcha_audio_play = document.getElementById('captcha-audio-play');
+		captcha_audio_play.setAttribute("class","captcha-audio-playing");
 		var rand=Math.floor(Math.random()*999999999);
-		document.getElementById('captcha-audio').innerHTML = '<embed hidden="false" src="/audioCaptcha.wav?r=' + rand +'" id="captcha-sound" controller="false" width="0" height="0" autoplay="true" autostart="true" type="audio/wav" />';
+		if(dojo.isIE){
+			document.getElementById('captcha-audio').innerHTML = '<embed hidden="false" src="/audioCaptcha.wav?r=' + rand +'" id="captcha-sound" controller="false" width="0" height="0" autoplay="true" autostart="true" type="audio/wav" />';
+		}else{
+			document.getElementById('captcha-audio').innerHTML = '<audio hidden="false" src="/audioCaptcha.wav?r=' + rand +'" id="captcha-sound" controller="false" width="0" height="0" autoplay="true" autostart="true" type="audio/wav" />';
+		}
 
 		setTimeout(function(){
-			document.getElementById('captcha-audio-play').setAttribute("class","captcha-audio-play");
+			captcha_audio_play.setAttribute("class","audio-play");
 		},8000);
 
 	}
