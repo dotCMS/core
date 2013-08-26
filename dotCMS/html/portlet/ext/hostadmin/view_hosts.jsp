@@ -42,6 +42,14 @@
 		}
 		t.start();
 	});
+	function stopEvent(event){
+		if(event.preventDefault){
+			event.preventDefault();
+			event.stopPropagation(); 
+		}
+	}
+
+
 </script> 
     <div class="yui-u" style="text-align: right;">
 		<input dojoType="dijit.form.CheckBox" type="checkbox" name="showDeleted" id="showDeleted" onClick="hostAdmin.filterHosts();" <%=(showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : ""%> value="true" />
@@ -121,10 +129,10 @@
             </div>
             <hr/>
             <div class="buttonRow">
-                <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep2(); dojo.stopEvent(event); return false; " iconClass="nextIcon">
+                <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep2(); stopEvent(event); return false; " iconClass="nextIcon">
                     <%= LanguageUtil.get(pageContext, "Next") %>
                 </button>
-                <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); dojo.stopEvent(event); return false; " iconClass="cancelIcon">
+                <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent(event); return false; " iconClass="cancelIcon">
                     <%= LanguageUtil.get(pageContext, "Cancel") %>
                 </button>
             </div>
