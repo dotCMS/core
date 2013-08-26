@@ -134,7 +134,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
 				}
 
 				Role test = resolveRole(perm);
-				Permission p = new Permission(environment.getPermissionType(), environment.getId(), test.getId(), PermissionAPI.PERMISSION_USE);
+				Permission p = new Permission(environment.getId(), test.getId(), PermissionAPI.PERMISSION_USE);
 
 				boolean exists=false;
 				for(Permission curr : permissions)
@@ -187,7 +187,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
 				}
 
 				Role test = resolveRole(perm);
-				Permission p = new Permission(environment.getPermissionType(), environment.getId(), test.getId(), PermissionAPI.PERMISSION_USE);
+				Permission p = new Permission(environment.getId(), test.getId(), PermissionAPI.PERMISSION_USE);
 
 				boolean exists=false;
 				for(Permission curr : permissions)
