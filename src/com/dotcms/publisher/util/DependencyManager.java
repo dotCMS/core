@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -52,6 +53,7 @@ public class DependencyManager {
 	private DependencySet contents;
 	private DependencySet links;
 	private DependencySet relationships;
+	private DependencySet workflows;
 
 	private Set<String> hostsSet;
 	private Set<String> foldersSet;
@@ -86,6 +88,7 @@ public class DependencyManager {
 		contents = new DependencySet(config.getId(), "content", config.isDownloading(), isPublish);
 		relationships = new DependencySet(config.getId(), "relationship", config.isDownloading(), isPublish);
 		links = new DependencySet(config.getId(),"links",config.isDownloading(), isPublish);
+		workflows = new DependencySet(config.getId(),"workflows",config.isDownloading(), isPublish);
 
 		// these ones are for being iterated over to solve the asset's dependencies
 		hostsSet = new HashSet<String>();
@@ -187,6 +190,9 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
 				}
+			} else if(asset.getType().equals("workflow")) {
+				WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(asset.getAsset());
+				workflows.add(asset.getAsset(),scheme.getModDate());
 			}
 		}
 
