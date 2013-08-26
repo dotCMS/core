@@ -877,6 +877,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		WorkflowStep proxy = new WorkflowStep();
 		proxy.setId(action.getStepId());
 		cache.removeActions(proxy);
+
+		// update workflowScheme mod date
+		WorkflowStep step = findStep(action.getStepId());
+		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		scheme.setModDate(new Date());
+		saveScheme(scheme);
+
 	}
 
 	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException {
@@ -939,6 +946,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			scheme.setId(UUIDGenerator.generateUuid());
 		}
 
+		scheme.setModDate(new Date());
+
 		final DotConnect db = new DotConnect();
 		try {
 			if (isNew) {
@@ -950,6 +959,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(scheme.isMandatory());
 				db.addParam(scheme.getEntryActionId());
 				db.addParam(scheme.isDefaultScheme());
+				db.addParam(scheme.getModDate());
 				db.loadResult();
 			} else {
 				db.setSQL(sql.UPDATE_SCHEME);
@@ -959,6 +969,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(scheme.isMandatory());
 				db.addParam(scheme.getEntryActionId());
 				db.addParam(scheme.getId());
+				db.addObject(scheme.getModDate());
 				db.loadResult();
 
 			}
@@ -1075,6 +1086,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 		}
 		cache.remove(step);
+
+		// update workflowScheme mod date
+		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		scheme.setModDate(new Date());
+		saveScheme(scheme);
 
 	}
 
