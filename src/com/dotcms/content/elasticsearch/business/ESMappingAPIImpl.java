@@ -69,6 +69,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
+import com.google.gson.Gson;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
@@ -333,10 +334,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     
                     String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
                     
-                    String metadata=(String)mlowered.remove("metadata");
-                    Map<String,Object> metamap=KeyValueFieldUtil.JSONValueToHashMap(metadata);
-                    metamap.put("content", contentData); // this is the dangerous call! everything in memory!
-                    mlowered.put("metadata", metamap);
+                    String lvar=con.getStructure().getVelocityVarName().toLowerCase();
+                    
+                    mlowered.put(lvar+".metadata.content", contentData);
                 }
             }
 	        
