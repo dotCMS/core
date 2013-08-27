@@ -13,7 +13,7 @@
 </style>
 
 
-#set($categ = $categories.getChildrenCategories("${fieldAux.values.trim()}"))
+#set($categ = $categories.getChildrenCategories("${fieldAux.values.trim()}",true,10))
 
 <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="select${fieldAux.velocityVarName}Inode" id="select${fieldAux.velocityVarName}Inode" autocomplete="false"  invalidMessage="Invalid category name"  onChange='updateCategoriesList("${fieldAux.velocityVarName}" , "${fieldAux.velocityVarName}Names", "select${fieldAux.velocityVarName}Inode")'>   
 <option value=""></option>

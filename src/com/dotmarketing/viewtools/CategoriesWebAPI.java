@@ -173,6 +173,56 @@ public class CategoriesWebAPI implements ViewTool {
 			return null;
 		}
 	}
+	
+	/**
+	 * Retrieves the list of categories, their children categories and grand-children categories upto the specified maxDepth.
+	 * 
+	 * @param inode CategoryInode for which to get the children categories.
+	 * @param includeGrandChildren 
+	 * @param maxDepth
+	 * @return
+	 */
+	public List<Category> getChildrenCategories(String inode, boolean includeGrandChildren, int maxDepth) {		
+		try {
+			List<Category> categories = new ArrayList<Category>();
+			Category cat = categoryAPI.find(inode, user, true);
+			List<Category> cats = categoryAPI.getChildren(cat, user, true);
+
+			if(!UtilMethods.isSet(maxDepth))
+				maxDepth = 5;
+			for (Category childCat : cats) {
+				categories.add(childCat);
+				if(includeGrandChildren)
+					categories.addAll(getChildrenCategories(childCat, 1 , maxDepth));
+			}
+			
+			return perAPI.filterCollection(categories, PermissionAPI.PERMISSION_READ, true, user);
+		} catch (Exception e) {
+			Logger.error(this, "An unknown error happening while trying to retrieve categories : ", e);
+			return null;
+		}
+	}
+	
+	private List<Category> getChildrenCategories(Category parentCategory, int level, int maxDepth) throws DotDataException, DotSecurityException{
+		
+		List<Category> result = new ArrayList<Category>();
+		
+		if(level <= maxDepth)
+		{
+			int nextLevel = level + 1;
+			List<Category> childCategories = categoryAPI.getChildren(parentCategory, user, true);
+			//Get the children categories of each child
+			for(Category categoryAux : childCategories)
+			{
+				result.add(categoryAux);
+				List<Category> children = getChildrenCategories(categoryAux,nextLevel, maxDepth);
+				if(children.size() > 0) {
+					result.addAll(children);
+				}
+			}
+		}
+		return result;
+	}
 
 	public List<Category> getActiveChildrenCategories(Category cat) {
 		try {
