@@ -22,6 +22,7 @@
 
 <style type="text/css">
     @import "$dojoPath/dijit/themes/dmundra/dmundra.css";
+    @import "$dojoPath/dijit/themes/claro/claro.css"; 
     @import "/html/css/leftPreview.css";
 </style>
 <script type="text/javascript">
@@ -242,7 +243,7 @@
 
 <div id="main_window" class="sideMenu">
 
-<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false"  class="claro" style="width:200px;">
 
 <!-- Edit Mode -->
     <div id="editModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Edit")" #if ($EDIT_MODE && $ADMIN_MODE) selected="true" #end>
