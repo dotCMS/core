@@ -24,7 +24,8 @@ hr {color: #fff; background-color: #fff; border: 1px solid #ddd; border-style: n
 .dmundra .dijitTabPaneWrapper {background:none;border-style:none;border-width:0px;border:none;}
 .dmundra .dijitTabListWrapper {}
 .dmundra .dijitTabContainerTop-dijitContentPane{padding-bottom:10px;}
-
+#mainTabContainer_tablist_menuBtn{left:165px;}
+#mainTabContainer_tablist{width:200px !important;}
 .dmundra .dijitButtonText {display:inline-block;width:155px;text-align:left;overflow: hidden;}
 .dmundra .dijitTabContainerTop-tabs {margin-top:3px;}
 
