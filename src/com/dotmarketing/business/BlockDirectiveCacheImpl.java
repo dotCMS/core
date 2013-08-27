@@ -29,7 +29,7 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
 	public BlockDirectiveCacheImpl() {
 		cache = CacheLocator.getCacheAdministrator();
 		//delete everything on startup
-		clearCache();
+		//clearCache();
 		canCache = LicenseUtil.getLevel() > 99;
 		
 		

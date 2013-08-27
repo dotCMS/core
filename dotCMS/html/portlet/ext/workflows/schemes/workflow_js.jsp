@@ -456,10 +456,9 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 			});
 
 			var x = dijit.byId("addEditStepDia");
-			x.hide();
-
-
-
+			if(typeof x != "undefined"){
+				x.hide();
+			}
 		}
 	}
 

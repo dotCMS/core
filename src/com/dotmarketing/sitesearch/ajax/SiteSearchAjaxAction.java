@@ -132,6 +132,8 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			}
 		}
 
+		config.setJobName(config.getJobName()+"_"+config.get("indexAlias"));
+
 		try {
 			if(config.runNow()){
 				APILocator.getSiteSearchAPI().executeTaskNow(config);
@@ -198,7 +200,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
         }
         response.getWriter().println(indexName);
     }
-	
+
 	public void getJobProgress(HttpServletRequest request, HttpServletResponse response) throws Exception {
         Map<String, String> map = getURIParams();
         StringBuilder json = new StringBuilder();
@@ -206,7 +208,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
         json.append("[");
         for(ScheduledTask task : ssapi.getTasks()){
             int progress=-1, max=-1;
-            if(ssapi.isTaskRunning(task.getJobName())){ 
+            if(ssapi.isTaskRunning(task.getJobName())){
                 SiteSearchPublishStatus ps = ssapi.getTaskProgress(task.getJobName());
                 progress=ps.getCurrentProgress() + ps.getBundleErrors();
                 max=ps.getTotalBundleWork();
@@ -216,11 +218,11 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
                 .append("},");
         }
         json.append("]");
-        
+
         response.setContentType("application/json");
         response.getWriter().println(json.toString());
 	}
-	
+
 	@Override
     public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
@@ -233,7 +235,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	        throw new RuntimeException(ex);
 	    }
     }
-	
+
 	@Override
     public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
