@@ -17,43 +17,43 @@ public abstract class RoleCache implements Cachable{
 	 * @return
 	 */
 	abstract protected Role get(String key);
-	
+
 	abstract protected List<String> addLayoutsToRole(List<String> layouts,String roleId);
 
 	abstract protected List<UserRoleCacheHelper> addRoleListForUser(List<UserRoleCacheHelper> roles, String userId);
-	
+
 	abstract protected List<UserRoleCacheHelper> getRoleIdsForUser(String userId);
-	
+
 	abstract protected List<String> getLayoutsForRole(String roleId);
-	
+
 	abstract protected List<Role> getRootRoles();
-	
+
 	abstract protected List<Role> addRootRoles(List<Role> roles);
-	
+
 	/**
 	 * FLushes both key and roleid cache
 	 */
 	abstract public void clearCache();
-	
+
 	abstract public void clearRootRoleCache();
-	
+
 	abstract protected void clearRoleCache();
-	
+
 	abstract protected void clearUserRoleCache();
 
 	abstract protected void remove(String key);
-	
+
 	abstract protected void removeLayoutsOnRole(String roleId);
-	
-	protected class UserRoleCacheHelper{
+
+	protected static class UserRoleCacheHelper{
 		private String roleId;
 		private boolean inherited;
-				
+
 		protected UserRoleCacheHelper(String roleId, boolean inherited){
 			this.roleId = roleId;
 			this.inherited = inherited;
 		}
-		
+
 		/**
 		 * @return the roleId
 		 */
