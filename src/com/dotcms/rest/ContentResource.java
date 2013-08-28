@@ -601,6 +601,18 @@ public class ContentResource extends WebResource {
                     contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 }
                 
+                // check for existing identifier
+                if(map.containsKey("identifier")) {
+                    try {
+                        Contentlet existing=APILocator.getContentletAPI().findContentletByIdentifier((String)map.get("identifier"), false, 
+                                contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
+                        APILocator.getContentletAPI().copyProperties(contentlet, existing.getMap());
+                        contentlet.setInode("");
+                    } catch (Exception e) {
+                        throw new RuntimeException("can't get existing content for ident "+map.get("identifier")+" lang "+contentlet.getLanguageId(),e);
+                    }
+                }
+                
                 // build a field map for easy lookup
                 Map<String,Field> fieldMap=new HashMap<String,Field>();
                 for(Field ff : FieldsCache.getFieldsByStructureInode(stInode))
