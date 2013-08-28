@@ -441,6 +441,16 @@
 		<antcall target="javadoc" />
 
 		<zip destfile="${distribution.output}/../dotcms_${dotcms.release.version}.zip" basedir="${distribution.output}" />
+		
+		<tar destfile="${distribution.output}/../dotcms_${dotcms.release.version}.tar.gz" compression="gzip" longfile="gnu">
+			<tarfileset dir="${distribution.output}">
+		        <include name="**/**"/>
+		    </tarfileset>
+		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
+		        <include name="**/*.sh"/>
+		    </tarfileset>
+		</tar>
+		
 		<delete dir="${distribution.output}" />
 	</target>
 
