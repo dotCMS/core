@@ -70,6 +70,7 @@ public class BundlePublisher extends Publisher {
         handlers.add( new LanguageHandler( config ) );
         handlers.add( new OSGIHandler( config ) );
         handlers.add( new LinkHandler( config ) );
+        handlers.add( new WorkflowHandler( config ) );
 
         auditAPI = PublishAuditAPI.getInstance();
 

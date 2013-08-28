@@ -27,6 +27,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.StructureBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -294,6 +295,7 @@ public class PushPublisher extends Publisher {
                 list.add( RelationshipBundler.class );
             }
             list.add( LanguageBundler.class );
+            list.add( WorkflowBundler.class );
         }
 
         return list;

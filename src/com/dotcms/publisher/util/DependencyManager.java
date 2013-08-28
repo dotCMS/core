@@ -219,6 +219,7 @@ public class DependencyManager {
 		config.setContents(contents);
 		config.setLinks(links);
 		config.setRelationships(relationships);
+		config.setWorkflows(workflows);
 	}
 
 	/**
