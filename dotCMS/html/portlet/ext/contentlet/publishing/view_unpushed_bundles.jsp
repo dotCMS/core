@@ -13,6 +13,8 @@
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="org.apache.commons.lang.StringEscapeUtils"%>
+<%@ page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException" %>
+<%@ page import="com.dotmarketing.util.Logger" %>
 
 <style>
 
@@ -106,43 +108,57 @@
 					
 					<tr>
 
-
 						<td nowrap="nowrap" valign="top" colspan="2">
-							
-							
 							
 								<%boolean hasRow = false;
 								for(PublishQueueElement asset : assets){
-									hasRow=true;%>
-									<div style="padding:4px;margin:3px;border-bottom:1px solid #eeeeee">
-									
+									hasRow=true;
 
-										<span class="deleteIcon" style="margin-right:2px; cursor: pointer" onclick="deleteAsset('<%=asset.getAsset()%>', '<%=bundle.getId()%>')"></span>&nbsp;
-	
-										<%
-										String identifier = asset.getAsset();
-										String assetType = asset.getType();
-										String structureName = "";
-										String title = "";
-										String inode = "";
-	
-				                        if ( assetType.equals( "contentlet" ) ) {
-				                            //Searches and returns for a this Identifier a Contentlet using the default language
-				                            Contentlet contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
-				                            title = contentlet.getTitle();
-				                            inode = contentlet.getInode();
-				                            structureName = contentlet.getStructure().getName();
-				                        %>
-										    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
-										        <strong style="text-decoration: underline;"><%=StringEscapeUtils.escapeHtml(title)%></strong>  : <%=structureName %>
-				                            </a>
-										<% } else {
-				                            title = PublishAuditUtil.getInstance().getTitle(assetType, identifier);%>
-											<strong><%=StringEscapeUtils.escapeHtml(title)%></strong> : <%= assetType%>
-										<% } %>
-		
-								    </div>					
-								<%}%>
+                                    String identifier = asset.getAsset();
+                                    String assetType = asset.getType();
+
+                                    Contentlet contentlet = null;
+                                    String structureName = "";
+                                    String title = "";
+                                    String inode = "";
+
+                                    if ( assetType.equals( "contentlet" ) ) {
+
+                                        //Searches and returns for a this Identifier a Contentlet using the default language
+                                        try {
+                                            contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
+                                        } catch ( DotContentletStateException e ) {
+                                            Logger.warn( this.getClass(), "Unable to find contentlet with identifier: [" + identifier + "]", e );
+                                        }
+                                        if (contentlet != null) {
+                                            title = contentlet.getTitle();
+                                            inode = contentlet.getInode();
+                                            structureName = contentlet.getStructure().getName();
+                                        }
+                                    } else {
+                                        title = PublishAuditUtil.getInstance().getTitle(assetType, identifier);
+                                        if (title.equals( assetType )) {
+                                            title = "";
+                                            Logger.warn( this.getClass(), "Unable to find Asset of type: [" + assetType + "] with identifier: [" + identifier + "]" );
+                                        }
+                                    }
+                                %>
+                                    <%if (contentlet != null || !title.equals( "" ) ) {%>
+                                        <div style="padding:4px;margin:3px;border-bottom:1px solid #eeeeee">
+
+                                            <span class="deleteIcon" style="margin-right:2px; cursor: pointer" onclick="deleteAsset('<%=asset.getAsset()%>', '<%=bundle.getId()%>')"></span>&nbsp;
+
+                                            <%if ( assetType.equals( "contentlet" ) ) {%>
+                                                <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
+                                                    <strong style="text-decoration: underline;"><%=StringEscapeUtils.escapeHtml(title)%></strong>  : <%=structureName %>
+                                                </a>
+                                            <%} else {%>
+                                                <strong><%=StringEscapeUtils.escapeHtml(title)%></strong> : <%= assetType%>
+                                            <%}%>
+
+                                        </div>
+								    <%}
+                                }%>
 							
 							<%if(!hasRow){ %>
 								<div style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_bundle_is_empty") %></div>
