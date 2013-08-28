@@ -167,11 +167,11 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       }
 
                                       type = "folder";
-                                  } else if ( UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
-                                	  type = "workflow";
                                   }
                               } catch ( Exception ex ) {
-                                  // well, none of those
+                            	  if ( UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
+                                	  type = "workflow";
+                                  }
                               }
 
                           } else {
