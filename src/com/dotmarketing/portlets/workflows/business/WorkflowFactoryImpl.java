@@ -324,6 +324,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void deleteAction(WorkflowAction action) throws DotDataException {
+		String stepId = action.getStepId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION);
 		db.addParam(action.getId());
@@ -331,9 +332,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		WorkflowStep proxy = new WorkflowStep();
 		proxy.setId(action.getStepId());
 		cache.removeActions(proxy);
+
+		// update scheme mod date
+		WorkflowStep step = findStep(stepId);
+		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		scheme.setModDate(new Date());
+		saveScheme(scheme);
 	}
 
 	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException {
+		String actionId = actionClass.getActionId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
 		db.addParam(actionClass.getId());
@@ -342,12 +350,26 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.setSQL(sql.DELETE_ACTION_CLASS);
 		db.addParam(actionClass.getId());
 		db.loadResult();
+
+		// update scheme mod date
+		WorkflowAction action = findAction(actionId);
+		WorkflowStep step = findStep(action.getStepId());
+		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		scheme.setModDate(new Date());
+		saveScheme(scheme);
 	}
 
 	public void deleteActionClassByAction(WorkflowAction action) throws DotDataException, DotSecurityException {
+		String actionId = action.getId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_BY_ACTION);
 		db.addParam(action.getId());
+
+		// update scheme mod date
+		WorkflowStep step = findStep(actionId);
+		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		scheme.setModDate(new Date());
+		saveScheme(scheme);
 	}
 
 	public void deleteComment(WorkflowComment comment) throws DotDataException {
@@ -358,18 +380,32 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void deleteStep(WorkflowStep step) throws DotDataException {
+		String schemeId = step.getSchemeId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_STEP);
 		db.addParam(step.getId());
 		db.loadResult();
 		cache.remove(step);
+
+		// update scheme mod date
+		WorkflowScheme scheme = findScheme(schemeId);
+		scheme.setModDate(new Date());
+		saveScheme(scheme);
 	}
 
 	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException {
+		String actionClassId = actionClass.getId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
 		db.addParam(actionClass.getId());
 		db.loadResult();
+
+		// update scheme mod date
+		WorkflowAction action = findAction(actionClassId);
+		WorkflowStep step = findStep(action.getStepId());
+		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		scheme.setModDate(new Date());
+		saveScheme(scheme);
 
 	}
 
@@ -922,6 +958,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 		}
 		// cache.remove(step);
+
+		// update workflowScheme mod date
+		WorkflowAction action = findAction(actionClass.getActionId());
+		WorkflowStep step = findStep(action.getStepId());
+		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		scheme.setModDate(new Date());
+		saveScheme(scheme);
 	}
 
 	public void saveComment(WorkflowComment comment) throws DotDataException {
@@ -1128,6 +1171,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 			db.loadResult();
 		}
+
+		// update workflowScheme mod date
+		WorkflowActionClass actionClass = findActionClass(param.getActionClassId());
+		WorkflowAction action = findAction(actionClass.getActionId());
+		WorkflowStep step = findStep(action.getStepId());
+		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		scheme.setModDate(new Date());
+		saveScheme(scheme);
 	}
 
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException {

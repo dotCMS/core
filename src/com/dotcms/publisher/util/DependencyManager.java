@@ -624,19 +624,38 @@ public class DependencyManager {
 	 * </ul>
 	 */
 	private void setStructureDependencies() {
-		Set<String> s = new HashSet<String>();
-		s.addAll(structures);
-		for (String inode : s) {
-			structureDependencyHelper(inode);
+		try {
+
+			Set<String> s = new HashSet<String>();
+			s.addAll(structures);
+			for (String inode : s) {
+				structureDependencyHelper(inode);
+			}
+
+		} catch (DotSecurityException e) {
+
+			Logger.error(this, e.getMessage(),e);
+		} catch (DotDataException e) {
+			Logger.error(this, e.getMessage(),e);
 		}
 	}
 
 
 
-	private void structureDependencyHelper(String stInode){
+	private void structureDependencyHelper(String stInode) throws DotDataException, DotSecurityException{
 		Structure st = StructureCache.getStructureByInode(stInode);
-		hosts.add(st.getHost()); // add the host dependency
-		folders.add(st.getFolder()); // add the folder dependency
+		Host h = APILocator.getHostAPI().find(st.getHost(), user, false);
+		hosts.add(st.getHost(), h.getModDate()); // add the host dependency
+
+		Folder f = APILocator.getFolderAPI().find(st.getFolder(), user, false);
+		folders.add(st.getFolder(), f.getModDate()); // add the folder dependency
+
+		try {
+			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
+			workflows.add(scheme.getId(), scheme.getModDate());
+		} catch (DotDataException e) {
+			Logger.debug(getClass(), "Could not get the Workflow Scheme Dependency for Structure ID: " + st.getInode());
+		}
 
 		// Related structures
 		List<Relationship> relations = RelationshipFactory.getAllRelationshipsByStructure(st);
