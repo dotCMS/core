@@ -62,11 +62,10 @@
 	}
 
 	function addToBundle (objId) {
-  	    dojo.require("dotcms.dojo.push.PushHandler");
-      	pushHandler = new dotcms.dojo.push.PushHandler();
-    	pushHandler.showAddToBundleDialog('$htmlPageInode', '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
-  	}
-
+        dojo.require("dotcms.dojo.push.PushHandler");
+        pushHandler = new dotcms.dojo.push.PushHandler();
+        pushHandler.showAddToBundleDialog('$htmlPageInode', '$languagewebapi.getFromUserLanguage("Add-To-Bundle")');
+    }
 
 	function _dotWidgetInitiate(){
 		_dotWidgetCleanResultsData();
