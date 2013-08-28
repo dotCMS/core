@@ -597,6 +597,54 @@ public class ContentResourceTest extends TestBase {
         Assert.assertEquals(0, inodes.size());
             
     }
+    
+    @Test
+    public void newVersion() throws Exception {
+        final User sysuser=APILocator.getUserAPI().getSystemUser();
+        
+        ClientResponse response=contRes.path("/justSave/1")
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .header(authheader, authvalue).put(ClientResponse.class,
+                    new JSONObject()
+                        .put("stName", "webPageContent")
+                        .put("contentHost", "demo.dotcms.com")
+                        .put("title", "testing newVersion")
+                        .put("body", "just testing")
+                        .toString());
+        Assert.assertEquals(200, response.getStatus());
+        
+        String inode=response.getHeaders().getFirst("inode");
+        
+        
+        String identifier=response.getHeaders().getFirst("identifier");
+        
+        response=contRes.path("/justSave/1")
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .header(authheader, authvalue).put(ClientResponse.class,
+                    new JSONObject()
+                        .put("stName", "webPageContent")
+                        .put("contentHost", "demo.dotcms.com")
+                        .put("title", "testing newVersion 2")
+                        .put("body", "just testing 2")
+                        .put("identifier", identifier)
+                        .toString());
+        String inode2=response.getHeaders().getFirst("inode");
+        String identifier2=response.getHeaders().getFirst("identifier");
+        
+        Assert.assertEquals(identifier, identifier2);
+        Assert.assertNotSame(inode, inode2);
+        
+        Contentlet c1=APILocator.getContentletAPI().find(inode, sysuser, false);
+        Contentlet c2=APILocator.getContentletAPI().find(inode2, sysuser, false);
+        
+        Contentlet working=APILocator.getContentletAPI().findContentletByIdentifier(identifier, false, 1, sysuser, false);
+        
+        Assert.assertEquals("testing newVersion 2", c2.getStringProperty("title"));
+        Assert.assertEquals("just testing 2", c2.getStringProperty("body"));
+        Assert.assertEquals(c1.getIdentifier(), c2.getIdentifier());
+        
+        Assert.assertEquals(working.getInode(), c2.getInode());
+    }
 }
 
 
