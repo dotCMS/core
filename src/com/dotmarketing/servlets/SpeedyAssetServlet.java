@@ -310,7 +310,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 			    // Set the expiration time
 				if (!_adminMode) {
 
-				    int _daysCache = 30;
+				    int _daysCache = Config.getIntProperty("cache.maxage.days");
 				    GregorianCalendar expiration = new GregorianCalendar();
 					expiration.add(java.util.Calendar.DAY_OF_MONTH, _daysCache);
 					int seconds = (_daysCache * 24 * 60 * 60);
