@@ -209,7 +209,7 @@ public class BrowserAPI {
 					cond.deleted = showArchived;
 					files.addAll(folderAPI.getFiles(parent, userAPI.getSystemUser(), false, cond));
 				}
-				files.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(parent, sortBy, !showWorking, showWorking, user, false));
+				files.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(parent, "", !showWorking, showWorking, user, false));
 			}
 
 		} catch (Exception e2) {
