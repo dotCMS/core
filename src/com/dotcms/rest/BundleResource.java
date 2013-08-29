@@ -17,6 +17,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import java.util.List;
 
 
@@ -37,9 +38,11 @@ public class BundleResource extends WebResource {
     @GET
     @Path ("/getunsendbundles/{params:.*}")
     @Produces ("application/json")
-    public String getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+    public Response getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = init( params, true, request, true );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
         //Reading the parameters
         String userId = initData.getParamsMap().get( "userid" );
@@ -92,21 +95,25 @@ public class BundleResource extends WebResource {
         jsonResponse.put( "items", jsonBundles.toArray() );
         jsonResponse.put( "numRows", bundles.size() );
 
-        return jsonResponse.toString();
+        return responseResource.response( jsonResponse.toString() );
     }
 
 	@GET
 	@Path("/updatebundle/{params:.*}")
 	@Produces("application/json")
-	public String updateBundle(@Context HttpServletRequest request, @PathParam("params") String params) {
+	public Response updateBundle(@Context HttpServletRequest request, @PathParam("params") String params) {
+
 		InitDataObject initData = init(params, true, request, true);
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+
 		String bundleId = initData.getParamsMap().get("bundleid");
 		String bundleName = initData.getParamsMap().get("bundlename");
 
 		try {
 
 			if(!UtilMethods.isSet(bundleId)) {
-				return "false";
+                return responseResource.response( "false" );
 			}
 
 			Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
@@ -115,59 +122,64 @@ public class BundleResource extends WebResource {
 
 		} catch (DotDataException e) {
 			Logger.error(getClass(), "Error trying to update Bundle. Bundle ID: " + bundleId);
-			return "false";
+            return responseResource.response( "false" );
 		}
 
-		return "true";
-
+        return responseResource.response( "true" );
 	}
 
 	@GET
 	@Path("/deletepushhistory/{params:.*}")
 	@Produces("application/json")
-	public String deletePushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
-		InitDataObject initData = init(params, true, request, true);
-		String assetId = initData.getParamsMap().get("assetid");
+	public Response deletePushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+
+        InitDataObject initData = init(params, true, request, true);
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+
+        String assetId = initData.getParamsMap().get("assetid");
 
 		try {
 
 			if(!UtilMethods.isSet(assetId)) {
-				return "false";
+                return responseResource.response( "false" );
 			}
 
 			APILocator.getPushedAssetsAPI().deletePushedAssets(assetId);
 
 		} catch (DotDataException e) {
 			Logger.error(getClass(), "Error trying to delete Pushed Assets for asset Id: " + assetId);
-			return "false";
+            return responseResource.response( "false" );
 		}
 
-		return "true";
-
+        return responseResource.response( "true" );
 	}
 
 	@GET
 	@Path("/deleteenvironmentpushhistory/{params:.*}")
 	@Produces("application/json")
-	public String deleteEnvironmentPushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
-		InitDataObject initData = init(params, true, request, true);
+	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+
+        InitDataObject initData = init(params, true, request, true);
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+
 		String environmentId = initData.getParamsMap().get("environmentid");
 
 		try {
 
 			if(!UtilMethods.isSet(environmentId)) {
-				return "false";
+                return responseResource.response( "false" );
 			}
 
 			APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(environmentId);
 
 		} catch (DotDataException e) {
 			Logger.error(getClass(), "Error trying to delete Pushed Assets for environment Id: " + environmentId);
-			return "false";
+            return responseResource.response( "false" );
 		}
 
-		return "true";
-
+        return responseResource.response( "true" );
 	}
 
 }
