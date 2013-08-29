@@ -50,6 +50,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -73,6 +74,9 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 
 @Path("/content")
 public class ContentResource extends WebResource {
+    
+    private static final String RELATIONSHIP_KEY = "__##relationships##__";
+    
     /**
      * performs a call to APILocator.getContentletAPI().searchIndex() with the 
      * specified parameters.
@@ -516,9 +520,11 @@ public class ContentResource extends WebResource {
                 }
             }
             
+            Map<Relationship,List<Contentlet>> relationships=(Map<Relationship,List<Contentlet>>)contentlet.get(RELATIONSHIP_KEY);
+            
             HibernateUtil.startTransaction();
             
-            contentlet = APILocator.getContentletAPI().checkin(contentlet,new HashMap<Relationship, List<Contentlet>>(),cats,new ArrayList<Permission>(),init.getUser(),false);
+            contentlet = APILocator.getContentletAPI().checkin(contentlet,relationships,cats,new ArrayList<Permission>(),init.getUser(),false);
             
             if(live)
                 APILocator.getContentletAPI().publish(contentlet, init.getUser(), false);
@@ -593,8 +599,12 @@ public class ContentResource extends WebResource {
             if(st!=null && InodeUtils.isSet(st.getInode())) {
                 // basic data
                 contentlet.setStructureInode(st.getInode());
-                if(map.containsKey("languageId"))
+                if(map.containsKey("languageId")) {
                     contentlet.setLanguageId(Long.parseLong((String)map.get("languageId")));
+                }
+                else {
+                    contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+                }
                 
                 // check for existing identifier
                 if(map.containsKey("identifier")) {
@@ -613,8 +623,6 @@ public class ContentResource extends WebResource {
                 for(Field ff : FieldsCache.getFieldsByStructureInode(stInode))
                     fieldMap.put(ff.getVelocityVarName(), ff);
                 
-<<<<<<< HEAD
-=======
                 // look for relationships
                 Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
                 for(Relationship rel : RelationshipFactory.getAllRelationshipsByStructure(st)) {
@@ -637,7 +645,6 @@ public class ContentResource extends WebResource {
                 
                 
                 // fill fields
->>>>>>> 5408d67... #2910 testing relationships
                 for(Map.Entry<String,Object> entry : map.entrySet()) {
                     String key=entry.getKey();
                     Object value=entry.getValue();
