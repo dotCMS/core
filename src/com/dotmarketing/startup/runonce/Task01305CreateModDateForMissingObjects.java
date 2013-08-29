@@ -16,37 +16,45 @@ public class Task01305CreateModDateForMissingObjects implements StartupTask {
 			dc.executeStatement("alter table structure add mod_date datetime null ;");
 			dc.executeStatement("alter table category add mod_date datetime null ;");
 			dc.executeStatement("alter table field add mod_date datetime null ;");
+			dc.executeStatement("alter table workflow_scheme add mod_date datetime null ;");
 			dc.executeStatement("update folder set mod_date = getdate(); ");
 			dc.executeStatement("update structure set mod_date = getdate(); ");
 			dc.executeStatement("update category set mod_date = getdate(); ");
 			dc.executeStatement("update field set mod_date = getdate(); ");
+			dc.executeStatement("update workflow_scheme set mod_date = getdate(); ");
 		}else if(DbConnectionFactory.isOracle()) {
-			dc.executeStatement("alter table folder add mod_date date");
-			dc.executeStatement("alter table structure add mod_date date");
-			dc.executeStatement("alter table category add mod_date date");
-			dc.executeStatement("alter table field add mod_date date");
+			dc.executeStatement("alter table folder add mod_date timestamp");
+			dc.executeStatement("alter table structure add mod_date timestamp");
+			dc.executeStatement("alter table category add mod_date timestamp");
+			dc.executeStatement("alter table field add mod_date timestamp");
+			dc.executeStatement("alter table workflow_scheme add mod_date timestamp");
 			dc.executeStatement("update folder set mod_date = sysdate");
 			dc.executeStatement("update structure set mod_date = sysdate");
 			dc.executeStatement("update category set mod_date = sysdate");
 			dc.executeStatement("update field set mod_date = sysdate");
+			dc.executeStatement("update workflow_scheme set mod_date = sysdate");
 		}else if(DbConnectionFactory.isMySql()) {
 			dc.executeStatement("alter table folder add mod_date datetime");
 			dc.executeStatement("alter table structure add mod_date datetime");
 			dc.executeStatement("alter table category add mod_date datetime");
 			dc.executeStatement("alter table field add mod_date datetime");
+			dc.executeStatement("alter table workflow_scheme add mod_date datetime");
 			dc.executeStatement("update folder set mod_date = now();");
 			dc.executeStatement("update structure set mod_date = now();");
 			dc.executeStatement("update category set mod_date = now();");
 			dc.executeStatement("update field set mod_date = now();");
+			dc.executeStatement("update workflow_scheme set mod_date = now();");
 		}else if(DbConnectionFactory.isPostgres()) {
 			dc.executeStatement("alter table folder add mod_date timestamp");
 			dc.executeStatement("alter table structure add mod_date timestamp");
 			dc.executeStatement("alter table category add mod_date timestamp");
 			dc.executeStatement("alter table field add mod_date timestamp");
+			dc.executeStatement("alter table workflow_scheme add mod_date timestamp");
 			dc.executeStatement("update folder set mod_date = now();");
 			dc.executeStatement("update structure set mod_date = now();");
 			dc.executeStatement("update category set mod_date = now();");
 			dc.executeStatement("update field set mod_date = now();");
+			dc.executeStatement("update workflow_scheme set mod_date = now();");
 
 		}
 	}
