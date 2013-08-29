@@ -116,7 +116,8 @@ td {font-size: 100%;}
 	var ImportTagMessageErrorMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.imported.error"))%>';
 	var batchDeleteMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.delete.tags")) %>';
 	var batchDeleteErrorMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.delete.tags.error")) %>';
-
+	var fileRequiredMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.file.required"))%>';
+	
 	var currentHostId = '<%=currentHostId %>';
 	var currentHostName = '<%=currentHostName %>';
 
@@ -362,12 +363,20 @@ td {font-size: 100%;}
 		}
 
 	   	function cancelImportTags(){
+	   		var fu = document.getElementById('uploadFile');
+	   		if (fu != null) {
+	   		document.getElementById('uploadFile').outerHTML = fu.outerHTML;
+	   		}
 	   		dijit.byId('importTagsDialog').hide();
 	   	}
 
 	   	function importTags(){
 	   		var file = dwr.util.getValue('uploadFile');
-			TagAjax.importTags(file, importTagsCallback);
+	   		if(file.value != ""){
+				TagAjax.importTags(file, importTagsCallback);
+	   		}else {
+	   	   		showDotCMSSystemMessage(fileRequiredMsg);
+	   		}
 	   	}
 
 	   	function importTagsCallback (data) {
@@ -539,7 +548,7 @@ td {font-size: 100%;}
 			<dd><ul id="importTagsErrorMessagesList"></ul></dd>
 		</dl>
 
-		<input type="file" id="uploadFile" name="uploadFile" />
+		<input type="file" id="uploadFile"  />
 		<br><br>
 		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "upload-csv-with-tags")) %>
 		<br><br>
