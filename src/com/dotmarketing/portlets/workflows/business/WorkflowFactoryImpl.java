@@ -336,7 +336,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// update scheme mod date
 		WorkflowStep step = findStep(stepId);
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		scheme.setModDate(new Date());
 		saveScheme(scheme);
 	}
 
@@ -356,7 +355,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		WorkflowAction action = findAction(actionId);
 		WorkflowStep step = findStep(action.getStepId());
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		scheme.setModDate(new Date());
 		saveScheme(scheme);
 	}
 
@@ -369,7 +367,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// update scheme mod date
 		WorkflowStep step = findStep(actionId);
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		scheme.setModDate(new Date());
 		saveScheme(scheme);
 	}
 
@@ -390,7 +387,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		
 		// update scheme mod date
 		WorkflowScheme scheme = findScheme(schemeId);
-		scheme.setModDate(new Date());
 		saveScheme(scheme);
 	}
 
@@ -405,7 +401,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		WorkflowAction action = findAction(actionClassId);
 		WorkflowStep step = findStep(action.getStepId());
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		scheme.setModDate(new Date());
 		saveScheme(scheme);
 
 	}
@@ -922,7 +917,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// update workflowScheme mod date
 		WorkflowStep step = findStep(action.getStepId());
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		scheme.setModDate(new Date());
 		saveScheme(scheme);
 
 	}
@@ -969,7 +963,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		WorkflowAction action = findAction(actionClass.getActionId());
 		WorkflowStep step = findStep(action.getStepId());
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		scheme.setModDate(new Date());
 		saveScheme(scheme);
 	}
 
@@ -1017,8 +1010,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(scheme.isArchived());
 				db.addParam(scheme.isMandatory());
 				db.addParam(scheme.getEntryActionId());
+				db.addParam(scheme.getModDate());
 				db.addParam(scheme.getId());
-				db.addObject(scheme.getModDate());
 				db.loadResult();
 
 			}
@@ -1138,7 +1131,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		
 		// update workflowScheme mod date
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		scheme.setModDate(new Date());
 		saveScheme(scheme);
 
 	}
@@ -1184,7 +1176,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		WorkflowAction action = findAction(actionClass.getActionId());
 		WorkflowStep step = findStep(action.getStepId());
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
-		scheme.setModDate(new Date());
 		saveScheme(scheme);
 	}
 
