@@ -92,7 +92,7 @@
 			<thead id="assetListHead">
 				<tr>
 					<th>
-						<a href="javascript: changeContentSort('title');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Name") %></a>
+						<a href="javascript: changeContentSort('name');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Name") %></a>
 					</th>
 					<th><a href="javascript: changeContentSort('sortOrder');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Menu") %></a></th>
 					<th><%= LanguageUtil.get(pageContext, "Status") %></th>
