@@ -25,7 +25,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * @author Jonathan Gamba
@@ -62,17 +65,15 @@ public class CMSConfigResource extends WebResource {
                                            @FormParam ("homeURL") String homeURL ) throws IOException, JSONException {
 
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+
         Map<String, String> paramsMap = initData.getParamsMap();
-        if ( paramsMap == null ) {
-            paramsMap = new HashMap<String, String>();
-        }
         paramsMap.put( "portalURL", portalURL );
         paramsMap.put( "mx", mx );
         paramsMap.put( "emailAddress", emailAddress );
         paramsMap.put( "size", size );
         paramsMap.put( "homeURL", homeURL );
 
-        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
@@ -140,14 +141,12 @@ public class CMSConfigResource extends WebResource {
                                             @FormParam ("timeZoneId") String timeZoneId ) throws IOException, JSONException {
 
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+
         Map<String, String> paramsMap = initData.getParamsMap();
-        if ( paramsMap == null ) {
-            paramsMap = new HashMap<String, String>();
-        }
         paramsMap.put( "languageId", languageId );
         paramsMap.put( "timeZoneId", timeZoneId );
-
-        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
@@ -204,13 +203,11 @@ public class CMSConfigResource extends WebResource {
                                               @FormParam ("authType") String authType ) throws IOException, JSONException {
 
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
-        Map<String, String> paramsMap = initData.getParamsMap();
-        if ( paramsMap == null ) {
-            paramsMap = new HashMap<String, String>();
-        }
-        paramsMap.put( "authType", authType );
 
-        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        Map<String, String> paramsMap = initData.getParamsMap();
+        paramsMap.put( "authType", authType );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
@@ -275,7 +272,8 @@ public class CMSConfigResource extends WebResource {
 
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
 
-        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
@@ -328,17 +326,18 @@ public class CMSConfigResource extends WebResource {
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response deleteEnvironment ( @Context HttpServletRequest request,
                                         @FormParam ("user") String user, @FormParam ("password") String password,
-                                        @FormParam ("environment") String environment ) throws JSONException, IOException {
+                                        @FormParam ("environment") String environment,
+                                        @FormParam ("type") String type,
+                                        @FormParam ("callback") String callback ) throws JSONException, IOException {
 
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
-        Map<String, String> paramsMap = initData.getParamsMap();
-        //Validate the parameters
-        if ( paramsMap == null ) {
-            paramsMap = new HashMap<String, String>();
-        }
-        paramsMap.put( "environment", environment );
 
-        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        Map<String, String> paramsMap = initData.getParamsMap();
+        paramsMap.put( "environment", environment );
+        paramsMap.put( "type", type );
+        paramsMap.put( "callback", callback );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
@@ -406,16 +405,18 @@ public class CMSConfigResource extends WebResource {
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response deleteEndpoint ( @Context HttpServletRequest request,
                                      @FormParam ("user") String user, @FormParam ("password") String password,
-                                     @FormParam ("endPoint") String endPoint ) throws JSONException, IOException {
+                                     @FormParam ("endPoint") String endPoint,
+                                     @FormParam ("type") String type,
+                                     @FormParam ("callback") String callback ) throws JSONException, IOException {
 
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
-        Map<String, String> paramsMap = initData.getParamsMap();
-        if ( paramsMap == null ) {
-            paramsMap = new HashMap<String, String>();
-        }
-        paramsMap.put( "endPoint", endPoint );
 
-        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        Map<String, String> paramsMap = initData.getParamsMap();
+        paramsMap.put( "endPoint", endPoint );
+        paramsMap.put( "type", type );
+        paramsMap.put( "callback", callback );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters

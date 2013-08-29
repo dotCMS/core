@@ -25,11 +25,14 @@ import java.util.Map;
 public class TestResource extends WebResource {
 
     /**
+     * Example method that handles a GET operation
+     * <p/>
      * URL Examples
-     * http://localhost:8081/api/testResource/test/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2
-     * http://localhost:8081/api/testResource/test/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/xml
-     * http://localhost:8081/api/testResource/test/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp
-     * http://localhost:8081/api/testResource/test/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp/callback/myMethodCallback
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/json
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/xml
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp/callback/myMethodCallback
      *
      * @param request
      * @param params
@@ -37,13 +40,14 @@ public class TestResource extends WebResource {
      * @throws JSONException
      */
     @GET
-    @Path ("/test/{params:.*}")
+    @Path ("/testGet/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
     public Response getDocumentCount ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
         InitDataObject initData = init( params, true, request, true );
 
-        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
@@ -104,11 +108,7 @@ public class TestResource extends WebResource {
     }
 
     /**
-     * URL Examples
-     * http://localhost:8081/api/testResource/test/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2
-     * http://localhost:8081/api/testResource/test/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/xml
-     * http://localhost:8081/api/testResource/test/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp
-     * http://localhost:8081/api/testResource/test/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp/callback/myMethodCallback
+     * Example method that handles a POST operation
      *
      * @param request
      * @param user
@@ -133,16 +133,14 @@ public class TestResource extends WebResource {
                                @FormParam ("callback") String callback ) throws IOException, JSONException {
 
         InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+
         Map<String, String> paramsMap = initData.getParamsMap();
-        if ( paramsMap == null ) {
-            paramsMap = new HashMap<String, String>();
-        }
         paramsMap.put( "param1", param1 );
         paramsMap.put( "param2", param2 );
         paramsMap.put( "type", type );
         paramsMap.put( "callback", callback );
-
-        ResponseResource responseResource = new ResponseResource( initData.getParamsMap() );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters

@@ -1,7 +1,9 @@
 package com.dotcms.rest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -12,6 +14,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -28,7 +31,17 @@ public class StructureResource extends WebResource {
 	@GET
 	@Path("/{path:.*}")
 	@Produces("application/json")
-	public String getStructuresWithWYSIWYGFields(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("path") String path, @QueryParam("name") String name) throws DotStateException, DotDataException, DotSecurityException {
+	public Response getStructuresWithWYSIWYGFields(@Context HttpServletRequest request, @Context HttpServletResponse response,
+                                                   @PathParam("path") String path, @QueryParam("name") String name,
+                                                   @PathParam ("type") String type,
+                                                   @PathParam ("callback") String callback) throws DotStateException, DotDataException, DotSecurityException {
+
+        Map<String, String> paramsMap = new HashMap<String, String>();
+        paramsMap.put( "type", type );
+        paramsMap.put( "callback", callback );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( paramsMap );
+
 		List<Structure> structures=new ArrayList<Structure>();
 		
 		String inodeFilter = "";
@@ -106,6 +119,6 @@ public class StructureResource extends WebResource {
 			}
 		}
 
-		return structureDataStore.toString();
-	}
+        return responseResource.response( structureDataStore.toString() );
+    }
 }

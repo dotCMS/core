@@ -1,40 +1,35 @@
 package com.dotcms.rest;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.io.FileUtils;
-
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
-import com.dotcms.publisher.receiver.BundlePublisher;
-import com.dotcms.publishing.DotPublishingException;
-import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.FileUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 @Path("/bundlePublisher")
 public class BundlePublisherResource extends WebResource {
@@ -66,7 +61,15 @@ public class BundlePublisherResource extends WebResource {
 			@FormDataParam("AUTH_TOKEN") String auth_token_enc,
 			@FormDataParam("GROUP_ID") String groupId,
 			@FormDataParam("ENDPOINT_ID") String endpointId,
+            @FormParam ("type") String type,
+            @FormParam ("callback") String callback,
 			@Context HttpServletRequest req) {
+
+        //Creating an utility response object
+        Map<String, String> paramsMap = new HashMap<String, String>();
+        paramsMap.put( "type", type );
+        paramsMap.put( "callback", callback );
+        ResourceResponse responseResource = new ResourceResponse( paramsMap );
 
 		String remoteIP = "";
 		try {
@@ -79,8 +82,8 @@ public class BundlePublisherResource extends WebResource {
 			
 			if(!isValidToken(auth_token, remoteIP, mySelf)) {
 				bundle.close();
-				return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
-			}
+                return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
+            }
 			
 			String bundleName = fileDetail.getFileName();
 			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
@@ -95,17 +98,17 @@ public class BundlePublisherResource extends WebResource {
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 				new Thread(new PublishThread(bundleName, groupId, endpointId, status)).start();
 			}
-			
-			return Response.status(HttpStatus.SC_OK).build();
-		} catch (NumberFormatException e) {
+
+            responseResource.response();
+        } catch (NumberFormatException e) {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		} catch (Exception e) {
 			Logger.error(PublisherQueueJob.class, "Error caused by remote call of: "+remoteIP);
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		}
-		
-		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
-	}
+
+        return responseResource.responseError( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+    }
 
     /**
      * Validates a received token

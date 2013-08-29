@@ -4,6 +4,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import org.apache.commons.httpclient.HttpStatus;
 
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
@@ -12,12 +13,12 @@ import java.util.Map;
  * @author Jonathan Gamba
  *         Date: 8/22/13
  */
-public class ResponseResource {
+public class ResourceResponse {
 
     private String type;
     private Map<String, String> paramsMap;
 
-    public ResponseResource ( Map<String, String> paramsMap ) {
+    public ResourceResponse ( Map<String, String> paramsMap ) {
         this.paramsMap = paramsMap;
         this.type = paramsMap.get( RESTParams.TYPE.getValue() );
     }
@@ -59,9 +60,22 @@ public class ResponseResource {
     }
 
     /**
-     * Prepares a Response object with a given response text for success operations (Will return a 200 status code).<br/>
+     * Just return a response with a Http status 200 (Ok)
+     *
+     * @return
+     */
+    public Response response () {
+        return Response.status( HttpStatus.SC_OK ).build();
+    }
+
+    /**
+     * Prepares a Response object with a given response text for success operations (will return a 200 status code).<br/>
+     * <p/>
      * If a parameter <strong>"type"</strong> was sent in the request we will use it to define the content type for the response and in the case of<br/>
-     * a <strong>type=jsonp</strong> we will also wrap the response (should be JSON format) with javascript.<br/>
+     * a <strong>type=jsonp</strong> we will also wrap the response within a javascript callback.<br/>
+     * For JSONP we can specify the name of the callback method using the parameter <strong>"callback"</strong> if such parameter is not present the name<br/>
+     * of the default callback method is <strong>dotJsonpCall</strong>.<br/>
+     * <p/>
      * Is important to clarify that if a <strong>"type"</strong> parameter is not send in the request the defined content type for the response will be<br/>
      * the defined by the <i>@Produces</i> annotation of the RESTful method.
      *
@@ -69,6 +83,10 @@ public class ResponseResource {
      * @return
      */
     public Response response ( String response ) {
+        return response( response, null );
+    }
+
+    public Response response ( String response, CacheControl cacheControl ) {
 
         String contentType = null;
         if ( UtilMethods.isSet( getType() ) ) {
@@ -76,7 +94,7 @@ public class ResponseResource {
                 contentType = "application/javascript";
 
                 /*
-                For jsonp we need to wrap the given json code into javascript.
+                For jsonp we need to wrap the given response code into javascript.
                 But before that lets verify if we have a callback method set in the params
                  */
                 String callback = getParamsMap().get( RESTParams.CALLBACK.getValue() );
@@ -89,6 +107,8 @@ public class ResponseResource {
                 contentType = MediaType.APPLICATION_JSON;
             } else if ( getType().equalsIgnoreCase( "xml" ) ) {
                 contentType = MediaType.APPLICATION_XML;
+            } else if ( getType().equalsIgnoreCase( "plain" ) ) {
+                contentType = MediaType.TEXT_PLAIN;
             }
         }
 
@@ -103,6 +123,10 @@ public class ResponseResource {
             responseBuilder = Response.ok( response );
         }
 
+        if ( cacheControl != null ) {
+            return responseBuilder.cacheControl( cacheControl ).build();
+        }
+
         return responseBuilder.build();
     }
 
@@ -110,10 +134,16 @@ public class ResponseResource {
         return responseError( response, HttpStatus.SC_INTERNAL_SERVER_ERROR );
     }
 
-    public Response responseError ( String response, int status ) {
+    public Response responseError ( int statusCode ) {
+        return responseError( null, statusCode );
+    }
 
-        Response.ResponseBuilder responseBuilder = Response.status( status );
-        responseBuilder.entity( response );
+    public Response responseError ( String response, int statusCode ) {
+
+        Response.ResponseBuilder responseBuilder = Response.status( statusCode );
+        if ( UtilMethods.isSet( response ) ) {
+            responseBuilder.entity( response );
+        }
 
         return responseBuilder.build();
     }
