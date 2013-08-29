@@ -818,7 +818,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			if (UtilMethods.isSet(searcher.getOrderBy())) {
 				query.append(searcher.getOrderBy());
 			} else {
-				query.append("mod_date desc");
+				query.append("workflow_task.mod_date desc");
 			}
 		}
 
