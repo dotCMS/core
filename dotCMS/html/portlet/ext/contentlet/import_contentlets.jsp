@@ -1,6 +1,6 @@
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
 
-<!-- JSP Imports --> 
+<!-- JSP Imports -->
 <%@ page import="java.util.*" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm" %>
@@ -14,14 +14,14 @@
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <script type='text/javascript' src='/dwr/interface/ImportContentletAjax.js'></script>
 <!--  Initialization Code -->
-<% 
+<%
 	List<Structure> structures = StructureFactory.getStructuresWithWritePermissions(user, false);
 	request.setAttribute("structures", structures);
 	String selectedStructure = null;
 	if(UtilMethods.isSet(session.getAttribute("selectedStructure"))){
 		selectedStructure= (String)session.getAttribute("selectedStructure");
 	}
-	
+
 
 	List<com.dotmarketing.portlets.languagesmanager.model.Language> languages = APILocator.getLanguageAPI().getLanguages();
 	List<HashMap<String, Object>> languagesMap = new ArrayList<HashMap<String, Object>>();
@@ -37,9 +37,9 @@
 	languageMap.put("description", "Multilingual File");
 	languagesMap.add(languageMap);
 	request.setAttribute("languages", languagesMap);
-	
+
 	ImportContentletsForm form = (ImportContentletsForm)request.getAttribute("ImportContentletsForm");
-	
+
 	if (form.getLanguage() == 0) {
 		form.setLanguage(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 	}
@@ -80,10 +80,10 @@
 		if(!fieldIndexed){
 		   disableField = "disabled"
 		}
-		
-		<% 
+
+		<%
 			String[] fields = form.getFields();
-			for (int i = 0; i < fields.length; i++) 
+			for (int i = 0; i < fields.length; i++)
 			{
 
 		%>
@@ -92,9 +92,9 @@
 				dijit.byId(fieldInode + 'Field').destroy();
 			return "<div><input checked type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> "  + fieldName + "</div>";
 		}
-		<%			
-			
-			} 
+		<%
+
+			}
 		%>
 		if (dijit.byId(fieldInode + 'Field'))
 			dijit.byId(fieldInode + 'Field').destroy()
@@ -107,7 +107,7 @@
 		button.disabled = true;
 		var href =  '<portlet:actionURL>';
 			href +=		'<portlet:param name="struts_action" value="/ext/contentlet/import_contentlets" />';
-			href +=		'<portlet:param name="cmd" value="preview" />';			
+			href +=		'<portlet:param name="cmd" value="preview" />';
 			href +=	'</portlet:actionURL>';
 		var form = document.getElementById("importForm");
 		form.action = href;
@@ -115,14 +115,14 @@
 		form.cmd.value = "preview";
 		form.submit();
 	}
-	
+
 	function downloadCSVExample() {
 		var href =  '<portlet:actionURL>';
 			href +=		'<portlet:param name="struts_action" value="/ext/contentlet/import_contentlets" />';
-			href +=		'<portlet:param name="cmd" value="downloadCSVTemplate" />';			
+			href +=		'<portlet:param name="cmd" value="downloadCSVTemplate" />';
 			href +=	'</portlet:actionURL>';
 		var form = document.getElementById("importForm");
-		
+
 		form.action = href;
 		form.cmd.value = "downloadCSVTemplate";
 		form.submit();
@@ -145,7 +145,7 @@
 		      while (tbl != document && tbl.nodeName != 'TABLE') {
 		        tbl = tbl.parentNode;
 		      }
-		 
+
 		      if (tbl && tbl.nodeName == 'TABLE') {
 		        while (tr.hasChildNodes()) {
 		          tr.removeChild( tr.lastChild );
@@ -155,20 +155,20 @@
 		    }
 	  	}
 	}
-	
+
 	function importCancel(id){
     	ImportContentletAjax.cancelImport(id,importCancelCallback);
     }
 </script>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
-    
+
 
       <liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"import-contentlets\") %>" />
-      
-      			<% 
+
+      			<%
 			     	ImportAuditUtil.ImportAuditResults iar = request.getAttribute("audits") == null ? null:(ImportAuditUtil.ImportAuditResults)request.getAttribute("audits");
-			     	if(iar != null && iar.getUserRecords().size() > 0){ 
+			     	if(iar != null && iar.getUserRecords().size() > 0){
 			     %>
 			     <div style="position:absolute;left:60%;top:16%; padding: 30px;">
 					<table class="listingTable">
@@ -180,18 +180,19 @@
 						</tr>
 						<% for(Map<String, Object> recs : iar.getUserRecords()){ %>
 						<tr id="audit<%= recs.get("id") %>">
-						<% 
+						<%
 						String dateData="";
-						if(recs.get("start_date")instanceof oracle.sql.TIMESTAMP){
-							oracle.sql.TIMESTAMP timestamp= (oracle.sql.TIMESTAMP) recs.get("start_date");
-							dateData=timestamp.timestampValue().toString();
+						Date dateValue = null;
+						if(recs.get("start_date")instanceof java.util.Date){
+							dateValue=(java.util.Date) recs.get("start_date");
 						}
 						else {
 							dateData= recs.get("start_date").toString();
+							SimpleDateFormat dateFormatter = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.LONGDBDATE);
+							dateValue = dateFormatter.parse(dateData);
 						}
-						SimpleDateFormat dateFormatter = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.LONGDBDATE);
-						Date dateValue = dateFormatter.parse(dateData);
-						
+
+
 						%>
 							<td><%= dateValue %></td>
 							<td><%= recs.get("filename") %></td>
@@ -205,17 +206,17 @@
 					</table>
 				</div>
 				<% } %>
-      
+
       		<html:form action="/ext/contentlet/import_contentlets" styleId="importForm" method="POST" enctype="multipart/form-data">
-		
+
 				<input type="hidden" name="cmd" value="preview" />
 				<input type="hidden" name="fileName" value="" />
-				
+
 			     <fieldset>
-			     
+
 				<div>
 		         	<dl>
-		
+
 			            <dt><%= LanguageUtil.get(pageContext, "Structure-to-Import") %>:</dt>
 			            <dd>
 			                <select dojoType="dijit.form.FilteringSelect" name="structure" id="structuresSelect" onchange="structureChanged()" value="<%= UtilMethods.isSet(form.getStructure()) ? form.getStructure() : "" %>" >
@@ -230,12 +231,12 @@
 			            </dd>
 			    	</dl>
 			        <dl id="importDetails">
-			            
+
 			            <dt><%= LanguageUtil.get(pageContext, "Language-of-the-Contents-to-Import") %>:</dt>
 			            <dd>
 			                <select dojoType="dijit.form.FilteringSelect" name="language" id="languageSelect" onchange="languageChanged()" value="<%= UtilMethods.isSet(form.getLanguage()) ? form.getLanguage() : "" %>" >
 			<%
-							
+
 							for (HashMap<String, Object> language: languagesMap) {
 			%>
 								<option value="<%= language.get("id") %>"><%= language.get("description") %></option>
@@ -255,35 +256,35 @@
 			                    </p>
 			                </div>
 			            </dd>
-			            
+
 			            <dt><%= LanguageUtil.get(pageContext, "Key-Fields") %>:</dt>
 			            <dd>
 			                <table>
 			                    <tbody id="import_fields_table"> </tbody>
 			                </table>
 			            </dd>
-			            
+
 			            <dt><%= LanguageUtil.get(pageContext, "File-to-Import-CSV-File-Required") %>:</dt>
 			            <dd>
 			                <input type="file" name="file" id="file" /> <br/>
 			                <a href="javascript: downloadCSVExample()"><%= LanguageUtil.get(pageContext, "Click-here-to-download-a-csv-sample-file") %></a>
 			            </dd>
-			            
+
 			            <dt>&nbsp;</dt>
 			            <dd>
 			                <button dojoType="dijit.form.Button" onclick="submitForm()" id="goToPreviewButton" iconClass="previewIcon">
-			                  <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Go-to-Preview")) %>  
+			                  <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Go-to-Preview")) %>
 			                </button>
-			            </dd>    
+			            </dd>
 		       		</dl>
 			        <dl id="cantImportMessage">
 			        	<div class="warningText"><%= LanguageUtil.get(pageContext, "import-not-allowed-structure-has-madatory-scheme-no-default-action")%></div>
-		       		</dl>			        
-					</div>		       	
+		       		</dl>
+					</div>
 		    	</fieldset>
 			</html:form>
-		
-	
+
+
 </liferay:box>
 <script type="text/javascript">
 	dojo.addOnLoad(function() {
