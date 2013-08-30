@@ -34,6 +34,8 @@
 <%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
+<%@page import="com.dotmarketing.portlets.structure.model.FieldVariable"%>
+
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 
@@ -124,6 +126,7 @@
     else if (field.getFieldType().equals(
             Field.FieldType.TEXT_AREA.toString())) {
         String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
+        String keyValue = com.dotmarketing.util.WebKeys.VELOCITY;
         FieldAPI fieldAPI = APILocator.getFieldAPI();
         if(fieldAPI.isElementConstant(field)){
             textValue = field.getValues();
@@ -134,8 +137,16 @@
             textValue = textValue.replaceAll("<", "&lt;");
             textValue = textValue.replaceAll(">", "&gt;");
         }
+        List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true); 
+        for(FieldVariable fv : fieldVariables){
+			if(fv.getKey().equals( com.dotmarketing.util.WebKeys.TEXT_EDITOR)){
+				keyValue = fv.getValue();
+				break;
+			}
+		}
 
 %>
+	<div id="aceTextArea" class="classAce"></div>
     <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea" style="overflow:auto;width:450px;min-height:100px;max-height: 600px"
         name="<%=field.getFieldContentlet()%>"
         id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
@@ -143,8 +154,13 @@
     if (!isReadOnly) {
  %>
     <br />
-    <div style="padding-left:10px;padding-right:10px;width:475px;float:left;">
-        <div style="float: left;padding-top: 5px;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Dictionary-Terms")) %>: <input
+    <div style="padding-right:10px;width:475px;float:left;">
+    	<div style="float: left;padding-top: 10px; padding-left: 2px;">
+    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>');" />
+        	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+        </div>
+        <br /> <br />
+        <div style="float: left;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Dictionary-Terms")) %>: <input
             type="text" id="glossary_term_<%= field.getVelocityVarName() %>"
             name="glossary_term_<%= field.getVelocityVarName() %>"
             class="form-text"
