@@ -671,4 +671,9 @@ public final class WebKeys {
 
 	// SYS Monitor
 	public static final String USER_SESSIONS = "USER_SESSIONS";
+	
+	// ACE Text Editor
+	
+	public static final String TEXT_EDITOR = "textEditor";
+	public static final String VELOCITY = "velocity";
 }
