@@ -29,6 +29,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.queryParser.ParseException;
@@ -128,7 +129,7 @@ public class ContentResource extends WebResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String indexCount(@Context HttpServletRequest request, @PathParam("query") String query) throws DotDataException, DotSecurityException {
         InitDataObject initData = init(null, true, request, false);
-        return Long.toString(APILocator.getContentletAPI().indexCount(query, initData.getUser(), true));
+        return Long.toString( APILocator.getContentletAPI().indexCount( query, initData.getUser(), true ) );
     }
 
     @GET
@@ -371,23 +372,41 @@ public class ContentResource extends WebResource {
                 try {
                     processJSON(contentlet,part.getEntityAs(InputStream.class));
                 } catch (JSONException e) {
-                    return Response.status(Status.BAD_REQUEST).build();
+
+                    Logger.error( this.getClass(), "Error processing JSON for Stream", e );
+
+                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
+                    responseBuilder.entity( e.getMessage() );
+                    return responseBuilder.build();
                 } catch (IOException e) {
-                    return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+
+                    Logger.error( this.getClass(), "Error processing Stream", e );
+
+                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+                    responseBuilder.entity( e.getMessage() );
+                    return responseBuilder.build();
                 }
             }
             else if(part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
                 try {
                     processXML(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
-                    return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+                    Logger.error( this.getClass(), "Error processing Stream", e );
+
+                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+                    responseBuilder.entity( e.getMessage() );
+                    return responseBuilder.build();
                 }
             }
             else if(part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE) || name.equals("urlencoded")) {
                 try {
                     processForm(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
-                    return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+                    Logger.error( this.getClass(), "Error processing Stream", e );
+
+                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+                    responseBuilder.entity( e.getMessage() );
+                    return responseBuilder.build();
                 }
             }
             else if(part.getContentDisposition()!=null) {
@@ -410,7 +429,12 @@ public class ContentResource extends WebResource {
                         }   
                     }
                 } catch (IOException e) {
-                    return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+
+                    Logger.error( this.getClass(), "Error processing Stream", e );
+
+                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+                    responseBuilder.entity( e.getMessage() );
+                    return responseBuilder.build();
                 }
             }
         }
@@ -436,10 +460,20 @@ public class ContentResource extends WebResource {
             else if(request.getContentType().startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
                 processForm(contentlet, request.getInputStream());
             }
-        } catch(JSONException e) {
-            return Response.status(Status.BAD_REQUEST).build();
-        } catch (Exception e) {
-            return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+        } catch ( JSONException e ) {
+
+            Logger.error( this.getClass(), "Error processing JSON for Stream", e );
+
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
+            responseBuilder.entity( e.getMessage() );
+            return responseBuilder.build();
+        } catch ( Exception e ) {
+
+            Logger.error( this.getClass(), "Error processing Stream", e );
+
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+            responseBuilder.entity( e.getMessage() );
+            return responseBuilder.build();
         }
         
         return saveContent(contentlet,init);
@@ -531,14 +565,29 @@ public class ContentResource extends WebResource {
             
             HibernateUtil.commitTransaction();
             clean = true;
-        } catch (DotContentletStateException e) {
-            return Response.status(Status.CONFLICT).build();
-        } catch(IllegalArgumentException e) {
-            return Response.status(Status.CONFLICT).build();
-        } catch (DotSecurityException e) {
-            return Response.status(Status.FORBIDDEN).build();
-        } catch (Exception e) {
-            Logger.warn(this, e.getMessage(), e);
+        } catch ( DotContentletStateException e ) {
+
+            Logger.error( this.getClass(), "Error saving Contentlet" + e );
+
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_CONFLICT );
+            responseBuilder.entity( e.getMessage() );
+            return responseBuilder.build();
+        } catch ( IllegalArgumentException e ) {
+
+            Logger.error( this.getClass(), "Error saving Contentlet" + e );
+
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_CONFLICT );
+            responseBuilder.entity( e.getMessage() );
+            return responseBuilder.build();
+        } catch ( DotSecurityException e ) {
+
+            Logger.error( this.getClass(), "Error saving Contentlet" + e );
+
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_FORBIDDEN );
+            responseBuilder.entity( e.getMessage() );
+            return responseBuilder.build();
+        } catch ( Exception e ) {
+            Logger.warn( this, e.getMessage(), e );
             return Response.serverError().build();
         }
         finally {
