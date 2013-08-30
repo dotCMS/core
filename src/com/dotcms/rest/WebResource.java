@@ -117,7 +117,7 @@ public class WebResource {
 
 	private User authenticateUser(Map<String, String> paramsMap, HttpServletRequest request, boolean rejectWhenNoUser) throws SecurityException  {
 
-		boolean forcefrontendauth = Config.getBooleanProperty("FORCE_FRONT_END_AUTH", false);
+		boolean forcefrontendauth = Config.getBooleanProperty("REST_API_FORCE_FRONT_END_SESSION_AUTH", false);
 
 		User user = (user = authenticateUserFromURL(paramsMap, request)) != null ? user
 						: (user = authenticateUserFromHeaderAuth(paramsMap, request)) != null ? user
@@ -127,7 +127,7 @@ public class WebResource {
 												: (user = getFrontEndUserFromRequest(request)) != null ? user : null;
 
 
-		if(user==null && (Config.getBooleanProperty("REJECT_REST_API_WITH_NO_USER", false) || rejectWhenNoUser) ) {
+		if(user==null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
 			throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
 		}
 
