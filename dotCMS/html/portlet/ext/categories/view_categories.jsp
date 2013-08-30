@@ -176,11 +176,11 @@ td {font-size: 100%;}
 			}, {
 				field : 'category_key',
 				name : '<%= LanguageUtil.get(pageContext, "Key") %>',
-				width : 'auto'
+				width : '15%'
 			}, {
 				field : 'category_velocity_var_name',
 				name : '<%= LanguageUtil.get(pageContext, "Variable") %>',
-				width : 'auto'
+				width : '15%'
 			}, {
 				field : 'sort_order',
 				name : '<%= LanguageUtil.get(pageContext, "Sort-Order") %>',
