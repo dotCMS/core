@@ -673,7 +673,8 @@ create table workflow_scheme(
 	archived number(1,0) default 0,
 	mandatory number(1,0) default 0,
 	default_scheme number(1,0) default 0,
-	entry_action_id varchar2(36)
+	entry_action_id varchar2(36),
+	mod_date timestamp
 );
 
 create table workflow_step(
@@ -876,6 +877,7 @@ CREATE TABLE publishing_queue (
 DROP SEQUENCE PUBLISHING_QUEUE_SEQ;
 CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
 CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before insert on publishing_queue for each row begin select PUBLISHING_QUEUE_SEQ.nextval into :new.id from dual; end;
+/
 
 create table publishing_bundle(
 	id varchar2(36) NOT NULL  primary key,

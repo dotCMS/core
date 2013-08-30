@@ -494,7 +494,8 @@ create table workflow_scheme(
     archived boolean default false,
     mandatory boolean default false,
     default_scheme boolean default false,
-    entry_action_id varchar(36)
+    entry_action_id varchar(36),
+    mod_date datetime
 );
 
 create table workflow_step(
