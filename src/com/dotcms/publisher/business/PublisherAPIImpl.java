@@ -169,7 +169,9 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       type = "folder";
                                   }
                               } catch ( Exception ex ) {
-                                  // well, none of those
+                            	  if ( UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
+                                	  type = "workflow";
+                                  }
                               }
 
                           } else {

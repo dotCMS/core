@@ -185,8 +185,8 @@ public class TagAPIImpl implements TagAPI{
 					//check all current host tags.
 					String sql =  "from tag in class com.dotmarketing.tag.model.Tag ";
 					sql = sql + "where ( host_id = ? ) " + sortStr;
-					dh.setParam(Host.SYSTEM_HOST);
 					dh.setQuery(sql);
+					dh.setParam(Host.SYSTEM_HOST);
 				}
 
 				dh.setFirstResult(start);

@@ -55,7 +55,7 @@ public class WebAssetMapComparator implements Comparator<Map<String, Object>> {
        	}
        	if (c1 != null && c2 != null) {
        		if (orderField.equals("name")) {
-       			return orderDirection * ((String)c1).compareTo((String)c2);
+       			return orderDirection * ((String)c1).toLowerCase().compareTo(((String)c2).toLowerCase());
        		} else if (orderField.equals("modUser")) {
        			String userId1 = (String)c1;
        			String userId2 = (String)c2;
