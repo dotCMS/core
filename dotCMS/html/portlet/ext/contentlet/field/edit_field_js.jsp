@@ -17,9 +17,20 @@
     #aceEditor { 
         position: relative;	  	
     }
+    #aceTextArea { 
+        position: relative;	  	
+    }
     .aceClass{
     	width: 100%;
         height: 400px;
+        border:1px solid #C0C0C0;
+        text-overflow: clip;
+    	white-space: nowrap;   
+    }
+    .aceText{
+    	width:450px;
+    	min-height:105px;
+    	max-height: 600px;    	
         border:1px solid #C0C0C0;
         text-overflow: clip;
     	white-space: nowrap;   
@@ -480,8 +491,13 @@ var cmsfile=null;
 		if(enabledWYSIWYG[glossaryTermId]) {
 			tinymce.EditorManager.get(glossaryTermId).load();
 		} else if (enabledCodeAreas[glossaryTermId]) {
-			editor.setValue(dojo.byId(glossaryTermId).value);
-			editor.clearSelection();
+			if(glossaryTermId==aceTextId){
+				textEditor.setValue(dojo.byId(glossaryTermId).value);
+				textEditor.clearSelection();				
+			} else {
+				editor.setValue(dojo.byId(glossaryTermId).value);
+				editor.clearSelection();
+			}
 		}
 		clearGlossaryTerms();
 	}
@@ -539,6 +555,7 @@ var cmsfile=null;
 		dojo.query('#'+textarea).style({display:''});
 		dojo.query('#'+textarea)[0].value=editorText;
 		enabledCodeAreas[textarea]=false;
+		editor.setValue("");
 	}
 	function addFileImageCallback(file) {
 		var ident
@@ -680,6 +697,38 @@ var cmsfile=null;
 
 	function editText(inode) {
 		editTextManager.editText(inode);
+	}
+	
+	var tog = true;
+	var textEditor;
+	var aceTextId;
+	function aceText(textarea,keyValue) {
+		if(tog){
+			textEditor = ace.edit('aceTextArea');
+			textEditor.setTheme("ace/theme/textmate");
+			textEditor.getSession().setMode("ace/mode/"+keyValue);
+			textEditor.getSession().setUseWrapMode(true);
+			tog = false;
+			aceTextId = textarea;
+		}
+    	dijit.byId("toggleEditor").disabled=true;
+		var acetId = document.getElementById('aceTextArea');
+		var aceClass = acetId.className;
+		if (dijit.byId("toggleEditor").checked) {
+			document.getElementById(textarea).style.display = "none";
+			acetId.className = aceClass.replace('classAce', 'aceText');
+			textEditor.setValue(document.getElementById(textarea).value);
+			textEditor.clearSelection();
+			enabledCodeAreas[textarea]=true;
+		} else {
+			var editorText = textEditor.getValue();
+			acetId.className = aceClass.replace('aceText', 'classAce');
+			document.getElementById(textarea).style.display = "inline";
+			document.getElementById(textarea).value = editorText;
+			textEditor.setValue("");
+			enabledCodeAreas[textarea]=false;
+		}
+		dijit.byId("toggleEditor").disabled=false;
 	}
 </script>
 

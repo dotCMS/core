@@ -267,9 +267,16 @@ dojo.require("dojox.layout.ContentPane");
 		var k = 0;
 		$(document.getElementById(formId)).getElementsBySelector('textarea').each(
 				function (textareaObj) {
+					var aceEditor;
+					if(textareaObj.id == aceTextId) {
+						aceEditor = textEditor;
+					} else{
+						aceEditor = editor;
+					}
 					if ((textareaObj.id != "") && (aceEditor != null)) {
 						try {
-							document.getElementById(textareaObj.id).value=aceEditor.getValue();
+							if(aceEditor.getValue() != "")
+								document.getElementById(textareaObj.id).value=aceEditor.getValue();
 						} catch (e) {
 						}
 					}
