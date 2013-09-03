@@ -340,16 +340,16 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 		if (pageExists) {
 			if (!permissionAPI.doesUserHavePermission(existingHTMLPage, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException("You don't have permission to read the source file.");
+				throw new DotSecurityException("You don't have permission to read the HTML page.");
 			}
 		}
 
 		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to wirte in the destination folder.");
+			throw new DotSecurityException("You don't have permission to read the template or the template is not published.");
 		}
 
 		if (!permissionAPI.doesUserHavePermission(parentFolder, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to wirte in the destination folder.");
+			throw new DotSecurityException("You don't have permission to write in the destination folder.");
 		}
 
 		try {
