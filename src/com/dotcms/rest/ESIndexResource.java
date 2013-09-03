@@ -356,8 +356,11 @@ public class ESIndexResource extends WebResource {
     public Response getActive(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            
-            return Response.ok(APILocator.getContentletIndexAPI().getActiveIndexName(init.getParamsMap().get("type"))).build();
+
+            //Creating an utility response object
+            ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
+
+            return responseResource.response( APILocator.getContentletIndexAPI().getActiveIndexName( init.getParamsMap().get( "type" ) ) );
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on getActive from "+request.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
@@ -373,8 +376,12 @@ public class ESIndexResource extends WebResource {
     public Response getDocumentCount(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
+
+            //Creating an utility response object
+            ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
+
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
-            return Response.ok(Long.toString(indexDocumentCount(indexName))).build();
+            return responseResource.response( Long.toString( indexDocumentCount( indexName ) ) );
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on getDocumentCount from "+request.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
@@ -389,10 +396,12 @@ public class ESIndexResource extends WebResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response indexList(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            auth(params,request);
-            return Response
-                    .ok(new Gson().toJson(APILocator.getContentletIndexAPI().listDotCMSIndices()))
-                    .build();
+            InitDataObject init = auth(params,request);
+
+            //Creating an utility response object
+            ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
+
+            return responseResource.response( new Gson().toJson( APILocator.getContentletIndexAPI().listDotCMSIndices() ) );
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on indexList from "+request.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();

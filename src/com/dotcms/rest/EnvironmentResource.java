@@ -10,6 +10,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
@@ -35,8 +36,12 @@ public class EnvironmentResource extends WebResource {
 	@GET
 	@Path("/loadenvironments/{params:.*}")
 	@Produces("application/json")
-	public String loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException {
+	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException {
+
 		InitDataObject initData = init(params, true, request, true);
+
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
 		String roleId = initData.getParamsMap().get("roleid");
 
@@ -79,8 +84,7 @@ public class EnvironmentResource extends WebResource {
 		json.append("]");
 
 
-		return json.toString();
-
+		return responseResource.response( json.toString() );
 	}
 
 }

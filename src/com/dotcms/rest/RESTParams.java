@@ -12,6 +12,7 @@ public enum RESTParams {
 	ID ("id"),
 	LIVE ("live"),
 	LANGUAGE ("language"),
+    CALLBACK ("callback"),
 	INODE ("inode");
 
 	private final String  value;
