@@ -278,7 +278,7 @@ END IF;
 END
 #
 DROP TRIGGER IF EXISTS check_container_versions;
-CREATE TRIGGER check_container_versions BEFORE DELETE
+CREATE TRIGGER check_container_versions AFTER DELETE
 on containers
 FOR EACH ROW
 BEGIN
