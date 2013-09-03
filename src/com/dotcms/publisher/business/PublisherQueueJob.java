@@ -91,18 +91,15 @@ public class PublisherQueueJob implements StatefulJob {
 						historyPojo = new PublishAuditHistory();
 						//Retriving assets
 						Map<String, String> assets = new HashMap<String, String>();
-						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
+						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); 
 
-                        for ( PublishQueueElement c : tempBundleContents ) {
-                            assets.put( c.getAsset(), c.getType() );
-                            if ( !c.getType().equals( "contentlet" ) ) {
-                                assetsToPublish.add( c );
-                            }
-                        }
-                        historyPojo.setAssets(assets);
+						for(PublishQueueElement c : tempBundleContents) {
+							assets.put( c.getAsset(), c.getType());
+							assetsToPublish.add(c);
+						}
+						historyPojo.setAssets(assets);
 
 						PushPublisherConfig pconf = new PushPublisherConfig();
-						// all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
 						pconf.setAssets(assetsToPublish);
 
 						//Status
