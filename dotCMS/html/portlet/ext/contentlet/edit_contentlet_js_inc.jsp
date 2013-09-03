@@ -271,7 +271,7 @@ dojo.require("dojox.layout.ContentPane");
 					if(textareaObj.id == aceTextId) {
 						aceEditor = textEditor;
 					} else{
-						aceEditor = editor;
+						aceEditor = aceEditors[textareaObj.id];
 					}
 					if ((textareaObj.id != "") && (aceEditor != null)) {
 						try {
