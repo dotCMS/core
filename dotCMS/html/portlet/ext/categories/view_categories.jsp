@@ -863,7 +863,7 @@ td {font-size: 100%;}
 </liferay:box>
 
 <!-- START Add Category pop up -->
-<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;height:290px;width:450px;vertical-align: middle;" draggable="true"
+<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;height:320px;width:450px;vertical-align: middle;" draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
 	<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane">
 		<div style="padding:0 0 10px 0; border-bottom:1px solid #ccc;">
