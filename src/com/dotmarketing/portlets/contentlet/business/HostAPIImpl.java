@@ -343,6 +343,7 @@ public class HostAPIImpl implements HostAPI {
 			hostCache.remove(host);
 		}
 		Contentlet c;
+		ContentletAPI conAPI = APILocator.getContentletAPI();
 		try {
 			c = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
 		} catch (DotContentletStateException e) {
@@ -359,13 +360,21 @@ public class HostAPIImpl implements HostAPI {
 
 		if(host.isDefault()) {  // If host is marked as default make sure that no other host is already set to be the default
 			List<Host> hosts= findAll(user, respectFrontendRoles);
+			Host otherHost;
+			Contentlet otherHostContentlet;
 			for(Host h : hosts){
 				if(h.getIdentifier().equals(host.getIdentifier())){
 					continue;
 				}
 				if(h.isDefault()){
-					h.setDefault(false);
-					save(h, user, respectFrontendRoles);
+					otherHostContentlet = APILocator.getContentletAPI().checkout(h.getInode(), user, respectFrontendRoles);
+					otherHost =  new Host(otherHostContentlet);
+					hostCache.remove(otherHost);
+					otherHost.setDefault(false);
+					otherHost.setInode("");
+					otherHostContentlet = conAPI.checkin(otherHost, user, respectFrontendRoles);
+					otherHost =  new Host(otherHostContentlet);
+					hostCache.add(otherHost);
 				}
 			}
 		}
