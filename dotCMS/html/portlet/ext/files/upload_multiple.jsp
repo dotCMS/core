@@ -96,6 +96,10 @@ if(request.getParameter("in_frame")!=null){
 				width:400px;
 				text-align: left;
 			}
+			.dojoxUploaderFileSize{
+				width:150px;
+				text-align: left;
+ 			}
 			.dojoxUploaderSize{
 				width:50px;
 				text-align: left;
