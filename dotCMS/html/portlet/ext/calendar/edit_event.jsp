@@ -27,6 +27,8 @@
 	//this file is a copy of the edit_contentlet.jsp that has
 	//some modifications to support events custom fields and actions
  %>
+ 
+<script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script> 
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
