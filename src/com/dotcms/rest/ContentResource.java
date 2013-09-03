@@ -95,8 +95,19 @@ public class ContentResource extends WebResource {
     @GET
     @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String indexSearch(@Context HttpServletRequest request, @PathParam("query") String query, @PathParam("sortby") String sortBy, @PathParam("limit") int limit, @PathParam("offset") int offset) throws DotSecurityException, DotDataException, JSONException {
+    public Response indexSearch ( @Context HttpServletRequest request, @PathParam ("query") String query,
+                                @PathParam ("sortby") String sortBy, @PathParam ("limit") int limit,
+                                @PathParam ("offset") int offset,
+                                @PathParam ("type") String type,
+                                @PathParam ("callback") String callback) throws DotSecurityException, DotDataException, JSONException {
+
         InitDataObject initData = init(null, true, request, false);
+
+        Map<String, String> paramsMap = new HashMap<String, String>();
+        paramsMap.put( "type", type );
+        paramsMap.put( "callback", callback );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( paramsMap );
 
         List<ContentletSearch> searchIndex = APILocator.getContentletAPI().searchIndex(query, limit, offset, sortBy, initData.getUser(), true);
         JSONArray array=new JSONArray();
@@ -105,35 +116,49 @@ public class ContentResource extends WebResource {
             .put("inode", cs.getInode())
             .put("identifier", cs.getIdentifier()));
         }
-        return array.toString();
+
+        return responseResource.response( array.toString() );
     }
 
     /**
      * Performs a call to APILocator.getContentletAPI().indexCount()
      * using the specified parameters.
-     * 
+     * <p/>
      * Example call using curl:
      * curl -XGET http://localhost:8080/api/content/indexcount/+structurename:webpagecontent
-     * 
+     *
      * @param request request obejct
-     * @param query lucene query to count on
+     * @param query   lucene query to count on
      * @return a string with the count
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @GET
-    @Path("/indexcount/{query}")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String indexCount(@Context HttpServletRequest request, @PathParam("query") String query) throws DotDataException, DotSecurityException {
-        InitDataObject initData = init(null, true, request, false);
-        return Long.toString( APILocator.getContentletAPI().indexCount( query, initData.getUser(), true ) );
+    @Path ("/indexcount/{query}")
+    @Produces (MediaType.TEXT_PLAIN)
+    public Response indexCount ( @Context HttpServletRequest request, @PathParam ("query") String query,
+                                 @PathParam ("type") String type,
+                                 @PathParam ("callback") String callback ) throws DotDataException, DotSecurityException {
+
+        InitDataObject initData = init( null, true, request, false );
+
+        Map<String, String> paramsMap = new HashMap<String, String>();
+        paramsMap.put( "type", type );
+        paramsMap.put( "callback", callback );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( paramsMap );
+
+        return responseResource.response( Long.toString( APILocator.getContentletAPI().indexCount( query, initData.getUser(), true ) ) );
     }
 
     @GET
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) {
+    public Response getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) {
+
         InitDataObject initData = init(params, true, request, false);
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         User user = initData.getUser();
@@ -219,7 +244,7 @@ public class ContentResource extends WebResource {
             Logger.warn(this, "Error converting result to XML/JSON");
         }
 
-        return result;
+        return responseResource.response( result );
     }
 
 
@@ -445,7 +470,7 @@ public class ContentResource extends WebResource {
     @Consumes({MediaType.APPLICATION_JSON,MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_XML})
     public Response singlePUT(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
         InitDataObject init=init(params,true,request,true);
-        
+
         Contentlet contentlet=new Contentlet();
         try {
             if(request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {

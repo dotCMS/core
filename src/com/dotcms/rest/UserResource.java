@@ -1,12 +1,5 @@
 package com.dotcms.rest;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -16,6 +9,14 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
 
 @Path("/user")
@@ -32,13 +33,19 @@ public class UserResource extends WebResource {
 	@GET
 	@Path("/getloggedinuser/{params:.*}")
 	@Produces("application/json")
-	public String getLoggedInUser(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException,
+	public Response getLoggedInUser(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException,
 			DotRuntimeException, PortalException, SystemException {
-		init(params, true, request, true);
+
+        InitDataObject initData = init( params, true, request, true );
+
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
 		User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 
-		if(user==null) return "{}";
+        if ( user == null ) {
+            return responseResource.response( "{}" );
+        }
 
 		Role myRole  = APILocator.getRoleAPI().getUserRole(user);
 
@@ -50,8 +57,7 @@ public class UserResource extends WebResource {
 		node.append("roleId: '").append(myRole.getId()).append("'");
 		node.append("}");
 
-		return node.toString();
-
+        return responseResource.response( node.toString() );
 	}
 
 }

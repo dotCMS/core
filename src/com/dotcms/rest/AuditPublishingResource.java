@@ -14,26 +14,26 @@ import com.dotmarketing.util.Logger;
 
 @Path("/auditPublishing")
 public class AuditPublishingResource extends WebResource {
-	public static String MY_TEMP = "";
-	private PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
+    public static String MY_TEMP = "";
+    private PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
 
-	@GET
-	@Path("/get/{bundleId:.*}")
-	@Produces(MediaType.TEXT_XML)
-	public Response get(@PathParam("bundleId") String bundleId) {
-		PublishAuditStatus status = null;
-		
-		try {
-			status = auditAPI.getPublishAuditStatus(bundleId);
-			
-			if(status != null)
-				return Response.ok((String) status.getStatusPojo().getSerialized()).build();
-		} catch (DotPublisherException e) {
-			Logger.warn(this, "error trying to get status for bundle "+bundleId,e);
-		}
-		
-		return Response.status(404).build();
-	}
+    @GET
+    @Path("/get/{bundleId:.*}")
+    @Produces(MediaType.TEXT_XML)
+    public Response get(@PathParam("bundleId") String bundleId) {
+        PublishAuditStatus status = null;
 
-	
+        try {
+            status = auditAPI.getPublishAuditStatus(bundleId);
+
+            if(status != null)
+                return Response.ok((String) status.getStatusPojo().getSerialized()).build();
+        } catch (DotPublisherException e) {
+            Logger.warn(this, "error trying to get status for bundle "+bundleId,e);
+        }
+
+        return Response.status(404).build();
+    }
+
+
 }

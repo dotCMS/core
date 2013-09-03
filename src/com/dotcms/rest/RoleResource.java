@@ -1,8 +1,12 @@
 package com.dotcms.rest;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -12,15 +16,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.UtilMethods;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 
 @Path("/role")
@@ -61,7 +59,11 @@ public class RoleResource extends WebResource {
 	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
 	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
-		InitDataObject initData = init(params, true, request, true);
+
+        InitDataObject initData = init(params, true, request, true);
+
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
 		Map<String, String> paramsMap = initData.getParamsMap();
 		String roleId = paramsMap.get("id");
@@ -120,13 +122,10 @@ public class RoleResource extends WebResource {
 
 		}
 
-		CacheControl cc = new CacheControl();
-		cc.setNoCache(true);
-
-		ResponseBuilder builder = Response.ok(json.toString(), "application/json");
-		return builder.cacheControl(cc).build();
-
-	}
+        CacheControl cc = new CacheControl();
+        cc.setNoCache( true );
+        return responseResource.response( json.toString(), cc );
+    }
 
 	/**
 	 * <p>Returns a JSON representation of the Role with the given id.
@@ -149,14 +148,17 @@ public class RoleResource extends WebResource {
 	@GET
 	@Path("/loadbyid/{params:.*}")
 	@Produces("application/json")
-	public String loadById(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException {
+	public Response loadById(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException {
 		InitDataObject initData = init(params, true, request, true);
+
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
 		Map<String, String> paramsMap = initData.getParamsMap();
 		String roleId = paramsMap.get("id");
 
 		if(!UtilMethods.isSet(roleId) || roleId.equalsIgnoreCase("root")) {
-			return "{id:'0', name: 'Root Role'}";
+            return responseResource.response( "{id:'0', name: 'Root Role'}" );
 		}
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -179,8 +181,8 @@ public class RoleResource extends WebResource {
 		node.append("system: '").append(role.isSystem()).append("'");
 		node.append("}");
 
-		return node.toString();
-	}
+        return responseResource.response( node.toString() );
+    }
 
 	/**
 	 * Returns a JSON tree structure whose leaves names contain the given "name" parameter.
@@ -207,14 +209,19 @@ public class RoleResource extends WebResource {
 	@Path("/loadbyname/{params:.*}")
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
-	public String loadByName(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException {
+	public Response loadByName(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException {
 		InitDataObject initData = init(params, true, request, true);
+
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
 		Map<String, String> paramsMap = initData.getParamsMap();
 		String name = paramsMap.get("name");
 
-		if(!UtilMethods.isSet(name))
-			return "";
+		if(!UtilMethods.isSet(name)) {
+            //return "";
+            responseResource.response( "" );//FIXME: Should return a proper error....
+        }
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role userRole = roleAPI.loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
@@ -253,9 +260,8 @@ public class RoleResource extends WebResource {
 
 		// build the resulting Json Tree
 		String json = buildFilteredJsonTree(resultTree);
-		return "{ identifier: 'id', label: 'name', items: [ { id: 'root', name: 'Roles', top: true, " +
-            "children: [" + json + "] } ] }";
-
+        return responseResource.response( "{ identifier: 'id', label: 'name', items: [ { id: 'root', name: 'Roles', top: true, " +
+                "children: [" + json + "] } ] }" );
 	}
 
 	@SuppressWarnings("unchecked")
