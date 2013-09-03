@@ -58,8 +58,6 @@ public class BundlePublisherResource extends WebResource {
 			@FormDataParam("AUTH_TOKEN") String auth_token_enc,
 			@FormDataParam("GROUP_ID") String groupId,
 			@FormDataParam("ENDPOINT_ID") String endpointId,
-            @FormDataParam ("type") String type,
-            @FormDataParam ("callback") String callback,
 			@Context HttpServletRequest req) {
 
 		String remoteIP = "";
