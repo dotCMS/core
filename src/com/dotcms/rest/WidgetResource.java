@@ -12,6 +12,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -32,8 +33,12 @@ public class WidgetResource extends WebResource {
 	@GET
 	@Path("/{params:.*}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws ResourceNotFoundException, ParseErrorException, Exception {
-		InitDataObject initData = init(params, true, request, false);
+	public Response getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws ResourceNotFoundException, ParseErrorException, Exception {
+
+        InitDataObject initData = init(params, true, request, false);
+
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
 		Map<String, String> paramsMap = initData.getParamsMap();
 		User user = initData.getUser();
@@ -73,11 +78,8 @@ public class WidgetResource extends WebResource {
 
 		}
 
-
-
-		return parseWidget(request, response, widget);
-
-	}
+        return responseResource.response( parseWidget( request, response, widget ) );
+    }
 
 	public static String parseWidget(HttpServletRequest request, HttpServletResponse response, Contentlet widget) throws IOException {
 		Structure contStructure = widget.getStructure();
