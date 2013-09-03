@@ -81,7 +81,8 @@
             myCp.destroyRecursive(false);
         }
         myCp = new dojox.layout.ContentPane({
-            id: "unpushedBundlesContent"
+            id: "unpushedBundlesContent",
+            preventCache: true
         }).placeAt("unpushedBundlesDiv");
 
         myCp.attr("href", url);
