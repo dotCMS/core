@@ -189,13 +189,78 @@ var cmsfile=null;
 		var toggleValue=dijit.byId(id+'_toggler').attr('value');
 		if (toggleValue=="WYSIWYG"){
 			toWYSIWYG(id);
+			updateDisabledWysiwyg(id,"WYSIWYG");
 			}
 		else if(toggleValue=="CODE"){
 			toCodeArea(id);
+			updateDisabledWysiwyg(id,"CODE");
 			}
 		else if(toggleValue=="PLAIN"){
 			toPlainView(id);
+			updateDisabledWysiwyg(id,"PLAIN");
 			}
+	}
+	
+	function updateDisabledWysiwyg(id,mode){
+		
+		//Updating the list of disabled wysiwyg list
+		var elementWysiwyg = document.getElementById("disabledWysiwyg");
+		var wysiwygValue = elementWysiwyg.value;
+		var result = "";
+		var existingInDisabledWysiwyg = false;
+		if(mode == "WYSIWYG"){
+			
+			if(wysiwygValue != ""){
+				var wysiwygValueArray = wysiwygValue.split(",");
+
+				for(i = 0;i < wysiwygValueArray.length;i++)
+				{
+					var wysiwygFieldVar = trimString(wysiwygValueArray[i]);
+					if((wysiwygFieldVar == id) || (wysiwygFieldVar == id+"<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>")){
+						wysiwygFieldVar = "";
+					}
+					result += wysiwygFieldVar + ",";
+				}
+			}
+		}else if(mode == "CODE"){
+			
+			if(wysiwygValue != ""){
+				var wysiwygValueArray = wysiwygValue.split(",");
+
+				for(i = 0;i < wysiwygValueArray.length;i++)
+				{
+					var wysiwygFieldVar = trimString(wysiwygValueArray[i]);
+					if(wysiwygFieldVar == id+"<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>"){
+						wysiwygFieldVar = id;
+						existingInDisabledWysiwyg = true;
+					}
+					result += wysiwygFieldVar + ",";
+				}
+				if(!existingInDisabledWysiwyg)
+					result += id;
+			}else{
+				result += id;
+			}
+		}else{// to PLAIN
+			
+			if(wysiwygValue != ""){
+				var wysiwygValueArray = wysiwygValue.split(",");
+
+				for(i = 0;i < wysiwygValueArray.length;i++){
+					var wysiwygFieldVar = trimString(wysiwygValueArray[i]);
+					if(wysiwygFieldVar == id){
+						wysiwygFieldVar = id+"<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>";
+						existingInDisabledWysiwyg = true;
+					}
+					result += wysiwygFieldVar + ",";
+				}
+				if(!existingInDisabledWysiwyg)
+					result += id+"<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>";
+			}else{
+				result += id+"<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>"; 
+			}
+		}
+		elementWysiwyg.value = result;
 	}
 
 	function toPlainView(id) {
@@ -206,33 +271,7 @@ var cmsfile=null;
 		else if(enabledCodeAreas[id]){
 			codeMirrorRemover(id);
 		}
-		if(!isWYSIWYGEnabled(id))
-        {
-			//Updating the list of disabled wysiwyg list
-			var elementWysiwyg = document.getElementById("disabledWysiwyg");
-			var wysiwygValue = elementWysiwyg.value;
-
-			var result = "";
-			if(wysiwygValue != "")
-			{
-				var wysiwygValueArray = wysiwygValue.split(",");
-
-				for(i = 0;i < wysiwygValueArray.length;i++)
-				{
-					var number = wysiwygValueArray[i];
-					number = trimString(number);
-					if(number.indexOf("<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>")!=-1){
-						number = number.replace("<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>","");
-					}
-					if(number != id)
-					{
-						result += number + ",";
-					}
-				}
-			}
-			result += id+"<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>";
-			elementWysiwyg.value = result;
-		}
+		document.getElementById(id).value = document.getElementById(id).value.trim();
 	}
 
 	function toCodeArea(id) {
@@ -264,32 +303,6 @@ var cmsfile=null;
 				return;
 			}
 
-
-			//Updating the disabled wysiwyg list
-			var elementWysiwyg = document.getElementById("disabledWysiwyg");
-			var wysiwygValue = elementWysiwyg.value;
-			var result = "";
-
-			if(wysiwygValue != "")
-			{
-				var wysiwygValueArray = wysiwygValue.split(",");
-
-				for(i = 0; i < wysiwygValueArray.length; i++)
-				{
-					var number = wysiwygValueArray[i];
-					number = trimString(number);
-					if(number.indexOf("<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>")!=-1){
-						number = number.replace("<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>","");
-					}
-					if(number != textAreaId)
-					{
-						result += number + ",";
-					}
-				}
-				result = result.substring(0, result.length - 1);
-			}
-			elementWysiwyg.value = result;
-
 			//Enabling the wysiwyg
 			try
 			{
@@ -310,27 +323,6 @@ var cmsfile=null;
 
 		if(isWYSIWYGEnabled(textAreaId))
         {
-			//Updating the list of disabled wysiwyg list
-			var elementWysiwyg = document.getElementById("disabledWysiwyg");
-			var wysiwygValue = elementWysiwyg.value;
-
-			var result = "";
-			if(wysiwygValue != "")
-			{
-				var wysiwygValueArray = wysiwygValue.split(",");
-
-				for(i = 0;i < wysiwygValueArray.length;i++)
-				{
-					var number = wysiwygValueArray[i];
-					if(number != textAreaId)
-					{
-						result += number + ",";
-					}
-				}
-			}
-			result += textAreaId;
-			elementWysiwyg.value = result;
-
 			//Disabling the control
 			tinymce.EditorManager.get(textAreaId).remove();
 			enabledWYSIWYG[textAreaId] = false;
@@ -496,6 +488,7 @@ var cmsfile=null;
 	var codeMirrorEditors = [];
 
 	function codeMirrorArea(textarea){
+		document.getElementById(textarea).value = document.getElementById(textarea).value.trim();
 		var dim = dojo.coords(textarea);
 		var areaWidth = dim.w - 27;
 		var areaHeight = "400px";
@@ -516,6 +509,7 @@ var cmsfile=null;
 		dojo.query('#'+textarea).style({display:''});
 		dojo.query('#'+textarea)[0].value=editorText;
 		enabledCodeAreas[textarea]=false;
+		codeMirrorEditors[textarea] = null;
 	}
 	function addFileImageCallback(file) {
 		var ident
