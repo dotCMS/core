@@ -17,6 +17,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -388,7 +389,9 @@ public class EditFileAction extends DotPortletAction implements DotPortletAction
 		if(req.getParameter("parent") != null) {
 			parentFolder = folderAPI.find(req.getParameter("parent"),user,false);
 		} else {
-			parentFolder = fileAPI.getFileFolder(file,WebAPILocator.getHostWebAPI().getCurrentHost(req), user, false);
+			Identifier tempId = APILocator.getIdentifierAPI().find(file.getIdentifier());
+			Host fileHost = APILocator.getHostAPI().find(tempId.getHostId(), user, false);
+			parentFolder = fileAPI.getFileFolder(file,fileHost, user, false);
 		}
 
 		// setting parent folder path and inode on the form bean
