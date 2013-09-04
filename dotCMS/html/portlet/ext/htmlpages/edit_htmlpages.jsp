@@ -245,7 +245,7 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 				<%} else if(fileAsContent && templateImgPreviewContent!=null && InodeUtils.isSet(templateImgPreviewContent.getInode())) {%>
 					<dd><img src="/thumbnail?id=<%=templateImgPreviewContent.getIdentifier() %>&w=250&h=250" id="templateImage" border="0" style="border:1px solid #B6CBEB;"></dd>
 				<%} if(templateImgPreviewContent==null || InodeUtils.isSet(templateImgPreviewContent.getInode())) {%>
-				<dd><img src="" id="templateImage" border="0" style="border:1px solid #B6CBEB;"></dd>
+				<dd><img src="" id="templateImage" border="0" style="border:1px solid #B6CBEB; display: none"></dd>
 				<%} else {} %>
 		</dl>
 	</div>
