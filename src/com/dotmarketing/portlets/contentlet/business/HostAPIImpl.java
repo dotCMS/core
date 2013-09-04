@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -482,37 +483,19 @@ public class HostAPIImpl implements HostAPI {
 
 	}
 
-	public void delete(Host host, User user, boolean respectFrontendRoles) {
-		DotConnect dc = new DotConnect();
-		List<HashMap<String, String>> types = new ArrayList<HashMap<String, String>>();
-		List<HashMap<String, String>> inodes = new ArrayList<HashMap<String, String>>();
-		dc.setSQL("select distinct asset_type from identifier where asset_type<>'contentlet'");
-		try {
-			types = dc.loadResults();
-			for(HashMap<String, String> type :types){
-				String assetType = type.get("asset_type");
-				dc.setSQL("select i.inode,type,asset.identifier from inode i,"+assetType+" asset,identifier ident " +
-						"where i.inode = asset.inode and asset.identifier = ident.id and ident.host_inode = ? ");
-				dc.addParam(host.getIdentifier());
-				inodes.addAll(dc.loadResults());
-			}
-		} catch (DotDataException e) {
-			Logger.error(HostAPIImpl.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
+	public void deleteAndWait(final Host host, final User user, final boolean respectFrontendRoles) {
+	    delete(host,user,respectFrontendRoles,true);
+	}
+	
+	public void delete(final Host host, final User user, final boolean respectFrontendRoles) {
+	    delete(host,user,respectFrontendRoles,false);
+	}
+	
+	protected void delete(final Host host, final User user, final boolean respectFrontendRoles, boolean wait) {
+		
 
 		class DeleteHostThread extends Thread {
-			private User user;
-			private boolean respectFrontendRoles;
-			private Host host;
-			private List<HashMap<String, String>> inodes;
 
-			public DeleteHostThread(Host host,User user, boolean respectFrontendRoles,List<HashMap<String, String>> inodes) {
-				this.host = host;
-				this.user = user;
-				this.respectFrontendRoles = respectFrontendRoles;
-				this.inodes = inodes;
-			}
 			public void run() {
 				try {
 					deleteHost();
@@ -603,26 +586,17 @@ public class HostAPIImpl implements HostAPI {
 					StructureFactory.deleteStructure(structure);
 				}
 				
-				// wipe bad old containers
-                dc.setSQL("delete from containers where exists (select * from identifier where host_inode=? and id=containers.identifier) ");
-                dc.addParam(host.getIdentifier());
-                dc.loadResult();
-                
-                // wipe bad old templates
-                dc.setSQL("delete from template where exists (select * from identifier where host_inode=? and id=template.identifier) ");
-                dc.addParam(host.getIdentifier());
-                dc.loadResult();
-                
-                // wipe bad old htmlpages
-                dc.setSQL("delete from htmlpage where exists (select * from identifier where host_inode=? and id=htmlpage.identifier) ");
-                dc.addParam(host.getIdentifier());
-                dc.loadResult();
-                
-                // wipe bad old links
-                dc.setSQL("delete from links where exists (select * from identifier where host_inode=? and id=links.identifier) ");
-                dc.addParam(host.getIdentifier());
-                dc.loadResult();
-                
+				String[] assets = {"containers","template","htmlpage","links"};
+				for(String asset : assets) {
+				    dc.setSQL("select inode from "+asset+" where exists (select * from identifier where host_inode=? and id="+asset+".identifier)");
+	                dc.addParam(host.getIdentifier());
+	                for(Map row : (List<Map>)dc.loadResults()) {
+	                    dc.setSQL("delete from "+asset+" where inode=?");
+	                    dc.addParam(row.get("inode"));
+	                    dc.loadResult();
+	                }
+				}
+				
                 // kill bad identifiers pointing to the host
                 dc.setSQL("delete from identifier where host_inode=?");
                 dc.addParam(host.getIdentifier());
@@ -631,25 +605,22 @@ public class HostAPIImpl implements HostAPI {
 				// Remove Host
 				Contentlet c = contentAPI.find(host.getInode(), user, respectFrontendRoles);
 				contentAPI.delete(c, user, respectFrontendRoles);
-
+				hostCache.remove(host);
 				hostCache.clearAliasCache();
 
 			}
 		}
-		DeleteHostThread thread = new DeleteHostThread(host,user,respectFrontendRoles,inodes);
+		
+		DeleteHostThread thread = new DeleteHostThread();
 
-		if (inodes.size()> 50) {
-			// Starting the thread
-			thread.start();
-			//SessionMessages.add(httpReq, "message", "message.contentlets.batch.deleting.background");
-		} else {
-			// Executing synchronous because there is not that many
-			try {
-				thread.deleteHost();
-			} catch (Exception e) {
-				Logger.error(HostAPIImpl.class, e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage(), e);
-			}
+		thread.start();
+		
+		if(wait) {
+		    try {
+                thread.join();
+            } catch (InterruptedException e) {
+                Logger.warn(this,"Interrpted while waiting for host "+host.getHostname()+" deletion",e);
+            }
 		}
 	}
 
