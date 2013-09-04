@@ -179,6 +179,7 @@
             }
         };
         dojo.xhrPost( xhrArgs );
+        dijit.byId( "checkAllCkBx" ).set('checked',false);
     }
 
     /**
