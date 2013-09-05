@@ -3158,7 +3158,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         continue;
                     }
-                } else if(!UtilMethods.isSet(o) && (st.getStructureType() != (Structure.STRUCTURE_TYPE_FORM))) {
+                } else if(!UtilMethods.isSet(o)) {
                     cve.addRequiredField(field);
                     hasError = true;
                     continue;
