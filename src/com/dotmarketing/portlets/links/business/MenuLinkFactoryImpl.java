@@ -83,7 +83,8 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 	        
 		} else {
 		    HibernateUtil.save(menuLink);
-			APILocator.getIdentifierAPI().createNew(menuLink, destination);
+			Identifier newIdentifier = APILocator.getIdentifierAPI().createNew(menuLink, destination);
+			menuLink.setIdentifier(newIdentifier.getInode());
 			HibernateUtil.save(menuLink);
 			APILocator.getVersionableAPI().setWorking(menuLink);
 		}
