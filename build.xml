@@ -523,6 +523,16 @@
 
 </target>
 
+    <target name="repackage-libraries" depends="compile">
+
+        <taskdef classname="com.dotcms.util.PackagerTask" name="packagerTask">
+            <classpath>
+                <path refid="files-classpath" />
+            </classpath>
+        </taskdef>
+
+        <packagerTask librarypath="${lib.app}"/>
+    </target>
 
 <target name="war-file" description="builds dotCMS as a war">
 
