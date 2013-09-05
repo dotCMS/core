@@ -78,17 +78,22 @@ public interface HostAPI {
      */
 	public void unarchive(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
-    /**
-     * Removes the given host plus all assets under it, use with caution
-     *
-     * @param host
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotDataException
-     * @throws DotSecurityException
+	/**
+	 * Removes the given host plus all assets under it, use with caution.
+	 * It does all the job in a separated thread and return inmediatly.
+	 * @throws ParseException
+	 * @throws DotContentletStateException
+	 */
+	public void delete(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+	
+	/**
+     * Removes the given host plus all assets under it, use with caution.
+     * This version will wait for the thread to finish. It can take some minutes.
+     * @throws ParseException
      * @throws DotContentletStateException
      */
-	public void delete(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+	public void deleteAndWait(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+	
 
 	/**
 	 * Retrieves a host given its id
