@@ -228,7 +228,7 @@
 	                    	class="form-text"
 							onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= defaultLang.getId() %>');" />
 
-							<div style="display:none;position:absolute;border:1px solid #ddd;padding:5px 10px;" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
+							<div style="display:none;position:absolute;border:1px solid #ddd;padding:5px 10px;z-index:1" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
 	                    		<div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
 		                	</div>
 			                <script type="text/javascript">
