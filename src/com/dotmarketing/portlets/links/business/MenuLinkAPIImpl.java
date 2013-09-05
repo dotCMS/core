@@ -21,7 +21,9 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -43,7 +45,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 		Link newLink = new Link();
 
         newLink.copy(sourceLink);
-
+        
         // translating internal link if internal and different host than the target folder
         if(sourceLink.getLinkType().equals(Link.LinkType.INTERNAL.toString()) &&
                 !APILocator.getIdentifierAPI().find(sourceLink).getHostId().equals(destination.getHostId())) {
@@ -64,17 +66,16 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
                 }
             }
         }
-
-        //persists the webasset
-        save(newLink, destination, user, respectFrontendRoles);
-
+        
         newLink.setFriendlyName(sourceLink.getFriendlyName());
         newLink.setTitle(sourceLink.getTitle());
         newLink.setShowOnMenu(sourceLink.isShowOnMenu());
         newLink.setProtocal(sourceLink.getProtocal());
         newLink.setLinkCode(sourceLink.getLinkCode());
         newLink.setLinkType(sourceLink.getLinkType());
-        save(newLink);
+
+        //persists the webasset
+        save(newLink, destination, user, respectFrontendRoles);
 
         if(sourceLink.isLive())
             APILocator.getVersionableAPI().setLive(newLink);
