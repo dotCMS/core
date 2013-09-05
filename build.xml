@@ -525,7 +525,7 @@
 
     <target name="repackage-libraries" depends="compile">
 
-        <taskdef classname="com.dotcms.util.PackagerTask" name="packagerTask">
+        <taskdef classname="com.dotcms.packager.PackagerTask" name="packagerTask">
             <classpath>
                 <path refid="files-classpath" />
             </classpath>

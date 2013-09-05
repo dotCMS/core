@@ -2,10 +2,7 @@ package com.dotcms.packager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -17,6 +14,33 @@ import java.util.jar.JarFile;
 public class Inspector {
 
     private HashMap<String, List<PathInfo>> classes = new HashMap<String, List<PathInfo>>();
+    private HashSet<Formatter> formatters = new HashSet<Formatter>();
+
+    /**
+     * Add a Formatter to this inspector; results will be sent to
+     * the formatter.
+     *
+     * @param fmt
+     */
+    public void addFormatter ( Formatter fmt ) {
+        formatters.add( fmt );
+    }
+
+    /**
+     * Generate the report of duplicate classes.
+     *
+     * @param title
+     */
+    public void report ( String title ) {
+
+        for ( Formatter fmt : formatters ) {
+            fmt.startReport( title );
+            for ( String name : classes.keySet() ) {
+                fmt.reportClass( name, classes.get( name ) );
+            }
+            fmt.endReport();
+        }
+    }
 
     /**
      * Inspect the given archive or directory tree for class instances.
