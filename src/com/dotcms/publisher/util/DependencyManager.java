@@ -380,6 +380,13 @@ public class DependencyManager {
 				htmlPages.add(p.getIdentifier(), p.getModDate());
 				htmlPagesSet.add(p.getIdentifier());
 			}
+			
+			// default fileasset type
+			Structure defaultType=StructureCache.getStructureByInode(f.getDefaultFileType());
+			if(defaultType!=null && InodeUtils.isSet(defaultType.getInode())) {
+			    structures.add(defaultType.getInode(), defaultType.getModDate());
+			    structuresSet.add(defaultType.getInode());
+			}
 
 			setFolderListDependencies(APILocator.getFolderAPI().findSubFolders(f, user, false));
 		}
