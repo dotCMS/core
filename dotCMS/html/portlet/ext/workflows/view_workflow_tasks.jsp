@@ -456,7 +456,7 @@ bottom="/html/common/box_bottom.jsp">
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="height:100px;">
 		
 <!-- START Left Column -->	
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;" class="lineRight">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px; overflow-x: scroll; overflow-y: hidden; white-space: nowrap;" class="lineRight">
 		<div style="margin-top:48px;">
 			<div  id="filterTasksFrm">
 				<input type="hidden" name="cmd" value="filterTasks">
