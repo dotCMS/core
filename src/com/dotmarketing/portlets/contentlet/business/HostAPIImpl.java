@@ -368,12 +368,15 @@ public class HostAPIImpl implements HostAPI {
 					continue;
 				}
 				if(h.isDefault()){
+					boolean isHostRunning = h.isLive();
 					otherHostContentlet = APILocator.getContentletAPI().checkout(h.getInode(), user, respectFrontendRoles);
 					otherHost =  new Host(otherHostContentlet);
 					hostCache.remove(otherHost);
 					otherHost.setDefault(false);
 					otherHost.setInode("");
 					otherHostContentlet = conAPI.checkin(otherHost, user, respectFrontendRoles);
+					if(isHostRunning)
+						conAPI.publish(otherHostContentlet, user, respectFrontendRoles);
 					otherHost =  new Host(otherHostContentlet);
 					hostCache.add(otherHost);
 				}
