@@ -233,6 +233,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dijit.byId("remotePublishSaveButton").setAttribute('disabled', true);
         document.body.style.cursor = 'wait';
 
+        var currentObject = this;
         var urlStr = this.isBundle?"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle":"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish";
 		var xhrArgs = {
 			url: urlStr,
@@ -240,20 +241,12 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 			handleAs: "json",
 			load: function(data){
 
-                var total = data.total;
-                var errors = data.errors;
-                var errorMessages = data.errorMessages;
-                if (errors != null && errors != undefined && errors > 0) {
-                    var messages = "";
-                    dojo.forEach(errorMessages, function(value, index){
-                        messages += "\n" + value;
-                    });
-                    showDotCMSSystemMessage(messages, true);
-                }
-
                 //Enable the save button
                 dijit.byId("remotePublishSaveButton").setAttribute('disabled', false);
                 document.body.style.cursor = 'default';
+
+                //Display the results to the user if required
+                currentObject._showResultMessage(data);
 
 				dialog.hide();
 			},
@@ -314,19 +307,19 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dijit.byId("addToBundleSaveButton").setAttribute('disabled', true);
         document.body.style.cursor = 'wait';
 
+        var currentObject = this;
         var xhrArgs = {
             url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle",
             form: dojo.byId("remotePublishForm"),
-            handleAs: "text",
+            handleAs: "json",
             load: function (data) {
-
-                if (data.indexOf("FAILURE") > -1) {
-                    showDotCMSSystemMessage(data, true);
-                }
 
                 //Enable the save button
                 dijit.byId("addToBundleSaveButton").setAttribute('disabled', false);
                 document.body.style.cursor = 'default';
+
+                //Display the results to the user if required
+                currentObject._showResultMessage(data);
 
                 dialog.hide();
             },
@@ -341,6 +334,20 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             }
         };
         dojo.xhrPost(xhrArgs);
+    },
+
+    _showResultMessage : function (data) {
+
+        var total = data.total;
+        var errors = data.errors;
+        var errorMessages = data.errorMessages;
+        if (errors != null && errors != undefined && errors > 0) {
+            var messages = "";
+            dojo.forEach(errorMessages, function(value, index){
+                messages += "<br>" + value;
+            });
+            showDotCMSSystemMessage(messages, true);
+        }
     },
 
 	addSelectedToWhereToSend : function (){
