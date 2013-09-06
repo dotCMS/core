@@ -195,7 +195,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 }
             }
 
-            //If we have errors lets return them in order to feedback the user about them
+            //If we have errors lets return them in order to feedback the user
             if ( responseMap != null && !responseMap.isEmpty() ) {
 
                 //Error messages
@@ -677,7 +677,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @param request  HttpRequest
      * @param response HttpResponse
      */
-    public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) {
+    public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
 
         PublisherAPI publisherAPI = PublisherAPI.getInstance();
         String _assetId = request.getParameter( "assetIdentifier" );
@@ -707,10 +707,26 @@ public class RemotePublishAjaxAction extends AjaxAction {
             List<String> assetsIds = Arrays.asList( _assetsIds );
 
             List<String> ids = getIdsToPush( assetsIds, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
-            publisherAPI.saveBundleAssets( ids, bundle.getId(), getUser() );
+            Map<String, Object> responseMap = publisherAPI.saveBundleAssets( ids, bundle.getId(), getUser() );
 
+            //If we have errors lets return them in order to feedback the user
+            if ( responseMap != null && !responseMap.isEmpty() ) {
+
+                //Error messages
+                JSONArray jsonErrors = new JSONArray( (ArrayList) responseMap.get( "errorMessages" ) );
+
+                //Prepare the Json response
+                JSONObject jsonResponse = new JSONObject();
+                jsonResponse.put( "errorMessages", jsonErrors.toArray() );
+                jsonResponse.put( "errors", responseMap.get( "errors" ) );
+                jsonResponse.put( "total", responseMap.get( "total" ) );
+
+                //And send it back to the user
+                response.getWriter().println( jsonResponse.toString() );
+            }
         } catch ( Exception e ) {
             Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+            response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Adding content to Bundle: " + e.getMessage() );
         }
     }
 
