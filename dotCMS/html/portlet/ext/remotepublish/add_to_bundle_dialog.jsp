@@ -38,7 +38,7 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
 		</div>
 
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" iconClass="addIcon" onClick="pushHandler.addToBundle()" type="button">
+			<button dojoType="dijit.form.Button" iconClass="addIcon" onClick="pushHandler.addToBundle()" type="button" id="addToBundleSaveButton">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
 			</button>
 			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('addToBundleDia').hide()" type="button">

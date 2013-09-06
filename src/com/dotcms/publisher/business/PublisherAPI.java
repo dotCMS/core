@@ -38,17 +38,17 @@ public abstract class PublisherAPI {
 	/**
 	 * Include in the publishing_queue table the identifier used to get contents to publish
 	 */
-	public abstract void addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user) throws DotPublisherException;
+	public abstract Map<String, Object> addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user) throws DotPublisherException;
 
 	/**
 	 * Include in the publishing_queue table the identifier used to get contents to UN-publish
 	 */
-	public abstract void addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user) throws DotPublisherException;
+	public abstract Map<String, Object> addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user) throws DotPublisherException;
 
 	/**
 	 * Persists the relationship between a List of assets and the bundle that they were added to
 	 */
-	public abstract void saveBundleAssets(List<String> identifiers, String bundleId, User user) throws DotPublisherException;
+	public abstract Map<String, Object> saveBundleAssets(List<String> identifiers, String bundleId, User user) throws DotPublisherException;
 
 	/**
 	 * sets the publish date and the publish operation type to the elements of the publishing queue contained in the bundle with the given bundleId
