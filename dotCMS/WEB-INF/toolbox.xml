@@ -365,7 +365,7 @@
 		<class>com.dotmarketing.viewtools.FileTool</class>
 	</tool>
 	<tool>
-		<key>workflow</key>
+		<key>workflowtool</key>
 		<scope>application</scope>
 		<class>com.dotmarketing.viewtools.WorkflowTool</class>
 	</tool>
