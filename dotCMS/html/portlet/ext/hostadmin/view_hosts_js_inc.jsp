@@ -224,6 +224,7 @@
 
 			dijit.registry.remove('hostToCopy');
 			dijit.registry.remove('id');
+			dijit.registry.remove('id_popup');
 			dojo.byId('hostToCopyWrapper').innerHTML = '<div id="hostToCopy"></div>';
 
 			this.hostsSelect = new dijit.form.FilteringSelect({
