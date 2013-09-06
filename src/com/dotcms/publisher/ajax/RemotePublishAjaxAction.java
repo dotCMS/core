@@ -333,7 +333,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @throws IOException If fails sending back to the user response information
      */
     public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
-
+    	try {
+			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", getUser())){
+				response.sendError(401);
+				return;
+			}
+		} catch (DotDataException e1) {
+			Logger.error(RemotePublishAjaxAction.class,e1.getMessage(),e1);
+			response.sendError(401);
+			return;
+		}
         Map<String, String> map = getURIParams();
 		response.setContentType("application/x-tgz");
 
@@ -381,7 +390,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @throws IOException If fails sending back to the user response information
      */
     public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
-
+    	try {
+			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", getUser())){
+				response.sendError(401);
+				return;
+			}
+		} catch (DotDataException e1) {
+			Logger.error(RemotePublishAjaxAction.class,e1.getMessage(),e1);
+			response.sendError(401);
+			return;
+		}
         //Read the parameters
         Map<String, String> map = getURIParams();
         String bundleId = map.get( "bundleId" );
@@ -447,7 +465,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      */
     @SuppressWarnings ("unchecked")
     public File generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
-
+    	
         PushPublisherConfig pconf = new PushPublisherConfig();
         PublisherAPI pubAPI = PublisherAPI.getInstance();
 
@@ -526,6 +544,17 @@ public class RemotePublishAjaxAction extends AjaxAction {
      */
     public void uploadBundle ( HttpServletRequest request, HttpServletResponse response ) throws FileUploadException, IOException{
 
+    	try {
+			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", getUser())){
+				response.sendError(401);
+				return;
+			}
+		} catch (DotDataException e1) {
+			Logger.error(RemotePublishAjaxAction.class,e1.getMessage(),e1);
+			response.sendError(401);
+			return;
+		}
+    	
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload(factory);
         @SuppressWarnings("unchecked")
