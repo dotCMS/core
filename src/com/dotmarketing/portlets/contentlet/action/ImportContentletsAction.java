@@ -94,7 +94,11 @@ public class ImportContentletsAction extends DotPortletAction {
 				UploadPortletRequest uploadReq = PortalUtil.getUploadPortletRequest(req);
 				byte[] bytes = FileUtil.getBytes(uploadReq.getFile("file"));
 
-				if (bytes == null || bytes.length == 0) {
+				ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
+				if(importContentletsForm.getStructure().isEmpty()){
+					SessionMessages.add(req, "error", "structure-type-is-required");
+					setForward(req, "portlet.ext.contentlet.import_contentlets");
+				}else if (bytes == null || bytes.length == 0) {
 					SessionMessages.add(req, "error", "message.contentlet.file.required");
 					setForward(req, "portlet.ext.contentlet.import_contentlets");
 				} else {
@@ -104,8 +108,7 @@ public class ImportContentletsAction extends DotPortletAction {
 						String[] csvHeaders = null;
 						int languageCodeHeaderColumn = -1;
 						int countryCodeHeaderColumn = -1;
-						
-						ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
+												
 						if (importContentletsForm.getLanguage() == -1)
 							reader = new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
 						else
