@@ -1,10 +1,5 @@
 package com.dotcms.publisher.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -23,6 +18,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.util.*;
 
 /**
  * Implement the PublishQueueAPI abstract class methods
@@ -75,8 +72,8 @@ public class PublisherAPIImpl extends PublisherAPI{
      * @param user
      * @throws DotPublisherException
      */
-    public void addContentsToPublish ( List<String> identifiers, String bundleId, Date publishDate, User user ) throws DotPublisherException {
-    	addAssetsToQueue(identifiers, bundleId, publishDate, user, ADD_OR_UPDATE_ELEMENT);
+    public Map<String, Object> addContentsToPublish ( List<String> identifiers, String bundleId, Date publishDate, User user ) throws DotPublisherException {
+    	return addAssetsToQueue(identifiers, bundleId, publishDate, user, ADD_OR_UPDATE_ELEMENT);
     }
 
     /**
@@ -88,19 +85,36 @@ public class PublisherAPIImpl extends PublisherAPI{
      * @param user
      * @throws DotPublisherException
      */
-    public void addContentsToUnpublish ( List<String> identifiers, String bundleId, Date unpublishDate, User user ) throws DotPublisherException {
-    	addAssetsToQueue(identifiers, bundleId, unpublishDate, user, DELETE_ELEMENT);
+    public Map<String, Object> addContentsToUnpublish ( List<String> identifiers, String bundleId, Date unpublishDate, User user ) throws DotPublisherException {
+    	return addAssetsToQueue(identifiers, bundleId, unpublishDate, user, DELETE_ELEMENT);
     }
 
 
     @Override
-	public void saveBundleAssets(List<String> identifiers, String bundleId,
+	public Map<String, Object> saveBundleAssets(List<String> identifiers, String bundleId,
 			User user) throws DotPublisherException {
-    	addAssetsToQueue(identifiers, bundleId, null, user, -1);
-
+    	return addAssetsToQueue(identifiers, bundleId, null, user, -1);
 	}
 
-    private void addAssetsToQueue(List<String> identifiers, String bundleId, Date operationDate, User user, long operationType ) throws DotPublisherException {
+    /**
+     * Adds a list of given identifiers to the Push Publish Queue,
+     *
+     * @param identifiers   Identifiers to add to the Push Publish Queue
+     * @param bundleId      The id of the bundle the assets will be part of
+     * @param operationDate When to apply the operation
+     * @param user          current user
+     * @param operationType Publish/Un-publish
+     * @return A map with the results of the operation, this map contains: the total number of assets we tried to add (<strong>total</strong>)<br/>
+     *         the number of failed assets (<strong>errors</strong> -> Permissions problems) and an ArrayList of error messages for the failed assets (<strong>errorMessages</strong>)<br/>
+     *         <strong>Keys: total, errors, errorMessages</strong>
+     * @throws DotPublisherException
+     */
+    private Map<String, Object> addAssetsToQueue(List<String> identifiers, String bundleId, Date operationDate, User user, long operationType ) throws DotPublisherException {
+
+        //Map to store the results and errors adding Assets to que Queue
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        List<String> errorsList = new ArrayList<String>();
+
     	  if ( identifiers != null ) {
 
               try {
@@ -152,7 +166,10 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       type = "category";
                                   } else if ( UtilMethods.isSet( st ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( st, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-                                          Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + st.getIdentifier() );
+
+                                          String errorMessage = "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + st.getIdentifier();
+                                          Logger.warn( PublisherAPIImpl.class, errorMessage );
+                                          errorsList.add( errorMessage );
                                           continue;
                                       }
 
@@ -162,19 +179,27 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   // check if it is a folder
                                   else if ( UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-                                          Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + folder.getIdentifier() );
+
+                                          String errorMessage = "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + folder.getIdentifier();
+                                          Logger.warn( PublisherAPIImpl.class, errorMessage );
+                                          errorsList.add( errorMessage );
                                           continue;
                                       }
 
                                       type = "folder";
                                   }
                               } catch ( Exception ex ) {
-                                  // well, none of those
+                            	  if ( UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
+                                	  type = "workflow";
+                                  }
                               }
 
                           } else {
                               if ( !strPerAPI.doesUserHavePermission( iden, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-                                  Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + iden.getId() );
+
+                                  String errorMessage = "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + iden.getId();
+                                  Logger.warn( PublisherAPIImpl.class, errorMessage );
+                                  errorsList.add( errorMessage );
                                   continue;
                               }
                               type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? "host" : iden.getAssetType();
@@ -215,6 +240,12 @@ public class PublisherAPIImpl extends PublisherAPI{
                   throw new DotPublisherException( "Unable to add element to publish queue table:" + e.getMessage(), e );
               }
           }
+
+        //Preparing and returning the response status object
+        resultMap.put( "errorMessages", errorsList );
+        resultMap.put( "errors", errorsList.size() );
+        resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
+        return resultMap;
     }
 
     private static final String TREE_QUERY = "select * from tree where child = ? or parent = ?";
