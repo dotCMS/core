@@ -195,7 +195,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                           } else {
                               if ( !strPerAPI.doesUserHavePermission( iden, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
                                   //Generate and append the error message
-                                  appendPermissionError( errorsList, user, iden.getAssetType(), iden.getAssetName(), iden.getId() );
+                                  appendPermissionError( errorsList, user, iden.getAssetType(), null, iden.getId() );
                                   continue;
                               }
                               type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? "host" : iden.getAssetType();
@@ -264,6 +264,10 @@ public class PublisherAPIImpl extends PublisherAPI{
             userData = user.getUserId();
         } else {
             userData = user.getEmailAddress();
+        }
+
+        if (assetName == null) {
+            assetName = PublishAuditUtil.getInstance().getTitle( assetType, identifier );
         }
 
         //Generate and append the error message
