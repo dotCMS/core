@@ -163,7 +163,7 @@ public class TagAPIImpl implements TagAPI{
 				//if global host is not set as unique filter but tag name is set, search in current host
 				else if (UtilMethods.isSet(tagName) && !globalTagsFilter){
     				dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where lower(tagname) like ? and (host_id = ?) " + sortStr);
-    				dh.setParam(tagName.toLowerCase() + "%");
+    				dh.setParam("%" + tagName.toLowerCase() + "%");
     				try {
     					dh.setParam(host.getMap().get("tagStorage").toString());
     				} catch(NullPointerException e) {
@@ -184,9 +184,16 @@ public class TagAPIImpl implements TagAPI{
 				} else {
 					//check all current host tags.
 					String sql =  "from tag in class com.dotmarketing.tag.model.Tag ";
-					sql = sql + "where ( host_id = ? ) " + sortStr;
-					dh.setQuery(sql);
-					dh.setParam(Host.SYSTEM_HOST);
+					
+					Object tagStorage = host.getMap().get("tagStorage");
+					
+					if(UtilMethods.isSet(tagStorage)){
+						sql = sql + "where ( host_id = ? ) " + sortStr;
+						dh.setQuery(sql);
+						dh.setParam(tagStorage.toString());
+					}else{
+						dh.setQuery(sql);
+					}
 				}
 
 				dh.setFirstResult(start);
