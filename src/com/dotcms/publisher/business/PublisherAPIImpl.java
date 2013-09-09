@@ -6,6 +6,7 @@ import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -17,6 +18,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
 import java.util.*;
@@ -166,10 +168,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       type = "category";
                                   } else if ( UtilMethods.isSet( st ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( st, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-
-                                          String errorMessage = "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + st.getIdentifier();
-                                          Logger.warn( PublisherAPIImpl.class, errorMessage );
-                                          errorsList.add( errorMessage );
+                                          //Generate and append the error message
+                                          appendPermissionError( errorsList, user, "Structure", st.getName(), st.getIdentifier() );
                                           continue;
                                       }
 
@@ -179,10 +179,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   // check if it is a folder
                                   else if ( UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-
-                                          String errorMessage = "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + folder.getIdentifier();
-                                          Logger.warn( PublisherAPIImpl.class, errorMessage );
-                                          errorsList.add( errorMessage );
+                                          //Generate and append the error message
+                                          appendPermissionError( errorsList, user, "Folder", folder.getName(), folder.getIdentifier() );
                                           continue;
                                       }
 
@@ -196,10 +194,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 
                           } else {
                               if ( !strPerAPI.doesUserHavePermission( iden, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-
-                                  String errorMessage = "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + iden.getId();
-                                  Logger.warn( PublisherAPIImpl.class, errorMessage );
-                                  errorsList.add( errorMessage );
+                                  //Generate and append the error message
+                                  appendPermissionError( errorsList, user, iden.getAssetType(), iden.getAssetName(), iden.getId() );
                                   continue;
                               }
                               type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? "host" : iden.getAssetType();
@@ -246,6 +242,35 @@ public class PublisherAPIImpl extends PublisherAPI{
         resultMap.put( "errors", errorsList.size() );
         resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
         return resultMap;
+    }
+
+    /**
+     * Generate and append Permissions error messages
+     *
+     * @param errorsList
+     * @param user
+     * @param assetType
+     * @param assetName
+     * @param identifier
+     */
+    private void appendPermissionError ( List<String> errorsList, User user, String assetType, String assetName, String identifier ) {
+
+        //First we should get the authentication type for this company
+        Company company = PublicCompanyFactory.getDefaultCompany();
+        String authType = company.getAuthType();
+
+        String userData;
+        if ( authType.equals( Company.AUTH_TYPE_ID ) ) {
+            userData = user.getUserId();
+        } else {
+            userData = user.getEmailAddress();
+        }
+
+        //Generate and append the error message
+        String errorMessage = "User: " + userData + " does not have Publish Permission over " + assetType + ": " + identifier;//For logs
+        Logger.warn( PublisherAPIImpl.class, errorMessage );
+        errorMessage = "User: " + userData + " does not have Publish Permission over " + assetType + ": " + assetName;//For user
+        errorsList.add( errorMessage );
     }
 
     private static final String TREE_QUERY = "select * from tree where child = ? or parent = ?";

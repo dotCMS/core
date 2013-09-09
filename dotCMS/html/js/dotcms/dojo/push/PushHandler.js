@@ -230,9 +230,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dojo.byId("forcePush").value = forcePush;
 		// END: PUSH PUBLISHING ACTIONLET
 
-        //Disable the save button
-        dijit.byId("remotePublishSaveButton").setAttribute('disabled', true);
-        document.body.style.cursor = 'wait';
+        //Hide the buttons and display the progress
+        dojo.query(".buttonRow").style("display", "none");
+        dojo.query(".progressRow").style("display", "block");
 
         var currentObject = this;
         var urlStr = this.isBundle?"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle":"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish";
@@ -242,10 +242,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 			handleAs: "json",
 			load: function(data){
 
-                //Enable the save button
-                dijit.byId("remotePublishSaveButton").setAttribute('disabled', false);
-                document.body.style.cursor = 'default';
-
                 //Display the results to the user if required
                 currentObject._showResultMessage(data);
 
@@ -254,9 +250,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 			error: function(error){
                 showDotCMSSystemMessage(error, true);
 
-                //Enable the save button
-                dijit.byId("remotePublishSaveButton").setAttribute('disabled', false);
-                document.body.style.cursor = 'default';
+                //Show the buttons and hide the progress
+                dojo.query(".buttonRow").style("display", "block");
+                dojo.query(".progressRow").style("display", "none");
 
 				dialog.hide();
 			}
@@ -305,8 +301,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         // END: PUSH PUBLISHING ACTIONLET
 
         //Disable the save button
-        dijit.byId("addToBundleSaveButton").setAttribute('disabled', true);
-        document.body.style.cursor = 'wait';
+        dojo.query(".buttonRow").style("display", "none");
+        dojo.query(".progressRow").style("display", "block");
 
         var currentObject = this;
         var xhrArgs = {
@@ -314,10 +310,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             form: dojo.byId("remotePublishForm"),
             handleAs: "json",
             load: function (data) {
-
-                //Enable the save button
-                dijit.byId("addToBundleSaveButton").setAttribute('disabled', false);
-                document.body.style.cursor = 'default';
 
                 //Display the results to the user if required
                 currentObject._showResultMessage(data);
@@ -327,9 +319,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             error: function (error) {
                 showDotCMSSystemMessage(error, true);
 
-                //Enable the save button
-                dijit.byId("addToBundleSaveButton").setAttribute('disabled', false);
-                document.body.style.cursor = 'default';
+                //Show the buttons and hide the progress
+                dojo.query(".buttonRow").style("display", "block");
+                dojo.query(".progressRow").style("display", "none");
 
                 dialog.hide();
             }
@@ -338,6 +330,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     },
 
     _showResultMessage : function (data) {
+
+        //Show the buttons and hide the progress
+        dojo.query(".buttonRow").style("display", "block");
+        dojo.query(".progressRow").style("display", "none");
 
         var total = data.total;
         var errors = data.errors;
