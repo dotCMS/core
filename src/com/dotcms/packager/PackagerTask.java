@@ -1,56 +1,79 @@
 package com.dotcms.packager;
 
+import com.tonicsystems.jarjar.JarJarTask;
+import com.tonicsystems.jarjar.Rule;
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.Task;
+import org.apache.tools.ant.types.ZipFileSet;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @author Jonathan Gamba
  *         Date: 9/4/13
  */
-public class PackagerTask extends Task {
+public class PackagerTask extends JarJarTask {
 
-    String libraryPath;
+    private String outputFolder;
 
-    public void setLibraryPath ( String libraryPath ) {
-        this.libraryPath = libraryPath;
+    public String getOutputFolder () {
+        return outputFolder;
     }
 
-    public static void main ( String[] args ) {
-
-        PackagerTask task = new PackagerTask();
-        task.setLibraryPath( args[0] );
-        task.execute();
+    public void setOutputFolder ( String outputFolder ) {
+        this.outputFolder = outputFolder;
     }
 
-    @Override
     public void execute () throws BuildException {
 
-        log( "Executing Packager task....", Project.MSG_INFO );
+        //Object with the duplicated classes
+        Inspector inspector = InspectorTask.globalInspector;
+        //inspector.report( "Test from Packager Task" );
 
-        // Validate input
-        if ( this.libraryPath == null ) {
-            throw new IllegalArgumentException( "No path element to inspect!" );
+        //Prepare the jars that we are going to repackage
+        Collection<File> files = new ArrayList<File>();
+
+        File tikaJar = new File( "/home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/tika-app-1.3.jar" );
+        files.add( tikaJar );
+
+        //Prepare the rules for these groups of jar
+        Collection<Rule> rules = new ArrayList<Rule>();
+
+        Rule rule = new Rule();
+        rule.setPattern( "de.l3s.boilerpipe.**" );
+        rule.setResult( "org.dotcms.example.@1" );
+        rules.add( rule );
+
+        generate( "test1.jar", rules, files );
+        generate( "test2.jar", rules, files );
+    }
+
+    private void generate ( String outputFileName, Collection<Rule> rules, Collection<File> jars ) {
+
+        //Destiny file
+        File outFile = new File( getOutputFolder() + File.separator + outputFileName );
+        setDestFile( outFile );
+
+        //Prepare the jars that we are going to repackage
+        for ( File jar : jars ) {
+
+            ZipFileSet fileSet = new ZipFileSet();
+            fileSet.setSrc( jar );
+
+            //Add it to the fileset
+            addZipfileset( fileSet );
         }
 
-        File libFolder = new File( this.libraryPath );
-        log( "Reading from: " + libFolder.getAbsolutePath(), Project.MSG_INFO );
+        //Prepare the rules for these groups of jar
+        for ( Rule rule : rules ) {
+            addConfiguredRule( rule );
+        }
 
-        //Create a formatter to read and display the results
-        Formatter formatter = new PlainFormatter();
-        formatter.setOutput( System.out );
-        formatter.setDuplicatesOnly( true );
-
-        //Create the inspector in order to analyze the given path
-        Inspector inspector = new Inspector();
-        inspector.addFormatter( formatter );
-        inspector.inspect( libFolder );
-        inspector.report( "Duplicated classes" );//Generate a report
-
-        log( "Found " + inspector.getClassCount() + " unique classes", Project.MSG_INFO );
-        log( "Found " + inspector.getDuplicateCount() + " duplicated classes", Project.MSG_INFO );
+        //Generate the new jar
+        super.execute();
+        //Clean everything a e ready to start again
+        cleanHelper();
     }
 
 }

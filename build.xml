@@ -525,13 +525,27 @@
 
     <target name="repackage-libraries" depends="compile">
 
-        <taskdef classname="com.dotcms.packager.PackagerTask" name="packagerTask">
+        <!--Clean the output folder-->
+        <delete dir="${lib.app}/out"/>
+        <mkdir dir="${lib.app}/out"/>
+
+        <!--Inspector-->
+        <taskdef classname="com.dotcms.packager.InspectorTask" name="inspectorTask" loaderref="sharedClassLoader">
+            <classpath>
+                <path refid="files-classpath" />
+            </classpath>
+        </taskdef>
+        <!--Packager-->
+        <taskdef classname="com.dotcms.packager.PackagerTask" name="packagerTask" loaderref="sharedClassLoader">
             <classpath>
                 <path refid="files-classpath" />
             </classpath>
         </taskdef>
 
-        <packagerTask librarypath="${lib.app}"/>
+        <!--Run the inspector-->
+        <inspectorTask librarypath="${lib.app}"/>
+        <!--Run the packager-->
+        <packagerTask outputFolder="${lib.app}/out" excludesfile="${lib.app}/jarjar-1.4.jar"/>
     </target>
 
 <target name="war-file" description="builds dotCMS as a war">
