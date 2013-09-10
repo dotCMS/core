@@ -172,7 +172,7 @@ function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,del
 
 		if ((deleted == "1") && (write == "1"))
 		{
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.confirm.delete.container")) %>\')){   delContainer(\'' +objId+ '\', \'' +referer+ '\'); }">';
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.confirm.delete.container")) %>\')){   delContainer(\'' +objId+ '\', \'' +referer+ '\', true); }">';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Container"))%>';
 			strHTML += '</div>';
 		}
