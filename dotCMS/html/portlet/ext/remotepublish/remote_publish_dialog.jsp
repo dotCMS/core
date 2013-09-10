@@ -16,6 +16,12 @@ GregorianCalendar cal = new GregorianCalendar();
 
 %>
 
+<style type="text/css">
+    .progressRow {
+        padding-left: 33%;
+    }
+</style>
+
 <!--  DOTCMS-7085 -->
 <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>">
 
@@ -113,14 +119,16 @@ GregorianCalendar cal = new GregorianCalendar();
 			<div class="clear"></div>
 		</div>
 
+        <div class="progressRow" style="display: none;">
+            <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveRemotePublishProgress" id="saveRemotePublishProgress"></div>
+        </div>
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="pushHandler.remotePublish()" type="button">
+			<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="pushHandler.remotePublish()" type="button" id="remotePublishSaveButton">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 			</button>
 			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="window.lastSelectedEnvironments = pushHandler.inialStateEnvs; pushHandler.inialStateEnvs = new Array();dijit.byId('remotePublisherDia').hide()" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 			</button>
-
 		</div>
 
 		<input id="whereToSendRequired" type="hidden" value="<%=LanguageUtil.get(pageContext, "publisher_dialog_environment_mandatory")%>" />
