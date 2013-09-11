@@ -194,6 +194,10 @@ public class Inspector {
         return count;
     }
 
+    public HashMap<String, List<PathInfo>> getClasses () {
+        return classes;
+    }
+
     /**
      * For objects that hold information about an instance of a class.
      */
