@@ -483,15 +483,11 @@ public class HostAPIImpl implements HostAPI {
 
 	}
 
-	public void deleteAndWait(final Host host, final User user, final boolean respectFrontendRoles) {
-	    delete(host,user,respectFrontendRoles,true);
-	}
-	
 	public void delete(final Host host, final User user, final boolean respectFrontendRoles) {
 	    delete(host,user,respectFrontendRoles,false);
 	}
 	
-	protected void delete(final Host host, final User user, final boolean respectFrontendRoles, boolean wait) {
+	public void delete(final Host host, final User user, final boolean respectFrontendRoles, boolean runAsSepareThread) {
 		
 
 		class DeleteHostThread extends Thread {
@@ -613,14 +609,10 @@ public class HostAPIImpl implements HostAPI {
 		
 		DeleteHostThread thread = new DeleteHostThread();
 
-		thread.start();
-		
-		if(wait) {
-		    try {
-                thread.join();
-            } catch (InterruptedException e) {
-                Logger.warn(this,"Interrpted while waiting for host "+host.getHostname()+" deletion",e);
-            }
+		if(runAsSepareThread) {
+			thread.start();
+		} else {
+			thread.run();
 		}
 	}
 
