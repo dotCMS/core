@@ -52,7 +52,7 @@ public class HostAPITest {
         Thread.sleep(600); // wait a bit for the index
         
         APILocator.getHostAPI().archive(host, user, false);
-        APILocator.getHostAPI().deleteAndWait(host, user, false);
+        APILocator.getHostAPI().delete(host, user, false);
         
         Thread.sleep(600); // wait a bit for the index
         
