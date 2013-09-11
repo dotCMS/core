@@ -13,18 +13,10 @@ import java.io.File;
 public class InspectorTask extends Task {
 
     private String libraryPath;
-    public static Inspector globalInspector;
 
     public void setLibraryPath ( String libraryPath ) {
         this.libraryPath = libraryPath;
     }
-
-    /*public static void main ( String[] args ) {
-
-        InspectorTask task = new InspectorTask();
-        task.setLibraryPath( args[0] );
-        task.execute();
-    }*/
 
     @Override
     public void execute () throws BuildException {
@@ -49,9 +41,6 @@ public class InspectorTask extends Task {
         inspector.addFormatter( formatter );
         inspector.inspect( libFolder );
         inspector.report( "Duplicated classes" );//Generate a report
-
-        //Sharing the resulting info
-        globalInspector = inspector;
 
         log( "Found " + inspector.getClassCount() + " unique classes", Project.MSG_INFO );
         log( "Found " + inspector.getDuplicateCount() + " duplicated classes", Project.MSG_INFO );
