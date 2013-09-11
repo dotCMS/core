@@ -107,25 +107,17 @@ public class PackagerTask extends JarJarTask {
             }
 
             Inspector.PathInfo detail = details.get( 0 );//TODO: Grabbing the first one.....
+            File jarFile = detail.base;
 
             //Handle some strings to use in the rules
-            File jarFile = detail.base;
-            //Get the package of the duplicated class (my.package.myClassName to my.package)
-            String jarName = jarFile.getName();
-            String fixedName = jarName.replace( ".jar", "" );
-            fixedName = fixedName.replaceAll( "[^a-zA-Z0-9]", "" );//simplecaptcha-1.2.1.jar to simplecaptcha121
-
             String packageName;
             if ( name.lastIndexOf( "." ) != -1 ) {
+                //Get the package of the duplicated class (from my.package.myClassName to my.package)
                 packageName = name.substring( 0, name.lastIndexOf( "." ) );
             } else {
                 //On the root??, no package??
                 continue;
             }
-
-            log( "-----------------------------------------", Project.MSG_DEBUG );
-            log( "packageName: " + packageName, Project.MSG_DEBUG );
-            log( "Jar name: " + jarName + " --> Fixed name: " + fixedName, Project.MSG_DEBUG );
 
             //Prepare the rules to apply
             HashMap<String, Rule> currentRules;
