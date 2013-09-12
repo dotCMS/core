@@ -1030,6 +1030,8 @@ public class ImportExportUtil {
         ad.mkdirs();
         String[] fl = ad.list();
         for (String fileName : fl) {
+        	if(fileName.equalsIgnoreCase("license")) continue;
+        	
             File f = new File(ad.getPath() + File.separator + fileName);
             if(f.isDirectory()){
                 FileUtil.deltree(f);
