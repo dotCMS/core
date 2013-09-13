@@ -20,7 +20,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.*;
@@ -211,7 +210,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 response.getWriter().println( jsonResponse.toString() );
             }
         } catch ( Exception e ) {
-            Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+            Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
             response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Publishing Bundle: " + e.getMessage() );
         }
     }
@@ -725,7 +724,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 response.getWriter().println( jsonResponse.toString() );
             }
         } catch ( Exception e ) {
-            Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+            Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
             response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Adding content to Bundle: " + e.getMessage() );
         }
     }
@@ -737,7 +736,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @param response HttpResponse
      * @throws WorkflowActionFailureException If fails trying to Publish the bundle contents
      */
-    public void pushBundle ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException {
+    public void pushBundle ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException, IOException {
 
         try {
 
@@ -799,15 +798,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 }
             }
 
-
-        } catch ( DotPublisherException e ) {
-            Logger.debug( PushPublishActionlet.class, e.getMessage(), e );
-            throw new WorkflowActionFailureException( e.getMessage(), e );
-        } catch ( ParseException e ) {
-            Logger.debug( PushPublishActionlet.class, e.getMessage() );
-            throw new WorkflowActionFailureException( e.getMessage() );
-        } catch ( DotDataException e ) {
-            Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+        } catch ( Exception e ) {
+            Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
+            response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Push Publishing Bundle: " + e.getMessage() );
         }
     }
 
