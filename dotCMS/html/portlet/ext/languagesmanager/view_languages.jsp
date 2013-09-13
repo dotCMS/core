@@ -49,7 +49,7 @@ function editDefault(){
 						<img src="/html/images/languages/<%=strLangCode%>_<%=strCountryCode%>.gif"  border="0" />
 					</a>
                   
-                    <%=strLanguage%>:
+                    <%=strLanguage+"&nbsp;("+strCountryCode+")&nbsp;"%>:
 					<a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString()%>">
 						<portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" />
 						<portlet:param name="id" value="<%= String.valueOf(longLanguageId) %>" />
