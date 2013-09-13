@@ -121,5 +121,9 @@ public final class Constants {
 
     //Request Headers
     public static String USER_AGENT_DOTCMS_BROWSER = "DOTCMS-BROWSER";
-
+    public static String USER_AGENT_DOTCMS_CMIS = "DOTCMS-CMIS";
+    public static String USER_AGENT_DOTCMS_HTMLPAGEDIFF = "DOTCMS-HTMLPAGEDIFF";
+    public static String USER_AGENT_DOTCMS_SITESEARCH = "DOTCMS-SITESEARCH";
+    public static String USER_AGENT_DOTCMS_TIMEMACHINE = "DOTCMS-TIMEMACHINE";
+    
 }
