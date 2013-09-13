@@ -600,25 +600,25 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		return QueryUtil.DBSearch(query, dbColToObjectAttribute, null, user, true, respectFrontendRoles);
 	}
 
-	public String getHTML(HTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+	public String getHTML(HTMLPage htmlPage, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
 
-		return getHTML(htmlPage, true, null);
+		return getHTML(htmlPage, true, null, userAgent);
 	}
-	public String getHTML(HTMLPage htmlPage, boolean liveMode) throws DotStateException, DotDataException, DotSecurityException {
+	public String getHTML(HTMLPage htmlPage, boolean liveMode, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
 
-		return getHTML(htmlPage, liveMode, null);
+		return getHTML(htmlPage, liveMode, null, userAgent);
 	}
-	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId) throws DotStateException, DotDataException, DotSecurityException {
-		return getHTML(htmlPage, liveMode, contentId, null);
+	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
+		return getHTML(htmlPage, liveMode, contentId, null, userAgent);
 	}
 	
 	@Override
-	public String getHTML(String uri, Host host,boolean liveMode, String contentId,User user) throws DotStateException, DotDataException, DotSecurityException {
-	    return getHTML(uri,host,liveMode,contentId,user,null);
+	public String getHTML(String uri, Host host,boolean liveMode, String contentId,User user, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
+	    return getHTML(uri,host,liveMode,contentId,user,0,userAgent);
 	}
 	
 	@Override
-	public String getHTML(String uri, Host host,boolean liveMode, String contentId,User user, String langId) throws DotStateException, DotDataException, DotSecurityException {
+	public String getHTML(String uri, Host host,boolean liveMode, String contentId,User user, long langId, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
 		/*
 		 * The below code is copied from VelocityServlet.doLiveMode() and modified to parse a HTMLPage.
 		 * Replaced the request and response objects with DotRequestProxy and DotResponseProxyObjects.
@@ -660,7 +660,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		}
 
 		responseProxy.setContentType( "text/html" );
-        requestProxy.setAttribute( "User-Agent", Constants.USER_AGENT_DOTCMS_BROWSER );
+        requestProxy.setAttribute( "User-Agent", userAgent );
         requestProxy.setAttribute("idInode", String.valueOf(idInode));
 
 		Logger.debug(HTMLPageAPIImpl.class, "VELOCITY HTML INODE=" + idInode);
@@ -756,25 +756,23 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 				requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
 			}
 			
-			if(UtilMethods.isSet(langId)) {
-			    requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, langId);
+			if(langId>0) {
+			    requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, Long.toString(langId));
 			}
 			LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
             langWebAPI.checkSessionLocale(requestProxy);
 			
 			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
-			if(UtilMethods.isSet(langId)) 
-                context.put("language", langId);
+			
+			if(langId>0) { 
+                context.put("language", Long.toString(langId));
+			}
 			
 			if(! liveMode ){
 				context.put("PREVIEW_MODE", new Boolean(true));
 			}else{
 				context.put("PREVIEW_MODE", new Boolean(false));
 			}
-			
-			if(UtilMethods.isSet(langId)) {
-                
-            }
 
 			context.put("host", host);
 			VelocityEngine ve = VelocityUtil.getEngine();
@@ -833,10 +831,10 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	}
 	
 	//http://jira.dotmarketing.net/browse/DOTCMS-3392
-	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId, User user) throws DotStateException, DotDataException, DotSecurityException {
+	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId, User user, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
 		String uri = htmlPage.getURI();
 		Host host = getParentHost(htmlPage);
-		return getHTML(uri, host, liveMode, contentId, user);
+		return getHTML(uri, host, liveMode, contentId, user, userAgent);
 	}
 
 
