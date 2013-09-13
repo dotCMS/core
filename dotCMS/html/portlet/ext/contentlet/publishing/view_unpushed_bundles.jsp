@@ -32,6 +32,11 @@
 	if(null!=request.getParameter("delBundle")){
 		String id = request.getParameter("delBundle");
 		APILocator.getBundleAPI().deleteBundle(id);
+		
+		Bundle lastSelectedBundle = (com.dotcms.publisher.bundle.bean.Bundle) request.getSession().getAttribute( com.dotmarketing.util.WebKeys.SELECTED_BUNDLE ); 
+		if(lastSelectedBundle!=null && lastSelectedBundle.getId().equals(id)) {
+		    request.getSession().removeAttribute( com.dotmarketing.util.WebKeys.SELECTED_BUNDLE );
+		}
 	}
 
 	if(null!=request.getParameter("delAsset")){
