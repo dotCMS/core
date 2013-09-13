@@ -493,7 +493,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue where publish_date is not null order by publish_date";
 	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue where publish_date is not null order by publish_date";
 
-	private static final String COUNTBUNDLES="select count(distinct(bundle_id)) as bundle_count from publishing_queue ";
+	private static final String COUNTBUNDLES="select count(distinct(bundle_id)) as bundle_count from publishing_queue where publish_date is not null";
 
 	/**
 	 * Gets the count of the bundles to be published
