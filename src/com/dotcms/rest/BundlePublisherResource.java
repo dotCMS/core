@@ -1,5 +1,23 @@
 package com.dotcms.rest;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.FileUtils;
+
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
@@ -14,22 +32,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.io.FileUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 @Path("/bundlePublisher")
 public class BundlePublisherResource extends WebResource {
@@ -63,6 +65,7 @@ public class BundlePublisherResource extends WebResource {
 			@FormDataParam("ENDPOINT_ID") String endpointId,
             @FormDataParam ("type") String type,
             @FormDataParam ("callback") String callback,
+			@FormDataParam("BUNDLE_NAME") String bundleName,
 			@Context HttpServletRequest req) {
 
         //Creating an utility response object
@@ -85,9 +88,13 @@ public class BundlePublisherResource extends WebResource {
                 return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
             }
 			
-			String bundleName = fileDetail.getFileName();
 			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
-			String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+			String bundleFolder = fileDetail.getFileName().substring(0, bundleName.indexOf(".tar.gz"));
+			
+			Bundle b = new Bundle();
+			b.setId(bundleFolder);
+			b.setName(bundleName);
+			APILocator.getBundleAPI().saveBundle(b);
 			
 			PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, groupId, bundleFolder);
 			
