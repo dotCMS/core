@@ -242,7 +242,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 			load: function(data){
 
                 //Display the results to the user if required
-                currentObject._showResultMessage(data);
+                if (data != undefined && data != null) {
+                    currentObject._showResultMessage(data);
+                }
 
 				dialog.hide();
 			},
@@ -311,7 +313,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             load: function (data) {
 
                 //Display the results to the user if required
-                currentObject._showResultMessage(data);
+                if (data != undefined && data != null) {
+                    currentObject._showResultMessage(data);
+                }
 
                 dialog.hide();
             },
@@ -334,10 +338,12 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dojo.query(".buttonRow").style("display", "block");
         dojo.query(".progressRow").style("display", "none");
 
-        var total = data.total;
+        //var total = data.total;
         var errors = data.errors;
-        var errorMessages = data.errorMessages;
         if (errors != null && errors != undefined && errors > 0) {
+
+            var errorMessages = data.errorMessages;
+
             var messages = "";
             dojo.forEach(errorMessages, function(value, index){
                 messages += "<br>" + value;
