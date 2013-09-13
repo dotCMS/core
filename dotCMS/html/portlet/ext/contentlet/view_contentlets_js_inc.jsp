@@ -1586,7 +1586,7 @@
                 row.appendChild(th);
 
                 th = document.createElement('th');
-                th.setAttribute("width","5%");
+                th.setAttribute("style","min-width:120px;");
                 th.innerHTML = '&nbsp;';
                 row.appendChild(th);
 
@@ -1655,14 +1655,14 @@
                                 var header = headers[j];
                                 var cell = row.insertCell (row.cells.length);
                                 //console.log(headers[j]);
-                                cell.setAttribute("align","center");
+                                cell.setAttribute("align","left");
                                 if (j == 0) {
                                         languageId = cellData["languageId"];
                                         locale = "";
 
                                         for (var n = 0; n < languages.length; ++n) {
                                                 if (languages[n][0] == languageId) {
-                                                        locale = "<img src=\"/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif\" width=\"16px\" height=\"11px\" />";
+                                                        locale = "<img src=\"/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;" + languages[n][3] + "&nbsp;" + "(" + languages[n][2] + ")";
                                                         //locale = languages[n][1] + "_" + languages[n][2];
                                                         break;
                                                 }

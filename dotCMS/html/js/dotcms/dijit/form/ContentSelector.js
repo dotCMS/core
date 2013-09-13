@@ -86,6 +86,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	relationJsName: '',
 	multiple: 'false',
 	containerStructures: new Array(),
+	availableLanguages: new Array(),
 
 	postCreate: function () {
 		this._fillStructures();
@@ -163,6 +164,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_fillLanguages: function(data) {
+		this.availableLanguages = data;
 		this.search_languages_table.innerHTML = "";
 		var htmlstr = "<dl>";
 		htmlstr += "<dt>"+data[0].title+" </dt>";
@@ -683,6 +685,12 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		cell.setAttribute("class","beta");
 		cell.setAttribute("className","beta");
 		cell.setAttribute("width","5%");
+		
+		var cell = row.insertCell (row.cells.length);
+		cell.setAttribute("class","beta");
+		cell.setAttribute("className","beta");
+		cell.setAttribute("style","min-width:120px;");
+		cell.innerHTML = "<b>"+this.availableLanguages[0]['title']+"</b>";
 
 		for (var i = 0; i < headers.length; i++) {
 			var header = headers[i];
@@ -704,6 +712,14 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				cell.innerHTML = this._checkButton(cellData);
 			} else {
 				cell.innerHTML = this._selectButton(cellData);
+			}
+			
+			for(var l = 0; l < this.availableLanguages.length; l++){
+				if(this.availableLanguages[l]['id'] == cellData['languageId']){
+					var cell = row.insertCell (row.cells.length);
+					var langStr = "<img src=\"/html/images/languages/" + this.availableLanguages[l]['languageCode'] + "_" + this.availableLanguages[l]['countryCode'] + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;"
+					cell.innerHTML = langStr + this.availableLanguages[l]['language']+"&nbsp;("+this.availableLanguages[l]['countryCode']+")";
+				}
 			}
 
 			for (var j = 0; j < this.headers.length; j++) {

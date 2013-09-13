@@ -70,7 +70,7 @@
 		<th width="5%" nowrap><%= LanguageUtil.get(pageContext, "Status") %></th>
 		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "Action") %></th>
 		<% if(isContentlet){ %>
-			<th width="1%" nowrap>&nbsp;</th>
+			<th style="min-width:120px;" nowrap>&nbsp;</th>
 		<% } %>
 		<th width="45%"><%= LanguageUtil.get(pageContext, "Title") %></th>
 		<th width="20%"><%= LanguageUtil.get(pageContext, "Author") %></th>
@@ -121,7 +121,7 @@
 		<% } %>
 		</td>
 		<% if(isContentlet){ %>
-			<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/></td>
+			<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/>&nbsp;<%=langV.getLanguage()+"&nbsp;("+langV.getCountryCode()+")" %></td>
 		<% } %>
 		<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
 <%
