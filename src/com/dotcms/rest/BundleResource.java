@@ -5,6 +5,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.NoCacheFilter;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -16,7 +17,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+
 import java.util.List;
 
 
@@ -37,7 +41,7 @@ public class BundleResource extends WebResource {
     @GET
     @Path ("/getunsendbundles/{params:.*}")
     @Produces ("application/json")
-    public String getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+    public Response getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = init( params, true, request, true );
 
@@ -92,7 +96,9 @@ public class BundleResource extends WebResource {
         jsonResponse.put( "items", jsonBundles.toArray() );
         jsonResponse.put( "numRows", bundles.size() );
 
-        return jsonResponse.toString();
+        CacheControl nocache=new CacheControl();
+        nocache.setNoCache(true);
+        return Response.ok(jsonResponse.toString()).cacheControl(nocache).build();
     }
 
 	@GET
