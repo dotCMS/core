@@ -90,11 +90,7 @@ public class BundlePublisherResource extends WebResource {
 			PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, groupId, bundleFolder);
 			
 			if(bundleName.trim().length()>0) {
-    			Bundle b=APILocator.getBundleAPI().getBundleByName(bundleName);
-                if(b!=null) {
-                    bundleName=bundleName+" "+System.currentTimeMillis();
-                }
-                b = new Bundle();
+                Bundle b = new Bundle();
                 b.setId(bundleFolder);
                 b.setName(bundleName);
                 b.setPublishDate(Calendar.getInstance().getTime());
