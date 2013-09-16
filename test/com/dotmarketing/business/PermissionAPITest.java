@@ -156,6 +156,8 @@ public class PermissionAPITest extends TestBase {
         assertTrue(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT, user));
         assertFalse(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_PUBLISH, user));
         assertFalse(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user));
+        
+        User anon = APILocator.getUserAPI().getAnonymousUser();
     }
 
     @Test
