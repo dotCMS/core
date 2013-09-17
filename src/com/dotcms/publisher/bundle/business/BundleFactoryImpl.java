@@ -10,6 +10,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 
 public class BundleFactoryImpl extends BundleFactory {
@@ -18,7 +19,9 @@ public class BundleFactoryImpl extends BundleFactory {
 	public void saveBundle(Bundle bundle) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(INSERT_BUNDLE);
-		bundle.setId(UUID.randomUUID().toString());
+		if(!InodeUtils.isSet(bundle.getId())) {
+		    bundle.setId(UUID.randomUUID().toString());
+		}
 		dc.addParam(bundle.getId());
 		dc.addParam(UtilMethods.isSet(bundle.getName())?bundle.getName():bundle.getId());
 		dc.addParam(bundle.getPublishDate());
