@@ -170,9 +170,11 @@
 				tagName = LTrim(tagName);
 				var tagNameParam = tagName.replace("'", "\\\'");
 				html += "<a href=\"javascript: useThisTagForSearch('"+tagNameParam+"');\">" + tagName + "</a>";
-				/* if (i+1 < result.length) {
-					html += ", ";
-				}*/
+				if (i+1 < result.length) {
+					if(!dojo.byId(suggestedTag+"suggestedTagsWrapper")) {
+						html += ", ";
+					}
+				}
 			}
 			html += "</div>";
 
