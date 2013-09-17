@@ -688,8 +688,18 @@ public class RemotePublishAjaxAction extends AjaxAction {
             Bundle bundle;
 
             if ( bundleId == null || bundleName.equals( bundleId ) ) {
-                bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
-                APILocator.getBundleAPI().saveBundle( bundle );
+                // if the user has a unsent bundle with that name just add to it
+                bundle=null;
+                for(Bundle b : APILocator.getBundleAPI().getUnsendBundlesByName(getUser().getUserId(), bundleName, 1000, 0)) {
+                    if(b.getName().equalsIgnoreCase(bundleName)) {
+                        bundle=b;
+                    }
+                }
+                
+                if(bundle==null) {
+                    bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
+                    APILocator.getBundleAPI().saveBundle( bundle );
+                }
             } else {
                 bundle = APILocator.getBundleAPI().getBundleById( bundleId );
             }
