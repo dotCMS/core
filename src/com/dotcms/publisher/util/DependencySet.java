@@ -49,7 +49,37 @@ public class DependencySet extends HashSet<String> {
 		}
 	}
 
-	public boolean add(String assetId, Date assetModDate) {
+    public boolean add ( String assetId, Date assetModDate ) {
+        return addOrClean( assetId, assetModDate, false );
+    }
+
+    /**
+     * Is this method is called and in case of an <strong>UN-PUBLISH</strong> instead of adding elements it will remove them
+     * from cache.<br>
+     * For <strong>PUBLISH</strong> do the same as the <strong>add</strong> method.
+     *
+     * @param assetId
+     * @param assetModDate
+     * @return
+     */
+    public boolean addOrClean ( String assetId, Date assetModDate) {
+        return addOrClean( assetId, assetModDate, true );
+    }
+
+    private boolean addOrClean ( String assetId, Date assetModDate, Boolean cleanForUnpublish ) {
+
+        if ( !isPublish ) {
+
+            //For un-publish we always remove the asset from cache
+            for ( Environment env : envs ) {
+                cache.removePushedAssetById( assetId, env.getId() );
+            }
+
+            //Return if we are here just to clean up dependencies from cache
+            if ( cleanForUnpublish ) {
+                return true;
+            }
+        }
 
 		boolean modified = false;
 
