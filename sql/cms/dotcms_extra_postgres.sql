@@ -795,11 +795,11 @@ CREATE TABLE publishing_queue (
 );
 
 create table publishing_bundle(
-	id varchar(36) NOT NULL  primary key,
-	name varchar(255) NOT NULL unique,
-	publish_date TIMESTAMP,
-	expire_date TIMESTAMP,
-	owner varchar(100)
+  id varchar(36) NOT NULL  primary key,
+  name varchar(255) NOT NULL,
+  publish_date TIMESTAMP,
+  expire_date TIMESTAMP,
+  owner varchar(100)
 );
 
 create table publishing_bundle_environment(
