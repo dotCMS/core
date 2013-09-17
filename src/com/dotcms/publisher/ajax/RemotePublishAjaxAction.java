@@ -688,13 +688,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             Bundle bundle;
 
             if ( bundleId == null || bundleName.equals( bundleId ) ) {
-
-                //Verify if a bundle exist with this name
-                bundle = APILocator.getBundleAPI().getBundleByName( bundleName );
-                if ( bundle == null ) {//If not create a new one
-                    bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
-                    APILocator.getBundleAPI().saveBundle( bundle );
-                }
+                bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
+                APILocator.getBundleAPI().saveBundle( bundle );
             } else {
                 bundle = APILocator.getBundleAPI().getBundleById( bundleId );
             }
