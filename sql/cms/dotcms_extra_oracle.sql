@@ -867,11 +867,11 @@ create table sitesearch_audit (
 );
 
 create table publishing_bundle(
-	id varchar2(36) NOT NULL  primary key,
-	name varchar2(255) NOT NULL unique,
-	publish_date TIMESTAMP,
-	expire_date TIMESTAMP,
-	owner varchar2(100)
+	  id varchar2(36) NOT NULL  primary key,
+	  name varchar2(255) NOT NULL,
+	  publish_date TIMESTAMP,
+	  expire_date TIMESTAMP,
+	  owner varchar2(100)
 );
 
 create table publishing_bundle_environment(

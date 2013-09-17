@@ -28,6 +28,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.StructureBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -140,9 +141,11 @@ public class PushPublisher extends Publisher {
 	        							PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
 
 	        			form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
-
+	        			Bundle b=APILocator.getBundleAPI().getBundleById(config.getId());
+	        			form.field("BUNDLE_NAME", b.getName());
 	        			form.field("ENDPOINT_ID", endpoint.getId());
 	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+	        			
 
 	        			//Sending bundle to endpoint
 	        			WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
