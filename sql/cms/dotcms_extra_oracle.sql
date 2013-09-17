@@ -494,6 +494,9 @@ alter table structure add constraint fk_structure_host foreign key (host) refere
 create index idx_template3 on template (lower(title));
 
 CREATE INDEX idx_contentlet_4 ON contentlet (structure_inode);
+
+CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);
+
 ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id);
 --ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
 ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) references identifier(id);
