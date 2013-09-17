@@ -15,7 +15,8 @@ public class Task01070BundleNameDropUnique extends AbstractJDBCStartupTask {
 
     @Override
     public String getPostgresScript() {
-        return "alter table publishing_bundle_environment drop constraint FK_bundle_id;\n"+
+        return "delete from publishing_bundle_environment;\n"+
+               "alter table publishing_bundle_environment drop constraint FK_bundle_id;\n"+
                "drop table publishing_bundle;\n"+
                "create table publishing_bundle( \n"+
                "  id varchar(36) NOT NULL  primary key,\n"+
@@ -47,7 +48,8 @@ public class Task01070BundleNameDropUnique extends AbstractJDBCStartupTask {
 
     @Override
     public String getOracleScript() {
-        return "alter table publishing_bundle_environment drop constraint FK_bundle_id;\n"+
+        return "delete from publishing_bundle_environment;\n"+
+               "alter table publishing_bundle_environment drop constraint FK_bundle_id;\n"+
                "drop table publishing_bundle; \n"+
                "create table publishing_bundle(\n"+
                "  id varchar2(36) NOT NULL primary key,\n"+
@@ -62,7 +64,8 @@ public class Task01070BundleNameDropUnique extends AbstractJDBCStartupTask {
 
     @Override
     public String getMSSQLScript() {
-        return  "alter table publishing_bundle_environment drop constraint FK_bundle_id;\n"+
+        return  "delete from publishing_bundle_environment;\n"+
+                "alter table publishing_bundle_environment drop constraint FK_bundle_id;\n"+
                 "drop table publishing_bundle; \n"+
                 "create table publishing_bundle(\n"+
                 "  id varchar(36) NOT NULL  primary key,\n"+
