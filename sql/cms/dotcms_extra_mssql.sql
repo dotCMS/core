@@ -756,7 +756,7 @@ CREATE TABLE publishing_queue (
 
 create table publishing_bundle(
   	  id varchar(36) NOT NULL  primary key,
-	  name varchar(255) NOT NULL unique,
+	  name varchar(255) NOT NULL,
  	  publish_date DATETIME,
 	  expire_date DATETIME,
 	  owner varchar(100)
