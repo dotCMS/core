@@ -35,7 +35,7 @@ import org.junit.runners.Suite;
  */
 @RunWith (Suite.class)
 @Suite.SuiteClasses ({
-    LinkCheckerAPITest.class,
+    //LinkCheckerAPITest.class,
     TemplateAPITest.class,
     HTMLPageAPITest.class,
     CategoryAPITest.class,
