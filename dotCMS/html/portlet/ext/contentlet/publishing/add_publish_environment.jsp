@@ -75,7 +75,7 @@
             id: "whoCanUseSelect",
             name: "whoCanUseSelect",
             store: myRoleReadStore,
-
+            maxHeight:400,
             pageSize:30,
             searchDelay:300,
             required:false,
