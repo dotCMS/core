@@ -229,6 +229,7 @@ public class HTMLPageFactory {
 
         //Getting the current parent folder of the HTMLPage
         Folder oldParent = APILocator.getFolderAPI().findParentFolder( workingWebAsset, APILocator.getUserAPI().getSystemUser(), false );
+        Host oldParentHost = hostAPI.findParentHost(workingWebAsset, APILocator.getUserAPI().getSystemUser(), false);
 
         //moving folders
         /*oldParent.deleteChild(workingWebAsset);
@@ -293,12 +294,22 @@ public class HTMLPageFactory {
         //Wipe out menues
         //RefreshMenus.deleteMenus();
         if ( parent != null ) {
-            RefreshMenus.deleteMenu( oldParent, parent );
+        	if(oldParent!=null) {
+        		RefreshMenus.deleteMenu(oldParent);
+        	} else if(oldParentHost!=null) {
+        		RefreshMenus.deleteMenu(oldParentHost);
+        	}
+        	
+            RefreshMenus.deleteMenu(parent );
             CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
-        } else {
+        } else if(oldParent != null ){
             RefreshMenus.deleteMenu( oldParent );
+        } else if(oldParentHost != null) {
+        	RefreshMenus.deleteMenu(oldParentHost);
         }
-        CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
+        
+        if(oldParent!=null)
+        	CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
         if(APILocator.getPermissionAPI().isInheritingPermissions(workingWebAsset))
             APILocator.getPermissionAPI().removePermissions(workingWebAsset);
