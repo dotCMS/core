@@ -354,6 +354,8 @@ public abstract class VelocityServlet extends HttpServlet {
 		uri = UtilMethods.cleanURI(uri);
 
 		Host host = hostWebAPI.getCurrentHost(request);
+		
+		boolean timemachine=request.getSession().getAttribute("tm_date")!=null;
 
 		// Map with all identifier inodes for a given uri.
 		//
@@ -471,7 +473,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		// Begin Page Caching
 		boolean buildCache = false;
 		String key = getPageCacheKey(request);
-		if (key != null) {
+		if (!timemachine && key!=null) {
 
 			String cachedPage = CacheLocator.getBlockDirectiveCache().get(key, (int) page.getCacheTTL());
 
