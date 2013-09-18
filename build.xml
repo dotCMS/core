@@ -641,7 +641,6 @@
 	    </java>
 	</target>
 
-	<!-- Creates an empty db. Attributes are defined in the build.properties file -->
 	<target name="create-db" >
 		<if>
 			<equals arg1="${db.driver}" arg2="oracle.jdbc.OracleDriver"/>
@@ -677,6 +676,19 @@
 	                CREATE DATABASE ${db.name};
 					ALTER DATABASE ${db.name} SET READ_COMMITTED_SNAPSHOT ON;
 					ALTER DATABASE ${db.name} SET ALLOW_SNAPSHOT_ISOLATION ON;
+	            </sql>
+			</then>
+		</elseif>
+		<elseif>
+			<equals arg1="${db.driver}" arg2="com.mysql.jdbc.Driver"/>
+			<then>
+				<sql driver="${db.driver}"
+	                url="${db.admin.url}"
+	                userid="${db.username}"
+	                password="${db.password}"
+	                autocommit="true"
+	                classpathref="files-classpath">
+	                CREATE DATABASE ${db.name} DEFAULT CHARACTER SET = utf8 DEFAULT COLLATE = utf8_general_ci;
 	            </sql>
 			</then>
 		</elseif>
