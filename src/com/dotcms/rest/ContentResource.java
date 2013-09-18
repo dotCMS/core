@@ -626,9 +626,11 @@ public class ContentResource extends WebResource {
         Map<String,Object> map=new HashMap<String,Object>();
         for(String param : IOUtils.toString(input).split("&")) {
             String[] parts=param.split("=");
-            String key=URLDecoder.decode(parts[0],"UTF-8");
-            String value=URLDecoder.decode(parts[1],"UTF-8");
-            map.put(key, value);
+            if(parts.length==2) {
+                String key=URLDecoder.decode(parts[0],"UTF-8");
+                String value=URLDecoder.decode(parts[1],"UTF-8");
+                map.put(key, value);
+            }
         }
         processMap(contentlet, map);
     }
