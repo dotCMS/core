@@ -712,7 +712,12 @@ public class BrowserAjax {
             //Getting the contentlet file
             Contentlet contentlet = APILocator.getContentletAPI().find( inode, user, false );
             Folder srcFolder = APILocator.getFolderAPI().find(contentlet.getFolder(),user,false);
-    		refreshIndex(null, parent, user, host, srcFolder );
+           
+            if(contentlet.getFolder().equals("SYSTEM_FOLDER")) {
+            	refreshIndex(null, null, user, APILocator.getHostAPI().find(contentlet.getHost(), user, false), srcFolder );
+            } else {
+            	refreshIndex(null, parent, user, host, srcFolder );
+            }
 
             if ( parent != null ) {
                 return APILocator.getFileAssetAPI().moveFile( contentlet, parent, user, false );
