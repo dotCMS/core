@@ -18,7 +18,7 @@ public class LinkWrapper {
 		this.links = link;
 	}
 
-	public Identifier getTemplateId() {
+	public Identifier getLinkId() {
 		return linkId;
 	}
 
