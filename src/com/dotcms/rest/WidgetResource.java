@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,7 +18,9 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
@@ -92,8 +95,20 @@ public class WidgetResource extends WebResource {
 			org.apache.velocity.context.Context context = VelocityUtil.getWebContext(request, response);
 
 			for(String key : widget.getMap().keySet()){
-				context.put(key, widget.getMap().get(key));
+				context.put(key, widget.getMap().get(key).toString());
 			}
+			
+			List<Field> fields = FieldsCache.getFieldsByStructureInode(contStructure.getInode());
+			
+			for (Field field : fields) {
+				if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+					String host = widget.getHost();
+					String folder = widget.getFolder();
+					String fieldValue = UtilMethods.isSet(folder) && !folder.equals(FolderAPI.SYSTEM_FOLDER)?folder:host;
+					context.put(field.getVelocityVarName(), fieldValue);
+				}
+			}
+			
 
   			Field field = contStructure.getFieldVar("widgetPreexecute");
 			widgetExecuteCode.append(field.getValues().trim() + "\n");
