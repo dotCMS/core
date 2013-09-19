@@ -870,6 +870,8 @@ var theme = 'dmundra';
 		   #end
 		   <button dojoType="dijit.form.Button" id="buttonSubmitButton" type="button" onclick="submitContent('$submitTabName');">$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.save')</button>
 	    </div>
+	    <input type="hidden" name="customDatePattern" value="$!customDatePattern" />
+	    <input type="hidden" name="customDateTimePattern" value="$!customDateTimePattern" />
 	</form>
 	<div style="clear:both"></div>
 </div>
