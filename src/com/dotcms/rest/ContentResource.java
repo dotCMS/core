@@ -621,18 +621,22 @@ public class ContentResource extends WebResource {
         Map<String,Object> root=(Map<String,Object>) xstream.fromXML(input);
         processMap(contentlet,root);
     }
-    
-    protected void processForm(Contentlet contentlet, InputStream input) throws Exception {
-        Map<String,Object> map=new HashMap<String,Object>();
-        for(String param : IOUtils.toString(input).split("&")) {
-            String[] parts=param.split("=");
-            if(parts.length==2) {
-                String key=URLDecoder.decode(parts[0],"UTF-8");
-                String value=URLDecoder.decode(parts[1],"UTF-8");
-                map.put(key, value);
+
+    protected void processForm ( Contentlet contentlet, InputStream input ) throws Exception {
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        for ( String param : IOUtils.toString( input ).split( "&" ) ) {
+
+            int index = param.indexOf( "=" );
+
+            //Verify if we have a value
+            if ( index != -1 ) {
+                String key = URLDecoder.decode( param.substring( 0, index ), "UTF-8" );
+                String value = URLDecoder.decode( param.substring( index + 1, param.length() ), "UTF-8" );
+                map.put( key, value );
             }
         }
-        processMap(contentlet, map);
+        processMap( contentlet, map );
     }
     
     protected void processMap(Contentlet contentlet, Map<String,Object> map) {
