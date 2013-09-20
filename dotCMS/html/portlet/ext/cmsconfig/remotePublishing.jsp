@@ -47,12 +47,13 @@
     }
 
     function goToEditEnvironment(identifier){
+    	var y = Math.floor(Math.random()*1123213213);
         var dialog = new dijit.Dialog({
             id: 'addEnvironment',
             title: "<%= LanguageUtil.get(pageContext, "publisher_Edit_Environment_Title")%>",
             style: "width: 600px; ",
             content: new dojox.layout.ContentPane({
-                href: "/html/portlet/ext/contentlet/publishing/add_publish_environment.jsp?op=edit&id="+identifier
+                href: "/html/portlet/ext/contentlet/publishing/add_publish_environment.jsp?op=edit&id="+identifier+"&random="+y
             }),
             onHide: function() {
                 var dialog=this;
