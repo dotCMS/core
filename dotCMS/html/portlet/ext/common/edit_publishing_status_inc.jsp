@@ -78,6 +78,7 @@ function deletePushHistory() {
 
 		Environment env = APILocator.getEnvironmentAPI().findEnvironmentById(pushedAsset.getEnvironmentId());
 		Bundle bundle = APILocator.getBundleAPI().getBundleById(pushedAsset.getBundleId());
+		if(bundle ==null) continue;
 		User owner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
 
 
