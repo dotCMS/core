@@ -746,56 +746,26 @@ function connectUploadEvents() {
 }
 
 function doCreateWorking() {
-
-
-	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-
-	var shards = parseInt(number);
-	if(shards <1){
-		return;
-
-	}
-
-	var xhrArgs = {
-       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/shards/" + shards,
-       handleAs: "text",
-       handle : function(dataOrError, ioArgs) {
-           if (dojo.isString(dataOrError)) {
-               if (dataOrError.indexOf("FAILURE") == 0) {
-                   showDotCMSSystemMessage(dataOrError, true);
-               } else {
-                   showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
-                   refreshIndexStats();
-
-               }
-           } else {
-               showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-           }
-       }
-    };
-    dojo.xhrPost(xhrArgs);
+	dijit.byId('addIndex').show();
+	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 4)%>;
+	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/shards/";
 }
 
 function doCreateLive() {
+	dijit.byId('addIndex').show();
+	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 4)%>;
+	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/";
+}
 
-
-	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-
-	var shards = parseInt(number);
+function shardCreating(){	
+	dijit.byId('addIndex').hide();
+	var shards = document.getElementById('shards').value;
 	if(shards <1){
 		return;
 	}
-
-
-
+	
 	var xhrArgs = {
-       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/" + shards,
+       url: shardsUrl + shards,
        handleAs: "text",
        handle : function(dataOrError, ioArgs) {
            if (dojo.isString(dataOrError)) {
@@ -804,6 +774,7 @@ function doCreateLive() {
                } else {
                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
                    refreshIndexStats();
+
                }
            } else {
                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
@@ -1878,6 +1849,19 @@ dd.leftdl {
         <img style="display:none;" id="loggedUsersProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
 
+</div>
+
+<div dojoType="dijit.Dialog" id="addIndex" title="Add Index" style="height:150px;width:400px;">
+
+ 	<div align="center" style="padding-top: 10px;">
+		<label name="index"><%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%></label>
+  		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 4)%>">
+  	</div><br />
+  	<div class="buttonRow" align="center">
+	           <button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp; 
+	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp; 
+	</div>
+	
 </div>
 
 <script language="Javascript">
