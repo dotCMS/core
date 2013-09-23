@@ -721,7 +721,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		query.append(" where  ");
 		if (UtilMethods.isSet(searcher.getKeywords())) {
 			query.append(" (lower(workflow_task.title) like ? or ");
-			query.append(" lower(workflow_task.description) like ? )  and ");
+			if(DbConnectionFactory.isMsSql())
+				query.append(" lower(cast(workflow_task.description as varchar(max))) like ? )  and ");
+			else
+				query.append(" lower(workflow_task.description) like ? )  and ");
 		}
 
 		if(!searcher.getShow4All() || !(APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())
