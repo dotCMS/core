@@ -61,10 +61,14 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 
 		// update page language
 		if (UtilMethods.isSet(httpRequest.getParameter(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))
-				|| UtilMethods.isSet(httpRequest.getParameter("language_id"))) {
+				|| UtilMethods.isSet(httpRequest.getParameter("language_id"))
+				|| UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
 			if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))) {
 				languageId = httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE);
-			} else {
+			} if(UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+			    languageId = (String)httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
+			}
+			else {
 				languageId = httpRequest.getParameter("language_id");
 			}
 			currentLang = langAPI.getLanguage(languageId);
