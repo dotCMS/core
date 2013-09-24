@@ -155,7 +155,7 @@
 				
 			</td>
 			<td onClick="editTask('<%=task.getId()%>')">
-				<%=task.getTitle() %>
+				<%=contentlet.getTitle() %>
 				</td>
 			<td nowrap="true" align="center" width="1%" onClick="editTask('<%=task.getId()%>')">
 				<%if (contentlet.isLive()) {%>

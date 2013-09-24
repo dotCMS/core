@@ -239,6 +239,9 @@ dojo.ready(function(){
 					Field.FieldType.RELATIONSHIPS_TAB.toString().equals(field.getFieldType())
 				){continue;}
 				
+				if(field.getFieldName().equals(LanguageUtil.get(pageContext, "Title"))){
+						continue;	
+				}
 				
 				if(content ==null || !UtilMethods.isSet( content.get(field.getVelocityVarName()))){
 					continue;	
