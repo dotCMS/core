@@ -673,7 +673,8 @@ create table workflow_scheme(
 	archived number(1,0) default 0,
 	mandatory number(1,0) default 0,
 	default_scheme number(1,0) default 0,
-	entry_action_id varchar2(36)
+	entry_action_id varchar2(36),
+	mod_date timestamp
 );
 
 create table workflow_step(

@@ -185,11 +185,12 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       }
 
                                       type = "folder";
-                                  }
+                                  }  
                               } catch ( Exception ex ) {
+                            	  // it's probably a workflow
                             	  if ( UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
                                 	  type = "workflow";
-                                  }
+                                  } 
                               }
 
                           } else {
