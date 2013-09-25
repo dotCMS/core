@@ -57,7 +57,8 @@ public class DotInvocationHandler implements InvocationHandler{
 		
 		if((methodName.equalsIgnoreCase("get") 
 				|| method.getName().equalsIgnoreCase("getAttribute")
-				|| method.getName().equalsIgnoreCase("getParameter"))
+				|| method.getName().equalsIgnoreCase("getParameter")
+				|| method.getName().equalsIgnoreCase("getHeader"))
 				&& args != null 
 				&& args[0]!= null){	
 			return get(map,(String) args[0]);
