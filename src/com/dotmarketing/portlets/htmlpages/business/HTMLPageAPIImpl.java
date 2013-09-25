@@ -663,8 +663,6 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
         requestProxy.setAttribute( "User-Agent", userAgent );
         requestProxy.setAttribute("idInode", String.valueOf(idInode));
 
-		Logger.debug(HTMLPageAPIImpl.class, "VELOCITY HTML INODE=" + idInode);
-
 		/* Set long lived cookie regardless of who this is */
 		String _dotCMSID = UtilMethods.getCookieValue(
 				requestProxy.getCookies(),
