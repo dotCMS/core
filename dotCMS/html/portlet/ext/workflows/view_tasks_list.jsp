@@ -154,10 +154,10 @@
 
 				
 			</td>
-			<td onClick="editTask('<%=task.getId()%>')">
+			<td onClick="editTask('<%=task.getId()%>', '<%=contentlet.getLanguageId()%>')">
 				<%=contentlet.getTitle() %>
 				</td>
-			<td nowrap="true" align="center" width="1%" onClick="editTask('<%=task.getId()%>')">
+			<td nowrap="true" align="center" width="1%" onClick="editTask('<%=task.getId()%>', '<%=contentlet.getLanguageId()%>')">
 				<%if (contentlet.isLive()) {%>
 		            <span class="liveIcon"></span>
 		        <%} else if (contentlet.isArchived()) {%>
@@ -176,7 +176,7 @@
 			</td>
 
 				
-			<td align="center" onClick="editTask('<%=task.getId()%>')" <%if(step.isResolved()) {%>style="text-decoration: line-through;"<%} %> >
+			<td align="center" onClick="editTask('<%=task.getId()%>', '<%=contentlet.getLanguageId()%>')" <%if(step.isResolved()) {%>style="text-decoration: line-through;"<%} %> >
 
 				 <%=step.getName() %>
 
