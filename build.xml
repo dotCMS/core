@@ -683,7 +683,7 @@
 			<equals arg1="${db.driver}" arg2="com.mysql.jdbc.Driver"/>
 			<then>
 				<sql driver="${db.driver}"
-	                url="${db.admin.url}"
+	                url="${db.base.url}"
 	                userid="${db.username}"
 	                password="${db.password}"
 	                autocommit="true"
