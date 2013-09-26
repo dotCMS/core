@@ -365,6 +365,12 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		searchCategoryList.innerHTML ="";
 		var form = this.search_form;
 		form.categories = null;
+		if(form.categories != null){
+        	var tempChildNodesLength = form.categories.childNodes.length; 
+        	for(var i = 0; i < tempChildNodesLength; i++){
+        		form.categories.removeChild(form.categories.childNodes[0]);
+        	}
+        }
 		dojo.require("dijit.form.MultiSelect");
 		if (data != null) {
 			categories = data;
