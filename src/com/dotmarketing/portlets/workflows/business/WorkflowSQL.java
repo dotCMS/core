@@ -43,9 +43,9 @@ abstract class WorkflowSQL {
 	protected static String INSERT_SCHEME_FOR_STRUCT= "insert into workflow_scheme_x_structure (id, scheme_id, structure_id) values ( ?, ?, ?)";
 	protected static String SELECT_SCHEME_BY_STRUCT= "select * from workflow_scheme, workflow_scheme_x_structure where workflow_scheme.id = workflow_scheme_x_structure.scheme_id and workflow_scheme_x_structure.structure_id = ?";
 	
-	protected static String INSERT_SCHEME= "insert into workflow_scheme (id, name, description, archived, mandatory, entry_action_id, default_scheme) values (?,?,?,?,?,?,?)";
+	protected static String INSERT_SCHEME= "insert into workflow_scheme (id, name, description, archived, mandatory, entry_action_id, default_scheme) values (?,?,?,?,?,?,?,?)";
 	
-	protected static String UPDATE_SCHEME= "update workflow_scheme set name = ?,description =?, archived=?,mandatory=?,entry_action_id=? where id =? ";
+	protected static String UPDATE_SCHEME= "update workflow_scheme set name = ?,description =?, archived=?,mandatory=?,entry_action_id=?, mod_date=? where id =? ";
 	
 	protected static String SELECT_STEPS_BY_SCHEME= "select * from workflow_step where scheme_id = ? order by  my_order";
 	protected static String SELECT_ACTIONS_BY_STEP= "select * from workflow_action where step_id = ? order by  my_order";

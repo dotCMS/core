@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -51,6 +52,7 @@ public class DependencyManager {
 	private DependencySet contents;
 	private DependencySet links;
 	private DependencySet relationships;
+	private DependencySet workflows;
 
 	private Set<String> hostsSet;
 	private Set<String> foldersSet;
@@ -85,6 +87,7 @@ public class DependencyManager {
 		contents = new DependencySet(config.getId(), "content", config.isDownloading(), isPublish);
 		relationships = new DependencySet(config.getId(), "relationship", config.isDownloading(), isPublish);
 		links = new DependencySet(config.getId(),"links",config.isDownloading(), isPublish);
+		workflows = new DependencySet(config.getId(),"workflows",config.isDownloading(), isPublish);
 
 		// these ones are for being iterated over to solve the asset's dependencies
 		hostsSet = new HashSet<String>();
@@ -186,6 +189,9 @@ public class DependencyManager {
                 } catch (DotSecurityException e) {
                     Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
                 }
+			} else if(asset.getType().equals("workflow")) {
+				WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(asset.getAsset());
+				workflows.add(asset.getAsset(),scheme.getModDate());
 			}
 		}
 
@@ -212,6 +218,7 @@ public class DependencyManager {
 		config.setContents(contents);
 		config.setLinks(links);
 		config.setRelationships(relationships);
+		config.setWorkflows(workflows);
 	}
 
     /**
@@ -585,19 +592,37 @@ public class DependencyManager {
      * </ul>
      */
 	private void setStructureDependencies() {
-		Set<String> s = new HashSet<String>();
-		s.addAll(structures);
-		for (String inode : s) {
-			structureDependencyHelper(inode);
+		try {
+
+			  Set<String> s = new HashSet<String>();
+			  s.addAll(structures);
+			  for (String inode : s) {
+			    structureDependencyHelper(inode);
+			  }
+
+			} catch (DotSecurityException e) {
+			  Logger.error(this, e.getMessage(),e);
+			} catch (DotDataException e) {
+			  Logger.error(this, e.getMessage(),e);
 		}
 	}
 
 
 
-	private void structureDependencyHelper(String stInode){
+	private void structureDependencyHelper(String stInode) throws DotDataException, DotSecurityException{
 		Structure st = StructureCache.getStructureByInode(stInode);
-		hosts.add(st.getHost()); // add the host dependency
-		folders.add(st.getFolder()); // add the folder dependency
+		Host h = APILocator.getHostAPI().find(st.getHost(), user, false);
+		hosts.add(st.getHost(), h.getModDate()); // add the host dependency
+
+		Folder f = APILocator.getFolderAPI().find(st.getFolder(), user, false);
+		folders.add(st.getFolder(), f.getModDate()); // add the folder dependency
+
+		try {
+		  WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
+		  workflows.add(scheme.getId(), scheme.getModDate());
+		} catch (DotDataException e) {
+		  Logger.debug(getClass(), "Could not get the Workflow Scheme Dependency for Structure ID: " + st.getInode());
+		}
 
 		// Related structures
 		List<Relationship> relations = RelationshipFactory.getAllRelationshipsByStructure(st);

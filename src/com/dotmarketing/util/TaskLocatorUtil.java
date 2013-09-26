@@ -74,6 +74,7 @@ import com.dotmarketing.startup.runonce.Task01055CreatePushPublishEnvironmentTab
 import com.dotmarketing.startup.runonce.Task01060CreatePushPublishPushedAssets;
 import com.dotmarketing.startup.runonce.Task01065IndexOnPublishingQueueAuditStatus;
 import com.dotmarketing.startup.runonce.Task01070BundleNameDropUnique;
+import com.dotmarketing.startup.runonce.Task01075AddModDateToWorkflowScheme;
 
 public class TaskLocatorUtil {
 
@@ -150,6 +151,7 @@ public class TaskLocatorUtil {
         ret.add(Task01060CreatePushPublishPushedAssets.class);
         ret.add(Task01065IndexOnPublishingQueueAuditStatus.class);
         ret.add(Task01070BundleNameDropUnique.class);
+        ret.add(Task01075AddModDateToWorkflowScheme.class);
         return ret;
     }
 

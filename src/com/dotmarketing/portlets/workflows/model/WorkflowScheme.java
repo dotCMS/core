@@ -18,6 +18,8 @@ public class WorkflowScheme implements Serializable {
 	boolean archived;
 	boolean mandatory;
 	boolean defaultScheme;
+	private Date modDate;
+	
 	public boolean isDefaultScheme() {
 		return defaultScheme;
 	}
@@ -94,4 +96,13 @@ public class WorkflowScheme implements Serializable {
 		return !UtilMethods.isSet(id);
 		
 	}
+
+	public Date getModDate() {
+		return modDate;
+	}
+
+	public void setModDate(Date modDate) {
+		this.modDate = modDate;
+	}
+	
 }
