@@ -2298,7 +2298,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	if(oldFile==null || !oldFile.equals(incomingFile)){
 				                	//FileUtil.deltree(binaryFieldFolder);
 
-			                		FileUtil.copyFile(incomingFile, newFile);
+			                		FileUtil.move(incomingFile, newFile);
 
 			                		// delete old content metadata if exists
 			                		if(metadata!=null && metadata.exists())
@@ -2990,6 +2990,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // setBinary
             }else if(field.getFieldContentlet().startsWith("binary")){
                 try{
+                	System.out.println(value.getClass());
                     contentlet.setBinary(field.getVelocityVarName(), (java.io.File) value);
                 }catch (Exception e) {
                     throw new DotContentletStateException("Unable to set binary file Object");
@@ -3617,9 +3618,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 + velocityVariableName);
                 if(binaryFilefolder.exists()){
                 java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
-                if(files.length > 0){
-                binaryFile = files[0];
-                }
+               
+                for (java.io.File file : files) {
+					String path = file.getPath();
+					if(path!=null && path.indexOf("temp")==-1) {
+						binaryFile = file;
+						break;
+					}
+				}
+                
             }
         }catch(Exception e){
             Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName );
