@@ -315,9 +315,10 @@
 		doFilter();
 	}
 	
-	function editTask(id){
-		var url = "<portlet:actionURL windowState="maximized"><portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" /><portlet:param name="cmd" value="view" /><portlet:param name="taskId" value="REPLACEME" /></portlet:actionURL>";
+	function editTask(id,langId){
+		var url = "<portlet:actionURL windowState="maximized"><portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" /><portlet:param name="cmd" value="view" /><portlet:param name="taskId" value="REPLACEME" /><portlet:param name="langId" value="LANGUAGE" /></portlet:actionURL>";
 		url = url.replace("REPLACEME", id);
+		url = url.replace("LANGUAGE", langId);
 		window.location=url;
 	}
 

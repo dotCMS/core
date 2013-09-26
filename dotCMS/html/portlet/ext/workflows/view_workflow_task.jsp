@@ -38,7 +38,8 @@
 <%
 
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
-	Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false, -1, APILocator.getUserAPI().getSystemUser(), true);
+	int langId = Integer.parseInt(request.getParameter("langId"));
+	Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false, langId, APILocator.getUserAPI().getSystemUser(), true);
 	Structure structure = contentlet.getStructure();
 
 	Role createdBy 		= APILocator.getRoleAPI().loadRoleById(task.getCreatedBy());
