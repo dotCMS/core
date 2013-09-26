@@ -554,27 +554,53 @@
                       excludesfile="${lib.app}/jarjar-1.4.jar"/>
     </target>
 
-<target name="war-file" description="builds dotCMS as a war">
+    <!--TODO: Add this on the header-->
+    <!--TODO: Add this on the header-->
+    <property name="tomcat.home" value="../app-servers/apache-tomcat-7.0.42"/>
+    <!--TODO: Add this on the header-->
+    <!--TODO: Add this on the header-->
 
-	<mkdir dir="${build.war}"/>
+    <target name="war" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
+        <antcall target="war-file"/>
+    </target>
 
-	 <copy todir="${build.war}/${war.name}.war">
-		<fileset dir="dotCMS/">
-			<exclude name="assets/"/>
-			<exclude name="WEB-INF/backup/"/>
-			<exclude name="WEB-INF/dotlucene/"/>
-			<exclude name="dot_secure/"/>
-			<exclude name="dotsecure/"/>
-		</fileset>
-	</copy>
-	
-</target>
+    <target name="war-file" description="builds dotCMS as a war">
 
+        <!--Clean-up-->
+        <delete dir="${build.war}"/>
+        <mkdir dir="${build.war}"/>
 
+        <!--Prepare the content of the war-->
+        <copy todir="${build.war}/${war.name}">
+            <fileset dir="dotCMS/">
+                <exclude name="assets/"/>
+                <exclude name="WEB-INF/backup/"/>
+                <exclude name="WEB-INF/dotlucene/"/>
+                <exclude name="dot_secure/"/>
+                <exclude name="dotsecure/"/>
+            </fileset>
+        </copy>
 
-<target name="war" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
-	<antcall target="war-file"/>
-</target>
+        <!--Create the war-->
+        <war destfile="${build.war}/${war.name}.war" webxml="dotCMS/WEB-INF/web.xml">
+
+            <fileset dir="${build.war}/${war.name}">
+                <exclude name="WEB-INF/web.xml"/>
+            </fileset>
+            <!--<metainf dir="${build.war}/${war.name}/META-INF"/>-->
+        </war>
+    </target>
+
+    <target name="undeploy-tomcat-war">
+        <delete file="${tomcat.home}/webapps/${war.name}.war"/>
+    </target>
+
+    <target name="deploy-tomcat-war" depends="undeploy-tomcat-war">
+        <copy todir="${tomcat.home}/lib/">
+            <fileset dir="./libs-extra/tomcat-7"/>
+        </copy>
+        <copy todir="${tomcat.home}/webapps/" file="${build.war}/${war.name}.war"/>
+    </target>
 
 
 <!-- Unit testing and code coverage -->
