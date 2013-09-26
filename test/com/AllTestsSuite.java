@@ -59,8 +59,7 @@ import org.junit.runners.Suite;
     WebDavTest.class,
     RoleAPITest.class,
     FolderAPITest.class,
-    HostAPITest.class,
-    LinkCheckerAPITest.class
+    HostAPITest.class
 })
 public class AllTestsSuite {
 
