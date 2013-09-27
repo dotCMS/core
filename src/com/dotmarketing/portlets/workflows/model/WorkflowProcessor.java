@@ -124,13 +124,14 @@ public class WorkflowProcessor {
 			}
 			if (UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY))) {
 				nextAssign = getRoleAPI().loadRoleById(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY));
-			}else{
+			}
+			if(!UtilMethods.isSet(nextAssign)){
 				nextAssign = getRoleAPI().loadRoleById(action.getNextAssign());
 			}
 			
 			
 			// if the action's next assign is the "System User", we assign to the user executing the workflow
-			if(getRoleAPI().loadCMSAnonymousRole().getId().equals(nextAssign.getId())){
+			if((!UtilMethods.isSet(nextAssign)) || getRoleAPI().loadCMSAnonymousRole().getId().equals(nextAssign.getId())){
 				nextAssign = getRoleAPI().loadRoleByKey(user.getUserId());
 			}
 			
