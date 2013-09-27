@@ -89,7 +89,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	availableLanguages: new Array(),
 
 	postCreate: function () {
-		this._fillStructures();
+		if(this.containerStructures.length > 0)
+			this._fillStructures();
+		else
+			this._structureChanged();
 		LanguageAjax.getLanguages(dojo.hitch(this, this._fillLanguages));
 
 		if(this.title != '')
@@ -494,7 +497,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 //		else
 //		fieldsValues[fieldsValues.length] = this.languageId;
 
-		fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
+		if(dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
+			fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
+		else
+			fieldsValues[fieldsValues.length] = "";
 
 		for (var h = 0; h < this.currentStructureFields.length; h++) {
 
@@ -820,10 +826,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		dojo.empty(this.results_table);
 
-		 var objc = document.getElementById("langcombo+"+this.dialogCounter);
-			if(objc!=null){
-				objc.value='';
-			}
+		if(dijit.byId("langcombo+"+this.dialogCounter))
+			dijit.byId("langcombo+"+this.dialogCounter).set('displayedValue','');
 
 		for (var i = 0; i < this.categories.length; i++) {
 			var mainCat = this.categories[i];
