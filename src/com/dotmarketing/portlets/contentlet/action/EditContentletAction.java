@@ -86,6 +86,7 @@ import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletURLUtil;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -97,6 +98,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.ActionResponseImpl;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 public class EditContentletAction extends DotPortletAction implements DotPortletActionInterface {
@@ -1036,6 +1038,22 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				for (Field field : list) {
 					if(field.getFieldContentlet().startsWith("binary")){
 						httpReq.getSession().setAttribute(field.getFieldContentlet() + "-sibling", sib+","+field.getVelocityVarName());
+						java.io.File inputFile = APILocator.getContentletAPI().getBinaryFile(sib, field.getVelocityVarName(), user);
+						java.io.File acopyFolder=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+                                + java.io.File.separator + user.getUserId() + java.io.File.separator + field.getFieldContentlet()
+                                + java.io.File.separator + UUIDGenerator.generateUuid());
+						
+						if(!acopyFolder.exists())
+                            acopyFolder.mkdir();
+						
+						String shortFileName = FileUtil.getShortFileName(inputFile.getAbsolutePath());
+						
+						java.io.File binaryFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+								+ java.io.File.separator + user.getUserId() + java.io.File.separator + field.getFieldContentlet()
+								+ java.io.File.separator + shortFileName.trim());
+						
+						FileUtil.copyFile(inputFile, binaryFile);
+						
 					}
 				}
 			}
