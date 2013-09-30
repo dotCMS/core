@@ -26,6 +26,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 
 /** @author Hibernate CodeGenerator */
 public class Contentlet extends WebAsset implements Serializable {
@@ -1681,8 +1683,8 @@ public class Contentlet extends WebAsset implements Serializable {
 						if(binaryFilefolder.exists()){
 							java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
 							for (File file : files) {
-								String path = file.getPath();
-								if(path!=null && path.indexOf("temp")==-1) {
+								String fileName = file.getName();
+								if(UtilMethods.isSet(fileName) && !fileName.startsWith(WebKeys.TEMP_FILE_PREFIX)) {
 									binaryFile = file;
 									break;
 								}
