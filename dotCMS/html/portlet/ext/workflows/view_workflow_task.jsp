@@ -38,7 +38,9 @@
 <%
 
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
-	int langId = Integer.parseInt(request.getParameter("langId"));
+	int langId = -1;
+	if(request.getParameter("langId")!= null)
+		langId = Integer.parseInt(request.getParameter("langId"));
 	Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false, langId, APILocator.getUserAPI().getSystemUser(), true);
 	Structure structure = contentlet.getStructure();
 
