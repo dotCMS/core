@@ -113,6 +113,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.gson.Gson;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
@@ -2290,7 +2291,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  oldFileName);
 
 			                		// do we have an inline edited file, if so use that
-					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + oldFileName);
+					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
 				                    if(editedFile.exists()){
 				                    	incomingFile = editedFile;
 				                    }
