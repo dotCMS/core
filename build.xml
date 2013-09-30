@@ -58,8 +58,9 @@
 	<property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
 	<property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
 
+    <property name="tomcat.home" value="../app-servers/apache-tomcat-7.0.42"/>
 
-	<path id="build-classpath">
+    <path id="build-classpath">
 		<pathelement path="${build.classes}" />
 	</path>
 
@@ -554,12 +555,6 @@
                       excludesfile="${lib.app}/jarjar-1.4.jar"/>
     </target>
 
-    <!--TODO: Add this on the header-->
-    <!--TODO: Add this on the header-->
-    <property name="tomcat.home" value="../app-servers/apache-tomcat-7.0.42"/>
-    <!--TODO: Add this on the header-->
-    <!--TODO: Add this on the header-->
-
     <target name="war" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
         <antcall target="war-file"/>
     </target>
@@ -571,7 +566,7 @@
         <mkdir dir="${build.war}"/>
 
         <!--Prepare the content of the war-->
-        <copy todir="${build.war}/${war.name}">
+        <copy todir="${build.war}/${war.name}.war">
             <fileset dir="dotCMS/">
                 <exclude name="assets/"/>
                 <exclude name="WEB-INF/backup/"/>
@@ -580,28 +575,74 @@
                 <exclude name="dotsecure/"/>
             </fileset>
         </copy>
+        <mkdir dir="${build.war}/${war.name}.war/META-INF"/>
+        <copy file="tomcat/conf/Catalina/localhost/ROOT.xml" tofile="${build.war}/${war.name}.war/META-INF/context.xml"/>
 
         <!--Create the war-->
-        <war destfile="${build.war}/${war.name}.war" webxml="dotCMS/WEB-INF/web.xml">
-
-            <fileset dir="${build.war}/${war.name}">
+        <war destfile="${build.war}/dotcms_${dotcms.release.version}.war" webxml="dotCMS/WEB-INF/web.xml">
+            <fileset dir="${build.war}/${war.name}.war">
                 <exclude name="WEB-INF/web.xml"/>
             </fileset>
             <!--<metainf dir="${build.war}/${war.name}/META-INF"/>-->
         </war>
     </target>
 
-    <target name="undeploy-tomcat-war">
-        <delete file="${tomcat.home}/webapps/${war.name}.war"/>
+    <target name="undeploy-tomcat7-war">
+        <delete dir="${tomcat.home}/webapps/ROOT"/>
     </target>
 
-    <target name="deploy-tomcat-war" depends="undeploy-tomcat-war">
+    <target name="deploy-tomcat7-war" depends="undeploy-tomcat7-war">
         <copy todir="${tomcat.home}/lib/">
             <fileset dir="./libs-extra/tomcat-7"/>
         </copy>
-        <copy todir="${tomcat.home}/webapps/" file="${build.war}/${war.name}.war"/>
+
+        <copy todir="${tomcat.home}/webapps/ROOT">
+            <fileset dir="${build.war}/${war.name}.war"/>
+        </copy>
     </target>
 
+    <!--++++++++++++++++++++++++++++++++++++++++++-->
+    <!--Git commands-->
+    <macrodef name="git">
+        <attribute name="command"/>
+        <attribute name="dir" default=""/>
+        <attribute default="false" name="failonerror"/>
+        <element name="args" optional="true"/>
+        <sequential>
+            <echo message="git @{command}"/>
+            <exec executable="git" dir="@{dir}">
+                <arg value="@{command}"/>
+                <args/>
+            </exec>
+        </sequential>
+    </macrodef>
+    <macrodef name="git-clone-pull">
+        <attribute name="repository"/>
+        <attribute name="dest"/>
+        <attribute default="false" name="failonerror"/>
+        <sequential>
+            <git command="clone">
+                <args>
+                    <arg value="@{repository}"/>
+                    <arg value="@{dest}"/>
+                </args>
+            </git>
+            <git command="pull" dir="@{dest}"/>
+        </sequential>
+    </macrodef>
+    <!--<target name="clone-tomcat">
+        <git command="clone">
+            <args>
+                <arg value="git://github.com/test/myTest.git"/>
+                <arg value="../app-servers/tomcat"/>
+            </args>
+        </git>
+    </target>-->
+    <target name="clone-pull-tomcat">
+        <git-clone-pull repository="git://github.com/test/myTest.git" dest="../app-servers/tomcat"/>
+    </target>
+    <!--Git commands-->
+    <!--++++++++++++++++++++++++++++++++++++++++++-->
 
 <!-- Unit testing and code coverage -->
 
