@@ -1682,12 +1682,8 @@ public class Contentlet extends WebAsset implements Serializable {
 								+ f.getVelocityVarName());
 						if(binaryFilefolder.exists()){
 							java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
-							for (File file : files) {
-								String fileName = file.getName();
-								if(UtilMethods.isSet(fileName) && !fileName.startsWith(WebKeys.TEMP_FILE_PREFIX)) {
-									binaryFile = file;
-									break;
-								}
+							if(files.length > 0){
+								binaryFile = files[0];
 							}
 						}
 						value = binaryFile;
