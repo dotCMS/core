@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -68,7 +69,7 @@ public class FileAssetAjax {
 		
 		java.io.File fileData =  new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + contentletInode.charAt(0)
 					+ java.io.File.separator + contentletInode.charAt(1) + java.io.File.separator + contentletInode
-					+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD + java.io.File.separator + "_temp_" + fa.getFileAsset().getName());
+					+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + fa.getFileAsset().getName());
 		fileData.deleteOnExit();
 		FileOutputStream fos = null;
 		try {
@@ -90,7 +91,7 @@ public class FileAssetAjax {
 		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
 		java.io.File tempFile = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + contInode.charAt(0)
 				+ java.io.File.separator + contInode.charAt(1) + java.io.File.separator + contInode
-				+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD + java.io.File.separator + "_temp_" + fa.getFileAsset().getName());
+				+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + fa.getFileAsset().getName());
 		if(tempFile.exists()){
 			tempFile.delete();
 		}
