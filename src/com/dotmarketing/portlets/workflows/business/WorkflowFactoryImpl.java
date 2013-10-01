@@ -135,6 +135,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final WorkflowScheme scheme = new WorkflowScheme();
 		row.put("entryActionId", row.get("entry_action_id"));
 		row.put("defaultScheme", row.get("default_scheme"));
+		row.put("modDate", row.get("mod_date"));
 
 		BeanUtils.copyProperties(scheme, row);
 
