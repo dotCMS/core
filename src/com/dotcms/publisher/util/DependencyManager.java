@@ -196,19 +196,18 @@ public class DependencyManager {
 			}
 		}
 
-        setHostDependencies();
-        setFolderDependencies();
-        setHTMLPagesDependencies();
-        setTemplateDependencies();
-        setContainerDependencies();
-        setStructureDependencies();
-        setLinkDependencies();
-
         if ( config.getOperation().equals( Operation.PUBLISH ) ) {
-			setContentDependencies(config.getLuceneQueries());
-		}else{
-			contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
-		}
+        	setHostDependencies();
+            setFolderDependencies();
+            setHTMLPagesDependencies();
+            setTemplateDependencies();
+            setContainerDependencies();
+            setStructureDependencies();
+            setLinkDependencies();
+            setContentDependencies( config.getLuceneQueries() );
+        } else {
+            contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+        }
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
