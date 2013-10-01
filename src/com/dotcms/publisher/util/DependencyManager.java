@@ -256,7 +256,7 @@ public class DependencyManager {
      */
 	private void setHostDependencies() {
 		try {
-			for (String id : hosts) {
+			for (String id : hostsSet) {
 				Host h = APILocator.getHostAPI().find(id, user, false);
 
 				// Template dependencies
@@ -320,7 +320,7 @@ public class DependencyManager {
 		try {
 			List<Folder> folderList = new ArrayList<Folder>();
 
-			for (String id : folders) {
+			for (String id : foldersSet) {
 				Folder f = APILocator.getFolderAPI().find(id, user, false);
 				// Parent folder
 				Folder parent = APILocator.getFolderAPI().findParentFolder(f, user, false);
@@ -506,7 +506,7 @@ public class DependencyManager {
 		try {
 			List<Container> containerList = new ArrayList<Container>();
 
-			for (String id : templates) {
+			for (String id : templatesSet) {
 				Template wkT = APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
 				Template lvT = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
 
@@ -551,7 +551,7 @@ public class DependencyManager {
 
 			List<Container> containerList = new ArrayList<Container>();
 
-			for (String id : containers) {
+			for (String id : containersSet) {
 				Container c = APILocator.getContainerAPI().getWorkingContainerById(id, user, false);
 
 				// Host Dependency
@@ -594,7 +594,7 @@ public class DependencyManager {
 		try {
 
 			  Set<String> s = new HashSet<String>();
-			  s.addAll(structures);
+			  s.addAll(structuresSet);
 			  for (String inode : s) {
 			    structureDependencyHelper(inode);
 			  }
@@ -767,7 +767,7 @@ public class DependencyManager {
 	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
-			Set<String> cons = new HashSet<String>(contents);
+			Set<String> cons = new HashSet<String>(contentsSet);
             for(String id : cons){
                 processList(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
             }
