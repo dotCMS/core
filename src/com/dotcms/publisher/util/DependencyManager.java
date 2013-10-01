@@ -611,14 +611,14 @@ public class DependencyManager {
 	private void structureDependencyHelper(String stInode) throws DotDataException, DotSecurityException{
 		Structure st = StructureCache.getStructureByInode(stInode);
 		Host h = APILocator.getHostAPI().find(st.getHost(), user, false);
-		hosts.add(st.getHost(), h.getModDate()); // add the host dependency
+		hosts.addOrClean(st.getHost(), h.getModDate()); // add the host dependency
 
 		Folder f = APILocator.getFolderAPI().find(st.getFolder(), user, false);
-		folders.add(st.getFolder(), f.getModDate()); // add the folder dependency
+		folders.addOrClean(st.getFolder(), f.getModDate()); // add the folder dependency
 
 		try {
 		  WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
-		  workflows.add(scheme.getId(), scheme.getModDate());
+		  workflows.addOrClean(scheme.getId(), scheme.getModDate());
 		} catch (DotDataException e) {
 		  Logger.debug(getClass(), "Could not get the Workflow Scheme Dependency for Structure ID: " + st.getInode());
 		}
