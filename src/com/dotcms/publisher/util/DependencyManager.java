@@ -629,7 +629,7 @@ public class DependencyManager {
 	 * <li>Relationships</li>
 	 * </ul>
 	 */
-	private void setStructureDependencies() {
+	private void setStructureDependencies() throws DotDataException, DotSecurityException {
 		try {
 
 			  Set<String> s = new HashSet<String>();
