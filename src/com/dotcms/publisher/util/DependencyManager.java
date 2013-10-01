@@ -194,8 +194,8 @@ public class DependencyManager {
 				workflows.add(asset.getAsset(),scheme.getModDate());
 			}
 		}
-
-        setHostDependencies();
+		
+		setHostDependencies();
         setFolderDependencies();
         setHTMLPagesDependencies();
         setTemplateDependencies();
@@ -257,7 +257,7 @@ public class DependencyManager {
      */
 	private void setHostDependencies() {
 		try {
-			for (String id : hosts) {
+			for (String id : hostsSet) {
 				Host h = APILocator.getHostAPI().find(id, user, false);
 
 				// Template dependencies
@@ -321,7 +321,7 @@ public class DependencyManager {
 		try {
 			List<Folder> folderList = new ArrayList<Folder>();
 
-			for (String id : folders) {
+			for (String id : foldersSet) {
 				Folder f = APILocator.getFolderAPI().find(id, user, false);
 				// Parent folder
 				Folder parent = APILocator.getFolderAPI().findParentFolder(f, user, false);
@@ -507,7 +507,7 @@ public class DependencyManager {
 		try {
 			List<Container> containerList = new ArrayList<Container>();
 
-			for (String id : templates) {
+			for (String id : templatesSet) {
 				Template wkT = APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
 				Template lvT = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
 
@@ -552,7 +552,7 @@ public class DependencyManager {
 
 			List<Container> containerList = new ArrayList<Container>();
 
-			for (String id : containers) {
+			for (String id : containersSet) {
 				Container c = APILocator.getContainerAPI().getWorkingContainerById(id, user, false);
 
 				// Host Dependency
@@ -595,7 +595,7 @@ public class DependencyManager {
 		try {
 
 			  Set<String> s = new HashSet<String>();
-			  s.addAll(structures);
+			  s.addAll(structuresSet);
 			  for (String inode : s) {
 			    structureDependencyHelper(inode);
 			  }
@@ -612,14 +612,14 @@ public class DependencyManager {
 	private void structureDependencyHelper(String stInode) throws DotDataException, DotSecurityException{
 		Structure st = StructureCache.getStructureByInode(stInode);
 		Host h = APILocator.getHostAPI().find(st.getHost(), user, false);
-		hosts.add(st.getHost(), h.getModDate()); // add the host dependency
+		hosts.addOrClean(st.getHost(), h.getModDate()); // add the host dependency
 
 		Folder f = APILocator.getFolderAPI().find(st.getFolder(), user, false);
-		folders.add(st.getFolder(), f.getModDate()); // add the folder dependency
+		folders.addOrClean(st.getFolder(), f.getModDate()); // add the folder dependency
 
 		try {
 		  WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
-		  workflows.add(scheme.getId(), scheme.getModDate());
+		  workflows.addOrClean(scheme.getId(), scheme.getModDate());
 		} catch (DotDataException e) {
 		  Logger.debug(getClass(), "Could not get the Workflow Scheme Dependency for Structure ID: " + st.getInode());
 		}
@@ -768,7 +768,7 @@ public class DependencyManager {
 	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
-			Set<String> cons = new HashSet<String>(contents);
+			Set<String> cons = new HashSet<String>(contentsSet);
             for(String id : cons){
                 processList(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
             }
