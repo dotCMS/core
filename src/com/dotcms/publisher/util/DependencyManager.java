@@ -194,15 +194,16 @@ public class DependencyManager {
 				workflows.add(asset.getAsset(),scheme.getModDate());
 			}
 		}
+		
+		setHostDependencies();
+        setFolderDependencies();
+        setHTMLPagesDependencies();
+        setTemplateDependencies();
+        setContainerDependencies();
+        setStructureDependencies();
+        setLinkDependencies();
 
         if ( config.getOperation().equals( Operation.PUBLISH ) ) {
-        	setHostDependencies();
-            setFolderDependencies();
-            setHTMLPagesDependencies();
-            setTemplateDependencies();
-            setContainerDependencies();
-            setStructureDependencies();
-            setLinkDependencies();
             setContentDependencies( config.getLuceneQueries() );
         } else {
             contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
