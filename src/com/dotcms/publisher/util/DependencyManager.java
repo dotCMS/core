@@ -638,7 +638,6 @@ public class DependencyManager {
 			    structureDependencyHelper(inode);
 			  }
 
-			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(),e);
 		}
