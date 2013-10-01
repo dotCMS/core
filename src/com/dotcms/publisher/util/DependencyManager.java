@@ -110,7 +110,7 @@ public class DependencyManager {
 	 * @throws DotDataException   If fails retrieving dependency objects
 	 * @throws DotBundleException If fails trying to set the Contentlets dependencies
 	 */
-	public void setDependencies() throws throws DotSecurityException, DotDataException, DotBundleException {
+	public void setDependencies() throws DotSecurityException, DotDataException, DotBundleException {
 		List<PublishQueueElement> assets = config.getAssets();
 
 		for (PublishQueueElement asset : assets) {
