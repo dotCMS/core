@@ -89,8 +89,13 @@ public class DependencySet extends HashSet<String> {
 		// if the asset hasn't been sent to at least one environment or an older version was sen't,
 		// we need to add it to the cache
 
-		if(!bundle.isForcePush() && !isDownload && isPublish ) {
-			for (Environment env : envs) {
+        Boolean isForcePush = false;
+        if ( bundle != null ) {
+            isForcePush = bundle.isForcePush();
+        }
+
+        if ( !isForcePush && !isDownload && isPublish ) {
+            for (Environment env : envs) {
 				PushedAsset asset = cache.getPushedAsset(assetId, env.getId());
 
 				if(modified |= (asset==null || asset.getPushDate().before(assetModDate))) {
@@ -108,10 +113,10 @@ public class DependencySet extends HashSet<String> {
 
 		}
 
-		if(bundle.isForcePush() || isDownload || !isPublish || modified) {
-			super.add(assetId);
-			return true;
-		}
+        if ( isForcePush || isDownload || !isPublish || modified ) {
+            super.add( assetId );
+            return true;
+        }
 
 		return false;
 	}
