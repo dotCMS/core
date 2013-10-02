@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.htmlpages.factories;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import java.util.Date;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
@@ -174,13 +175,14 @@ public class HTMLPageFactory {
      *
      * @param currentHTMLPage
      * @param host
+     * @param user
      * @return
      * @throws DotDataException
      * @throws DotStateException
      * @throws DotSecurityException
      */
-    public static boolean moveHTMLPage ( HTMLPage currentHTMLPage, Host host ) throws DotDataException, DotStateException, DotSecurityException {
-        return moveHTMLPage( currentHTMLPage, null, host );
+    public static boolean moveHTMLPage ( HTMLPage currentHTMLPage, Host host, User user ) throws DotDataException, DotStateException, DotSecurityException {
+        return moveHTMLPage( currentHTMLPage, null, host, user );
     }
 
     /**
@@ -188,13 +190,14 @@ public class HTMLPageFactory {
      *
      * @param currentHTMLPage
      * @param parent
+     * @param user
      * @return
      * @throws DotDataException
      * @throws DotStateException
      * @throws DotSecurityException
      */
-    public static boolean moveHTMLPage ( HTMLPage currentHTMLPage, Folder parent ) throws DotDataException, DotStateException, DotSecurityException {
-        return moveHTMLPage( currentHTMLPage, parent, null );
+    public static boolean moveHTMLPage ( HTMLPage currentHTMLPage, Folder parent, User user ) throws DotDataException, DotStateException, DotSecurityException {
+        return moveHTMLPage( currentHTMLPage, parent, null, user );
     }
 
     /**
@@ -203,12 +206,13 @@ public class HTMLPageFactory {
      * @param currentHTMLPage
      * @param parent
      * @param host
+     * @param user
      * @return
      * @throws DotDataException
      * @throws DotStateException
      * @throws DotSecurityException
      */
-    private static boolean moveHTMLPage ( HTMLPage currentHTMLPage, Folder parent, Host host ) throws DotStateException, DotDataException, DotSecurityException {
+    private static boolean moveHTMLPage ( HTMLPage currentHTMLPage, Folder parent, Host host, User user ) throws DotStateException, DotDataException, DotSecurityException {
 
         Identifier identifier = APILocator.getIdentifierAPI().find( currentHTMLPage );
 
@@ -313,7 +317,22 @@ public class HTMLPageFactory {
 
         if(APILocator.getPermissionAPI().isInheritingPermissions(workingWebAsset))
             APILocator.getPermissionAPI().removePermissions(workingWebAsset);
-        
+
+        /*
+         And finally if everything is ok lets update the html page, as we are moving the page
+         the mod date should change, this will avoid cache problems specially Push Publishing cache problems.
+          */
+        if ( (liveWebAsset != null) && (InodeUtils.isSet( liveWebAsset.getInode() )) ) {
+            //Update the live version
+            liveWebAsset.setModDate( new Date() );
+            liveWebAsset.setModUser( user.getUserId() );
+            HibernateUtil.saveOrUpdate( liveWebAsset );
+        }
+        //Update the working version
+        workingWebAsset.setModDate( new Date() );
+        workingWebAsset.setModUser( user.getUserId() );
+        HibernateUtil.saveOrUpdate( workingWebAsset );
+
         return true;
     }
 
