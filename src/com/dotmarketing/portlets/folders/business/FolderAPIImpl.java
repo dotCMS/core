@@ -11,6 +11,7 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -375,6 +376,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			if(localTransaction){
                 HibernateUtil.commitTransaction();
             }
+			
+			PublisherAPI.getInstance().deleteElementFromPublishQueueTable(folder.getIdentifier());
 
 		} catch (Exception e) {
 
