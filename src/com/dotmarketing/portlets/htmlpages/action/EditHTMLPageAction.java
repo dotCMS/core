@@ -459,7 +459,7 @@ public class EditHTMLPageAction extends DotPortletAction implements DotPortletAc
 		if (parentInode != null && parentInode.length() != 0 && !parentInode.equals("0")) {
 			// the new parent is being passed through the request
 			Folder parent = (Folder) InodeFactory.getInode(parentInode, Folder.class);
-			if (HTMLPageFactory.moveHTMLPage(webAsset, parent)) {
+			if (HTMLPageFactory.moveHTMLPage(webAsset, parent, user)) {
 				SessionMessages.add(httpReq, "message", "message.htmlpage.move");
 			} else {
 				SessionMessages.add(httpReq, "error", "message.htmlpage.error.htmlpage.exists");
