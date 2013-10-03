@@ -58,7 +58,7 @@
 	<property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
 	<property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
 
-    <property name="tomcat.home" value="../app-servers/apache-tomcat-7.0.42"/>
+    <property name="tomcat.home" value="../tomcat7"/>
 
     <path id="build-classpath">
 		<pathelement path="${build.classes}" />
@@ -593,7 +593,11 @@
 
     <target name="deploy-tomcat7-war" depends="undeploy-tomcat7-war">
         <copy todir="${tomcat.home}/lib/">
-            <fileset dir="./libs-extra/tomcat-7"/>
+            <fileset dir="./extra/tomcat-7/libs/"/>
+        </copy>
+
+        <copy todir="${tomcat.home}/bin/">
+            <fileset dir="./extra/tomcat-7/conf/"/>
         </copy>
 
         <copy todir="${tomcat.home}/webapps/ROOT">
