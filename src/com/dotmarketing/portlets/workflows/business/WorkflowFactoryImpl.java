@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -968,8 +969,24 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void saveComment(WorkflowComment comment) throws DotDataException {
-
-		HibernateUtil.saveOrUpdate(comment);
+	    if(InodeUtils.isSet(comment.getId())) {
+	        boolean update=false;
+    	    try {
+    	        HibernateUtil.load(WorkflowComment.class, comment.getId());
+    	        // if no exception it exists. just update
+    	        update=true;
+    	    }
+    	    catch(Exception ex) {
+    	        // if it doesn't then save with primary key
+    	        HibernateUtil.saveWithPrimaryKey(comment, comment.getId());
+    	    }
+    	    if(update) {
+    	        HibernateUtil.update(comment);
+    	    }
+	    }
+	    else {
+	        HibernateUtil.save(comment);
+	    }
 
 	}
 
@@ -1181,14 +1198,43 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException {
-		HibernateUtil.saveOrUpdate(history);
+	    if(InodeUtils.isSet(history.getId())) {
+	        boolean update=false;
+	        try {
+	            HibernateUtil.load(WorkflowHistory.class, history.getId());
+	            // if exists just update
+	            update=true;
+	        }
+	        catch(Exception ex) {
+	            // if not then save with existing key
+	            HibernateUtil.saveWithPrimaryKey(history, history.getId());	            
+	        }
+	        if(update) {
+	            HibernateUtil.update(history);
+	        }
+	    }
+	    else {
+	        HibernateUtil.save(history);
+	    }
 	}
 
 	public void saveWorkflowTask(WorkflowTask task) throws DotDataException {
 		if (task.isNew()) {
 			HibernateUtil.save(task);
 		} else {
-			HibernateUtil.saveOrUpdate(task);
+		    boolean update=false;
+		    try {
+		        HibernateUtil.load(WorkflowTask.class, task.getId());
+		        // if the object exists no exception is thrown just update
+		        update=true;
+		    }
+		    catch(Exception ex) {
+		        // if it doesn't exists then save with that primary key
+		        HibernateUtil.saveWithPrimaryKey(task, task.getId());
+		    }
+		    if(update) {
+                HibernateUtil.update(task);
+		    }
 		}
 		cache.remove(task);
 	}
