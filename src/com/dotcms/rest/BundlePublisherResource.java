@@ -90,12 +90,15 @@ public class BundlePublisherResource extends WebResource {
 			PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, groupId, bundleFolder);
 			
 			if(bundleName.trim().length()>0) {
-                Bundle b = new Bundle();
-                b.setId(bundleFolder);
-                b.setName(bundleName);
-                b.setPublishDate(Calendar.getInstance().getTime());
-                b.setOwner(APILocator.getUserAPI().getSystemUser().getUserId());
-                APILocator.getBundleAPI().saveBundle(b);
+			    // save bundle if it doesn't exists
+			    if(APILocator.getBundleAPI().getBundleById(bundleFolder)!=null) {
+                    Bundle b = new Bundle();
+                    b.setId(bundleFolder);
+                    b.setName(bundleName);
+                    b.setPublishDate(Calendar.getInstance().getTime());
+                    b.setOwner(APILocator.getUserAPI().getSystemUser().getUserId());
+                    APILocator.getBundleAPI().saveBundle(b);
+			    }
 			}
 			
 			//Write file on FS
