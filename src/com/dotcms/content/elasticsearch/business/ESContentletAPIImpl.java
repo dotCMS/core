@@ -2044,7 +2044,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				contentlet.setModUser(user.getUserId());
 				// start up workflow
 				WorkflowAPI wapi  = APILocator.getWorkflowAPI();
-				WorkflowProcessor workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
+				WorkflowProcessor workflow=null;
+				
+				if(contentlet.getMap().get("__disable_workflow__")==null) {
+				    workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
+				}
 
 				workingContentlet = contentlet;
 				if(createNewVersion)
@@ -2494,8 +2498,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
 
 				//wapi.
-				workflow.setContentlet(contentlet);
-				wapi.fireWorkflowPostCheckin(workflow);
+				if(workflow!=null) {
+    				workflow.setContentlet(contentlet);
+    				wapi.fireWorkflowPostCheckin(workflow);
+				}
 
 				// DOTCMS-7290
 				DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
