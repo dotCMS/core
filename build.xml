@@ -587,11 +587,11 @@
         </war>
     </target>
 
-    <target name="undeploy-tomcat7-war">
+    <target name="tomcat7-undeploy-war">
         <delete dir="${tomcat.home}/webapps/ROOT"/>
     </target>
 
-    <target name="deploy-tomcat7-war" depends="undeploy-tomcat7-war">
+    <target name="tomcat7-deploy-war" depends="tomcat7-undeploy-war">
         <copy todir="${tomcat.home}/lib/">
             <fileset dir="./extra/tomcat-7/libs/"/>
         </copy>
@@ -614,7 +614,7 @@
         <element name="args" optional="true"/>
         <sequential>
             <echo message="git @{command}"/>
-            <exec executable="git" dir="@{dir}">
+            <exec executable="git" dir="@{dir}" >
                 <arg value="@{command}"/>
                 <args/>
             </exec>
@@ -622,11 +622,14 @@
     </macrodef>
     <macrodef name="git-clone-pull">
         <attribute name="repository"/>
+        <attribute name="version"/>
         <attribute name="dest"/>
         <attribute default="false" name="failonerror"/>
         <sequential>
             <git command="clone">
                 <args>
+                    <arg value="-b"/>
+                    <arg value="@{version}"/>
                     <arg value="@{repository}"/>
                     <arg value="@{dest}"/>
                 </args>
@@ -637,13 +640,13 @@
     <!--<target name="clone-tomcat">
         <git command="clone">
             <args>
-                <arg value="git://github.com/test/myTest.git"/>
+                <arg value="https://github.com/dotCMS/tomcat7.git"/>
                 <arg value="../app-servers/tomcat"/>
             </args>
         </git>
     </target>-->
-    <target name="clone-pull-tomcat">
-        <git-clone-pull repository="git://github.com/test/myTest.git" dest="../app-servers/tomcat"/>
+    <target name="tomcat7-clone-pull">
+        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="../tomcat7Test/"/>
     </target>
     <!--Git commands-->
     <!--++++++++++++++++++++++++++++++++++++++++++-->
