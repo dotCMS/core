@@ -857,9 +857,9 @@ public class BrowserAjax {
         }
 
         if ( parent != null ) {
-            return HTMLPageFactory.moveHTMLPage( page, parent );
+            return HTMLPageFactory.moveHTMLPage( page, parent, user );
         } else {
-            return HTMLPageFactory.moveHTMLPage( page, host );
+            return HTMLPageFactory.moveHTMLPage( page, host, user );
         }
     }
 
