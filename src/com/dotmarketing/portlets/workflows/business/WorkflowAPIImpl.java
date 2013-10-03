@@ -376,8 +376,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return APILocator.getFileAssetAPI().fromContentletsI(contents);
 	}
 
+	public void saveWorkflowTask(WorkflowTask task) throws DotDataException {
+	    wfac.saveWorkflowTask(task);
+	}
+	
 	public void saveWorkflowTask(WorkflowTask task, WorkflowProcessor processor) throws DotDataException {
-		wfac.saveWorkflowTask(task);
+		saveWorkflowTask(task);
 		WorkflowHistory history = new WorkflowHistory();
 		history.setWorkflowtaskId(task.getId());
 		history.setActionId(processor.getAction().getId());
