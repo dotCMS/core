@@ -1182,6 +1182,19 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	   		else
 	   			fullName = shortenString(newName, 30) + "." + ext;
 	   		showDotCMSSystemMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-changed")) %>");
+	   		
+			//Emptying the assets rigth hand side listing
+			cleanContentSide();
+
+		    //Showing the loading message
+		    Element.show('loadingContentListing');
+		    
+		    setTimeout('reloadContent()',1000);
+		    if(data.assetType == "folder"){
+			    setTimeout(function(){
+			    	BrowserAjax.getTree(myHostId, initializeTree);
+			    },1000);
+		    }
 		} else {
 			if (ext == null || ext == "")
 	   			fullName = shortenString(lastName, 30) + "";
@@ -1190,10 +1203,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	   		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-change-failed")) %> " + data.errorReason);
 		}
 
-   	 	if ($(inode + '-NameSPAN') != null)
-	   	 	Element.update(inode + '-NameSPAN', fullName);
-   	 	if ($(inode + '-TreeFolderName') != null)
-			Element.update(inode + '-TreeFolderName', fullName);
+   	 	
      }
 
      function enableChangeContentShowOnMenu (inode) {

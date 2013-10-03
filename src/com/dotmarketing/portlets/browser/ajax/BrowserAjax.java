@@ -245,8 +245,7 @@ public class BrowserAjax {
 
 	public Map<String, Object> getFolderContent (String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc) throws DotHibernateException, DotSecurityException, DotDataException {
-
-
+		
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
@@ -397,6 +396,7 @@ public class BrowserAjax {
     	result.put("extension", "");
     	result.put("newName", newName);
     	result.put("inode", folder.getInode());
+    	result.put("assetType", "folder");
     	try {
 			if (folderAPI.renameFolder(folder, newName,usr,false)) {
 				result.put("result", 0);
@@ -551,11 +551,16 @@ public class BrowserAjax {
     		result.put("newName", newName);
     		result.put("inode", inode);
     		if(!cont.isLocked()){
-    			if(APILocator.getFileAssetAPI().renameFile(cont, newName, user, false)){
-    				result.put("result", 0);
-    			}else{
+    			try{
+    				if(APILocator.getFileAssetAPI().renameFile(cont, newName, user, false)){
+        				result.put("result", 0);
+        			}else{
+        				result.put("result", 1);
+        				result.put("errorReason", "Another file with the same name already exists on this folder");
+        			}
+    			}catch(Exception e){
     				result.put("result", 1);
-    				result.put("errorReason", "Another file with the same name already exists on this folder");
+    				result.put("errorReason", e.getLocalizedMessage());
     			}
     		}else{
     			result.put("result", 1);
