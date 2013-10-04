@@ -52,8 +52,6 @@ public class BundlePublisher extends Publisher {
         handlers.add( new UserHandler( config ) );
         handlers.add( new CategoryHandler( config ) );
         handlers.add( new HostHandler( config ) );
-        handlers.add( new FolderHandler( config ) );
-        handlers.add( new WorkflowHandler( config ) );
 
         if ( Config.getBooleanProperty( "PUSH_PUBLISHING_PUSH_STRUCTURES" ) ) {
             handlers.add( new StructureHandler( config ) );
@@ -63,6 +61,9 @@ public class BundlePublisher extends Publisher {
              */
             handlers.add( new RelationshipHandler( config ) );
         }
+
+        handlers.add( new FolderHandler( config ) );
+        handlers.add( new WorkflowHandler( config ) );
 
         handlers.add( new ContainerHandler( config ) );
         handlers.add( new TemplateHandler( config ) );

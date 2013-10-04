@@ -380,7 +380,17 @@ public class DependencyManager {
 				structuresSet.add(structure.getInode());
 			}
 
-			// HTML Page dependencies
+            //Add the default structure of this folder
+            if ( f.getDefaultFileType() != null ) {
+                Structure defaultStructure = StructureCache.getStructureByInode( f.getDefaultFileType() );
+                if ( (defaultStructure != null && InodeUtils.isSet( defaultStructure.getInode() ))
+                        && !structuresSet.contains( defaultStructure.getInode() ) ) {
+                    structures.addOrClean( defaultStructure.getInode(), defaultStructure.getModDate() );
+                    structuresSet.add( defaultStructure.getInode() );
+                }
+            }
+
+            // HTML Page dependencies
 			List<HTMLPage> pages = APILocator.getFolderAPI().getHTMLPages(f, user, false);
 
 			for (HTMLPage p : pages) {
