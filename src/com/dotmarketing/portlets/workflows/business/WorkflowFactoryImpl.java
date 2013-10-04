@@ -817,14 +817,17 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		query.append(" 1=1  ");
 		if (!counting) {
 			query.append(" order by ");
+			String orderby="";
 			if (!UtilMethods.isSet(searcher.getStepId())) {
 				// condition.append(" status , ");
 			}
 			if (UtilMethods.isSet(searcher.getOrderBy())) {
-				query.append(searcher.getOrderBy());
+				orderby=searcher.getOrderBy();
 			} else {
-				query.append("workflow_task.mod_date desc");
+
+				orderby="mod_date desc";
 			}
+			query.append(orderby.replace("mod_date", "workflow_task.mod_date"));
 		}
 
 		dc.setSQL(query.toString());
