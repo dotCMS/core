@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -23,6 +25,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -108,6 +111,12 @@ public class StructureAPIImpl implements StructureAPI {
         FieldsCache.removeFields(st);
         StructureCache.removeStructure(st);
         StructureServices.removeStructureFile(st);
+        
+        try {
+			PublisherAPI.getInstance().deleteElementFromPublishQueueTable(st.getInode());
+		} catch (DotPublisherException e) {
+			Logger.error(getClass(), "Error deleting Contentlet from Publishing Queue. Identifier:  " + st.getIdentifier());
+		}
     }
 
 	@Override

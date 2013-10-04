@@ -118,9 +118,16 @@ public class PublisherAPIImpl extends PublisherAPI{
         List<String> errorsList = new ArrayList<String>();
 
     	  if ( identifiers != null ) {
+    		  
+    		  boolean localTransaction = false;
+    			
+    		  try {
+    			  localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+    		  } catch(DotDataException dde) {
+    			  throw new DotPublisherException("Error starting Transaction", dde);
+    		  }
 
               try {
-                  HibernateUtil.startTransaction();
                   for ( String identifier : identifiers ) {
 
                       DotConnect dc = new DotConnect();
@@ -225,7 +232,6 @@ public class PublisherAPIImpl extends PublisherAPI{
                       PushPublishLogger.log(getClass(), "Asset added to Push Publish Queue. Action: "+action+", Asset Type: " + type + ", Asset Id: " + identifier, bundleId, user);
                   }
 
-                  HibernateUtil.commitTransaction();
               } catch ( Exception e ) {
 
                   try {
@@ -235,6 +241,14 @@ public class PublisherAPIImpl extends PublisherAPI{
                   }
                   Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
                   throw new DotPublisherException( "Unable to add element to publish queue table:" + e.getMessage(), e );
+              } finally {
+            	  if(localTransaction){
+      				try {
+      					HibernateUtil.commitTransaction();
+      				} catch (DotHibernateException e) {
+      					throw new DotPublisherException("Error commiting Transaction", e);
+      				}
+      			}
               }
           }
 
@@ -683,9 +697,17 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @param last_results error message
 	 * @throws DotPublisherException
 	 */
-	public void updateElementStatusFromPublishQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException{
+	public void updateElementStatusFromPublishQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException {
+		
+		boolean localTransaction = false;
+		
+		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+		} catch(DotDataException dde) {
+			throw new DotPublisherException("Error starting Transaction", dde);
+		}
+		
 		try{
-			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
@@ -703,7 +725,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.addParam(last_results);
 			dc.addParam(id);
 			dc.loadResult();
-			HibernateUtil.commitTransaction();
 		}catch(Exception e){
 			try {
 				HibernateUtil.rollbackTransaction();
@@ -712,6 +733,14 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to update element "+id+" :"+e.getMessage(), e);
+		} finally {
+			if(localTransaction){
+				try {
+					HibernateUtil.commitTransaction();
+				} catch (DotHibernateException e) {
+					throw new DotPublisherException("Error commiting Transaction", e);
+				}
+			}
 		}
 	}
 
@@ -729,8 +758,15 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @throws DotPublisherException
 	 */
 	public void deleteElementFromPublishQueueTable(String identifier) throws DotPublisherException{
+		boolean localTransaction = false;
+		
+		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+		} catch(DotDataException dde) {
+			throw new DotPublisherException("Error starting Transaction", dde);
+		}
+		
 		try{
-			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
@@ -744,7 +780,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			dc.addParam(identifier);
 			dc.loadResult();
-			HibernateUtil.commitTransaction();
 		}catch(Exception e){
 			try {
 				HibernateUtil.rollbackTransaction();
@@ -755,6 +790,13 @@ public class PublisherAPIImpl extends PublisherAPI{
 			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
+			if(localTransaction){
+				try {
+					HibernateUtil.commitTransaction();
+				} catch (DotHibernateException e) {
+					throw new DotPublisherException("Error commiting Transaction", e);
+				}
+			}
 		}
 	}
 
@@ -772,8 +814,15 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @throws DotPublisherException
 	 */
 	public void deleteElementsFromPublishQueueTable(String bundleId) throws DotPublisherException{
+		boolean localTransaction = false;
+		
+		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+		} catch(DotDataException dde) {
+			throw new DotPublisherException("Error starting Transaction", dde);
+		}
+		
 		try{
-			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
@@ -787,7 +836,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			dc.addParam(bundleId);
 			dc.loadResult();
-			HibernateUtil.commitTransaction();
 		}catch(Exception e){
 			try {
 				HibernateUtil.rollbackTransaction();
@@ -796,6 +844,14 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element(s) "+bundleId+" :"+e.getMessage(), e);
+		}finally{
+			if(localTransaction){
+				try {
+					HibernateUtil.commitTransaction();
+				} catch (DotHibernateException e) {
+					throw new DotPublisherException("Error commiting Transaction", e);
+				}
+			}
 		}
 	}
 
@@ -808,8 +864,15 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @return boolean
 	 */
 	public void deleteAllElementsFromPublishQueueTable() throws DotPublisherException{
+		boolean localTransaction = false;
+		
+		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+		} catch(DotDataException dde) {
+			throw new DotPublisherException("Error starting Transaction", dde);
+		}
+		
 		try{
-			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
@@ -822,7 +885,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.setSQL(OCLDELETEALLELEMENTFROMQUEUESQL);
 			}
 			dc.loadResult();
-			HibernateUtil.commitTransaction();
 		}catch(Exception e){
 			try {
 				HibernateUtil.rollbackTransaction();
@@ -831,6 +893,14 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete elements :"+e.getMessage(), e);
+		} finally{
+			if(localTransaction){
+				try {
+					HibernateUtil.commitTransaction();
+				} catch (DotHibernateException e) {
+					throw new DotPublisherException("Error commiting Transaction", e);
+				}
+			}
 		}
 	}
 

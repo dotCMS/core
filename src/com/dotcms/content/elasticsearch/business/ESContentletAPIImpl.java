@@ -31,6 +31,8 @@ import org.elasticsearch.search.SearchHits;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -1136,7 +1138,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // jira.dotmarketing.net/browse/DOTCMS-1073
         deleteBinaryFiles(contentletsVersion,null);
-
+        
+        for (Contentlet contentlet : contentlets) {
+        	try {
+				PublisherAPI.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier());
+			} catch (DotPublisherException e) {
+				Logger.error(getClass(), "Error deleting Contentlet from Publishing Queue. Identifier:  " + contentlet.getIdentifier());
+			}
+		}
+        
     }
 
     public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
