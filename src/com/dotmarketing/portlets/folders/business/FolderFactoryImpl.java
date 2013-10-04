@@ -721,6 +721,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				identifier.setHostId(newHost.getIdentifier());
 				identifier.setURI(page.getURI(theFolder));
 				APILocator.getIdentifierAPI().save(identifier);
+				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
 			}
 
 			// Add to Preview and Live Cache
@@ -759,6 +760,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				identifier.setHostId(newHost.getIdentifier());
 				identifier.setURI(file.getURI(theFolder));
 				APILocator.getIdentifierAPI().save(identifier);
+				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
 			}
 
 			// Add to Preview and Live Cache
@@ -788,6 +790,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				Identifier folderIdentifier  = APILocator.getIdentifierAPI().find(theFolder);
 				identifier.setParentPath(folderIdentifier.getPath());
 				APILocator.getIdentifierAPI().save(identifier);
+				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
 			}
 
 			// Add to Preview and Live Cache
@@ -810,10 +813,10 @@ public class FolderFactoryImpl extends FolderFactory {
 				identifier.setHostId(newHost.getIdentifier());
 				identifier.setURI(link.getURI(theFolder));
 				APILocator.getIdentifierAPI().save(identifier);
+				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
 			}
 
 		}
-		CacheLocator.getIdentifierCache().clearCache();
 	}
 
 	/**
@@ -861,7 +864,6 @@ public class FolderFactoryImpl extends FolderFactory {
 				LiveCache.addToLiveAssetToCache(newFileAsset);
 			}
 		}
-		CacheLocator.getIdentifierCache().clearCache();
 	}
 
 	protected boolean move(Folder folder, Folder destination) throws DotDataException, DotSecurityException {
