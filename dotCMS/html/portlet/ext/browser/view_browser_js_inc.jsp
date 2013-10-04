@@ -1430,12 +1430,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function moveFolderCallback (response) {
-		if (!response) {
-			reloadContent ();
-			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-move-another-folder-with-the-same-name-already-exists-in-the-destination")) %>');
-		} else {
+		if(response == '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-moved")) %>'){
 			BrowserAjax.getTree(myHostId, initializeTree);
-			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-moved")) %>');
+			showDotCMSSystemMessage(response);
+		} else {
+			reloadContent ();
+			showDotCMSErrorMessage(response);
 		}
 	}
 
