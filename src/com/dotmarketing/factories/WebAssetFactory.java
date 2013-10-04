@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -1764,6 +1765,9 @@ public class WebAssetFactory {
 			//### Delete the Identifier ###
 			APILocator.getIdentifierAPI().delete(identifier);
 			//### Delete the Identifier ###
+			
+			PublisherAPI.getInstance().deleteElementFromPublishQueueTable(identifier.getId());
+			
 			returnValue = true;
 		}
 		else
