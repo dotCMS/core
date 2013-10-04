@@ -542,6 +542,9 @@ public class ContentletAjax {
 		        if("_all".equals(x)){
 		            String next =  fields.get(i+1);
 		            next = next.replaceAll("\\*", "");
+		            while(next.contains("  ")){
+		            	next = next.replace("  ", " ");
+		            }
 		            String y[] = next.split(" ");
 		            for(int j=0;j<y.length;j++){
 		                luceneQuery.append("title:" + y[j] + "* ");
@@ -717,6 +720,9 @@ public class ContentletAjax {
 							    String next =  fieldValue.toString();
 							    if(!next.contains("'") && ! next.contains("\"")){ 
 							        next = next.replaceAll("\\*", "");
+							        while(next.contains("  ")){
+							        	next = next.replace("  ", " ");
+							        }
 							        String y[] = next.split(" ");
 							        for(int j=0;j<y.length;j++){
 							            luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
