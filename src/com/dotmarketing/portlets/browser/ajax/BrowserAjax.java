@@ -43,6 +43,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.BrowserAPI;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import org.directwebremoting.WebContext;
@@ -471,10 +472,14 @@ public class BrowserAjax {
      * @return Confirmation message
      * @throws Exception
      */
-    public boolean moveFolder ( String inode, String newFolder ) throws Exception {
+    public String moveFolder ( String inode, String newFolder ) throws Exception {
 
         HibernateUtil.startTransaction();
-
+        
+        Locale requestLocale = WebContextFactory.get().getHttpServletRequest().getLocale();
+        String successString = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-moved"));
+        String errorString = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Failed-to-move-another-folder-with-the-same-name-already-exists-in-the-destination"));
+        
         try {
             HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
             User user = getUser( req );
@@ -494,7 +499,7 @@ public class BrowserAjax {
 
                 if ( !folderAPI.move( folder, parentHost, user, respectFrontendRoles ) ) {
                     //A folder with the same name already exists on the destination
-                    return false;
+                    return errorString;
                 }
                 refreshIndex(null, null, user, parentHost, folder );
             } else {
@@ -507,16 +512,16 @@ public class BrowserAjax {
 
                 if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
                     //Trying to move a folder over itself
-                    return false;
+                    return errorString;
                 }
                 if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
                     //Trying to move a folder over one of its children
-                    return false;
+                    return errorString;
                 }
 
                 if ( !folderAPI.move( folder, parentFolder, user, respectFrontendRoles ) ) {
                     //A folder with the same name already exists on the destination
-                    return false;
+                    return errorString;
                 }
                 
                 refreshIndex(null, parentFolder, user, null, folder );
@@ -524,11 +529,12 @@ public class BrowserAjax {
             }
         } catch ( Exception e ) {
             HibernateUtil.rollbackTransaction();
+            return e.getLocalizedMessage();
         } finally {
             HibernateUtil.commitTransaction();
         }
 
-        return true;
+        return successString;
     }
 
     public Map<String, Object> renameFile (String inode, String newName) throws Exception {

@@ -2128,7 +2128,7 @@
                         dojo.byId("expireDateReset").value="";
 
 
-                        div.innerHTML ="<div class='contentViewDialog'>" +
+                        div.innerHTML ="<div class='contentViewDialog' style=\"white-space: pre;\">" +
 
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "frontend-query") %></div>"+
                             "<div class='contentViewQuery'>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</div>" +
