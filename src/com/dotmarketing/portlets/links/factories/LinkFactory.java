@@ -471,6 +471,7 @@ public class LinkFactory {
 
         //HibernateUtil.saveOrUpdate(identifier);
         APILocator.getIdentifierAPI().save( identifier );
+        CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
         
         if(APILocator.getPermissionAPI().isInheritingPermissions(currentLink)) {
             APILocator.getPermissionAPI().removePermissions(currentLink);
