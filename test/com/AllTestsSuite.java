@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.structure.business.URLMapTest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
 import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
 import com.dotmarketing.portlets.templates.business.TemplateAPITest;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest;
 import com.dotmarketing.plugin.PluginMergerTest;
 import com.dotmarketing.webdav.WebDavTest;
 
@@ -59,7 +60,8 @@ import org.junit.runners.Suite;
     WebDavTest.class,
     RoleAPITest.class,
     FolderAPITest.class,
-    HostAPITest.class
+    HostAPITest.class,
+    WorkflowSearcherTest.class
 })
 public class AllTestsSuite {
 
