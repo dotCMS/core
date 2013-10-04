@@ -827,22 +827,20 @@ public class HostAPIImpl implements HostAPI {
 
 		String workingHostName = workinghost.getHostname();
 		String updatedHostName = updatedhost.getHostname();
-		String workingURL = "";
-		String newURL = "";
-		HibernateUtil dh = new HibernateUtil(VirtualLink.class);
-		List<VirtualLink> resultList = new ArrayList<VirtualLink>();
-		dh.setQuery("select inode from inode in class " + VirtualLink.class.getName() + " where inode.url like ?");
-		dh.setParam(workingHostName+":/%");
-		resultList = dh.list();
-		for (VirtualLink vl : resultList) {
-			workingURL = vl.getUrl();
-			newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
-			vl.setUrl(newURL);
-			HibernateUtil.saveOrUpdate(vl);
+		if(!workingHostName.equals(updatedHostName)) {
+    		HibernateUtil dh = new HibernateUtil(VirtualLink.class);
+    		List<VirtualLink> resultList = new ArrayList<VirtualLink>();
+    		dh.setQuery("select inode from inode in class " + VirtualLink.class.getName() + " where inode.url like ?");
+    		dh.setParam(workingHostName+":/%");
+    		resultList = dh.list();
+    		for (VirtualLink vl : resultList) {
+    			String workingURL = vl.getUrl();
+    			String newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
+    			vl.setUrl(newURL);
+    			HibernateUtil.saveOrUpdate(vl);
+    			VirtualLinksCache.removePathFromCache(vl.getUrl());
+    		}
 		}
-
-		VirtualLinksCache.clearCache();
-		hostCache.clearAliasCache();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -850,22 +848,23 @@ public class HostAPIImpl implements HostAPI {
 
 		String workingHostName = workinghost.getHostname();
 		String updatedHostName = updatedhost.getHostname();
-		String workingURL = "";
-		String newURL = "";
-		HibernateUtil dh = new HibernateUtil(Link.class);
-		List<Link> resultList = new ArrayList<Link>();
-		dh.setQuery("select asset from asset in class " + Link.class.getName() + " where asset.url like ?");
-		dh.setParam(workingHostName+"/%");
-		resultList = dh.list();
-		for(Link link : resultList){
-			workingURL = link.getUrl();
-			newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
-			link.setUrl(newURL);
-			HibernateUtil.saveOrUpdate(link);
+		if(!workingHostName.equals(updatedHostName)) {
+    		HibernateUtil dh = new HibernateUtil(Link.class);
+    		List<Link> resultList = new ArrayList<Link>();
+    		dh.setQuery("select asset from asset in class " + Link.class.getName() + " where asset.url like ?");
+    		dh.setParam(workingHostName+"/%");
+    		resultList = dh.list();
+    		for(Link link : resultList){
+    			String workingURL = link.getUrl();
+    			String newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
+    			link.setUrl(newURL);
+    			try {
+                    APILocator.getMenuLinkAPI().save(link, APILocator.getUserAPI().getSystemUser(), false);
+                } catch (DotSecurityException e) {
+                    throw new RuntimeException(e);
+                }
+    		}
 		}
-		CacheLocator.getMenuLinkCache().clearCache();
-		RefreshMenus.deleteMenus();
-		CacheLocator.getNavToolCache().clearCache();
 
 	}
 
