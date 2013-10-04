@@ -635,7 +635,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			move(subFolder, (Object)folder);
 		}
 
-		CacheLocator.getIdentifierCache().clearCache();
+		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderId.getId());
 
 		if(folder.isShowOnMenu())
 			RefreshMenus.deleteMenu(folder);
