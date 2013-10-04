@@ -380,19 +380,22 @@ public class DependencyManager {
 				structuresSet.add(structure.getInode());
 			}
 
-			// HTML Page dependencies
+            //Add the default structure of this folder
+            if ( f.getDefaultFileType() != null ) {
+                Structure defaultStructure = StructureCache.getStructureByInode( f.getDefaultFileType() );
+                if ( (defaultStructure != null && InodeUtils.isSet( defaultStructure.getInode() ))
+                        && !structuresSet.contains( defaultStructure.getInode() ) ) {
+                    structures.addOrClean( defaultStructure.getInode(), defaultStructure.getModDate() );
+                    structuresSet.add( defaultStructure.getInode() );
+                }
+            }
+
+            // HTML Page dependencies
 			List<HTMLPage> pages = APILocator.getFolderAPI().getHTMLPages(f, user, false);
 
 			for (HTMLPage p : pages) {
 				htmlPages.addOrClean( p.getIdentifier(), p.getModDate());
 				htmlPagesSet.add(p.getIdentifier());
-			}
-			
-			// default fileasset type
-			Structure defaultType=StructureCache.getStructureByInode(f.getDefaultFileType());
-			if(defaultType!=null && InodeUtils.isSet(defaultType.getInode())) {
-			    structures.addOrClean( defaultType.getInode(), defaultType.getModDate());
-			    structuresSet.add(defaultType.getInode());
 			}
 
 			setFolderListDependencies(APILocator.getFolderAPI().findSubFolders(f, user, false));
