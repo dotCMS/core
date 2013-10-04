@@ -564,6 +564,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	@SuppressWarnings("unchecked")
 	private boolean move(Folder folder, Object destination) throws DotDataException, DotStateException, DotSecurityException {
 
+		folder = (Folder) HibernateUtil.load(Folder.class, folder.getInode());
 		IdentifierAPI identAPI = APILocator.getIdentifierAPI();
 		Identifier folderId = identAPI.find(folder.getIdentifier());
 
