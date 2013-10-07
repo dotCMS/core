@@ -568,6 +568,7 @@ public class ImportUtil {
 				else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
 
 					Identifier identifier = null;
+					valueObj = null;
 					try{
 						identifier = APILocator.getIdentifierAPI().findFromInode(value);
 					}
@@ -598,14 +599,20 @@ public class ImportUtil {
 								}
 							}
 							Host host = APILocator.getHostAPI().findByName(hostName, user, false);
-							Folder f = APILocator.getFolderAPI().findFolderByPath(path.toString(), host, user, false);
-							valueObj=host.getIdentifier();
-							headersIncludeHostField = true;
+							if(UtilMethods.isSet(host)){
+								valueObj=host.getIdentifier();
+								Folder f = APILocator.getFolderAPI().findFolderByPath(path.toString(), host, user, false);
+								if(UtilMethods.isSet(f))
+									valueObj=f.getInode();
+								headersIncludeHostField = true;
+							}
 					}
 					else{
 						Host h = APILocator.getHostAPI().findByName(value, user, false);
-						valueObj=h.getIdentifier();	
-						headersIncludeHostField = true;
+						if(UtilMethods.isSet(h)){
+							valueObj=h.getIdentifier();	
+							headersIncludeHostField = true;
+						}
 					}
 
 					if(valueObj ==null){

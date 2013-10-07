@@ -11,6 +11,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.chemistry.cmissql.CmisSqlParser.boolean_factor_return;
 import org.directwebremoting.WebContextFactory;
 
 import com.dotmarketing.beans.ContainerStructure;
@@ -36,6 +37,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import edu.emory.mathcs.backport.java.util.Collections;
@@ -216,19 +218,39 @@ public class ContainerAjax {
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = userWebAPI.getLoggedInUser(req);
 		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-		Container cont = (Container) InodeFactory.getInode(containerInode, Container.class);
-		TemplateAPI templateAPI = APILocator.getTemplateAPI();
-		List<Template> templates = templateAPI.findTemplates(user, true, null, null, null, null, null, 0, -1, null);
+		String[] inodesArray = containerInode.split(",");
+		String result= null;
+		for(String contInode : inodesArray){
+			Container cont = (Container) InodeFactory.getInode(contInode, Container.class);
+			TemplateAPI templateAPI = APILocator.getTemplateAPI();
+			List<Template> templates = templateAPI.findTemplates(user, true, null, null, null, null, null, 0, -1, null);
+			result = checkTemplatesUsedByContainer(templates,cont,user, respectFrontendRoles);			
+			if(result.length()>0){
+				StringBuilder dialogMessage=new StringBuilder();
+				dialogMessage.append(LanguageUtil.get(user,"container-used-templates")).append("<br> <br>");
+				dialogMessage.append("Container-Name :").append(cont.getTitle()).append("<br>").append(result);
+				return dialogMessage.length()>0?dialogMessage.toString():null;
+			}
+				
+		}
 
+		return result.length()>0?result.toString():null;
+
+	}
+	
+	private String checkTemplatesUsedByContainer(List<Template> templates,Container cont, User user,boolean respectFrontendRoles ) throws DotSecurityException,	DotDataException {
+		TemplateAPI templateAPI = APILocator.getTemplateAPI();
 		StringBuilder names=new StringBuilder();
+		String result = null;
 		for (Template template : templates) {
 			List<Container> containers = templateAPI.getContainersInTemplate(template, user, respectFrontendRoles);
 			if(containers.contains(cont)) {
 				names.append(template.getFriendlyName()).append(", ");
 			}
 		}
-
-		return names.length()>0?names.toString():null;
-
+		result = names.toString();
+		return result;
 	}
+	
+	
 }

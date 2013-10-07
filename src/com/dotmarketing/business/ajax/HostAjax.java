@@ -246,7 +246,7 @@ public class HostAjax {
 		Host host = hostAPI.find(id, user, respectFrontendRoles);
 		if(host.isDefault())
 			throw new DotStateException("the default host can't be deleted");
-		hostAPI.delete(host, user, respectFrontendRoles);
+		hostAPI.delete(host, user, respectFrontendRoles, true);
 	}
 
 
