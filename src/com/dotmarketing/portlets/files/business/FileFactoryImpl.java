@@ -165,17 +165,15 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 			}
 			WorkingCache.addToWorkingAssetToCache(newFile);
 
+			if (localTransation) {
+                HibernateUtil.commitTransaction();
+            }
 		} catch (Exception e) {
 			if (localTransation) {
 				HibernateUtil.rollbackTransaction();
 			}
 			throw new DotDataException(e.getMessage(),e);
 
-		} finally {
-
-			if (localTransation) {
-				HibernateUtil.commitTransaction();
-			}
 		}
 		return newFile;
 	}
