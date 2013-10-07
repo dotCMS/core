@@ -1182,6 +1182,19 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	   		else
 	   			fullName = shortenString(newName, 30) + "." + ext;
 	   		showDotCMSSystemMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-changed")) %>");
+	   		
+			//Emptying the assets rigth hand side listing
+			cleanContentSide();
+
+		    //Showing the loading message
+		    Element.show('loadingContentListing');
+		    
+		    setTimeout('reloadContent()',1000);
+		    if(data.assetType == "folder"){
+			    setTimeout(function(){
+			    	BrowserAjax.getTree(myHostId, initializeTree);
+			    },1000);
+		    }
 		} else {
 			var asset = inodes[inode];
             if (asset.type == 'folder') {
@@ -1203,10 +1216,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	   		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-change-failed")) %> " + data.errorReason);
 		}
 
-   	 	if ($(inode + '-NameSPAN') != null)
-	   	 	Element.update(inode + '-NameSPAN', fullName);
-   	 	if ($(inode + '-TreeFolderName') != null)
-			Element.update(inode + '-TreeFolderName', fullName);
+   	 	
      }
 
      function enableChangeContentShowOnMenu (inode) {
@@ -1420,12 +1430,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function moveFolderCallback (response) {
-		if (!response) {
-			reloadContent ();
-			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-move-another-folder-with-the-same-name-already-exists-in-the-destination")) %>');
-		} else {
+		if(response == '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-moved")) %>'){
 			BrowserAjax.getTree(myHostId, initializeTree);
-			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-moved")) %>');
+			showDotCMSSystemMessage(response);
+		} else {
+			reloadContent ();
+			showDotCMSErrorMessage(response);
 		}
 	}
 

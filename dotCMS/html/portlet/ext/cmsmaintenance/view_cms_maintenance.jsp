@@ -746,56 +746,26 @@ function connectUploadEvents() {
 }
 
 function doCreateWorking() {
-
-
-	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-
-	var shards = parseInt(number);
-	if(shards <1){
-		return;
-
-	}
-
-	var xhrArgs = {
-       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/shards/" + shards,
-       handleAs: "text",
-       handle : function(dataOrError, ioArgs) {
-           if (dojo.isString(dataOrError)) {
-               if (dataOrError.indexOf("FAILURE") == 0) {
-                   showDotCMSSystemMessage(dataOrError, true);
-               } else {
-                   showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
-                   refreshIndexStats();
-
-               }
-           } else {
-               showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-           }
-       }
-    };
-    dojo.xhrPost(xhrArgs);
+	dijit.byId('addIndex').show();
+	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 4)%>;
+	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/shards/";
 }
 
 function doCreateLive() {
+	dijit.byId('addIndex').show();
+	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 4)%>;
+	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/";
+}
 
-
-	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
-	if(!number){
-		return;
-	}
-
-	var shards = parseInt(number);
+function shardCreating(){	
+	dijit.byId('addIndex').hide();
+	var shards = document.getElementById('shards').value;
 	if(shards <1){
 		return;
 	}
-
-
-
+	
 	var xhrArgs = {
-       url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/" + shards,
+       url: shardsUrl + shards,
        handleAs: "text",
        handle : function(dataOrError, ioArgs) {
            if (dojo.isString(dataOrError)) {
@@ -804,6 +774,7 @@ function doCreateLive() {
                } else {
                    showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Index-Created"))%>", true);
                    refreshIndexStats();
+
                }
            } else {
                showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
@@ -1192,55 +1163,104 @@ function assetsSearchAndReplace(assetsToProcess){
     	}
 	}
 }
-function updateHostList(inode, name, selectval){
-	var f=dijit.byId(selectval).attr('value');
-	var c=dojo.byId(name).value.indexOf(dojo.byId(selectval).value);
 
-	if (c == -1){
-	    var hostlisting  = f.split(',');
-	    if(hostlisting == "all"){
-	      	dojo.byId(name).value='all';
-			dojo.byId(inode).value='all';
-			dojo.byId(inode+'list').innerHTML = '';
-	    }else if(dojo.byId(inode).value == "all"){
-			dojo.byId(name).value=hostlisting[0];
-			dojo.byId(inode).value=hostlisting[1];
-		} else {
-			dojo.byId(name).value= dojo.byId(name).value + "," + hostlisting[0];
-			dojo.byId(inode).value= dojo.byId(inode).value + "," + hostlisting[1];
-		}
-		dojo.byId(inode+'list').innerHTML = '';
-		var hostnames=dojo.byId(name).value.split(",");
-		var hostids=dojo.byId(inode).value.split(",");
-		var buffer='';
-		for(i = 0; i < hostnames.length; i++){
-			buffer+="<div id='entry-"+hostids[i]+"'>"+hostnames[i] + " <a href='#' onclick='removeHost(\""+hostids[i]+"\",\""+inode+"\",\""+name+"\")'><img src='/html/images/icons/cross.png'/></a></div>";
-		}
-		buffer+="";
-		dojo.byId(inode+'list').innerHTML = buffer;
-	}else{
-		alert("Host already selected");
+function updateHostList(inode, name, selectval){
+
+	if(dijit.byId('selectAssetHostInode').attr('value') == '') {
+		return;
 	}
-}
-function removeHost(id, inode, name){
-	var hostnames=dojo.byId(name).value.split(",");
-	var hostids=dojo.byId(inode).value.split(",");
-	var names="";
-	var ids="";
-	for(i = 0; i < hostids.length; i++){
-		if(hostids[i] != id){
-			if(names==""){
-				names=hostnames[i];
-				ids=hostids[i];
-			}else{
-				names=names + "," +hostnames[i];
-				ids=ids + "," +hostids[i];
+
+	var hostId = dijit.byId('selectAssetHostInode').attr('value');
+	var hostName = dijit.byId('selectAssetHostInode').attr('displayedValue');
+	var table = document.getElementById('assetHostListTable');
+	var rowCount = table.rows.length;
+	var row  = document.getElementById("assetHostListTable_"+hostId);
+
+	if(row!=null){
+	   alert('<%= LanguageUtil.get(pageContext, "host-already-selected") %>');
+	}else{
+		
+		if(hostId == 'all'){
+			var existingHostIds=dojo.byId("assetHost").value.split(",");
+			for(var i = 0; i < existingHostIds.length; i++){
+				assetHostListTable_deleteHost(existingHostIds[i]);
+			}
+		}else{
+			if(dojo.byId("assetHost").value == 'all'){
+				assetHostListTable_deleteHost('all');
 			}
 		}
+
+	    var nohosts = document.getElementById("assetHostListTable_nohosts");
+		if(nohosts!=null){
+			table.deleteRow(1);
+	    }
+	
+	
+		var newRow = table.insertRow(table.rows.length);
+		if((table.rows.length%2)==0){
+	        newRow.className = "alternate_1";
+		}else{
+			newRow.className = "alternate_2";
+		}
+		newRow.id = "assetHostListTable_"+hostId;
+		var cell0 = newRow.insertCell(0);
+		var cell1 = newRow.insertCell(1);
+		var anchor = document.createElement("a");
+		anchor.href= 'javascript:assetHostListTable_deleteHost('+'"'+ hostId +'"'+');';
+		anchor.innerHTML = '<span class="deleteIcon"></span>';
+		cell0.appendChild(anchor);
+		cell1.innerHTML = hostName;
+		
+		if((dojo.byId(inode).value == '') || (dojo.byId(inode).value == 'all')){
+			dojo.byId(inode).value = hostId;
+		}else if(hostId == 'all'){
+			dojo.byId(inode).value = hostId;
+		}else{
+			dojo.byId(inode).value = dojo.byId(inode).value + "," + hostId;
+		}
 	}
-	dojo.byId(name).value=names;
-	dojo.byId(inode).value=ids;
-	dojo.destroy("entry-"+id);
+}
+function assetHostListTable_deleteHost(hostId){
+
+	var table = document.getElementById('assetHostListTable');
+	var row  = document.getElementById("assetHostListTable_"+hostId);
+	if(row){
+		try {
+			 var rowCount = table.rows.length;
+			 for(var i=0; i<rowCount; i++) {
+				if(row.id==table.rows[i].id) {
+					table.deleteRow(i);
+					rowCount--;
+					i--;
+					if(rowCount <= 1) {
+						var newRow = table.insertRow(rowCount);
+						newRow.id="assetHostListTable_nohosts";
+						newRow.innerHTML = '<td colspan="2"><div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "no-hosts-selected") %></div></td>';
+						break;
+					}
+				}
+			 }
+		 }catch(e) {}
+	}
+
+	if(hostId == 'all'){
+		dojo.byId("assetHost").value='';
+		return;
+	}else{
+		var hostids=dojo.byId("assetHost").value.split(",");
+		var ids="";
+		for(var i = 0; i < hostids.length; i++){
+			if(hostids[i] != hostId){
+				if(ids == ''){
+					ids = hostids[i];
+				}else{
+					ids=ids + "," +hostids[i];
+				}
+			}
+		}
+		dojo.byId("assetHost").value=ids;
+	}
 }
 </script>
 
@@ -1665,7 +1685,7 @@ dd.leftdl {
 			               	<tr>
 			               		<td>
 			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Host") %>
-		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid host name"  onChange='updateHostList("assetHost","assetHostNames","selectAssetHostInode")'>
+		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid host name">
 										<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_All") %></option>
 										<%	String hostNames="";
 											String hostIdentifier="";
@@ -1674,15 +1694,27 @@ dd.leftdl {
 	                            				hostNames=hostNames+","+h.getHostname();
 	                            				hostIdentifier=hostIdentifier+","+h.getIdentifier();
 	                            		%>
-	                                			<option value="<%=h.getHostname()+","+h.getIdentifier()%>"><%= h.getHostname() %></option>
+	                                			<option value="<%=h.getIdentifier()%>"><%= h.getHostname() %></option>
 	                            		<%  }
 	                            	  	}
 										%>
 									</select>
-									<input type="hidden" name="assetHost" id="assetHost" value="all"/>
+									<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick='updateHostList("assetHost","assetHostNames","selectAssetHostInode")'><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
+									<input type="hidden" name="assetHost" id="assetHost" value=""/>
                         			<input type="hidden" name="assetHostNames" id="assetHostNames" value=""/>
 									<br/><br/>
                         			<div name="assetHostlist" id="assetHostlist"></div>
+									<table class="listingTable" id="assetHostListTable" style="margin:10px;width:90%">
+										<tr>
+										    <th nowrap style="width:60px;"><span><%= LanguageUtil.get(pageContext, "Delete") %></span></th>
+											<th nowrap><%= LanguageUtil.get(pageContext, "Host") %></th>
+										</tr>
+										<tr id= "assetHostListTable_nohosts">
+											<td colspan="2">
+												<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "no-hosts-selected") %></div>
+											</td>
+										</tr>
+									</table>                        			
                   			    </td>
 			               		<td>
 			               			<input type="radio" onclick="enableDisableRadio(this)" checked="checked" value="assetType" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchType" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset") %>:<br/>
@@ -1878,6 +1910,19 @@ dd.leftdl {
         <img style="display:none;" id="loggedUsersProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
 
+</div>
+
+<div dojoType="dijit.Dialog" id="addIndex" title="Add Index" style="height:150px;width:400px;">
+
+ 	<div align="center" style="padding-top: 10px;">
+		<label name="index"><%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%></label>
+  		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 4)%>">
+  	</div><br />
+  	<div class="buttonRow" align="center">
+	           <button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp; 
+	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp; 
+	</div>
+	
 </div>
 
 <script language="Javascript">

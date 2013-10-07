@@ -1,23 +1,14 @@
 package com.dotcms.publishing;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
-
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.util.*;
 
 public class PublisherConfig implements Map<String, Object> {
 
@@ -25,9 +16,9 @@ public class PublisherConfig implements Map<String, Object> {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
-		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS;
+		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT
 	}
-	
+
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
 	}
@@ -47,8 +38,60 @@ public class PublisherConfig implements Map<String, Object> {
 	public void setFolders(Set<String> folders) {
 		params.put(Config.FOLDERS.name(), folders);
 	}
-	
-	@SuppressWarnings("unchecked")
+
+    /**
+     * Get the list of pending folders to apply a given default type (Structure inode)
+     *
+     * @param structureInode
+     * @return
+     */
+    public ArrayList<Folder> getPendingFoldersForDefaultType ( String structureInode ) {
+
+        if ( get( Config.FOLDERS_PENDING_DEFAULT.name() ) != null ) {
+
+            Map<String, ArrayList<Folder>> pendingRecords = (Map<String, ArrayList<Folder>>) get( Config.FOLDERS_PENDING_DEFAULT.name() );
+            return pendingRecords.get( structureInode );
+        }
+
+        return null;
+    }
+
+    /**
+     * Adds a given Folder to a list of pending folders to apply a given default structure type as
+     * soon as the structure is created in the end point server.
+     *
+     * @param structureInode
+     * @param folder
+     */
+    public void addPendingFolderForDefaultType ( String structureInode, Folder folder ) {
+
+        if ( get( Config.FOLDERS_PENDING_DEFAULT.name() ) == null ) {
+
+            Map<String, ArrayList<Folder>> pendingRecords = new HashMap<String, ArrayList<Folder>>();
+
+            ArrayList<Folder> foldersToModify = new ArrayList<Folder>();
+            foldersToModify.add( folder );
+            pendingRecords.put( structureInode, foldersToModify );
+
+            params.put( Config.FOLDERS_PENDING_DEFAULT.name(), pendingRecords );
+        } else {
+
+            Map<String, ArrayList<Folder>> pendingRecords = (Map<String, ArrayList<Folder>>) get( Config.FOLDERS_PENDING_DEFAULT.name() );
+
+            ArrayList<Folder> foldersToModify;
+            if ( pendingRecords.containsKey( structureInode ) ) {
+                foldersToModify = pendingRecords.get( structureInode );
+                foldersToModify.add( folder );
+            } else {
+                foldersToModify = new ArrayList<Folder>();
+                foldersToModify.add( folder );
+            }
+
+            pendingRecords.put( structureInode, foldersToModify );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
 	public Set<String> getHostSet() {
 		if(get(Config.HOSTS.name()) == null){
 			Set<String> hostsToBuild =   new HashSet<String>();

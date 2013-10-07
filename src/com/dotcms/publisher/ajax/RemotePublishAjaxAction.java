@@ -20,7 +20,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.*;
@@ -44,10 +43,7 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class RemotePublishAjaxAction extends AjaxAction {
 
@@ -211,7 +207,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 response.getWriter().println( jsonResponse.toString() );
             }
         } catch ( Exception e ) {
-            Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+            Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
             response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Publishing Bundle: " + e.getMessage() );
         }
     }
@@ -434,9 +430,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
 
         File bundle;
+        String generatedBundleId;
         try {
             //Generate the bundle file for this given operation
-            bundle = generateBundle( bundleId, operation );
+            Map<String, Object> bundleData = generateBundle( bundleId, operation );
+            bundle = (File) bundleData.get( "file" );
+            generatedBundleId = (String) bundleData.get( "id" );
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
             response.sendError( 500, "Error trying to generate bundle with id: " + bundleId );
@@ -463,6 +462,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
             } catch ( Exception ex ) {
                 Logger.error( this.getClass(), "Error closing Stream for bundle: " + bundleId, ex );
             }
+
+            //Clean the just created bundle because on each download we will generate a new bundle file with a new id in order to avoid conflicts with ids
+            File bundleRoot = BundlerUtil.getBundleRoot( generatedBundleId );
+            File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + generatedBundleId + ".tar.gz" );
+            if ( compressedBundle.exists() ) {
+                compressedBundle.delete();
+                if ( bundleRoot.exists() ) {
+                    com.liferay.util.FileUtil.deltree( bundleRoot );
+                }
+            }
         }
     }
 
@@ -481,7 +490,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @throws IOException If fails compressing the all the Bundle contents into the final Bundle file
      */
     @SuppressWarnings ("unchecked")
-    public File generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
+    private Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
     	
         PushPublisherConfig pconf = new PushPublisherConfig();
         PublisherAPI pubAPI = PublisherAPI.getInstance();
@@ -519,15 +528,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
         }
 
-        //We want to clean the bundle files as the assets could changed or could be created for another operation
+        //Create a new bundle id for this generated bundle
+        String newBundleId = UUID.randomUUID().toString();
+        pconf.setId( newBundleId );
         File bundleRoot = BundlerUtil.getBundleRoot( pconf );
-        File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + pconf.getId() + ".tar.gz" );
-        if ( compressedBundle.exists() ) {
-            compressedBundle.delete();
-            if ( bundleRoot.exists() ) {
-                com.liferay.util.FileUtil.deltree( bundleRoot );
-            }
-        }
 
         // Run bundlers
         BundlerUtil.writeBundleXML( pconf );
@@ -548,7 +552,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
         list.add( bundleRoot );
         File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz" );
 
-        return PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() );
+        Map<String, Object> bundleData = new HashMap<String, Object>();
+        bundleData.put( "id", newBundleId );
+        bundleData.put( "file", PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() ) );
+        return bundleData;
     }
 
     /**
@@ -689,10 +696,15 @@ public class RemotePublishAjaxAction extends AjaxAction {
             Bundle bundle;
 
             if ( bundleId == null || bundleName.equals( bundleId ) ) {
-
-                //Verify if a bundle exist with this name
-                bundle = APILocator.getBundleAPI().getBundleByName( bundleName );
-                if ( bundle == null ) {//If not create a new one
+                // if the user has a unsent bundle with that name just add to it
+                bundle=null;
+                for(Bundle b : APILocator.getBundleAPI().getUnsendBundlesByName(getUser().getUserId(), bundleName, 1000, 0)) {
+                    if(b.getName().equalsIgnoreCase(bundleName)) {
+                        bundle=b;
+                    }
+                }
+                
+                if(bundle==null) {
                     bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
                     APILocator.getBundleAPI().saveBundle( bundle );
                 }
@@ -725,7 +737,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 response.getWriter().println( jsonResponse.toString() );
             }
         } catch ( Exception e ) {
-            Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+            Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
             response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Adding content to Bundle: " + e.getMessage() );
         }
     }
@@ -737,7 +749,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @param response HttpResponse
      * @throws WorkflowActionFailureException If fails trying to Publish the bundle contents
      */
-    public void pushBundle ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException {
+    public void pushBundle ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException, IOException {
 
         try {
 
@@ -799,15 +811,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 }
             }
 
-
-        } catch ( DotPublisherException e ) {
-            Logger.debug( PushPublishActionlet.class, e.getMessage(), e );
-            throw new WorkflowActionFailureException( e.getMessage(), e );
-        } catch ( ParseException e ) {
-            Logger.debug( PushPublishActionlet.class, e.getMessage() );
-            throw new WorkflowActionFailureException( e.getMessage() );
-        } catch ( DotDataException e ) {
-            Logger.error( PushPublishActionlet.class, e.getMessage(), e );
+        } catch ( Exception e ) {
+            Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
+            response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Push Publishing Bundle: " + e.getMessage() );
         }
     }
 

@@ -207,7 +207,7 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 		StringBuffer query = new StringBuffer();
 		query.append("select asset from asset in class " + HTMLPage.class.getName() + ", " +
 				"inode in class " + Inode.class.getName()+", identifier in class " + Identifier.class.getName() +
-				((!includeArchived)? (", htmlvi in class "+HTMLPageVersionInfo.class.getName()) : ""));
+				 ", htmlvi in class "+HTMLPageVersionInfo.class.getName());
 		if(UtilMethods.isSet(parent)){
 			if(APILocator.getIdentifierAPI().find(parent).getAssetType().equals(new Template().getType()))
 			  query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id and asset.templateId = '"+parent+"' ");
@@ -219,6 +219,8 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 		}
 		if(!includeArchived)
 		    query.append(" and identifier.id=htmlvi.identifier and htmlvi.workingInode=asset.inode and htmlvi.deleted="+DbConnectionFactory.getDBFalse());
+		else
+			query.append(" and identifier.id=htmlvi.identifier and htmlvi.workingInode=asset.inode");
 		if(UtilMethods.isSet(hostId)){
 			query.append(" and identifier.hostId = '"+ hostId +"'");
 		}

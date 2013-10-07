@@ -376,8 +376,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return APILocator.getFileAssetAPI().fromContentletsI(contents);
 	}
 
+	public void saveWorkflowTask(WorkflowTask task) throws DotDataException {
+	    wfac.saveWorkflowTask(task);
+	}
+	
 	public void saveWorkflowTask(WorkflowTask task, WorkflowProcessor processor) throws DotDataException {
-		wfac.saveWorkflowTask(task);
+		saveWorkflowTask(task);
 		WorkflowHistory history = new WorkflowHistory();
 		history.setWorkflowtaskId(task.getId());
 		history.setActionId(processor.getAction().getId());
@@ -386,6 +390,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		history.setStepId(processor.getNextStep().getId());
 
 		String comment = (UtilMethods.isSet(processor.getWorkflowMessage()))? processor.getWorkflowMessage() : "";
+		String nextAssignName = (UtilMethods.isSet(processor.getNextAssign()))? processor.getNextAssign().getName() : "";
 
 
 		try {
@@ -394,7 +399,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						processor.getUser().getFullName(),
 						processor.getAction().getName(),
 						processor.getNextStep().getName(),
-						processor.getNextAssign().getName(),
+						nextAssignName,
 						comment}, false)
 					);
 		} catch (LanguageException e) {
@@ -788,7 +793,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 				task.setTitle(processor.getContentlet().getTitle());
 				task.setModDate(new java.util.Date());
-				task.setAssignedTo(processor.getNextAssign().getId());
+				if(processor.getNextAssign() != null)
+					task.setAssignedTo(processor.getNextAssign().getId());
 				task.setStatus(processor.getNextStep().getId());
 
 				saveWorkflowTask(task,processor);
