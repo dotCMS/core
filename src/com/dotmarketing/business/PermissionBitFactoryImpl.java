@@ -2519,6 +2519,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	//					dc1.addParam(permissionable.getPermissionId());
 						dc1.loadResult();
 					}
+					
+					if(localTransaction){
+	                    HibernateUtil.commitTransaction();
+	                }
 				} catch(Exception exception){
 					if(permissionable != null && newReference != null){
 						Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Permissionable:" + permissionable.getPermissionId() + " Parent : " + newReference.getPermissionId() + " Type: " + type);
@@ -2529,13 +2533,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					Logger.debug(this.getClass(), "Failed to insert Permission Ref. : " + exception.toString(), exception);
 					if(localTransaction){
 						HibernateUtil.rollbackTransaction();
-					}else{
-						throw new DotDataException(exception.getMessage(), exception);
 					}
+					throw new DotDataException(exception.getMessage(), exception);
 				}
-				if(localTransaction){
-					HibernateUtil.commitTransaction();
-				}
+				
 				bitPermissionsList = inheritedPermissions;
 			}
 		}

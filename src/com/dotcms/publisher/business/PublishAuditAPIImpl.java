@@ -49,9 +49,10 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	@Override
 	public void insertPublishAuditStatus(PublishAuditStatus pa)
 			throws DotPublisherException {
+	    boolean localt=false;
 		if(getPublishAuditStatus(pa.getBundleId()) == null) {
 			try{
-				HibernateUtil.startTransaction();
+				localt=HibernateUtil.startLocalTransactionIfNeeded();
 				DotConnect dc = new DotConnect();
 				
 				if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -73,14 +74,17 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 				
 				dc.loadResult();
 				
-				HibernateUtil.commitTransaction();			
+				if(localt) {
+				    HibernateUtil.commitTransaction();
+				}
 			}catch(Exception e){
-	
-				try {
-					HibernateUtil.rollbackTransaction();
-				} catch (DotHibernateException e1) {
-					Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e1);
-				}			
+			    if(localt) {
+    				try {
+    					HibernateUtil.rollbackTransaction();
+    				} catch (DotHibernateException e1) {
+    					Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e1);
+    				}			
+			    }
 				Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e);
 				throw new DotPublisherException("Unable to add element to publish queue audit table:" + e.getMessage(), e);
 			}
@@ -93,10 +97,10 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String OCLUPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ? where bundle_id = ? ";
 	
 	@Override
-	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history)
-			throws DotPublisherException {
+	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history) throws DotPublisherException {
+	    boolean local=false;
 		try{
-			HibernateUtil.startTransaction();
+			local = HibernateUtil.startLocalTransactionIfNeeded();
 			DotConnect dc = new DotConnect();
 			
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -121,14 +125,17 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			
 			dc.loadResult();
 			
-			HibernateUtil.commitTransaction();			
+			if(local) {
+			    HibernateUtil.commitTransaction();
+			}
 		}catch(Exception e){
-
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e1);
-			}			
+		    if(local) {
+    			try {
+    				HibernateUtil.rollbackTransaction();
+    			} catch (DotHibernateException e1) {
+    				Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e1);
+    			}
+		    }
 			Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e);
 			throw new DotPublisherException(
 					"Unable to update element in publish queue audit table:" +
@@ -142,10 +149,10 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String OCLDELETESQL="delete from publishing_queue_audit where bundle_id = ? ";
 
 	@Override
-	public void deletePublishAuditStatus(String bundleId)
-			throws DotPublisherException {
+	public void deletePublishAuditStatus(String bundleId) throws DotPublisherException {
+	    boolean local=false;
 		try{
-			HibernateUtil.startTransaction();
+			local = HibernateUtil.startLocalTransactionIfNeeded();
 			DotConnect dc = new DotConnect();
 			
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
@@ -162,14 +169,17 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			
 			dc.loadResult();
 			
-			HibernateUtil.commitTransaction();			
+			if(local) {
+			    HibernateUtil.commitTransaction();
+			}
 		}catch(Exception e){
-
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e1);
-			}			
+		    if(local) {
+    			try {
+    				HibernateUtil.rollbackTransaction();
+    			} catch (DotHibernateException e1) {
+    				Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e1);
+    			}
+		    }
 			Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e);
 			throw new DotPublisherException(
 					"Unable to remove element in publish queue audit table:" +
