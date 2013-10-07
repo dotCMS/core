@@ -217,6 +217,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					scheme.setName("Default Scheme");
 					scheme.setDescription("This is the default workflow scheme that will be applied to all content");
 					scheme.setDefaultScheme(true);
+					scheme.setModDate(new Date());
 
 					db.setSQL(sql.INSERT_SCHEME);
 					db.addParam(scheme.getId());
@@ -226,7 +227,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					db.addParam(scheme.isMandatory());
 					db.addParam((String) null);
 					db.addParam(scheme.isDefaultScheme());
-					db.addParam(new Date());
+					db.addParam(scheme.getModDate());
 					db.loadResult();
 
 					db.setSQL(sql.UPDATE_SCHEME_SET_TO_DEFAULT);
