@@ -279,7 +279,7 @@ public class WebDavTest extends TestBase {
         
         File uploaded = hh.uploadFile(tmp);
         
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         
         List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, user, false);
         Assert.assertEquals(1, files.size());
