@@ -421,18 +421,18 @@ public class PermissionAPITest extends TestBase {
         StructureFactory.saveStructure(s);
         StructureCache.addStructure(s);
 
-        Field field = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s,
+        Field field1 = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s,
                 true, true, true, 3, "", "", "", true, false, true);
-        field.setVelocityVarName("testtext");
-        field.setListed(true);
-        FieldFactory.saveField(field);
-        FieldsCache.addField(field);
+        field1.setVelocityVarName("testtext");
+        field1.setListed(true);
+        FieldFactory.saveField(field1);
+        FieldsCache.addField(field1);
 
-        field = new Field("f", Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, s,
+        Field field2 = new Field("f", Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, s,
                 true, true, true, 4, "", "", "", true, false, true);
-        field.setVelocityVarName("f");
-        FieldFactory.saveField(field);
-        FieldsCache.addField(field);
+        field2.setVelocityVarName("f");
+        FieldFactory.saveField(field2);
+        FieldsCache.addField(field2);
 
         Contentlet cont1=new Contentlet();
         cont1.setStructureInode(s.getInode());
@@ -472,6 +472,15 @@ public class PermissionAPITest extends TestBase {
         assertTrue(perm.isInheritingPermissions(f4));
         assertTrue(perm.isInheritingPermissions(cont1));
         assertTrue(perm.isInheritingPermissions(cont2));
+        
+        APILocator.getContentletAPI().archive(cont1, sysuser, false);
+        APILocator.getContentletAPI().archive(cont2, sysuser, false);
+        APILocator.getContentletAPI().delete(cont1, sysuser, false);
+        APILocator.getContentletAPI().delete(cont2, sysuser, false);
+        
+        FieldFactory.deleteField(field1);
+        FieldFactory.deleteField(field2);
+        StructureFactory.deleteStructure(s.getInode());
     }
 
     @Test
