@@ -226,6 +226,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					db.addParam(scheme.isMandatory());
 					db.addParam((String) null);
 					db.addParam(scheme.isDefaultScheme());
+					db.addParam(new Date());
 					db.loadResult();
 
 					db.setSQL(sql.UPDATE_SCHEME_SET_TO_DEFAULT);
