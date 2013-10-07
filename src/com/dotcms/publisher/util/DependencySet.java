@@ -98,7 +98,7 @@ public class DependencySet extends HashSet<String> {
             for (Environment env : envs) {
 				PushedAsset asset = cache.getPushedAsset(assetId, env.getId());
 
-				if(modified |= (asset==null || asset.getPushDate().before(assetModDate))) {
+				if(modified |= (asset==null || (assetModDate!=null && asset.getPushDate().before(assetModDate)))) {
 					try {
 						asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId());
 						APILocator.getPushedAssetsAPI().savePushedAsset(asset);

@@ -18,7 +18,7 @@ public class WorkflowScheme implements Serializable {
 	boolean archived;
 	boolean mandatory;
 	boolean defaultScheme;
-	private Date modDate;
+	private Date modDate = new Date();
 	
 	public boolean isDefaultScheme() {
 		return defaultScheme;
