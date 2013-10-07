@@ -332,16 +332,16 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				templateContainer.setContainerId(container.getIdentifier());
 				HibernateUtil.save(templateContainer);
 			}
+			
+			if(local){
+                HibernateUtil.commitTransaction();
+            }
 		}catch(DotHibernateException e){
 			if(local){
 				HibernateUtil.rollbackTransaction();
 			}
 			throw new DotWorkflowException(e.getMessage());
 	
-		}finally{
-			if(local){
-				HibernateUtil.commitTransaction();
-			}
 		}
 	}
 	

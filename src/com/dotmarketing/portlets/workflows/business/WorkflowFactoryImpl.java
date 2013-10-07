@@ -443,6 +443,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.setSQL("delete from workflow_task where id = ?");
 			db.addParam(task.getId());
 			db.loadResult();
+			
+			if(localTransaction){
+                HibernateUtil.commitTransaction();
+            }
 
 		} catch (final Exception e) {
 			if(localTransaction){
@@ -451,10 +455,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			Logger.error(this, "deleteWorkflowTask failed:" + e, e);
 			throw new DotDataException(e.toString());
 		}
-		finally{
-			if(localTransaction){
-				HibernateUtil.commitTransaction();
-			}
+		finally {
 			cache.remove(c);
 		}
 	}
