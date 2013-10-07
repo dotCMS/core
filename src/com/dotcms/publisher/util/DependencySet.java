@@ -51,6 +51,36 @@ public class DependencySet extends HashSet<String> {
 	}
 
 	public boolean add(String assetId, Date assetModDate) {
+        return addOrClean( assetId, assetModDate, false );
+    }
+
+    /**
+     * Is this method is called and in case of an <strong>UN-PUBLISH</strong> instead of adding elements it will remove them
+     * from cache.<br>
+     * For <strong>PUBLISH</strong> do the same as the <strong>add</strong> method.
+     *
+     * @param assetId
+     * @param assetModDate
+     * @return
+     */
+    public boolean addOrClean ( String assetId, Date assetModDate) {
+        return addOrClean( assetId, assetModDate, true );
+    }
+
+    private boolean addOrClean ( String assetId, Date assetModDate, Boolean cleanForUnpublish ) {
+
+        if ( !isPublish ) {
+
+            //For un-publish we always remove the asset from cache
+            for ( Environment env : envs ) {
+                cache.removePushedAssetById( assetId, env.getId() );
+            }
+
+            //Return if we are here just to clean up dependencies from cache
+            if ( cleanForUnpublish ) {
+                return true;
+            }
+        }
 
 		boolean modified = false;
 
@@ -60,9 +90,13 @@ public class DependencySet extends HashSet<String> {
 		// if the asset hasn't been sent to at least one environment or an older version was sen't,
 		// we need to add it to the cache
 
-		if(!bundle.isForcePush() && !isDownload && isPublish ) {
+        Boolean isForcePush = false;
+        if ( bundle != null ) {
+            isForcePush = bundle.isForcePush();
+        }
 
-			for (Environment env : envs) {
+        if ( !isForcePush && !isDownload && isPublish ) {
+            for (Environment env : envs) {
 				PushedAsset asset = cache.getPushedAsset(assetId, env.getId());
 
 				if(modified |= (asset==null || !UtilMethods.isSet(assetModDate) || asset.getPushDate().before(assetModDate) )) {
@@ -80,10 +114,10 @@ public class DependencySet extends HashSet<String> {
 
 		}
 
-		if(bundle.isForcePush() || isDownload || !isPublish || modified) {
-			super.add(assetId);
-			return true;
-		}
+        if ( isForcePush || isDownload || !isPublish || modified ) {
+            super.add( assetId );
+            return true;
+        }
 
 		return false;
 	}

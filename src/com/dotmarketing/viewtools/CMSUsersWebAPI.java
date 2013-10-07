@@ -257,7 +257,7 @@ public class CMSUsersWebAPI implements ViewTool {
 				Logger.debug(this, "failed login from:" + request.getRemoteHost());
 			}
 			if(! _rVal){
-				ctx.put("_loginMessage", "dotcms.macro.login.failed");
+				ctx.put("_loginMessage", "dotcms_macro_login_failed");
 			}
 
 			if( _rVal && UtilMethods.isSet(referrer)){
@@ -274,7 +274,7 @@ public class CMSUsersWebAPI implements ViewTool {
 		else if("logout".equals(loginAction)){
 			LoginFactory.doLogout(request, response);
 			ctx.remove("user");
-			ctx.put("_loginMessage", "dotcms.macro.login.loggedOut");
+			ctx.put("_loginMessage", "dotcms_macro_login_loggedOut");
 		}
 		return;
 	}

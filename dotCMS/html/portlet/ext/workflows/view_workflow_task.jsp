@@ -38,7 +38,10 @@
 <%
 
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
-	Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false, -1, APILocator.getUserAPI().getSystemUser(), true);
+	int langId = -1;
+	if(request.getParameter("langId")!= null)
+		langId = Integer.parseInt(request.getParameter("langId"));
+	Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false, langId, APILocator.getUserAPI().getSystemUser(), true);
 	Structure structure = contentlet.getStructure();
 
 	Role createdBy 		= APILocator.getRoleAPI().loadRoleById(task.getCreatedBy());
@@ -230,7 +233,7 @@
 			<tr>
 				<th colspan="2" valign="bottom">
 					<div>
-						<div style="font-size:14pt;font-weight:normal;padding:5px;"><span class="documentIcon"></span>&nbsp;<a href="javascript:doEdit()"><%= task.getTitle() %></a>
+						<div style="font-size:14pt;font-weight:normal;padding:5px;"><span class="documentIcon"></span>&nbsp;<a href="javascript:doEdit()"><%= contentlet.getTitle() %></a>
 						<div style="float:right;border:1px solid silver;background: white;padding:5px;">
 							<%if (contentlet.isLive()) {%>
 					            <span class="liveIcon"></span>

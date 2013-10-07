@@ -8,7 +8,7 @@
 		<td style="width:260px;border:0;">
 			<textarea dojoType="dijit.form.Textarea" name="tagName" id="tagName" style="min-height:100px; width:250px;" onkeyup="suggestTagsForSearch(this, 'suggestedTagsDiv');"></textarea><br/>
 			<span class="inputCaption"><%= LanguageUtil.get(pageContext, "Suggested-Tags") %>:</span>
-			<div id="suggestedTagsDiv" style="border:1px dotted #ccc;height:20px;"></div>
+			<div id="suggestedTagsDiv" style="border:1px dotted #ccc;width:250px;height:100px;white-space:pre-wrap;overflow:auto;"></div>
 			
 			<input type="hidden" name="cmd" id="cmd" value="" />
 			<div class="buttonRow">

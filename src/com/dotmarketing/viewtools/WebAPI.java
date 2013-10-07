@@ -547,7 +547,12 @@ public class WebAPI implements ViewTool {
 				}else if(user!=null){
 					localUser = user;
 				}
-				Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, true);
+				Contentlet cont;
+				if(ADMIN_MODE && (EDIT_MODE || PREVIEW_MODE)){
+					cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, true);
+				}else{
+					cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, true);
+				}
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					realPath = APILocator.getFileAssetAPI().getRealAssetPath(cont.getInode(), fileName, ext);
 				}
@@ -592,6 +597,11 @@ public class WebAPI implements ViewTool {
 			while(path.indexOf("//") > -1){
 				path = path.replaceAll("//", "/");
 			}
+			
+			HttpSession session = request.getSession();
+			boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+			boolean PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
+			boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
 
 			Identifier id = APILocator.getIdentifierAPI().find(host, path);
 			if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
@@ -601,7 +611,13 @@ public class WebAPI implements ViewTool {
 				}else if(user!=null){
 					localUser = user;
 				}
-				Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, false);
+
+				Contentlet cont;
+				if(ADMIN_MODE && (EDIT_MODE || PREVIEW_MODE)){
+					cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, true);
+				}else{
+					cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, true);
+				}
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					return cont.getInode();
 				}

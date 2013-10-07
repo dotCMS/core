@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
@@ -68,6 +69,7 @@ public class BundlePublisher extends Publisher {
         handlers.add( new HTMLPageHandler( config ) );
 
         handlers.add( new ContentHandler( config ) );
+        handlers.add( new ContentWorkflowHandler( config ) );
         handlers.add( new LanguageHandler( config ) );
         handlers.add( new OSGIHandler( config ) );
         handlers.add( new LinkHandler( config ) );
