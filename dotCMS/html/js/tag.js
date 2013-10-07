@@ -191,14 +191,15 @@
 	}
 	function clearSuggestTagsForSearch() {
 		if ((suggestedTag != null) && (suggestedTag != "")) {
+			
+			if(dojo.byId(suggestedTag+"suggestedTagsWrapper")) {
+				dojo.style(suggestedTag+"suggestedTagsWrapper", "display", "none");
+			}
+			
 			var tagDiv = document.getElementById(suggestedDiv);
 			tagDiv.innerHTML = "";
 			suggestedTag = "";
 			suggestedDiv = "";
-
-			if(dojo.byId(suggestedTag+"suggestedTagsWrapper")) {
-				dojo.style(suggestedTag+"suggestedTagsWrapper", "display", "none");
-			}
 		}
 	}
 	function useThisTagForSearch(tagSuggested) {

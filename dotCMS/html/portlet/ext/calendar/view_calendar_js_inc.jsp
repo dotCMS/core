@@ -600,7 +600,7 @@
 				'<span class="unarchiveIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unarchive")) %></a>'; 
 		}
 
-		if(!event.archived  && event.publishPermission){
+		if(!event.archived  && event.publishPermission && !event.live){
 			if(event.recurs){
 				eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'delete\');">' +
 				'<span class="deleteIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></a>'; 
