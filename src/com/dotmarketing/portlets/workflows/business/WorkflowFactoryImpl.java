@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -135,6 +136,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final WorkflowScheme scheme = new WorkflowScheme();
 		row.put("entryActionId", row.get("entry_action_id"));
 		row.put("defaultScheme", row.get("default_scheme"));
+		row.put("modDate", row.get("mod_date"));
 
 		BeanUtils.copyProperties(scheme, row);
 
@@ -215,6 +217,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					scheme.setName("Default Scheme");
 					scheme.setDescription("This is the default workflow scheme that will be applied to all content");
 					scheme.setDefaultScheme(true);
+					scheme.setModDate(new Date());
 
 					db.setSQL(sql.INSERT_SCHEME);
 					db.addParam(scheme.getId());
@@ -224,6 +227,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					db.addParam(scheme.isMandatory());
 					db.addParam((String) null);
 					db.addParam(scheme.isDefaultScheme());
+					db.addParam(scheme.getModDate());
 					db.loadResult();
 
 					db.setSQL(sql.UPDATE_SCHEME_SET_TO_DEFAULT);
@@ -440,6 +444,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.setSQL("delete from workflow_task where id = ?");
 			db.addParam(task.getId());
 			db.loadResult();
+			
+			if(localTransaction){
+                HibernateUtil.commitTransaction();
+            }
 
 		} catch (final Exception e) {
 			if(localTransaction){
@@ -448,10 +456,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			Logger.error(this, "deleteWorkflowTask failed:" + e, e);
 			throw new DotDataException(e.toString());
 		}
-		finally{
-			if(localTransaction){
-				HibernateUtil.commitTransaction();
-			}
+		finally {
 			cache.remove(c);
 		}
 	}
@@ -752,7 +757,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		query.append(" where  ");
 		if (UtilMethods.isSet(searcher.getKeywords())) {
 			query.append(" (lower(workflow_task.title) like ? or ");
-			query.append(" lower(workflow_task.description) like ? )  and ");
+			if(DbConnectionFactory.isMsSql())
+				query.append(" lower(cast(workflow_task.description as varchar(max))) like ? )  and ");
+			else
+				query.append(" lower(workflow_task.description) like ? )  and ");
 		}
 
 		if(!searcher.getShow4All() || !(APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())
@@ -812,14 +820,17 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		query.append(" 1=1  ");
 		if (!counting) {
 			query.append(" order by ");
+			String orderby="";
 			if (!UtilMethods.isSet(searcher.getStepId())) {
 				// condition.append(" status , ");
 			}
 			if (UtilMethods.isSet(searcher.getOrderBy())) {
-				query.append(searcher.getOrderBy());
+				orderby=searcher.getOrderBy();
 			} else {
-				query.append("workflow_task.mod_date desc");
+
+				orderby="mod_date desc";
 			}
+			query.append(orderby.replace("mod_date", "workflow_task.mod_date"));
 		}
 
 		dc.setSQL(query.toString());
@@ -961,8 +972,24 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void saveComment(WorkflowComment comment) throws DotDataException {
-
-		HibernateUtil.saveOrUpdate(comment);
+	    if(InodeUtils.isSet(comment.getId())) {
+	        boolean update=false;
+    	    try {
+    	        HibernateUtil.load(WorkflowComment.class, comment.getId());
+    	        // if no exception it exists. just update
+    	        update=true;
+    	    }
+    	    catch(Exception ex) {
+    	        // if it doesn't then save with primary key
+    	        HibernateUtil.saveWithPrimaryKey(comment, comment.getId());
+    	    }
+    	    if(update) {
+    	        HibernateUtil.update(comment);
+    	    }
+	    }
+	    else {
+	        HibernateUtil.save(comment);
+	    }
 
 	}
 
@@ -1173,14 +1200,43 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException {
-		HibernateUtil.saveOrUpdate(history);
+	    if(InodeUtils.isSet(history.getId())) {
+	        boolean update=false;
+	        try {
+	            HibernateUtil.load(WorkflowHistory.class, history.getId());
+	            // if exists just update
+	            update=true;
+	        }
+	        catch(Exception ex) {
+	            // if not then save with existing key
+	            HibernateUtil.saveWithPrimaryKey(history, history.getId());	            
+	        }
+	        if(update) {
+	            HibernateUtil.update(history);
+	        }
+	    }
+	    else {
+	        HibernateUtil.save(history);
+	    }
 	}
 
 	public void saveWorkflowTask(WorkflowTask task) throws DotDataException {
 		if (task.isNew()) {
 			HibernateUtil.save(task);
 		} else {
-			HibernateUtil.saveOrUpdate(task);
+		    boolean update=false;
+		    try {
+		        HibernateUtil.load(WorkflowTask.class, task.getId());
+		        // if the object exists no exception is thrown just update
+		        update=true;
+		    }
+		    catch(Exception ex) {
+		        // if it doesn't exists then save with that primary key
+		        HibernateUtil.saveWithPrimaryKey(task, task.getId());
+		    }
+		    if(update) {
+                HibernateUtil.update(task);
+		    }
 		}
 		cache.remove(task);
 	}

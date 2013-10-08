@@ -2,6 +2,7 @@ package com.dotmarketing.cms.content.submit.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -70,6 +71,8 @@ public class SubmitContentUtil {
 	private static String[] dateFormats = new String[] { "yyyy-MM-dd", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm",
 		"MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
 		"hh:mm:ss aa", "HH:mm:ss"};
+	private static String customDatePattern = "";
+	private static String customDateTimePattern = "";
 
 	/**
 	 * Get the user if the user is not logged return default AnonymousUser
@@ -288,7 +291,21 @@ public class SubmitContentUtil {
 				}else if(field.getFieldType().equals(Field.FieldType.DATE.toString())){
 					value = VelocityUtil.cleanVelocity(values[0]);
 					if(value instanceof String){
+						if(UtilMethods.isSet(customDatePattern)){
+							Date dateValue = new SimpleDateFormat(customDatePattern).parse(value);
+							conAPI.setContentletProperty(contentlet, field, dateValue);
+							return;
+						}
 						value = value+" 00:00:00";
+					}
+				}else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
+					value = VelocityUtil.cleanVelocity(values[0]);
+					if(value instanceof String){
+						if(UtilMethods.isSet(customDateTimePattern)){
+							Date dateTimeValue = new SimpleDateFormat(customDateTimePattern).parse(value);
+							conAPI.setContentletProperty(contentlet, field, dateTimeValue);
+							return;
+						}
 					}
 				} else {
 
@@ -325,7 +342,16 @@ public class SubmitContentUtil {
 				imageField= field;
 			else if(parametersName.contains(field.getVelocityVarName()+"oldBinaryInode"))
 				binaryField= field;
-		}	
+		}
+		
+		for(int i=0; i < parametersName.size(); i++){
+			if(parametersName.get(i).equals("customDatePattern"))
+				customDatePattern = values.get(i)[0];
+			if(parametersName.get(i).equals("customDateTimePattern"))
+				customDateTimePattern = values.get(i)[0];
+		}
+		
+			 
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(st.getInode());
 		contentlet.setLanguageId(lAPI.getDefaultLanguage().getId());

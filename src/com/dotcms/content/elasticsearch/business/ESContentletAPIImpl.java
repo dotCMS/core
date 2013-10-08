@@ -112,6 +112,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.gson.Gson;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
@@ -2043,7 +2044,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				contentlet.setModUser(user.getUserId());
 				// start up workflow
 				WorkflowAPI wapi  = APILocator.getWorkflowAPI();
-				WorkflowProcessor workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
+				WorkflowProcessor workflow=null;
+				
+				if(contentlet.getMap().get("__disable_workflow__")==null) {
+				    workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
+				}
 
 				workingContentlet = contentlet;
 				if(createNewVersion)
@@ -2285,7 +2290,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  oldFileName);
 
 			                		// do we have an inline edited file, if so use that
-					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + "_temp_" + oldFileName);
+					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
 				                    if(editedFile.exists()){
 				                    	incomingFile = editedFile;
 				                    }
@@ -2298,7 +2303,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	if(oldFile==null || !oldFile.equals(incomingFile)){
 				                	//FileUtil.deltree(binaryFieldFolder);
 
-			                		FileUtil.copyFile(incomingFile, newFile);
+			                		FileUtil.move(incomingFile, newFile);
 
 			                		// delete old content metadata if exists
 			                		if(metadata!=null && metadata.exists())
@@ -2493,8 +2498,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
 
 				//wapi.
-				workflow.setContentlet(contentlet);
-				wapi.fireWorkflowPostCheckin(workflow);
+				if(workflow!=null) {
+    				workflow.setContentlet(contentlet);
+    				wapi.fireWorkflowPostCheckin(workflow);
+				}
 
 				// DOTCMS-7290
 				DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
@@ -2990,6 +2997,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // setBinary
             }else if(field.getFieldContentlet().startsWith("binary")){
                 try{
+                	System.out.println(value.getClass());
                     contentlet.setBinary(field.getVelocityVarName(), (java.io.File) value);
                 }catch (Exception e) {
                     throw new DotContentletStateException("Unable to set binary file Object");
@@ -3153,7 +3161,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         continue;
                     }
-                } else if(!UtilMethods.isSet(o) && (st.getStructureType() != (Structure.STRUCTURE_TYPE_FORM))) {
+                } else if(!UtilMethods.isSet(o)) {
                     cve.addRequiredField(field);
                     hasError = true;
                     continue;
@@ -3617,9 +3625,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 + velocityVariableName);
                 if(binaryFilefolder.exists()){
                 java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
-                if(files.length > 0){
-                binaryFile = files[0];
-                }
+               
+                for (java.io.File file : files) {
+					String path = file.getPath();
+					if(path!=null && path.indexOf("temp")==-1) {
+						binaryFile = file;
+						break;
+					}
+				}
+                
             }
         }catch(Exception e){
             Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName );

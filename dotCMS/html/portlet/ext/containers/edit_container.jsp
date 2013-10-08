@@ -1,4 +1,3 @@
-<%@page import="org.apache.jasper.tagplugins.jstl.core.ForEach"%>
 <%@ page import="com.dotmarketing.portlets.user.factories.*" %>
 <%@ page import="com.dotmarketing.portlets.user.model.*" %>
 <%@ page import="com.dotmarketing.beans.Identifier" %>

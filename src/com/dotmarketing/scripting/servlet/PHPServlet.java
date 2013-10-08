@@ -164,10 +164,7 @@ public class PHPServlet extends HttpServlet {
 	public void service(HttpServletRequest request, HttpServletResponse response)
 	throws ServletException, IOException {
 		if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
-			try {
-				response.getWriter().println(LanguageUtil.get(request.getLocale(), "scripting_not_enabled_contact_admin"));
-			} catch (LanguageException e) {
-			}
+			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
 		php.setWorkDir(getPath(request));

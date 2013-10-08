@@ -315,9 +315,10 @@
 		doFilter();
 	}
 	
-	function editTask(id){
-		var url = "<portlet:actionURL windowState="maximized"><portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" /><portlet:param name="cmd" value="view" /><portlet:param name="taskId" value="REPLACEME" /></portlet:actionURL>";
+	function editTask(id,langId){
+		var url = "<portlet:actionURL windowState="maximized"><portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" /><portlet:param name="cmd" value="view" /><portlet:param name="taskId" value="REPLACEME" /><portlet:param name="langId" value="LANGUAGE" /></portlet:actionURL>";
 		url = url.replace("REPLACEME", id);
+		url = url.replace("LANGUAGE", langId);
 		window.location=url;
 	}
 
@@ -456,7 +457,7 @@ bottom="/html/common/box_bottom.jsp">
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="height:100px;">
 		
 <!-- START Left Column -->	
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;" class="lineRight">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px; overflow-x: scroll; overflow-y: hidden; white-space: nowrap;" class="lineRight">
 		<div style="margin-top:48px;">
 			<div  id="filterTasksFrm">
 				<input type="hidden" name="cmd" value="filterTasks">

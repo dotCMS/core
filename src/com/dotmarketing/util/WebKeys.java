@@ -59,6 +59,7 @@ public final class WebKeys {
     public static final String FILE_QUERY = "com.dotmarketing.file.query";
     public static final String FILE_SHOW_DELETED = "com.dotmarketing.file.show_deleted";
     public static final String FILE_HOST_CHANGED = "com.dotmarketing.file.host_changed";
+    public static final String TEMP_FILE_PREFIX = "_temp_";
 
     public static final String REPORTS_VIEW = "com.dotmarketing.files.view";
     public static final String REPORTS_VIEW_COUNT = "com.dotmarketing.files.view.count";

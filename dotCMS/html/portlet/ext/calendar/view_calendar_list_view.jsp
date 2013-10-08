@@ -22,7 +22,7 @@
 			</select>
 			-->
 		</div>
-		<div class="yui-u"style=" text-align:center;padding-top:5px;">
+		<div class="yui-u"style="text-align:left;padding-top:5px;width:400px;">
 			<span id="monthListViewName" class="monthName" style="font-size:108%;"></span>
 		</div>
 	    <div class="yui-u">

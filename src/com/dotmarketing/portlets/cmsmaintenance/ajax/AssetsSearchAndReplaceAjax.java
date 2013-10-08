@@ -25,6 +25,7 @@ import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -123,7 +124,7 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 		if(generateNewAssetVersion){
 			fileData =  new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + file.getInode().charAt(0)
 					+ java.io.File.separator + file.getInode().charAt(1) + java.io.File.separator + file.getInode()
-					+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD + java.io.File.separator + "_temp_" + file.getFileAsset().getName());
+					+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + file.getFileAsset().getName());
 		}else{
 			fileData = file.getFileAsset();
 		}

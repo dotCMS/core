@@ -453,6 +453,8 @@ create index idx_template3 on template (lower(title));
 
 CREATE INDEX idx_contentlet_4 ON contentlet (structure_inode);
 
+CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);
+
 alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid);
 alter table htmlpage add constraint fk_user_htmlpage foreign key (mod_user) references user_(userid);
 alter table containers add constraint fk_user_containers foreign key (mod_user) references user_(userid);
@@ -793,11 +795,11 @@ CREATE TABLE publishing_queue (
 );
 
 create table publishing_bundle(
-	id varchar(36) NOT NULL  primary key,
-	name varchar(255) NOT NULL unique,
-	publish_date TIMESTAMP,
-	expire_date TIMESTAMP,
-	owner varchar(100)
+  id varchar(36) NOT NULL  primary key,
+  name varchar(255) NOT NULL,
+  publish_date TIMESTAMP,
+  expire_date TIMESTAMP,
+  owner varchar(100)
 );
 
 create table publishing_bundle_environment(

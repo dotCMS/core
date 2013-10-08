@@ -5,6 +5,12 @@
 String inode=request.getParameter( "inode" );// DOTCMS-7085
 %>
 
+<style type="text/css">
+    .progressRow {
+        padding-left: 30%;
+    }
+</style>
+
 <!--  DOTCMS-7085 -->
 <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>">
 
@@ -37,8 +43,11 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
 			<div class="clear"></div>
 		</div>
 
+        <div class="progressRow" style="display: none;">
+            <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveAddBundleProgress" id="saveAddBundleProgress"></div>
+        </div>
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" iconClass="addIcon" onClick="pushHandler.addToBundle()" type="button">
+			<button dojoType="dijit.form.Button" iconClass="addIcon" onClick="pushHandler.addToBundle()" type="button" id="addToBundleSaveButton">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
 			</button>
 			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('addToBundleDia').hide()" type="button">

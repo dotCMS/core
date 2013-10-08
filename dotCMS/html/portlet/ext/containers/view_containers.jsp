@@ -100,10 +100,11 @@ function submitfmPublish() {
 function submitfmDelete() {
 	if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "confirm.containers.delete.containers")) %>'))
 	{
-		form = document.getElementById('fm_publish');
-		form.cmd.value = 'full_delete_list';
-		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="full_delete_list" /></portlet:actionURL>';
-		submitForm(form);
+		var containerInodesToDelete = dojo.query("input[name='publishInode']")
+        									.filter(function(x){return x.checked;})
+        									.map(function(x){return x.value;}).toString();		
+		
+		delContainer(containerInodesToDelete, "<%=referer%>", false);
 	}
 }
 function addAsset(event) {
@@ -148,11 +149,12 @@ function togglePublish(){
 		}
 }
 
-function delContainer(inode, referer) {
+function delContainer(inode, referer, isFromMenu) {
 
 	var callMetaData = {
 			  callback:handleDepResponse,
-			  arg: inode + '|' + referer, // specify an argument to pass to the callback and exceptionHandler
+			  arg: inode + '|' + referer + '|' + isFromMenu, 
+			   // specify an argument to pass to the callback and exceptionHandler
 			};
 
 	ContainerAjax.checkDependencies(inode, callMetaData);
@@ -162,13 +164,18 @@ function handleDepResponse(data, arg1) {
 	var params = arg1.split('|');
 	var inode = params[0];
 	var referer = params[1];
-
-
+	var isFromMenu = params[2] == 'true';
+	
 	if(data!=null) {
 		dojo.byId("depDiv").innerHTML = "<br />" + data;
 		dijit.byId("dependenciesDialog").show();
-	} else {
+	}else if(isFromMenu){
 		processDelete(inode, referer);
+	}else {
+		form = document.getElementById('fm_publish');
+		form.cmd.value = 'full_delete_list';
+		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="full_delete_list" /></portlet:actionURL>';
+		submitForm(form);		
 	}
 }
 

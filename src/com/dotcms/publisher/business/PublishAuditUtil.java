@@ -38,6 +38,8 @@ public class PublishAuditUtil {
                 sw.append( APILocator.getHTMLPageAPI().loadWorkingPageById( id, user, false ).getTitle() );
             } else if ( "category".equals( assetType ) ) {
                 sw.append( APILocator.getCategoryAPI().find( id, user, false ).getCategoryName() );
+            } else if ( "links".equals( assetType ) ) {
+                sw.append( APILocator.getMenuLinkAPI().findWorkingLinkById( id, user, false ).getTitle() );
             } else {
                 sw.append( assetType );
             }

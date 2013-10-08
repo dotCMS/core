@@ -145,6 +145,10 @@ public class RoleAPIImpl implements RoleAPI {
                 removeLayoutFromRole( l, role );
             }
             rf.delete( role );
+            
+            if ( local ) {
+                HibernateUtil.commitTransaction();
+            }
         } catch ( Exception e ) {
             if ( local ) {
                 HibernateUtil.rollbackTransaction();
@@ -155,10 +159,6 @@ public class RoleAPIImpl implements RoleAPI {
                 Logger.error( this.getClass(), "Error deleting Role", e );
             }
             throw new DotDataException( e.getMessage() );
-        } finally {
-            if ( local ) {
-                HibernateUtil.commitTransaction();
-            }
         }
     }
 
