@@ -376,6 +376,13 @@
 		userChanged = true;
 		passwordChanged = true;
 	}
+	
+	//Handler from when the user info has changed
+	var emailChanged = false;
+	function userEmailChanged() {
+		userChanged = true;
+		emailChanged = true;
+	}
 
 	//Handler to save the user details
 	function saveUserDetails() {
@@ -393,7 +400,7 @@
 		}
 
 		var userEmail;
-		if(currentUser == null){
+		if(emailChanged){
 			var pattern=/^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\.([a-zA-Z])+([a-zA-Z])+/;
 			userEmail = dijit.byId('emailAddress').attr('value');
 			if(!pattern.test(userEmail)){
@@ -420,7 +427,7 @@
 		}
 		if(!newUser) {
 			UserAjax.updateUser(currentUser.id, currentUser.id, dijit.byId('firstName').attr('value'), dijit.byId('lastName').attr('value'),
-					dijit.byId('emailAddress').attr('value'), passswordValue, callbackOptions);
+					userEmail, passswordValue, callbackOptions);
 		} else {
 			if (!authByEmail) {
 				UserAjax.addUser(dijit.byId('userId').attr('value'), dijit.byId('firstName').attr('value'), dijit.byId('lastName').attr('value'), dijit.byId('emailAddress').attr('value'), passswordValue, callbackOptions);
