@@ -132,7 +132,8 @@ public class UserAjax {
 		}
 		userToSave.setFirstName(firstName);
 		userToSave.setLastName(lastName);
-		userToSave.setEmailAddress(email);
+		if(email != null)
+			userToSave.setEmailAddress(email);
 		if(password != null) {
 			userToSave.setPassword(Encryptor.digest(password));
 		}
