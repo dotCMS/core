@@ -43,6 +43,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.BrowserAPI;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import org.directwebremoting.WebContext;
@@ -245,8 +246,7 @@ public class BrowserAjax {
 
 	public Map<String, Object> getFolderContent (String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc) throws DotHibernateException, DotSecurityException, DotDataException {
-
-
+		
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
@@ -397,6 +397,7 @@ public class BrowserAjax {
     	result.put("extension", "");
     	result.put("newName", newName);
     	result.put("inode", folder.getInode());
+    	result.put("assetType", "folder");
     	try {
 			if (folderAPI.renameFolder(folder, newName,usr,false)) {
 				result.put("result", 0);
@@ -471,10 +472,14 @@ public class BrowserAjax {
      * @return Confirmation message
      * @throws Exception
      */
-    public boolean moveFolder ( String inode, String newFolder ) throws Exception {
+    public String moveFolder ( String inode, String newFolder ) throws Exception {
 
         HibernateUtil.startTransaction();
-
+        
+        Locale requestLocale = WebContextFactory.get().getHttpServletRequest().getLocale();
+        String successString = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-moved"));
+        String errorString = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Failed-to-move-another-folder-with-the-same-name-already-exists-in-the-destination"));
+        
         try {
             HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
             User user = getUser( req );
@@ -494,7 +499,7 @@ public class BrowserAjax {
 
                 if ( !folderAPI.move( folder, parentHost, user, respectFrontendRoles ) ) {
                     //A folder with the same name already exists on the destination
-                    return false;
+                    return errorString;
                 }
                 refreshIndex(null, null, user, parentHost, folder );
             } else {
@@ -507,16 +512,16 @@ public class BrowserAjax {
 
                 if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
                     //Trying to move a folder over itself
-                    return false;
+                    return errorString;
                 }
                 if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
                     //Trying to move a folder over one of its children
-                    return false;
+                    return errorString;
                 }
 
                 if ( !folderAPI.move( folder, parentFolder, user, respectFrontendRoles ) ) {
                     //A folder with the same name already exists on the destination
-                    return false;
+                    return errorString;
                 }
                 
                 refreshIndex(null, parentFolder, user, null, folder );
@@ -524,11 +529,12 @@ public class BrowserAjax {
             }
         } catch ( Exception e ) {
             HibernateUtil.rollbackTransaction();
+            return e.getLocalizedMessage();
         } finally {
             HibernateUtil.commitTransaction();
         }
 
-        return true;
+        return successString;
     }
 
     public Map<String, Object> renameFile (String inode, String newName) throws Exception {
@@ -552,11 +558,16 @@ public class BrowserAjax {
     		result.put("newName", newName);
     		result.put("inode", inode);
     		if(!cont.isLocked()){
-    			if(APILocator.getFileAssetAPI().renameFile(cont, newName, user, false)){
-    				result.put("result", 0);
-    			}else{
+    			try{
+    				if(APILocator.getFileAssetAPI().renameFile(cont, newName, user, false)){
+        				result.put("result", 0);
+        			}else{
+        				result.put("result", 1);
+        				result.put("errorReason", "Another file with the same name already exists on this folder");
+        			}
+    			}catch(Exception e){
     				result.put("result", 1);
-    				result.put("errorReason", "Another file with the same name already exists on this folder");
+    				result.put("errorReason", e.getLocalizedMessage());
     			}
     		}else{
     			result.put("result", 1);
@@ -713,7 +724,12 @@ public class BrowserAjax {
             //Getting the contentlet file
             Contentlet contentlet = APILocator.getContentletAPI().find( inode, user, false );
             Folder srcFolder = APILocator.getFolderAPI().find(contentlet.getFolder(),user,false);
-    		refreshIndex(null, parent, user, host, srcFolder );
+           
+            if(contentlet.getFolder().equals("SYSTEM_FOLDER")) {
+            	refreshIndex(null, null, user, APILocator.getHostAPI().find(contentlet.getHost(), user, false), srcFolder );
+            } else {
+            	refreshIndex(null, parent, user, host, srcFolder );
+            }
 
             if ( parent != null ) {
                 return APILocator.getFileAssetAPI().moveFile( contentlet, parent, user, false );
@@ -848,9 +864,9 @@ public class BrowserAjax {
         }
 
         if ( parent != null ) {
-            return HTMLPageFactory.moveHTMLPage( page, parent );
+            return HTMLPageFactory.moveHTMLPage( page, parent, user );
         } else {
-            return HTMLPageFactory.moveHTMLPage( page, host );
+            return HTMLPageFactory.moveHTMLPage( page, host, user );
         }
     }
 

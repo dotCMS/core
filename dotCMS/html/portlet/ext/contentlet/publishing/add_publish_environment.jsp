@@ -23,7 +23,18 @@
 
 	var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect", includeFake:true});
 
-
+	dojo.ready( function(){	        
+		if(dojo.isIE){
+	    	setTimeout(function(){
+	        	var randomParam = Math.floor((Math.random()*10000)+1);
+	            var myRoleReadStoreURL = myRoleReadStore.url;
+	            var dummyVar = new Array();
+	            myRoleReadStore.url = myRoleReadStoreURL+"?randomParam="+randomParam;
+	            myRoleReadStore.fetch({onComplete: dummyVar});
+	        },100);
+	    }
+	});
+	
     function saveEnvironment() {
 
         var form = dijit.byId("formSaveEnvironment");
@@ -75,7 +86,7 @@
             id: "whoCanUseSelect",
             name: "whoCanUseSelect",
             store: myRoleReadStore,
-
+            maxHeight:400,
             pageSize:30,
             searchDelay:300,
             required:false,

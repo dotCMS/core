@@ -291,7 +291,7 @@ public interface HTMLPageAPI {
 	 * @throws DotStateException 
 	 * @throws DotSecurityException 
 	 */	
-	public String getHTML(HTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException;
+	public String getHTML(HTMLPage htmlPage, String userAgent) throws DotStateException, DotDataException, DotSecurityException;
 	
 	
 	/**
@@ -303,7 +303,7 @@ public interface HTMLPageAPI {
 	 * @throws DotStateException 
 	 * @throws DotSecurityException 
 	 */	
-	public String getHTML(HTMLPage htmlPage, boolean liveMode) throws DotStateException, DotDataException, DotSecurityException;
+	public String getHTML(HTMLPage htmlPage, boolean liveMode, String userAgent) throws DotStateException, DotDataException, DotSecurityException;
 	/**
 	 * Will parse the HTMLPage and return HTMLPage in liveMode or workingMode, include 
 	 * the URL Map Content and rendering it as a String.
@@ -314,7 +314,7 @@ public interface HTMLPageAPI {
 	 * @throws DotStateException 
 	 * @throws DotSecurityException 
 	 */	
-	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId) throws DotStateException, DotDataException, DotSecurityException;
+	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId, String userAgent) throws DotStateException, DotDataException, DotSecurityException;
 	/**
 	 * Will parse the HTMLPage and return HTMLPage in liveMode or workingMode, include 
 	 * the URL Map Content and rendering it as a String.
@@ -325,7 +325,7 @@ public interface HTMLPageAPI {
 	 * @throws DotStateException 
 	 * @throws DotSecurityException 
 	 */	
-	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId,User user) throws DotStateException, DotDataException, DotSecurityException;
+	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId,User user, String userAgent) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
 	 * Will parse the HTMLPage and return HTMLPage in liveMode or workingMode, include 
@@ -337,8 +337,8 @@ public interface HTMLPageAPI {
 	 * @throws DotStateException 
 	 * @throws DotSecurityException 
 	 */	
-	public String getHTML(String uri, Host host,boolean liveMode,String contentId,User user) throws DotStateException, DotDataException, DotSecurityException;
-	public String getHTML(String uri, Host host,boolean liveMode,String contentId,User user, String langId) throws DotStateException, DotDataException, DotSecurityException;
+	public String getHTML(String uri, Host host,boolean liveMode,String contentId,User user, String userAgent) throws DotStateException, DotDataException, DotSecurityException;
+	public String getHTML(String uri, Host host,boolean liveMode,String contentId,User user, long langId, String userAgent) throws DotStateException, DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves the working version of a page based on its identifier

@@ -1,16 +1,12 @@
 package com.dotcms.publisher.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -22,7 +18,10 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+
+import java.util.*;
 
 /**
  * Implement the PublishQueueAPI abstract class methods
@@ -75,8 +74,8 @@ public class PublisherAPIImpl extends PublisherAPI{
      * @param user
      * @throws DotPublisherException
      */
-    public void addContentsToPublish ( List<String> identifiers, String bundleId, Date publishDate, User user ) throws DotPublisherException {
-    	addAssetsToQueue(identifiers, bundleId, publishDate, user, ADD_OR_UPDATE_ELEMENT);
+    public Map<String, Object> addContentsToPublish ( List<String> identifiers, String bundleId, Date publishDate, User user ) throws DotPublisherException {
+    	return addAssetsToQueue(identifiers, bundleId, publishDate, user, ADD_OR_UPDATE_ELEMENT);
     }
 
     /**
@@ -88,23 +87,47 @@ public class PublisherAPIImpl extends PublisherAPI{
      * @param user
      * @throws DotPublisherException
      */
-    public void addContentsToUnpublish ( List<String> identifiers, String bundleId, Date unpublishDate, User user ) throws DotPublisherException {
-    	addAssetsToQueue(identifiers, bundleId, unpublishDate, user, DELETE_ELEMENT);
+    public Map<String, Object> addContentsToUnpublish ( List<String> identifiers, String bundleId, Date unpublishDate, User user ) throws DotPublisherException {
+    	return addAssetsToQueue(identifiers, bundleId, unpublishDate, user, DELETE_ELEMENT);
     }
 
 
     @Override
-	public void saveBundleAssets(List<String> identifiers, String bundleId,
+	public Map<String, Object> saveBundleAssets(List<String> identifiers, String bundleId,
 			User user) throws DotPublisherException {
-    	addAssetsToQueue(identifiers, bundleId, null, user, -1);
-
+    	return addAssetsToQueue(identifiers, bundleId, null, user, -1);
 	}
 
-    private void addAssetsToQueue(List<String> identifiers, String bundleId, Date operationDate, User user, long operationType ) throws DotPublisherException {
+    /**
+     * Adds a list of given identifiers to the Push Publish Queue,
+     *
+     * @param identifiers   Identifiers to add to the Push Publish Queue
+     * @param bundleId      The id of the bundle the assets will be part of
+     * @param operationDate When to apply the operation
+     * @param user          current user
+     * @param operationType Publish/Un-publish
+     * @return A map with the results of the operation, this map contains: the total number of assets we tried to add (<strong>total</strong>)<br/>
+     *         the number of failed assets (<strong>errors</strong> -> Permissions problems) and an ArrayList of error messages for the failed assets (<strong>errorMessages</strong>)<br/>
+     *         <strong>Keys: total, errors, errorMessages</strong>
+     * @throws DotPublisherException
+     */
+    private Map<String, Object> addAssetsToQueue(List<String> identifiers, String bundleId, Date operationDate, User user, long operationType ) throws DotPublisherException {
+
+        //Map to store the results and errors adding Assets to que Queue
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        List<String> errorsList = new ArrayList<String>();
+
     	  if ( identifiers != null ) {
+    		  
+    		  boolean localTransaction = false;
+    			
+    		  try {
+    			  localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+    		  } catch(DotDataException dde) {
+    			  throw new DotPublisherException("Error starting Transaction", dde);
+    		  }
 
               try {
-                  HibernateUtil.startTransaction();
                   for ( String identifier : identifiers ) {
 
                       DotConnect dc = new DotConnect();
@@ -152,7 +175,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       type = "category";
                                   } else if ( UtilMethods.isSet( st ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( st, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-                                          Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + st.getIdentifier() );
+                                          //Generate and append the error message
+                                          appendPermissionError( errorsList, user, "Structure", st.getName(), st.getIdentifier() );
                                           continue;
                                       }
 
@@ -162,7 +186,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   // check if it is a folder
                                   else if ( UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-                                          Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + folder.getIdentifier() );
+                                          //Generate and append the error message
+                                          appendPermissionError( errorsList, user, "Folder", folder.getName(), folder.getIdentifier() );
                                           continue;
                                       }
 
@@ -176,7 +201,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 
                           } else {
                               if ( !strPerAPI.doesUserHavePermission( iden, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-                                  Logger.info( PublisherAPIImpl.class, "User: " + user.getUserId() + " does not have Publish Permission over asset with Identifier: " + iden.getId() );
+                                  //Generate and append the error message
+                                  appendPermissionError( errorsList, user, iden.getAssetType(), null, iden.getId() );
                                   continue;
                               }
                               type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? "host" : iden.getAssetType();
@@ -205,18 +231,60 @@ public class PublisherAPIImpl extends PublisherAPI{
                       PushPublishLogger.log(getClass(), "Asset added to Push Publish Queue. Action: "+action+", Asset Type: " + type + ", Asset Id: " + identifier, bundleId, user);
                   }
 
-                  HibernateUtil.commitTransaction();
+                  if(localTransaction) {
+                      HibernateUtil.commitTransaction();
+                  }
               } catch ( Exception e ) {
-
-                  try {
-                      HibernateUtil.rollbackTransaction();
-                  } catch ( DotHibernateException e1 ) {
-                      Logger.error( PublisherAPIImpl.class, e.getMessage(), e1 );
+                  if(localTransaction) {
+                      try {
+                          HibernateUtil.rollbackTransaction();
+                      } catch ( DotHibernateException e1 ) {
+                          Logger.error( PublisherAPIImpl.class, e.getMessage(), e1 );
+                      }
                   }
                   Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
                   throw new DotPublisherException( "Unable to add element to publish queue table:" + e.getMessage(), e );
               }
           }
+
+        //Preparing and returning the response status object
+        resultMap.put( "errorMessages", errorsList );
+        resultMap.put( "errors", errorsList.size() );
+        resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
+        return resultMap;
+    }
+
+    /**
+     * Generate and append Permissions error messages
+     *
+     * @param errorsList
+     * @param user
+     * @param assetType
+     * @param assetName
+     * @param identifier
+     */
+    private void appendPermissionError ( List<String> errorsList, User user, String assetType, String assetName, String identifier ) {
+
+        //First we should get the authentication type for this company
+        Company company = PublicCompanyFactory.getDefaultCompany();
+        String authType = company.getAuthType();
+
+        String userData;
+        if ( authType.equals( Company.AUTH_TYPE_ID ) ) {
+            userData = user.getUserId();
+        } else {
+            userData = user.getEmailAddress();
+        }
+
+        if (assetName == null) {
+            assetName = PublishAuditUtil.getInstance().getTitle( assetType, identifier );
+        }
+
+        //Generate and append the error message
+        String errorMessage = "User: " + userData + " does not have Publish Permission over " + assetType + ": " + identifier;//For logs
+        Logger.warn( PublisherAPIImpl.class, errorMessage );
+        errorMessage = "User: " + userData + " does not have Publish Permission over " + assetType + ": " + assetName;//For user
+        errorsList.add( errorMessage );
     }
 
     private static final String TREE_QUERY = "select * from tree where child = ? or parent = ?";
@@ -435,7 +503,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MSGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue where publish_date is not null order by publish_date";
 	private static final String OCLGETBUNDLES="select distinct(bundle_id) as bundle_id, publish_date, operation from publishing_queue where publish_date is not null order by publish_date";
 
-	private static final String COUNTBUNDLES="select count(distinct(bundle_id)) as bundle_count from publishing_queue ";
+	private static final String COUNTBUNDLES="select count(distinct(bundle_id)) as bundle_count from publishing_queue where publish_date is not null";
 
 	/**
 	 * Gets the count of the bundles to be published
@@ -624,9 +692,17 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @param last_results error message
 	 * @throws DotPublisherException
 	 */
-	public void updateElementStatusFromPublishQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException{
+	public void updateElementStatusFromPublishQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException {
+		
+		boolean localTransaction = false;
+		
+		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+		} catch(DotDataException dde) {
+			throw new DotPublisherException("Error starting Transaction", dde);
+		}
+		
 		try{
-			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
@@ -644,13 +720,18 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.addParam(last_results);
 			dc.addParam(id);
 			dc.loadResult();
-			HibernateUtil.commitTransaction();
+			
+			if(localTransaction){
+                HibernateUtil.commitTransaction();
+            }
 		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-			}
+		    if(localTransaction) {
+    			try {
+    				HibernateUtil.rollbackTransaction();
+    			} catch (DotHibernateException e1) {
+    				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+    			}
+		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to update element "+id+" :"+e.getMessage(), e);
 		}
@@ -670,8 +751,15 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @throws DotPublisherException
 	 */
 	public void deleteElementFromPublishQueueTable(String identifier) throws DotPublisherException{
+		boolean localTransaction = false;
+		
+		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+		} catch(DotDataException dde) {
+			throw new DotPublisherException("Error starting Transaction", dde);
+		}
+		
 		try{
-			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
@@ -685,17 +773,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			dc.addParam(identifier);
 			dc.loadResult();
-			HibernateUtil.commitTransaction();
+			
+			if(localTransaction) {
+			    HibernateUtil.commitTransaction();
+			}
 		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+			if(localTransaction) {
+			    try {
+			        HibernateUtil.rollbackTransaction();
+			    } catch (DotHibernateException e1) {
+			        Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+			    }
 			}
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 
@@ -713,8 +804,15 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @throws DotPublisherException
 	 */
 	public void deleteElementsFromPublishQueueTable(String bundleId) throws DotPublisherException{
+		boolean localTransaction = false;
+		
+		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+		} catch(DotDataException dde) {
+			throw new DotPublisherException("Error starting Transaction", dde);
+		}
+		
 		try{
-			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
@@ -728,13 +826,18 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			dc.addParam(bundleId);
 			dc.loadResult();
-			HibernateUtil.commitTransaction();
-		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+			
+			if(localTransaction) {
+			    HibernateUtil.commitTransaction();
 			}
+		}catch(Exception e){
+		    if(localTransaction) {
+    			try {
+    				HibernateUtil.rollbackTransaction();
+    			} catch (DotHibernateException e1) {
+    				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+    			}
+		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element(s) "+bundleId+" :"+e.getMessage(), e);
 		}
@@ -749,8 +852,15 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @return boolean
 	 */
 	public void deleteAllElementsFromPublishQueueTable() throws DotPublisherException{
+		boolean localTransaction = false;
+		
+		try {
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+		} catch(DotDataException dde) {
+			throw new DotPublisherException("Error starting Transaction", dde);
+		}
+		
 		try{
-			HibernateUtil.startTransaction();
 			DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
 				/*Validate if the table doesn't exist then is created*/
@@ -763,13 +873,18 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.setSQL(OCLDELETEALLELEMENTFROMQUEUESQL);
 			}
 			dc.loadResult();
-			HibernateUtil.commitTransaction();
+			
+			if(localTransaction) {
+                HibernateUtil.commitTransaction();
+            }
 		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-			}
+		    if(localTransaction) {
+    			try {
+    				HibernateUtil.rollbackTransaction();
+    			} catch (DotHibernateException e1) {
+    				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+    			}
+		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete elements :"+e.getMessage(), e);
 		}

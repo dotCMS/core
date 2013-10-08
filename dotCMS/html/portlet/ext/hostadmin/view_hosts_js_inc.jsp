@@ -224,6 +224,7 @@
 
 			dijit.registry.remove('hostToCopy');
 			dijit.registry.remove('id');
+			dijit.registry.remove('id_popup');
 			dojo.byId('hostToCopyWrapper').innerHTML = '<div id="hostToCopy"></div>';
 
 			this.hostsSelect = new dijit.form.FilteringSelect({
@@ -586,10 +587,43 @@
 				DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
 			    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
 			    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
+			    setTimeout(dojo.hitch(this, this.refreshAfterDelete, id), 1000);
 				HostAjax.deleteHost(id, dojo.hitch(this, this.refreshHostTable));
 			}
 		},
-
+        refreshAfterDelete: function(identifier){
+            var filter = dijit.byId('filter').attr('value');
+            var showDeleted = dijit.byId('showDeleted').attr('checked');
+            var offset = (this.currentPage - 1) * this.RESULTS_PER_PAGE;
+            var count = this.RESULTS_PER_PAGE;
+            var callMetaData = { 
+            		  callback:dojo.hitch(this, this.refreshAfterDeleteCallback), 
+            		  arg: identifier
+            		};
+            HostAjax.findHostsPaginated(filter, showDeleted, offset, count, callMetaData);
+        },
+        refreshAfterDeleteCallback: function(data, identifier){
+            var list = data.list;
+			var isDeletionDone = true;
+            for (var i = 0; i < list.length; i++) {
+                if(list[i]["identifier"] == identifier)
+                	isDeletionDone = false;
+            }
+            if(isDeletionDone){
+            	setTimeout(dojo.hitch(this, this.refreshHostTable), 200);
+            }else{
+            	dojo.attr(identifier + "SetupProgress",'innerHTML','<%= LanguageUtil.get(pageContext, "Processing") %> . . . .');
+            	dojo.attr(identifier + "SetupProgress",'style','display:block;width:100px;');
+				dojo.fadeOut({
+					node: dojo.byId('hostName' + identifier),
+					duration: 1000,
+					onEnd: function () {
+						dojo.fadeIn({ node: dojo.byId('hostName' + identifier), duration: 1000 }).play();
+					}
+				}).play();
+            	setTimeout(dojo.hitch(this, this.refreshAfterDelete, identifier), 2000);
+            }
+        },
 		makeDefault: function (id, inode) {
 			if(confirm(makeDefaultConfirmMessage)) {
 				DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));

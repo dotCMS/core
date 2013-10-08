@@ -23,6 +23,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.WebKeys;
 
 public class TimeMachineFilter implements Filter {
 
@@ -85,14 +86,16 @@ public class TimeMachineFilter implements Filter {
 		        return;
 		    }
 		    
+		    String langid=(String) req.getSession().getAttribute("tm_lang");
+		    
 		    // future date. Lets handle in other places
 		    if(date.after(new Date())) {
+		        request.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, langid);
 		        chain.doFilter(request, response);
 		        return;
 		    }
 
 		    Host host=(Host) req.getSession().getAttribute("tm_host");
-		    String langid=(String) req.getSession().getAttribute("tm_lang");
 
 //		    if(uri.equals("/"))
 //		        uri="/home/index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");

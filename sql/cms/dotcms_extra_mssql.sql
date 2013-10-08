@@ -388,6 +388,8 @@ create index idx_template3 on template (title);
 
 CREATE INDEX idx_contentlet_4 ON contentlet (structure_inode);
 
+CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);
+
 ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id);
 --ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
 ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) references identifier(id);
@@ -755,7 +757,7 @@ CREATE TABLE publishing_queue (
 
 create table publishing_bundle(
 	id varchar(36) NOT NULL  primary key,
-	name varchar(255) NOT NULL unique,
+	name varchar(255) NOT NULL,
 	publish_date DATETIME,
 	expire_date DATETIME,
 	owner varchar(100)

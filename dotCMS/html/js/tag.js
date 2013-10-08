@@ -170,9 +170,11 @@
 				tagName = LTrim(tagName);
 				var tagNameParam = tagName.replace("'", "\\\'");
 				html += "<a href=\"javascript: useThisTagForSearch('"+tagNameParam+"');\">" + tagName + "</a>";
-				/* if (i+1 < result.length) {
-					html += ", ";
-				}*/
+				if (i+1 < result.length) {
+					if(!dojo.byId(suggestedTag+"suggestedTagsWrapper")) {
+						html += ", ";
+					}
+				}
 			}
 			html += "</div>";
 
@@ -191,14 +193,15 @@
 	}
 	function clearSuggestTagsForSearch() {
 		if ((suggestedTag != null) && (suggestedTag != "")) {
+			
+			if(dojo.byId(suggestedTag+"suggestedTagsWrapper")) {
+				dojo.style(suggestedTag+"suggestedTagsWrapper", "display", "none");
+			}
+			
 			var tagDiv = document.getElementById(suggestedDiv);
 			tagDiv.innerHTML = "";
 			suggestedTag = "";
 			suggestedDiv = "";
-
-			if(dojo.byId(suggestedTag+"suggestedTagsWrapper")) {
-				dojo.style(suggestedTag+"suggestedTagsWrapper", "display", "none");
-			}
 		}
 	}
 	function useThisTagForSearch(tagSuggested) {
