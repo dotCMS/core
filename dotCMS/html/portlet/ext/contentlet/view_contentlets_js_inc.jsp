@@ -629,7 +629,7 @@
                         fieldValue = '<%= conFolderValue %>';
                   <%}%>
 
-                  var result = "<div onchange='doSearch()' id=\"FolderHostSelector\" style='width270px' dojoType=\"dotcms.dijit.form.HostFolderFilteringSelect\" includeAll=\"true\" onClick=\"resetHostValue();\" onChange=\"getHostValue();\" "
+                  var result = "<div onchange=\"doSearch(null, '<%=orderBy%>')\" id=\"FolderHostSelector\" style='width270px' dojoType=\"dotcms.dijit.form.HostFolderFilteringSelect\" includeAll=\"true\" onClick=\"resetHostValue();\" onChange=\"getHostValue();\" "
                                                 +" hostId=\"" + hostId + "\" value = \"" + fieldValue + "\"" + "></div>";
 
           hasHostFolderField = true;
@@ -1469,7 +1469,7 @@
                         currentPage = page;
 
                 if (sortBy != null) {
-                        if (sortBy == currentSortBy)
+                        if (sortBy == currentSortBy && sortBy.indexOf("desc")==-1)
                                 sortBy = sortBy + " desc";
                         currentSortBy = sortBy;
                 }
