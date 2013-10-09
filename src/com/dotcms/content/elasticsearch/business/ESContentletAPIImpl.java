@@ -239,7 +239,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }catch (DotSecurityException se) {
 			throw se;
     	}catch (Exception e) {
-            throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + languageId + " live:" + live );
+            throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + languageId + " live:" + live,e);
         }
 
     }

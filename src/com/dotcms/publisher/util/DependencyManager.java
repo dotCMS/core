@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -480,13 +481,17 @@ public class DependencyManager {
 					for (MultiTree mt : treeList) {
 						String contentIdentifier = mt.getChild();
 						// Contents dependencies
-						Contentlet content =  APILocator.getContentletAPI().findContentletByIdentifier(contentIdentifier, true, -1, user, false);
-						if(content==null) {
+						
+						Contentlet content = null;
+						try{
+							content =  APILocator.getContentletAPI().findContentletByIdentifier(contentIdentifier, true, -1, user, false);
+						}catch (DotContentletStateException e) {
 							content = APILocator.getContentletAPI().findContentletByIdentifier(contentIdentifier, false, -1, user, false);
 						}
-
-						contents.addOrClean( contentIdentifier, content.getModDate());
-						contentsSet.add(contentIdentifier);
+						if(content==null) {
+							contents.addOrClean( contentIdentifier, content.getModDate());
+							contentsSet.add(contentIdentifier);
+						}
 					}
 				}
 			}
