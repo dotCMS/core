@@ -529,29 +529,43 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected void delete(List<Contentlet> contentlets) throws DotDataException {
-	    StringBuffer buffy = new StringBuffer();
+
+        /*
+         First thing to do is to clean up the trees for the given Contentles
+         */
+        StringBuffer buffy = new StringBuffer();
         StringBuffer idsbuffy = new StringBuffer();
 
-        for (Contentlet contentlet : contentlets) {
-            if(buffy.length() > 0){
-                buffy.append(",'" + contentlet.getInode()+"'");
-                idsbuffy.append(",'" + contentlet.getIdentifier()+"'");
-            }else{
-                buffy.append("'"+contentlet.getInode()+"'");
-                idsbuffy.append("'"+contentlet.getIdentifier()+"'");
+        int maxRecords = 500;
+        int current = 0;
+        for ( Contentlet contentlet : contentlets ) {
+
+            if ( buffy.length() > 0 ) {
+                buffy.append( ",'" + contentlet.getInode() + "'" );
+                idsbuffy.append( ",'" + contentlet.getIdentifier() + "'" );
+            } else {
+                buffy.append( "'" + contentlet.getInode() + "'" );
+                idsbuffy.append( "'" + contentlet.getIdentifier() + "'" );
+            }
+
+            current++;
+            //Another group of 500 contentles ids is ready...
+            if ( current >= maxRecords ) {
+
+                deleteTreesForInodes( buffy );
+
+                buffy = new StringBuffer();
+                //idsbuffy = new StringBuffer();
+                current = 0;
             }
         }
-        // workaround for dbs where we can't have more than one constraint
-        // or triggers
-        DotConnect db = new DotConnect();
-        db.setSQL("delete from tree where child in (" + buffy.toString() + ") or parent in (" + buffy.toString() + ")");
-        db.getResult();
 
-        // workaround for dbs where we can't have more than one constraint
-        // or triggers
-        db.setSQL("delete from multi_tree where child in (" + buffy.toString() + ") or parent1 in (" + buffy.toString() + ") or parent2 in (" + buffy.toString() + ")");
-        db.getResult();
+        //And if is something left..
+        if ( buffy.length() > 0 ) {
+            deleteTreesForInodes( buffy );
+        }
 
+        //Now workflows, and versions
         List<String> identsDeleted = new ArrayList<String>();
         for (Contentlet con : contentlets) {
             cc.remove(con.getInode());
@@ -609,6 +623,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 	}
+
+    /**
+     * Deletes from the tree and multi_tree tables Contentles given in a comma separated String list
+     *
+     * @param buffy List of contentles inodes
+     */
+    private void deleteTreesForInodes ( StringBuffer buffy ) {
+
+        // workaround for dbs where we can't have more than one constraint
+        // or triggers
+        DotConnect db = new DotConnect();
+        db.setSQL( "delete from tree where child in (" + buffy.toString() + ") or parent in (" + buffy.toString() + ")" );
+        db.getResult();
+
+        // workaround for dbs where we can't have more than one constraint
+        // or triggers
+        db.setSQL( "delete from multi_tree where child in (" + buffy.toString() + ") or parent1 in (" + buffy.toString() + ") or parent2 in (" + buffy.toString() + ")" );
+        db.getResult();
+    }
 
 	@Override
 	protected int deleteOldContent(Date deleteFrom) throws DotDataException {
@@ -675,13 +708,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    String conInode = contentlet.getInode();
         DotConnect db = new DotConnect();
         db.setSQL("delete from tree where child = ? or parent = ?");
-        db.addParam(conInode);
-        db.addParam(conInode);
+        db.addParam( conInode );
+        db.addParam( conInode );
         db.getResult();
 
         // workaround for dbs where we can't have more than one constraint
         // or triggers
-        db.setSQL("delete from multi_tree where child = ? or parent1 = ? or parent2 = ?");
+        db.setSQL( "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?" );
         db.addParam(conInode);
         db.addParam(conInode);
         db.addParam(conInode);
