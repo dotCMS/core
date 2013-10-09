@@ -1223,26 +1223,36 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	    }
 	}
 
-	public void saveWorkflowTask(WorkflowTask task) throws DotDataException {
-		if (task.isNew()) {
-			HibernateUtil.save(task);
-		} else {
-		    boolean update=false;
-		    try {
-		        HibernateUtil.load(WorkflowTask.class, task.getId());
-		        // if the object exists no exception is thrown just update
-		        update=true;
-		    }
-		    catch(Exception ex) {
-		        // if it doesn't exists then save with that primary key
-		        HibernateUtil.saveWithPrimaryKey(task, task.getId());
-		    }
-		    if(update) {
-                HibernateUtil.update(task);
-		    }
-		}
-		cache.remove(task);
-	}
+    /**
+     * Saves a given WorkflowTask, if the task does not exist it will create a new one and if does exist
+     * it will update the existing record.
+     * <br/>
+     * If the record does not exist and the given task have set an id the new record will be created with that id.
+     *
+     * @param task
+     * @throws DotDataException
+     */
+    public void saveWorkflowTask ( WorkflowTask task ) throws DotDataException {
+
+        if ( task.isNew() ) {
+            HibernateUtil.save( task );
+        } else {
+
+            try {
+                Object currentWorkflowTask = HibernateUtil.load( WorkflowTask.class, task.getId() );
+                HibernateUtil.evict( currentWorkflowTask );//Remove the object from hibernate cache, we used just to verify if exist
+
+                // if the object exists no exception is thrown so just update it
+
+                HibernateUtil.update( task );
+            } catch ( Exception ex ) {
+                // if it doesn't exists then save with that primary key
+                HibernateUtil.saveWithPrimaryKey( task, task.getId() );
+            }
+        }
+
+        cache.remove( task );
+    }
 
 	public List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException {
 		DotConnect dc = getWorkflowSqlQuery(searcher, false);
