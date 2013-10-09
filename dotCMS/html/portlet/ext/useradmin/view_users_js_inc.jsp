@@ -974,7 +974,8 @@
 
 	//Saves the current selection of roles
 	function saveRoles () {
-		UserAjax.updateUserRoles(currentUser.id, rolesAdded, saveRolesCallback);
+		if(currentUser != null)
+			UserAjax.updateUserRoles(currentUser.id, rolesAdded, saveRolesCallback);
 	}
 
 	//Callback from the server after successful save
@@ -1209,9 +1210,10 @@
 	}
 
 	function saveAddress(){
-		if(!dijit.byId('addressForm').validate())
+		if(currentUser == null)
 			return;
-
+		if(!dijit.byId('addressForm').validate())
+			return;		
 		var id = dojo.byId('addressId').value;
 		var desc = dijit.byId('addressDescription').attr('value');
 		var street1 = dijit.byId('addressStreet1').attr('value');
@@ -1293,9 +1295,10 @@
 	}
 
 	function saveUserAdditionalInfo(){
-		if (!dijit.byId('userAdditionalInfoForm').validate())
+		if(currentUser == null)
 			return;
-
+		if (!dijit.byId('userAdditionalInfoForm').validate())
+			return;		
 		var active = dijit.byId('userActive').attr('value') != false;
 		var prefix = dijit.byId('prefix').attr('value');
 		var suffix = dijit.byId('suffix').attr('value');
@@ -1363,6 +1366,8 @@
 	}
 
 	function viewFullClickHistory() {
+		if(currentUser == null)
+			return;
 		if(dijit.byId('userClickHistoryPane'))
 			dijit.registry.remove('userClickHistoryPane');
 
@@ -1386,6 +1391,8 @@
 	}
 
 	function viewClickstreamDetails(clickstreamId, userId) {
+		if(currentUser == null)
+			return;
 		if(dijit.byId('userClickHistoryDetailPane'))
 			dijit.registry.remove('userClickHistoryDetailPane');
 
@@ -1407,10 +1414,12 @@
 	//User Tags
 
 	function initTags() {
-		TagAjax.getTagsByUser(currentUser.userId, showResult);
+		if(currentUser != null)
+			TagAjax.getTagsByUser(currentUser.userId, showResult);
 	}
 	function removeTagInode(tagName) {
-		TagAjax.deleteTag(tagName, currentUser.userId, showResult);
+		if(currentUser != null)
+			TagAjax.deleteTag(tagName, currentUser.userId, showResult);
 	}
 	function editTag(tagName) {
 		var tagTable = document.getElementById('tags_detail');
@@ -1425,7 +1434,8 @@
 		var cmd = document.getElementById('cmd').value;
 		document.getElementById('tagName').value = '';
 		document.getElementById('cmd').value = '';
-		TagAjax.addTag(tagName, currentUser.userId, currentUser.inode, showResult);
+		if(currentUser != null)
+			TagAjax.addTag(tagName, currentUser.userId, currentUser.inode, showResult);
 	}
 	function showResult(result) {
 		DWRUtil.removeAllRows("tags_table");
@@ -1468,7 +1478,8 @@
 
 	//User categories
 	function loadUserCategories() {
-		UserAjax.getUserCategories(currentUser.userId, loadUserCategoriesCallback);
+		if(currentUser != null)
+			UserAjax.getUserCategories(currentUser.userId, loadUserCategoriesCallback);
 	}
 
 	function loadUserCategoriesCallback(categories) {
@@ -1491,7 +1502,8 @@
 				}
 			}
 		}, this);
-		UserAjax.updateUserCategories(currentUser.userId, selectedCategories, updateUserCategoriesCallback);
+		if(currentUser != null)
+			UserAjax.updateUserCategories(currentUser.userId, selectedCategories, updateUserCategoriesCallback);
 	}
 
 	function updateUserCategoriesCallback(){
@@ -1534,8 +1546,8 @@
 	function updateUserLocale() {
 		var timeZoneId = dijit.byId('userTimeZone').attr('value');
 		var languageId = dijit.byId('userLanguage').attr('value');
-
-		UserAjax.updateUserLocale(currentUser.userId, timeZoneId, languageId, updateUserLocaleCallback);
+		if(currentUser != null)
+			UserAjax.updateUserLocale(currentUser.userId, timeZoneId, languageId, updateUserLocaleCallback);
 	}
 
 
