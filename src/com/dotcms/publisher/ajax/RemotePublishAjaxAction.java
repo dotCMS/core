@@ -166,10 +166,21 @@ public class RemotePublishAjaxAction extends AjaxAction {
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
 
-            String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
-            List<String> assetsIds = Arrays.asList( _assetsIds );
+            List<String> ids;
+            if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
 
-            List<String> ids = getIdsToPush(assetsIds, _contentFilterDate, dateFormat);
+                String luceneQuery = _assetId.replace( "query_", "" );
+                List<String> queries = new ArrayList<String>();
+                queries.add( luceneQuery );
+                ids = PublisherUtil.getContentIds( queries );
+
+            } else {
+
+                String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
+                List<String> assetsIds = Arrays.asList( _assetsIds );
+
+                ids = getIdsToPush( assetsIds, _contentFilterDate, dateFormat );
+            }
 
             //Response map with the status of the addContents operation (error messages and counts )
             Map<String, Object> responseMap = null;
@@ -715,10 +726,22 @@ public class RemotePublishAjaxAction extends AjaxAction {
             //Put the selected bundle in session in order to have last one selected
             request.getSession().setAttribute( WebKeys.SELECTED_BUNDLE, bundle );
 
-            String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
-            List<String> assetsIds = Arrays.asList( _assetsIds );
+            List<String> ids;
+            if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
 
-            List<String> ids = getIdsToPush( assetsIds, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
+                String luceneQuery = _assetId.replace( "query_", "" );
+                List<String> queries = new ArrayList<String>();
+                queries.add( luceneQuery );
+                ids = PublisherUtil.getContentIds( queries );
+
+            } else {
+
+                String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
+                List<String> assetsIds = Arrays.asList( _assetsIds );
+
+                ids = getIdsToPush( assetsIds, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
+            }
+
             Map<String, Object> responseMap = publisherAPI.saveBundleAssets( ids, bundle.getId(), getUser() );
 
             //If we have errors lets return them in order to feedback the user
