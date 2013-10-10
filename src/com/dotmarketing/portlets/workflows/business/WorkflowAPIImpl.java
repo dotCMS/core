@@ -760,13 +760,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void fireWorkflowPostCheckin(WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-		boolean local = HibernateUtil.startLocalTransactionIfNeeded();
+		boolean local = false;
 
 		try{
 			if(!processor.inProcess()){
 				return;
 			}
 
+			local = HibernateUtil.startLocalTransactionIfNeeded();
+			
 			processor.getContentlet().setStringProperty("wfActionId", processor.getAction().getId());
 
 
