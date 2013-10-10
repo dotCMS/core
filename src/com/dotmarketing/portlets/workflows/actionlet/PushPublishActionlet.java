@@ -27,9 +27,9 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 
 	private PublisherAPI publisherAPI = PublisherAPI.getInstance();
 	ContentletAPI conAPI = APILocator.getContentletAPI();
-	
+
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 
@@ -57,52 +57,52 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 		try {
 			//Gets available languages
 			//List<Language> languages = languagesAPI.getLanguages();
-			
+
 			Contentlet ref = processor.getContentlet();
 			String _contentPushPublishDate = ref.getStringProperty("wfPublishDate");
 			String _contentPushPublishTime = ref.getStringProperty("wfPublishTime");
 			String _contentPushExpireDate = ref.getStringProperty("wfExpireDate");
 			String _contentPushExpireTime = ref.getStringProperty("wfExpireTime");
 			boolean _contentPushNeverExpire = "on".equals(ref.getStringProperty("wfNeverExpire")) || "true".equals(ref.getStringProperty("wfNeverExpire"))?true:false;
-            String whereToSend = ref.getStringProperty( "whereToSend" );
-            List<String> whoCanUse = Arrays.asList(whereToSend.split(","));
+			String whoToSendTmp = ref.getStringProperty( "whereToSend" );
+            String forcePushStr = ref.getStringProperty( "forcePush" );
+            boolean forcePush = (forcePushStr!=null && forcePushStr.equals("true"));
+            List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
-            
+
             // Lists of Environments to push to
-            for (String envId : whoCanUse) {
+            for (String envId : whereToSend) {
             	Environment e = APILocator.getEnvironmentAPI().findEnvironmentById(envId);
-				
+
             	if(e!=null) {
             		envsToSendTo.add(e);
             	}
 			}
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 			Date publishDate = dateFormat.parse(_contentPushPublishDate+"-"+_contentPushPublishTime);
-			
-			List<String> identifiers = new ArrayList<String>();			
-			String bundleId = UUID.randomUUID().toString();			
+
+			List<String> identifiers = new ArrayList<String>();
 			identifiers.add(ref.getIdentifier());
-			
-			Bundle bundle = new Bundle(null, publishDate, null, processor.getUser().getUserId());
+
+			Bundle bundle = new Bundle(null, publishDate, null, processor.getUser().getUserId(), forcePush);
         	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
-			
-			publisherAPI.addContentsToPublish(identifiers, bundleId, publishDate, processor.getUser());
+
+			publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, processor.getUser());
 			if(!_contentPushNeverExpire && (!"".equals(_contentPushExpireDate.trim()) && !"".equals(_contentPushExpireTime.trim()))){
-				bundleId = UUID.randomUUID().toString();
 				Date expireDate = dateFormat.parse(_contentPushExpireDate+"-"+_contentPushExpireTime);
-				bundle = new Bundle(null, publishDate, expireDate, processor.getUser().getUserId());
+				bundle = new Bundle(null, publishDate, expireDate, processor.getUser().getUserId(), forcePush);
             	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
-				publisherAPI.addContentsToUnpublish(identifiers, bundleId, expireDate, processor.getUser());
+				publisherAPI.addContentsToUnpublish(identifiers, bundle.getId(), expireDate, processor.getUser());
 			}
 		} catch (DotPublisherException e) {
 			Logger.debug(PushPublishActionlet.class, e.getMessage());
 			throw new  WorkflowActionFailureException(e.getMessage());
 		} catch (ParseException e){
 			Logger.debug(PushPublishActionlet.class, e.getMessage());
-			throw new  WorkflowActionFailureException(e.getMessage());			
+			throw new  WorkflowActionFailureException(e.getMessage());
 		} catch (DotDataException e) {
 			Logger.debug(PushPublishActionlet.class, e.getMessage());
-			throw new  WorkflowActionFailureException(e.getMessage());			
+			throw new  WorkflowActionFailureException(e.getMessage());
 		}
 
 	}

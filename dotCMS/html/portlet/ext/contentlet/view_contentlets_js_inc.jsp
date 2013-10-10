@@ -1238,7 +1238,7 @@
                 var form = document.getElementById("search_form");
                 form.categories = null;
                 if(form.categories != null){
-                	var tempChildNodesLength = form.categories.childNodes.length; 
+                	var tempChildNodesLength = form.categories.childNodes.length;
                 	for(var i = 0; i < tempChildNodesLength; i++){
                 		form.categories.removeChild(form.categories.childNodes[0]);
                 	}
@@ -2570,11 +2570,13 @@
 					: (dojo.byId("whereToSend"))
 						? dojo.byId("whereToSend").value
 								: "";
+
+			var forcePush = dijit.byId("forcePush").checked;
 			// END: PUSH PUBLISHING ACTIONLET
 
 
     		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-    				publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback);
+    				publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback);
 
     	}
 
