@@ -121,4 +121,6 @@ public interface WorkFlowFactory {
     public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException;
 
     public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException;
+
+    public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException;
 }

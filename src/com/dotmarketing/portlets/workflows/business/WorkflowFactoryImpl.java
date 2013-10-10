@@ -384,6 +384,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public void deleteStep(WorkflowStep step) throws DotDataException {
 		String schemeId = step.getSchemeId();
 		final DotConnect db = new DotConnect();
+		
+		// delete tasks referencing it
+		db.setSQL("select id from workflow_task where status=?");
+		db.addParam(step.getId());
+		for(Map<String,Object> res : db.loadObjectResults()) {
+		    String taskId=(String)res.get("id");
+		    WorkflowTask task=findWorkFlowTaskById(taskId);
+		    deleteWorkflowTask(task);
+		}
+		
 		db.setSQL(sql.DELETE_STEP);
 		db.addParam(step.getId());
 		db.loadResult();
@@ -395,14 +405,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException {
-		String actionClassId = actionClass.getId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
 		db.addParam(actionClass.getId());
 		db.loadResult();
 		
 		// update scheme mod date
-		WorkflowAction action = findAction(actionClassId);
+		WorkflowAction action = findAction(actionClass.getActionId());
 		WorkflowStep step = findStep(action.getStepId());
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
 		saveScheme(scheme);
@@ -418,6 +427,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException {
 		final DotConnect db = new DotConnect();
+		
+		HibernateUtil.evict(task);
 
 		Contentlet c = new Contentlet();
 		c.setIdentifier(task.getWebasset());
@@ -535,7 +546,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.setSQL(sql.SELECT_ACTION_CLASS_PARAMS_BY_ACTIONCLASS);
 		db.addParam(actionClass.getId());
 		final List<WorkflowActionClassParameter> list = (List<WorkflowActionClassParameter>) this.convertListToObjects(db.loadObjectResults(), WorkflowActionClassParameter.class);
-		final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap();
+		final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap<String, WorkflowActionClassParameter>();
 		for (final WorkflowActionClassParameter param : list) {
 			map.put(param.getKey(), param);
 		}
@@ -1349,5 +1360,20 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throw new DotDataException(e.getMessage(),e);
         }
         return scheme;
+    }
+
+    @Override
+    public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException {
+        DotConnect db=new DotConnect();
+        db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ID);
+        db.addParam(param.getId());
+        db.loadResult();
+        
+        // update scheme mod date
+        WorkflowActionClass clazz = findActionClass(param.getActionClassId());
+        WorkflowAction action = findAction(clazz.getActionId());
+        WorkflowStep step = findStep(action.getStepId());
+        WorkflowScheme scheme = findScheme(step.getSchemeId());
+        saveScheme(scheme);
     }
 }
