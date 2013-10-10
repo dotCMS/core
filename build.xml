@@ -605,6 +605,10 @@
         </copy>
     </target>
 
+    <target name="tomcat7-clone-pull">
+        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat.home}"/>
+    </target>
+
     <!--++++++++++++++++++++++++++++++++++++++++++-->
     <!--Git commands-->
     <macrodef name="git">
@@ -645,9 +649,6 @@
             </args>
         </git>
     </target>-->
-    <target name="tomcat7-clone-pull">
-        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="../tomcat7Test/"/>
-    </target>
     <!--Git commands-->
     <!--++++++++++++++++++++++++++++++++++++++++++-->
 
