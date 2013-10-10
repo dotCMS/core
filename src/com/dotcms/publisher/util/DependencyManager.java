@@ -481,18 +481,18 @@ public class DependencyManager {
 					for (MultiTree mt : treeList) {
 						String contentIdentifier = mt.getChild();
 						// Contents dependencies
-						
-						Contentlet content = null;
-						try{
-							content =  APILocator.getContentletAPI().findContentletByIdentifier(contentIdentifier, true, -1, user, false);
-						}catch (DotContentletStateException e) {
-							content = APILocator.getContentletAPI().findContentletByIdentifier(contentIdentifier, false, -1, user, false);
-						}
-						if(content==null) {
-							contents.addOrClean( contentIdentifier, content.getModDate());
-							contentsSet.add(contentIdentifier);
-						}
-					}
+
+                        Contentlet content;
+                        try {
+                            content = APILocator.getContentletAPI().findContentletByIdentifier( contentIdentifier, true, -1, user, false );
+                        } catch ( DotContentletStateException e ) {
+                            content = APILocator.getContentletAPI().findContentletByIdentifier( contentIdentifier, false, -1, user, false );
+                        }
+                        if ( content != null ) {
+                            contents.addOrClean( contentIdentifier, content.getModDate() );
+                            contentsSet.add( contentIdentifier );
+                        }
+                    }
 				}
 			}
 		} catch (DotSecurityException e) {
