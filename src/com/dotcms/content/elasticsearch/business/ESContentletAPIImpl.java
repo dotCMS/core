@@ -2055,7 +2055,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    throw ve;
 				}
 
-				canLock(contentlet, user);
+				if(contentlet.getMap().get("_dont_validate_me") == null) {
+				    canLock(contentlet, user);
+				}
 				contentlet.setModUser(user.getUserId());
 				// start up workflow
 				WorkflowAPI wapi  = APILocator.getWorkflowAPI();
