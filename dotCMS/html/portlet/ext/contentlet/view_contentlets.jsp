@@ -267,7 +267,7 @@
 
             onChange: function(){
                 structureChanged(true);
-                        doSearch();
+                        doSearch(null, "<%=orderBy%>");
             }
         },
         dojo.byId("structSelectBox"));
