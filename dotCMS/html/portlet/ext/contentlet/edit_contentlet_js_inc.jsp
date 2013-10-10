@@ -736,6 +736,9 @@ dojo.require("dojox.layout.ContentPane");
 					: (dojo.byId("whereToSend"))
 						? dojo.byId("whereToSend").value
 								: "";
+
+			var forcePush = dijit.byId("forcePush").checked;
+
 			// END: PUSH PUBLISHING ACTIONLET
 
 			dojo.byId("wfActionAssign").value=assignRole;
