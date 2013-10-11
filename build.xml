@@ -66,12 +66,13 @@
 
 	<path id="files-classpath">
 		<pathelement location="${java.home}/../lib/tools.jar"/>
-		<fileset dir="tomcat/bin">
-			<include name="**/*.jar" />
-		</fileset>
-		<fileset dir="tomcat/lib">
-			<include name="**/*.jar" />
-		</fileset>
+
+        <fileset dir="extra/tomcat-7/libs">
+            <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="extra/tomcat-7/dependencies">
+            <include name="**/*.jar" />
+        </fileset>
 		<fileset dir="${lib.app}">
 			<include name="**/*.jar" />
 			<exclude name="**/dotcms*.jar" />
@@ -82,9 +83,12 @@
 	<!-- classpath only used for plugins no other task should use becuase it locks the jar files -->
 	<path id="ant-files-classpath">
 		<pathelement location="${java.home}/../lib/tools.jar"/>
-		<fileset dir="tomcat/lib">
-			<include name="**/*.jar" />
-		</fileset>
+		<fileset dir="extra/tomcat-7/libs">
+            <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="extra/tomcat-7/dependencies">
+            <include name="**/*.jar" />
+        </fileset>
 		<fileset dir="${lib.app}">
 			<include name="log4j.jar" />
 			<include name="dotcms_ant.jar" />
