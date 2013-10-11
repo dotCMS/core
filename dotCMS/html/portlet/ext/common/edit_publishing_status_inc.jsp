@@ -11,7 +11,6 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure" %>
 <%@page import="com.dotcms.publisher.bundle.bean.Bundle" %>
 <%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 
 <%
 	Object assetObject = request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT);
@@ -20,9 +19,9 @@
                         (assetObject instanceof Inode ? ((Inode)assetObject).getIdentifier() :
                             (assetObject instanceof Contentlet ? ((Contentlet)assetObject).getIdentifier() : ""));
 
-    assetId = (asset instanceof Structure)?((Structure)asset).getInode():assetId;
+    assetId = (assetObject instanceof Structure)?((Structure)assetObject).getInode():assetId;
 
-	List<PushedAsset> pushedAssets = asset!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(assetId) : new ArrayList<PushedAsset>();
+	List<PushedAsset> pushedAssets = assetObject!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(assetId) : new ArrayList<PushedAsset>();
 
 %>
 
