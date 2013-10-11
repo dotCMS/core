@@ -596,6 +596,15 @@
     </target>
 
     <target name="deploy-war-tomcat7" depends="undeploy-war-tomcat7, clone-pull-tomcat7, war">
+
+        <copy todir="${tomcat7.home}/lib/">
+            <fileset dir="./extra/tomcat-7/libs/"/>
+        </copy>
+
+        <!--<copy todir="${tomcat7.home}/bin/">
+            <fileset dir="./extra/tomcat-7/conf/"/>
+        </copy>-->
+
         <copy todir="${tomcat7.home}/webapps/ROOT">
             <fileset dir="${build.war}/${war.name}.war"/>
         </copy>
