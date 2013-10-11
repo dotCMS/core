@@ -58,7 +58,7 @@
 	<property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
 	<property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
 
-    <property name="tomcat.home" value="../tomcat7"/>
+    <property name="tomcat7.home" value="${tomcat7.install.location}"/>
 
     <path id="build-classpath">
 		<pathelement path="${build.classes}" />
@@ -587,26 +587,18 @@
         </war>
     </target>
 
-    <target name="tomcat7-undeploy-war">
-        <delete dir="${tomcat.home}/webapps/ROOT"/>
+    <target name="undeploy-war-tomcat7">
+        <delete dir="${tomcat7.home}/webapps/ROOT"/>
     </target>
 
-    <target name="tomcat7-deploy-war" depends="tomcat7-undeploy-war">
-        <copy todir="${tomcat.home}/lib/">
-            <fileset dir="./extra/tomcat-7/libs/"/>
-        </copy>
-
-        <copy todir="${tomcat.home}/bin/">
-            <fileset dir="./extra/tomcat-7/conf/"/>
-        </copy>
-
-        <copy todir="${tomcat.home}/webapps/ROOT">
+    <target name="deploy-war-tomcat7" depends="undeploy-war-tomcat7, clone-pull-tomcat7, war">
+        <copy todir="${tomcat7.home}/webapps/ROOT">
             <fileset dir="${build.war}/${war.name}.war"/>
         </copy>
     </target>
 
-    <target name="tomcat7-clone-pull">
-        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat.home}"/>
+    <target name="clone-pull-tomcat7">
+        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat7.home}"/>
     </target>
 
     <!--++++++++++++++++++++++++++++++++++++++++++-->
