@@ -773,7 +773,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @throws WorkflowActionFailureException If fails trying to Publish the bundle contents
      */
     public void pushBundle ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException, IOException {
-
+        response.setContentType("text/plain");
         try {
 
             PublisherAPI publisherAPI = PublisherAPI.getInstance();
