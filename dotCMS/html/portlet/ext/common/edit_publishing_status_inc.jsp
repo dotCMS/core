@@ -19,8 +19,6 @@
                         (assetObject instanceof Inode ? ((Inode)assetObject).getIdentifier() :
                             (assetObject instanceof Contentlet ? ((Contentlet)assetObject).getIdentifier() : ""));
 
-    assetId = (assetObject instanceof Structure)?((Structure)assetObject).getInode():assetId;
-
 	List<PushedAsset> pushedAssets = assetObject!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(assetId) : new ArrayList<PushedAsset>();
 
 %>
