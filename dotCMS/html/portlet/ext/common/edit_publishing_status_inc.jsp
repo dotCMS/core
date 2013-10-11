@@ -9,12 +9,15 @@
 <%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
 <%@page import="com.dotcms.publisher.bundle.bean.Bundle" %>
 <%@page import="com.liferay.portal.model.User"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 
 <%
 	Object asset = request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT);
     String assetId = asset==null ? "" :
                         (asset instanceof Inode ? ((Inode)asset).getIdentifier() :
                             (asset instanceof Contentlet ? ((Contentlet)asset).getIdentifier() : ""));
+
+    assetId = (asset instanceof Structure)?((Structure)asset).getInode():assetId;
 
 	List<PushedAsset> pushedAssets = asset!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(assetId) : new ArrayList<PushedAsset>();
 
