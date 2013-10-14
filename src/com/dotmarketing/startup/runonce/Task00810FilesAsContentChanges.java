@@ -104,12 +104,9 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		dc.addParam(fileAsset.getVelocityVarName());
 		dc.loadResult();
 		
-		
-		
-		
 		APILocator.getFileAssetAPI().createBaseFileAssetFields(fileAsset);
 		StructureCache.addStructure(fileAsset);
 		return fileAsset;
 	}
-
+	
 }
