@@ -33,7 +33,7 @@
 	<property name="sql.liferay.mysql" value="portal-mysql.sql" />
 	<property name="sql.quartz.mysql" value="tables_mysql.sql" />
 	<property name="sql.dotcms.h2" value="dotcms_h2.sql" />
-	<property name="sql.liferay.h2" value="portal-h2.sql" />
+	<property name="sql.liferay.h2" value="portal-hypersonic.sql" />
 	<property name="sql.quartz.h2" value="tables_h2.sql" />
 	<property name="sql.dotcms.extra.h2" value="dotcms_extra_h2.sql" />
 	<property name="build.dir" value="build" />
