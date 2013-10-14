@@ -116,7 +116,12 @@ public class FieldFactory {
 	{
 		InodeFactory.deleteInode(field);
 		FieldsCache.removeField(field);
-		FieldsCache.removeFieldVariables(field);
+
+		List<FieldVariable> fieldVars = getFieldVariablesForField(field);
+		for (FieldVariable var : fieldVars) {
+			deleteFieldVariable(var);
+		}
+
 	}
 
 	public static String getNextAvaliableFieldNumber (String dataType, String currentFieldInode, String structureInode) {

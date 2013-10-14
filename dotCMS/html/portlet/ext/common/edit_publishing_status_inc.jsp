@@ -7,16 +7,19 @@
 <%@page import="com.dotmarketing.factories.WebAssetFactory" %>
 <%@page import="com.dotcms.publisher.assets.bean.PushedAsset" %>
 <%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
+<%@page import="com.dotmarketing.portlets.folders.model.Folder" %>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure" %>
 <%@page import="com.dotcms.publisher.bundle.bean.Bundle" %>
 <%@page import="com.liferay.portal.model.User"%>
 
 <%
-	Object asset = request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT);
-    String assetId = asset==null ? "" :
-                        (asset instanceof Inode ? ((Inode)asset).getIdentifier() :
-                            (asset instanceof Contentlet ? ((Contentlet)asset).getIdentifier() : ""));
+	Object assetObject = request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT);
+	String assetId = assetObject==null ? "" :  assetObject instanceof Folder ? ((Folder)assetObject).getInode() :
+						assetObject instanceof Structure ? ((Structure)assetObject).getInode() :
+	                    (assetObject instanceof Inode ? ((Inode)assetObject).getIdentifier() :
+	                        (assetObject instanceof Contentlet ? ((Contentlet)assetObject).getIdentifier() : ""));
 
-	List<PushedAsset> pushedAssets = asset!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(assetId) : new ArrayList<PushedAsset>();
+	List<PushedAsset> pushedAssets = assetObject!=null ? APILocator.getPushedAssetsAPI().getPushedAssets(assetId) : new ArrayList<PushedAsset>();
 
 %>
 
@@ -25,7 +28,7 @@
 function deletePushHistory() {
 
 	var xhrArgs = {
-		url : '/api/bundle/deletepushhistory/assetid/<%=(asset!=null ? assetId : "")%>',
+		url : '/api/bundle/deletepushhistory/assetid/<%=(assetObject!=null ? assetId : "")%>',
 		handleAs : "json",
 		sync: false,
 		load : function(data) {
