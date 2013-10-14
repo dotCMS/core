@@ -1093,8 +1093,13 @@
 						? dojo.byId("wfNeverExpire").value
 								: "";
 
-			var whereToSend = dojo.byId("whereToSend").value;
-			var forcePush = dijit.byId("forcePush").checked;
+            var whereToSend = (dijit.byId("whereToSend"))
+                ? dijit.byId("whereToSend").getValue()
+                    : (dojo.byId("whereToSend"))
+                        ? dojo.byId("whereToSend").value
+                            : "";
+
+            var forcePush = (dijit.byId("forcePush")) ? dijit.byId("forcePush").checked : false;
 
 			// END: PUSH PUBLISHING ACTIONLET
 

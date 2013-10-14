@@ -2571,7 +2571,7 @@
 						? dojo.byId("whereToSend").value
 								: "";
 
-			var forcePush = dijit.byId("forcePush").checked;
+            var forcePush = (dijit.byId("forcePush")) ? dijit.byId("forcePush").checked : false;
 			// END: PUSH PUBLISHING ACTIONLET
 
 
