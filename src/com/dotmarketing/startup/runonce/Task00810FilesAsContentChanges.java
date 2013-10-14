@@ -105,11 +105,21 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		dc.loadResult();
 		
 		
-		
+		upgradeFieldTableWithModDate();
 		
 		APILocator.getFileAssetAPI().createBaseFileAssetFields(fileAsset);
 		StructureCache.addStructure(fileAsset);
 		return fileAsset;
+	}
+	
+	protected void upgradeFieldTableWithModDate() throws DotDataException {
+	    DotConnect dc=new DotConnect();
+	    try {
+    	    dc.executeStatement("alter table field add mod_date "+DbConnectionFactory.getDBDateTimeType()+" null");
+    	    dc.executeStatement("update field set mod_date = "+DbConnectionFactory.getDBDateTimeFunction());
+	    }catch(Exception ex) {
+	        throw new DotDataException(ex.getMessage(),ex);
+	    }
 	}
 
 }
