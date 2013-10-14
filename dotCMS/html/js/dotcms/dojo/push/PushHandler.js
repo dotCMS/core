@@ -241,8 +241,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 		// END: PUSH PUBLISHING ACTIONLET
 
         //Hide the buttons and display the progress
-        dojo.query(".buttonRow").style("display", "none");
-        dojo.query(".progressRow").style("display", "block");
+        dojo.query("#publishForm .buttonRow").style("display", "none");
+        dojo.query("#publishForm .progressRow").style("display", "block");
 
         var currentObject = this;
         var urlStr = this.isBundle?"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle":"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish";
@@ -263,8 +263,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 showDotCMSSystemMessage(error, true);
 
                 //Show the buttons and hide the progress
-                dojo.query(".buttonRow").style("display", "block");
-                dojo.query(".progressRow").style("display", "none");
+                dojo.query("#publishForm .buttonRow").style("display", "block");
+                dojo.query("#publishForm .progressRow").style("display", "none");
 
 				dialog.hide();
 			}
@@ -313,8 +313,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         // END: PUSH PUBLISHING ACTIONLET
 
         //Disable the save button
-        dojo.query(".buttonRow").style("display", "none");
-        dojo.query(".progressRow").style("display", "block");
+        dojo.query("#publishForm .buttonRow").style("display", "none");
+        dojo.query("#publishForm .progressRow").style("display", "block");
 
         var currentObject = this;
         var xhrArgs = {
@@ -334,8 +334,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 showDotCMSSystemMessage(error, true);
 
                 //Show the buttons and hide the progress
-                dojo.query(".buttonRow").style("display", "block");
-                dojo.query(".progressRow").style("display", "none");
+                dojo.query("#publishForm .buttonRow").style("display", "block");
+                dojo.query("#publishForm .progressRow").style("display", "none");
 
                 dialog.hide();
             }
@@ -346,8 +346,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     _showResultMessage : function (data) {
 
         //Show the buttons and hide the progress
-        dojo.query(".buttonRow").style("display", "block");
-        dojo.query(".progressRow").style("display", "none");
+        dojo.query("#publishForm .buttonRow").style("display", "block");
+        dojo.query("#publishForm .progressRow").style("display", "none");
 
         //var total = data.total;
         var errors = data.errors;
