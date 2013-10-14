@@ -30,6 +30,8 @@ import org.elasticsearch.search.SearchHits;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -236,7 +238,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }catch (DotSecurityException se) {
 			throw se;
     	}catch (Exception e) {
-            throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + languageId + " live:" + live );
+            throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + languageId + " live:" + live,e);
         }
 
     }
@@ -1131,6 +1133,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // jira.dotmarketing.net/browse/DOTCMS-1073
         deleteBinaryFiles(contentletsVersion,null);
+
+        for (Contentlet contentlet : contentlets) {
+        	try {
+				PublisherAPI.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier());
+			} catch (DotPublisherException e) {
+				Logger.error(getClass(), "Error deleting Contentlet from Publishing Queue. Identifier:  " + contentlet.getIdentifier());
+			}
+		}
 
     }
 
@@ -2040,12 +2050,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    throw ve;
 				}
 
-				canLock(contentlet, user);
+				if(contentlet.getMap().get("_dont_validate_me") == null) {
+				    canLock(contentlet, user);
+				}
 				contentlet.setModUser(user.getUserId());
 				// start up workflow
 				WorkflowAPI wapi  = APILocator.getWorkflowAPI();
 				WorkflowProcessor workflow=null;
-				
+
 				if(contentlet.getMap().get("__disable_workflow__")==null) {
 				    workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
 				}
@@ -2099,6 +2111,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
 				String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
 				String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
+				String contentWhereToSend = contentlet.getStringProperty("whereToSend");
+				String forcePush = contentlet.getStringProperty("forcePush");
 
 				if(saveWithExistingID)
 				    contentlet = conFac.save(contentlet, existingInode);
@@ -2496,6 +2510,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				contentlet.setStringProperty("wfExpireDate", contentPushExpireDate);
 				contentlet.setStringProperty("wfExpireTime", contentPushExpireTime);
 				contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
+				contentlet.setStringProperty("whereToSend", contentWhereToSend);
+				contentlet.setStringProperty("forcePush", forcePush);
 
 				//wapi.
 				if(workflow!=null) {
@@ -3625,15 +3641,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 + velocityVariableName);
                 if(binaryFilefolder.exists()){
                 java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
-               
-                for (java.io.File file : files) {
-					String path = file.getPath();
-					if(path!=null && path.indexOf("temp")==-1) {
-						binaryFile = file;
-						break;
-					}
-				}
-                
+
+                if(files.length > 0){
+                	binaryFile = files[0];
+                }
+
             }
         }catch(Exception e){
             Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName );
@@ -4189,5 +4201,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			result = conFac.getMostViewedContent(structureInode, startDate, endDate , user);
 		} catch (Exception e) {}
 		return result;
+	}
+
+	/**
+	 * This method is called when I'm publishing a contentlet and one of its fields is an IMAGE or a FILE.
+	 *
+	 * Unlike the current version, before find the asset with the default language I try to do this by using the languageId of the
+	 * current contentlet.
+	 *
+	 * In this way I can upload an asset into a language different from the default one, publish it and create another contentlet,
+	 * into the same language, and link them.
+	 *
+	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+	 *
+	 * Jun 20, 2013 - 2:32:05 PM
+	 */
+	private Contentlet findBinaryAssociatedContent(Identifier id, long languageId) throws DotContentletStateException, DotSecurityException, DotDataException{
+		Contentlet fileAssetCont = null;
+    	try {
+    		fileAssetCont = findContentletByIdentifier(id.getId(), true, languageId, APILocator.getUserAPI().getSystemUser(), false);
+        } catch(DotContentletStateException se) {
+        	try{
+        		fileAssetCont = findContentletByIdentifier(id.getId(), false, languageId, APILocator.getUserAPI().getSystemUser(), false);
+        	}catch(DotContentletStateException se1) {
+        		/**
+        		 * Finally, if I didn't found the contentlet I do the "findContentletByIdentifier" with the default language,
+        		 * like the current class version.
+        		 */
+        		fileAssetCont = findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+        	}
+        }
+    	return fileAssetCont;
+
 	}
 }

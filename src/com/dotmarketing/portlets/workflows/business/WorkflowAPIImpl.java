@@ -707,10 +707,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     	boolean localTransaction=false;
     	try {
 			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
-			WorkflowActionClass actionClass= wfac.findActionClass(params.get(0).getActionClassId());
-			//wfac.deleteWorkflowActionClassParameters(actionClass);
-
+			
 			for(WorkflowActionClassParameter param : params){
 				wfac.saveWorkflowActionClassParameter(param);
 			}
@@ -764,13 +761,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void fireWorkflowPostCheckin(WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-		boolean local = HibernateUtil.startLocalTransactionIfNeeded();
+		boolean local = false;
 
 		try{
 			if(!processor.inProcess()){
 				return;
 			}
 
+			local = HibernateUtil.startLocalTransactionIfNeeded();
+			
 			processor.getContentlet().setStringProperty("wfActionId", processor.getAction().getId());
 
 
@@ -930,6 +929,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     @Override
     public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException {
         return wfac.findSchemeByName(schemaName);
+    }
+
+    @Override
+    public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException {
+        wfac.deleteWorkflowActionClassParameter(param);
+        
     }
 
 

@@ -157,7 +157,7 @@ function timeChange() {
 
 function stopBrowing() {
 	dojo.xhr('GET',{
-        url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/stopBrowsing',
+        url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/stopBrowsing/r/'+ Math.floor(Math.random()*11232132132131),
         handle: function() {
             dojo.empty('iframeWrapper');
             dijit.byId('closeBtn').setDisabled(true);

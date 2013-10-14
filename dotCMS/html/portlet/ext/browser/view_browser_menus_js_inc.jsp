@@ -1093,11 +1093,14 @@
 						? dojo.byId("wfNeverExpire").value
 								: "";
 
+			var whereToSend = dojo.byId("whereToSend").value;
+			var forcePush = dijit.byId("forcePush").checked;
+
 			// END: PUSH PUBLISHING ACTIONLET
 
 
     		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);
+    				publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback);
 
     	}
 
