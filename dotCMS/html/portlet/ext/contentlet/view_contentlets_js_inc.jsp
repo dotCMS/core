@@ -1312,6 +1312,7 @@
 
         function doSearch1 (page, sortBy) {
 
+
                 if (page == undefined || page == null ) {
                     //Unless we are using pagination we don't need to keep the All selection across searches
                     clearAllContentsSelection();
@@ -2567,7 +2568,7 @@
 						? dojo.byId("whereToSend").value
 								: "";
 
-			var forcePush = dijit.byId("forcePush").checked;
+            var forcePush = (dijit.byId("forcePush")) ? dijit.byId("forcePush").checked : false;
 			// END: PUSH PUBLISHING ACTIONLET
 
 
