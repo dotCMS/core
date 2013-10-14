@@ -26,8 +26,6 @@ public class Task01015AddPublishExpireDateToIdentifier extends AbstractJDBCStart
     public String getPostgresScript() {        
         return "alter table identifier add syspublish_date timestamp;" +
         		"alter table identifier add sysexpire_date timestamp;" +
-                "alter table structure add expire_date_var varchar(255);" +
-        		"alter table structure add publish_date_var varchar(255);"+
                 "create index idx_identifier_pub on identifier (syspublish_date);"+
                 "create index idx_identifier_exp on identifier (sysexpire_date);";
     }
@@ -36,8 +34,6 @@ public class Task01015AddPublishExpireDateToIdentifier extends AbstractJDBCStart
     public String getMySQLScript() {
         return "alter table identifier add syspublish_date datetime;" +
                 "alter table identifier add sysexpire_date datetime;"+
-                "alter table structure add expire_date_var varchar(255);" +
-                "alter table structure add publish_date_var varchar(255);"+
                 "create index idx_identifier_pub on identifier (syspublish_date);"+
                 "create index idx_identifier_exp on identifier (sysexpire_date);";
         
@@ -47,8 +43,6 @@ public class Task01015AddPublishExpireDateToIdentifier extends AbstractJDBCStart
     public String getOracleScript() {
         return "alter table identifier add syspublish_date timestamp;" +
                 "alter table identifier add sysexpire_date timestamp;"+
-                "alter table structure add expire_date_var varchar2(255);" +
-                "alter table structure add publish_date_var varchar2(255);"+
                 "create index idx_identifier_pub on identifier (syspublish_date);"+
                 "create index idx_identifier_exp on identifier (sysexpire_date);";
     }
@@ -57,8 +51,6 @@ public class Task01015AddPublishExpireDateToIdentifier extends AbstractJDBCStart
     public String getMSSQLScript() {
         return "alter table identifier add syspublish_date datetime;" +
                 "alter table identifier add sysexpire_date datetime;"+
-                "alter table structure add expire_date_var varchar(255);" +
-                "alter table structure add publish_date_var varchar(255);"+
                 "create index idx_identifier_pub on identifier (syspublish_date);"+
                 "create index idx_identifier_exp on identifier (sysexpire_date);";
     }
