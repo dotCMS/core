@@ -104,15 +104,18 @@ function setDates(){
 }
 
 function validate() {
-	var whereToSend = dojo.byId("whereToSend").value;
-	if(whereToSend==null || whereToSend=="") {
-		alert("<%=LanguageUtil.get(pageContext, "publisher_dialog_environment_mandatory")%>");
-		return false;
-	}
 
-	contentAdmin.saveAssign();
+    <%if(hasPushPublishActionlet){%>
+        var whereToSend = dojo.byId("whereToSend").value;
+        if(whereToSend==null || whereToSend=="") {
+            showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "publisher_dialog_environment_mandatory")%>");
+            return false;
+        }
+    <%}%>
 
+    contentAdmin.saveAssign();
 }
+
 </script>
 
 <!--  DOTCMS-7085 -->
