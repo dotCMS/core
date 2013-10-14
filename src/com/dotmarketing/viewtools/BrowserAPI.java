@@ -351,7 +351,9 @@ public class BrowserAPI {
 					fileMap.put("name", ident.getAssetName());
 					fileMap.put("fileName", ident.getAssetName());
 					fileMap.put("title", fileAsset.getFriendlyName());
-					fileMap.put("description", ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION));
+					fileMap.put("description", fileAsset instanceof Contentlet ?
+					                           ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION)
+					                           : "");
 					fileMap.put("extension", UtilMethods
 							.getFileExtension(fileAsset.getFileName()));
 					fileMap.put("path", fileAsset.getPath());
