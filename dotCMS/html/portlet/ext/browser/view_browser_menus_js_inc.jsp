@@ -1093,11 +1093,19 @@
 						? dojo.byId("wfNeverExpire").value
 								: "";
 
+            var whereToSend = (dijit.byId("whereToSend"))
+                ? dijit.byId("whereToSend").getValue()
+                    : (dojo.byId("whereToSend"))
+                        ? dojo.byId("whereToSend").value
+                            : "";
+
+            var forcePush = (dijit.byId("forcePush")) ? dijit.byId("forcePush").checked : false;
+
 			// END: PUSH PUBLISHING ACTIONLET
 
 
     		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);
+    				publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback);
 
     	}
 

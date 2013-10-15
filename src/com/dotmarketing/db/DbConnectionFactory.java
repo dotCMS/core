@@ -172,7 +172,7 @@ package com.dotmarketing.db;import java.sql.Connection;import java.sql.Databa
 
 		return _dbType;
 	}
-	public static String getDBDateTimeFunction(){		if(MSSQL.equals(getDBType())){			return "GETDATE()";		}else if(ORACLE.equals(getDBType())){			return "SYSDATE";		}else{			return "now()";		}	}
+	public static String getDBDateTimeFunction(){		if(MSSQL.equals(getDBType())){			return "GETDATE()";		}else if(ORACLE.equals(getDBType())){			return "SYSDATE";		}else{			return "now()";		}	}	public static String getDBDateTimeType() {	    if(isOracle() || isPostgres()) {	        return "timestamp";	    }	    else {	        return "datetime";	    }	}
 	public static String getDBTrue() {
 		String x = getDBType();
 

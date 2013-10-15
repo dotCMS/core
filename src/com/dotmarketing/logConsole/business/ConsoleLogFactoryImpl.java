@@ -71,7 +71,7 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
     }
 
     public void updateLogMapper ( LogMapperRow r ) throws DotDataException {
-
+        
         final DotConnect db = new DotConnect();
         try {
 
@@ -93,9 +93,7 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
 
         } catch ( final Exception e ) {
             Logger.error( this.getClass(), e.getMessage(), e );
-        } finally {
-            HibernateUtil.commitTransaction();
-        }
+        } 
 
     }
 
