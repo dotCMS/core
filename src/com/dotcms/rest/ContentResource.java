@@ -57,6 +57,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -78,16 +79,16 @@ public class ContentResource extends WebResource {
     private static final String RELATIONSHIP_KEY = "__##relationships##__";
 
     /**
-     * performs a call to APILocator.getContentletAPI().searchIndex() with the 
+     * performs a call to APILocator.getContentletAPI().searchIndex() with the
      * specified parameters.
      * Example call using curl:
-     * curl -XGET http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0 
-     * 
+     * curl -XGET http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0
+     *
      * @param request request object
      * @param query lucene query
      * @param sortBy field to sortby
      * @param limit how many results return
-     * @param offset how many results skip 
+     * @param offset how many results skip
      * @return json array of objects. each object with inode and identifier
      * @throws DotSecurityException
      * @throws DotDataException
@@ -380,17 +381,17 @@ public class ContentResource extends WebResource {
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response multipartPUT(@Context HttpServletRequest request, @Context HttpServletResponse response, 
+    public Response multipartPUT(@Context HttpServletRequest request, @Context HttpServletResponse response,
             FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException {
-        InitDataObject init=init(params,true,request,true);
+        InitDataObject init=init(params,true,request,false);
         User user=init.getUser();
 
         Contentlet contentlet=new Contentlet();
-        
+
         for(BodyPart part : multipart.getBodyParts()) {
             ContentDisposition cd=part.getContentDisposition();
             String name=cd!=null && cd.getParameters().containsKey("name") ? cd.getParameters().get("name") : "";
-            
+
             if(part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
                 try {
                     processJSON(contentlet,part.getEntityAs(InputStream.class));
@@ -436,20 +437,20 @@ public class ContentResource extends WebResource {
                 InputStream input=part.getEntityAs(InputStream.class);
                 String filename=part.getContentDisposition().getFileName();
                 java.io.File tmp=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
-                        + java.io.File.separator + user.getUserId() 
-                        + java.io.File.separator + System.currentTimeMillis()  
+                        + java.io.File.separator + user.getUserId()
+                        + java.io.File.separator + System.currentTimeMillis()
                         + java.io.File.separator + filename);
                 if(tmp.exists())
                     tmp.delete();
                 try {
                     FileUtils.copyInputStreamToFile(input, tmp);
-                    
+
                     for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
                         // filling binarys in order. as they come / as field order says
                         if(ff.getFieldContentlet().startsWith("binary") && contentlet.getBinary(ff.getVelocityVarName())==null) {
                             contentlet.setBinary(ff.getVelocityVarName(), tmp);
                             break;
-                        }   
+                        }
                     }
                 } catch (IOException e) {
 
@@ -461,10 +462,10 @@ public class ContentResource extends WebResource {
                 }
             }
         }
-        
+
         return saveContent(contentlet,init);
     }
-    
+
     @PUT
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
@@ -498,10 +499,10 @@ public class ContentResource extends WebResource {
             responseBuilder.entity( e.getMessage() );
             return responseBuilder.build();
         }
-        
+
         return saveContent(contentlet,init);
     }
-    
+
     /*
     @PATCH
     @Path("/{params:.*}")
@@ -510,11 +511,11 @@ public class ContentResource extends WebResource {
     public Response singlePatch(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
         return Response.ok().build();
     }*/
-    
+
     protected Response saveContent(Contentlet contentlet, InitDataObject init) throws URISyntaxException {
         boolean live = init.getParamsMap().containsKey("publish");
         boolean clean=false;
-        
+
         try {
             // preparing categories
             List<Category> cats=new ArrayList<Category>();
@@ -543,49 +544,51 @@ public class ContentResource extends WebResource {
                                     category=(Category)hu.load();
                                     if(category!=null && InodeUtils.isSet(category.getCategoryId())) {
                                         cats.add(category);
-                                    }                                    
+                                    }
                                 }
                             }
-                            
+
                         }
                     }
                 }
-            }            
-            
+            }
+
             // running a workflow action?
             for(WorkflowAction action : APILocator.getWorkflowAPI().findAvailableActions(contentlet, init.getUser())) {
                 if(init.getParamsMap().containsKey(action.getName().toLowerCase())) {
-                    
+
                     contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, action.getId());
-                    
+
                     if(action.isCommentable()) {
                         String comment=init.getParamsMap().get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
                         if(UtilMethods.isSet(comment)) {
                             contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, comment);
                         }
                     }
-                    
+
                     if(action.isAssignable()) {
                         String assignTo=init.getParamsMap().get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
                         if(UtilMethods.isSet(assignTo)) {
                             contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, assignTo);
                         }
                     }
-                    
-                    live=false; // avoid manually publishing 
+
+                    live=false; // avoid manually publishing
                     break;
                 }
             }
-            
+
             Map<Relationship,List<Contentlet>> relationships=(Map<Relationship,List<Contentlet>>)contentlet.get(RELATIONSHIP_KEY);
-            
+
             HibernateUtil.startTransaction();
-            
-            contentlet = APILocator.getContentletAPI().checkin(contentlet,relationships,cats,new ArrayList<Permission>(),init.getUser(),false);
-            
+
+            boolean allowFrontEndSaving = Config.getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
+
+            contentlet = APILocator.getContentletAPI().checkin(contentlet,relationships,cats,new ArrayList<Permission>(),init.getUser(),allowFrontEndSaving);
+
             if(live)
                 APILocator.getContentletAPI().publish(contentlet, init.getUser(), false);
-            
+
             HibernateUtil.commitTransaction();
             clean = true;
         } catch ( DotContentletStateException e ) {
@@ -622,14 +625,14 @@ public class ContentResource extends WebResource {
                 Logger.warn(this, e.getMessage(), e);
             }
         }
-        
+
         // waiting for the index
         try {
             APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),contentlet.isLive());
         } catch (Exception ex) {
             return Response.serverError().build();
         }
-        
+
         return Response.seeOther(new URI("/content/inode/"+contentlet.getInode()))
                        .header("inode", contentlet.getInode())
                        .header("identifier", contentlet.getIdentifier())
@@ -661,7 +664,7 @@ public class ContentResource extends WebResource {
         }
         processMap( contentlet, map );
     }
-    
+
     protected void processMap(Contentlet contentlet, Map<String,Object> map) {
         String stInode=(String)map.get(Contentlet.STRUCTURE_INODE_KEY);
         if(!UtilMethods.isSet(stInode)) {
@@ -681,11 +684,11 @@ public class ContentResource extends WebResource {
                 else {
                     contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 }
-                
+
                 // check for existing identifier
                 if(map.containsKey("identifier")) {
                     try {
-                        Contentlet existing=APILocator.getContentletAPI().findContentletByIdentifier((String)map.get("identifier"), false, 
+                        Contentlet existing=APILocator.getContentletAPI().findContentletByIdentifier((String)map.get("identifier"), false,
                                 contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
                         APILocator.getContentletAPI().copyProperties(contentlet, existing.getMap());
                         contentlet.setInode("");
@@ -693,12 +696,12 @@ public class ContentResource extends WebResource {
                         throw new RuntimeException("can't get existing content for ident "+map.get("identifier")+" lang "+contentlet.getLanguageId(),e);
                     }
                 }
-                
+
                 // build a field map for easy lookup
                 Map<String,Field> fieldMap=new HashMap<String,Field>();
                 for(Field ff : FieldsCache.getFieldsByStructureInode(stInode))
                     fieldMap.put(ff.getVelocityVarName(), ff);
-                
+
                 // look for relationships
                 Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
                 for(Relationship rel : RelationshipFactory.getAllRelationshipsByStructure(st)) {
@@ -718,8 +721,8 @@ public class ContentResource extends WebResource {
                     }
                 }
                 contentlet.setProperty(RELATIONSHIP_KEY, relationships);
-                
-                
+
+
                 // fill fields
                 for(Map.Entry<String,Object> entry : map.entrySet()) {
                     String key=entry.getKey();
@@ -789,7 +792,7 @@ public class ContentResource extends WebResource {
                                 if(!found) {
                                     throw new Exception("asset "+value+" not found");
                                 }
-                                
+
                             }
                             catch(Exception ex) {
                                 throw new RuntimeException(ex);
@@ -803,7 +806,7 @@ public class ContentResource extends WebResource {
             }
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException {
         HashMap<String,Object> map=new HashMap<String,Object>();
@@ -815,5 +818,5 @@ public class ContentResource extends WebResource {
             map.put(key, value.toString());
         }
         processMap(contentlet,map);
-    }   
+    }
 }
