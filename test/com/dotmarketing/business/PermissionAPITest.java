@@ -156,8 +156,7 @@ public class PermissionAPITest extends TestBase {
         assertTrue(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT, user));
         assertFalse(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_PUBLISH, user));
         assertFalse(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user));
-        
-        User anon = APILocator.getUserAPI().getAnonymousUser();
+
     }
 
     @Test
@@ -474,12 +473,12 @@ public class PermissionAPITest extends TestBase {
         assertTrue(perm.isInheritingPermissions(f4));
         assertTrue(perm.isInheritingPermissions(cont1));
         assertTrue(perm.isInheritingPermissions(cont2));
-        
+
         APILocator.getContentletAPI().archive(cont1, sysuser, false);
         APILocator.getContentletAPI().archive(cont2, sysuser, false);
         APILocator.getContentletAPI().delete(cont1, sysuser, false);
         APILocator.getContentletAPI().delete(cont2, sysuser, false);
-        
+
         FieldFactory.deleteField(field1);
         FieldFactory.deleteField(field2);
         StructureFactory.deleteStructure(s.getInode());
@@ -617,7 +616,7 @@ public class PermissionAPITest extends TestBase {
             Folder c = APILocator.getFolderAPI().createFolders("/a/b/c/", hh, sysuser, false);
 
             perm.permissionIndividually(APILocator.getHostAPI().findSystemHost(), a, sysuser, false);
-            
+
             String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 
             HTMLPage pa=new HTMLPage();
