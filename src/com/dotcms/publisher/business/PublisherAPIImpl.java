@@ -231,23 +231,19 @@ public class PublisherAPIImpl extends PublisherAPI{
                       PushPublishLogger.log(getClass(), "Asset added to Push Publish Queue. Action: "+action+", Asset Type: " + type + ", Asset Id: " + identifier, bundleId, user);
                   }
 
+                  if(localTransaction) {
+                      HibernateUtil.commitTransaction();
+                  }
               } catch ( Exception e ) {
-
-                  try {
-                      HibernateUtil.rollbackTransaction();
-                  } catch ( DotHibernateException e1 ) {
-                      Logger.error( PublisherAPIImpl.class, e.getMessage(), e1 );
+                  if(localTransaction) {
+                      try {
+                          HibernateUtil.rollbackTransaction();
+                      } catch ( DotHibernateException e1 ) {
+                          Logger.error( PublisherAPIImpl.class, e.getMessage(), e1 );
+                      }
                   }
                   Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
                   throw new DotPublisherException( "Unable to add element to publish queue table:" + e.getMessage(), e );
-              } finally {
-            	  if(localTransaction){
-      				try {
-      					HibernateUtil.commitTransaction();
-      				} catch (DotHibernateException e) {
-      					throw new DotPublisherException("Error commiting Transaction", e);
-      				}
-      			}
               }
           }
 
@@ -724,22 +720,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.addParam(last_results);
 			dc.addParam(id);
 			dc.loadResult();
+			
+			if(localTransaction){
+                HibernateUtil.commitTransaction();
+            }
 		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-			}
+		    if(localTransaction) {
+    			try {
+    				HibernateUtil.rollbackTransaction();
+    			} catch (DotHibernateException e1) {
+    				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+    			}
+		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to update element "+id+" :"+e.getMessage(), e);
-		} finally {
-			if(localTransaction){
-				try {
-					HibernateUtil.commitTransaction();
-				} catch (DotHibernateException e) {
-					throw new DotPublisherException("Error commiting Transaction", e);
-				}
-			}
 		}
 	}
 
@@ -779,23 +773,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			dc.addParam(identifier);
 			dc.loadResult();
+			
+			if(localTransaction) {
+			    HibernateUtil.commitTransaction();
+			}
 		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+			if(localTransaction) {
+			    try {
+			        HibernateUtil.rollbackTransaction();
+			    } catch (DotHibernateException e1) {
+			        Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+			    }
 			}
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
-			if(localTransaction){
-				try {
-					HibernateUtil.commitTransaction();
-				} catch (DotHibernateException e) {
-					throw new DotPublisherException("Error commiting Transaction", e);
-				}
-			}
 		}
 	}
 
@@ -835,22 +826,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			dc.addParam(bundleId);
 			dc.loadResult();
-		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+			
+			if(localTransaction) {
+			    HibernateUtil.commitTransaction();
 			}
+		}catch(Exception e){
+		    if(localTransaction) {
+    			try {
+    				HibernateUtil.rollbackTransaction();
+    			} catch (DotHibernateException e1) {
+    				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+    			}
+		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element(s) "+bundleId+" :"+e.getMessage(), e);
-		}finally{
-			if(localTransaction){
-				try {
-					HibernateUtil.commitTransaction();
-				} catch (DotHibernateException e) {
-					throw new DotPublisherException("Error commiting Transaction", e);
-				}
-			}
 		}
 	}
 
@@ -884,22 +873,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.setSQL(OCLDELETEALLELEMENTFROMQUEUESQL);
 			}
 			dc.loadResult();
+			
+			if(localTransaction) {
+                HibernateUtil.commitTransaction();
+            }
 		}catch(Exception e){
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-			}
+		    if(localTransaction) {
+    			try {
+    				HibernateUtil.rollbackTransaction();
+    			} catch (DotHibernateException e1) {
+    				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
+    			}
+		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete elements :"+e.getMessage(), e);
-		} finally{
-			if(localTransaction){
-				try {
-					HibernateUtil.commitTransaction();
-				} catch (DotHibernateException e) {
-					throw new DotPublisherException("Error commiting Transaction", e);
-				}
-			}
 		}
 	}
 

@@ -242,19 +242,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 
 		boolean localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-		try{
+		try {
 			
 			// Checking for Next Step references
-						for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
-							if(otherStep.equals(step))
-								continue;
-							for(WorkflowAction a : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
-								if(a.getNextStep().equals(step.getId())){
-									throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" + 
-											" Step : '"+otherStep.getName() + "' ->  Action : '" + a.getName() + "' </br></br>");
-								}
-							}
-						}
+			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
+				if(otherStep.equals(step))
+					continue;
+				for(WorkflowAction a : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
+					if(a.getNextStep().equals(step.getId())){
+						throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" + 
+								" Step : '"+otherStep.getName() + "' ->  Action : '" + a.getName() + "' </br></br>");
+					}
+				}
+			}
 
 			List<WorkflowAction> actions = wfac.findActions(step);
 			for(WorkflowAction action : actions){
@@ -269,21 +269,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 
 			wfac.deleteStep(step);
+			
+			if(localTransaction){
+                HibernateUtil.commitTransaction();
+            }
 		}
 		catch(Exception e){
 			if(localTransaction){
 				HibernateUtil.rollbackTransaction();
 			}
 			throw new DotDataException(e.getMessage(), e);
-
-
 		}
-		finally{
-			if(localTransaction){
-				HibernateUtil.commitTransaction();
-			}
-		}
-
 	}
 
 	public void reorderStep(WorkflowStep step, int order) throws DotDataException {
@@ -349,15 +345,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		try{
 			wfac.deleteWorkflowTask(task);
 
+			if(local){
+                HibernateUtil.commitTransaction();
+            }
 		}catch(Exception e){
 			if(local){
 				HibernateUtil.rollbackTransaction();
-			}
-
-		}
-		finally{
-			if(local){
-				HibernateUtil.commitTransaction();
 			}
 
 		}
@@ -522,8 +515,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException {
+	    boolean localTran=false;
 		try {
-			HibernateUtil.startTransaction();
+			localTran=HibernateUtil.startLocalTransactionIfNeeded();
 			this.saveAction(action);
 			APILocator.getPermissionAPI().removePermissions(action);
 			if(perms != null){
@@ -532,12 +526,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					APILocator.getPermissionAPI().save(p, action, APILocator.getUserAPI().getSystemUser(), false);
 				}
 			}
+			if(localTran) {
+			    HibernateUtil.commitTransaction();
+			}
 		} catch (Exception e) {
-			HibernateUtil.rollbackTransaction();
+		    if(localTran) {
+		        HibernateUtil.rollbackTransaction();
+		    }
 			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
-		} finally {
-			HibernateUtil.commitTransaction();
 		}
 
 	}
@@ -707,12 +704,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     		return;
     	}
 
+    	boolean localTransaction=false;
     	try {
-			boolean localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
-			WorkflowActionClass actionClass= wfac.findActionClass(params.get(0).getActionClassId());
-			//wfac.deleteWorkflowActionClassParameters(actionClass);
-
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+			
 			for(WorkflowActionClassParameter param : params){
 				wfac.saveWorkflowActionClassParameter(param);
 			}
@@ -721,12 +716,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 		} catch (Exception e) {
 			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
-			HibernateUtil.rollbackTransaction();
-			DbConnectionFactory.closeConnection();
-
-		}
-		finally{
-			HibernateUtil.commitTransaction();
+			if(localTransaction) {
+			    HibernateUtil.rollbackTransaction();
+			}
 		}
     }
 
@@ -769,13 +761,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void fireWorkflowPostCheckin(WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-		boolean local = HibernateUtil.startLocalTransactionIfNeeded();
+		boolean local = false;
 
 		try{
 			if(!processor.inProcess()){
 				return;
 			}
 
+			local = HibernateUtil.startLocalTransactionIfNeeded();
+			
 			processor.getContentlet().setStringProperty("wfActionId", processor.getAction().getId());
 
 
@@ -809,19 +803,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 				
-				List<WorkflowActionClass> actionClasses = processor.getActionClasses();
-				if(actionClasses != null){
-					for(WorkflowActionClass actionClass : actionClasses){
-						WorkFlowActionlet actionlet= actionClass.getActionlet();
-						Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
-						actionlet.executeAction(processor, params);
+			List<WorkflowActionClass> actionClasses = processor.getActionClasses();
+			if(actionClasses != null){
+				for(WorkflowActionClass actionClass : actionClasses){
+					WorkFlowActionlet actionlet= actionClass.getActionlet();
+					Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+					actionlet.executeAction(processor, params);
 
-						//if we should stop processing further actionlets
-						if(actionlet.stopProcessing()){
-							break;
-						}
+					//if we should stop processing further actionlets
+					if(actionlet.stopProcessing()){
+						break;
 					}
 				}
+			}
+			
+			if(local){
+                HibernateUtil.commitTransaction();
+            }
 
 		}catch(Exception e){
 			if(local){
@@ -830,14 +828,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotWorkflowException(e.getMessage());
 
 		}
-		finally{
-			if(local){
-				HibernateUtil.commitTransaction();
-			}
-
-		}
-
-
 	}
 
 	private void updateTask(WorkflowProcessor processor) throws DotDataException{
@@ -939,6 +929,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     @Override
     public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException {
         return wfac.findSchemeByName(schemaName);
+    }
+
+    @Override
+    public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException {
+        wfac.deleteWorkflowActionClassParameter(param);
+        
     }
 
 

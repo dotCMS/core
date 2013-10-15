@@ -34,6 +34,7 @@
         var loadingSearchFields = true;
         var categoriesLastSearched = new Array();
 
+        var queryRaw;
         var structureInode;
         var currentStructureFields;
         var currentPage = 1;
@@ -628,7 +629,7 @@
                         fieldValue = '<%= conFolderValue %>';
                   <%}%>
 
-                  var result = "<div onchange='doSearch()' id=\"FolderHostSelector\" style='width270px' dojoType=\"dotcms.dijit.form.HostFolderFilteringSelect\" includeAll=\"true\" onClick=\"resetHostValue();\" onChange=\"getHostValue();\" "
+                  var result = "<div onchange=\"doSearch(null, '<%=orderBy%>')\" id=\"FolderHostSelector\" style='width270px' dojoType=\"dotcms.dijit.form.HostFolderFilteringSelect\" includeAll=\"true\" onClick=\"resetHostValue();\" onChange=\"getHostValue();\" "
                                                 +" hostId=\"" + hostId + "\" value = \"" + fieldValue + "\"" + "></div>";
 
           hasHostFolderField = true;
@@ -944,20 +945,49 @@
         }
 
         function pushPublishSelectedContentlets() {
-        	var selectedInodes=dojo.query("input[name='publishInode']")
-                                       .filter(function(x){return x.checked;})
-                                       .map(function(x){return x.value;});
 
+            var selectedInodes = getSelectedInodes ();
 			pushHandler.showDialog(selectedInodes);
         }
 
         function addToBundleSelectedContentlets() {
-        	var selectedInodes=dojo.query("input[name='publishInode']")
-                                       .filter(function(x){return x.checked;})
-                                       .map(function(x){return x.value;});
 
+            var selectedInodes = getSelectedInodes ();
 			pushHandler.showAddToBundleDialog(selectedInodes, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+        }
 
+        function getSelectedInodes () {
+
+            var selectedInodes;
+            if ( document.getElementById("fullCommand").value == "true" ) {
+
+                /*
+                 If we choose to select all the elements, not just the ones in the current page, we can't just
+                 send the selected elements as we are using pagination, we only have track of the current page, for
+                 that reason lets send the lucene query that returned the current values LESS the uncheked values.
+                */
+                var excludeInodes = "";
+                if (unCheckedInodes != undefined && unCheckedInodes != null && unCheckedInodes.length > 0) {
+
+                    var inodesToExcludeColl = unCheckedInodes.split(",");
+                    for (var i=0; i<inodesToExcludeColl.length; i++) {
+                        if (inodesToExcludeColl[i] != "" && inodesToExcludeColl[i] != " " && inodesToExcludeColl[i] != "-" ) {
+                            excludeInodes += " inode:" + inodesToExcludeColl[i];
+                        }
+                    }
+                    //excludeInodes = unCheckedInodes.replace(/,/g, " inode:");
+                    excludeInodes = " -(" + excludeInodes + ")";
+                }
+
+                selectedInodes = "query_" + queryRaw + excludeInodes;
+
+            } else {
+                selectedInodes = dojo.query("input[name='publishInode']")
+                                    .filter(function(x){return x.checked;})
+                                    .map(function(x){return x.value;});
+            }
+
+            return selectedInodes;
         }
 
         function unPublishSelectedContentlets(){
@@ -1208,7 +1238,7 @@
                 var form = document.getElementById("search_form");
                 form.categories = null;
                 if(form.categories != null){
-                	var tempChildNodesLength = form.categories.childNodes.length; 
+                	var tempChildNodesLength = form.categories.childNodes.length;
                 	for(var i = 0; i < tempChildNodesLength; i++){
                 		form.categories.removeChild(form.categories.childNodes[0]);
                 	}
@@ -1281,6 +1311,12 @@
 
 
         function doSearch1 (page, sortBy) {
+
+
+                if (page == undefined || page == null ) {
+                    //Unless we are using pagination we don't need to keep the All selection across searches
+                    clearAllContentsSelection();
+                }
 
 	            var structureInode = "";
 
@@ -1434,7 +1470,7 @@
                         currentPage = page;
 
                 if (sortBy != null) {
-                        if (sortBy == currentSortBy)
+                        if (sortBy == currentSortBy && sortBy.indexOf("desc")==-1)
                                 sortBy = sortBy + " desc";
                         currentSortBy = sortBy;
                 }
@@ -1563,6 +1599,8 @@
 
         function clearAllContentsMessage()      {
                 $('tablemessage').innerHTML = " &nbsp ";
+                unCheckedInodes = "";
+                document.getElementById('allUncheckedContentsInodes').value = "";
                 document.getElementById("fullCommand").value = "false";
                 return true;
         }
@@ -2112,7 +2150,7 @@
                            ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
                            "/api/content/render/false";
                         %>
-                        var queryRaw = counters["luceneQueryRaw"];
+                        queryRaw = counters["luceneQueryRaw"];
                         var queryfield=document.getElementById("luceneQuery");
                         queryfield.value=queryRaw;
                         var queryFrontend = counters["luceneQueryFrontend"];
@@ -2529,11 +2567,13 @@
 					: (dojo.byId("whereToSend"))
 						? dojo.byId("whereToSend").value
 								: "";
+
+            var forcePush = (dijit.byId("forcePush")) ? dijit.byId("forcePush").checked : false;
 			// END: PUSH PUBLISHING ACTIONLET
 
 
     		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-    				publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback);
+    				publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback);
 
     	}
 
