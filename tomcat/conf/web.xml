@@ -659,6 +659,10 @@
         <mime-type>image/ief</mime-type>
     </mime-mapping>
     <mime-mapping>
+		<extension>flv</extension>
+		<mime-type>video/x-flv</mime-type>
+	</mime-mapping>
+    <mime-mapping>
         <extension>jad</extension>
         <mime-type>text/vnd.sun.j2me.app-descriptor</mime-type>
     </mime-mapping>
