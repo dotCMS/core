@@ -14,13 +14,12 @@ import java.util.List;
 
 /**
  * @author Jonathan Gamba
- *         Date: 10/15/13
+ *         Date: 9/4/13
  */
-public class PackagerTask extends JarJarTask {
+public class AutoPackagerTask extends JarJarTask {
 
     private String libraryPath;
     private String outputFolder;
-    private String outputFile;
     private String dotcmsJar;
 
     public void execute () throws BuildException {
@@ -58,70 +57,119 @@ public class PackagerTask extends JarJarTask {
         log( "Found " + inspector.getClassCount() + " unique classes" );
         log( "Found " + inspector.getDuplicateCount() + " duplicated classes" );
 
-        if ( inspector.getDuplicateCount() > 0 ) {
-            throw new IllegalStateException( "Found duplicated classes on the specified class path, you need to fix those duplicates " +
-                    "in order to continue." );
-        }
-
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //PREPARE ALL THE JARS AND RULES TO APPLY
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        Collection<File> toTransform = new ArrayList<File>();
-        HashMap<String, Rule> rulesToApply = new HashMap<String, Rule>();
+        /*
+        What we got here (Something like this):
 
-        //Get all the classes we found
+        1) Duplicated classes
+        2) Where is duplicated each class (jars)
+
+        [Plain representation]
+            org.bouncycastle.crypto.signers.ISO9796d2PSSSigner
+                5204  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/tika-app-1.3.jar
+                5204  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/bcprov-jdk15-1.45.jar
+            com.sun.jna.Function$NativeMappedArray
+                993  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/jna.jar
+                1098  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/jna-3.3.0.jar
+            org.dom4j.swing.BranchTreeNode
+                2880  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/tika-app-1.3.jar
+                2880  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/dom4j-1.6.1.jar
+            org.dom4j.dom.DOMDocumentType
+                4750  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/tika-app-1.3.jar
+                4750  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/dom4j-1.6.1.jar
+            org.apache.wml.WMLWmlElement
+                202  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/tika-app-1.3.jar
+                202  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/xercesImpl.jar
+                202  /home/jonathan/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/daisydiff.jar
+
+        WHAT WE NEED TO TO:
+            A) So witch jar we must modify??, meaning ir we have a class duplicated on 3 or 2 jars we should modify
+             just one right?. FOR NOW LEST GRAB THE FIRST ONE..... NOTE: ASK JASON ABOUT THIS
+
+            B) AFTER repackage the chosen jars we must apply the same rules to the dotcms.jar in order to update the dependencies.
+         */
+
+        HashMap<File, HashMap<String, Rule>> toTransform = new HashMap<File, HashMap<String, Rule>>();
+        HashMap<String, Rule> globalRules = new HashMap<String, Rule>();
+
+        //Get all the duplicated classes
         HashMap<String, List<Inspector.PathInfo>> classes = inspector.getClasses();
         for ( String name : classes.keySet() ) {
 
-            //Collection with the info of found for each class
+            //Collection with the info of where is duplicated
             List<Inspector.PathInfo> details = classes.get( name );
-            Inspector.PathInfo detail = details.get( 0 );//Grabbing the first one, could be more than one for duplicated classes
+            //if details > 1 means the class is in more than one jar, duplicated!
+            if ( details.size() <= 1 ) {
+                continue;
+            }
+
+            Inspector.PathInfo detail = details.get( 0 );//TODO: Grabbing the first one.....
             File jarFile = detail.base;
 
             //Handle some strings to use in the rules
             String packageName;
             if ( name.lastIndexOf( "." ) != -1 ) {
-                //Get the package of the class (from my.package.myClassName to my.package)
+                //Get the package of the duplicated class (from my.package.myClassName to my.package)
                 packageName = name.substring( 0, name.lastIndexOf( "." ) );
             } else {
                 //On the root??, no package??
                 continue;
             }
 
-            //Create the rule for this class and add it to the list of rules for this jar
+            //Prepare the rules to apply
+            HashMap<String, Rule> currentRules;
+            if ( toTransform.containsKey( jarFile ) ) {
+                currentRules = toTransform.get( jarFile );
+            } else {
+                currentRules = new HashMap<String, Rule>();
+            }
+
+            //Create the rule for this duplicated class and add it to the list of rules for this jar
             Rule rule = new Rule();
 
             String pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
-            String result = "com.dotcms.repackage." + packageName + ".@1";
+            String result = "com.dotcms." + packageName + ".@1";
 
             rule.setPattern( pattern );
             rule.setResult( result );
-
-            //Global list of rules to apply
-            if ( !rulesToApply.containsKey( pattern + result ) ) {
-                rulesToApply.put( pattern + result, rule );
+            if ( !currentRules.containsKey( pattern + result ) ) {
+                currentRules.put( pattern + result, rule );
+            }
+            //Add this rule to a global array and have a list of all the applied rules
+            if ( !globalRules.containsKey( pattern + result ) ) {
+                globalRules.put( pattern + result, rule );
             }
 
-            //Global list of jars to repackage
-            if ( !toTransform.contains( jarFile ) ) {
-                toTransform.add( jarFile );
-            }
+            //Update the map of jars to repackage
+            toTransform.put( jarFile, currentRules );
         }
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //NOW REPACKAGE THE JARS
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        //-------------------------------
-        //SOME LOGGING
         log( "-----------------------------------------" );
         log( "Jars to repackage: " + toTransform.size() );
-        logRules( rulesToApply.values() );
-        logJars( toTransform );
 
-        //And finally repackage the jars
-        generate( getOutputFile(), rulesToApply.values(), toTransform );
+        for ( File jarFile : toTransform.keySet() ) {
+
+            //Prepare the jars that we are going to repackage
+            Collection<File> files = new ArrayList<File>();
+            files.add( jarFile );
+
+            //Prepare the rules for these groups of jar
+            Collection<Rule> rules = toTransform.get( jarFile ).values();
+
+            //-------------------------------
+            //SOME LOGGING
+            logRepackaging( jarFile, rules );
+
+            //And finally repackage the file
+            generate( jarFile.getName(), rules, files );
+        }
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //CHANGE THE OLD REFERENCES IN THE DOTCMS JAR
@@ -130,12 +178,16 @@ public class PackagerTask extends JarJarTask {
         //Prepare the jars that we are going to repackage
         Collection<File> files = new ArrayList<File>();
         files.add( dotcmsJar );
+
+        //Prepare the rules for these groups of jar
+        Collection<Rule> rules = globalRules.values();
+
         //-------------------------------
         //SOME LOGGING
-        logJars( files );
+        logRepackaging( dotcmsJar, rules );
 
         //And finally repackage the file
-        generate( dotcmsJar.getName(), rulesToApply.values(), files );
+        generate( dotcmsJar.getName(), rules, files );
     }
 
     /**
@@ -172,41 +224,18 @@ public class PackagerTask extends JarJarTask {
         super.reset();
     }
 
-    private void logJars ( Collection<File> jars ) {
+    private void logRepackaging ( File jar, Collection<Rule> rules ) {
 
         //-------------------------------
         //SOME LOGGING
         log( "" );
         log( "-----------------------------------------" );
-        log( "Repackaging... " );
-        for ( File jar : jars ) {
-            log( jar.getName() );
-        }
-        //-------------------------------
-    }
-
-    private void logRules ( Collection<Rule> rules ) {
-
-        //-------------------------------
-        //SOME LOGGING
-        log( "" );
-        log( "-----------------------------------------" );
-        log( "Rules to apply: " );
+        log( "Repackaging... " + jar.getName() );
+        log( "With rules: " );
         for ( Rule rule : rules ) {
             log( rule.getPattern() + " --> " + rule.getResult() );
         }
         //-------------------------------
-    }
-
-    /**
-     * Return true if the name corresponds to a jar file
-     *
-     * @param name The file name
-     * @return true if the name is a jar file, false otherwise.
-     */
-    private boolean isJarName ( String name ) {
-        name = name.toLowerCase();
-        return name.endsWith( ".jar" );
     }
 
     public String getOutputFolder () {
@@ -215,14 +244,6 @@ public class PackagerTask extends JarJarTask {
 
     public void setOutputFolder ( String outputFolder ) {
         this.outputFolder = outputFolder;
-    }
-
-    public String getOutputFile () {
-        return outputFile;
-    }
-
-    public void setOutputFile ( String outputFile ) {
-        this.outputFile = outputFile;
     }
 
     public void setLibraryPath ( String libraryPath ) {
