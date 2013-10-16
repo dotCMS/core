@@ -111,11 +111,11 @@ public class FolderAPIImpl implements FolderAPI  {
 			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
 			renamed=ffac.renameFolder(folder, newName, user, respectFrontEndPermissions);
-			
+
 			if (localTransaction) {
                 HibernateUtil.commitTransaction();
             }
-			
+
 			return renamed;
 		} catch (Exception e) {
 
@@ -373,11 +373,11 @@ public class FolderAPIImpl implements FolderAPI  {
 				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 			}
 
+			PublisherAPI.getInstance().deleteElementFromPublishQueueTable(folder.getInode());
+
 			if(localTransaction){
                 HibernateUtil.commitTransaction();
             }
-			
-			PublisherAPI.getInstance().deleteElementFromPublishQueueTable(folder.getIdentifier());
 
 		} catch (Exception e) {
 
