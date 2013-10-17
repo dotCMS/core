@@ -1315,7 +1315,8 @@
 
                 if (page == undefined || page == null ) {
                     //Unless we are using pagination we don't need to keep the All selection across searches
-                    clearAllContentsSelection();
+                    if(dijit.byId('checkAll')!= undefined)
+                    	clearAllContentsSelection();
                 }
 
 	            var structureInode = "";
