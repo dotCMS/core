@@ -40,7 +40,7 @@
 	var checkboxesIds = new Array();
 	var counter_radio = 0;
 	var counter_checkbox = 0;
-	var userId = '<%= user.getUserId() %>'
+	var userId = '<%= user.getUserId() %>';
 	var	hasHostFolderField = false;
 	var setDotFieldTypeStr = "";
 	var DOT_FIELD_TYPE = "dotFieldType";
@@ -55,7 +55,7 @@
 		document.getElementById("previousDiv").style.display = "none";
 		counter_radio = 0;
 	    counter_checkbox = 0;
-		
+        setDotFieldTypeStr = "";
 	}
 	
 	function fieldName (field) { 
@@ -275,14 +275,14 @@ function renderSearchField (field) {
 		currentStructureFields = data;
 		dwr.util.removeAllRows("search_fields_table");
 		var htmlstr = "<dl>";
-		for(var i = 0; i < data.length; i++) { 
+		for(var i = 0; i < data.length; i++) {
 			htmlstr += "<dt>" + fieldName(data[i]) + "</dt>";
 			htmlstr += "<dd>" + renderSearchField(data[i]) + "</dd>";
 		}
 		htmlstr += "</d>";
 		$('search_fields_table').update(htmlstr);
 		dojo.parser.parse(dojo.byId('search_fields_table'));
-		eval(setDotFieldTypeStr);
+        eval(setDotFieldTypeStr);
 	}
 
 	function categoryName (field) {
