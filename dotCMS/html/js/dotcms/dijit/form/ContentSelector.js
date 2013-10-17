@@ -115,6 +115,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_structureChanged: function () {
+        this.setDotFieldTypeStr = "";
 		LanguageAjax.getLanguages(dojo.hitch(this, this._fillLanguages));
 		StructureAjax.getSearchableStructureFields (this.structureInode,dojo.hitch(this, this._fillFields));
 		StructureAjax.getStructureCategories (this.structureInode,dojo.hitch(this, this._fillCategories));
@@ -161,7 +162,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "</dl>";
 		dojo.place(htmlstr,this.search_fields_table);
 		dojo.parser.parse(this.search_fields_table);
-		eval(this.setDotFieldTypeStr);
+        eval(this.setDotFieldTypeStr);
 	},
 
 	_fieldName: function  (field) {
@@ -273,9 +274,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		}else if(type=='tag'){
 			var result="<table style='width:200px;' border=\"0\">";
 			result = result + "<tr><td style='padding:0px;'>";
-			result = result +"<textarea id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field " + this.dialogCounter
-			+ "Field\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName
-			+ "Field\" cols=\"20\" rows=\"2\" onkeyup=\"suggestTagsForSearch(this,'"
+			result = result +"<textarea id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field" + this.dialogCounter + "\""
+			+ " name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\""
+			+ " cols=\"20\" rows=\"2\" onkeyup=\"suggestTagsForSearch(this,'"
 			+ this.structureVelVar+"."+ fieldVelocityVarName + "suggestedTagsDiv" + this.dialogCounter + "');\" "
 			+ " style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; "
 			+ " font-family: Verdana, Arial,Helvetica; font-size: 11px; height: 50px; width: 160px;\" "
@@ -419,7 +420,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			var mycallbackfnc = function(data) { fillCategorySelect(selectId, data); };
 
 			CategoryAjax.getSubCategories(cat["inode"], '', { callback: mycallbackfnc, async: false });
-		}
+        }
 	},
 
 	_hideMatchingResults: function  () {
