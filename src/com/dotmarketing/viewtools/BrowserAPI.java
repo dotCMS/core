@@ -45,13 +45,28 @@ public class BrowserAPI {
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     public Map<String, Object> getFolderContent ( User usr, String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
+    		List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks ) throws DotSecurityException, DotDataException {
+    	return getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks);
+    }
+
+    public Map<String, Object> getFolderContent ( User usr, String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
                                                   List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc ) throws DotSecurityException, DotDataException {
     	return getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc);
     }
 
+    public Map<String, Object> getFolderContent(User user, String folderId,
+			int offset, int maxResults, String filter, List<String> mimeTypes,
+			List<String> extensions, boolean showWorking, boolean showArchived, boolean noFolders,
+			boolean onlyFiles, String sortBy, boolean sortByDesc)
+			throws DotSecurityException, DotDataException {
+
+    	return getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions, showWorking, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, false);
+
+    }
+
 	/**
-	 * Gets the Folders, HTMLPages, Links, FileAssets under the specified folderId. 
-	 * 
+	 * Gets the Folders, HTMLPages, Links, FileAssets under the specified folderId.
+	 *
 	 * @param user
 	 * @param folderId
 	 * @param offset
@@ -59,24 +74,25 @@ public class BrowserAPI {
 	 * @param filter
 	 * @param mimeTypes
 	 * @param extensions
-	 * 
+	 *
 	 * @param showWorking   If true, returns the working version of HTMLPages, Links and FileAssets in the folder.
-	 * 						If false, returns the live version of HTMLPages, Links and FileAssets in the folder. 						
-	 * 
+	 * 						If false, returns the live version of HTMLPages, Links and FileAssets in the folder.
+	 *
 	 * @param showArchived  If true, includes the archived version of HTMLPages, Links and FileAssets in the folder.
-	 * 
+	 *
 	 * @param noFolders
 	 * @param onlyFiles
 	 * @param sortBy
 	 * @param sortByDesc
-	 * @return 
+	 * @param excludeLinks
+	 * @return
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
 	public Map<String, Object> getFolderContent(User user, String folderId,
 			int offset, int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showWorking, boolean showArchived, boolean noFolders,
-			boolean onlyFiles, String sortBy, boolean sortByDesc)
+			boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks)
 			throws DotSecurityException, DotDataException {
 
 		if (!UtilMethods.isSet(sortBy)) {
@@ -150,9 +166,9 @@ public class BrowserAPI {
 						pages.addAll(folderAPI.getLiveHTMLPages(parent, user, false));
 					else
 						pages.addAll(folderAPI.getHTMLPages(parent, true, false, user, false));
-					
+
 					if(showArchived)
-						pages.addAll(folderAPI.getHTMLPages(parent, true, showArchived, user, false));					
+						pages.addAll(folderAPI.getHTMLPages(parent, true, showArchived, user, false));
 				} else {
 					pages.addAll(folderAPI.getHTMLPages(host, true,
 							showArchived, user, false));
@@ -203,7 +219,7 @@ public class BrowserAPI {
 		        if(showWorking)
 		        	cond.working = true;
 		        else
-		        	cond.live = true;		        
+		        	cond.live = true;
 				files.addAll(folderAPI.getFiles(parent,	userAPI.getSystemUser(), false, cond));
 				if (showArchived) {
 					cond.deleted = showArchived;
@@ -381,7 +397,7 @@ public class BrowserAPI {
 
 		}
 
-		if (!onlyFiles) {
+		if (!onlyFiles && !excludeLinks) {
 
 			// Getting the links directly under the parent folder or host
 			List<Link> links = new ArrayList<Link>();
@@ -477,5 +493,5 @@ public class BrowserAPI {
 		returnMap.put("list", returnList.subList(offset, offset + maxResults));
 		return returnMap;
 	}
-    
+
 }

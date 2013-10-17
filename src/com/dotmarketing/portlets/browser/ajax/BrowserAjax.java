@@ -244,6 +244,16 @@ public class BrowserAjax {
     }
 
 	public Map<String, Object> getFolderContent (String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
+			List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks) throws DotHibernateException, DotSecurityException, DotDataException {
+
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest req = ctx.getHttpServletRequest();
+		User usr = getUser(req);
+
+		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks);
+	}
+
+	public Map<String, Object> getFolderContent (String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc) throws DotHibernateException, DotSecurityException, DotDataException {
 
 		WebContext ctx = WebContextFactory.get();
@@ -252,6 +262,7 @@ public class BrowserAjax {
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc);
 	}
+
 	public void saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId, String wfPublishDate,
 			String wfPublishTime, String wfExpireDate, String wfExpireTime, String wfNeverExpire, String whereToSend, String forcePush) throws  DotSecurityException, ServletException{
 		WebContext ctx = WebContextFactory.get();
