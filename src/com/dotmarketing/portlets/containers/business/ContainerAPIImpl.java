@@ -76,8 +76,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		//persists the webasset
 		save(newContainer);
 
-		if(source.isLive()){
+		if(source.isWorking()){
 			APILocator.getVersionableAPI().setWorking(newContainer);
+		}
+		if(source.isLive()){
 			APILocator.getVersionableAPI().setLive(newContainer);
 		}
 
