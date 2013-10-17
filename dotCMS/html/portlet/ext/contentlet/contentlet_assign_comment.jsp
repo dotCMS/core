@@ -46,10 +46,14 @@ if(conPublishDateVar ==null && structureInode != null){
 %>
 
 <script>
-dojo.require("dojox.data.QueryReadStore");
-dojo.require("dotcms.dojo.push.PushHandler");
-var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
-var myRoleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfRoleStoreAjax?cmd=assignable&actionId=<%=actionId%>'});
+
+    <%if(hasPushPublishActionlet){%>
+        dojo.require("dotcms.dojo.push.PushHandler");
+        var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+    <%}%>
+
+    dojo.require("dojox.data.QueryReadStore");
+    var myRoleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfRoleStoreAjax?cmd=assignable&actionId=<%=actionId%>'});
 
 
 
@@ -240,10 +244,13 @@ function validate() {
 			</div>
 		</div>
 	</div>
-<script>
-	dojo.parser.parse(dojo.byId("wfDivWrapperForDojo"));
-	setDates();
+    <script>
+        dojo.parser.parse(dojo.byId("wfDivWrapperForDojo"));
 
-</script>
+        <%if(hasPushPublishActionlet){%>
+            setDates();
+        <%}%>
+
+    </script>
 <% } %>
 
