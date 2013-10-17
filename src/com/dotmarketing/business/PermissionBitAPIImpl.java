@@ -145,6 +145,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @return If the user has the required permission for the collection of permissions passed in
 	 */
 	private boolean doRolesHavePermission(List<String> userRoleIDs, List<Permission> permissions, int requiredPermissionType){
+		
 		for (Permission permission : permissions) {
 			if(permission.matchesPermission(requiredPermissionType)
 					&& userRoleIDs.contains(permission.getRoleId())){
@@ -338,7 +339,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					}else if(user != null && p.getRoleId().equals(frontEndUserRole.getId())){
 						return true;
 					}
-				}
+				} 
 				// if owner and owner has required permission return true
 				try {
 					if(p.getRoleId().equals(cmsOwnerRole.getId()) && user != null &&
@@ -357,7 +358,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		//If we don't have a user, return false
 		if(user ==null){
 			return false;
-		}
+		} 
 
 		List<Role> roles;
 		try {
@@ -411,6 +412,24 @@ public class PermissionBitAPIImpl implements PermissionAPI {
                         return true;
                 }
         }
+        
+        if(!respectFrontendRoles) {
+			List<String> frontEndRoles = new ArrayList<String>(3);
+	
+			try {
+				frontEndRoles.add(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+				frontEndRoles.add(APILocator.getRoleAPI().loadLoggedinSiteRole().getId());
+				frontEndRoles.add(APILocator.getRoleAPI().loadRoleByKey("anonymous").getId());
+			} catch (DotDataException e1) {
+				Logger.error(this, e1.getMessage(), e1);
+				throw new DotRuntimeException(e1.getMessage(), e1);
+			}
+			
+			if(frontEndRoles.containsAll(userRoleIds)) {
+				return false; // The user roles are ALL frontEnd roles AND respectFrontEndRoles is false, so return false
+			}
+		}
+        
 		return doRolesHavePermission(userRoleIds,getPermissions(permissionable, true),permissionType);
 	}
 

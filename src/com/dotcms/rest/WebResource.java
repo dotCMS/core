@@ -10,6 +10,7 @@ import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -129,6 +130,12 @@ public class WebResource {
 
 		if(user==null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
 			throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
+		} else if(user==null) {
+			try {
+				user =APILocator.getUserAPI().getAnonymousUser();
+			} catch (DotDataException e) {
+				Logger.debug(getClass(), "Could not get Anonymous User. ");
+			}
 		}
 
 		return user;
