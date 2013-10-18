@@ -87,7 +87,7 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		dc.addParam(inode);
 		dc.addParam(APILocator.getUserAPI().getSystemUser().getUserId());
 		dc.addParam(new Date());
-		dc.addParam(fileAsset.getPermissionType());
+		dc.addParam(fileAsset.getType());
 		dc.loadResult();
 		
 		
