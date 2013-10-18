@@ -286,9 +286,7 @@ public class Container extends WebAsset implements Serializable {
 	}
 
 	public String getNotes() {
-		if (UtilMethods.isSet(this.notes))
-			return this.notes;
-		return "";
+		return this.notes;
 	}
 
 	public void setNotes(String notes) {
