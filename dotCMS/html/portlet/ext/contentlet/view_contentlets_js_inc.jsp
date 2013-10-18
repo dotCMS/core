@@ -1147,6 +1147,7 @@
                 document.getElementById("structureInode").value = structureInode;
                 hasHostFolderField = false;
                 loadingSearchFields = true;
+                setDotFieldTypeStr = "";
 
                 StructureAjax.getStructureSearchFields (structureInode,
                         { callback:fillFields, async: async });
@@ -1312,9 +1313,11 @@
 
         function doSearch1 (page, sortBy) {
 
+
                 if (page == undefined || page == null ) {
                     //Unless we are using pagination we don't need to keep the All selection across searches
-                    clearAllContentsSelection();
+                    if(dijit.byId('checkAll')!= undefined)
+                    	clearAllContentsSelection();
                 }
 
 	            var structureInode = "";
@@ -2567,7 +2570,7 @@
 						? dojo.byId("whereToSend").value
 								: "";
 
-			var forcePush = dijit.byId("forcePush").checked;
+            var forcePush = (dijit.byId("forcePush")) ? dijit.byId("forcePush").checked : false;
 			// END: PUSH PUBLISHING ACTIONLET
 
 

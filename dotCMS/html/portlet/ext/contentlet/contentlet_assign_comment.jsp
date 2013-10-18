@@ -46,10 +46,14 @@ if(conPublishDateVar ==null && structureInode != null){
 %>
 
 <script>
-dojo.require("dojox.data.QueryReadStore");
-dojo.require("dotcms.dojo.push.PushHandler");
-var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
-var myRoleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfRoleStoreAjax?cmd=assignable&actionId=<%=actionId%>'});
+
+    <%if(hasPushPublishActionlet){%>
+        dojo.require("dotcms.dojo.push.PushHandler");
+        var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+    <%}%>
+
+    dojo.require("dojox.data.QueryReadStore");
+    var myRoleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfRoleStoreAjax?cmd=assignable&actionId=<%=actionId%>'});
 
 
 
@@ -104,15 +108,18 @@ function setDates(){
 }
 
 function validate() {
-	var whereToSend = dojo.byId("whereToSend").value;
-	if(whereToSend==null || whereToSend=="") {
-		alert("<%=LanguageUtil.get(pageContext, "publisher_dialog_environment_mandatory")%>");
-		return false;
-	}
 
-	contentAdmin.saveAssign();
+    <%if(hasPushPublishActionlet){%>
+        var whereToSend = dojo.byId("whereToSend").value;
+        if(whereToSend==null || whereToSend=="") {
+            showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "publisher_dialog_environment_mandatory")%>");
+            return false;
+        }
+    <%}%>
 
+    contentAdmin.saveAssign();
 }
+
 </script>
 
 <!--  DOTCMS-7085 -->
@@ -237,10 +244,13 @@ function validate() {
 			</div>
 		</div>
 	</div>
-<script>
-	dojo.parser.parse(dojo.byId("wfDivWrapperForDojo"));
-	setDates();
+    <script>
+        dojo.parser.parse(dojo.byId("wfDivWrapperForDojo"));
 
-</script>
+        <%if(hasPushPublishActionlet){%>
+            setDates();
+        <%}%>
+
+    </script>
 <% } %>
 

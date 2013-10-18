@@ -225,7 +225,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this._removeRows(this.thumbnailsTableBody);
 
 		BrowserAjax.getFolderContent(this._norm(this.currentFolder.id), this._currentOffset, this._maxNumberOfAssets, this._currentFilter, this.mimeTypes,
-			this.fileExtensions, false, true, this.onlyFiles, "title", false, dojo.hitch(this, this._selectFolderCallback));
+			this.fileExtensions, false, true, this.onlyFiles, "title", false, true, dojo.hitch(this, this._selectFolderCallback));
 
 	},
 
@@ -484,7 +484,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	/* hack for IE only */
 	_fileSubmitted: function(numOfFiles,waitMsg) {
 		dojo.global.fileSubmittedWaitToSave = dojo.hitch(this, this._fileSubmittedWaitToSave);
-		
+
 		this.addFileDialog.hide();
 		this._hide(this.noContent);
 		this._hide(this.noResults);
@@ -497,7 +497,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this._removeRows(this.detailsTableBody);
 		this._removeRows(this.listTableBody);
 		this._removeRows(this.thumbnailsTableBody);
-		
+
 		showDotCMSSystemMessage(waitMsg,true);
 		if(numOfFiles < 5)
 			setTimeout('fileSubmittedWaitToSave()', numOfFiles*2000);
