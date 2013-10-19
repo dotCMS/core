@@ -104,7 +104,7 @@ public class ResizeImageServlet extends HttpServlet {
 				try {
 					currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 					String path = LiveCache.getPathFromCache(url, currentHost);
-					String cinode=path.split("/")[3];
+					String cinode=path.split("\\\\")[3];
 					id=APILocator.getIdentifierAPI().findFromInode(cinode).getId();
 				} catch (Exception e) {
 					Logger.error(ResizeImageServlet.class, e.getMessage(), e);
