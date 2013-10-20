@@ -686,7 +686,8 @@ public class DotCMSPHPCauchoVFS extends FilesystemPath {
 			try{
 				file = fileAPI.find(inode, userAPI.getSystemUser(), false);
 			}catch(DotHibernateException e){
-				inode = uri.split(Pattern.quote(File.separator))[3];
+				String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+				inode = uri.split(Pattern.quote(separator))[3];
 				file = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(inode, userAPI.getSystemUser(), false));
 			}
 			mu = userAPI.loadUserById(file.getModUser(), userAPI.getSystemUser(), true);
