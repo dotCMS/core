@@ -9,7 +9,8 @@ public class StructureUtil {
 
 	public static String generateRegExForURLMap(String urlMapString){
 		StringBuilder pattern = new StringBuilder();
-		String[] urlFrags = urlMapString.split("/");
+		String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+		String[] urlFrags = urlMapString.split(separator);
 		for (String frag : urlFrags) {
 			if(UtilMethods.isSet(frag)){
 				pattern.append("/");
