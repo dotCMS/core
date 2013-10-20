@@ -11,7 +11,8 @@ public class AjaxUtils {
 	public Map<String,String> urlAsMap(String url){
 		
 		url = (url.startsWith("/")) ? url.substring(1, url.length()) : url;
-		String p[] = url.split("/");
+		String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+		String p[] = url.split(separator);
 		Map<String, String> map = new HashMap<String, String>();
 		
 		String key =null;
