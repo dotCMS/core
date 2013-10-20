@@ -1383,7 +1383,8 @@ public class ContentletAjax {
 				if(UtilMethods.isSet(referer)){
 					List<RegExMatch> matches = RegEX.find(referer, StructureUtil.generateRegExForURLMap(urlMap));
 					if (matches != null && matches.size() > 0) {
-						String[] urlFrags = urlMap.split("/");
+						String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+						String[] urlFrags = urlMap.split(separator);
 						Map<String,Integer> vars = new HashMap<String, Integer>();
 						int index = 0;
 						for (String frag : urlFrags) {
@@ -1395,7 +1396,7 @@ public class ContentletAjax {
 							index++;
 						}
 						if(!vars.isEmpty()){
-							String[] refererVars =referer.split("/");
+							String[] refererVars =referer.split(separator);
 							for(String var: vars.keySet()){
 								String contVar = contentlet.get(var)!=null?(String)contentlet.get(var):"";
 								String refererVar = refererVars[vars.get(var)];
