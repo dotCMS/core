@@ -299,7 +299,8 @@ public class WebResource {
 		if (params.startsWith("/")) {
 			params = params.substring(1);
 		}
-		String[] pathParts = params.split("/");
+		String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+		String[] pathParts = params.split(separator);
 		Map<String, String> pathMap = new HashMap<String, String>();
 		for (int i=0; i < pathParts.length/2; i++) {
 			String key = pathParts[2*i].toLowerCase();
