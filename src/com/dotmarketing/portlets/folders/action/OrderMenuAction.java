@@ -129,7 +129,8 @@ public class OrderMenuAction extends DotPortletAction {
 		String hostId = req.getParameter("hostId");
 		String path = null;
 
-		String [] pathTokens = pagePath.split("/");
+		String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+		String [] pathTokens = pagePath.split(separator);
 		if(startLevel <= 1){
 			path = "/";
 		}else{
