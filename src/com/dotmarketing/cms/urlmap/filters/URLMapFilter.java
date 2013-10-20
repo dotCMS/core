@@ -257,7 +257,8 @@ public class URLMapFilter implements Filter {
 						request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
 						request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, c.getIdentifier());
 						request.setAttribute(WebKeys.WIKI_CONTENTLET_URL, url);
-						String[] x = url.split("/");
+						String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+						String[] x = url.split(separator);
 						for(int i=0;i<x.length;i++){
 							if(UtilMethods.isSet(x[i])){
 								request.setAttribute("URL_ARG" + i, x[i]);
