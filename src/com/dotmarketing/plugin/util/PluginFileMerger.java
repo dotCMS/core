@@ -399,7 +399,8 @@ public class PluginFileMerger {
 				       String fullPath = classDest + path;
 					   deleteFiles(fullPath,prefix,".class");
 					   //to delete empty directories.
-					   int size = path.split("/").length;
+					   String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+					   int size = path.split(separator).length;
 					   for(int j=size;j>0;j--){
 							File dir = new File(fullPath);
 							 if (dir.exists() && dir.listFiles().length == 0)
