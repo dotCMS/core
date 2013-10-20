@@ -29,7 +29,8 @@ public class AjaxDirectorServlet extends HttpServlet {
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		try {
-			String clazz = request.getRequestURI().split("/")[2];
+			String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+			String clazz = request.getRequestURI().split(separator)[2];
 
 			AjaxAction aj = (AjaxAction) Class.forName(clazz).newInstance();
 			if (!(aj instanceof AjaxAction)) {
