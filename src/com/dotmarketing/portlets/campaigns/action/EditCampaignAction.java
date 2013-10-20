@@ -694,7 +694,8 @@ public class EditCampaignAction extends DotPortletAction {
 						schedulerForm.setAt(null);
 						schedulerForm.setAtTimeSecond(0);
 					} else {
-						intervalTokens = token.split("/");
+						String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+						intervalTokens = token.split(separator);
 						rangeTokens = intervalTokens[0].split("-");
 						
 						if (rangeTokens.length == 2) {
@@ -777,7 +778,8 @@ public class EditCampaignAction extends DotPortletAction {
 						schedulerForm.setAt(null);
 						schedulerForm.setAtTimeHour(0);
 					} else {
-						intervalTokens = token.split("/");
+						String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+						intervalTokens = token.split(separator);
 						rangeTokens = intervalTokens[0].split("-");
 						
 						if (rangeTokens.length == 2) {
