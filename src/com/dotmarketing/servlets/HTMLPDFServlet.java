@@ -328,7 +328,8 @@ public class HTMLPDFServlet extends VelocityServlet {
 			}
 
 			// Is it a wiki?
-			String[] path = pageID.split("/");
+			String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+			String[] path = pageID.split(separator);
 			if (path.length > 2) {
 				String wiki = map.get("/" + path[1]);
 				String wikiName = pageID.substring(1); // String of first /
