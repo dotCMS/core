@@ -28,13 +28,14 @@ public class ChainServlet extends HttpServlet {
         try {
         	
         	String chainURI = uri.substring(servletPath.length(), uri.length());
-        	if(chainURI.split("/").length < 2 && request.getParameter("chainId") == null && request.getParameter("chainKey") == null) {
+        	String separator = Platform.isWindows()?java.io.File.separator+"\\":java.io.File.separator;
+        	if(chainURI.split(separator).length < 2 && request.getParameter("chainId") == null && request.getParameter("chainKey") == null) {
         		throw new ServletException("You got to invoke the chains executor with a valid chain key name");
         	}
 				
     		String chainKey = "";
-    		if(chainURI.split("/").length >= 2)
-    			chainKey = chainURI.split("/")[1];	
+    		if(chainURI.split(separator).length >= 2)
+    			chainKey = chainURI.split(separator)[1];	
     		else if(request.getParameter("chainId") != null) 
     			chainKey = request.getParameter("chainId");	
    			else if(request.getParameter("chainKey") != null) 
