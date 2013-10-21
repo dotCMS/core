@@ -107,8 +107,6 @@ public class Link extends WebAsset implements Serializable, Comparable {
 	 * @return String
 	 */
 	public String getUrl() {
-		if(linkType != null && linkType.equals(LinkType.CODE.toString()))
-			return getType() + "." + inode;
 		return url;
 	}
 
