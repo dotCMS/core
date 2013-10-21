@@ -173,6 +173,12 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
     protected void saveLanguage(Language o) {
         try {
+            if(UtilMethods.isSet(o.getLanguageCode())) {
+                o.setLanguageCode(o.getLanguageCode().toLowerCase());
+            }
+            if(UtilMethods.isSet(o.getCountryCode())) {
+                o.setCountryCode(o.getCountryCode().toUpperCase());
+            }
 			HibernateUtil.saveOrUpdate(o);
 		} catch (DotHibernateException e) {
             Logger.error(LanguageFactoryImpl.class, "saveLanguage failed to save the language.", e);
