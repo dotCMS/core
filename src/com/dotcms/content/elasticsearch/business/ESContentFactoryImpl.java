@@ -137,12 +137,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if(field.getFieldContentlet().indexOf("bool") != -1){
             sql.append(DbConnectionFactory.getDBFalse());
         }else if(field.getFieldContentlet().indexOf("date") != -1){
-            if(DbConnectionFactory.isOracle())
-                sql.append("CURRENT_DATE");
-            else if(DbConnectionFactory.isMsSql())
-                sql.append("GETDATE()");
-            else
-                sql.append("NOW()");
+            sql.append(DbConnectionFactory.getDBDateTimeFunction());
         }else if(field.getFieldContentlet().indexOf("float") != -1){
             sql.append(0.0);
         }else if(field.getFieldContentlet().indexOf("integer") != -1){
