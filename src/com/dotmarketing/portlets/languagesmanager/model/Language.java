@@ -93,11 +93,7 @@ public class Language implements Serializable {
      * @param countryCode The countryCode to set.
      */
     public void setCountryCode(String countryCode) {
-        if (countryCode != null) {
-            this.countryCode = countryCode.toUpperCase();
-        } else {
-            this.countryCode = countryCode;
-        }
+        this.countryCode = countryCode;
     }
 
     /**
@@ -125,12 +121,7 @@ public class Language implements Serializable {
      * @param languageCode The languageCode to set.
      */
     public void setLanguageCode(String languageCode) {
-        if (languageCode != null) {
-            this.languageCode = languageCode.toLowerCase();
-        } else {
-            this.languageCode = languageCode;
-        }
-
+        this.languageCode = languageCode;
     }
 
     public int hashCode() {

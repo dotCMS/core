@@ -111,10 +111,12 @@ public class WidgetResource extends WebResource {
 			
 
   			Field field = contStructure.getFieldVar("widgetPreexecute");
-			widgetExecuteCode.append(field.getValues().trim() + "\n");
+  			String fval = field.getValues()!=null ? field.getValues().trim() : "";
+			widgetExecuteCode.append(fval + "\n");
 
 			field = contStructure.getFieldVar("widgetCode");
-			widgetExecuteCode.append(field.getValues().trim() + "\n");
+			fval = field.getValues()!=null ? field.getValues().trim() : "";
+			widgetExecuteCode.append(fval + "\n");
 
 			VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
 			VelocityUtil.getEngine().evaluate(context, secondEval, "", firstEval.toString());

@@ -224,10 +224,7 @@ public class Field extends Inode implements Exportable, Importable
 		this.structureInode = structureInode;
 	}
 	public String getValues() {
-		if(UtilMethods.isSet(values)){
-			return values;
-		}
-		return "";
+		return values;
 	}
 	public void setValues(String values) {
 		this.values = values;
@@ -313,7 +310,7 @@ public class Field extends Inode implements Exportable, Importable
         oMap.put("fieldFieldType", this.getFieldType());
         oMap.put("fieldHint", this.getHint());
         oMap.put("fieldRegexCheck", this.getRegexCheck());
-        oMap.put("fieldValues", this.getValues());
+        oMap.put("fieldValues", this.getValues()!=null ? this.getValues() : "");
         oMap.put("fieldVelocityVarName", this.getVelocityVarName());
         oMap.put("fieldSortOrder", this.getSortOrder());
         oMap.put("fieldStructureInode", this.getStructureInode());
