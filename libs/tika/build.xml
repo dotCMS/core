@@ -1,4 +1,4 @@
-<project name="Repackager - Spring" default="repackage">
+<project name="Repackager - Tika" default="repackage">
 
     <property file="../../src/com/liferay/portal/util/build.properties"/>
     <property name="lib.app" value="../../dotCMS/WEB-INF/lib"/>
@@ -23,7 +23,7 @@
             </classpath>
         </taskdef>
 
-        <packagerTask libraryPath="."
+        <packagerTask libraryPath="${basedir}"
                       outputFolder="${lib.app}"
                       outputFile="${output.file}"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"/>
