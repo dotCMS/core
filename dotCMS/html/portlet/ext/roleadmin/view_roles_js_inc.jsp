@@ -1223,6 +1223,7 @@
 		for(var i = 0; i < portletsInLayout.length; i++) {
 			if(portletsInLayout[i].portletId == portletId) {
 				portletsInLayout.splice(i, 1);
+				portletsListSource.deleteSelectedNodes();
 				break;
 			}
 		}
