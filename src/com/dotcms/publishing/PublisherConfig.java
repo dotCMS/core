@@ -13,8 +13,8 @@ import java.util.*;
 public class PublisherConfig implements Map<String, Object> {
 
 	private enum Config {
-		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
-		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
+		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
+		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY,
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
 		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT
 	}
@@ -22,8 +22,8 @@ public class PublisherConfig implements Map<String, Object> {
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
 	}
-	
-	Map<String, Object> params;
+
+	private Map<String, Object> params;
 	private boolean liveOnly = true;
 
 	@SuppressWarnings("unchecked")
@@ -115,11 +115,11 @@ public class PublisherConfig implements Map<String, Object> {
 	public boolean makeBundle() {
 		return (Boolean) params.get(Config.MAKE_BUNDLE.name());
 	}
-	
+
 	public void setMakeBundle(boolean bundle) {
 		params.put(Config.MAKE_BUNDLE.name(), bundle);
 	}
-	
+
 	/**
 	 * Defaults to live. This handles most cause.  Is set to false bundlers should bundle both working and live
 	 * @return
@@ -127,15 +127,15 @@ public class PublisherConfig implements Map<String, Object> {
 	public boolean liveOnly(){
 		return liveOnly;
 	}
-	
+
 	public void setLiveOnly(boolean liveOnly){
 		this.liveOnly = liveOnly;
 	}
-	
+
 	public void setStructures(Set<String> structures) {
 		params.put(Config.STRUCTURES.name(), structures);
 	}
-	
+
 	public String getLuceneQuery() {
 		return (String) params.get(Config.LUCENE_QUERY.name());
 	}
@@ -143,7 +143,7 @@ public class PublisherConfig implements Map<String, Object> {
 	public void setLuceneQuery(String luceneQuery) {
 		params.put(Config.LUCENE_QUERY.name(), luceneQuery);
 	}
-	
+
 	public String getEndpoint() {
 		return (String) params.get(Config.ENDPOINT.name());
 	}
@@ -151,7 +151,7 @@ public class PublisherConfig implements Map<String, Object> {
 	public void setEndpoint(String endpoint) {
 		params.put(Config.ENDPOINT.name(), endpoint);
 	}
-	
+
 	public String getGroupId() {
 		return (String) params.get(Config.GROUP_ID.name());
 	}
@@ -159,7 +159,7 @@ public class PublisherConfig implements Map<String, Object> {
 	public void setGroupId(String groupId) {
 		params.put(Config.GROUP_ID.name(), groupId);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public List<String> getLuceneQueries() {
 		return (List<String>) params.get(Config.LUCENE_QUERIES.name());
@@ -253,9 +253,9 @@ public class PublisherConfig implements Map<String, Object> {
 	public List<String> getIncludePatterns() {
 		return (List<String>) params.get(Config.INCLUDE_PATTERN.name());
 	}
-	
+
 	public List<String> getUpdatedHTMLPageIds() {
-		
+
 		// lazy load
 		if(params.get(Config.UPDATED_HTML_PAGE_IDS.name()) ==null){
 			List<String> ids = new ArrayList<String>();
@@ -267,12 +267,12 @@ public class PublisherConfig implements Map<String, Object> {
 
 		return (List<String>) params.get(Config.UPDATED_HTML_PAGE_IDS.name());
 	}
-	
+
 	public void setUpdatedHTMLPageIds(List<String> pageIds) {
 		params.put(Config.UPDATED_HTML_PAGE_IDS.name(), pageIds);
 	}
-	
-	
+
+
 	public void setIncludePatterns(List<String> includePatterns) {
 		params.put(Config.INCLUDE_PATTERN.name(), includePatterns);
 	}
@@ -347,11 +347,11 @@ public class PublisherConfig implements Map<String, Object> {
 	public String getDestinationBundle() {
 		return (String) params.get(Config.DESTINATION_BUNDLE.name());
 	}
-	
+
 	public void setDestinationBundle(String bundle) {
 		params.put(Config.DESTINATION_BUNDLE.name(), bundle);
 	}
-	
+
 	public List<Class> getPublishers() {
 		return (List<Class>) params.get(Config.PUBLISHER.name());
 	}
@@ -373,14 +373,14 @@ public class PublisherConfig implements Map<String, Object> {
 		}
 
 		params.put(Config.BUNDLERS.name(), bs);
-		
-		
-		
-		
-		
+
+
+
+
+
 	}
-	
-	
+
+
 	public List<IBundler> getBundlers() {
 
 		 List<String> x = (List<String>) params.get(Config.BUNDLERS.name());
@@ -391,13 +391,13 @@ public class PublisherConfig implements Map<String, Object> {
 			} catch (Exception e) {
 				Logger.error(this.getClass(), "Cannont get bundler:" + e.getMessage(), e);
 			}
-			 
+
 		 }
 		 return bs;
 	}
 	public boolean isIncremental(){
 		return (params.get(Config.INCREMENTAL.name()) !=null);
-		
+
 	}
 	public void setIncremental(boolean inc){
 		if(inc){
@@ -407,13 +407,13 @@ public class PublisherConfig implements Map<String, Object> {
 			params.remove(Config.INCREMENTAL.name());
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public List<PublishQueueElement> getAssets() {
-		
+
 		return (List<PublishQueueElement>) params.get(Config.ASSETS.name());
 	}
-	
+
 	public void setAssets(List<PublishQueueElement> pageIds) {
 		params.put(Config.ASSETS.name(), pageIds);
 	}
