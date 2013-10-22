@@ -7,7 +7,7 @@
     <path id="files-classpath">
         <fileset dir="${lib.app}">
             <include name="jarjar-1.4.jar" />
-            <include name="packager.jar" />
+            <include name="packager-taks.jar" />
         </fileset>
     </path>
 
