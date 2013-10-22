@@ -641,12 +641,14 @@ public class DependencyManager {
 			if(!structures.contains(r.getChildStructureInode())){
 				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
 				structures.addOrClean( r.getChildStructureInode(), struct.getModDate());
-				structureDependencyHelper( r.getChildStructureInode() );
+                                if(st!=null)
+				    structureDependencyHelper( r.getChildStructureInode() );
 			}
 			if(!structures.contains(r.getParentStructureInode())){
 				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
 				structures.addOrClean( r.getParentStructureInode(), struct.getModDate());
-				structureDependencyHelper( r.getParentStructureInode() );
+                                if(st!=null)
+				    structureDependencyHelper( r.getParentStructureInode() );
 			}
 		}
 	}
