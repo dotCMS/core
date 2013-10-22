@@ -147,13 +147,13 @@ public class ContentletBaseTest extends TestBase {
 
         //*******************************************************************************
         //Creating tests structures
-        Structure newStructure = createStructure( "JUnit Test Structure_0", "junit_test_structure_0" );
+        Structure newStructure = createStructure( "Test Structure_0_"+System.currentTimeMillis(), "junit_test_st_0_"+System.currentTimeMillis() );
         structures.add( newStructure );
-        newStructure = createStructure( "JUnit Test Structure_1", "junit_test_structure_1" );
+        newStructure = createStructure( "JUnit Test Structure_1_"+System.currentTimeMillis(), "junit_test_st_1_"+System.currentTimeMillis() );
         structures.add( newStructure );
-        newStructure = createStructure( "JUnit Test Structure_2", "junit_test_structure_2" );
+        newStructure = createStructure( "JUnit Test Structure_2_"+System.currentTimeMillis(), "junit_test_st_2_"+System.currentTimeMillis() );
         structures.add( newStructure );
-        newStructure = createStructure( "JUnit Test Structure_3", "junit_test_structure_3" );
+        newStructure = createStructure( "JUnit Test Structure_3_"+System.currentTimeMillis(), "junit_test_st_3_"+System.currentTimeMillis() );
         structures.add( newStructure );
 
         //Adding the fields to the structures

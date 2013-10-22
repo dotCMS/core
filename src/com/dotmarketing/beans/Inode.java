@@ -49,9 +49,9 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 
 	protected String owner = "";
 
-	protected String inode = "";
+	protected String inode;
 	
-	protected String identifier = "";
+	protected String identifier;
 
 	public Inode() {
 		iDate = new java.util.Date();
