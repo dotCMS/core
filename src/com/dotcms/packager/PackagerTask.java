@@ -89,11 +89,17 @@ public class PackagerTask extends JarJarTask {
                 continue;
             }
 
+            //Create a name to be part of the resulting package name
+            String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
+            jarNameForPackage = jarNameForPackage.replaceAll( "-", "_" );
+            jarNameForPackage = jarNameForPackage.replaceAll( "\\.", "_" );
+            jarNameForPackage = jarNameForPackage.toLowerCase();
+
             //Create the rule for this class and add it to the list of rules for this jar
             Rule rule = new Rule();
 
             String pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
-            String result = "com.dotcms.repackage." + packageName + ".@1";
+            String result = "com.dotcms.repackage." + jarNameForPackage + "." + packageName + ".@1";
 
             rule.setPattern( pattern );
             rule.setResult( result );
