@@ -254,7 +254,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
         fatty.setInode(cont.getInode());
-        fatty.setIdentifier(cont.getIdentifier());
+        fatty.setIdentifier(UtilMethods.isSet(cont.getIdentifier())?cont.getIdentifier():null);
         fatty.setSortOrder(new Long(cont.getSortOrder()).intValue());
         fatty.setStructureInode(cont.getStructureInode());
         fatty.setLanguageId(cont.getLanguageId());
