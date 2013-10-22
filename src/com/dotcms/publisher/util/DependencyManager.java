@@ -215,7 +215,7 @@ public class DependencyManager {
 		config.setHTMLPages(htmlPages);
 		config.setTemplates(templates);
 		config.setContainers(containers);
-//		config.setStructures(structures);
+		config.setStructures(structures);
 		config.setContents(contents);
 		config.setLinks(links);
 		config.setRelationships(relationships);
