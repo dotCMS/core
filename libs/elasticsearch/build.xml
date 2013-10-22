@@ -23,7 +23,7 @@
             </classpath>
         </taskdef>
 
-        <packagerTask libraryPath="."
+        <packagerTask libraryPath="${basedir}"
                       outputFolder="${lib.app}"
                       outputFile="${output.file}"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"/>
