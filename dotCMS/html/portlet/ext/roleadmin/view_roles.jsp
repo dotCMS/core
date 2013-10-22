@@ -69,7 +69,7 @@
 			</dd>
 		</dl>
 
-		<div id="portletsListWrapper"></div>
+		<div id="portletsListWrapper" style="max-height:200px; overflow: auto;"></div>
 
 		<div class="inputCaption" style="text-align:right">* <%= LanguageUtil.get(pageContext, "drag-a-tool-to-order-it") %></div>
 
