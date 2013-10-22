@@ -49,6 +49,7 @@
 	<property name="war.name" value="dotcms"/>
 	<property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
 	<property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
+	<property name="build.packager" value="${build.dir}/packager" />
 	<property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
 	<property name="agent.version" value="30"/>
 
@@ -67,15 +68,33 @@
 	<path id="files-classpath">
 		<pathelement location="${java.home}/../lib/tools.jar"/>
 
-        <fileset dir="extra/tomcat-7/libs">
+        <fileset dir="libs/spring">
             <include name="**/*.jar" />
         </fileset>
-        <fileset dir="extra/tomcat-7/dependencies">
+        <fileset dir="libs/elasticsearch">
+            <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="libs/tika">
+            <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="libs/utils">
+            <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="libs/jruby">
+            <include name="**/*.jar" />
+        </fileset>
+
+        <fileset dir="libs/buildlibs">
             <include name="**/*.jar" />
         </fileset>
 		<fileset dir="${lib.app}">
 			<include name="**/*.jar" />
 			<exclude name="**/dotcms*.jar" />
+			<exclude name="**/com.dotcms.spring.jar" />
+			<exclude name="**/com.dotcms.elasticsearch.jar" />
+			<exclude name="**/com.dotcms.tika.jar" />
+			<exclude name="**/com.dotcms.utils.jar" />
+			<exclude name="**/com.dotcms.jruby.jar" />
 		</fileset>
 		<pathelement path="${build.classes}" />
 	</path>
@@ -83,10 +102,7 @@
 	<!-- classpath only used for plugins no other task should use becuase it locks the jar files -->
 	<path id="ant-files-classpath">
 		<pathelement location="${java.home}/../lib/tools.jar"/>
-		<fileset dir="extra/tomcat-7/libs">
-            <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="extra/tomcat-7/dependencies">
+		<fileset dir="libs/buildlibs">
             <include name="**/*.jar" />
         </fileset>
 		<fileset dir="${lib.app}">
@@ -302,36 +318,7 @@
 
 	<target name="jsp" depends="compile">
 
-		<taskdef classname="com.dotmarketing.util.jasper.DotJasperTask" name="jasper2" >
-			<classpath id="jspc.classpath" refid="files-classpath">
-			</classpath>
-		</taskdef>
 
-
-		<jasper2
-             validateXml="false"
-             uriroot="dotCMS"
-             javaEncoding="UTF-8"
-             webXmlFragment="dotCMS/WEB-INF/generated_web.xml"
-             outputDir="${src.jsp}/">
-
-		</jasper2>
-		<javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8" 
-		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.6"
-		target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
-		memoryinitialsize="256m" memorymaximumsize="512m">
-			<classpath refid="files-classpath" />
-		</javac>
-
-		<loadfile property="generated.web"
-	      srcFile="dotCMS/WEB-INF/generated_web.xml"/>
-
-		<replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
-		  	replace="&lt;!-- BEGIN JSPS --&gt; ${generated.web} &lt;!-- END JSPS --&gt;">
-			<fileset dir="dotCMS/WEB-INF/">
-				<include name="web.xml"/>
-			</fileset>
-		</replaceregexp>
 	</target>
 
 	<target name="buildsql" depends="buildseqsql, buildmXsql">
@@ -528,13 +515,7 @@
 
 </target>
 
-    <target name="clean-repackaged-output">
-        <!--Clean the output folder-->
-        <delete dir="${lib.app}/out"/>
-        <mkdir dir="${lib.app}/out"/>
-    </target>
-
-    <target name="find-duplicated-classes" depends="compile">
+    <target name="find-duplicated-classes" depends="clean,build">
 
         <taskdef classname="com.dotcms.packager.InspectorTask" name="inspectorTask">
             <classpath>
@@ -545,9 +526,44 @@
         <inspectorTask librarypath="${lib.app}"/>
     </target>
 
-    <target name="repackage-libraries" depends="clean-repackaged-output, compile">
+    <target name="find-dependencies">
 
-        <taskdef classname="com.dotcms.packager.PackagerTask" name="packagerTask">
+        <property name="lib.classpath" refid="files-classpath"/>
+
+        <java jar="${lib.app}/jarjar-1.4.jar" fork="true">
+            <arg value="find"/>
+            <arg value="jar"/>
+            <arg value="${lib.classpath}"/>
+        </java>
+    </target>
+
+    <target name="find-dependencies-for-jar">
+
+        <property name="lib.classpath" refid="files-classpath"/>
+
+        <java jar="${lib.app}/jarjar-1.4.jar" fork="true">
+            <arg value="find"/>
+            <arg value="jar"/>
+            <!--<arg value="${lib.app}/tika-app-1.3.jar"/>-->
+            <arg value="${lib.app}/dotcms_2.6.jar"/>
+            <arg value="${lib.classpath}"/>
+        </java>
+    </target>
+
+    <target name="print-classpath" description="Print the application classpath">
+        <!-- Capture the path as a delimited property using the refid attribute -->
+        <property name="app-classpath" refid="files-classpath"/>
+        <!-- Emit the property to the ant console -->
+        <echo message="${app-classpath}"/>
+    </target>
+
+    <!--<target name="repackage-libraries" depends="compile">
+
+        &lt;!&ndash;Clean the output folder&ndash;&gt;
+        <delete dir="${lib.app}/out"/>
+        <mkdir dir="${lib.app}/out"/>
+
+        <taskdef classname="com.dotcms.packager.AutoPackagerTask" name="packagerTask">
             <classpath>
                 <path refid="files-classpath" />
             </classpath>
@@ -557,7 +573,7 @@
                       outputFolder="${lib.app}/out"
                       dotcmsjar="${lib.app}/dotcms_${dotcms.release.version}.jar"
                       excludesfile="${lib.app}/jarjar-1.4.jar"/>
-    </target>
+    </target>-->
 
     <target name="war" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
         <antcall target="war-file"/>
@@ -598,7 +614,16 @@
     <target name="deploy-war-tomcat7" depends="undeploy-war-tomcat7, clone-pull-tomcat7, war">
 
         <copy todir="${tomcat7.home}/lib/">
-            <fileset dir="./extra/tomcat-7/libs/"/>
+            <fileset dir="libs/buildlibs/">
+                <include name="log4j-1.2.16.jar"/>
+                <include name="dotcms_log4j.jar"/>
+                <include name="log4j.xml"/>
+
+                <include name="mysql-connector-java-5.1.23-bin.jar"/>
+                <include name="postgresql-9.0-801.jdbc3.jar"/>
+                <include name="ojdbc5.jar"/>
+                <include name="jtds-1.2.2.jar"/>
+            </fileset>
         </copy>
 
         <!--<copy todir="${tomcat7.home}/bin/">
@@ -1163,5 +1188,38 @@
 		</jar>
 </target>
 
+
+    <!--PACKAGER-->
+
+    <path id="packager-classpath">
+        <fileset dir="${lib.app}">
+            <include name="**/*.jar" />
+        </fileset>
+    </path>
+
+    <target name="build-packager-classpath">
+        <manifestclasspath property="packager-jar-cp" jarfile="${lib.app}/packager-taks.jar">
+            <classpath refid="packager-classpath" />
+        </manifestclasspath>
+    </target>
+
+    <target name="clean-packager">
+        <delete file="${lib.app}/packager-taks.jar" failonerror="false" />
+        <delete dir="${build.packager}" failonerror="false"/>
+    </target>
+
+    <target name="compile-packager" depends="clean-packager, prepare" description="Compiles packager source.">
+        <mkdir dir="${build.packager}" />
+        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.packager}"
+               source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
+               memoryinitialsize="256m" memorymaximumsize="512m" >
+            <classpath refid="files-classpath" />
+            <include name="com/dotcms/packager/**"/>
+        </javac>
+    </target>
+
+    <target name="jar-packager" depends="compile-packager,build-packager-classpath" description="Generates packager-taks.jar in the 'build/packager' directory.">
+        <jar jarfile="${lib.app}/packager-taks.jar" basedir="${build.packager}"/>
+    </target>
 
 </project>

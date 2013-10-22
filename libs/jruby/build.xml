@@ -1,0 +1,32 @@
+<project name="Repackager - JRuby" default="repackage">
+
+    <property file="../../src/com/liferay/portal/util/build.properties"/>
+    <property name="lib.app" value="../../dotCMS/WEB-INF/lib"/>
+    <property name="output.file" value="com.dotcms.jruby.jar"/>
+
+    <path id="files-classpath">
+        <fileset dir="${lib.app}">
+            <include name="jarjar-1.4.jar" />
+            <include name="packager-taks.jar" />
+        </fileset>
+    </path>
+
+    <target name="clean">
+        <delete file="${lib.app}/${output.file}" failonerror="false" />
+    </target>
+
+    <target name="repackage" depends="clean">
+
+        <taskdef classname="com.dotcms.packager.PackagerTask" name="packagerTask">
+            <classpath>
+                <path refid="files-classpath" />
+            </classpath>
+        </taskdef>
+
+        <packagerTask libraryPath="${basedir}"
+                      outputFolder="${lib.app}"
+                      outputFile="${output.file}"
+                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"/>
+    </target>
+
+</project>
