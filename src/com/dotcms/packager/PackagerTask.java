@@ -58,10 +58,10 @@ public class PackagerTask extends JarJarTask {
         log( "Found " + inspector.getClassCount() + " unique classes" );
         log( "Found " + inspector.getDuplicateCount() + " duplicated classes" );
 
-        if ( inspector.getDuplicateCount() > 0 ) {
+        /*if ( inspector.getDuplicateCount() > 0 ) {
             throw new IllegalStateException( "Found duplicated classes on the specified class path, you need to fix those duplicates " +
                     "in order to continue." );
-        }
+        }*/
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //PREPARE ALL THE JARS AND RULES TO APPLY
@@ -140,8 +140,18 @@ public class PackagerTask extends JarJarTask {
         //SOME LOGGING
         logJars( files );
 
-        //And finally repackage the file
-        generate( dotcmsJar.getName(), rulesToApply.values(), files );
+        //And finally repackage the dotcms jar
+        String dotcmsJarName = dotcmsJar.getName().substring( 0, dotcmsJar.getName().lastIndexOf( "." ) );
+        String tempDotcmsJarName = dotcmsJarName + "_temp" + ".jar";
+        generate( tempDotcmsJarName, rulesToApply.values(), files );
+
+        //Remove the original dotcms jar
+        dotcmsJar.delete();
+
+        //Rename the just repackaged dotcms jar
+        File toRename = new File( getOutputFolder() + File.separator + tempDotcmsJarName );
+        File finalJar = new File( this.dotcmsJar );
+        toRename.renameTo( finalJar );
     }
 
     /**
