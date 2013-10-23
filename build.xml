@@ -1062,6 +1062,10 @@
         <echo message="${app-classpath}"/>
     </target>
 
+    <target name="repackage-libraries">
+        <ant target="repackage" antfile="build.xml" dir="libs"/>
+    </target>
+
     <!--<target name="repackage-libraries" depends="compile">
 
         &lt;!&ndash;Clean the output folder&ndash;&gt;
@@ -1080,7 +1084,7 @@
                       excludesfile="${lib.app}/jarjar-1.4.jar"/>
     </target>-->
 
-    <target name="war" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
+    <target name="war" depends="deploy-no-jsp,deploy-plugins,repackage-libraries" description="builds dotCMS as a war without the jsps precompiled">
         <antcall target="war-file"/>
     </target>
 
