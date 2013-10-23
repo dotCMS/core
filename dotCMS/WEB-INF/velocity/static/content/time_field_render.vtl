@@ -1,5 +1,5 @@
 <div id="${fieldAux.velocityVarName}TimeFieldWrapper" class="dateFieldWrapper">
-	<select dojoType="dijit.form.FilteringSelect" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" class="timeField">
+	<select dojoType="dijit.form.FilteringSelect" id="${fieldAux.velocityVarName}" name="${fieldAux.velocityVarName}" class="timeField" maxHeight="300">
 	#foreach($hour24 in [0..23] )
 		#if($hour24 > 12)
     		#set($hour = $math.sub($hour24,12))
@@ -12,8 +12,8 @@
         #if($hour24 == 0)
         	#set($hour = 12)
         #end
-	    #foreach($minRed in [0..11])
-			#set($min = $math.mul($minRed, 5))
+	    #foreach($minRed in [0..59])
+			#set($min = $math.mul($minRed, 1))
 			#if($min < 10)
     	    	#set($min = "0$min")  
 			#end
@@ -22,8 +22,8 @@
     	    	#set($hour24Str = "0$hour24")  
 			#end
 			#set($dateHours = $date.format("H", $fieldDefaultValue))
-			#set($dateMin = $math.mul($math.round($math.div($date.format("mm", $fieldDefaultValue), 5)), 5))
-			#if($dateMin < 10)
+			#set($dateMin = $date.format("mm", $fieldDefaultValue))
+			#if($math.toNumber($dateMin) < 10)
 				#set($dateMin ="0$dateMin")
 			#end
 			#if("${dateHours}:${dateMin}" == "${hour24}:${min}")
