@@ -601,7 +601,7 @@ public class ContentImportThread implements Job{
 					{
 
 
-						String fieldEntriesString = field.getValues();
+						String fieldEntriesString = field.getValues()!=null ? field.getValues():"";
 						String[] fieldEntries = fieldEntriesString.split("\n");
 						boolean found = false;
 						for(String fieldEntry : fieldEntries)

@@ -120,7 +120,8 @@ public class ContentletMapServices {
 					widgetCode="#set($_dummy=$!dotcms_content_" + content.getIdentifier() + ".put(\"" + field.getVelocityVarName() + "\", $velutil.mergeTemplate(\"" + velPath + content.getInode() + "_" + field.getInode()  + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION") + "\")))";
 					continue;
 				}else{
-					if(field.getValues().contains("$") || field.getValues().contains("#")){
+				    String fv=field.getValues()!=null ? field.getValues() : "";
+					if(fv.contains("$") || fv.contains("#")){
 						sb.append("#set($_dummy=$!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("\", $velutil.mergeTemplate(\"").append(velPath).append(content.getInode()).append("_").append(field.getInode()).append(".").append(Config.getStringProperty("VELOCITY_FIELD_EXTENSION")).append("\")))");
 					}else{
 						sb.append("#set($_dummy=$!dotcms_content_").append(content.getIdentifier()).append(".put(\"").append(field.getVelocityVarName()).append("\", \"").append(UtilMethods.espaceForVelocity(field.getValues()).trim()).append("\"))");

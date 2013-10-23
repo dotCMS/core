@@ -79,7 +79,7 @@ public class StructureServices {
 						!field.getFieldType().equals(Field.FieldType.TIME.toString())) 
 					sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"" ).append( UtilMethods.espaceForVelocity(contFieldValue).trim() ).append( "\" )");
 			}
-
+			String fv=field.getValues()!=null ? field.getValues() : "";
 			if (field.getFieldType().equals(Field.FieldType.TEXT.toString()) || field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
 				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ #fixBreaks($" ).append( field.getVelocityVarName() ).append( ") ]\")");
 			} else if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())) {
@@ -99,11 +99,11 @@ public class StructureServices {
 				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileURI =\"" ).append( uri ).append( "\" )");
 				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "FileTitle =\"[ Test File Structure ]\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "SelectLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\")");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "SelectLabelsValues = \"" ).append( fv.replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\")");
 			} else if (field.getFieldType().equals(Field.FieldType.RADIO.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "RadioLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "RadioLabelsValues = \"" ).append( fv.replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CheckboxLabelsValues = \"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CheckboxLabelsValues = \"" ).append( fv.replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\" )");
 			} else if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {				
 				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( " =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
 				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ShortFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
@@ -117,8 +117,8 @@ public class StructureServices {
 				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "LongFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
 				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "DBFormat =\"[ " ).append( field.getVelocityVarName() ).append( " ]\")");
 			} else if (field.getFieldType().equals(Field.FieldType.BUTTON.toString())) {
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonValue =\"" ).append( (field.getFieldName() == null?"":field.getFieldName()) ).append( "\" )");
-				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonCode =\"" ).append( (field.getValues() == null?"":field.getValues()) ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonValue =\"" ).append( fv ).append( "\" )");
+				sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "ButtonCode =\"" ).append( fv ).append( "\" )");
 			}
 		}
 

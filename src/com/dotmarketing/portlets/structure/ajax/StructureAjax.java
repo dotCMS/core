@@ -342,7 +342,7 @@ public class StructureAjax {
 		else
 			ddHtml.append("<select id=\"" + f.getVelocityVarName() + "\" name=\"" + f.getVelocityVarName() + "\">\n");
 		String valuesSt = f.getValues();
-		String[] values = valuesSt.split("[(\\r\\n)\\n\\s]");
+		String[] values = valuesSt!=null ? valuesSt.split("[(\\r\\n)\\n\\s]") : new String[0];
 		for (String value : values) {
 			if (value.trim().equals("")) continue;
 			String[] temp = value.split("\\|");
@@ -365,7 +365,7 @@ public class StructureAjax {
 		StringBuffer ddHtml = new StringBuffer ();
 		Field f = FieldFactory.getFieldByInode(fieldInode);
 		String valuesSt = f.getValues();
-		String[] values = valuesSt.split("[(\\r\\n)\\n\\s]");
+		String[] values = valuesSt!=null ? valuesSt.split("[(\\r\\n)\\n\\s]") : new String[0];
 		for (String value : values) {
 			if (value.trim().equals("")) continue;
 			String[] temp = value.split("\\|");
@@ -387,7 +387,7 @@ public class StructureAjax {
 		StringBuffer ddHtml = new StringBuffer ();
 		Field f = FieldFactory.getFieldByInode(fieldInode);
 		String valuesSt = f.getValues();
-		String[] values = valuesSt.split("[(\\r\\n)\\n\\s]");
+		String[] values = valuesSt !=null ? valuesSt.split("[(\\r\\n)\\n\\s]") : new String[0];
 		for (String value : values) {
 			if (value.trim().equals("")) continue;
 			String[] temp = value.split("\\|");
@@ -409,7 +409,7 @@ public class StructureAjax {
 		StringBuffer ddHtml = new StringBuffer ();
 		Field f = FieldFactory.getFieldByInode(fieldInode);
 		String valuesSt = f.getValues();
-		String[] values = valuesSt.split("[(\\r\\n)\\n\\s]");
+		String[] values = valuesSt!=null ? valuesSt.split("[(\\r\\n)\\n\\s]") : new String[0];
 		for (String value : values) {
 			if (value.trim().equals("")) continue;
 			String[] temp = value.split("\\|");

@@ -49,9 +49,9 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 
 	protected String owner = "";
 
-	protected String inode = "";
+	protected String inode;
 	
-	protected String identifier = "";
+	protected String identifier;
 
 	public Inode() {
 		iDate = new java.util.Date();
@@ -148,28 +148,8 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	 * @return Returns the identifier.
 	 */
 	public String getIdentifier() {
-		if(InodeUtils.isSet(identifier))
-		    return identifier;
-		return null;
+	    return identifier;
 	}
-	/*public String getIdentifier() {
-		try {
-			  if(InodeUtils.isSet(identifier))
-				 return identifier;
-			   if(InodeUtils.isSet(inode)){
-		   		 Identifier id =  APILocator.getIdentifierAPI().find(inode);
-		   		 setIdentifier(id.getInode());
-		   		 return "";
-		   	  } 
-			 } catch (DotHibernateException e) {
-				Logger.error(this, "Unable to retrieve the identifier.", e);
-			}
-			return null;
-			if(InodeUtils.isSet(identifier))
-				return identifier;
-			else 
-				return null;
-	}*/
 	
 	/**
 	 * @param identifier

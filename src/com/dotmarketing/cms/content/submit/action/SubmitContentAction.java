@@ -167,6 +167,9 @@ public class SubmitContentAction extends DispatchAction{
 				if(UtilMethods.isSet(emailvalues)){
 					emailvalues = emailvalues.trim().toLowerCase();
 				}
+				else {
+				    emailvalues = "";
+				}
 				if (UtilMethods.isSet(emailvalues)) {
 					if (emailvalues.contains(",")) {
 						emailvaluessep = emailvalues.split(",");
