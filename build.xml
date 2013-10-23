@@ -80,9 +80,6 @@
         <fileset dir="libs/utils">
             <include name="**/*.jar" />
         </fileset>
-        <fileset dir="libs/jruby">
-            <include name="**/*.jar" />
-        </fileset>
 
         <fileset dir="libs/buildlibs">
             <include name="**/*.jar" />
@@ -94,7 +91,6 @@
 			<exclude name="**/com.dotcms.elasticsearch.jar" />
 			<exclude name="**/com.dotcms.tika.jar" />
 			<exclude name="**/com.dotcms.utils.jar" />
-			<exclude name="**/com.dotcms.jruby.jar" />
 		</fileset>
 		<pathelement path="${build.classes}" />
 	</path>

@@ -174,7 +174,7 @@ public class PackagerTask extends JarJarTask {
 
         //Generate the new jar
         super.execute();
-        //Clean everything a e ready to start again
+        //Clean everything and get ready to start again
         super.reset();
     }
 
@@ -188,6 +188,7 @@ public class PackagerTask extends JarJarTask {
         for ( File jar : jars ) {
             log( jar.getName() );
         }
+        log( "" );
         //-------------------------------
     }
 
