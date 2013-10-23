@@ -1,7 +1,7 @@
 <project name="Repackager - Tika" default="repackage">
 
-    <property file="../../src/com/liferay/portal/util/build.properties"/>
-    <property name="lib.app" value="../../dotCMS/WEB-INF/lib"/>
+    <property file="${basedir}/../../src/com/liferay/portal/util/build.properties"/>
+    <property name="lib.app" value="${basedir}/../../dotCMS/WEB-INF/lib"/>
     <property name="output.file" value="com.dotcms.tika.jar"/>
 
     <path id="files-classpath">
