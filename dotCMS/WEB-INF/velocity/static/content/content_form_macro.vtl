@@ -605,6 +605,8 @@ var theme = 'dmundra';
 	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #elseif($UtilMethods.isSet($field.defaultValue))
+	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$!field.defaultValue))
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
@@ -631,6 +633,8 @@ var theme = 'dmundra';
 	            	    	#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #elseif($UtilMethods.isSet($field.defaultValue))
+	            	    	#set($fieldDefaultValue = $date.toDate('HH:mm',$!field.defaultValue))
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
@@ -658,6 +662,8 @@ var theme = 'dmundra';
 	            	    	#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #elseif($UtilMethods.isSet($field.defaultValue))
+	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd HH:mm',$!field.defaultValue))
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
