@@ -407,7 +407,6 @@ public class StructureFactory {
 		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
 		Date now = new Date();
 		structure.setiDate(now);
-		structure.setModDate(now);
 		fixFolderHost(structure);
 		HibernateUtil.saveOrUpdate(structure);
 		
@@ -421,7 +420,6 @@ public class StructureFactory {
 		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
 		Date now = new Date();
 		structure.setiDate(now);
-		structure.setModDate(now);
 		fixFolderHost(structure);
 		HibernateUtil.saveWithPrimaryKey(structure, existingId);
 	}
