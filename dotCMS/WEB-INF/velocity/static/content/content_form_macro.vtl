@@ -1008,6 +1008,18 @@ var theme = 'dmundra';
 							return false;
 						}
 					#end
+					#if("$field.getFieldType().toUpperCase()"=="KEY_VALUE")
+						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
+						var ${field.velocityVarName}Empty = "$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.keyval.empty')";
+						if(document.getElementById("${fieldAux.velocityVarName}list").value == ${field.velocityVarName}Empty){
+							if(customErrorMessages["$field.velocityVarName"] != "")
+								document.getElementById("alert"+"${field.velocityVarName}").innerHTML = customErrorMessages["$field.velocityVarName"];
+							else
+								document.getElementById("alert"+"${field.velocityVarName}").innerHTML = ${field.velocityVarName}Empty;
+
+							return false;
+						}
+					#end
 				#end
 
 
