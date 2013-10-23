@@ -68,18 +68,18 @@
 	<path id="files-classpath">
 		<pathelement location="${java.home}/../lib/tools.jar"/>
 
-        <fileset dir="libs/spring">
+        <!--<fileset dir="libs/spring">
             <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="libs/elasticsearch">
+        </fileset>-->
+        <!--<fileset dir="libs/elasticsearch">
             <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="libs/tika">
+        </fileset>-->
+        <!--<fileset dir="libs/tika">
             <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="libs/utils">
+        </fileset>-->
+        <!--<fileset dir="libs/utils">
             <include name="**/*.jar" />
-        </fileset>
+        </fileset>-->
 
         <fileset dir="libs/buildlibs">
             <include name="**/*.jar" />
@@ -87,10 +87,11 @@
 		<fileset dir="${lib.app}">
 			<include name="**/*.jar" />
 			<exclude name="**/dotcms*.jar" />
-			<exclude name="**/com.dotcms.spring.jar" />
-			<exclude name="**/com.dotcms.elasticsearch.jar" />
-			<exclude name="**/com.dotcms.tika.jar" />
-			<exclude name="**/com.dotcms.utils.jar" />
+
+			<!--<exclude name="**/com.dotcms.spring.jar" />-->
+			<!--<exclude name="**/com.dotcms.elasticsearch.jar" />-->
+			<!--<exclude name="**/com.dotcms.tika.jar" />-->
+			<!--<exclude name="**/com.dotcms.utils.jar" />-->
 		</fileset>
 		<pathelement path="${build.classes}" />
 	</path>
