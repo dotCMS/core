@@ -715,27 +715,29 @@ dojo.require("dojo.cookie");
 
 
 
-    <%if(session.getAttribute("_autoupdater_showUpdate") == null) {%>
-        <script type="text/javascript" src="/dwr/interface/AutoUpdaterAjax.js"></script>
-        <script>
-            dojo.addOnLoad(function(){
-                AutoUpdaterAjax.getLatestVersionInfo(dojo.hitch(enableAutoUpdaterLink));
-            })
-        </script>
-    <%}else if((Boolean) session.getAttribute("_autoupdater_showUpdate") == true) {%>
-        <script>
-            dojo.addOnLoad(function(){
-                var enableupdatevar = {
-                        showUpdate : <%=session.getAttribute("_autoupdater_showUpdate")%>,
-                        major : "<%=session.getAttribute("_autoupdater_major")%>",
-                        minor : "<%=session.getAttribute("_autoupdater_minor")%>",
-                        buildNumber : '0'
-                }
-                if(enableupdatevar.showUpdate){
-                    enableAutoUpdaterLink(enableupdatevar);
-                }
-            })
-        </script>
-    <%}%>
+    <%if(APILocator.getUserAPI().isCMSAdmin(user)) {
+	    if(session.getAttribute("_autoupdater_showUpdate") == null) {%>
+	        <script type="text/javascript" src="/dwr/interface/AutoUpdaterAjax.js"></script>
+	        <script>
+	            dojo.addOnLoad(function(){
+	                AutoUpdaterAjax.getLatestVersionInfo(dojo.hitch(enableAutoUpdaterLink));
+	            })
+	        </script>
+	    <%}else if((Boolean) session.getAttribute("_autoupdater_showUpdate") == true) {%>
+	        <script>
+	            dojo.addOnLoad(function(){
+	                var enableupdatevar = {
+	                        showUpdate : <%=session.getAttribute("_autoupdater_showUpdate")%>,
+	                        major : "<%=session.getAttribute("_autoupdater_major")%>",
+	                        minor : "<%=session.getAttribute("_autoupdater_minor")%>",
+	                        buildNumber : '0'
+	                }
+	                if(enableupdatevar.showUpdate){
+	                    enableAutoUpdaterLink(enableupdatevar);
+	                }
+	            })
+	        </script>
+    <%	}
+    }%>
 
 
