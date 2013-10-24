@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -145,7 +146,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 	}
 
     public boolean isDeleted(Versionable ver) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver.getVersionId()))
+        if(!UtilMethods.isSet(ver) || !InodeUtils.isSet(ver.getVersionId()))
         	return false;
         Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
         
@@ -166,7 +167,7 @@ public class VersionableAPIImpl implements VersionableAPI {
     }
 
     public boolean isLive(Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(versionable) || !UtilMethods.isSet(versionable.getVersionId()))
+        if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
         	return false;
         Identifier ident = APILocator.getIdentifierAPI().find(versionable);
         if(ident==null || !UtilMethods.isSet(ident.getId()) || !UtilMethods.isSet(ident.getAssetType()))
@@ -189,7 +190,7 @@ public class VersionableAPIImpl implements VersionableAPI {
     }
 
     public boolean isLocked(Versionable ver) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver.getVersionId()))
+        if(!UtilMethods.isSet(ver) || !InodeUtils.isSet(ver.getVersionId()))
             return false;
         Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
         if(ident.getAssetType().equals("contentlet")) {
@@ -208,7 +209,7 @@ public class VersionableAPIImpl implements VersionableAPI {
     }
 
     public boolean isWorking(Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(versionable) || !UtilMethods.isSet(versionable.getVersionId()))
+        if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
         	return false;
         Identifier ident = APILocator.getIdentifierAPI().find(versionable);
         if(ident==null || !UtilMethods.isSet(ident.getId()) || !UtilMethods.isSet(ident.getAssetType()))
