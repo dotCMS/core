@@ -71,6 +71,7 @@
             onClick:function(){
             	dijit.byId("whoCanUseSelect").set("displayedValue","");
             	dijit.byId("whoCanUseSelect").loadDropDown();
+            	dijit.byId("whoCanUseSelect").openDropDown();
             }
         },
         "actionWhoCanUseSelect");
