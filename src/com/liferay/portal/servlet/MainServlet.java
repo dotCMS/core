@@ -56,9 +56,9 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.StartupTasksExecutor;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DotConfig;
 import com.dotmarketing.util.Logger;
 import com.httpbridge.webproxy.http.TaskController;
-import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyLocalManagerUtil;
 import com.liferay.portal.ejb.PortletManagerUtil;
@@ -83,7 +83,6 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.util.CookieUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Http;
-import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.PwdGenerator;
 import com.liferay.util.StringUtil;
@@ -92,11 +91,11 @@ import com.liferay.util.servlet.UploadServletRequest;
 
 /**
  * <a href="MainServlet.java.html"><b><i>View Source</i></b></a>
- * 
+ *
  * @author Brian Wing Shun Chan
  * @author Jorge Ferrer
  * @version $Revision: 1.41 $
- * 
+ *
  */
 public class MainServlet extends ActionServlet {
 
@@ -104,6 +103,7 @@ public class MainServlet extends ActionServlet {
 		synchronized (MainServlet.class) {
 			super.init(config);
 			Config.initializeConfig();
+			DotConfig.initializeConfig(config.getServletContext());
 			com.dotmarketing.util.Config.setMyApp(config.getServletContext());
 			// Need the plugin root dir before Hibernate comes up
 			try {
@@ -128,7 +128,7 @@ public class MainServlet extends ActionServlet {
 			}
 
 			ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
-			
+
 			try {
 				EventsProcessor.process(new String[] { StartupAction.class.getName() }, true);
 			} catch (Exception e) {
@@ -470,7 +470,7 @@ public class MainServlet extends ActionServlet {
 		String userId = PortalUtil.getUserId(req);
 
 		if ((userId != null)) {
-			PrincipalThreadLocal.setName(userId);			
+			PrincipalThreadLocal.setName(userId);
 		}
 
 		if (userId == null) {
