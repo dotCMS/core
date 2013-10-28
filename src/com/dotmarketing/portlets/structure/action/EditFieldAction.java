@@ -466,7 +466,7 @@ public class EditFieldAction extends DotPortletAction {
 			AdminLogger.log(EditFieldAction.class, "_saveField","Added field " + field.getFieldName() + " to " + structure.getName() + " Structure.", user);
 			return true;
 		} catch (Exception ex) {
-			Logger.error(EditFieldAction.class, ex.toString());
+			Logger.error(EditFieldAction.class, ex.toString(), ex);
 		}
 		return false;
 	}
