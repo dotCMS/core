@@ -1,7 +1,7 @@
 <div id="${fieldAux.velocityVarName}DateTimeFieldWrapper" class="dateTimeFieldWrapper">
 	<input type="hidden" name="${fieldAux.velocityVarName}" id="${fieldAux.velocityVarName}" value="$UtilMethods.dateToHTMLDate($fieldDefaultValue,'yyyy-MM-dd HH:mm')">
     <input onchange="updateDateTime('${fieldAux.velocityVarName}')" dojoType="dijit.form.DateTextBox" type="text" name="${fieldAux.velocityVarName}Date" id="${fieldAux.velocityVarName}Date" value="$UtilMethods.dateToHTMLDate($fieldDefaultValue,'yyyy-MM-dd')">
-    <select onchange="updateDateTime('${fieldAux.velocityVarName}')" dojoType="dijit.form.FilteringSelect" id="${fieldAux.velocityVarName}Time" name="${fieldAux.velocityVarName}Time" class="timeField">
+    <select onchange="updateDateTime('${fieldAux.velocityVarName}')" dojoType="dijit.form.FilteringSelect" id="${fieldAux.velocityVarName}Time" name="${fieldAux.velocityVarName}Time" class="timeField" maxHeight="300">
 	#foreach($hour24 in [0..23] )
 		#if($hour24 > 12)
     		#set($hour = $math.sub($hour24,12))
@@ -14,8 +14,8 @@
         #if($hour24 == 0)
         	#set($hour = 12)
         #end
-	    #foreach($minRed in [0..11])
-			#set($min = $math.mul($minRed, 5))
+	    #foreach($minRed in [0..59])
+			#set($min = $math.mul($minRed, 1))
 			#if($min < 10)
     	    	#set($min = "0$min")  
 			#end
@@ -24,8 +24,8 @@
     	    	#set($hour24Str = "0$hour24")  
 			#end
 			#set($dateHours = $date.format("H", $fieldDefaultValue))
-			#set($dateMin = $math.mul($math.round($math.div($date.format("mm", $fieldDefaultValue), 5)), 5))
-			#if($dateMin < 10)
+			#set($dateMin = $date.format("mm", $fieldDefaultValue))
+			#if($math.toNumber($dateMin) < 10)
 				#set($dateMin ="0$dateMin")
 			#end
 				

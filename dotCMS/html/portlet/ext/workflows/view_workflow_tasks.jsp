@@ -207,9 +207,10 @@
 		    required:false,
 		    value:"<%=assignedTo.getId()%>",
 		    onClick:function(){
-		    	dijit.byId("assignedTo").set("displayedValue","");
-		        dijit.byId("assignedTo").loadDropDown();
-
+		    	if(show4All==false){
+		    		dijit.byId("assignedTo").set("displayedValue","");
+		        	dijit.byId("assignedTo").loadDropDown();
+		    	}
 		    },
 		    onChange:doFilter
 	

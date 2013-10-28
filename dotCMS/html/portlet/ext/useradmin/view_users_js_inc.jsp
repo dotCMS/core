@@ -884,7 +884,7 @@
 		            rolesAdded.push(id);
 				}
 			}
-
+			rolesChecked.length = 0;
 			dijit.byId("addUserRoleBtn").setAttribute('disabled',true);
 			buildRolesTree();
 
