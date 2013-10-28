@@ -207,7 +207,7 @@ public class EditFieldAction extends DotPortletAction {
 		try {
 			FieldForm fieldForm = (FieldForm) form;
 			Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
-			Structure structure = StructureFactory.getStructureByInode(field.getStructureInode());
+			Structure structure = StructureCache.getStructureByInode(field.getStructureInode());
 			boolean isNew = false;
 			boolean wasIndexed = field.isIndexed();
 
@@ -396,7 +396,7 @@ public class EditFieldAction extends DotPortletAction {
 					// validate if a field with the same category already exists
 					List<Field> stFields = FieldsCache.getFieldsByStructureInode(field.getStructureInode());
 					for (Field stField : stFields) {
-						if(stField.getValues().equals(field.getValues())) {
+						if(UtilMethods.isSet(stField.getValues()) && stField.getValues().equals(field.getValues())) {
 							SessionMessages.add(httpReq, "message", "message.category.existing.field");
 							return false;
 						}
@@ -466,7 +466,7 @@ public class EditFieldAction extends DotPortletAction {
 			AdminLogger.log(EditFieldAction.class, "_saveField","Added field " + field.getFieldName() + " to " + structure.getName() + " Structure.", user);
 			return true;
 		} catch (Exception ex) {
-			Logger.debug(EditFieldAction.class, ex.toString());
+			Logger.error(EditFieldAction.class, ex.toString());
 		}
 		return false;
 	}
