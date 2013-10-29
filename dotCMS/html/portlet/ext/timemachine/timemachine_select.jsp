@@ -183,13 +183,14 @@ function stopBrowing() {
     });
 }
 function showSettings() {
+	var r = Math.floor(Math.random() * 1000000000);
 	var dialog = new dijit.Dialog({
 		id: 'settingsDialog',
         title: "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>",
         style: "width: 600px;height: 600px;",
         content: new dojox.layout.ContentPane({
         	style: "height:550px; width: 580px;",
-            href: "/html/portlet/ext/timemachine/settings.jsp"
+            href: "/html/portlet/ext/timemachine/settings.jsp?random="+r
         }),
         onHide: function() {
         	var dialog=this;
