@@ -2,12 +2,15 @@
 
     <property file="${basedir}/../../src/com/liferay/portal/util/build.properties"/>
     <property name="lib.app" value="${basedir}/../../dotCMS/WEB-INF/lib"/>
+    <property name="web-inf.dir" value="${basedir}/../../dotCMS/WEB-INF"/>
+    <property name="src-conf.dir" value="${basedir}/../../src-conf"/>
     <property name="output.file" value="com.dotcms.spring.jar"/>
 
     <path id="files-classpath">
         <fileset dir="${lib.app}">
             <include name="jarjar-1.4.jar" />
             <include name="packager-taks.jar" />
+            <include name="commons-io-2.0.1.jar" />
         </fileset>
     </path>
 
@@ -26,7 +29,19 @@
         <packagerTask libraryPath="${basedir}"
                       outputFolder="${lib.app}"
                       outputFile="${output.file}"
-                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"/>
+                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar">
+
+            <fileset dir="${src-conf.dir}">
+                <include name="dotmarketing-config.properties"/>
+            </fileset>
+
+            <fileset dir="${web-inf.dir}">
+                <include name="web.xml"/>
+                <include name="springmvc-servlet.xml"/>
+            </fileset>
+
+        </packagerTask>
+
     </target>
 
 </project>
