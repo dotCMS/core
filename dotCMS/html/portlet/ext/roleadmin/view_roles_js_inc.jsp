@@ -521,8 +521,11 @@
 	}
 
 	function saveRoleCallback (newRole) {
-
+		var roleName = norm(newRole.name);
 		dijit.byId('addRoleDialog').hide();
+		dojo.byId("displayRoleName1").innerHTML= roleName;
+		dojo.byId("displayRoleName2").innerHTML= roleName;
+		dojo.byId("displayRoleName3").innerHTML = roleName;
 		buildRolesTree();
 
 	}
@@ -1223,6 +1226,7 @@
 		for(var i = 0; i < portletsInLayout.length; i++) {
 			if(portletsInLayout[i].portletId == portletId) {
 				portletsInLayout.splice(i, 1);
+				portletsListSource.deleteSelectedNodes();
 				break;
 			}
 		}
@@ -1403,7 +1407,7 @@
 		var roleNode;
 
 		var xhrArgs = {
-			url : "/api/role/loadbyid/id/" + roleid,
+			url : "/api/role/loadbyid/id/" + roleid+"/r/"+ Math.floor(Math.random()*11232132132131),
 			handleAs : "json",
 			sync: true,
 			load : function(data) {

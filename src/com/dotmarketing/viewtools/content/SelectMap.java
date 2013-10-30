@@ -25,7 +25,7 @@ public class SelectMap {
 	private Object selectValue;
 	
 	public SelectMap(Field field, Contentlet content) {
-		String[] pairs = field.getValues().split("\r\n");
+		String[] pairs = (field.getValues()!=null?field.getValues():"").split("\r\n");
 		for (int j = 0; j < pairs.length; j++) {
 		    String pair = pairs[j];
 		    String[] tokens = pair.split("\\|");
