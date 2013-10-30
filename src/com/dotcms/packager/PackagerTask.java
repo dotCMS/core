@@ -2,15 +2,14 @@ package com.dotcms.packager;
 
 import com.tonicsystems.jarjar.JarJarTask;
 import com.tonicsystems.jarjar.Rule;
+import org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
+import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.ZipFileSet;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
 /**
  * @author Jonathan Gamba
@@ -22,6 +21,7 @@ public class PackagerTask extends JarJarTask {
     private String outputFolder;
     private String outputFile;
     private String dotcmsJar;
+    private Vector<FileSet> filesets = new Vector<FileSet>();
 
     public void execute () throws BuildException {
 
@@ -152,6 +152,43 @@ public class PackagerTask extends JarJarTask {
         File toRename = new File( getOutputFolder() + File.separator + tempDotcmsJarName );
         File finalJar = new File( this.dotcmsJar );
         toRename.renameTo( finalJar );
+
+        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //APPLY THE SAME RULES TO GIVEN FILES, XML'S, .PROPERTIES, ETC...
+        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        if ( filesets != null ) {
+            for ( FileSet fileSet : filesets ) {
+
+                if ( fileSet.getDirectoryScanner() != null && fileSet.getDirectoryScanner().getIncludedFiles() != null ) {
+                    for ( String file : fileSet.getDirectoryScanner().getIncludedFiles() ) {
+
+                        //The file to check and probably to modify
+                        String filePath = fileSet.getDirectoryScanner().getBasedir().getPath() + File.separator + file;
+                        try {
+                            //Reading the file to check
+                            FileInputStream inputStream = new FileInputStream( filePath );
+                            String fileContent = IOUtils.toString( inputStream );
+
+                            log( "Searching on " + filePath + " for packages strings." );
+
+                            for ( Rule rule : rulesToApply.values() ) {
+                                Wildcard wildcard = new Wildcard( rule );
+                                fileContent = wildcard.replace( fileContent );
+                            }
+
+                            BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
+                            writer.write( fileContent );
+                            writer.close();
+
+                        } catch ( FileNotFoundException e ) {
+                            throw new BuildException( "File " + filePath + " not found.", e );
+                        } catch ( IOException e ) {
+                            throw new BuildException( "Error checking and/or modifying " + filePath + ".", e );
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -252,6 +289,10 @@ public class PackagerTask extends JarJarTask {
 
     public void setDotcmsJar ( String dotcmsJar ) {
         this.dotcmsJar = dotcmsJar;
+    }
+
+    public void addFileset ( FileSet fileset ) {
+        filesets.add( fileset );
     }
 
 }
