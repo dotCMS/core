@@ -391,6 +391,15 @@ public class StructureFactory {
 		return list;
 	}
 
+	
+	protected static void fixFolderHost(Structure st) {
+	    if(!UtilMethods.isSet(st.getFolder())) {
+	        st.setFolder("SYSTEM_FOLDER");
+	    }
+	    if(!UtilMethods.isSet(st.getHost())) {
+	        st.setHost("SYSTEM_HOST");
+	    }
+	}
 
 	//### CREATE AND UPDATE
 	public static void saveStructure(Structure structure) throws DotHibernateException
@@ -399,6 +408,7 @@ public class StructureFactory {
 		Date now = new Date();
 		structure.setiDate(now);
 		structure.setModDate(now);
+		fixFolderHost(structure);
 		HibernateUtil.saveOrUpdate(structure);
 
 		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
@@ -412,6 +422,7 @@ public class StructureFactory {
 		Date now = new Date();
 		structure.setiDate(now);
 		structure.setModDate(now);
+		fixFolderHost(structure);
 		HibernateUtil.saveWithPrimaryKey(structure, existingId);
 	}
 

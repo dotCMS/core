@@ -605,6 +605,8 @@ var theme = 'dmundra';
 	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #elseif($UtilMethods.isSet($field.defaultValue))
+	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$!field.defaultValue))
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
@@ -631,6 +633,8 @@ var theme = 'dmundra';
 	            	    	#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #elseif($UtilMethods.isSet($field.defaultValue))
+	            	    	#set($fieldDefaultValue = $date.toDate('HH:mm',$!field.defaultValue))
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
@@ -658,6 +662,8 @@ var theme = 'dmundra';
 	            	    	#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
 	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
 	            	    	#set($fieldDefaultValue = $tempVelocityVar)
+	            	    #elseif($UtilMethods.isSet($field.defaultValue))
+	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd HH:mm',$!field.defaultValue))
 	            	    #else
 	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
 	            	    #end
@@ -1001,6 +1007,18 @@ var theme = 'dmundra';
 						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
 						requiredLength = (document.getElementById("$field.velocityVarName").getAttribute("requiredLength")!= undefined) ? document.getElementById("$field.velocityVarName").getAttribute("requiredLength") : 1;
 						if(!lengthValidCustomField(document.getElementById("$field.velocityVarName"), requiredLength , "$field.fieldName")){
+							return false;
+						}
+					#end
+					#if("$field.getFieldType().toUpperCase()"=="KEY_VALUE")
+						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
+						var ${field.velocityVarName}Empty = "$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.keyval.empty')";
+						if(document.getElementById("${fieldAux.velocityVarName}list").value == ${field.velocityVarName}Empty){
+							if(customErrorMessages["$field.velocityVarName"] != "")
+								document.getElementById("alert"+"${field.velocityVarName}").innerHTML = customErrorMessages["$field.velocityVarName"];
+							else
+								document.getElementById("alert"+"${field.velocityVarName}").innerHTML = ${field.velocityVarName}Empty;
+
 							return false;
 						}
 					#end

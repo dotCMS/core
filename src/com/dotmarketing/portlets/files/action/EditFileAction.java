@@ -388,7 +388,7 @@ public class EditFileAction extends DotPortletAction implements DotPortletAction
 		
 		if(req.getParameter("parent") != null) {
 			parentFolder = folderAPI.find(req.getParameter("parent"),user,false);
-		} else {
+		} else if(UtilMethods.isSet(file.getIdentifier())){
 			Identifier tempId = APILocator.getIdentifierAPI().find(file.getIdentifier());
 			Host fileHost = APILocator.getHostAPI().find(tempId.getHostId(), user, false);
 			parentFolder = fileAPI.getFileFolder(file,fileHost, user, false);

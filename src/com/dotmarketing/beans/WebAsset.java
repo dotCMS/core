@@ -200,30 +200,13 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 	 * @param friendlyName The friendlyName to set
 	 */
 	public void setFriendlyName(String friendlyName) {
-		if (!UtilMethods.isSet(friendlyName))
-			this.friendlyName = title;
-		else
-			this.friendlyName = friendlyName;
+		this.friendlyName = friendlyName;
 	}
 	
 	//The owner for webassets belong to the identifier
 	@Override
 	public String getOwner() {
-		/*Identifier id;
-		try {*/
-			if(UtilMethods.isSet(owner)){
-				return owner;
-			}
-			/*else if(InodeUtils.isSet(getIdentifier())) {
-				id = APILocator.getIdentifierAPI().find(getIdentifier());
-				if(InodeUtils.isSet(id.getInode()))
-					return id.getOwner();
-			}
-
-		} catch (Exception e) {
-			Logger.error(this, "Unable to retrieve the identifier.", e);
-		}*/
-		return "";
+		return owner;
 	}
 
 
