@@ -241,8 +241,8 @@ public class PermissionedWebAssetUtil {
 		String orderBySelect = "";
 		int count  = 0;
 		for(ColumnItem item : columnsToOrderBy){
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL) 
-					|| DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+			if(DbConnectionFactory.isPostgres()
+					|| DbConnectionFactory.isMySql()){
 				item.setIsString(false);
 			}
 			orderByClause += item.getOrderClause(true) + (count<columnsToOrderBy.size()-1?", ":"");
@@ -251,9 +251,9 @@ public class PermissionedWebAssetUtil {
 			count++;
 		}
 
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		if(DbConnectionFactory.isOracle()){
 			extraSQLForOffset = "ROW_NUMBER() OVER(ORDER BY "+orderByClause+") LINENUM, ";
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		}else if(DbConnectionFactory.isMsSql()){
 			extraSQLForOffset = "ROW_NUMBER() OVER (ORDER BY "+orderByClause+") AS LINENUM, ";
 		}
 		permissionRefSQL.append("SELECT * FROM (");
@@ -309,8 +309,8 @@ public class PermissionedWebAssetUtil {
 			individualPermissionSQL.append(" group by "+ colToSelect + " ");
 		}
 		for(ColumnItem item : columnsToOrderBy){
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL) 
-					|| DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+			if(DbConnectionFactory.isPostgres() 
+					|| DbConnectionFactory.isMySql()){
 				item.setIsString(false);
 			}
 
@@ -324,10 +324,10 @@ public class PermissionedWebAssetUtil {
 		String sql = "";
 		DotConnect dc = new DotConnect();
 		String limitOffsetSQL = null;
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		if(DbConnectionFactory.isOracle()){
 			limitOffsetSQL = "WHERE LINENUM BETWEEN " + (offset<=0?offset:offset+1) + " AND " + (offset + limit);
 			sql = permissionRefSQL.toString() + (UtilMethods.isSet(individualPermissionSQL.toString())?" UNION " +individualPermissionSQL.toString():"") +" ) " + limitOffsetSQL + " ORDER BY " + orderByClauseWithAlias ;
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		}else if(DbConnectionFactory.isMsSql()){
 			limitOffsetSQL = "AS MyDerivedTable WHERE MyDerivedTable.LINENUM BETWEEN " + (offset<=0?offset:offset+1)  + " AND " + (offset + limit);
 			sql = permissionRefSQL.toString() + (UtilMethods.isSet(individualPermissionSQL.toString())?" UNION " +individualPermissionSQL.toString():"") +" ) " + limitOffsetSQL + " ORDER BY " + orderByClauseWithAlias;
 		}else{

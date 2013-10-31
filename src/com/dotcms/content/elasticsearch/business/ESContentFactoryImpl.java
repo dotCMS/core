@@ -208,7 +208,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	protected long contentletIdentifierCount() throws DotDataException {
 	    DotConnect dc = new DotConnect();
-        if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+        if(DbConnectionFactory.isOracle()){
             dc.setSQL("select count(*) as count from (select distinct identifier from contentlet)");
         }else{
             dc.setSQL("select count(*) as count from (select distinct identifier from contentlet) as t");

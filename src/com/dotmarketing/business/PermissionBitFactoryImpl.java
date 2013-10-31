@@ -115,10 +115,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 //		" WHERE not exists (SELECT asset_id from permission_reference where asset_id = ?)";
 
 	private final String insertPermissionReferenceSQL =
-		DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 		"insert into permission_reference (asset_id, reference_id, permission_type) " +
 		"	values (?, ?, ?)":
-		DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		DbConnectionFactory.isOracle() ?
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		"	values (permission_reference_seq.NEXTVAL, ?, ?, ?)":
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -214,10 +214,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id the templates belong to
 	 */
 	private final String insertTemplateReferencesToAHostSQL =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 		"insert into permission_reference (asset_id, reference_id, permission_type) " +
 		"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle() ?
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		"select permission_reference_seq.NEXTVAL, ":
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -275,10 +275,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id the templates belong to
 	 */
 	private final String insertContainerReferencesToAHostSQL =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 			"insert into permission_reference (asset_id, reference_id, permission_type) " +
 			"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle()?
 			"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 			"select permission_reference_seq.NEXTVAL, ":
 			"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -294,7 +294,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	/**
 	 * Function name to get the folder path. MSSql need owner prefix dbo
 	 */
-	private final String dotFolderPath=(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL) ? "dbo.":"")+"dotFolderPath";
+	private final String dotFolderPath=(DbConnectionFactory.isMsSql() ? "dbo.":"")+"dotFolderPath";
 
 	/*
 	 * To load folder inodes that are in the same tree/hierarchy of a parent host/folder
@@ -374,10 +374,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 5. same as 3
 	 */
 	private final String insertSubfolderReferencesSQL =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -469,10 +469,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertHTMLPageReferencesSQL =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -566,10 +566,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertFileReferencesSQL =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -664,10 +664,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertLinkReferencesSQL =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -795,10 +795,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertContentReferencesByPathSQL =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle()?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -826,10 +826,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. structure id
 	 */
 	private final String insertContentReferencesByStructureSQL =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle()?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -971,10 +971,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 5. same as 2
 	 */
 	private final String insertStructureReferencesByPathSQL =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -1007,10 +1007,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 5. same as 2
 	 */
 	private final String insertStructureReferencesByPathSQLFolder =
-		(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
-		 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?
+		 DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
