@@ -1,7 +1,5 @@
-package com.dotcms.packager;
+package com.tonicsystems.jarjar;
 
-import com.tonicsystems.jarjar.JarJarTask;
-import com.tonicsystems.jarjar.Rule;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.ZipFileSet;

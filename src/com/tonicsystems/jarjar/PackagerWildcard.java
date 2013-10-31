@@ -1,6 +1,4 @@
-package com.dotcms.packager;
-
-import com.tonicsystems.jarjar.Rule;
+package com.tonicsystems.jarjar;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,17 +9,17 @@ import java.util.regex.Pattern;
  * @author Jonathan Gamba
  *         Date: 10/24/13
  */
-public class Wildcard {
+public class PackagerWildcard {
 
     private Collection<Pattern> patterns;
     private Pattern simplePattern;
     private String replaceWith;
 
-    public Wildcard ( Rule rule ) {
+    public PackagerWildcard ( Rule rule ) {
         init( rule.getPattern(), rule.getResult() );
     }
 
-    public Wildcard ( String pattern, String result ) {
+    public PackagerWildcard ( String pattern, String result ) {
         init( pattern, result );
     }
 
@@ -39,9 +37,7 @@ public class Wildcard {
         String regex = pattern;
         regex = regex.replaceAll( "\\*\\*", "" );
         simplePattern = Pattern.compile( regex );
-        patterns.add( Pattern.compile( regex + "\\w+<" ) );//For xml files
-        patterns.add( Pattern.compile( regex + "\\w+\"" ) );//For xml files
-        patterns.add( Pattern.compile( regex + "\\w+\\n" ) );//For properties files
+        patterns.add( Pattern.compile( "(\"|>| )" + regex + "\\w+(<|\"|\\n|,)" ) );
 
         //Clean up the result
         if ( result.lastIndexOf( "@" ) != -1 ) {

@@ -1,0 +1,79 @@
+<project name="Repackager - Commons" default="repackage">
+
+    <property file="${basedir}/../../src/com/liferay/portal/util/build.properties"/>
+    <property name="lib.app" value="${basedir}/../../dotCMS/WEB-INF/lib"/>
+    <property name="web-inf.dir" value="${basedir}/../../dotCMS/WEB-INF"/>
+    <property name="src-conf.dir" value="${basedir}/../../src-conf"/>
+    <property name="output.file" value="com.dotcms.commons.jar"/>
+
+    <path id="files-classpath">
+        <fileset dir="${lib.app}">
+            <include name="jarjar-1.4.jar" />
+            <include name="packager-taks.jar" />
+            <include name="commons-io-2.0.1.jar" />
+        </fileset>
+
+        <fileset dir="../buildlibs">
+            <include name="commons-io-2.0.1.jar" />
+        </fileset>
+    </path>
+
+    <target name="clean">
+        <delete file="${lib.app}/${output.file}" failonerror="false" />
+    </target>
+
+    <target name="repackage" depends="clean">
+
+        <taskdef classname="com.tonicsystems.jarjar.PackagerTask" name="packagerTask">
+            <classpath>
+                <path refid="files-classpath" />
+            </classpath>
+        </taskdef>
+
+        <packagerTask libraryPath="${basedir}"
+                      outputFolder="${lib.app}"
+                      outputFile="${output.file}"
+                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar">
+
+            <!--List of dependecies to check if there are dependencies to old packages -->
+            <fileset dir="${lib.app}">
+                <include name="commons-validator.jar"/>
+                <include name="jasperreports-3.5.0.jar"/>
+                <include name="struts.jar"/>
+                <include name="groovy-all-1.7.0.jar"/>
+                <include name="hadoop-0.20.3-dev-core.jar"/>
+                <include name="dotcms_log4j.jar"/>
+                <include name="jcaptcha-mod.jar"/>
+                <!--<include name="esapi-2.0.1.jar"/>-->
+                <include name="quartz-all-1.8.6.jar"/>
+                <include name="apache-solr-core-1.4.0.jar"/>
+                <include name="dwr_3rc2modified.jar"/>
+                <include name="fileupload-ext.jar"/>
+                <include name="milton-servlet-1.8.1.4.jar"/>
+                <include name="org.springframework.web-3.1.0.RELEASE.jar"/>
+                <include name="abdera-client-0.4.0-incubating.jar"/>
+                <include name="apache-solr-solrj-1.4.0.jar"/>
+                <include name="ee-96daf56ad45c.jar"/>
+                <include name="ldap.jar"/>
+                <include name="tika-app-1.3.jar"/>
+                <include name="urlrewritefilter-4.0.3.jar"/>
+                <include name="milton-api-1.8.1.4.jar"/>
+                <include name="drools-compiler-3.0.5.jar"/>
+                <include name="hibernate2.jar"/>
+            </fileset>
+
+            <!--<fileset dir="${src-conf.dir}">
+                <include name="dotmarketing-config.properties"/>
+            </fileset>-->
+
+            <!--FIXME: Apply the rules to the osgi-extra.conf-->
+
+            <fileset dir="${web-inf.dir}">
+                <include name="validator-rules.xml"/>
+            </fileset>
+
+        </packagerTask>
+
+    </target>
+
+</project>

@@ -1,6 +1,7 @@
 <project name="Repackager" default="repackage">
 
     <target name="clean">
+        <ant target="clean" antfile="build.xml" dir="commons"/>
         <!--<ant target="clean" antfile="build.xml" dir="elasticsearch"/>-->
         <!--<ant target="clean" antfile="build.xml" dir="spring"/>-->
         <!--<ant target="clean" antfile="build.xml" dir="tika"/>-->
@@ -8,6 +9,7 @@
     </target>
 
     <target name="repackage">
+        <ant target="repackage" antfile="build.xml" dir="commons"/>
         <!--<ant target="repackage" antfile="build.xml" dir="elasticsearch"/>-->
         <!--<ant target="repackage" antfile="build.xml" dir="spring"/>-->
         <!--<ant target="repackage" antfile="build.xml" dir="tika"/>-->
