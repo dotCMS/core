@@ -126,13 +126,13 @@ public class PackagerTask extends JarJarTask {
         logJars( toTransform );
 
         //And finally repackage the jars
-        //generate( getOutputFile(), rulesToApply.values(), toTransform, false );
+        generate( getOutputFile(), rulesToApply.values(), toTransform, false );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //CHANGE THE OLD REFERENCES IN THE DOTCMS JAR
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //Repackage the dotcms jar
-        //repackageDependent( this.dotcmsJar, rulesToApply );
+        repackageDependent( this.dotcmsJar, rulesToApply );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //APPLY THE SAME RULES TO GIVEN FILES, XML'S, .PROPERTIES, ETC...
@@ -156,7 +156,7 @@ public class PackagerTask extends JarJarTask {
                             //++++++++++++++++++++++++++++++++++++++++++++++++++++++
                             //CHANGE THE OLD REFERENCES IN DEPENDENT JARS
                             //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            //repackageDependent( filePath, rulesToApply );
+                            repackageDependent( filePath, rulesToApply );
 
                         } else {
 
