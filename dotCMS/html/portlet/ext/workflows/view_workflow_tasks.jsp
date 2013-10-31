@@ -223,15 +223,15 @@
 		var stepId = new dijit.form.FilteringSelect({
 		    id: "stepId",
 		    name: "stepId",
-		    store: stepStore,
+		    store: emptyStore,
 		    searchDelay:300,
 		    pageSize:20,
 		    required:false,
-		    onClick:function(){
-		    	dijit.byId("stepId").displayedValue="";
+		    onChange:function(){
+		    	doFilter();
 		    }
-		},
-		"stepId");
+		    	
+		},"stepId");
 		
 		var olderThanCombo = new dijit.form.ComboBox({
 	        id:"daysold",
@@ -252,11 +252,16 @@
             
           
             
-	function updateSteps(){
+	function updateSteps(){	
 		var schemeId = dijit.byId("schemeId").value;
-		var myUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme&schemeId=" + schemeId;
-		dijit.byId("stepId").attr('value','');
-		dijit.byId("stepId").set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
+		var stepId = dijit.byId("stepId");
+		stepId.store= emptyStore;
+		dojo.byId("stepId").value ="";
+		if(schemeId){
+			var myUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme&schemeId=" + schemeId;		
+			dijit.byId("stepId").set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
+		}
+		
 	}
 	
 	function assignedToMe(){
@@ -293,6 +298,7 @@
 		}
 	<%}%>
 	function resetFilters(){
+		
 		dijit.byId("daysold").setValue("");	
 		var stepId = dijit.byId("stepId");
 		stepId.store= emptyStore;
@@ -304,16 +310,12 @@
 		<%if(isAdministrator){%>
 		     disable4AllUsers();
 		<%}%>
-		var schemeId = dijit.byId("schemeId");
-
-		schemeId.setValue("");
 		
 		dijit.byId("keywords").setValue("");
 		dijit.byId("showOpen").setValue(true);
-		dijit.byId("showClosed").setValue(false);
-		
-		
-		doFilter();
+		dijit.byId("showClosed").setValue(false);		
+		var schemeId = dijit.byId("schemeId");
+		schemeId.setValue("");
 	}
 	
 	function editTask(id,langId){
