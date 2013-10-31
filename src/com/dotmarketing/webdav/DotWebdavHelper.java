@@ -950,7 +950,8 @@ public class DotWebdavHelper {
 					//http://jira.dotmarketing.net/browse/DOTCMS-5911
 					String inode = destinationFile.getInode();
 					if(UtilMethods.isSet(inode)){
-						java.io.File tumbnailDir = new java.io.File(Config.CONTEXT.getRealPath("/assets/dotGenerated/" + inode.charAt(0) + "/" + inode.charAt(1)));
+						String realAssetPath = APILocator.getFileAPI().getRealAssetPath();
+						java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator + "dotGenerated" + java.io.File.separator + inode.charAt(0) + java.io.File.separator + inode.charAt(1));
 						if(tumbnailDir!=null){
 							java.io.File[] files = tumbnailDir.listFiles();
 							if(files!=null){
