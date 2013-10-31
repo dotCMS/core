@@ -19,6 +19,7 @@ public class PackagerTask extends JarJarTask {
     private String outputFolder;
     private String outputFile;
     private String dotcmsJar;
+    private String jspFolder;
     private Vector<FileSet> filesets = new Vector<FileSet>();
 
     public void execute () throws BuildException {
@@ -125,13 +126,13 @@ public class PackagerTask extends JarJarTask {
         logJars( toTransform );
 
         //And finally repackage the jars
-        generate( getOutputFile(), rulesToApply.values(), toTransform, false );
+        //generate( getOutputFile(), rulesToApply.values(), toTransform, false );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //CHANGE THE OLD REFERENCES IN THE DOTCMS JAR
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //Repackage the dotcms jar
-        repackageDependent( this.dotcmsJar, rulesToApply );
+        //repackageDependent( this.dotcmsJar, rulesToApply );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //APPLY THE SAME RULES TO GIVEN FILES, XML'S, .PROPERTIES, ETC...
@@ -142,6 +143,10 @@ public class PackagerTask extends JarJarTask {
                 if ( fileSet.getDirectoryScanner() != null && fileSet.getDirectoryScanner().getIncludedFiles() != null ) {
                     for ( String file : fileSet.getDirectoryScanner().getIncludedFiles() ) {
 
+                        //File currentFile = new File (file);
+                        log( "+++++++++++++++++++++++++++++++++++++++" );
+                        log( file );
+
                         //The file to check and probably to modify
                         String filePath = fileSet.getDirectoryScanner().getBasedir().getPath() + File.separator + file;
 
@@ -151,7 +156,7 @@ public class PackagerTask extends JarJarTask {
                             //++++++++++++++++++++++++++++++++++++++++++++++++++++++
                             //CHANGE THE OLD REFERENCES IN DEPENDENT JARS
                             //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            repackageDependent( filePath, rulesToApply );
+                            //repackageDependent( filePath, rulesToApply );
 
                         } else {
 
@@ -179,6 +184,39 @@ public class PackagerTask extends JarJarTask {
                         }
                     }
                 }
+            }
+        }
+
+        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //APPLY THE SAME RULES TO JSP's UNDER THE DOTCMS FOLDER
+        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        File jspFolderFile = new File( getJspFolder() );
+
+        for ( Rule rule : rulesToApply.values() ) {
+
+            //Clean-up the pattern
+            String pattern = rule.getPattern();
+            pattern = pattern.replaceAll( "\\*\\*", "" );
+
+            //Clean up the result
+            String result = rule.getResult();
+            if ( result.lastIndexOf( "@" ) != -1 ) {
+                result = result.substring( 0, result.lastIndexOf( "@" ) );
+            }
+
+            String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/" + pattern + "/" + result + "/' {} \\;";
+
+            log( "" );
+            log( command );
+
+            try {
+                Runtime.getRuntime().exec(
+                        new String[]{
+                                "sh", "-l", "-c", command
+                        }
+                );
+            } catch ( IOException e ) {
+                throw new BuildException( "Error replacing JSP's Strings: " + pattern + ".", e );
             }
         }
     }
@@ -311,6 +349,14 @@ public class PackagerTask extends JarJarTask {
 
     public void setOutputFile ( String outputFile ) {
         this.outputFile = outputFile;
+    }
+
+    public String getJspFolder () {
+        return jspFolder;
+    }
+
+    public void setJspFolder ( String jspFolder ) {
+        this.jspFolder = jspFolder;
     }
 
     public void setLibraryPath ( String libraryPath ) {
