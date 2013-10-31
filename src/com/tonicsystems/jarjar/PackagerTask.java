@@ -1,7 +1,5 @@
-package com.dotcms.packager;
+package com.tonicsystems.jarjar;
 
-import com.tonicsystems.jarjar.JarJarTask;
-import com.tonicsystems.jarjar.Rule;
 import org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -34,8 +32,8 @@ public class PackagerTask extends JarJarTask {
         if ( this.dotcmsJar == null ) {
             throw new IllegalArgumentException( "No dotCMS jar specified" );
         }
-        File dotcmsJar = new File( this.dotcmsJar );
-        log( "dotCMS jar location: " + dotcmsJar.getAbsolutePath(), Project.MSG_INFO );
+        File dotcmsJarFile = new File( this.dotcmsJar );
+        log( "dotCMS jar location: " + dotcmsJarFile.getAbsolutePath(), Project.MSG_INFO );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //FIRST WE RUN THE INSPECTOR TO FIND DUPLICATED CLASSES
@@ -127,31 +125,13 @@ public class PackagerTask extends JarJarTask {
         logJars( toTransform );
 
         //And finally repackage the jars
-        generate( getOutputFile(), rulesToApply.values(), toTransform );
+        generate( getOutputFile(), rulesToApply.values(), toTransform, false );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //CHANGE THE OLD REFERENCES IN THE DOTCMS JAR
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-        //Prepare the jars that we are going to repackage
-        Collection<File> files = new ArrayList<File>();
-        files.add( dotcmsJar );
-        //-------------------------------
-        //SOME LOGGING
-        logJars( files );
-
-        //And finally repackage the dotcms jar
-        String dotcmsJarName = dotcmsJar.getName().substring( 0, dotcmsJar.getName().lastIndexOf( "." ) );
-        String tempDotcmsJarName = dotcmsJarName + "_temp" + ".jar";
-        generate( tempDotcmsJarName, rulesToApply.values(), files );
-
-        //Remove the original dotcms jar
-        dotcmsJar.delete();
-
-        //Rename the just repackaged dotcms jar
-        File toRename = new File( getOutputFolder() + File.separator + tempDotcmsJarName );
-        File finalJar = new File( this.dotcmsJar );
-        toRename.renameTo( finalJar );
+        //Repackage the dotcms jar
+        repackageDependent( this.dotcmsJar, rulesToApply );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //APPLY THE SAME RULES TO GIVEN FILES, XML'S, .PROPERTIES, ETC...
@@ -164,31 +144,75 @@ public class PackagerTask extends JarJarTask {
 
                         //The file to check and probably to modify
                         String filePath = fileSet.getDirectoryScanner().getBasedir().getPath() + File.separator + file;
-                        try {
-                            //Reading the file to check
-                            FileInputStream inputStream = new FileInputStream( filePath );
-                            String fileContent = IOUtils.toString( inputStream );
 
-                            log( "Searching on " + filePath + " for packages strings." );
+                        //Verify if we are going to check for dependencies on another jars or files
+                        if ( filePath.endsWith( ".jar" ) ) {
 
-                            for ( Rule rule : rulesToApply.values() ) {
-                                Wildcard wildcard = new Wildcard( rule );
-                                fileContent = wildcard.replace( fileContent );
+                            //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            //CHANGE THE OLD REFERENCES IN DEPENDENT JARS
+                            //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            repackageDependent( filePath, rulesToApply );
+
+                        } else {
+
+                            try {
+                                //Reading the file to check
+                                FileInputStream inputStream = new FileInputStream( filePath );
+                                String fileContent = IOUtils.toString( inputStream );
+
+                                log( "Searching on " + filePath + " for packages strings." );
+
+                                for ( Rule rule : rulesToApply.values() ) {
+                                    PackagerWildcard wildcard = new PackagerWildcard( rule );
+                                    fileContent = wildcard.replace( fileContent );
+                                }
+
+                                BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
+                                writer.write( fileContent );
+                                writer.close();
+
+                            } catch ( FileNotFoundException e ) {
+                                throw new BuildException( "File " + filePath + " not found.", e );
+                            } catch ( IOException e ) {
+                                throw new BuildException( "Error checking and/or modifying " + filePath + ".", e );
                             }
-
-                            BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
-                            writer.write( fileContent );
-                            writer.close();
-
-                        } catch ( FileNotFoundException e ) {
-                            throw new BuildException( "File " + filePath + " not found.", e );
-                        } catch ( IOException e ) {
-                            throw new BuildException( "Error checking and/or modifying " + filePath + ".", e );
                         }
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Repackage a given jar that was using some of the packages we changed
+     *
+     * @param jarPath
+     * @param rulesToApply
+     */
+    private void repackageDependent ( String jarPath, HashMap<String, Rule> rulesToApply ) {
+
+        File jarFile = new File( jarPath );
+        String jarName = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
+        String jarLocation = jarFile.getAbsolutePath().substring( 0, jarFile.getAbsolutePath().lastIndexOf( File.separator ) );
+
+        //Prepare the jars that we are going to repackage
+        Collection<File> files = new ArrayList<File>();
+        files.add( jarFile );
+        //-------------------------------
+        //SOME LOGGING
+        logJars( files );
+
+        //Repackage the jar into a temporal file
+        String tempJarName = jarName + "_temp" + ".jar";
+        generate( tempJarName, rulesToApply.values(), files, true );
+
+        //Remove the original jar
+        jarFile.delete();
+
+        //Rename the just repackaged temporal jar
+        File toRename = new File( jarLocation + File.separator + tempJarName );
+        File finalJar = new File( jarPath );
+        toRename.renameTo( finalJar );
     }
 
     /**
@@ -198,7 +222,7 @@ public class PackagerTask extends JarJarTask {
      * @param rules          rules to apply
      * @param jars           jars to integrate into one
      */
-    private void generate ( String outputFileName, Collection<Rule> rules, Collection<File> jars ) {
+    private void generate ( String outputFileName, Collection<Rule> rules, Collection<File> jars, boolean skipManifest ) {
 
         //Destiny file
         File outFile = new File( getOutputFolder() + File.separator + outputFileName );
@@ -215,12 +239,22 @@ public class PackagerTask extends JarJarTask {
         }
 
         //Prepare the rules for these groups of jar
+        List<PatternElement> patterns = new ArrayList<PatternElement>();
         for ( Rule rule : rules ) {
             addConfiguredRule( rule );
+            patterns.add( rule );
         }
 
         //Generate the new jar
-        super.execute();
+        MainProcessor processor = new MainProcessor( patterns, verbose, skipManifest );
+        execute( processor );
+        try {
+            processor.strip( getDestFile() );
+        } catch ( IOException e ) {
+            throw new BuildException( e );
+        }
+        //super.execute();
+
         //Clean everything and get ready to start again
         super.reset();
     }

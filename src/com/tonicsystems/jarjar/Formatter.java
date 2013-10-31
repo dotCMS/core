@@ -1,4 +1,4 @@
-package com.dotcms.packager;
+package com.tonicsystems.jarjar;
 
 import java.io.OutputStream;
 import java.util.List;

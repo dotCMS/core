@@ -17,7 +17,7 @@
 
     <target name="repackage" depends="clean">
 
-        <taskdef classname="com.dotcms.packager.PackagerTask" name="packagerTask">
+        <taskdef classname="com.tonicsystems.jarjar.PackagerTask" name="packagerTask">
             <classpath>
                 <path refid="files-classpath" />
             </classpath>

@@ -1,4 +1,4 @@
-package com.dotcms.packager;
+package com.tonicsystems.jarjar;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
