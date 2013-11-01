@@ -712,7 +712,7 @@ public class StructureFactoryTest extends ContentletBaseTest {
     public void findStructuresUserCanUse () throws DotSecurityException, DotDataException {
 
         //Lets filter by name
-        String filter = "JUnit Test Structure_0";
+        String filter = "JUnit Test";
 
         //Make the search
         //TODO: It's weird, the method ask for a query parameter, but what it actually needs is a name to filter, I mean, the method at the end will just grab that "query" and use it like this: and (lower(structure.name) LIKE '%" + searchString.toLowerCase() + "%'"
