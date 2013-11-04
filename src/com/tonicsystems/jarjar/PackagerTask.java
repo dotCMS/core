@@ -143,10 +143,6 @@ public class PackagerTask extends JarJarTask {
                 if ( fileSet.getDirectoryScanner() != null && fileSet.getDirectoryScanner().getIncludedFiles() != null ) {
                     for ( String file : fileSet.getDirectoryScanner().getIncludedFiles() ) {
 
-                        //File currentFile = new File (file);
-                        log( "+++++++++++++++++++++++++++++++++++++++" );
-                        log( file );
-
                         //The file to check and probably to modify
                         String filePath = fileSet.getDirectoryScanner().getBasedir().getPath() + File.separator + file;
 
@@ -192,6 +188,10 @@ public class PackagerTask extends JarJarTask {
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         File jspFolderFile = new File( getJspFolder() );
 
+        log( "" );
+        log( "-----------------------------------------" );
+        log( "Updating JSP's" );
+
         for ( Rule rule : rulesToApply.values() ) {
 
             //Clean-up the pattern
@@ -205,8 +205,6 @@ public class PackagerTask extends JarJarTask {
             }
 
             String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/" + pattern + "/" + result + "/' {} \\;";
-
-            log( "" );
             log( command );
 
             try {
