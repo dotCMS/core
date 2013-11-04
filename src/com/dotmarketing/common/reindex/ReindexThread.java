@@ -273,6 +273,8 @@ public class ReindexThread extends Thread {
                 lock="LOCK TABLE dist_reindex_journal IN EXCLUSIVE MODE";
             else if(DbConnectionFactory.isPostgres())
                 lock="lock table dist_reindex_journal";
+            else if(DbConnectionFactory.isH2())
+                lock="SELECT * from dist_reindex_journal FOR UPDATE";
             
             Statement smt=conn.createStatement();
             smt.execute(lock);

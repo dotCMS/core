@@ -12,7 +12,7 @@ public class H2Procedure {
     public static ResultSet loadRecordsToIndex(Connection conn, String serverId, int records) throws SQLException {
         
         SimpleResultSet ret=new SimpleResultSet();
-        ret.addColumn("id", Types.VARCHAR, 36, 0);
+        ret.addColumn("id", Types.INTEGER, 10, 0);
         ret.addColumn("inode_to_index", Types.VARCHAR, 36, 0);
         ret.addColumn("ident_to_index", Types.VARCHAR, 36, 0);
         ret.addColumn("priority", Types.INTEGER, 10, 0);
@@ -25,11 +25,11 @@ public class H2Procedure {
         ResultSet rs=smt.executeQuery();
         
         while(rs.next()) {
-            String id = rs.getString("id");
+            int id = rs.getInt("id");
             ret.addRow(id, rs.getString("inode_to_index"), rs.getString("ident_to_index"), rs.getInt("priority"));
             
             update.setString(1, serverId);
-            update.setString(2, id);
+            update.setInt(2, id);
             update.executeUpdate();
         }
         
