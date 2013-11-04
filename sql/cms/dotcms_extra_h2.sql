@@ -430,3 +430,6 @@ alter table publishing_bundle add force_push bool ;
 
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
+CREATE ALIAS load_records_to_index FOR "com.dotcms.h2.H2Procedure.loadRecordsToIndex";
+CREATE ALIAS dotFolderPath FOR "com.dotcms.h2.H2Procedure.dotFolderPath";
+CREATE TRIGGER rename_folder_assets_trigger AFTER UPDATE ON Folder FOR EACH ROW CALL "com.dotcms.h2.FolderRenameTrigger";
