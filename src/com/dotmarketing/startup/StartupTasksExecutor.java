@@ -23,8 +23,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
 
 public class StartupTasksExecutor {
 
-	private final String runOncePackage = Config.getStringProperty("RUNONCEPACKAGE","com.dotmarketing.startup.runonce");
-	private final String runAlwaysPackage = Config.getStringProperty("RUNALWAYSPACKAGE", "com.dotmarketing.startup.runalways");
+	
 	private static StartupTasksExecutor executor;
 
 	private String pgLock = "lock table db_version;";
@@ -74,28 +73,27 @@ public class StartupTasksExecutor {
 	 * different method to avoid further clutter
 	 */
 	private void setupSQL() {
-		String dbType = DbConnectionFactory.getDBType();
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.POSTGRESQL)) {
+		if (DbConnectionFactory.isPostgres()) {
 			lock = pgLock;
 			commit = pgCommit;
 			create = pgCreate;
 			select = pgSelect;
 		}
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.MYSQL)) {
+		if (DbConnectionFactory.isMySql()) {
 			lock = myLock.toLowerCase();
 			commit = myCommit.toLowerCase();
 			create = myCreate.toLowerCase();
 			select = mySelect.toLowerCase();
 		}
 		
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.ORACLE)) {
+		if (DbConnectionFactory.isOracle()) {
 			lock = oraLock;
 			commit = oraCommit;
 			create = oraCreate;
 			select = oraSelect;
 		}
 		
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.MSSQL)) {
+		if (DbConnectionFactory.isMsSql()) {
 			lock = msLock;
 			commit = msCommit;
 			create = msCreate;
@@ -145,7 +143,7 @@ public class StartupTasksExecutor {
 			Logger.debug(this.getClass(), "Trying to create db_version table");
 			try {
 				conn.rollback();
-				if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				if(DbConnectionFactory.isMySql()){
 					s.execute("SET storage_engine=INNODB");
 				}
 				s.execute(create);
@@ -307,7 +305,7 @@ public class StartupTasksExecutor {
 			try {
 				if(conn != null && !conn.isClosed()){
 					Statement s1 = conn.createStatement();
-					if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+					if(DbConnectionFactory.isMySql()){
 						s1.execute(commit);
 					}
 					if(!conn.getAutoCommit()){

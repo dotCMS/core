@@ -85,4 +85,9 @@ public class Task01070BundleNameDropUnique extends AbstractJDBCStartupTask {
         return tables;
     }
 
+    @Override
+    public String getH2Script() {
+        return null;
+    }
+
 }

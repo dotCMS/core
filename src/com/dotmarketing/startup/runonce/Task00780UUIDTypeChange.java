@@ -976,8 +976,8 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 	@Override
 	protected List<String> getTablesToDropConstraints() {
 		List<String> tables = new ArrayList<String>();
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)
-				||DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		if(DbConnectionFactory.isOracle()
+				||DbConnectionFactory.isMsSql()){
 			dropIndexes();
 			tables.add("template");
 			tables.add("htmlpage");
@@ -1034,12 +1034,12 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 		DotConnect dc = new DotConnect();
 		
 		String sql ="";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		if(DbConnectionFactory.isOracle()){
 			sql = "drop index IDX_FIELD_VELOCITY_STRUCTURE;" +
 			      "alter table analytic_summary_pages drop constraint fka1ad33b9ed30e054;" +
 			      "alter table analytic_summary_content drop constraint fk53cb4f2eed30e054;" +
 			      "alter table analytic_summary_referer drop constraint fk5bc0f3e2ed30e054;";
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		}else if(DbConnectionFactory.isMsSql()){
 			sql = "drop index idx_identifier ON identifier;" + 
 			      "drop index tag_inode_inode ON tag_inode;" +
 			      "drop index idx_workflow_4 ON workflow_task;" +
@@ -1107,4 +1107,9 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 	public boolean forceRun() {
       return true;
 	}
+
+    @Override
+    public String getH2Script() {
+        return null;
+    }
 }

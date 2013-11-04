@@ -41,7 +41,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		private void deleteIdentifiersFromInode(){
 		DotConnect dc = new DotConnect();
 		String dropFKs = "";
-		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+		if (DbConnectionFactory.isMySql()){
 
 			dropFKs = "ALTER TABLE structure DROP FOREIGN KEY fk_structure_host;" + 
 			          "ALTER TABLE tree DROP FOREIGN KEY FK36739EC4AB08AA;" +
@@ -157,13 +157,13 @@ public class Task00785DataModelChanges implements StartupTask  {
 				                "  END\n" +
 				                "  RETURN @parent_path+@asset_name+'/';\n" +
 				                "END;\n";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL))
+		if(DbConnectionFactory.isPostgres())
 			dc.executeStatement(pgPathFunction);
-		else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))
+		else if(DbConnectionFactory.isMySql())
 			dc.executeStatement(myPathFunction);
-		else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+		else if(DbConnectionFactory.isOracle())
 			dc.executeStatement(oraPathFunction);
-		else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))
+		else if(DbConnectionFactory.isMsSql())
 			dc.executeStatement(msPathFunction);
 	}
 
@@ -281,16 +281,16 @@ public class Task00785DataModelChanges implements StartupTask  {
 								"END;";
 
 			try {
-				if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+				if(DbConnectionFactory.isOracle()){
 					dc.executeStatement(triggerInOracle);
 				}
-				if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+				if(DbConnectionFactory.isPostgres()){
 					dc.executeStatement(fileTrigger);
 					dc.executeStatement(ContentletTrigger1);
 					dc.executeStatement(ContentletTrigger2);
 					dc.executeStatement(identifierTrigger);
 				}
-				if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+				if(DbConnectionFactory.isMsSql()){
 					dc.executeStatement(triggerInMSSQL);
 				}
 			} catch (SQLException e) {
@@ -1136,11 +1136,11 @@ public class Task00785DataModelChanges implements StartupTask  {
 	private void addNewTriggers(){
 		DotConnect dc = new DotConnect();
 		List<String> newTriggers = new ArrayList<String>();
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+		if(DbConnectionFactory.isPostgres()){
 			newTriggers = newTriggersForPostgres();
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		}else if(DbConnectionFactory.isMsSql()){
 			newTriggers = newTriggersForMSSQL();
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		}else if(DbConnectionFactory.isOracle()){
 			newTriggers = newTriggersForOracle();
 		}else{
 			newTriggers = newTriggersForMySql();
@@ -1171,7 +1171,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			dc.addParam(identifier);
 			dc.loadResult();
 		}
-		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+		if (DbConnectionFactory.isMySql()){
 			dropFK = "ALTER TABLE contentlet DROP FOREIGN KEY fk_folder";
 		}else {
 			dropFK  = "Alter table contentlet drop constraint fk_folder";
@@ -1183,7 +1183,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 	private void folderTableChanges() throws SQLException, DotDataException{
 		DotConnect dc = new DotConnect();
 		String addIdentifierToFolder = "ALTER TABLE Folder add identifier varchar(36)";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+		if(DbConnectionFactory.isOracle())
 		    addIdentifierToFolder=addIdentifierToFolder.replaceAll("varchar\\(", "varchar2\\(");
 		String addFK = "ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id)";
 		String dropHostColumn = "ALTER TABLE Folder drop column host_inode";
@@ -1264,9 +1264,9 @@ public class Task00785DataModelChanges implements StartupTask  {
 		//HibernateUtil.startTransaction();
 		try {
 		    DbConnectionFactory.getConnection().setAutoCommit(true);
-		  if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))
+		  if (DbConnectionFactory.isMySql())
 			 dc.executeStatement("SET storage_engine=INNODB");
-		  if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))
+		  if (DbConnectionFactory.isMsSql())
 		     dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 
 		
@@ -1282,7 +1282,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			             			 "alter table contentlet add identifier varchar(36);" +
 			             			 "alter table links add identifier varchar(36);";		
 		
-	    if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+	    if (DbConnectionFactory.isMySql()){
 	        try {
 	            dc.executeStatement("alter table identifier drop foreign key host_inode_fk");
 	            dc.executeStatement("alter table identifier drop index host_inode_fk");
@@ -1293,7 +1293,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 	        addConstraint = 
                     "ALTER TABLE identifier change inode id varchar(36);" +
                     "ALTER TABLE identifier drop index uri;";
-	    }else  if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+	    }else  if(DbConnectionFactory.isMsSql()) {
 	        try {
                 dc.executeStatement("alter table identifier drop constraint host_inode_fk");
             } catch(Exception ex) {
@@ -1315,7 +1315,7 @@ public class Task00785DataModelChanges implements StartupTask  {
    		  				  	"ALTER TABLE identifier ALTER column id varchar(36) not null;" +
    		  				  	"ALTER TABLE identifier ADD CONSTRAINT identifier_pkey PRIMARY KEY(id);" +
    		  				  	"CREATE INDEX idx_identifier ON identifier(id);";
-	    }else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+	    }else if(DbConnectionFactory.isOracle()){
 	        try {
                 dc.executeStatement("alter table identifier drop constraint host_inode_fk");
             } catch(Exception ex) {
@@ -1368,7 +1368,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 					     "ALTER TABLE identifier add asset_name varchar(255);" +
 					     "ALTER TABLE identifier add asset_type varchar(64);";
 
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+		if(DbConnectionFactory.isOracle())
 		    addConstraint=addConstraint.replaceAll("varchar\\(", "varchar2\\(");
 
 		String dropUriColumn = "ALTER TABLE Identifier DROP COLUMN URI";
@@ -1470,7 +1470,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		  	dc.executeStatement(constraint);
 		}
 
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+		if(DbConnectionFactory.isMsSql()) {
 			// the MSSQL version of this trigger creates a cursor without
 			// setting its scope. So if the default is GLOBAL then this upgrade task will fail
 			dc.setSQL("DROP TRIGGER check_identifier_host_inode");
@@ -1531,9 +1531,9 @@ public class Task00785DataModelChanges implements StartupTask  {
 		dc.executeStatement(dropUriColumn);
 		dc.executeStatement(addUniqueKey);
 
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)||
-				 DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) ||
-				   		DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		if(DbConnectionFactory.isPostgres() ||
+				 DbConnectionFactory.isOracle() ||
+				   		DbConnectionFactory.isMsSql()){
 			triggersChanges();  //Update existing triggers
 		}
 		addNewTriggers(); //Add New Triggers
