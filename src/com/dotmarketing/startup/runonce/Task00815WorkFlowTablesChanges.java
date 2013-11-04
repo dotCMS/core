@@ -21,18 +21,18 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		String dropInode = "";
 		DotConnect dc = new DotConnect();
 		dropWorkFlowTaskIndexes();
-		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+		if (DbConnectionFactory.isMySql()){
 			dropInode = "ALTER TABLE workflow_task DROP FOREIGN KEY fk441116055fb51eb;" +
 		                " drop index fk441116055fb51eb on workflow_task;"+
 						"ALTER TABLE workflow_task change inode id varchar(36);";
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		}else if(DbConnectionFactory.isOracle()){
 			dropInode = "ALTER TABLE workflow_task DROP CONSTRAINT fk441116055fb51eb;" +
 			            "ALTER TABLE workflow_task add id varchar2(36);" +
 			            "UPDATE workflow_task set id = cast(inode as varchar2(36));" +
 			            "ALTER TABLE workflow_task drop column inode;" +
 			            "ALTER TABLE workflow_task MODIFY (id NOT NULL);" +
 			            "ALTER TABLE workflow_task ADD CONSTRAINT workflow_task_pkey PRIMARY KEY(id);"; 
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		}else if(DbConnectionFactory.isMsSql()){
 			dropInode = "ALTER TABLE workflow_task DROP CONSTRAINT fk441116055fb51eb;" +
 			            "ALTER TABLE workflow_task DROP CONSTRAINT pk_workflow_task;" +
 				        "ALTER TABLE workflow_task add new_inode varchar(36);" +
@@ -53,7 +53,7 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		 					"(id varchar(36) NOT NULL  primary key," +
 		 					"workflowtask_id varchar(36) NOT NULL," +
 		 					"file_inode varchar(36) NOT NULL);";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+		if(DbConnectionFactory.isOracle())
 		    createTable=createTable.replaceAll("varchar\\(", "varchar2\\(");
         
 		String addFKs = "alter table workflowtask_files add constraint FK_workflow_id foreign key (workflowtask_id) references workflow_task(id);"
@@ -89,18 +89,18 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
     private void workflowCommentChanges() throws SQLException, DotDataException{
     	DotConnect dc = new DotConnect();
     	String dropInode = "";
-    	if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+    	if (DbConnectionFactory.isMySql()){
 			dropInode = "ALTER TABLE workflow_comment DROP FOREIGN KEY fk94993ddf5fb51eb;" +
 			            "drop index fk94993ddf5fb51eb on workflow_comment;" +
 						"ALTER TABLE workflow_comment change inode id varchar(36);";
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		}else if(DbConnectionFactory.isOracle()){
 			dropInode = "ALTER TABLE workflow_comment DROP CONSTRAINT fk94993ddf5fb51eb;" +
 			            "ALTER TABLE workflow_comment add id varchar2(36);" +
 			            "UPDATE workflow_comment set id = cast(inode as varchar2(36));" +
 			            "ALTER TABLE workflow_comment drop column inode;" +
 			            "ALTER TABLE workflow_comment MODIFY (id NOT NULL);" +
 			            "ALTER TABLE workflow_comment ADD CONSTRAINT workflow_comment_pkey PRIMARY KEY(id);"; 
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		}else if(DbConnectionFactory.isMsSql()){
 			dropInode = "ALTER TABLE workflow_comment DROP CONSTRAINT fk94993ddf5fb51eb;" +
 			            "ALTER TABLE workflow_comment DROP CONSTRAINT pk_workflow_comment;" +
 				        "ALTER TABLE workflow_comment add new_inode varchar(36);" +
@@ -119,7 +119,7 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		}
 		String addWorkFlowCommentFK = "alter table workflow_comment add workflowtask_id varchar(36);" + 
 									  "alter table workflow_comment add constraint wf_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+		if(DbConnectionFactory.isOracle())
 		    addWorkFlowCommentFK=addWorkFlowCommentFK.replaceAll("varchar\\(", "varchar2\\(");
 		
 		String workflowtask_workflowcomment_relations = "Select child,parent from tree where parent in(select id from workflow_task) and child in(select id from workflow_comment)";
@@ -149,18 +149,18 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
     private void workflowHistoryChanges() throws SQLException, DotDataException{
     	String dropInode = "";
     	DotConnect dc = new DotConnect();
-    	if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+    	if (DbConnectionFactory.isMySql()){
 			dropInode = "ALTER TABLE workflow_history DROP FOREIGN KEY fk933334145fb51eb;" +
 			            "drop index fk933334145fb51eb on workflow_history;"+
 						"ALTER TABLE workflow_history change inode id varchar(36);";
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		}else if(DbConnectionFactory.isOracle()){
 			dropInode = "ALTER TABLE workflow_history DROP CONSTRAINT fk933334145fb51eb;" +
 			            "ALTER TABLE workflow_history add id varchar2(36);" +
 			            "UPDATE workflow_history set id = cast(inode as varchar2(36));" +
 			            "ALTER TABLE workflow_history drop column inode;" +
 			            "ALTER TABLE workflow_history MODIFY (id NOT NULL);" +
 			            "ALTER TABLE workflow_history ADD CONSTRAINT workflow_history_pkey PRIMARY KEY(id);"; 
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		}else if(DbConnectionFactory.isMsSql()){
 			dropInode = "ALTER TABLE workflow_history DROP CONSTRAINT fk933334145fb51eb;" +
 			            "ALTER TABLE workflow_history DROP CONSTRAINT pk_workflow_history;" + 
 				        "ALTER TABLE workflow_history add new_inode varchar(36);" +
@@ -179,7 +179,7 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		}
 		String addWorkFlowHistoryFK = "alter table workflow_history add workflowtask_id varchar(36);" + 
         							  "alter table workflow_history add constraint wf_id_history_FK foreign key (workflowtask_id) references workflow_task(id)";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+		if(DbConnectionFactory.isOracle())
 		    addWorkFlowHistoryFK=addWorkFlowHistoryFK.replaceAll("varchar\\(", "varchar2\\(");
 		
 		String workflowtask_workflowhistory_relations = "Select child,parent from tree where parent in(select id from workflow_task) and child in(select id from workflow_history)";
@@ -211,14 +211,14 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
     private void dropWorkFlowTaskIndexes() throws SQLException{
     	String indexes = "";
     	DotConnect dc = new DotConnect();
-    	if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)||
-    			      DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+    	if(DbConnectionFactory.isOracle()||
+    			      DbConnectionFactory.isPostgres()){
     		indexes = "drop index idx_workflow_1;" +
     		          "drop index idx_workflow_2;" +
     		          "drop index idx_workflow_3;" +
     		          "drop index idx_workflow_4;" +
     		          "drop index idx_workflow_5;";
-    	}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+    	}else if(DbConnectionFactory.isMsSql()){
     		indexes = "drop index workflow_task.idx_workflow_1;" +
     		          "drop index workflow_task.idx_workflow_2;" +
     		          "drop index workflow_task.idx_workflow_3;" +
@@ -232,9 +232,9 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
     }
     private void addWorkFlowTaskIndexes() throws SQLException{
     	DotConnect dc = new DotConnect();
-    	if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)||
-    			      DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL) ||
-    			      DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+    	if(DbConnectionFactory.isOracle()||
+    			      DbConnectionFactory.isPostgres() ||
+    			      DbConnectionFactory.isMsSql()){
     		dc.executeStatement("create index idx_workflow_4 on workflow_task (webasset)");
     		dc.executeStatement("create index idx_workflow_5 on workflow_task (created_by)");
     		dc.executeStatement("create index idx_workflow_2 on workflow_task (belongs_to)");
@@ -249,9 +249,9 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		HibernateUtil.startTransaction();
 		  try {
 			conn = DbConnectionFactory.getConnection();
-			  if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))
+			  if (DbConnectionFactory.isMySql())
 				 dc.executeStatement("SET storage_engine=INNODB", conn);
-			  if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))
+			  if (DbConnectionFactory.isMsSql())
 			     dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 			  workflowTaskChanges();
 			  workflowCommentChanges();

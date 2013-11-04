@@ -257,9 +257,9 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
         String likepattern=RegEX.replaceAll(pattern, "%", "\\*");
         
         String concat;
-        if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+        if(DbConnectionFactory.isMySql()){
             concat=" concat(ii.parent_path, ii.asset_name) ";
-        }else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+        }else if (DbConnectionFactory.isMsSql()) {
             concat=" (ii.parent_path + ii.asset_name) ";
         }else {
             concat=" (ii.parent_path || ii.asset_name) ";

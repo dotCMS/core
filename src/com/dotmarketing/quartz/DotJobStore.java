@@ -83,11 +83,10 @@ public class DotJobStore extends JobStoreCMT {
 				}
 		);
 		
-		String dbType = DbConnectionFactory.getDBType();
 		
 		//This is done because http://jira.opensymphony.com/browse/QUARTZ-497
 		UpdateLockRowSemaphore sem = new UpdateLockRowSemaphore();
-		if (dbType.equals(DbConnectionFactory.MYSQL)) {
+		if (DbConnectionFactory.isMySql()) {
 			tablePrefix = tablePrefix.toLowerCase();
 		}else{
 		  sem.setUpdateLockRowSQL("UPDATE {0}LOCKS SET LOCK_NAME = LOCK_NAME WHERE LOCK_NAME = ?");
@@ -102,7 +101,7 @@ public class DotJobStore extends JobStoreCMT {
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
-		}else if (dbType.equals(DbConnectionFactory.MYSQL)) {
+		}else if (DbConnectionFactory.isMySql()) {
 			try {
 				setDriverDelegateClass("com.dotmarketing.quartz.MySQLJDBCDelegate");
 				MySQLLockSemaphore mySQLSem = new MySQLLockSemaphore(tablePrefix);
@@ -110,26 +109,33 @@ public class DotJobStore extends JobStoreCMT {
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
-		} else if (dbType.equals(DbConnectionFactory.POSTGRESQL)) {
+		} else if (DbConnectionFactory.isPostgres()) {
 			try {
 				setDriverDelegateClass("org.quartz.impl.jdbcjobstore.PostgreSQLDelegate");
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
-		} else if (dbType.equals(DbConnectionFactory.MSSQL)) {
+		} else if (DbConnectionFactory.isMsSql()) {
 			try {
 				setDriverDelegateClass("org.quartz.impl.jdbcjobstore.DotMSSQLDelegate");
 				setLockHandler(sem);
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
-		} else if (dbType.equals(DbConnectionFactory.ORACLE)) {
+		} else if (DbConnectionFactory.isOracle()) {
 			try {
 				setDriverDelegateClass("org.quartz.impl.jdbcjobstore.oracle.OracleDelegate");
 				setLockHandler(sem);
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
+		} else if (DbConnectionFactory.isH2()) {
+            try {
+                setDriverDelegateClass("org.quartz.impl.jdbcjobstore.HSQLDBDelegate");
+                setLockHandler(sem);
+            } catch (Exception e) {
+                Logger.info(this, e.getMessage());
+            }
 		}
 		
 		super.initialize(loadHelper, signaler);

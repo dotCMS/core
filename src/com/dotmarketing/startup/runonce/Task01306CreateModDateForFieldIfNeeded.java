@@ -51,4 +51,9 @@ public class Task01306CreateModDateForFieldIfNeeded extends AbstractJDBCStartupT
         return null;
     }
 
+    @Override
+    public String getH2Script() {
+        return null;
+    }
+
 }

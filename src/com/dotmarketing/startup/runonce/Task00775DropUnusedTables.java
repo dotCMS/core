@@ -111,4 +111,9 @@ public class Task00775DropUnusedTables extends AbstractJDBCStartupTask {
 		return true;
 	}
 
+    @Override
+    public String getH2Script() {
+        return null;
+    }
+
 }
