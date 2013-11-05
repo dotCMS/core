@@ -1,15 +1,19 @@
-<project name="Repackager - elasticSearch" default="repackage">
+<project name="Repackager - Parsers" default="repackage">
 
     <property file="${basedir}/../../src/com/liferay/portal/util/build.properties"/>
     <property name="lib.app" value="${basedir}/../../dotCMS/WEB-INF/lib"/>
     <property name="web-inf.dir" value="${basedir}/../../dotCMS/WEB-INF"/>
+    <property name="dotcms.dir" value="${basedir}/../../dotCMS"/>
     <property name="src-conf.dir" value="${basedir}/../../src-conf"/>
-    <property name="output.file" value="com.dotcms.elasticsearch.jar"/>
+    <property name="output.file" value="com.dotcms.parsers.jar"/>
 
     <path id="files-classpath">
         <fileset dir="${lib.app}">
             <include name="jarjar-1.4.jar" />
             <include name="packager-taks.jar" />
+        </fileset>
+
+        <fileset dir="../buildlibs">
             <include name="commons-io-2.0.1.jar" />
         </fileset>
     </path>
@@ -29,15 +33,26 @@
         <packagerTask libraryPath="${basedir}"
                       outputFolder="${lib.app}"
                       outputFile="${output.file}"
-                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar">
+                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
+                      jspFolder="${dotcms.dir}">
 
-            <fileset dir="${src-conf.dir}">
+            <!--List of dependecies to check if there are dependencies to old packages -->
+            <fileset dir="${lib.app}">
+                <include name="castor.jar"/>
+                <include name="daisydiff.jar"/>
+                <include name="nekohtml-1.9.17.jar"/>
+                <include name="tika-app-1.3.jar"/>
+                <include name="hibernate2.jar"/>
+                <include name="jaxen-1.1.3.jar"/>
+            </fileset>
+
+            <!--<fileset dir="${src-conf.dir}">
                 <include name="dotmarketing-config.properties"/>
             </fileset>
 
             <fileset dir="${web-inf.dir}">
                 <include name="web.xml"/>
-            </fileset>
+            </fileset>-->
         </packagerTask>
 
     </target>
