@@ -2,7 +2,8 @@
 
     <target name="clean">
         <ant target="clean" antfile="build.xml" dir="commons"/>
-        <!--<ant target="clean" antfile="build.xml" dir="elasticsearch"/>-->
+        <ant target="clean" antfile="build.xml" dir="parsers"/>
+        <!--<ant target="clean" antfile="build.xml" dir="lucene"/>-->
         <!--<ant target="clean" antfile="build.xml" dir="spring"/>-->
         <!--<ant target="clean" antfile="build.xml" dir="tika"/>-->
         <!--<ant target="clean" antfile="build.xml" dir="utils"/>-->
@@ -10,7 +11,8 @@
 
     <target name="repackage">
         <ant target="repackage" antfile="build.xml" dir="commons"/>
-        <!--<ant target="repackage" antfile="build.xml" dir="elasticsearch"/>-->
+        <ant target="repackage" antfile="build.xml" dir="parsers"/>
+        <!--<ant target="repackage" antfile="build.xml" dir="lucene"/>-->
         <!--<ant target="repackage" antfile="build.xml" dir="spring"/>-->
         <!--<ant target="repackage" antfile="build.xml" dir="tika"/>-->
         <!--<ant target="repackage" antfile="build.xml" dir="utils"/>-->

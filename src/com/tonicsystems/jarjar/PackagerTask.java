@@ -204,7 +204,7 @@ public class PackagerTask extends JarJarTask {
                 result = result.substring( 0, result.lastIndexOf( "@" ) );
             }
 
-            String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/" + pattern + "/" + result + "/' {} \\;";
+            String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/\"" + pattern + "/\"" + result + "/' {} \\;";
             log( command );
 
             try {

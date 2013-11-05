@@ -71,10 +71,13 @@
         <fileset dir="libs/commons">
             <include name="**/*.jar" />
         </fileset>
+        <fileset dir="libs/parsers">
+            <include name="**/*.jar" />
+        </fileset>
         <!--<fileset dir="libs/spring">
             <include name="**/*.jar" />
         </fileset>-->
-        <!--<fileset dir="libs/elasticsearch">
+        <!--<fileset dir="libs/lucene">
             <include name="**/*.jar" />
         </fileset>-->
         <!--<fileset dir="libs/tika">
@@ -92,6 +95,8 @@
 			<exclude name="**/dotcms*.jar" />
 
 			<exclude name="**/com.dotcms.commons.jar" />
+			<exclude name="**/com.dotcms.parsers.jar" />
+			<!--<exclude name="**/com.dotcms.lucene.jar" />-->
 			<!--<exclude name="**/com.dotcms.spring.jar" />-->
 			<!--<exclude name="**/com.dotcms.elasticsearch.jar" />-->
 			<!--<exclude name="**/com.dotcms.tika.jar" />-->
@@ -1077,6 +1082,27 @@
 
             <!--<arg value="${lib.app}/tika-app-1.3.jar"/>-->
             <arg value="${lib.app}/dotcms_2.6.jar"/>
+
+            <!--<arg value="${lib.app}/xercesImpl.jar"/>-->
+            <!--<arg value="${lib.app}/xmlpull-1.1.3.1.jar"/>-->
+            <!--<arg value="${lib.app}/dom4j-1.6.1.jar"/>-->
+            <!--<arg value="${lib.app}/xpp3_min-1.1.4c.jar"/>-->
+            <!--<arg value="${lib.app}/xstream-1.4.4.jar"/>-->
+            <!--<arg value="${lib.app}/jaxen-1.1.3.jar"/>-->
+
+            <!--<arg value="${lib.app}/elasticsearch-0.90.3.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-analyzers-common-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-codecs-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-core-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-highlighter-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-join-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-memory-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-queries-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-queryparser-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-sandbox-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/lucene-suggest-4.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/apache-solr-core-1.4.0.jar"/>-->
+            <!--<arg value="${lib.app}/apache-solr-solrj-1.4.0.jar"/>-->
         </java>
     </target>
 
