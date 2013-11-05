@@ -1,0 +1,52 @@
+<project name="Repackager - chemistry" default="repackage">
+
+    <property file="${basedir}/../../src/com/liferay/portal/util/build.properties"/>
+    <property name="lib.app" value="${basedir}/../../dotCMS/WEB-INF/lib"/>
+    <property name="web-inf.dir" value="${basedir}/../../dotCMS/WEB-INF"/>
+    <property name="dotcms.dir" value="${basedir}/../../dotCMS"/>
+    <property name="src-conf.dir" value="${basedir}/../../src-conf"/>
+    <property name="output.file" value="com.dotcms.chemistry.jar"/>
+
+    <path id="files-classpath">
+        <fileset dir="${lib.app}">
+            <include name="jarjar-1.4.jar" />
+            <include name="packager-taks.jar" />
+        </fileset>
+
+        <fileset dir="../buildlibs">
+            <include name="commons-io-2.0.1.jar" />
+        </fileset>
+    </path>
+
+    <target name="clean">
+        <delete file="${lib.app}/${output.file}" failonerror="false" />
+    </target>
+
+    <target name="repackage" depends="clean">
+
+        <taskdef classname="com.tonicsystems.jarjar.PackagerTask" name="packagerTask">
+            <classpath>
+                <path refid="files-classpath" />
+            </classpath>
+        </taskdef>
+
+        <packagerTask libraryPath="${basedir}"
+                      outputFolder="${lib.app}"
+                      outputFile="${output.file}"
+                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
+                      jspFolder="${dotcms.dir}">
+
+            <!--List of dependecies to check if there are dependencies to old packages -->
+            <fileset dir="${lib.app}">
+                <include name="ee-96daf56ad45c.jar"/>
+            </fileset>
+
+            <fileset dir="${web-inf.dir}">
+                <include name="web.xml"/>
+            </fileset>
+
+        </packagerTask>
+
+    </target>
+
+</project>
