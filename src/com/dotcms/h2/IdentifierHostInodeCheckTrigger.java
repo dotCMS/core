@@ -13,7 +13,7 @@ public class IdentifierHostInodeCheckTrigger extends TriggerAdapter {
     @Override
     public void fire(Connection conn, ResultSet oldIdent, ResultSet newIdent)  throws SQLException {        
         String newIdentHost=newIdent.getString("host_inode");
-        if(!oldIdent.getString("asset_type").equals("contentlet") && !UtilMethods.isSet(newIdentHost)) {
+        if(!newIdent.getString("asset_type").equals("contentlet") && !UtilMethods.isSet(newIdentHost)) {
             throw new SQLException("Cannot insert/update a null or empty host inode for this kind of identifier");
         }
 
