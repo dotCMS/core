@@ -444,6 +444,7 @@ CREATE TRIGGER template_versions_check_trigger AFTER DELETE ON template FOR EACH
 CREATE TRIGGER required_identifier_host_inode_trigger BEFORE INSERT OR UPDATE ON identifier FOR EACH ROW CALL "com.dotcms.h2.IdentifierHostInodeCheckTrigger";
 CREATE TRIGGER identifier_parent_path_trigger BEFORE INSERT OR UPDATE ON identifier FOR EACH ROW CALL "com.dotcms.h2.IdentifierParentPathCheckTrigger";
 CREATE TRIGGER link_versions_check_trigger AFTER DELETE ON links FOR EACH ROW CALL "com.dotcms.h2.LinkVersionCheckTrigger";
+CREATE TRIGGER structure_host_folder_trigger BEFORE INSERT OR UPDATE ON structure FOR EACH ROW CALL "com.dotcms.h2.StructureHostFolderCheckTrigger";
 
 
 
