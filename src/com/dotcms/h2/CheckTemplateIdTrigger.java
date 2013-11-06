@@ -12,7 +12,7 @@ public class CheckTemplateIdTrigger extends TriggerAdapter {
     @Override
     public void fire(Connection conn, ResultSet oldTemplate, ResultSet newTemplate) throws SQLException {
         PreparedStatement smt=conn.prepareStatement("select id from identifier where asset_type='template' and id=?");
-        smt.setString(1, oldTemplate.getString("identifier"));
+        smt.setString(1, newTemplate.getString("template_id"));
         ResultSet rs=smt.executeQuery();
         boolean found=rs.next();
         rs.close(); smt.close();

@@ -434,17 +434,18 @@ CREATE ALIAS load_records_to_index FOR "com.dotcms.h2.H2Procedure.loadRecordsToI
 CREATE ALIAS dotFolderPath FOR "com.dotcms.h2.H2Procedure.dotFolderPath";
 CREATE TRIGGER rename_folder_assets_trigger AFTER UPDATE ON Folder FOR EACH ROW CALL "com.dotcms.h2.FolderRenameTrigger";
 CREATE TRIGGER check_child_assets_trigger BEFORE DELETE ON identifier FOR EACH ROW CALL "com.dotcms.h2.CheckChildAssetTrigger";
-CREATE TRIGGER check_template_identifier BEFORE INSERT OR UPDATE ON htmlpage FOR EACH ROW CALL "com.dotcms.h2.CheckTemplateIdTrigger";
+CREATE TRIGGER check_template_identifier BEFORE INSERT, UPDATE ON htmlpage FOR EACH ROW CALL "com.dotcms.h2.CheckTemplateIdTrigger";
 CREATE TRIGGER container_versions_check_trigger AFTER DELETE ON containers FOR EACH ROW CALL "com.dotcms.h2.ContainerVersionCheckTrigger";
 CREATE TRIGGER content_versions_check_trigger AFTER DELETE ON contentlet FOR EACH ROW CALL "com.dotcms.h2.ContentVersionCheckTrigger";
 CREATE TRIGGER file_versions_check_trigger AFTER DELETE ON file_asset FOR EACH ROW CALL "com.dotcms.h2.FileVersionCheckTrigger";
 CREATE TRIGGER folder_identifier_check_trigger AFTER DELETE ON folder FOR EACH ROW CALL "com.dotcms.h2.FolderIdentifierCheckTrigger";
 CREATE TRIGGER htmlpage_versions_check_trigger AFTER DELETE ON htmlpage FOR EACH ROW CALL "com.dotcms.h2.HTMLPageVersionCheckTrigger";
 CREATE TRIGGER template_versions_check_trigger AFTER DELETE ON template FOR EACH ROW CALL "com.dotcms.h2.TemplateVersionCheckTrigger";
-CREATE TRIGGER required_identifier_host_inode_trigger BEFORE INSERT OR UPDATE ON identifier FOR EACH ROW CALL "com.dotcms.h2.IdentifierHostInodeCheckTrigger";
-CREATE TRIGGER identifier_parent_path_trigger BEFORE INSERT OR UPDATE ON identifier FOR EACH ROW CALL "com.dotcms.h2.IdentifierParentPathCheckTrigger";
+CREATE TRIGGER required_identifier_host_inode_trigger BEFORE INSERT, UPDATE ON identifier FOR EACH ROW CALL "com.dotcms.h2.IdentifierHostInodeCheckTrigger";
+CREATE TRIGGER identifier_parent_path_trigger BEFORE INSERT, UPDATE ON identifier FOR EACH ROW CALL "com.dotcms.h2.IdentifierParentPathCheckTrigger";
 CREATE TRIGGER link_versions_check_trigger AFTER DELETE ON links FOR EACH ROW CALL "com.dotcms.h2.LinkVersionCheckTrigger";
-CREATE TRIGGER structure_host_folder_trigger BEFORE INSERT OR UPDATE ON structure FOR EACH ROW CALL "com.dotcms.h2.StructureHostFolderCheckTrigger";
+CREATE TRIGGER structure_host_folder_trigger BEFORE INSERT, UPDATE ON structure FOR EACH ROW CALL "com.dotcms.h2.StructureHostFolderCheckTrigger";
+CREATE TRIGGER structure_fix_trigger AFTER INSERT, UPDATE ON structure FOR EACH ROW CALL "com.dotcms.h2.StructureHostFolderFixer";
 
 
 

@@ -12,7 +12,7 @@ public class FolderRenameTrigger extends TriggerAdapter {
     @Override
     public void fire(Connection conn, ResultSet oldF, ResultSet newF) throws SQLException {
         
-        if(oldF.getString("name").equals(newF.getString("name"))) {
+        if(!oldF.getString("name").equals(newF.getString("name"))) {
             
             PreparedStatement smt=conn.prepareStatement("select asset_name,parent_path,host_inode from identifier where id=?");
             smt.setString(1, newF.getString("identifier"));

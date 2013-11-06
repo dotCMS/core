@@ -15,7 +15,7 @@ public class StructureHostFolderCheckTrigger extends TriggerAdapter {
     public void fire(Connection conn, ResultSet oldSt, ResultSet newSt) throws SQLException {
         String newHost=newSt.getString("host");
         String newFolder=newSt.getString("folder");
-        if(UtilMethods.isSet(newHost) && !newHost.equals("SYSTEM_HOST") && UtilMethods.isSet(newFolder) && !newFolder.equals("SYSTEM_HOST")) {
+        if(UtilMethods.isSet(newHost) && !newHost.equals("SYSTEM_HOST") && UtilMethods.isSet(newFolder) && !newFolder.equals("SYSTEM_FOLDER")) {
             PreparedStatement smt=conn.prepareStatement("select host_inode from folder join identifier "
                     + " on folder.identifier = identifier.id where folder.inode=?");
             smt.setString(1, newSt.getString("folder"));
@@ -26,12 +26,6 @@ public class StructureHostFolderCheckTrigger extends TriggerAdapter {
             if(!samehost) {
                 throw new SQLException("Cannot assign host/folder to structure, folder does not belong to given host");
             }
-        }
-        else if((!UtilMethods.isSet(newHost) || newHost.equals("SYSTEM_HOST")) && !newFolder.equals("SYSTEM_FOLDER")) {
-            throw new SQLException("SYSTEM_HOST only allows SYSTEM_FOLDER");
-        }
-        else if((!UtilMethods.isSet(newFolder) || newFolder.equals("SYSTEM_FOLDER")) && !newHost.equals("SYSTEM_HOST")) {
-            throw new SQLException("SYSTEM_FOLDER only only SYSTEM_HOST");
         }
     }
 }
