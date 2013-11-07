@@ -97,16 +97,11 @@
 
 		deferred = dojo.xhrGet(xhrArgs);
 
-		var html = "<table class='listingTable' style='background:white; width:auto'>"
-			 + "<tr>"
-		     + "<th style='font-size: 8pt;' width='30%'><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Status") %></th> "
-		     + "<th style='font-size: 8pt;'><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Node_Status") %></th>"
-		     + "</tr>";
+		var html = "<table class='listingTable'>";
 
 		for(var key in properties){
-			console.log(key)
 			var value = properties[key];
-			html += "<tr><td class='left_td'>"+key+"</td><td>"+value+"</td></tr>"
+			html += "<tr><td class='left_td'>"+key+"</td><td><input style='width: 95%' type='text' data-dojo-type='dijit/form/TextBox' name='"+key+"+' value="+value+"></input></td></tr>"
 
 		}
 
@@ -117,7 +112,39 @@
 				});
 		dojo.place(nodeDiv, dojo.byId("propertiesDiv"))
 
+		var form = dojo.byId("propertiesForm");
+
+
+		dojo.connect(form, "onSubmit", function(event){
+
+		    // Stop the submit event since we want to control form submission.
+		    dojo.stopEvent(event);
+
+		    // The parameters to pass to xhrPost, the form, how to handle it, and the callbacks.
+		    // Note that there isn't a url passed.  xhrPost will extract the url to call from the form's
+		    //'action' attribute.  You could also leave off the action attribute and set the url of the xhrPost object
+		    // either should work.
+
+		    var xhrArgs = {
+		      form: dojo.byId("propertiesForm"),
+		      handleAs: "text",
+		      load: function(data){
+		        dojo.byId("response").innerHTML = "Form posted.";
+		      },
+		      error: function(error){
+		        // We'll 404 in the demo, but that's okay.  We don't have a 'postIt' service on the
+		        // docs server.
+		        dojo.byId("response").innerHTML = "Form posted.";
+		      }
+		    }
+		    // Call the asynchronous xhrPost
+		    dojo.byId("response").innerHTML = "Form being sent..."
+		    var deferred = dojo.xhrPost(xhrArgs);
+		  });
+
 	});
+
+
 
 </script>
 
@@ -129,6 +156,17 @@
 
 </style>
 
-<div style="margin:auto;">
-	<div id='propertiesDiv'></div>
+<div>
+	<form action="/api/cluster/updateESConfigProperties/" id="propertiesForm" method="post">
+		<div id='propertiesDiv'></div>
+
+		<div align="center">
+			<button style="padding-top: 10px; padding-bottom: 10px;" dojoType="dijit.form.Button"
+				iconClass="saveIcon"
+				type="submit"><%=LanguageUtil.get(pageContext, "Save")%></button>
+			<button style="padding-top: 10px; padding-bottom: 10px;" dojoType="dijit.form.Button"
+				onClick='bundles.modifyExtraPackages()' iconClass="cancelIcon"
+				type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
+		</div>
+	</form>
 </div>
