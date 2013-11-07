@@ -47,12 +47,22 @@ public class PackagerTask extends JarJarTask {
         Inspector inspector = new Inspector();
         inspector.addFormatter( formatter );
 
+        Collection<File> toTransform = new ArrayList<File>();
+
+        //Find all the jars define to repackage
         if ( filesets != null ) {
             for ( FileSet fileSet : filesets ) {
 
                 if ( fileSet.getDirectoryScanner() != null && fileSet.getDirectoryScanner().getIncludedFiles() != null ) {
                     for ( String file : fileSet.getDirectoryScanner().getIncludedFiles() ) {
-                        File fileToInspect = new File( file );
+
+                        File fileToInspect = new File( fileSet.getDirectoryScanner().getBasedir().getAbsolutePath() + File.separator + file );
+
+                        //Global list of jars to repackage
+                        if ( !toTransform.contains( fileToInspect ) ) {
+                            toTransform.add( fileToInspect );
+                        }
+
                         inspector.inspect( fileToInspect );
                     }
                 }
@@ -72,8 +82,6 @@ public class PackagerTask extends JarJarTask {
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //PREPARE ALL THE JARS AND RULES TO APPLY
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-        Collection<File> toTransform = new ArrayList<File>();
         HashMap<String, Rule> rulesToApply = new HashMap<String, Rule>();
 
         //Get all the classes we found
@@ -81,9 +89,9 @@ public class PackagerTask extends JarJarTask {
         for ( String name : classes.keySet() ) {
 
             //Collection with the info of found for each class
-            List<Inspector.PathInfo> details = classes.get( name );
-            Inspector.PathInfo detail = details.get( 0 );//Grabbing the first one, could be more than one for duplicated classes
-            File jarFile = detail.base;
+            //List<Inspector.PathInfo> details = classes.get( name );
+            //Inspector.PathInfo detail = details.get( 0 );//Grabbing the first one, could be more than one for duplicated classes
+            //File jarFile = detail.base;
 
             //Handle some strings to use in the rules
             String packageName;
@@ -97,28 +105,22 @@ public class PackagerTask extends JarJarTask {
 
             //Create a name to be part of the resulting package name
             /*String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );*/
-            String jarNameForPackage = getDotVersion();
+            String jarNameForPackage = "_" + getDotVersion() + "_";
             jarNameForPackage = jarNameForPackage.replaceAll( "-", "_" );
             jarNameForPackage = jarNameForPackage.replaceAll( "\\.", "_" );
             jarNameForPackage = jarNameForPackage.toLowerCase();
 
             //Create the rule for this class and add it to the list of rules for this jar
-            Rule rule = new Rule();
-
             String pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
-            String result = "com.dotcms.repackage._" + jarNameForPackage + "_." + packageName + ".@1";
+            String result = "com.dotcms.repackage." + jarNameForPackage + "." + packageName + ".@1";
 
+            Rule rule = new Rule();
             rule.setPattern( pattern );
             rule.setResult( result );
 
             //Global list of rules to apply
             if ( !rulesToApply.containsKey( pattern + result ) ) {
                 rulesToApply.put( pattern + result, rule );
-            }
-
-            //Global list of jars to repackage
-            if ( !toTransform.contains( jarFile ) ) {
-                toTransform.add( jarFile );
             }
         }
 
