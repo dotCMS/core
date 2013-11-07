@@ -30,27 +30,24 @@
             </classpath>
         </taskdef>
 
-        <packagerTask libraryPath="${basedir}"
-                      outputFolder="${lib.app}"
+        <packagerTask outputFolder="${lib.app}"
                       outputFile="${output.file}"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
+                      dotVersion="${dotcms.release.version}"
                       jspFolder="${dotcms.dir}">
 
-            <!--List of dependecies to check if there are dependencies to old packages -->
-            <fileset dir="${lib.app}">
-                <include name="ee-96daf56ad45c.jar"/>
-                <include name="h2-1.3.169.jar"/>
-                <include name="apache-solr-core-1.4.0"/>
-                <include name="apache-solr-solrj-1.4.0.jar"/>
+            <fileset dir=".">
+                <include name="**/*.jar"/>
             </fileset>
 
-            <fileset dir="${src-conf.dir}">
-                <include name="dotmarketing-config.properties"/>
-            </fileset>
+            <!--List of dependencies to check if there are dependencies to old packages -->
+            <dependency path="${web-inf.dir}/web.xml"/>
+            <dependency path="${src-conf.dir}/dotmarketing-config.properties"/>
+            <dependency path="${lib.app}/ee-96daf56ad45c.jar"/>
+            <dependency path="${lib.app}/h2-1.3.169.jar"/>
+            <dependency path="${lib.app}/apache-solr-core-1.4.0"/>
+            <dependency path="${lib.app}/apache-solr-solrj-1.4.0.jar"/>
 
-            <fileset dir="${web-inf.dir}">
-                <include name="web.xml"/>
-            </fileset>
         </packagerTask>
 
     </target>

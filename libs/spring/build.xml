@@ -26,19 +26,19 @@
             </classpath>
         </taskdef>
 
-        <packagerTask libraryPath="${basedir}"
-                      outputFolder="${lib.app}"
+        <packagerTask outputFolder="${lib.app}"
                       outputFile="${output.file}"
+                      dotVersion="${dotcms.release.version}"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar">
 
-            <fileset dir="${src-conf.dir}">
-                <include name="dotmarketing-config.properties"/>
+            <fileset dir=".">
+                <include name="**/*.jar"/>
             </fileset>
 
-            <fileset dir="${web-inf.dir}">
-                <include name="web.xml"/>
-                <include name="springmvc-servlet.xml"/>
-            </fileset>
+            <!--List of dependencies to check if there are dependencies to old packages -->
+            <dependency path="${web-inf.dir}/web.xml"/>
+            <dependency path="${web-inf.dir}/springmvc-servlet.xml"/>
+            <dependency path="${src-conf.dir}/dotmarketing-config.properties"/>
 
         </packagerTask>
 

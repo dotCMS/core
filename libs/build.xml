@@ -6,6 +6,7 @@
         <ant target="clean" antfile="build.xml" dir="abdera"/>
         <ant target="clean" antfile="build.xml" dir="chemistry"/>
         <ant target="clean" antfile="build.xml" dir="mylyn"/>
+        <!--<ant target="clean" antfile="build.xml" dir="jersey"/>-->
         <!--<ant target="clean" antfile="build.xml" dir="lucene"/>-->
         <!--<ant target="clean" antfile="build.xml" dir="spring"/>-->
         <!--<ant target="clean" antfile="build.xml" dir="tika"/>-->
@@ -18,6 +19,7 @@
         <ant target="repackage" antfile="build.xml" dir="abdera"/>
         <ant target="repackage" antfile="build.xml" dir="chemistry"/>
         <ant target="repackage" antfile="build.xml" dir="mylyn"/>
+        <!--<ant target="repackage" antfile="build.xml" dir="jersey"/>-->
         <!--<ant target="repackage" antfile="build.xml" dir="lucene"/>-->
         <!--<ant target="repackage" antfile="build.xml" dir="spring"/>-->
         <!--<ant target="repackage" antfile="build.xml" dir="tika"/>-->

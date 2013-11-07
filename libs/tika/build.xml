@@ -23,10 +23,15 @@
             </classpath>
         </taskdef>
 
-        <packagerTask libraryPath="${basedir}"
-                      outputFolder="${lib.app}"
+        <packagerTask outputFolder="${lib.app}"
                       outputFile="${output.file}"
+                      dotVersion="${dotcms.release.version}"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"/>
+
+        <fileset dir=".">
+            <include name="**/*.jar"/>
+        </fileset>
+
     </target>
 
 </project>

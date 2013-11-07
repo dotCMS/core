@@ -26,6 +26,7 @@
         <packagerTask libraryPath="${basedir}"
                       outputFolder="${lib.app}"
                       outputFile="${output.file}"
+                      dotVersion="${dotcms.release.version}"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"/>
     </target>
 
