@@ -20,17 +20,17 @@
   margin: 20px;
   padding: 2px;
   width: auto;
-  background: #3f65b7;
-  background-clip: padding-box;
-  border: 1px solid #172b4e;
-  border-bottom-color: #142647;
-  border-radius: 5px;
-  background-image: -webkit-radial-gradient(cover, #437dd6, #3960a6);
-  background-image: -moz-radial-gradient(cover, #437dd6, #3960a6);
-  background-image: -o-radial-gradient(cover, #437dd6, #3960a6);
-  background-image: radial-gradient(cover, #437dd6, #3960a6);
-  -webkit-box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.1), 0 2px 10px rgba(0, 0, 0, 0.5);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.1), 0 2px 10px rgba(0, 0, 0, 0.5);
+/*   background: #3f65b7; */
+/*   background-clip: padding-box; */
+/*   border: 1px solid #172b4e; */
+/*   border-bottom-color: #142647; */
+  border-radius: 1px;
+   background-image: -webkit-radial-gradient(cover, #437dd6, #3960a6);
+   background-image: -moz-radial-gradient(cover, #437dd6, #3960a6);
+   background-image: -o-radial-gradient(cover, #437dd6, #3960a6);
+   background-image: radial-gradient(cover, #437dd6, #3960a6);
+   -webkit-box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.1), 0 2px 10px rgba(0, 0, 0, 0.5);
+   box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.1), 0 2px 10px rgba(0, 0, 0, 0.5);
   display:inline-block;
   text-align: left;
 }
@@ -90,7 +90,7 @@ var xhrArgs = {
 var deferred = dojo.xhrGet(xhrArgs);
 
 var clusterStatusDiv = dojo.create("div",
-		{ innerHTML: "<table class='listingTable' style='background:white; width:auto'>"
+		{ innerHTML: "<table class='listingTable' style='background:white; width:100%'>"
 						+ "<tr><td class='left_td'>Cluster Name</td><td>"+cacheClusterStatus.clusterName+"</td></tr>"
 						+ "<tr><td class='left_td'>Channel Open</td><td>"+cacheClusterStatus.open+"</td></tr>"
 						+ "<tr><td class='left_td'>Number of Nodes</td><td>"+cacheClusterStatus.numerOfNodes+"</td></tr>"
@@ -153,7 +153,7 @@ xhrArgs = {
 deferred = dojo.xhrGet(xhrArgs);
 
 var esClusterStatusDiv = dojo.create("div",
-		{ innerHTML: "<table class='listingTable' style='background:white; width:auto'>"
+		{ innerHTML: "<table class='listingTable' style='background:white; width:100%'>"
 						+ "<tr><td class='left_td'>Cluster Name</td><td>"+esClusterStatus.cluster_name+"</td></tr>"
 						+ "<tr><td class='left_td'>Status</td><td>"+esClusterStatus.status+"</td></tr>"
 						+ "<tr><td class='left_td'>Number of Nodes</td><td>"+esClusterStatus.number_of_nodes+"</td></tr>"
@@ -204,7 +204,7 @@ function showClusterPropertiesDialog() {
     var dialog = new dijit.Dialog({
         id: 'clusterConfigDialog',
         title: "<%= LanguageUtil.get(pageContext, "configuration_Cluster_Edit_Config")%>",
-        style: "width: 700px; ",
+        style: "width: 700px;",
         content: new dojox.layout.ContentPane({
             href: "/html/portlet/ext/cmsconfig/edit_cluster_properties.jsp"
         }),
@@ -231,14 +231,14 @@ function showClusterPropertiesDialog() {
     </div>
 </div>
 
-<div class="">
-<table id="cacheCluster" class="listingTable shadowBox">
+<div >
+<table id="cacheCluster" class="listingTable shadowBox" >
     <tr>
         <th style="font-size: 8pt;" width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Status") %></th>
         <th style="font-size: 8pt;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Node_Status") %></th>
     </tr>
     <tr style="text-align: center">
-        <td width="30%"><div id='cacheClusterStatus'></div></td>
+        <td width="30%" style="padding:0px"><div id='cacheClusterStatus'></div></td>
         <td><div id='cacheClusterNodeStatus'></div></td>
     </tr>
 </table><br>
@@ -259,7 +259,7 @@ function showClusterPropertiesDialog() {
         <th style="font-size: 8pt;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Node_Status") %></th>
     </tr>
     <tr style="text-align: center">
-        <td width="30%"><div id='esClusterStatus'></div></td>
+        <td width="30%" style="padding:0px"><div id='esClusterStatus'></div></td>
         <td><div id='esClusterNodeStatus'></div></td>
     </tr>
 </table>
