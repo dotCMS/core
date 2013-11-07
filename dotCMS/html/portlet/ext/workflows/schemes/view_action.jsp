@@ -45,7 +45,7 @@
 	List<WorkflowActionClass> subActions = wapi.findActionClasses(action);
 
 %>
-<script>
+<script type="text/javascript">
 	dojo.ready(function(){
 		actionAdmin.actionlets = new Array();
 		mainAdmin.resetCrumbTrail();
@@ -55,30 +55,24 @@
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Step")%> : <%=step.getName()%>", stepAdmin.baseJsp + "?schemeId=<%=schemeId%>");
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Action")%>", actionAdmin.baseJsp + "?stepId=<%=stepId%>" );
 		mainAdmin.refreshCrumbtrail();
-
-
-
-
-
+		
 		var permissionSelect = new dijit.form.FilteringSelect({
             id: "whoCanUseSelect",
             name: "whoCanUseSelect",
             store: myRoleReadStore2,
-
             pageSize:30,
             searchDelay:300,
             required:false,
             onClick:function(){
             	dijit.byId("whoCanUseSelect").set("displayedValue","");
-            	dijit.byId("whoCanUseSelect").loadDropDown();
-            	dijit.byId("whoCanUseSelect").openDropDown();
+            	dijit.byId("whoCanUseSelect").loadDropDown();            	
             }
         },
         "actionWhoCanUseSelect");
 
 	    <%
             String assignToLabel=null;
-            if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId() ) ) {
+            if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId())) {
                 assignToLabel = nextAssignRole.getName();
                 if(nextAssignRole.equals(APILocator.getRoleAPI().loadCMSAnonymousRole())) {
                     assignToLabel=LanguageUtil.get(pageContext, "current-user");
