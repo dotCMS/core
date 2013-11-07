@@ -30,11 +30,16 @@
             </classpath>
         </taskdef>
 
-        <packagerTask libraryPath="${basedir}"
-                      outputFolder="${lib.app}"
+        <packagerTask outputFolder="${lib.app}"
                       outputFile="${output.file}"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
+                      dotVersion="${dotcms.release.version}"
                       jspFolder="${dotcms.dir}">
+
+            <fileset dir=".">
+                <include name="**/*.jar"/>
+            </fileset>
+
         </packagerTask>
 
     </target>

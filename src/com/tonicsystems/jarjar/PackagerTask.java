@@ -15,21 +15,19 @@ import java.util.*;
  */
 public class PackagerTask extends JarJarTask {
 
-    private String libraryPath;
     private String outputFolder;
     private String outputFile;
     private String dotcmsJar;
     private String jspFolder;
+    private String dotVersion;
     private Vector<FileSet> filesets = new Vector<FileSet>();
+    private List<Dependency> dependencies = new ArrayList<Dependency>();
 
     public void execute () throws BuildException {
 
         log( "Executing Packager task....", Project.MSG_INFO );
 
         // Validate input
-        if ( this.libraryPath == null ) {
-            throw new IllegalArgumentException( "No path element to inspect!" );
-        }
         if ( this.dotcmsJar == null ) {
             throw new IllegalArgumentException( "No dotCMS jar specified" );
         }
@@ -39,8 +37,6 @@ public class PackagerTask extends JarJarTask {
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //FIRST WE RUN THE INSPECTOR TO FIND DUPLICATED CLASSES
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        File libFolder = new File( this.libraryPath );
-        log( "Reading from: " + libFolder.getAbsolutePath(), Project.MSG_INFO );
 
         //Create a formatter to read and display the results
         Formatter formatter = new PlainFormatter();
@@ -50,7 +46,18 @@ public class PackagerTask extends JarJarTask {
         //Create the inspector in order to analyze the given path
         Inspector inspector = new Inspector();
         inspector.addFormatter( formatter );
-        inspector.inspect( libFolder );
+
+        if ( filesets != null ) {
+            for ( FileSet fileSet : filesets ) {
+
+                if ( fileSet.getDirectoryScanner() != null && fileSet.getDirectoryScanner().getIncludedFiles() != null ) {
+                    for ( String file : fileSet.getDirectoryScanner().getIncludedFiles() ) {
+                        File fileToInspect = new File( file );
+                        inspector.inspect( fileToInspect );
+                    }
+                }
+            }
+        }
         //inspector.report( "Duplicated classes" );//Generate a report
 
         log( "-----------------------------------------" );
@@ -89,7 +96,8 @@ public class PackagerTask extends JarJarTask {
             }
 
             //Create a name to be part of the resulting package name
-            String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
+            /*String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );*/
+            String jarNameForPackage = getDotVersion();
             jarNameForPackage = jarNameForPackage.replaceAll( "-", "_" );
             jarNameForPackage = jarNameForPackage.replaceAll( "\\.", "_" );
             jarNameForPackage = jarNameForPackage.toLowerCase();
@@ -98,7 +106,7 @@ public class PackagerTask extends JarJarTask {
             Rule rule = new Rule();
 
             String pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
-            String result = "com.dotcms.repackage." + jarNameForPackage + "." + packageName + ".@1";
+            String result = "com.dotcms.repackage._" + jarNameForPackage + "_." + packageName + ".@1";
 
             rule.setPattern( pattern );
             rule.setResult( result );
@@ -129,56 +137,49 @@ public class PackagerTask extends JarJarTask {
         generate( getOutputFile(), rulesToApply.values(), toTransform, false );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        //CHANGE THE OLD REFERENCES IN THE DOTCMS JAR
+        //APPLY THE SAME RULES TO GIVEN FILES,JAR's,  XML's, .PROPERTIES, ETC...
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        //Repackage the dotcms jar
-        repackageDependent( this.dotcmsJar, rulesToApply );
 
-        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        //APPLY THE SAME RULES TO GIVEN FILES, XML'S, .PROPERTIES, ETC...
-        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        if ( filesets != null ) {
-            for ( FileSet fileSet : filesets ) {
+        //Add the dotcms jar as a dependency we need to check and modify
+        Dependency dotcmsJarDependency = new Dependency();
+        dotcmsJarDependency.setPath( this.dotcmsJar );
+        dependencies.add( dotcmsJarDependency );
 
-                if ( fileSet.getDirectoryScanner() != null && fileSet.getDirectoryScanner().getIncludedFiles() != null ) {
-                    for ( String file : fileSet.getDirectoryScanner().getIncludedFiles() ) {
+        for ( Dependency dependency : dependencies ) {
 
-                        //The file to check and probably to modify
-                        String filePath = fileSet.getDirectoryScanner().getBasedir().getPath() + File.separator + file;
+            //The file to check and probably to modify
+            String filePath = dependency.getPath();
 
-                        //Verify if we are going to check for dependencies on another jars or files
-                        if ( filePath.endsWith( ".jar" ) ) {
+            //Verify if we are going to check for dependencies on another jars or files
+            if ( isJarName( filePath ) ) {
 
-                            //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            //CHANGE THE OLD REFERENCES IN DEPENDENT JARS
-                            //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            repackageDependent( filePath, rulesToApply );
+                //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                //CHANGE THE OLD REFERENCES IN DEPENDENT JARS
+                //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                repackageDependent( filePath, rulesToApply );
 
-                        } else {
+            } else {
 
-                            try {
-                                //Reading the file to check
-                                FileInputStream inputStream = new FileInputStream( filePath );
-                                String fileContent = IOUtils.toString( inputStream );
+                try {
+                    //Reading the file to check
+                    FileInputStream inputStream = new FileInputStream( filePath );
+                    String fileContent = IOUtils.toString( inputStream );
 
-                                log( "Searching on " + filePath + " for packages strings." );
+                    log( "Searching on " + filePath + " for packages strings." );
 
-                                for ( Rule rule : rulesToApply.values() ) {
-                                    PackagerWildcard wildcard = new PackagerWildcard( rule );
-                                    fileContent = wildcard.replace( fileContent );
-                                }
-
-                                BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
-                                writer.write( fileContent );
-                                writer.close();
-
-                            } catch ( FileNotFoundException e ) {
-                                throw new BuildException( "File " + filePath + " not found.", e );
-                            } catch ( IOException e ) {
-                                throw new BuildException( "Error checking and/or modifying " + filePath + ".", e );
-                            }
-                        }
+                    for ( Rule rule : rulesToApply.values() ) {
+                        PackagerWildcard wildcard = new PackagerWildcard( rule );
+                        fileContent = wildcard.replace( fileContent );
                     }
+
+                    BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
+                    writer.write( fileContent );
+                    writer.close();
+
+                } catch ( FileNotFoundException e ) {
+                    throw new BuildException( "File " + filePath + " not found.", e );
+                } catch ( IOException e ) {
+                    throw new BuildException( "Error checking and/or modifying " + filePath + ".", e );
                 }
             }
         }
@@ -282,7 +283,7 @@ public class PackagerTask extends JarJarTask {
         }
 
         //Generate the new jar
-        MainProcessor processor = new MainProcessor( patterns, verbose, skipManifest );
+        MainProcessor processor = new MainProcessor( patterns, verbose, skipManifest, renameServices );
         execute( processor );
         try {
             processor.strip( getDestFile() );
@@ -333,6 +334,14 @@ public class PackagerTask extends JarJarTask {
         return name.endsWith( ".jar" );
     }
 
+    public String getDotVersion () {
+        return dotVersion;
+    }
+
+    public void setDotVersion ( String dotVersion ) {
+        this.dotVersion = dotVersion;
+    }
+
     public String getOutputFolder () {
         return outputFolder;
     }
@@ -357,10 +366,6 @@ public class PackagerTask extends JarJarTask {
         this.jspFolder = jspFolder;
     }
 
-    public void setLibraryPath ( String libraryPath ) {
-        this.libraryPath = libraryPath;
-    }
-
     public String getDotcmsJar () {
         return dotcmsJar;
     }
@@ -371,6 +376,13 @@ public class PackagerTask extends JarJarTask {
 
     public void addFileset ( FileSet fileset ) {
         filesets.add( fileset );
+    }
+
+    public Dependency createDependency () {
+        Dependency dependency = new Dependency();
+        dependencies.add( dependency );
+
+        return dependency;
     }
 
 }
