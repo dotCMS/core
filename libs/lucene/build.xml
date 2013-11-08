@@ -34,6 +34,7 @@
                       outputFile="${output.file}"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
                       dotVersion="${dotcms.release.version}"
+                      renameservices="true"
                       jspFolder="${dotcms.dir}">
 
             <fileset dir=".">
@@ -45,7 +46,7 @@
             <dependency path="${src-conf.dir}/dotmarketing-config.properties"/>
             <dependency path="${lib.app}/ee-96daf56ad45c.jar"/>
             <dependency path="${lib.app}/h2-1.3.169.jar"/>
-            <dependency path="${lib.app}/apache-solr-core-1.4.0"/>
+            <dependency path="${lib.app}/apache-solr-core-1.4.0.jar"/>
             <dependency path="${lib.app}/apache-solr-solrj-1.4.0.jar"/>
 
         </packagerTask>

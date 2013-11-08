@@ -20,6 +20,7 @@ public class PackagerTask extends JarJarTask {
     private String dotcmsJar;
     private String jspFolder;
     private String dotVersion;
+    private boolean multipleJars;
     private Vector<FileSet> filesets = new Vector<FileSet>();
     private List<Dependency> dependencies = new ArrayList<Dependency>();
 
@@ -135,8 +136,29 @@ public class PackagerTask extends JarJarTask {
         logRules( rulesToApply.values() );
         logJars( toTransform );
 
-        //And finally repackage the jars
-        generate( getOutputFile(), rulesToApply.values(), toTransform, false );
+        //And finally repackage the jars but how we do it depends on if we want them all on a single jar or multiples
+        if ( isMultipleJars() ) {
+
+            //Remember the initial values, they are clean after repackage each jar
+            boolean initialRenameServices = renameServices;
+            boolean initialVerbose = verbose;
+
+            //Repackage jar by jar
+            for ( File jar : toTransform ) {
+
+                renameServices = initialRenameServices;
+                verbose = initialVerbose;
+
+                //Repackaging this single jar
+                Collection<File> transform = new ArrayList<File>();
+                transform.add( jar );
+                generate( jar.getName(), rulesToApply.values(), transform );
+            }
+
+        } else {
+            //Repackage all the jars in a single jar
+            generate( getOutputFile(), rulesToApply.values(), toTransform );
+        }
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //APPLY THE SAME RULES TO GIVEN FILES,JAR's,  XML's, .PROPERTIES, ETC...
@@ -243,7 +265,7 @@ public class PackagerTask extends JarJarTask {
 
         //Repackage the jar into a temporal file
         String tempJarName = jarName + "_temp" + ".jar";
-        generate( tempJarName, rulesToApply.values(), files, true );
+        generate( tempJarName, rulesToApply.values(), files );
 
         //Remove the original jar
         jarFile.delete();
@@ -261,7 +283,7 @@ public class PackagerTask extends JarJarTask {
      * @param rules          rules to apply
      * @param jars           jars to integrate into one
      */
-    private void generate ( String outputFileName, Collection<Rule> rules, Collection<File> jars, boolean skipManifest ) {
+    private void generate ( String outputFileName, Collection<Rule> rules, Collection<File> jars ) {
 
         //Destiny file
         File outFile = new File( getOutputFolder() + File.separator + outputFileName );
@@ -285,7 +307,7 @@ public class PackagerTask extends JarJarTask {
         }
 
         //Generate the new jar
-        MainProcessor processor = new MainProcessor( patterns, verbose, skipManifest, renameServices );
+        MainProcessor processor = new MainProcessor( patterns, verbose, false, renameServices );
         execute( processor );
         try {
             processor.strip( getDestFile() );
@@ -374,6 +396,14 @@ public class PackagerTask extends JarJarTask {
 
     public void setDotcmsJar ( String dotcmsJar ) {
         this.dotcmsJar = dotcmsJar;
+    }
+
+    public boolean isMultipleJars () {
+        return multipleJars;
+    }
+
+    public void setMultipleJars ( boolean multipleJars ) {
+        this.multipleJars = multipleJars;
     }
 
     public void addFileset ( FileSet fileset ) {
