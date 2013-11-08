@@ -45,7 +45,7 @@
             <dependency path="${lib.app}/struts.jar"/>
             <dependency path="${lib.app}/groovy-all-1.7.0.jar"/>
             <dependency path="${lib.app}/hadoop-0.20.3-dev-core.jar"/>
-            <dependency path="${lib.app}/dotcms_log4j.jar"/>
+            <!--<dependency path="${lib.app}/dotcms_log4j.jar"/>--><!--TODO: I think I should check dependecies here!!-->
             <dependency path="${lib.app}/jcaptcha-mod.jar"/>
             <!--<dependency path="${lib.app}/esapi-2.0.1.jar"/>-->
             <dependency path="${lib.app}/quartz-all-1.8.6.jar"/>
@@ -54,7 +54,6 @@
             <dependency path="${lib.app}/fileupload-ext.jar"/>
             <dependency path="${lib.app}/milton-servlet-1.8.1.4.jar"/>
             <dependency path="${lib.app}/org.springframework.web-3.1.0.RELEASE.jar"/>
-            <dependency path="${lib.app}/abdera-client-0.4.0-incubating.jar"/>
             <dependency path="${lib.app}/apache-solr-solrj-1.4.0.jar"/>
             <dependency path="${lib.app}/ee-96daf56ad45c.jar"/>
             <dependency path="${lib.app}/ldap.jar"/>
@@ -64,9 +63,11 @@
             <dependency path="${lib.app}/drools-compiler-3.0.5.jar"/>
             <dependency path="${lib.app}/hibernate2.jar"/>
 
+            <dependency path="${lib.app}/com.dotcms.abdera.jar"/><!--FIXME: I don't like this dependency, fixme!!-->
+
             <dependency path="${web-inf.dir}/validator-rules.xml"/>
+            <dependency path="${web-inf.dir}/felix/osgi-extra.conf"/>
             <dependency path="${src-conf.dir}/dotmarketing-config.properties"/>
-            <!--FIXME: Apply the rules to the osgi-extra.conf-->
 
         </packagerTask>
 

@@ -35,23 +35,15 @@
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
                       dotVersion="${dotcms.release.version}"
                       renameservices="true"
+                      multiplejars="true"
                       jspFolder="${dotcms.dir}">
 
-            <!--<fileset dir=".">
+            <fileset dir=".">
                 <include name="**/*.jar"/>
-            </fileset>-->
-
-            <zipfileset src="jersey-multipart-1.12.jar"/>
-            <zipfileset src="jersey-client-1.12.jar"/>
-            <zipfileset src="jersey-core-1.12.jar"/>
-            <zipfileset src="jersey-json-1.12.jar"/>
-            <zipfileset src="jersey-server-1.12.jar"/>
-            <zipfileset src="jersey-servlet-1.12.jar"/>
+            </fileset>
 
             <!--List of dependencies to check if there are dependencies to old packages -->
             <dependency path="${web-inf.dir}/web.xml"/>
-            <dependency path="${lib.app}/jackson-jaxrs-1.9.2.jar"/>
-            <dependency path="${lib.app}/jsr311-api-1.1.1.jar"/>
 
         </packagerTask>
 
