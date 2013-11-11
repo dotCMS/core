@@ -129,7 +129,7 @@
 
 </style>
 
-<div style="margin:auto;">
+<div style="margin:auto; width:580px; height:360px; overflow:auto;">
 	<div dojoType="dijit.form.Form"  name="formSaveEnvironment"  id="formSaveEnvironment" onsubmit="return false;">
 		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEnvironment.getId())) %>">
 		<table class="myTable" border=0 style="margin: auto" align="center">
