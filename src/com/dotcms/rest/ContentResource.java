@@ -235,7 +235,8 @@ public class ContentResource extends WebResource {
         sb.append("<contentlets>");
 
         for(Contentlet c : cons){
-            Map<String, Object> m = c.getMap();
+            Map<String, Object> m = new HashMap<String, Object>();
+            m.putAll(c.getMap());
             Structure s = c.getStructure();
 
             for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
