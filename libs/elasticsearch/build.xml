@@ -1,32 +1,32 @@
-<project name="Repackager - Lucene" default="repackage">
+<project name="Repackager - elasticsearch" default="repackage">
 
     <property file="${basedir}/../../src/com/liferay/portal/util/build.properties"/>
     <property name="lib.app" value="${basedir}/../../dotCMS/WEB-INF/lib"/>
     <property name="web-inf.dir" value="${basedir}/../../dotCMS/WEB-INF"/>
     <property name="dotcms.dir" value="${basedir}/../../dotCMS"/>
     <property name="src-conf.dir" value="${basedir}/../../src-conf"/>
-    <property name="output.file" value="com.dotcms.lucene.jar"/>
+    <property name="output.file" value="com.dotcms.elasticsearch.jar"/>
 
     <path id="files-classpath">
         <fileset dir="${lib.app}">
-            <include name="jarjar-1.4.jar" />
-            <include name="packager-taks.jar" />
+            <include name="jarjar-1.4.jar"/>
+            <include name="packager-taks.jar"/>
         </fileset>
 
         <fileset dir="../buildlibs">
-            <include name="commons-io-2.0.1.jar" />
+            <include name="commons-io-2.0.1.jar"/>
         </fileset>
     </path>
 
     <target name="clean">
-        <delete file="${lib.app}/${output.file}" failonerror="false" />
+        <delete file="${lib.app}/${output.file}" failonerror="false"/>
     </target>
 
     <target name="repackage" depends="clean">
 
         <taskdef classname="com.tonicsystems.jarjar.PackagerTask" name="packagerTask">
             <classpath>
-                <path refid="files-classpath" />
+                <path refid="files-classpath"/>
             </classpath>
         </taskdef>
 
@@ -35,6 +35,7 @@
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
                       dotVersion="${dotcms.release.version}"
                       renameservices="true"
+                      multiplejars="true"
                       jspFolder="${dotcms.dir}">
 
             <fileset dir=".">
@@ -45,7 +46,7 @@
             <dependency path="${web-inf.dir}/web.xml"/>
             <dependency path="${src-conf.dir}/dotmarketing-config.properties"/>
             <dependency path="${lib.app}/ee-96daf56ad45c.jar"/>
-            <dependency path="${lib.app}/h2-1.3.169.jar"/>
+            <!--<dependency path="${lib.app}/h2-1.3.169.jar"/>-->
             <dependency path="${lib.app}/apache-solr-core-1.4.0.jar"/>
             <dependency path="${lib.app}/apache-solr-solrj-1.4.0.jar"/>
 
