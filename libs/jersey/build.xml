@@ -5,7 +5,6 @@
     <property name="web-inf.dir" value="${basedir}/../../dotCMS/WEB-INF"/>
     <property name="dotcms.dir" value="${basedir}/../../dotCMS"/>
     <property name="src-conf.dir" value="${basedir}/../../src-conf"/>
-    <property name="output.file" value="com.dotcms.repackage.jersey.jar"/>
 
     <path id="files-classpath">
         <fileset dir="${lib.app}">
@@ -19,7 +18,10 @@
     </path>
 
     <target name="clean">
-        <delete file="${lib.app}/${output.file}" failonerror="false"/>
+        <delete file="${lib.app}/com.dotcms.repackage.jersey.jar" failonerror="false"/>
+        <delete file="${lib.app}/com.dotcms.repackage.jersey-multipart.jar" failonerror="false"/>
+        <delete file="${lib.app}/com.dotcms.repackage.jersey-server.jar" failonerror="false"/>
+        <delete file="${lib.app}/com.dotcms.repackage.jersey-json.jar" failonerror="false"/>
     </target>
 
     <target name="repackage" depends="clean">
@@ -31,19 +33,70 @@
         </taskdef>
 
         <packagerTask outputFolder="${lib.app}"
-                      outputFile="${output.file}"
+                      outputFile="com.dotcms.repackage.jersey.jar"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
                       dotVersion="${dotcms.release.version}"
+                      generateRulesFromParentFolder="true"
                       renameservices="true"
-                      multiplejars="true"
                       jspFolder="${dotcms.dir}">
 
             <fileset dir=".">
                 <include name="**/*.jar"/>
+                <exclude name="jersey-multipart-1.12.jar"/>
+                <exclude name="jersey-server-1.12.jar"/>
+                <exclude name="jersey-json-1.12.jar"/>
             </fileset>
 
             <!--List of dependencies to check if there are dependencies to old packages -->
             <dependency path="${web-inf.dir}/web.xml"/>
+
+        </packagerTask>
+
+        <!--jersey-multipart-->
+        <packagerTask outputFolder="${lib.app}"
+                      outputFile="com.dotcms.repackage.jersey-multipart.jar"
+                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
+                      dotVersion="${dotcms.release.version}"
+                      generateRulesFromParentFolder="true"
+                      skipdependenciesreplacement="true"
+                      renameservices="true"
+                      jspFolder="${dotcms.dir}">
+
+            <fileset dir=".">
+                <include name="jersey-multipart-1.12.jar"/>
+            </fileset>
+
+        </packagerTask>
+
+        <!--jersey-server-->
+        <packagerTask outputFolder="${lib.app}"
+                      outputFile="com.dotcms.repackage.jersey-server.jar"
+                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
+                      dotVersion="${dotcms.release.version}"
+                      generateRulesFromParentFolder="true"
+                      skipdependenciesreplacement="true"
+                      renameservices="true"
+                      jspFolder="${dotcms.dir}">
+
+            <fileset dir=".">
+                <include name="jersey-server-1.12.jar"/>
+            </fileset>
+
+        </packagerTask>
+
+        <!--jersey-json-->
+        <packagerTask outputFolder="${lib.app}"
+                      outputFile="com.dotcms.repackage.jersey-json.jar"
+                      dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
+                      dotVersion="${dotcms.release.version}"
+                      generateRulesFromParentFolder="true"
+                      skipdependenciesreplacement="true"
+                      renameservices="true"
+                      jspFolder="${dotcms.dir}">
+
+            <fileset dir=".">
+                <include name="jersey-json-1.12.jar"/>
+            </fileset>
 
         </packagerTask>
 

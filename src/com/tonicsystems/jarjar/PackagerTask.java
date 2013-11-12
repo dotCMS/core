@@ -21,12 +21,21 @@ public class PackagerTask extends JarJarTask {
     private String jspFolder;
     private String dotVersion;
     private boolean multipleJars;
+    private boolean generateRulesFromParentFolder;
+    private boolean skipDependenciesReplacement;
     private Vector<FileSet> filesets = new Vector<FileSet>();
     private List<Dependency> dependencies = new ArrayList<Dependency>();
+
+    private boolean initialRenameServices;
+    private boolean initialVerbose;
 
     public void execute () throws BuildException {
 
         log( "Executing Packager task....", Project.MSG_INFO );
+
+        //Remember the initial values, they are clean after repackage each jar
+        initialRenameServices = renameServices;
+        initialVerbose = verbose;
 
         // Validate input
         if ( this.dotcmsJar == null ) {
@@ -50,6 +59,8 @@ public class PackagerTask extends JarJarTask {
 
         Collection<File> toTransform = new ArrayList<File>();
 
+        List<File> parentFolders = new ArrayList<File>();
+
         //Find all the jars define to repackage
         if ( filesets != null ) {
             for ( FileSet fileSet : filesets ) {
@@ -64,7 +75,14 @@ public class PackagerTask extends JarJarTask {
                             toTransform.add( fileToInspect );
                         }
 
-                        inspector.inspect( fileToInspect );
+                        if ( isGenerateRulesFromParentFolder() ) {
+                            if ( !parentFolders.contains( fileToInspect.getParentFile() ) ) {
+                                parentFolders.add( fileToInspect.getParentFile() );
+                                inspector.inspect( fileToInspect.getParentFile() );
+                            }
+                        } else {
+                            inspector.inspect( fileToInspect );
+                        }
                     }
                 }
             }
@@ -139,25 +157,25 @@ public class PackagerTask extends JarJarTask {
         //And finally repackage the jars but how we do it depends on if we want them all on a single jar or multiples
         if ( isMultipleJars() ) {
 
-            //Remember the initial values, they are clean after repackage each jar
-            boolean initialRenameServices = renameServices;
-            boolean initialVerbose = verbose;
-
             //Repackage jar by jar
             for ( File jar : toTransform ) {
-
-                renameServices = initialRenameServices;
-                verbose = initialVerbose;
 
                 //Repackaging this single jar
                 Collection<File> transform = new ArrayList<File>();
                 transform.add( jar );
-                generate( jar.getName(), rulesToApply.values(), transform );
+
+                File outJar = new File( getOutputFolder() + File.separator + jar.getName() );
+                generate( outJar, rulesToApply.values(), transform );
             }
 
         } else {
             //Repackage all the jars in a single jar
-            generate( getOutputFile(), rulesToApply.values(), toTransform );
+            File outJar = new File( getOutputFolder() + File.separator + getOutputFile() );
+            generate( outJar, rulesToApply.values(), toTransform );
+        }
+
+        if ( isSkipDependenciesReplacement() ) {
+            return;
         }
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -254,7 +272,7 @@ public class PackagerTask extends JarJarTask {
 
         File jarFile = new File( jarPath );
         String jarName = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
-        String jarLocation = jarFile.getAbsolutePath().substring( 0, jarFile.getAbsolutePath().lastIndexOf( File.separator ) );
+        //String jarLocation = jarFile.getAbsolutePath().substring( 0, jarFile.getAbsolutePath().lastIndexOf( File.separator ) );
 
         //Prepare the jars that we are going to repackage
         Collection<File> files = new ArrayList<File>();
@@ -265,28 +283,32 @@ public class PackagerTask extends JarJarTask {
 
         //Repackage the jar into a temporal file
         String tempJarName = jarName + "_temp" + ".jar";
-        generate( tempJarName, rulesToApply.values(), files );
+        File tempJar = new File( getOutputFolder() + File.separator + tempJarName );
+        generate( tempJar, rulesToApply.values(), files );
 
-        //Remove the original jar
-        jarFile.delete();
+        /*
+         Rename the just repackaged temporal jar
+         */
+        //If the jars live in the same folder delete the original jar in order to be able to rename the temporal file
+        if ( jarFile.getParent().equals( tempJar.getParent() ) ) {
+            //Remove the original jar
+            jarFile.delete();
+        }
 
-        //Rename the just repackaged temporal jar
-        File toRename = new File( jarLocation + File.separator + tempJarName );
-        File finalJar = new File( jarPath );
-        toRename.renameTo( finalJar );
+        File finalJar = new File( tempJar.getParent() + File.separator + jarFile.getName() );
+        tempJar.renameTo( finalJar );
     }
 
     /**
      * Repackage a list of given jars applying given rules
      *
-     * @param outputFileName the output jar after processing
-     * @param rules          rules to apply
-     * @param jars           jars to integrate into one
+     * @param outFile the output jar after processing
+     * @param rules   rules to apply
+     * @param jars    jars to integrate into one
      */
-    private void generate ( String outputFileName, Collection<Rule> rules, Collection<File> jars ) {
+    private void generate ( File outFile, Collection<Rule> rules, Collection<File> jars ) {
 
         //Destiny file
-        File outFile = new File( getOutputFolder() + File.separator + outputFileName );
         setDestFile( outFile );
 
         //Prepare the jars that we are going to repackage
@@ -307,7 +329,7 @@ public class PackagerTask extends JarJarTask {
         }
 
         //Generate the new jar
-        MainProcessor processor = new MainProcessor( patterns, verbose, false, renameServices );
+        MainProcessor processor = new MainProcessor( patterns, initialVerbose, false, initialRenameServices );
         execute( processor );
         try {
             processor.strip( getDestFile() );
@@ -404,6 +426,22 @@ public class PackagerTask extends JarJarTask {
 
     public void setMultipleJars ( boolean multipleJars ) {
         this.multipleJars = multipleJars;
+    }
+
+    public boolean isGenerateRulesFromParentFolder () {
+        return generateRulesFromParentFolder;
+    }
+
+    public void setGenerateRulesFromParentFolder ( boolean generateRulesFromParentFolder ) {
+        this.generateRulesFromParentFolder = generateRulesFromParentFolder;
+    }
+
+    public boolean isSkipDependenciesReplacement () {
+        return skipDependenciesReplacement;
+    }
+
+    public void setSkipDependenciesReplacement ( boolean skipDependenciesReplacement ) {
+        this.skipDependenciesReplacement = skipDependenciesReplacement;
     }
 
     public void addFileset ( FileSet fileset ) {
