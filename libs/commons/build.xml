@@ -5,7 +5,7 @@
     <property name="web-inf.dir" value="${basedir}/../../dotCMS/WEB-INF"/>
     <property name="dotcms.dir" value="${basedir}/../../dotCMS"/>
     <property name="src-conf.dir" value="${basedir}/../../src-conf"/>
-    <property name="output.file" value="com.dotcms.commons.jar"/>
+    <property name="output.file" value="com.dotcms.repackage.commons.jar"/>
 
     <path id="files-classpath">
         <fileset dir="${lib.app}">
@@ -63,7 +63,7 @@
             <dependency path="${lib.app}/drools-compiler-3.0.5.jar"/>
             <dependency path="${lib.app}/hibernate2.jar"/>
 
-            <dependency path="${lib.app}/com.dotcms.abdera.jar"/><!--FIXME: I don't like this dependency, fixme!!-->
+            <!--<dependency path="${lib.app}/com.dotcms.repackage.chemistry.jar"/>--><!--FIXME: I don't like this dependency, fixme!!-->
 
             <dependency path="${web-inf.dir}/validator-rules.xml"/>
             <dependency path="${web-inf.dir}/felix/osgi-extra.conf"/>
