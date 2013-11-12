@@ -68,42 +68,14 @@
 	<path id="files-classpath">
 		<pathelement location="${java.home}/../lib/tools.jar"/>
 
-        <fileset dir="libs/commons">
+        <fileset dir="libs/">
             <include name="**/*.jar" />
         </fileset>
-        <fileset dir="libs/parsers">
-            <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="libs/abdera">
-            <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="libs/chemistry">
-            <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="libs/mylyn">
-            <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="libs/jersey">
-            <include name="**/*.jar" />
-        </fileset>
-        <!--<fileset dir="libs/lucene">
-            <include name="**/*.jar" />
-        </fileset>-->
 
-        <fileset dir="libs/buildlibs">
-            <include name="**/*.jar" />
-        </fileset>
 		<fileset dir="${lib.app}">
 			<include name="**/*.jar" />
 			<exclude name="**/dotcms*.jar" />
-
-			<exclude name="**/com.dotcms.commons.jar" />
-			<exclude name="**/com.dotcms.parsers.jar" />
-			<exclude name="**/com.dotcms.abdera.jar" />
-			<exclude name="**/com.dotcms.chemistry.jar" />
-			<exclude name="**/com.dotcms.mylyn.jar" />
-			<exclude name="**/com.dotcms.jersey.jar" />
-			<!--<exclude name="**/com.dotcms.lucene.jar" />-->
+			<exclude name="**/com.dotcms.repackage*.jar" />
 		</fileset>
 		<pathelement path="${build.classes}" />
 	</path>

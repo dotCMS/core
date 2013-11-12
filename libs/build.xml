@@ -2,9 +2,7 @@
 
     <target name="clean">
         <ant target="clean" antfile="build.xml" dir="jersey"/>
-        <ant target="clean" antfile="build.xml" dir="abdera"/>
         <ant target="clean" antfile="build.xml" dir="chemistry"/>
-        <ant target="clean" antfile="build.xml" dir="mylyn"/>
         <ant target="clean" antfile="build.xml" dir="parsers"/>
         <ant target="clean" antfile="build.xml" dir="commons"/>
         <ant target="clean" antfile="build.xml" dir="elasticsearch"/>
@@ -15,9 +13,7 @@
 
     <target name="repackage">
         <ant target="repackage" antfile="build.xml" dir="jersey"/>
-        <ant target="repackage" antfile="build.xml" dir="abdera"/>
         <ant target="repackage" antfile="build.xml" dir="chemistry"/>
-        <ant target="repackage" antfile="build.xml" dir="mylyn"/>
         <ant target="repackage" antfile="build.xml" dir="parsers"/>
         <ant target="repackage" antfile="build.xml" dir="commons"/>
         <ant target="repackage" antfile="build.xml" dir="elasticsearch"/>

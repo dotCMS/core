@@ -5,7 +5,7 @@
     <property name="web-inf.dir" value="${basedir}/../../dotCMS/WEB-INF"/>
     <property name="dotcms.dir" value="${basedir}/../../dotCMS"/>
     <property name="src-conf.dir" value="${basedir}/../../src-conf"/>
-    <property name="output.file" value="com.dotcms.chemistry.jar"/>
+    <property name="output.file" value="com.dotcms.repackage.chemistry.jar"/>
 
     <path id="files-classpath">
         <fileset dir="${lib.app}">
