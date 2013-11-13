@@ -71,7 +71,8 @@ public class PackagerTask extends JarJarTask {
                         File fileToInspect = new File( fileSet.getDirectoryScanner().getBasedir().getAbsolutePath() + File.separator + file );
 
                         //Global list of jars to repackage
-                        if ( !toTransform.contains( fileToInspect ) ) {
+                        if ( !toTransform.contains( fileToInspect )
+                                && (!dotcmsJarFile.getAbsolutePath().equals( fileToInspect.getAbsolutePath() )) ) {
                             toTransform.add( fileToInspect );
                         }
 
