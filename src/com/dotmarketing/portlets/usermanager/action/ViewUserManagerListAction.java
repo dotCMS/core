@@ -1135,7 +1135,7 @@ public class ViewUserManagerListAction extends DotPortletAction {
                                     if (tagNameToken.hasMoreTokens()) {
                                         for (; tagNameToken.hasMoreTokens();) {
                                             String tagTokenized = tagNameToken.nextToken().trim();
-                                            TagFactory.addTagInode(tagTokenized, userLoader.getUserId(), "");
+                                            TagFactory.addTag(tagTokenized, user.getUserId(),"");
                                         }
                                     }
                                 }
