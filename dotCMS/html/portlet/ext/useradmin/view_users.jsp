@@ -177,7 +177,7 @@
 
 
 						<div class="buttonRow">
-							<button dojoType="dijit.form.Button" onclick="resetRoles()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Reset") %></button>
+							<button dojoType="dijit.form.Button" onclick="resetUserRoles()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Reset") %></button>
 							<button dojoType="dijit.form.Button" onclick="saveRoles()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
 						</div>
 
@@ -373,5 +373,11 @@
 	});
 
 	resizeRoleBrowser();
+	
+	function resetUserRoles() {
+		var uId = document.getElementById("userId");
+		editUser(uId.value);
+				
+	}
 
 </script>
