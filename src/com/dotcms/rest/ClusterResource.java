@@ -5,11 +5,15 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.io.IOUtils;
@@ -56,19 +60,19 @@ public class ClusterResource extends WebResource {
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
         JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
-        List<Address> members = view.getMembers();
-        System.out.println(channel.getSentMessages());
-
         JSONObject jsonClusterStatusObject = new JSONObject();
-        jsonClusterStatusObject.put( "clusterName", channel.getClusterName());
-        jsonClusterStatusObject.put( "open", channel.isOpen());
-        jsonClusterStatusObject.put( "numerOfNodes", members.size());
-        jsonClusterStatusObject.put( "address", channel.getAddressAsString());
-        jsonClusterStatusObject.put( "receivedBytes", channel.getReceivedBytes());
-        jsonClusterStatusObject.put( "receivedMessages", channel.getReceivedMessages());
-        jsonClusterStatusObject.put( "sentBytes", channel.getSentBytes());
-        jsonClusterStatusObject.put( "sentMessages", channel.getSentMessages());
-        //Added to the response list
+
+        if(view!=null) {
+        	List<Address> members = view.getMembers();
+        	jsonClusterStatusObject.put( "clusterName", channel.getClusterName());
+        	jsonClusterStatusObject.put( "open", channel.isOpen());
+        	jsonClusterStatusObject.put( "numerOfNodes", members.size());
+        	jsonClusterStatusObject.put( "address", channel.getAddressAsString());
+        	jsonClusterStatusObject.put( "receivedBytes", channel.getReceivedBytes());
+        	jsonClusterStatusObject.put( "receivedMessages", channel.getReceivedMessages());
+        	jsonClusterStatusObject.put( "sentBytes", channel.getSentBytes());
+        	jsonClusterStatusObject.put( "sentMessages", channel.getSentMessages());
+        }
 
         return responseResource.response( jsonClusterStatusObject.toString() );
 
@@ -94,19 +98,23 @@ public class ClusterResource extends WebResource {
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
         Channel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
-        List<Address> members = view.getMembers();
         JSONArray jsonNodes = new JSONArray();
 
-        for ( Address member : members ) {
+        if(view!=null) {
 
-        	PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, member));
-        	IpAddress ipAddr = (IpAddress)physicalAddr;
+        	List<Address> members = view.getMembers();
 
-            JSONObject jsonNode = new JSONObject();
-            jsonNode.put( "id", member.toString());
-            jsonNode.put( "ip", ipAddr.toString());
-            //Added to the response list
-            jsonNodes.add( jsonNode );
+        	for ( Address member : members ) {
+
+        		PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, member));
+        		IpAddress ipAddr = (IpAddress)physicalAddr;
+
+        		JSONObject jsonNode = new JSONObject();
+        		jsonNode.put( "id", member.toString());
+        		jsonNode.put( "ip", ipAddr.toString());
+        		//Added to the response list
+        		jsonNodes.add( jsonNode );
+        	}
         }
 
         return responseResource.response( jsonNodes.toString() );
@@ -209,6 +217,39 @@ public class ClusterResource extends WebResource {
 		}
 
         return responseResource.response( clusterProps.toString() );
+
+    }
+
+    /**
+     * Returns a Map of the ES Cluster Nodes Status
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws JSONException
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Path ("/updateESConfigProperties/{params:.*}")
+    @Produces ("application/json")
+    public String updateESConfigProperties ( @Context HttpServletRequest request, @FormParam("accept") String accept ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+
+//        InitDataObject initData = init( params, true, request, false );
+//        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+
+        JSONObject clusterProps = new JSONObject();
+        Iterator<String> keys = DotConfig.getKeys();
+
+        while ( keys.hasNext() ) {
+        	String key = keys.next();
+        	clusterProps.put( key, DotConfig.getStringProperty(key));
+		}
+
+//        return responseResource.response( clusterProps.toString() );
+        return "true";
 
     }
 

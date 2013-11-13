@@ -20,17 +20,17 @@
   margin: 20px;
   padding: 2px;
   width: auto;
-  background: #3f65b7;
-  background-clip: padding-box;
-  border: 1px solid #172b4e;
-  border-bottom-color: #142647;
-  border-radius: 5px;
-  background-image: -webkit-radial-gradient(cover, #437dd6, #3960a6);
-  background-image: -moz-radial-gradient(cover, #437dd6, #3960a6);
-  background-image: -o-radial-gradient(cover, #437dd6, #3960a6);
-  background-image: radial-gradient(cover, #437dd6, #3960a6);
-  -webkit-box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.1), 0 2px 10px rgba(0, 0, 0, 0.5);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.1), 0 2px 10px rgba(0, 0, 0, 0.5);
+/*   background: #3f65b7; */
+/*   background-clip: padding-box; */
+/*   border: 1px solid #172b4e; */
+/*   border-bottom-color: #142647; */
+  border-radius: 1px;
+   background-image: -webkit-radial-gradient(cover, #437dd6, #3960a6);
+   background-image: -moz-radial-gradient(cover, #437dd6, #3960a6);
+   background-image: -o-radial-gradient(cover, #437dd6, #3960a6);
+   background-image: radial-gradient(cover, #437dd6, #3960a6);
+   -webkit-box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.1), 0 2px 10px rgba(0, 0, 0, 0.5);
+   box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.1), 0 2px 10px rgba(0, 0, 0, 0.5);
   display:inline-block;
   text-align: left;
 }
@@ -90,7 +90,7 @@ var xhrArgs = {
 var deferred = dojo.xhrGet(xhrArgs);
 
 var clusterStatusDiv = dojo.create("div",
-		{ innerHTML: "<table class='listingTable' style='background:white; width:auto'>"
+		{ innerHTML: "<table class='listingTable' style='background:white; width:100%'>"
 						+ "<tr><td class='left_td'>Cluster Name</td><td>"+cacheClusterStatus.clusterName+"</td></tr>"
 						+ "<tr><td class='left_td'>Channel Open</td><td>"+cacheClusterStatus.open+"</td></tr>"
 						+ "<tr><td class='left_td'>Number of Nodes</td><td>"+cacheClusterStatus.numerOfNodes+"</td></tr>"
@@ -153,7 +153,7 @@ xhrArgs = {
 deferred = dojo.xhrGet(xhrArgs);
 
 var esClusterStatusDiv = dojo.create("div",
-		{ innerHTML: "<table class='listingTable' style='background:white; width:auto'>"
+		{ innerHTML: "<table class='listingTable' style='background:white; width:100%'>"
 						+ "<tr><td class='left_td'>Cluster Name</td><td>"+esClusterStatus.cluster_name+"</td></tr>"
 						+ "<tr><td class='left_td'>Status</td><td>"+esClusterStatus.status+"</td></tr>"
 						+ "<tr><td class='left_td'>Number of Nodes</td><td>"+esClusterStatus.number_of_nodes+"</td></tr>"
@@ -201,25 +201,74 @@ for(var prop in esClusterNodes){
 }
 
 function showClusterPropertiesDialog() {
-    var dialog = new dijit.Dialog({
-        id: 'clusterConfigDialog',
-        title: "<%= LanguageUtil.get(pageContext, "configuration_Cluster_Edit_Config")%>",
-        style: "width: 700px; ",
-        content: new dojox.layout.ContentPane({
-            href: "/html/portlet/ext/cmsconfig/edit_cluster_properties.jsp"
-        }),
-        onHide: function () {
-            var dialog = this;
-            setTimeout(function () {
-                dialog.destroyRecursive();
-            }, 200);
-        },
-        onLoad: function () {
 
-        }
-    });
-    dialog.show();
-    dojo.style(dialog.domNode, 'top', '80px');
+	//ES Cluster Nodes Status
+	var properties;
+
+	xhrArgs = {
+		url : "/api/cluster/getESConfigProperties/",
+		handleAs : "json",
+		sync: true,
+		load : function(data) {
+			properties = data;
+		},
+		error : function(error) {
+			targetNode.innerHTML = "An unexpected error occurred: " + error;
+		}
+	}
+
+	deferred = dojo.xhrGet(xhrArgs);
+
+	var html = "<table class='listingTable' style='width:90%'>";
+
+	for(var key in properties){
+		var value = properties[key];
+		html += "<tr><td class='left_td' style='font-size:11px'>"+key+"</td><td><input style='width: 95%; font-size:11px' type='text' data-dojo-type='dijit/form/TextBox' name='"+key+"+' value="+value+"></input></td></tr>"
+
+	}
+
+	html += "</table>"
+
+	var nodeDiv = dojo.create("div",
+			{ innerHTML: html
+			});
+
+	dojo.empty(dojo.byId("propertiesDiv"));
+	dojo.place(nodeDiv, dojo.byId("propertiesDiv"))
+
+	var form = dojo.byId("propertiesForm");
+
+
+	dojo.connect(form, "onSubmit", function(event){
+
+	    // Stop the submit event since we want to control form submission.
+	    dojo.stopEvent(event);
+
+	    // The parameters to pass to xhrPost, the form, how to handle it, and the callbacks.
+	    // Note that there isn't a url passed.  xhrPost will extract the url to call from the form's
+	    //'action' attribute.  You could also leave off the action attribute and set the url of the xhrPost object
+	    // either should work.
+
+	    var xhrArgs = {
+	      form: dojo.byId("propertiesForm"),
+	      handleAs: "text",
+	      load: function(data){
+	        dojo.byId("response").innerHTML = "Form posted.";
+	      },
+	      error: function(error){
+	        // We'll 404 in the demo, but that's okay.  We don't have a 'postIt' service on the
+	        // docs server.
+	        dojo.byId("response").innerHTML = "Form posted.";
+	      }
+	    }
+	    // Call the asynchronous xhrPost
+	    dojo.byId("response").innerHTML = "Form being sent..."
+	    var deferred = dojo.xhrPost(xhrArgs);
+	  });
+
+	dijit.byId('clusterPropertiesDialog').show();
+
+
 }
 
 
@@ -231,14 +280,14 @@ function showClusterPropertiesDialog() {
     </div>
 </div>
 
-<div class="">
-<table id="cacheCluster" class="listingTable shadowBox">
+<div >
+<table id="cacheCluster" class="listingTable shadowBox" >
     <tr>
         <th style="font-size: 8pt;" width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Status") %></th>
         <th style="font-size: 8pt;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Node_Status") %></th>
     </tr>
     <tr style="text-align: center">
-        <td width="30%"><div id='cacheClusterStatus'></div></td>
+        <td width="30%" style="padding:0px"><div id='cacheClusterStatus'></div></td>
         <td><div id='cacheClusterNodeStatus'></div></td>
     </tr>
 </table><br>
@@ -259,12 +308,28 @@ function showClusterPropertiesDialog() {
         <th style="font-size: 8pt;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Node_Status") %></th>
     </tr>
     <tr style="text-align: center">
-        <td width="30%"><div id='esClusterStatus'></div></td>
+        <td width="30%" style="padding:0px"><div id='esClusterStatus'></div></td>
         <td><div id='esClusterNodeStatus'></div></td>
     </tr>
 </table>
 </div>
-<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
-<%--END OF ENVIROMENTS--%>
-<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
+
+
+<div id="clusterPropertiesDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "configuration_Cluster_Edit_Config")%>" style="display: none; height: 470px; width:500px">
+    <div style="padding:10px 15px;">
+      <form action="/api/cluster/updateESConfigProperties/" id="propertiesForm" method="post">
+            <div style="height: 380px;">
+                <div id='propertiesDiv'></div>
+            </div>
+            <div align="center">
+               <button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
+					iconClass="saveIcon"
+					type="submit"><%=LanguageUtil.get(pageContext, "Save")%></button>
+				<button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
+					onClick='bundles.modifyExtraPackages()' iconClass="cancelIcon"
+					type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
+			</div>
+        </form>
+    </div>
+</div>
 
