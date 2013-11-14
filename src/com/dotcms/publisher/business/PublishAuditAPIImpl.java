@@ -40,10 +40,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	
 	private final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?" ;
 
-	private final String PGINSERTSQL="insert into publishing_queue_audit("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
-	private final String MYINSERTSQL="insert into publishing_queue_audit("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
-	private final String MSINSERTSQL="insert into publishing_queue_audit("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
-	private final String OCLINSERTSQL="insert into publishing_queue_audit("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
+	private final String INSERTSQL="insert into publishing_queue_audit("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 	
 	
 	@Override
@@ -54,17 +51,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			try{
 				localt=HibernateUtil.startLocalTransactionIfNeeded();
 				DotConnect dc = new DotConnect();
-				
-				if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-					dc.setSQL(PGINSERTSQL);
-				} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-					dc.setSQL(MYINSERTSQL);
-				} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-					dc.setSQL(MSINSERTSQL);
-				} else {
-					dc.setSQL(OCLINSERTSQL);
-				}
-				
+				dc.setSQL(INSERTSQL);
 				dc.addParam(pa.getBundleId());
 				dc.addParam(pa.getStatus().getCode());
 				
@@ -91,10 +78,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 	
-	private final String PGUPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ?  where bundle_id = ? ";
-	private final String MYUPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ? where bundle_id = ? ";
-	private final String MSUPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ? where bundle_id = ? ";
-	private final String OCLUPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ? where bundle_id = ? ";
+	private final String UPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ?  where bundle_id = ? ";
 	
 	@Override
 	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history) throws DotPublisherException {
@@ -102,17 +86,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		try{
 			local = HibernateUtil.startLocalTransactionIfNeeded();
 			DotConnect dc = new DotConnect();
-			
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-				dc.setSQL(PGUPDATESQL);
-			} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-				dc.setSQL(MYUPDATESQL);
-			} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-				dc.setSQL(MSUPDATESQL);
-			} else {
-				dc.setSQL(OCLUPDATESQL);
-			}
-			
+			dc.setSQL(UPDATESQL);
 			dc.addParam(newStatus.getCode());
 			
 			if(history != null)
@@ -143,10 +117,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 	
-	private final String PGDELETESQL="delete from publishing_queue_audit where bundle_id = ? ";
-	private final String MYDELETESQL="delete from publishing_queue_audit where bundle_id = ? ";
-	private final String MSDELETESQL="delete from publishing_queue_audit where bundle_id = ? ";
-	private final String OCLDELETESQL="delete from publishing_queue_audit where bundle_id = ? ";
+	private final String DELETESQL="delete from publishing_queue_audit where bundle_id = ? ";
 
 	@Override
 	public void deletePublishAuditStatus(String bundleId) throws DotPublisherException {
@@ -154,17 +125,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		try{
 			local = HibernateUtil.startLocalTransactionIfNeeded();
 			DotConnect dc = new DotConnect();
-			
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
-				dc.setSQL(PGDELETESQL);
-			} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-				dc.setSQL(MYDELETESQL);
-			} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
-				dc.setSQL(MSDELETESQL);
-			} else {
-				dc.setSQL(OCLDELETESQL);
-			}
-			
+			dc.setSQL(DELETESQL);
 			dc.addParam(bundleId);
 			
 			dc.loadResult();

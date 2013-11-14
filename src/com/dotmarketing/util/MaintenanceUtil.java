@@ -465,7 +465,7 @@ public class MaintenanceUtil {
 			if(count>1){
 				SQL.append(",");
 			}
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+			if(DbConnectionFactory.isMsSql()){
 				SQL.append("text" + count + " = replace(cast(text" + count + " as varchar(max)),?,?)");
 			}else{
 				SQL.append("text" + count + " = replace(text" + count + ",?,?)");
@@ -494,7 +494,7 @@ public class MaintenanceUtil {
 			if(count>1){
 				SQL.append(",");
 			}
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+			if(DbConnectionFactory.isMsSql()){
 				SQL.append("text_area" + count + " = replace(cast(text_area" + count + " as varchar(max)),?,?)");
 			}else{
 				SQL.append("text_area" + count + " = replace(text_area" + count + ",?,?)");
@@ -516,7 +516,7 @@ public class MaintenanceUtil {
 			Logger.error(MaintenanceUtil.class,"Problem updating contentlet table : " + e.getMessage(),e);
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE COLUMNS code, pre_loop, and post_loop ON THE containers TABLE");
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		if(DbConnectionFactory.isMsSql()){
 			dc.setSQL("UPDATE containers SET code=replace(cast(code as varchar(max)),?,?),pre_loop=replace(cast(pre_loop as varchar(max)),?,?),post_loop=replace(cast(post_loop as varchar(max)),?,?) WHERE containers.inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = containers.inode OR cvi.live_inode =containers.inode)) ");
 		}else{
 			dc.setSQL("UPDATE containers SET code=replace(code,?,?),pre_loop=replace(pre_loop,?,?),post_loop=replace(post_loop,?,?) WHERE containers.inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = containers.inode OR cvi.live_inode =containers.inode)) ");
@@ -534,7 +534,7 @@ public class MaintenanceUtil {
 			Logger.error(MaintenanceUtil.class,"Problem updating containers table : " + e.getMessage(),e);
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE body COLUMN ON THE template TABLE");
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		if(DbConnectionFactory.isMsSql()){
 			dc.setSQL("UPDATE template SET body=replace(cast(body as varchar(max)),?,?) WHERE template.inode = (SELECT working_inode FROM template_version_info tvi WHERE (tvi.working_inode = template.inode OR tvi.live_inode = template.inode)) ");
 		}else{
 			dc.setSQL("UPDATE template SET body=replace(body,?,?) WHERE template.inode = (SELECT working_inode FROM template_version_info tvi WHERE (tvi.working_inode = template.inode OR tvi.live_inode = template.inode)) ");
@@ -548,7 +548,7 @@ public class MaintenanceUtil {
 			Logger.error(MaintenanceUtil.class,"Problem updating template table : " + e.getMessage(),e);
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE field_values COLUMN ON THE field TABLE");
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		if(DbConnectionFactory.isMsSql()){
 			dc.setSQL("UPDATE field SET field_values=replace(cast(field_values as varchar(max)),?,?)");
 		}else{
 			dc.setSQL("UPDATE field SET field_values=replace(field_values,?,?)");
@@ -562,7 +562,7 @@ public class MaintenanceUtil {
 			Logger.error(MaintenanceUtil.class,"Problem updating field table : " + e.getMessage(),e);
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE url COLUMN ON THE links TABLE");
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		if(DbConnectionFactory.isMsSql()){
 			dc.setSQL("UPDATE links SET url=replace(cast(url as varchar(max)),?,?) WHERE links.inode = (SELECT working_inode FROM link_version_info lvi WHERE (lvi.working_inode = links.inode OR lvi.live_inode = links.inode)) ");
 		}else{
 			dc.setSQL("UPDATE links SET url=replace(url,?,?) WHERE links.inode = (SELECT working_inode FROM link_version_info lvi WHERE (lvi.working_inode = links.inode OR lvi.live_inode = links.inode)) ");

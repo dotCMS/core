@@ -47,5 +47,10 @@ public class Task00910AddEscalationFields extends AbstractJDBCStartupTask {
     protected List<String> getTablesToDropConstraints() {
         return null;
     }
+
+    @Override
+    public String getH2Script() {
+        return null;
+    }
     
 }

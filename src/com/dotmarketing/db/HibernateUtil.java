@@ -393,15 +393,14 @@ public class HibernateUtil {
 	 */
 	public Object load() throws DotHibernateException{
 		getSession();
-		ArrayList l = new java.util.ArrayList();
-		Object obj = new Object();
-
+		Object obj;
+		
 		try {
 			if (maxResults > 0) {
 				query.setMaxResults(maxResults);
 			}
 
-			l = (java.util.ArrayList) query.list();
+			List l = (java.util.List) query.list();
 			obj = l.get(0);
 			query = null;
 		} catch (java.lang.IndexOutOfBoundsException iob) {
@@ -486,32 +485,34 @@ public class HibernateUtil {
 			#################################
 			*/
 			Configuration cfg = new Configuration().configure();
-			String _dbType = DbConnectionFactory.getDBType();
-			if(_dbType == null){
-				throw new Exception("DbConnectionFactory.getDBType() is null.  Cannot build Hibernate DB Connection without a dbType.");
-			}
-			if (DbConnectionFactory.MYSQL.equals(_dbType)) {
+			
+			if (DbConnectionFactory.isMySql()) {
 				//http://jira.dotmarketing.net/browse/DOTCMS-4937
 				cfg.setNamingStrategy(new LowercaseNamingStrategy());
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
 				cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Id",cfg);
 				cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.MySQLDialect");
-			} else if (DbConnectionFactory.POSTGRESQL.equals(_dbType)) {
+			} else if (DbConnectionFactory.isPostgres()) {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Seq",cfg);
 				cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.PostgreSQLDialect");
-			} else if (DbConnectionFactory.MSSQL.equals(_dbType)) {
+			} else if (DbConnectionFactory.isMsSql()) {
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
 				cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Id",cfg);
 				cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.SQLServerDialect");
-			} else if (DbConnectionFactory.ORACLE.equals(_dbType)) {
+			} else if (DbConnectionFactory.isOracle()) {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Seq",cfg);
 				cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.OracleDialect");
+			} else if (DbConnectionFactory.isH2()) {
+			    cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
+                cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
+                getPluginsHBM("Id",cfg);
+                cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.HSQLDialect");
 			}
 			
 			
