@@ -1,18 +1,18 @@
 package com.dotcms.publisher.endpoint.business;
 
-import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.util.PublisherUtil;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Logger;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.util.PublisherUtil;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 
 public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
     private PublishingEndPointCache cache = null;
@@ -22,7 +22,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
         cache = CacheLocator.getPublishingEndPointCache();
     }
 
-    public void ensureCacheIsLoaded() throws DotDataException {
+    public void ensureCacheIsLoaded() throws DotDataException{
         if(cache.isLoaded() == false) {
             getEndPoints();
         }
@@ -93,7 +93,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
         dc.addParam(anEndPoint.isSending());
         dc.addParam(anEndPoint.getId());
         dc.loadResult();
-        cache.clearCache();		//clear cache to make sure all nodes in the cluster update
+        cache.clearCache();                //clear cache to make sure all nodes in the cluster update
     }
 
     public void deleteEndPointById(String id) throws DotDataException {
