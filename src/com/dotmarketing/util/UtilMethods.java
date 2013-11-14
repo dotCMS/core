@@ -485,7 +485,7 @@ public class UtilMethods {
     }
 
     public static final String dateToShortJDBCForQuery(java.util.Date x) {
-    	if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+    	if (DbConnectionFactory.isOracle()) {
     		return "TO_DATE('" + DATE_TO_SHORT_JDBC.format(x) + "','YYYY-MM-DD')";
     	} else {
     		return "'" + DATE_TO_SHORT_JDBC.format(x) + "'";
@@ -1285,250 +1285,250 @@ public class UtilMethods {
 
     public static String escapeUnicodeCharsForHTML(String valueSt) {
 
-        // inverted exclamation mark �
+        // inverted exclamation mark ���
         valueSt = valueSt.replaceAll("\u00A1", "&iexcl;");
-        // cent sign �
+        // cent sign ���
         valueSt = valueSt.replaceAll("\u00A2", "&cent;");
-        // pound sign �
+        // pound sign ���
         valueSt = valueSt.replaceAll("\u00A3", "&pound;");
-        // currency sign �
+        // currency sign ���
         valueSt = valueSt.replaceAll("\u00A4", "&curren;");
-        // yen sign �
+        // yen sign ���
         valueSt = valueSt.replaceAll("\u00A5", "&yen;");
-        // broken bar �
+        // broken bar ���
         valueSt = valueSt.replaceAll("\u00A6", "&brvbar;");
-        // section sign �
+        // section sign ���
         valueSt = valueSt.replaceAll("\u00A7", "&sect;");
-        // diaeresis �
+        // diaeresis ���
         valueSt = valueSt.replaceAll("\u00A8", "&uml;");
-        // copyright sign �
+        // copyright sign ���
         valueSt = valueSt.replaceAll("\u00A9", "&copy;");
-        // feminine ordinal indicator �
+        // feminine ordinal indicator ���
         valueSt = valueSt.replaceAll("\u00AA", "&ordf;");
-        // left-pointing double angle quotation mark �
+        // left-pointing double angle quotation mark ���
         valueSt = valueSt.replaceAll("\u00AB", "&laquo;");
-        // not sign �
+        // not sign ���
         valueSt = valueSt.replaceAll("\u00AC", "&not;");
-        // soft hyphen �
+        // soft hyphen ���
         valueSt = valueSt.replaceAll("\u00AD", "&shy;");
-        // registered sign �
+        // registered sign ���
         valueSt = valueSt.replaceAll("\u00AE", "&reg;");
-        // macron �
+        // macron ���
         valueSt = valueSt.replaceAll("\u00AF", "&macr;");
-        // degree sign �
+        // degree sign ���
         valueSt = valueSt.replaceAll("\u00B0", "&deg;");
-        // plus-minus sign �
+        // plus-minus sign ���
         valueSt = valueSt.replaceAll("\u00B1", "&plusmn;");
-        // superscript two �
+        // superscript two ���
         valueSt = valueSt.replaceAll("\u00B2", "&sup2;");
-        // superscript three �
+        // superscript three ���
         valueSt = valueSt.replaceAll("\u00B3", "&sup3;");
-        // acute accent �
+        // acute accent ���
         valueSt = valueSt.replaceAll("\u00B4", "&acute;");
-        // micro sign �
+        // micro sign ���
         valueSt = valueSt.replaceAll("\u00B5", "&micro;");
-        // pilcrow sign �
+        // pilcrow sign ���
         valueSt = valueSt.replaceAll("\u00B6", "&para;");
-        // middle dot �
+        // middle dot ���
         valueSt = valueSt.replaceAll("\u00B7", "&middot;");
-        // cedilla �
+        // cedilla ���
         valueSt = valueSt.replaceAll("\u00B8", "&cedil;");
-        // superscript one �
+        // superscript one ���
         valueSt = valueSt.replaceAll("\u00B9", "&sup1;");
-        // masculine ordinal indicator �
+        // masculine ordinal indicator ���
         valueSt = valueSt.replaceAll("\u00BA", "&ordm;");
-        // right-pointing double angle quotation mark �
+        // right-pointing double angle quotation mark ���
         valueSt = valueSt.replaceAll("\u00BB", "&raquo;");
-        // vulgar fraction one quarter �
+        // vulgar fraction one quarter ���
         valueSt = valueSt.replaceAll("\u00BC", "&frac14;");
-        // vulgar fraction one half �
+        // vulgar fraction one half ���
         valueSt = valueSt.replaceAll("\u00BD", "&frac12;");
-        // vulgar fraction three quarters �
+        // vulgar fraction three quarters ���
         valueSt = valueSt.replaceAll("\u00BE", "&frac34;");
-        // inverted question mark �
+        // inverted question mark ���
         valueSt = valueSt.replaceAll("\u00BF", "&iquest;");
-        // latin capital letter A with grave �
+        // latin capital letter A with grave ���
         valueSt = valueSt.replaceAll("\u00C0", "&Agrave;");
-        // latin capital letter A with acute �
+        // latin capital letter A with acute ���
         valueSt = valueSt.replaceAll("\u00C1", "&Aacute;");
-        // latin capital letter A with circumflex �
+        // latin capital letter A with circumflex ���
         valueSt = valueSt.replaceAll("\u00C2", "&Acirc;");
-        // latin capital letter A with tilde �
+        // latin capital letter A with tilde ���
         valueSt = valueSt.replaceAll("\u00C3", "&Atilde;");
-        // latin capital letter A with diaeresis �
+        // latin capital letter A with diaeresis ���
         valueSt = valueSt.replaceAll("\u00C4", "&Auml;");
-        // latin capital letter A with ring above �
+        // latin capital letter A with ring above ���
         valueSt = valueSt.replaceAll("\u00C5", "&Aring;");
-        // latin capital letter AE �
+        // latin capital letter AE ���
         valueSt = valueSt.replaceAll("\u00C6", "&AElig;");
-        // latin capital letter C with cedilla �
+        // latin capital letter C with cedilla ���
         valueSt = valueSt.replaceAll("\u00C7", "&Ccedil;");
-        // latin capital letter E with grave �
+        // latin capital letter E with grave ���
         valueSt = valueSt.replaceAll("\u00C8", "&Egrave;");
-        // latin capital letter E with acute �
+        // latin capital letter E with acute ���
         valueSt = valueSt.replaceAll("\u00C9", "&Eacute;");
-        // latin capital letter E with circumflex �
+        // latin capital letter E with circumflex ���
         valueSt = valueSt.replaceAll("\u00CA", "&Ecirc;");
-        // latin capital letter E with diaeresis �
+        // latin capital letter E with diaeresis ���
         valueSt = valueSt.replaceAll("\u00CB", "&Euml;");
-        // latin capital letter I with grave �
+        // latin capital letter I with grave ���
         valueSt = valueSt.replaceAll("\u00CC", "&Igrave;");
-        // latin capital letter I with acute �
+        // latin capital letter I with acute ���
         valueSt = valueSt.replaceAll("\u00CD", "&Iacute;");
-        // latin capital letter I with circumflex �
+        // latin capital letter I with circumflex ���
         valueSt = valueSt.replaceAll("\u00CE", "&Icirc;");
-        // latin capital letter I with diaeresis �
+        // latin capital letter I with diaeresis ���
         valueSt = valueSt.replaceAll("\u00CF", "&Iuml;");
-        // latin capital letter ETH �
+        // latin capital letter ETH ���
         valueSt = valueSt.replaceAll("\u00D0", "&ETH;");
-        // latin capital letter N with tilde �
+        // latin capital letter N with tilde ���
         valueSt = valueSt.replaceAll("\u00D1", "&Ntilde;");
-        // latin capital letter O with grave �
+        // latin capital letter O with grave ���
         valueSt = valueSt.replaceAll("\u00D2", "&Ograve;");
-        // latin capital letter O with acute �
+        // latin capital letter O with acute ���
         valueSt = valueSt.replaceAll("\u00D3", "&Oacute;");
-        // latin capital letter O with circumflex �
+        // latin capital letter O with circumflex ���
         valueSt = valueSt.replaceAll("\u00D4", "&Ocirc;");
-        // latin capital letter O with tilde �
+        // latin capital letter O with tilde ���
         valueSt = valueSt.replaceAll("\u00D5", "&Otilde;");
-        // latin capital letter O with diaeresis �
+        // latin capital letter O with diaeresis ���
         valueSt = valueSt.replaceAll("\u00D6", "&Ouml;");
-        // multiplication sign �
+        // multiplication sign ���
         valueSt = valueSt.replaceAll("\u00D7", "&times;");
-        // latin capital letter O with stroke �
+        // latin capital letter O with stroke ���
         valueSt = valueSt.replaceAll("\u00D8", "&Oslash;");
-        // latin capital letter U with grave �
+        // latin capital letter U with grave ���
         valueSt = valueSt.replaceAll("\u00D9", "&Ugrave;");
-        // latin capital letter U with acute �
+        // latin capital letter U with acute ���
         valueSt = valueSt.replaceAll("\u00DA", "&Uacute;");
-        // latin capital letter U with circumflex �
+        // latin capital letter U with circumflex ���
         valueSt = valueSt.replaceAll("\u00DB", "&Ucirc;");
-        // latin capital letter U with diaeresis �
+        // latin capital letter U with diaeresis ���
         valueSt = valueSt.replaceAll("\u00DC", "&Uuml;");
-        // latin capital letter Y with acute �
+        // latin capital letter Y with acute ���
         valueSt = valueSt.replaceAll("\u00DD", "&Yacute;");
-        // latin capital letter THORN �
+        // latin capital letter THORN ���
         valueSt = valueSt.replaceAll("\u00DE", "&THORN;");
-        // latin small letter sharp s �
+        // latin small letter sharp s ���
         valueSt = valueSt.replaceAll("\u00DF", "&szlig;");
-        // latin small letter a with grave �
+        // latin small letter a with grave ���
         valueSt = valueSt.replaceAll("\u00E0", "&agrave;");
-        // latin small letter a with acute �
+        // latin small letter a with acute ���
         valueSt = valueSt.replaceAll("\u00E1", "&aacute;");
-        // latin small letter a with circumflex �
+        // latin small letter a with circumflex ���
         valueSt = valueSt.replaceAll("\u00E2", "&acirc;");
-        // latin small letter a with tilde �
+        // latin small letter a with tilde ���
         valueSt = valueSt.replaceAll("\u00E3", "&atilde;");
-        // latin small letter a with diaeresis �
+        // latin small letter a with diaeresis ���
         valueSt = valueSt.replaceAll("\u00E4", "&auml;");
-        // latin small letter a with ring above �
+        // latin small letter a with ring above ���
         valueSt = valueSt.replaceAll("\u00E5", "&aring;");
-        // latin small letter ae �
+        // latin small letter ae ���
         valueSt = valueSt.replaceAll("\u00E6", "&aelig;");
-        // latin small letter c with cedilla �
+        // latin small letter c with cedilla ���
         valueSt = valueSt.replaceAll("\u00E7", "&ccedil;");
-        // latin small letter e with grave �
+        // latin small letter e with grave ���
         valueSt = valueSt.replaceAll("\u00E8", "&egrave;");
-        // latin small letter e with acute �
+        // latin small letter e with acute ���
         valueSt = valueSt.replaceAll("\u00E9", "&eacute;");
-        // latin small letter e with circumflex �
+        // latin small letter e with circumflex ���
         valueSt = valueSt.replaceAll("\u00EA", "&ecirc;");
-        // latin small letter e with diaeresis �
+        // latin small letter e with diaeresis ���
         valueSt = valueSt.replaceAll("\u00EB", "&euml;");
-        // latin small letter i with grave �
+        // latin small letter i with grave ���
         valueSt = valueSt.replaceAll("\u00EC", "&igrave;");
-        // latin small letter i with acute �
+        // latin small letter i with acute ���
         valueSt = valueSt.replaceAll("\u00ED", "&iacute;");
-        // latin small letter i with circumflex �
+        // latin small letter i with circumflex ���
         valueSt = valueSt.replaceAll("\u00EE", "&icirc;");
-        // latin small letter i with diaeresis �
+        // latin small letter i with diaeresis ���
         valueSt = valueSt.replaceAll("\u00EF", "&iuml;");
-        // latin small letter eth �
+        // latin small letter eth ���
         valueSt = valueSt.replaceAll("\u00F0", "&eth;");
-        // latin small letter n with tilde �
+        // latin small letter n with tilde ���
         valueSt = valueSt.replaceAll("\u00F1", "&ntilde;");
-        // latin small letter o with grave �
+        // latin small letter o with grave ���
         valueSt = valueSt.replaceAll("\u00F2", "&ograve;");
-        // latin small letter o with acute �
+        // latin small letter o with acute ���
         valueSt = valueSt.replaceAll("\u00F3", "&oacute;");
-        // latin small letter o with circumflex �
+        // latin small letter o with circumflex ���
         valueSt = valueSt.replaceAll("\u00F4", "&ocirc;");
-        // latin small letter o with tilde �
+        // latin small letter o with tilde ���
         valueSt = valueSt.replaceAll("\u00F5", "&otilde;");
-        // latin small letter o with diaeresis �
+        // latin small letter o with diaeresis ���
         valueSt = valueSt.replaceAll("\u00F6", "&ouml;");
-        // division sign �
+        // division sign ���
         valueSt = valueSt.replaceAll("\u00F7", "&divide;");
-        // latin small letter o with stroke, �
+        // latin small letter o with stroke, ���
         valueSt = valueSt.replaceAll("\u00F8", "&oslash;");
-        // latin small letter u with grave �
+        // latin small letter u with grave ���
         valueSt = valueSt.replaceAll("\u00F9", "&ugrave;");
-        // latin small letter u with acute �
+        // latin small letter u with acute ���
         valueSt = valueSt.replaceAll("\u00FA", "&uacute;");
-        // latin small letter u with circumflex �
+        // latin small letter u with circumflex ���
         valueSt = valueSt.replaceAll("\u00FB", "&ucirc;");
-        // latin small letter u with diaeresis �
+        // latin small letter u with diaeresis ���
         valueSt = valueSt.replaceAll("\u00FC", "&uuml;");
-        // latin small letter y with acute �
+        // latin small letter y with acute ���
         valueSt = valueSt.replaceAll("\u00FD", "&yacute;");
-        // latin small letter thorn �
+        // latin small letter thorn ���
         valueSt = valueSt.replaceAll("\u00FE", "&thorn;");
-        // latin small letter y with diaeresis �
+        // latin small letter y with diaeresis ���
         valueSt = valueSt.replaceAll("\u00FF", "&yuml;");
 
         // non standards but supported by IE and Mozilla
 
-        // non-standard, use &sbquo; �
+        // non-standard, use &sbquo; ���
         valueSt = valueSt.replaceAll("\u201A", "&sbquo;");
-        // non-standard, use &fnof; �
+        // non-standard, use &fnof; ���
         valueSt = valueSt.replaceAll("\u0192", "&fnof;");
-        // non-standard, use &bdquo; �
+        // non-standard, use &bdquo; ���
         valueSt = valueSt.replaceAll("\u201E", "&dbquo;");
-        // non-standard, use &hellip; �
+        // non-standard, use &hellip; ���
         valueSt = valueSt.replaceAll("\u2026", "&hellip;");
-        // non-standard, use &dagger; �
+        // non-standard, use &dagger; ���
         valueSt = valueSt.replaceAll("\u2020", "&dagger;");
-        // non-standard, use &Dagger �
+        // non-standard, use &Dagger ���
         valueSt = valueSt.replaceAll("\u2021", "&Dagger;");
-        // non-standard, use &Scaron; �
+        // non-standard, use &Scaron; ���
         valueSt = valueSt.replaceAll("\u0160", "&Scaron;");
-        // non-standard, use &OElig; �
+        // non-standard, use &OElig; ���
         valueSt = valueSt.replaceAll("\u0152", "&OElig;");
         // unused ?
         valueSt = valueSt.replaceAll("\u008D", "");
-        // non-standard �
+        // non-standard ���
         valueSt = valueSt.replaceAll("\u008E", "");
         // unused ?
         valueSt = valueSt.replaceAll("\u008F", "");
         // unused ?
         valueSt = valueSt.replaceAll("\u0090", "");
-        // non-standard, use &lsquo; �
+        // non-standard, use &lsquo; ���
         valueSt = valueSt.replaceAll("\u2018", "&lsquo;");
-        // non-standard, use &rsquo; �
+        // non-standard, use &rsquo; ���
         valueSt = valueSt.replaceAll("\u2019", "&rsquo;");
-        // non-standard, use &ldquo; �
+        // non-standard, use &ldquo; ���
         valueSt = valueSt.replaceAll("\u201C", "&ldquo;");
-        // non-standard, use &rdquo; �
+        // non-standard, use &rdquo; ���
         valueSt = valueSt.replaceAll("\u201D", "&rdquo;");
-        // non-standard, use &bull; �
+        // non-standard, use &bull; ���
         valueSt = valueSt.replaceAll("\u2022", "&bull;");
-        // non-standard, use &ndash; �
+        // non-standard, use &ndash; ���
         valueSt = valueSt.replaceAll("\u2013", "&ndash;");
-        // non-standard, use &mdash; �
+        // non-standard, use &mdash; ���
         valueSt = valueSt.replaceAll("\u2014", "&mdash;");
-        // non-standard, use &tilde; �
+        // non-standard, use &tilde; ���
         valueSt = valueSt.replaceAll("\u007E", "&tilde;");
-        // non-standard, use &trade; �
+        // non-standard, use &trade; ���
         valueSt = valueSt.replaceAll("\u2122", "&trade;");
-        // non-standard, use &scaron; �
+        // non-standard, use &scaron; ���
         valueSt = valueSt.replaceAll("\u0161", "&scaron;");
-        // non-standard, use &oelig; �
+        // non-standard, use &oelig; ���
         valueSt = valueSt.replaceAll("\u0153", "&oelig;");
         // unused ?
         valueSt = valueSt.replaceAll("\u009D", "");
-        // unused �
+        // unused ���
         valueSt = valueSt.replaceAll("\u009E", "");
-        // non-standard, use &Yuml; �
+        // non-standard, use &Yuml; ���
         valueSt = valueSt.replaceAll("\u0178", "&Yuml;");
 
         return valueSt;
@@ -1694,7 +1694,7 @@ public class UtilMethods {
     }
 
     public static String stripUnicode(String x) {
-        return (x == null) ? x : x.replaceAll("([^\000-\177��������������])", " ");
+        return (x == null) ? x : x.replaceAll("([^\000-\177������������������������������������������])", " ");
 
     }
 

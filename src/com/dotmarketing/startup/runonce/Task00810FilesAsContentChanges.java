@@ -37,7 +37,7 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		    DbConnectionFactory.getConnection().setAutoCommit(true);  
 			DotConnect dc = new DotConnect();
 			String addDefaultFileType = "alter table folder add default_file_type varchar(36)";
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+			if(DbConnectionFactory.isOracle())
 			    addDefaultFileType=addDefaultFileType.replaceAll("varchar\\(", "varchar2\\(");
 			
 			String addFK = "alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode)";

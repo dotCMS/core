@@ -23,6 +23,7 @@ sql/cms/dotcms_mssql-sybase.sql
 sql/cms/dotcms_mysql.sql
 sql/cms/dotcms_oracle.sql
 sql/cms/dotcms_postgresql.sql
+sql/cms/dotcms_h2.sql
 dotCMS/email_backups
 dotCMS/WEB-INF/felix/felix-cache
 

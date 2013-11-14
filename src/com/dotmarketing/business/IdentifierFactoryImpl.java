@@ -54,9 +54,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			bob.append("join " + assetType + "_version_info vi on (i.id = vi.identifier) join " + assetType + " a on (" + (hasLive ? "vi.live_inode":"vi.working_inode") + " = a.inode) ");
 		}
 		
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+		if(DbConnectionFactory.isMySql()){
 			bob.append("where concat(parent_path, asset_name) ");
-		}else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+		}else if (DbConnectionFactory.isMsSql()) {
 			bob.append("where (parent_path + asset_name) ");
 		}else {
 			bob.append("where (parent_path || asset_name) ");

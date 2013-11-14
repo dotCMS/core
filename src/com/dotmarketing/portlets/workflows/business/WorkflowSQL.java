@@ -9,16 +9,18 @@ abstract class WorkflowSQL {
 	protected static final String MSSQL = "Microsoft SQL Server";
 
 	static protected WorkflowSQL getInstance() {
-		String x = DbConnectionFactory.getDBType();
-		if (MYSQL.equals(x)) {
+		if (DbConnectionFactory.isMySql()) {
 			return new MySQLWorkflowSQL();
-		} else if (POSTGRESQL.equals(x)) {
+		} else if (DbConnectionFactory.isPostgres()) {
 			return new PostgresWorkflowSQL();
-		} else if (MSSQL.equals(x)) {
+		} else if (DbConnectionFactory.isMsSql()) {
 			return new MSSQLWorkflowSQL();
-		} else {
+		} else if (DbConnectionFactory.isOracle()) {
 			return new OracleWorkflowSQL();
+		} else if (DbConnectionFactory.isH2()) {
+		    return new H2WorkflowSQL();
 		}
+		return null;
 	}
 
 

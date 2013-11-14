@@ -691,23 +691,22 @@ public class DotConnect {
     
     public static String concat(String[] elements) {
         
-        String dbType = DbConnectionFactory.getDBType();
         StringBuffer result = new StringBuffer(); 
         int size = elements.length;
 
-        if (DbConnectionFactory.MYSQL.equals(dbType)) {
+        if (DbConnectionFactory.isMySql()) {
            result.append("CONCAT(");
              for(int i = 0; i < size; i++ ) {
             result.append(elements[i]);
               if( i + 1 < size ) result.append(",");
            }
            result.append(")");
-           } else if (DbConnectionFactory.POSTGRESQL.equals(dbType) || DbConnectionFactory.ORACLE.equals(dbType)) {
+           } else if (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) {
                for(int i = 0; i < size; i++ ) {
                  result.append(elements[i]);
                if( i + 1 < size ) result.append(" || ");
                }
-           } else if (DbConnectionFactory.MSSQL.equals(dbType)) {
+           } else if (DbConnectionFactory.isMsSql()) {
              for(int i = 0; i < size; i++ ) {
               result.append(elements[i]);
                if( i + 1 < size ) result.append(" + ");
@@ -727,10 +726,9 @@ public class DotConnect {
     
     public static String bitAND(String op1, String op2) {
 
-		String dbType = DbConnectionFactory.getDBType();
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 
-		if (DbConnectionFactory.ORACLE.equals(dbType)) {
+		if (DbConnectionFactory.isOracle()) {
 			result.append("BITAND(");
 			result.append(op1);
 			result.append(",");
@@ -757,10 +755,9 @@ public class DotConnect {
     
     public static String bitOR(String op1, String op2) {
 
-		String dbType = DbConnectionFactory.getDBType();
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 
-		if (DbConnectionFactory.ORACLE.equals(dbType)) {
+		if (DbConnectionFactory.isOracle()) {
 			result.append("(");
 			result.append(op1);
 			result.append(" + ");
@@ -792,22 +789,21 @@ public class DotConnect {
     
     public static String bitXOR(String op1, String op2) {
 
-		String dbType = DbConnectionFactory.getDBType();
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 
-		if (DbConnectionFactory.ORACLE.equals(dbType)) {
+		if (DbConnectionFactory.isOracle()) {
 			result.append("BITXOR(");
 			result.append(op1);
 			result.append(",");
 			result.append(op2);
 			result.append(")");
-		} else if(DbConnectionFactory.POSTGRESQL.equals(dbType)) {
+		} else if(DbConnectionFactory.isPostgres()) {
 			result.append("(");
 			result.append(op1);
 			result.append(" # ");
 			result.append(op2);
 			result.append(")");
-		} else if(DbConnectionFactory.MYSQL.equals(dbType) || DbConnectionFactory.MSSQL.equals(dbType)) {
+		} else {
 			result.append("(");
 			result.append(op1);
 			result.append(" ^ ");
@@ -827,10 +823,9 @@ public class DotConnect {
     
     public static String bitNOT(String op1) {
 
-		String dbType = DbConnectionFactory.getDBType();
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 
-		if (DbConnectionFactory.ORACLE.equals(dbType)) {
+		if (DbConnectionFactory.isOracle()) {
 			result.append("BITNOT(");
 			result.append(op1);
 			result.append(")");

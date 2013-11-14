@@ -44,5 +44,10 @@ public class Task00922FixdotfolderpathMSSQL extends AbstractJDBCStartupTask {
     protected List<String> getTablesToDropConstraints() {
         return null;
     }
+
+    @Override
+    public String getH2Script() {
+        return null;
+    }
     
 }
