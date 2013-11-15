@@ -1,12 +1,17 @@
 package com.dotmarketing.util;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -238,7 +243,32 @@ public class OSGIUtil {
     public String getExtraOSGIPackages () throws IOException {
 
         String extraPackages;
-
+        
+        File f = new File(FELIX_EXTRA_PACKAGES_FILE);
+        if(!f.exists()){
+        	StringBuilder bob = new StringBuilder();
+        	final Collection<String> list = ResourceCollectorUtil.getResources();
+        	for(final String name : list){
+        		bob.append(name.replace(File.separator, ".") + "," + "\n");
+        	}
+        	bob.append("org.osgi.framework," +
+        			"org.osgi.service.packageadmin," +
+        			"org.osgi.service.startlevel," +
+        			"org.osgi.service.url," +
+        			"org.osgi.util.tracker," +
+        			"org.osgi.service.http");
+        	
+        	BufferedWriter writer = null;
+        	try {
+        	    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(FELIX_EXTRA_PACKAGES_FILE), "utf-8"));
+        	    writer.write(bob.toString());
+        	} catch (IOException ex) {
+        		Logger.error(this, ex.getMessage(), ex);
+        	} finally {
+        	   try {writer.close();} catch (Exception ex) {Logger.error(this, ex.getMessage(), ex);}
+        	}
+        }
+                
         //Reading the file with the extra packages
         FileInputStream inputStream = new FileInputStream( FELIX_EXTRA_PACKAGES_FILE );
         try {
