@@ -373,6 +373,10 @@ public class HostAPIImpl implements HostAPI {
 					hostCache.remove(otherHost);
 					otherHost.setDefault(false);
 					otherHost.setInode("");
+					if(host.getBoolProperty("_dont_validate_me"))
+					    otherHost.setProperty("_dont_validate_me",true);
+					if(host.getBoolProperty("__disable_workflow__"))
+					    otherHost.setProperty("__disable_workflow__",true);
 					otherHostContentlet = conAPI.checkin(otherHost, user, respectFrontendRoles);
 					otherHost =  new Host(otherHostContentlet);
 					hostCache.add(otherHost);
