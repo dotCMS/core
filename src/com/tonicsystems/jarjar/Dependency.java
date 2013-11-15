@@ -6,6 +6,8 @@ package com.tonicsystems.jarjar;
  */
 public class Dependency {
 
+    private boolean generate;
+    private boolean renameServices;
     private String path;
 
     public Dependency () {
@@ -17,6 +19,22 @@ public class Dependency {
 
     public void setPath ( String path ) {
         this.path = path;
+    }
+
+    public boolean isGenerate () {
+        return generate;
+    }
+
+    public void setGenerate ( boolean generate ) {
+        this.generate = generate;
+    }
+
+    public boolean isRenameServices () {
+        return renameServices;
+    }
+
+    public void setRenameServices ( boolean renameServices ) {
+        this.renameServices = renameServices;
     }
 
 }

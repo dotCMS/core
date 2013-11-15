@@ -21,8 +21,13 @@ public class PackagerTask extends JarJarTask {
     private String jspFolder;
     private String dotVersion;
     private boolean multipleJars;
+
     private boolean generateRulesFromParentFolder;
+    private boolean skipJarsGeneration;
     private boolean skipDependenciesReplacement;
+    private boolean skipDependenciesJars;
+    private boolean skipJpsFiles;
+
     private Vector<FileSet> filesets = new Vector<FileSet>();
     private List<Dependency> dependencies = new ArrayList<Dependency>();
 
@@ -71,8 +76,7 @@ public class PackagerTask extends JarJarTask {
                         File fileToInspect = new File( fileSet.getDirectoryScanner().getBasedir().getAbsolutePath() + File.separator + file );
 
                         //Global list of jars to repackage
-                        if ( !toTransform.contains( fileToInspect )
-                                && (!dotcmsJarFile.getAbsolutePath().equals( fileToInspect.getAbsolutePath() )) ) {
+                        if ( !toTransform.contains( fileToInspect ) ) {
                             toTransform.add( fileToInspect );
                         }
 
@@ -88,6 +92,17 @@ public class PackagerTask extends JarJarTask {
                 }
             }
         }
+        if ( !isSkipDependenciesJars() ) {//This can be use for testing purposes
+            for ( Dependency dependency : dependencies ) {
+
+                if ( dependency.isGenerate() ) {
+                    //The file to check and probably to modify
+                    File fileToInspect = new File( dependency.getPath() );
+                    inspector.inspect( fileToInspect );
+                }
+            }
+        }
+
         //inspector.report( "Duplicated classes" );//Generate a report
 
         log( "-----------------------------------------" );
@@ -109,9 +124,9 @@ public class PackagerTask extends JarJarTask {
         for ( String name : classes.keySet() ) {
 
             //Collection with the info of found for each class
-            //List<Inspector.PathInfo> details = classes.get( name );
-            //Inspector.PathInfo detail = details.get( 0 );//Grabbing the first one, could be more than one for duplicated classes
-            //File jarFile = detail.base;
+            List<Inspector.PathInfo> details = classes.get( name );
+            Inspector.PathInfo detail = details.get( 0 );//Grabbing the first one, could be more than one for duplicated classes
+            File jarFile = detail.base;
 
             //Handle some strings to use in the rules
             String packageName;
@@ -124,8 +139,8 @@ public class PackagerTask extends JarJarTask {
             }
 
             //Create a name to be part of the resulting package name
-            /*String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );*/
-            String jarNameForPackage = "_" + getDotVersion() + "_";
+            String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
+            //String jarNameForPackage = "_" + getDotVersion() + "_";
             jarNameForPackage = jarNameForPackage.replaceAll( "-", "_" );
             jarNameForPackage = jarNameForPackage.replaceAll( "\\.", "_" );
             jarNameForPackage = jarNameForPackage.toLowerCase();
@@ -155,27 +170,30 @@ public class PackagerTask extends JarJarTask {
         logRules( rulesToApply.values() );
         logJars( toTransform );
 
-        //And finally repackage the jars but how we do it depends on if we want them all on a single jar or multiples
-        if ( isMultipleJars() ) {
+        if ( !isSkipJarsGeneration() ) {//This can be use for testing purposes
 
-            //Repackage jar by jar
-            for ( File jar : toTransform ) {
+            //Repackage the jars but how we do it depends on if we want them all on a single jar or multiples
+            if ( isMultipleJars() ) {
 
-                //Repackaging this single jar
-                Collection<File> transform = new ArrayList<File>();
-                transform.add( jar );
+                //Repackage jar by jar
+                for ( File jar : toTransform ) {
 
-                File outJar = new File( getOutputFolder() + File.separator + jar.getName() );
-                generate( outJar, rulesToApply.values(), transform );
+                    //Repackaging this single jar
+                    Collection<File> transform = new ArrayList<File>();
+                    transform.add( jar );
+
+                    File outJar = new File( getOutputFolder() + File.separator + jar.getName() );
+                    generate( outJar, rulesToApply.values(), transform );
+                }
+
+            } else {
+                //Repackage all the jars in a single jar
+                File outJar = new File( getOutputFolder() + File.separator + getOutputFile() );
+                generate( outJar, rulesToApply.values(), toTransform );
             }
-
-        } else {
-            //Repackage all the jars in a single jar
-            File outJar = new File( getOutputFolder() + File.separator + getOutputFile() );
-            generate( outJar, rulesToApply.values(), toTransform );
         }
 
-        if ( isSkipDependenciesReplacement() ) {
+        if ( isSkipDependenciesReplacement() ) {//This can be use for testing purposes
             return;
         }
 
@@ -196,10 +214,26 @@ public class PackagerTask extends JarJarTask {
             //Verify if we are going to check for dependencies on another jars or files
             if ( isJarName( filePath ) ) {
 
-                //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                //CHANGE THE OLD REFERENCES IN DEPENDENT JARS
-                //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                repackageDependent( filePath, rulesToApply );
+                if ( !isSkipDependenciesJars() ) {//This can be use for testing purposes
+
+                    if ( dependency.isGenerate() ) {
+
+                        //Repackaging this single jar
+                        File jar = new File( filePath );
+
+                        Collection<File> transform = new ArrayList<File>();
+                        transform.add( jar );
+
+                        File outJar = new File( getOutputFolder() + File.separator + jar.getName() );
+                        generate( outJar, rulesToApply.values(), transform, dependency.isRenameServices() );
+
+                    } else {
+                        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        //CHANGE THE OLD REFERENCES IN DEPENDENT JARS
+                        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        repackageDependent( filePath, rulesToApply );
+                    }
+                }
 
             } else {
 
@@ -220,45 +254,51 @@ public class PackagerTask extends JarJarTask {
                     writer.close();
 
                 } catch ( FileNotFoundException e ) {
-                    throw new BuildException( "File " + filePath + " not found.", e );
+                    log( "File " + filePath + " not found.", e, Project.MSG_ERR );
+                    //throw new BuildException( "File " + filePath + " not found.", e );
                 } catch ( IOException e ) {
-                    throw new BuildException( "Error checking and/or modifying " + filePath + ".", e );
+                    log( "Error checking and/or modifying " + filePath + ".", e, Project.MSG_ERR );
+                    //throw new BuildException( "Error checking and/or modifying " + filePath + ".", e );
                 }
             }
         }
 
-        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        //APPLY THE SAME RULES TO JSP's UNDER THE DOTCMS FOLDER
-        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        File jspFolderFile = new File( getJspFolder() );
+        if ( !isSkipJpsFiles() ) {//This can be use for testing purposes
 
-        log( "" );
-        log( "-----------------------------------------" );
-        log( "Updating JSP's" );
+            //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //APPLY THE SAME RULES TO JSP's UNDER THE DOTCMS FOLDER
+            //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            File jspFolderFile = new File( getJspFolder() );
 
-        for ( Rule rule : rulesToApply.values() ) {
+            log( "" );
+            log( "-----------------------------------------" );
+            log( "Updating JSP's" );
 
-            //Clean-up the pattern
-            String pattern = rule.getPattern();
-            pattern = pattern.replaceAll( "\\*\\*", "" );
+            for ( Rule rule : rulesToApply.values() ) {
 
-            //Clean up the result
-            String result = rule.getResult();
-            if ( result.lastIndexOf( "@" ) != -1 ) {
-                result = result.substring( 0, result.lastIndexOf( "@" ) );
-            }
+                //Clean-up the pattern
+                String pattern = rule.getPattern();
+                pattern = pattern.replaceAll( "\\*\\*", "" );
 
-            String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/\"" + pattern + "/\"" + result + "/' {} \\;";
-            log( command );
+                //Clean up the result
+                String result = rule.getResult();
+                if ( result.lastIndexOf( "@" ) != -1 ) {
+                    result = result.substring( 0, result.lastIndexOf( "@" ) );
+                }
 
-            try {
-                Runtime.getRuntime().exec(
-                        new String[]{
-                                "sh", "-l", "-c", command
-                        }
-                );
-            } catch ( IOException e ) {
-                throw new BuildException( "Error replacing JSP's Strings: " + pattern + ".", e );
+                String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/\"" + pattern + "/\"" + result + "/' {} \\;";
+                log( command );
+
+                try {
+                    Runtime.getRuntime().exec(
+                            new String[]{
+                                    "sh", "-l", "-c", command
+                            }
+                    );
+                } catch ( IOException e ) {
+                    log( "Error replacing JSP's Strings: " + pattern + ".", e, Project.MSG_ERR );
+                    //throw new BuildException( "Error replacing JSP's Strings: " + pattern + ".", e );
+                }
             }
         }
     }
@@ -308,6 +348,18 @@ public class PackagerTask extends JarJarTask {
      * @param jars    jars to integrate into one
      */
     private void generate ( File outFile, Collection<Rule> rules, Collection<File> jars ) {
+        generate( outFile, rules, jars, initialRenameServices );
+    }
+
+    /**
+     * Repackage a list of given jars applying given rules
+     *
+     * @param outFile        the output jar after processing
+     * @param rules          rules to apply
+     * @param jars           jars to integrate into one
+     * @param renameServices rename the services files
+     */
+    private void generate ( File outFile, Collection<Rule> rules, Collection<File> jars, boolean renameServices ) {
 
         //Destiny file
         setDestFile( outFile );
@@ -330,7 +382,7 @@ public class PackagerTask extends JarJarTask {
         }
 
         //Generate the new jar
-        MainProcessor processor = new MainProcessor( patterns, initialVerbose, false, initialRenameServices );
+        MainProcessor processor = new MainProcessor( patterns, initialVerbose, false, renameServices );
         execute( processor );
         try {
             processor.strip( getDestFile() );
@@ -443,6 +495,30 @@ public class PackagerTask extends JarJarTask {
 
     public void setSkipDependenciesReplacement ( boolean skipDependenciesReplacement ) {
         this.skipDependenciesReplacement = skipDependenciesReplacement;
+    }
+
+    public boolean isSkipDependenciesJars () {
+        return skipDependenciesJars;
+    }
+
+    public void setSkipDependenciesJars ( boolean skipDependenciesJars ) {
+        this.skipDependenciesJars = skipDependenciesJars;
+    }
+
+    public boolean isSkipJarsGeneration () {
+        return skipJarsGeneration;
+    }
+
+    public void setSkipJarsGeneration ( boolean skipJarsGeneration ) {
+        this.skipJarsGeneration = skipJarsGeneration;
+    }
+
+    public boolean isSkipJpsFiles () {
+        return skipJpsFiles;
+    }
+
+    public void setSkipJpsFiles ( boolean skipJpsFiles ) {
+        this.skipJpsFiles = skipJpsFiles;
     }
 
     public void addFileset ( FileSet fileset ) {
