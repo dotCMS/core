@@ -68,7 +68,7 @@
 	<path id="files-classpath">
 		<pathelement location="${java.home}/../lib/tools.jar"/>
 
-        <fileset dir="libs/">
+        <fileset dir="libs/buildlibs">
             <include name="**/*.jar" />
         </fileset>
 
