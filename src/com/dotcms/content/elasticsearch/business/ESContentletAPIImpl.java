@@ -3701,107 +3701,135 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return QueryUtil.DBSearch(query, dbColToObjectAttribute, "structure_inode = '" + fields.get(0).getStructureInode() + "'", user, true,respectFrontendRoles);
     }
 
-    private Contentlet copyContentlet(Contentlet contentlet, Host host, Folder folder, User user,boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+    private Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user,boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 
-    	boolean isContentletLive = false;
+    	Contentlet resultContentlet = new Contentlet();
+    	String newIdentifier = "";
+    	List<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
+    	List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
+    	//GIT-4362 copying all versions of a content
+    	versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), user, respectFrontendRoles));
+    	
+    	for(Contentlet contentlet : versionsToCopy){
+        	
+        	boolean isContentletLive = false;
+        	boolean isContentletWorking = false;
 
-        if (user == null) {
-            throw new DotSecurityException("A user must be specified.");
-        }
+            if (user == null) {
+                throw new DotSecurityException("A user must be specified.");
+            }
 
-        if (!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-            throw new DotSecurityException("You don't have permission to read the source file.");
-        }
+            if (!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+                throw new DotSecurityException("You don't have permission to read the source file.");
+            }
 
-        // gets the new information for the template from the request object
-        Contentlet newContentlet = new Contentlet();
-        newContentlet.setStructureInode(contentlet.getStructureInode());
-        copyProperties(newContentlet, contentlet.getMap(),true);
-        //newContentlet.setLocked(false);
-        //newContentlet.setLive(contentlet.isLive());
+            // gets the new information for the template from the request object
+            Contentlet newContentlet = new Contentlet();
+            newContentlet.setStructureInode(contentlet.getStructureInode());
+            copyProperties(newContentlet, contentlet.getMap(),true);
+            //newContentlet.setLocked(false);
+            //newContentlet.setLive(contentlet.isLive());
 
-        if(contentlet.isLive())
-        	isContentletLive = true;
+            if(contentlet.isLive())
+            	isContentletLive = true;
+            if(contentlet.isWorking())
+            	isContentletWorking = true;
 
-        newContentlet.setInode("");
-        newContentlet.setIdentifier("");
-        newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
-        newContentlet.setFolder(folder != null?folder.getInode(): null);
-        newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
-        if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
-        	if(appendCopyToFileName){
-        		String fldNameNoExt=UtilMethods.getFileName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-                String fldfileExt=UtilMethods.getFileExtension(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-        		newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fldNameNoExt + "_(COPY)." + fldfileExt);
-        	}
-        	else
-        		newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-        }
+            newContentlet.setInode("");
+            newContentlet.setIdentifier("");
+            if(UtilMethods.isSet(newIdentifier))
+            	newContentlet.setIdentifier(newIdentifier);
+            newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
+            newContentlet.setFolder(folder != null?folder.getInode(): null);
+            newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
+            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
+            	if(appendCopyToFileName){
+            		String fldNameNoExt=UtilMethods.getFileName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+                    String fldfileExt=UtilMethods.getFileExtension(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+            		newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fldNameNoExt + "_(COPY)." + fldfileExt);
+            	}
+            	else
+            		newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+            }
 
-        List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-        java.io.File srcFile;
-        java.io.File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId());
-        if (!destFile.exists())
-            destFile.mkdirs();
+            List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
+            java.io.File srcFile;
+            java.io.File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId());
+            if (!destFile.exists())
+                destFile.mkdirs();
 
-        String fieldValue;
-        for (Field tempField: fields) {
-            if (tempField.getFieldType().equals(Field.FieldType.BINARY.toString())) {
-                fieldValue = "";
-                try {
-                    srcFile = getBinaryFile(contentlet.getInode(), tempField.getVelocityVarName(), user);
-                    if(srcFile != null) {
-                        if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
-                            final String nameNoExt=UtilMethods.getFileName(srcFile.getName());
-                            final String fileExt=UtilMethods.getFileExtension(srcFile.getName());
-                        	if(appendCopyToFileName)
-                        		fieldValue = nameNoExt + "_copy." + fileExt;
-                        	else
-                        		fieldValue = nameNoExt + "." + fileExt;
-                        }else{
-                            fieldValue=srcFile.getName();
+            String fieldValue;
+            for (Field tempField: fields) {
+                if (tempField.getFieldType().equals(Field.FieldType.BINARY.toString())) {
+                    fieldValue = "";
+                    try {
+                        srcFile = getBinaryFile(contentlet.getInode(), tempField.getVelocityVarName(), user);
+                        if(srcFile != null) {
+                            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
+                                final String nameNoExt=UtilMethods.getFileName(srcFile.getName());
+                                final String fileExt=UtilMethods.getFileExtension(srcFile.getName());
+                            	if(appendCopyToFileName)
+                            		fieldValue = nameNoExt + "_copy." + fileExt;
+                            	else
+                            		fieldValue = nameNoExt + "." + fileExt;
+                            }else{
+                                fieldValue=srcFile.getName();
+                            }
+                            destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + java.io.File.separator + fieldValue);
+                            if (!destFile.exists())
+                                destFile.createNewFile();
+
+                            FileUtils.copyFile(srcFile, destFile);
+                            newContentlet.setBinary(tempField.getVelocityVarName(), destFile);
                         }
-                        destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + java.io.File.separator + fieldValue);
-                        if (!destFile.exists())
-                            destFile.createNewFile();
-
-                        FileUtils.copyFile(srcFile, destFile);
-                        newContentlet.setBinary(tempField.getVelocityVarName(), destFile);
+                    } catch (Exception e) {
+                        throw new DotDataException("Error copying binary file: '" + fieldValue + "'");
                     }
-                } catch (Exception e) {
-                    throw new DotDataException("Error copying binary file: '" + fieldValue + "'");
                 }
-            }
 
-            if (tempField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                if (folder != null || host != null){
-                    newContentlet.setStringProperty(tempField.getVelocityVarName(), folder != null?folder.getInode():host.getIdentifier());
-                }else{
-                    if(contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-                        newContentlet.setStringProperty(tempField.getVelocityVarName(), contentlet.getFolder());
+                if (tempField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+                    if (folder != null || host != null){
+                        newContentlet.setStringProperty(tempField.getVelocityVarName(), folder != null?folder.getInode():host.getIdentifier());
                     }else{
-                        newContentlet.setStringProperty(tempField.getVelocityVarName(), contentlet.getHost());
+                        if(contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
+                            newContentlet.setStringProperty(tempField.getVelocityVarName(), contentlet.getFolder());
+                        }else{
+                            newContentlet.setStringProperty(tempField.getVelocityVarName(), contentlet.getHost());
+                        }
                     }
                 }
             }
-        }
 
-        List<Category> parentCats = catAPI.getParents(contentlet, false, user, respectFrontendRoles);
-        ContentletRelationships cr = getAllRelationships(contentlet);
-        List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();
-        Map<Relationship, List<Contentlet>> rels = new HashMap<Relationship, List<Contentlet>>();
-        for (ContentletRelationshipRecords crr : rr) {
-            rels.put(crr.getRelationship(), crr.getRecords());
-        }
+            List<Category> parentCats = catAPI.getParents(contentlet, false, user, respectFrontendRoles);
+            ContentletRelationships cr = getAllRelationships(contentlet);
+            List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();
+            Map<Relationship, List<Contentlet>> rels = new HashMap<Relationship, List<Contentlet>>();
+            for (ContentletRelationshipRecords crr : rr) {
+                rels.put(crr.getRelationship(), crr.getRecords());
+            }
 
-        newContentlet = checkin(newContentlet, rels, parentCats, perAPI.getPermissions(contentlet), user, respectFrontendRoles);
+            newContentlet = checkin(newContentlet, rels, parentCats, perAPI.getPermissions(contentlet), user, respectFrontendRoles);
+            if(!UtilMethods.isSet(newIdentifier))
+            	newIdentifier = newContentlet.getIdentifier();
 
-        perAPI.copyPermissions(contentlet, newContentlet);
+            perAPI.copyPermissions(contentlet, newContentlet);
 
-        if(isContentletLive)
-        	APILocator.getVersionableAPI().setLive(newContentlet);
+            if(isContentletLive)
+            	APILocator.getVersionableAPI().setLive(newContentlet);
+ 
+            if(isContentletWorking)
+            	versionsToMarkWorking.add(newContentlet);
+            
 
-        return newContentlet;
+            if(contentlet.getInode().equals(contentletToCopy.getInode()))
+            	resultContentlet = newContentlet;
+    	}
+    	
+    	for(Contentlet con : versionsToMarkWorking){
+    		APILocator.getVersionableAPI().setWorking(con);
+    	}
+    	
+    	return resultContentlet;
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
