@@ -36,12 +36,6 @@
                       dotVersion="${dotcms.release.version}"
                       renameservices="true"
                       multiplejars="true"
-                      verbose="true"
-
-                      skipJarsGeneration="false"
-                      skipdependenciesjars="false"
-                      skipjpsfiles="true"
-
                       jspFolder="${dotcms.dir}">
 
             <fileset dir="${lib.app}" id="">
