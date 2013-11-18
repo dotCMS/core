@@ -1,5 +1,7 @@
 package com.tonicsystems.jarjar;
 
+import com.tonicsystems.jarjar.ext_util.EntryStruct;
+import com.tonicsystems.jarjar.resource.ResourceRewriter;
 import org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -92,14 +94,12 @@ public class PackagerTask extends JarJarTask {
                 }
             }
         }
-        if ( !isSkipDependenciesJars() ) {//This can be use for testing purposes
-            for ( Dependency dependency : dependencies ) {
+        for ( Dependency dependency : dependencies ) {
 
-                if ( dependency.isGenerate() ) {
-                    //The file to check and probably to modify
-                    File fileToInspect = new File( dependency.getPath() );
-                    inspector.inspect( fileToInspect );
-                }
+            if ( dependency.isGenerate() ) {
+                //The file to check and probably to modify
+                File fileToInspect = new File( dependency.getPath() );
+                inspector.inspect( fileToInspect );
             }
         }
 
@@ -201,6 +201,8 @@ public class PackagerTask extends JarJarTask {
         //APPLY THE SAME RULES TO GIVEN FILES,JAR's,  XML's, .PROPERTIES, ETC...
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+        ResourceRewriter resourceRewriter = new ResourceRewriter( new CustomLineRewriter( rulesToApply.values() ), initialVerbose, initialRenameServices );
+
         //Add the dotcms jar as a dependency we need to check and modify
         Dependency dotcmsJarDependency = new Dependency();
         dotcmsJarDependency.setPath( this.dotcmsJar );
@@ -238,20 +240,22 @@ public class PackagerTask extends JarJarTask {
             } else {
 
                 try {
+
+                    EntryStruct struct = new EntryStruct();
+
                     //Reading the file to check
                     FileInputStream inputStream = new FileInputStream( filePath );
-                    String fileContent = IOUtils.toString( inputStream );
+                    struct.data = IOUtils.toByteArray( inputStream );
+                    struct.name = filePath;
+                    struct.time = new Date().getTime();
 
-                    log( "Searching on " + filePath + " for packages strings." );
+                    //Apply the rules to the given structure
+                    resourceRewriter.process( struct );
 
-                    for ( Rule rule : rulesToApply.values() ) {
-                        PackagerWildcard wildcard = new PackagerWildcard( rule );
-                        fileContent = wildcard.replace( fileContent );
-                    }
-
-                    BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
-                    writer.write( fileContent );
-                    writer.close();
+                    //Apply the results to the file
+                    FileOutputStream outputStream = new FileOutputStream( new File( filePath ) );
+                    outputStream.write( struct.data );
+                    outputStream.close();
 
                 } catch ( FileNotFoundException e ) {
                     log( "File " + filePath + " not found.", e, Project.MSG_ERR );
