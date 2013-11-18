@@ -256,7 +256,9 @@
 
 				<div style="float:right;">
 					<%= LanguageUtil.get(pageContext, "publisher_Identifier") %>: <span style="color:gray;font-weight: normal;"><%=bundle.get("bundle_id")%></span>
+					<% if(bundleObj!=null) { %>
 					&nbsp; <%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %>: <span style="color:gray;font-weight: normal;"><%=bundleObj.isForcePush()%></span>
+					<% } %>
 				</div>
 
 
