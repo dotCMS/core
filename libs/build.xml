@@ -42,11 +42,11 @@
                 <include name="**/*.jar"/>
                 <exclude name="jamm-0.2.5.jar"/>
 
-                <!--<exclude name="jarjar-1.4.jar"/>-->
                 <exclude name="dotcms_${dotcms.release.version}.jar"/>
                 <exclude name="ee-96daf56ad45c.jar"/>
                 <exclude name="dotcms_ant.jar"/>
                 <exclude name="packager-taks.jar"/>
+                <exclude name="jarjar-1.4.jar"/><!--Wont work later if we apply jarjar on it-->
 
                 <exclude name="**/org.apache.felix.*.jar"/>
                 <exclude name="**/felix-4.2.1.jar"/>
@@ -84,15 +84,40 @@
             <dependency path="${lib.app}/ee-96daf56ad45c.jar"/>
 
             <dependency path="${web-inf.dir}/web.xml"/>
-            <dependency path="${web-inf.dir}/struts-config.xml"/>
+            <dependency path="${web-inf.dir}/springmvc-servlet.xml"/>
+            <dependency path="${web-inf.dir}/felix/osgi-extra.conf"/>
+
             <dependency path="${web-inf.dir}/struts-config.xml"/>
             <dependency path="${web-inf.dir}/struts-config-ext.xml"/>
-            <dependency path="${web-inf.dir}/springmvc-servlet.xml"/>
             <dependency path="${web-inf.dir}/validator-rules.xml"/>
-            <dependency path="${web-inf.dir}/felix/osgi-extra.conf"/>
+            <dependency path="${web-inf.dir}/tld/c.tld"/>
+            <dependency path="${web-inf.dir}/tld/c-rt.tld"/>
+            <dependency path="${web-inf.dir}/tld/displaytag.tld"/>
+            <dependency path="${web-inf.dir}/tld/dotmarketing.tld"/>
+            <dependency path="${web-inf.dir}/tld/fmt.tld"/>
+            <dependency path="${web-inf.dir}/tld/fmt-rt.tld"/>
+            <dependency path="${web-inf.dir}/tld/liferay-portlet.tld"/>
+            <dependency path="${web-inf.dir}/tld/liferay-util.tld"/>
+            <dependency path="${web-inf.dir}/tld/sql.tld"/>
+            <dependency path="${web-inf.dir}/tld/sql-rt.tld"/>
+            <dependency path="${web-inf.dir}/tld/struts-bean.tld"/>
+            <dependency path="${web-inf.dir}/tld/struts-html.tld"/>
+            <dependency path="${web-inf.dir}/tld/struts-logic.tld"/>
+            <dependency path="${web-inf.dir}/tld/struts-nested.tld"/>
+            <dependency path="${web-inf.dir}/tld/struts-template.tld"/>
+            <dependency path="${web-inf.dir}/tld/struts-tiles.tld"/>
+            <dependency path="${web-inf.dir}/tld/x.tld"/>
+            <dependency path="${web-inf.dir}/tld/x-rt.tld"/>
+            <dependency path="${web-inf.dir}/tld/old/struts-bean.tld"/>
+            <dependency path="${web-inf.dir}/tld/old/struts-html.tld"/>
+            <dependency path="${web-inf.dir}/tld/old/struts-logic.tld"/>
+            <dependency path="${web-inf.dir}/tld/old/struts-nested.tld"/>
+            <dependency path="${web-inf.dir}/tld/old/struts-template.tld"/>
+            <dependency path="${web-inf.dir}/tld/old/struts-tiles.tld"/>
 
             <dependency path="${src-conf.dir}/dotmarketing-config.properties"/>
             <dependency path="${src-conf.dir}/system.properties"/>
+            <dependency path="${src-conf.dir}/stxx.properties"/>
             <dependency path="${src-conf.dir}/quartz.properties"/>
             <dependency path="${src-conf.dir}/quartz_sequential.properties"/>
 

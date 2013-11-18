@@ -257,6 +257,21 @@ public class PackagerTask extends JarJarTask {
                     outputStream.write( struct.data );
                     outputStream.close();
 
+                    //Reading the file to check
+                    /*FileInputStream inputStream = new FileInputStream( filePath );
+                    String fileContent = IOUtils.toString( inputStream );
+
+                    log( "Searching on " + filePath + " for packages strings." );
+
+                    for ( Rule rule : rulesToApply.values() ) {
+                        PackagerWildcard wildcard = new PackagerWildcard( rule );
+                        fileContent = wildcard.replace( fileContent );
+                    }
+
+                    BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
+                    writer.write( fileContent );
+                    writer.close();*/
+
                 } catch ( FileNotFoundException e ) {
                     log( "File " + filePath + " not found.", e, Project.MSG_ERR );
                     //throw new BuildException( "File " + filePath + " not found.", e );
