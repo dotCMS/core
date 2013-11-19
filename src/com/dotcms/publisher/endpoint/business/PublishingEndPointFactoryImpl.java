@@ -1,5 +1,7 @@
 package com.dotcms.publisher.endpoint.business;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +12,7 @@ import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 
 public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 	private PublishingEndPointCache cache = null;
@@ -106,11 +109,34 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> allEndPoints = getEndPoints();
 		for(PublishingEndPoint endPoint : allEndPoints) {
-			if(endPoint.getAddress().equals(address) && endPoint.isEnabled() && endPoint.isSending())
+			if(isMatchingEndpoint(endPoint.getAddress(), address) && endPoint.isEnabled() && endPoint.isSending())
 				return endPoint;
 		}
 		return null;
 	}
+
+    	boolean isMatchingEndpoint(String endPointAddress, String requestAddress) {
+        	boolean result = false;
+        	try {
+            		InetAddress endPointInetAddress = getInetAddress(endPointAddress);
+            		InetAddress requestInetAddress = getInetAddress(requestAddress);
+            		result = endPointInetAddress.equals(requestInetAddress);
+        	}
+        	catch(UnknownHostException e) {
+            		Logger.error(this.getClass(), "Unable to compare endpoints.", e);
+        	}
+        	return result;
+    	}
+
+    	private InetAddress getInetAddress(String address) throws UnknownHostException {
+        	try {
+            		return InetAddress.getByName(address);
+        	}
+        	catch(UnknownHostException e) {
+            		Logger.error(this.getClass(), "Unable to resolve inetAddress for " + address);
+            		throw e;
+        	}
+    	}
 
 	public List<PublishingEndPoint> getSendingEndPointsByEnvironment(String environmentId) throws DotDataException {
 		ensureCacheIsLoaded();
