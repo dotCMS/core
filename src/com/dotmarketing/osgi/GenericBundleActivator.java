@@ -1,8 +1,50 @@
 package com.dotmarketing.osgi;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.Filter;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServlet;
+import javax.ws.rs.core.Application;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.felix.http.api.ExtHttpService;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.struts.Globals;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.config.ActionConfig;
+import org.apache.struts.config.ForwardConfig;
+import org.apache.struts.config.ModuleConfig;
+import org.apache.struts.config.impl.ModuleConfigImpl;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.apache.velocity.tools.view.ToolInfo;
+import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.wiring.BundleWiring;
+import org.quartz.SchedulerException;
+import org.tuckey.web.filters.urlrewrite.NormalRule;
+import org.tuckey.web.filters.urlrewrite.Rule;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -24,36 +66,7 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.felix.http.api.ExtHttpService;
-import org.apache.felix.http.proxy.DispatcherTracker;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.config.ActionConfig;
-import org.apache.struts.config.ForwardConfig;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.struts.config.impl.ModuleConfigImpl;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.apache.velocity.tools.view.ToolInfo;
-import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.quartz.SchedulerException;
-import org.tuckey.web.filters.urlrewrite.NormalRule;
-import org.tuckey.web.filters.urlrewrite.Rule;
-
-import javax.servlet.ServletContext;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.util.*;
+import com.sun.jersey.spi.container.servlet.ServletContainer;
 
 /**
  * Created by Jonathan Gamba
@@ -598,6 +611,80 @@ public abstract class GenericBundleActivator implements BundleActivator {
         interceptor.addPostHook( postHook );
         postHooks.add( postHook.getClass().getName() );
     }
+	
+	/**
+	 * Adds REST services<br/>
+	 * <br/>
+	 * <strong>Example:</strong><br/>
+	 * addRestServices(context, extHttpService, "org.example.rest", "/example-rest")<br/>
+	 * <br/>
+	 * This will bind all REST resources in package org.example.rest to /app/example-rest/...
+	 * 
+	 * @param context The bundle context
+	 * @param extHttpService The service(s) will be added to this ExtHttpService
+	 * @param basePackage Package that will be scanned for REST resources. All classes with @Path or @Provider annotations 
+	 * 		  will be loaded. This package must live in the same dynamic plugin as the Activator that calls this function
+	 * @param baseUri The base URI that the REST services will be bound on. The paths defined in @Path annotations are relative to
+	 * this path.
+	 */
+	protected void addRestServices(BundleContext context, ExtHttpService extHttpService, String basePackage, final String baseUri) {
+		
+		BundleWiring bundleWiring = context.getBundle().adapt(BundleWiring.class);
+		Application restApplication = new RestApplication(bundleWiring, basePackage);
+		
+		ServletContainer restServletContainer = new ServletContainer(restApplication);
+		
+		try {
+			extHttpService.registerServlet(baseUri, restServletContainer, null, null);
+		} catch (Exception e) {
+			Logger.error(this, "Failed to add REST service", e);
+			throw new RuntimeException(e);
+		}
+
+		CMSFilter.addExclude(baseUri + "/.*");
+	}
+	
+	/**
+	 * Adds a servlet to dotCMS
+	 * 
+	 * @param context The bundle context
+	 * @param extHttpService The service(s) will be added to this ExtHttpService
+	 * @param servlet The servlet that must be added
+	 * @param servletUri The URI that the servlet will be bound on
+	 * @param initParams The init params that will be passed to the servlet
+	 */
+	protected void addServlet(BundleContext context, ExtHttpService extHttpService, HttpServlet servlet, String servletUri, Dictionary<?, ?> initParams) {
+		try {
+			extHttpService.registerServlet(servletUri, servlet, initParams, null);
+		} catch (Exception e) {
+			Logger.error(this, "Failed to add servlet", e);
+			throw new RuntimeException(e);
+		}
+		
+		CMSFilter.addExclude(servletUri);
+		
+		Logger.info(this, "Added servlet: " + servlet.getClass().getName());
+	}
+
+	/**
+	 * Adds a filter
+	 * 
+	 * @param context The bundle context
+	 * @param extHttpService The service(s) will be added to this ExtHttpService
+	 * @param filter The filter that must be added
+	 * @param path The path that the filter will be bound on
+	 * @param initParams The init params that will be passed to the filter
+	 */
+	protected void addFilter(BundleContext context, ExtHttpService extHttpService, Filter filter, String path, Dictionary<?, ?> initParams) {
+		try {
+			extHttpService.registerFilter(filter, path, initParams, 0, null);
+		} catch (Exception e) {
+			Logger.error(this, "Failed to add servlet", e);
+			throw new RuntimeException(e);
+		}
+		
+		Logger.info(this, "Added filter: " + filter.getClass().getName());
+	}
 
     //*******************************************************************
     //*******************************************************************
