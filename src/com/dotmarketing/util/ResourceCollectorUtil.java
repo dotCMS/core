@@ -2,6 +2,8 @@ package com.dotmarketing.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,10 +33,24 @@ public class ResourceCollectorUtil{
     	Pattern pattern = Pattern.compile(".*\\.class");
         final Set<String> retval = new HashSet<String>();
         final String classPath = System.getProperty("java.class.path", ".");
-        String libPath = ResourceCollectorUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath().substring(0, ResourceCollectorUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath().indexOf("WEB-INF" + File.separator)) + "WEB-INF" + File.separator + "lib";
-        String classesPath = ResourceCollectorUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath().substring(0, ResourceCollectorUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath().indexOf("WEB-INF" + File.separator)) + "WEB-INF" + File.separator + "classes";
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        String codeSourcePath = ResourceCollectorUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        if(isWindows){
+        	try {
+				codeSourcePath = new File(URLDecoder.decode(codeSourcePath, "UTF-8")).getPath();
+			} catch (UnsupportedEncodingException e) {
+				Logger.error(ResourceCollectorUtil.class, e.getMessage());
+			}
+        }
+        String libPath = codeSourcePath.substring(0, codeSourcePath.indexOf("WEB-INF" + File.separator)) + "WEB-INF" + File.separator + "lib";
+        String classesPath = codeSourcePath.substring(0, codeSourcePath.indexOf("WEB-INF" + File.separator)) + "WEB-INF" + File.separator + "classes";
 //        String libPath = Config.CONTEXT_PATH + "WEB-INF" + File.separator + "lib";
-        List<String> classPathElements = new ArrayList(Arrays.asList(classPath.split(":")));
+        List<String> classPathElements = new ArrayList<String>();
+        if(isWindows)
+        	classPathElements = new ArrayList(Arrays.asList(classPath.split(";")));
+        else
+        	classPathElements = new ArrayList(Arrays.asList(classPath.split(":")));
+        
         classPathElements.add(classesPath);
         File dir = new File(libPath);
         if(dir.exists() && dir.isDirectory()){
