@@ -60,10 +60,11 @@
                 <!--We can repackage them but not rename their services files-->
 
                 <!--TODO: JUST FOR TESTING-->
+                <exclude name="dwr_3rc2modified.jar"/>
                 <exclude name="urlrewritefilter-4.0.3.jar"/>
                 <exclude name="tika-app-1.3.jar"/>
                 <exclude name="**/org.springframework*.jar"/>
-                <exclude name="h2-1.3.169.jar"/><!--Has a zip inside it and it is causing problems-->
+                <exclude name="h2-1.3.169.jar"/><!--Has a zip inside it and I think it is causing problems-->
                 <exclude name="jna.jar"/>
                 <!--TODO: JUST FOR TESTING-->
             </fileset>
