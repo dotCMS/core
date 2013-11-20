@@ -1,0 +1,5 @@
+f9c887951e0d38014c596b31a8719173b9fda121  werken-xpath-0.9.4.jar
+7bc7e49ddfe4fb5f193ed37ecc96c12292c8ceb6  xercesImpl.jar
+2b8e230d2ab644e4ecaa94db7cdedbc40c805dfa  xmlpull-1.1.3.1.jar
+19d4e90b43059058f6e056f794f0ea4030d60b86  xpp3_min-1.1.4c.jar
+488e9e4a47afc81d2b2dec3c3eb3a4d0f10fe105  xstream-1.4.4.jar
