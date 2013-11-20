@@ -378,6 +378,7 @@ public class HostAPIImpl implements HostAPI {
 					    otherHost.setProperty("__disable_workflow__",true);
 
 					conAPI.checkin(otherHost, user, respectFrontendRoles);
+				}
 			}
 		}
 		
