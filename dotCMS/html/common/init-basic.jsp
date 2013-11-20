@@ -1,4 +1,3 @@
-
 <%@page import="com.dotmarketing.business.Layout"%>
 <%@ page import="com.liferay.portal.NoSuchUserException" %>
 <%@ page import="com.liferay.portal.auth.PrincipalException" %>
@@ -159,7 +158,7 @@ else {
 	signedIn = true;
 }
 
-Locale locale = (Locale)session.getAttribute(Globals.LOCALE_KEY);
+Locale locale = (Locale)session.getAttribute(org.apache.struts.Globals.LOCALE_KEY);
 if (locale == null) {
 
 	// Locale should never be null except when the TCK tests invalidate the session
@@ -240,5 +239,4 @@ int RES_WIDE = 0;
 
 <%@ page import="org.apache.commons.logging.Log" %>
 <%@ page import="org.apache.commons.logging.LogFactory" %>
-<%@ page import="org.apache.struts.Globals" %>
 

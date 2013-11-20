@@ -124,7 +124,6 @@
 %>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment" %>
 <%@ page import="com.dotcms.publisher.bundle.bean.Bundle" %>
-<%@ page import="org.apache.struts.Globals" %>
 <%
 	String CTX_PATH = (String) application
 			.getAttribute(WebKeys.CTX_PATH);
@@ -157,7 +156,7 @@
 	}
 
 	Locale locale = (Locale) session
-			.getAttribute(Globals.LOCALE_KEY);
+			.getAttribute(org.apache.struts.Globals.LOCALE_KEY);
 	if (locale == null) {
 
 		// Locale should never be null except when the TCK tests invalidate the session
@@ -170,13 +169,13 @@
 			String test = locales[i].getLanguage() + "_" + locales[i].getCountry();
 			if(test.equals(request.getParameter("switchLocale"))){
 				locale = locales[i];
-				session.setAttribute(Globals.LOCALE_KEY, locale);
+				session.setAttribute(org.apache.struts.Globals.LOCALE_KEY, locale);
 				break;
 			}
 		}
 		
 	}else{//DOTCMS-5013
-		session.setAttribute(Globals.LOCALE_KEY, locale);
+		session.setAttribute(org.apache.struts.Globals.LOCALE_KEY, locale);
 	}
 
 	TimeZone timeZone = user.getTimeZone();
