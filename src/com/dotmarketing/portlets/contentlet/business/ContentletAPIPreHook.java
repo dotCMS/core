@@ -10,6 +10,7 @@ import java.util.Map;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.exception.DotDataException;
@@ -1206,5 +1207,9 @@ public interface ContentletAPIPreHook {
      * @return
      */
 	public boolean getMostViewedContent(String structureVariableName, String startDate, String endDate, User user);
+
+    public boolean finishPublish(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+
+    public boolean finishPublish(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
 }
