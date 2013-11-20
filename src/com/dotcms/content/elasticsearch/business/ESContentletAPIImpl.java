@@ -2167,7 +2167,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
 
-
 				APILocator.getVersionableAPI().setWorking(contentlet);
 
 				boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
@@ -3702,7 +3701,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	String newIdentifier = "";
     	List<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
     	List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
-    	//GIT-4362 copying all versions of a content
+    	
     	versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), user, respectFrontendRoles));
     	
     	for(Contentlet contentlet : versionsToCopy){
@@ -3796,11 +3795,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             List<Category> parentCats = catAPI.getParents(contentlet, false, user, respectFrontendRoles);
-            ContentletRelationships cr = getAllRelationships(contentlet);
-            List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();
             Map<Relationship, List<Contentlet>> rels = new HashMap<Relationship, List<Contentlet>>();
-            for (ContentletRelationshipRecords crr : rr) {
-                rels.put(crr.getRelationship(), crr.getRecords());
+            String destinationHostId = "";
+            if(host != null && UtilMethods.isSet(host.getIdentifier())){
+            	destinationHostId = host.getIdentifier();
+            } else if(folder!=null){
+            	destinationHostId = folder.getHostId();
+            } else{
+            	destinationHostId = contentlet.getHost();
+            }
+            if(contentletToCopy.getHost().equals(destinationHostId)){
+	            ContentletRelationships cr = getAllRelationships(contentlet);
+	            List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();	            
+	            for (ContentletRelationshipRecords crr : rr) {
+	                rels.put(crr.getRelationship(), crr.getRecords());
+	            }
             }
 
             newContentlet = checkin(newContentlet, rels, parentCats, perAPI.getPermissions(contentlet), user, respectFrontendRoles);
