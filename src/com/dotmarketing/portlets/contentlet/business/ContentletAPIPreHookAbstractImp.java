@@ -10,6 +10,7 @@ import org.elasticsearch.common.inject.ImplementedBy;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.exception.DotDataException;
@@ -569,5 +570,17 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 		return true;
 	}
 
+	@Override
+	public boolean finishPublish(Contentlet contentlet, boolean isNew)
+	        throws DotSecurityException, DotDataException,
+	        DotContentletStateException, DotStateException {
+	    return true;
+	}
 	
+	@Override
+	public boolean finishPublish(Contentlet contentlet, boolean isNew,
+	        boolean isNewVersion) throws DotSecurityException,
+	        DotDataException, DotContentletStateException, DotStateException {
+	    return true;
+	}
 }

@@ -356,13 +356,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }*/
 
-    private void finishPublish(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException,
+    public void finishPublish(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException,
             DotContentletStateException, DotStateException {
         finishPublish(contentlet, isNew, true);
 
     }
 
-    private void finishPublish(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException,
+    public void finishPublish(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException,
     DotContentletStateException, DotStateException {
 
         if (!contentlet.isWorking())
