@@ -84,7 +84,7 @@ public class ImportUtil {
 
 
 
-	public static HashMap<String, List<String>> importFile(Long importId, String structure, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader)
+	public static HashMap<String, List<String>> importFile(Long importId, String currentHostId, String structure, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader)
 	throws DotRuntimeException, DotDataException {
 
 		HashMap<String, List<String>> results = new HashMap<String, List<String>>();
@@ -178,7 +178,7 @@ public class ImportUtil {
                                 }
 
                                 //Importing content record...
-                                importLine( csvLine, st, preview, isMultilingual, user, results, lineNumber, languageToImport, headers, keyFields, choosenKeyField,
+                                importLine( csvLine, currentHostId, st, preview, isMultilingual, user, results, lineNumber, languageToImport, headers, keyFields, choosenKeyField,
                                         counters, keyContentUpdated, structurePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, sameKeyBatchInsert );
 
                                 //Storing the record keys we just imported for a later reference...
@@ -458,7 +458,7 @@ public class ImportUtil {
      *                           and the same key, mostly used for content with multiple languages.
      * @throws DotRuntimeException
      */
-    private static void importLine ( String[] line, Structure structure, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
+    private static void importLine ( String[] line, String currentHostId, Structure structure, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
                                      HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, StringBuffer choosenKeyField, Counters counters,
                                      HashSet<String> keyContentUpdated, List<Permission> structurePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships, HashMap<Integer, Boolean> onlyChild, HashMap<Integer, Boolean> onlyParent,
                                      boolean sameKeyBatchInsert ) throws DotRuntimeException {
@@ -628,7 +628,8 @@ public class ImportUtil {
 					else
 					{
 						//check if the path is relative to this host or not
-						Host fileHost = hostAPI.findDefaultHost(user,false);
+						//Host fileHost = hostAPI.findDefaultHost(user,false);
+						Host fileHost = hostAPI.find(currentHostId, user, false);
 						if(filePath.indexOf(":") > -1)
 						{
 							String[] fileInfo = filePath.split(":");

@@ -335,14 +335,15 @@ public class ImportContentletsAction extends DotPortletAction {
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+		HttpSession session = httpReq.getSession();
 
 		httpReq.getSession().setAttribute("file_to_import", bytes);
 		httpReq.getSession().setAttribute("form_to_import", form);
 
 		ImportContentletsForm importForm = (ImportContentletsForm) form;
 		httpReq.getSession().setAttribute("fileName", importForm.getFileName());
-
-		HashMap<String, List<String>> results = ImportUtil.importFile(importId, importForm.getStructure(), importForm.getFields(), true, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+		String currentHostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentHostId, importForm.getStructure(), importForm.getFields(), true, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
 
 		req.setAttribute("previewResults", results);
 	}
@@ -353,10 +354,10 @@ public class ImportContentletsAction extends DotPortletAction {
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-
+		HttpSession session = httpReq.getSession();
 		ImportContentletsForm importForm = (ImportContentletsForm) httpReq.getSession().getAttribute("form_to_import");
-
-	 	HashMap<String, List<String>> results = ImportUtil.importFile(importId,importForm.getStructure(), importForm.getFields(), false, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+		String currentHostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+	 	HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentHostId, importForm.getStructure(), importForm.getFields(), false, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
 	 	//req.setAttribute("importResults", results);
 	 	return results;
 		
