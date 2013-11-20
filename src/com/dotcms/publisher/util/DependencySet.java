@@ -9,9 +9,13 @@ import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
 public class DependencySet extends HashSet<String> {
@@ -98,7 +102,31 @@ public class DependencySet extends HashSet<String> {
             for (Environment env : envs) {
 				PushedAsset asset = cache.getPushedAsset(assetId, env.getId());
 
-				if(modified |= (asset==null || (assetModDate!=null && asset.getPushDate().before(assetModDate)))) {
+				modified = (asset==null || (assetModDate!=null && asset.getPushDate().before(assetModDate)));
+				
+				try {
+				    if(!modified && assetType.equals("content")) {
+				        // check for versionInfo TS on content
+				        for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
+                            ContentletVersionInfo info=APILocator.getVersionableAPI().getContentletVersionInfo(assetId, lang.getId());
+                            if(info!=null && InodeUtils.isSet(info.getIdentifier())) {
+                                modified = modified || assetModDate.before(info.getVersionTs()); 
+                            }
+				        }
+				    }
+				    if(!modified && (assetType.equals("template") || assetType.equals("links") || assetType.equals("container") || assetType.equals("htmlpage"))) {
+				        // check for versionInfo TS
+                        VersionInfo info=APILocator.getVersionableAPI().getVersionInfo(assetId);
+                        if(info!=null && InodeUtils.isSet(info.getIdentifier())) {
+                            modified = assetModDate.before(info.getVersionTs()); 
+                        }
+				    }
+				} catch (Exception e) {
+                    Logger.warn(getClass(), "Error checking versionInfo for assetType:"+assetType+" assetId:"+assetId+
+                            " process continues without checking versionInfo.ts",e);
+                }
+				
+				if(modified) {
 					try {
 						asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId());
 						APILocator.getPushedAssetsAPI().savePushedAsset(asset);
