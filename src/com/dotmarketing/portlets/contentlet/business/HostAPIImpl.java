@@ -357,7 +357,6 @@ public class HostAPIImpl implements HostAPI {
 		c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
 		APILocator.getVersionableAPI().setLive(c);
 		Host savedHost =  new Host(c);
-		hostCache.add(savedHost);
 
 		if(host.isDefault()) {  // If host is marked as default make sure that no other host is already set to be the default
 			List<Host> hosts= findAll(user, respectFrontendRoles);
@@ -372,14 +371,11 @@ public class HostAPIImpl implements HostAPI {
 					otherHost =  new Host(otherHostContentlet);
 					hostCache.remove(otherHost);
 					otherHost.setDefault(false);
-					otherHost.setInode("");
-					if(host.getBoolProperty("_dont_validate_me"))
+					if(host.getMap().containsKey("_dont_validate_me"))
 					    otherHost.setProperty("_dont_validate_me",true);
-					if(host.getBoolProperty("__disable_workflow__"))
+					if(host.getMap().containsKey("__disable_workflow__"))
 					    otherHost.setProperty("__disable_workflow__",true);
-					otherHostContentlet = conAPI.checkin(otherHost, user, respectFrontendRoles);
-					otherHost =  new Host(otherHostContentlet);
-					hostCache.add(otherHost);
+					conAPI.checkin(otherHost, user, respectFrontendRoles);
 				}
 			}
 		}
