@@ -9,6 +9,8 @@ import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.ZipFileSet;
 
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -37,6 +39,9 @@ public class PackagerTask extends JarJarTask {
     private boolean initialVerbose;
 
     public void execute () throws BuildException {
+
+        //Track the time
+        long startProcessTime = System.currentTimeMillis();
 
         log( "Executing Packager task....", Project.MSG_INFO );
 
@@ -172,6 +177,9 @@ public class PackagerTask extends JarJarTask {
 
         if ( !isSkipJarsGeneration() ) {//This can be use for testing purposes
 
+            //Track the time
+            long startJarsGeneration = System.currentTimeMillis();
+
             //Repackage the jars but how we do it depends on if we want them all on a single jar or multiples
             if ( isMultipleJars() ) {
 
@@ -191,10 +199,9 @@ public class PackagerTask extends JarJarTask {
                 File outJar = new File( getOutputFolder() + File.separator + getOutputFile() );
                 generate( outJar, rulesToApply.values(), toTransform );
             }
-        }
 
-        if ( isSkipDependenciesReplacement() ) {//This can be use for testing purposes
-            return;
+            //Log the time
+            trackTime( "Generated Jars!!", startJarsGeneration );
         }
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -207,6 +214,9 @@ public class PackagerTask extends JarJarTask {
         Dependency dotcmsJarDependency = new Dependency();
         dotcmsJarDependency.setPath( this.dotcmsJar );
         dependencies.add( dotcmsJarDependency );
+
+        //Track the time
+        long startDependenciesChanges = System.currentTimeMillis();
 
         for ( Dependency dependency : dependencies ) {
 
@@ -239,50 +249,60 @@ public class PackagerTask extends JarJarTask {
 
             } else {
 
-                try {
+                if ( !isSkipDependenciesReplacement() ) {//This can be use for testing purposes
 
-                    EntryStruct struct = new EntryStruct();
+                    try {
 
-                    //Reading the file to check
-                    FileInputStream inputStream = new FileInputStream( filePath );
-                    struct.data = IOUtils.toByteArray( inputStream );
-                    struct.name = filePath;
-                    struct.time = new Date().getTime();
+                        EntryStruct struct = new EntryStruct();
 
-                    //Apply the rules to the given structure
-                    resourceRewriter.process( struct );
+                        //Reading the file to check
+                        FileInputStream inputStream = new FileInputStream( filePath );
+                        struct.data = IOUtils.toByteArray( inputStream );
+                        struct.name = filePath;
+                        struct.time = new Date().getTime();
 
-                    //Apply the results to the file
-                    FileOutputStream outputStream = new FileOutputStream( new File( filePath ) );
-                    outputStream.write( struct.data );
-                    outputStream.close();
+                        //Apply the rules to the given structure
+                        resourceRewriter.process( struct );
 
-                    //Reading the file to check
-                    /*FileInputStream inputStream = new FileInputStream( filePath );
-                    String fileContent = IOUtils.toString( inputStream );
+                        //Apply the results to the file
+                        FileOutputStream outputStream = new FileOutputStream( new File( filePath ) );
+                        outputStream.write( struct.data );
+                        outputStream.close();
 
-                    log( "Searching on " + filePath + " for packages strings." );
+                        //Reading the file to check
+                        /*FileInputStream inputStream = new FileInputStream( filePath );
+                        String fileContent = IOUtils.toString( inputStream );
 
-                    for ( Rule rule : rulesToApply.values() ) {
-                        PackagerWildcard wildcard = new PackagerWildcard( rule );
-                        fileContent = wildcard.replace( fileContent );
+                        log( "Searching on " + filePath + " for packages strings." );
+
+                        for ( Rule rule : rulesToApply.values() ) {
+                            PackagerWildcard wildcard = new PackagerWildcard( rule );
+                            fileContent = wildcard.replace( fileContent );
+                        }
+
+                        BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
+                        writer.write( fileContent );
+                        writer.close();*/
+
+                    } catch ( FileNotFoundException e ) {
+                        log( "File " + filePath + " not found.", e, Project.MSG_ERR );
+                        //throw new BuildException( "File " + filePath + " not found.", e );
+                    } catch ( IOException e ) {
+                        log( "Error checking and/or modifying " + filePath + ".", e, Project.MSG_ERR );
+                        //throw new BuildException( "Error checking and/or modifying " + filePath + ".", e );
                     }
 
-                    BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
-                    writer.write( fileContent );
-                    writer.close();*/
-
-                } catch ( FileNotFoundException e ) {
-                    log( "File " + filePath + " not found.", e, Project.MSG_ERR );
-                    //throw new BuildException( "File " + filePath + " not found.", e );
-                } catch ( IOException e ) {
-                    log( "Error checking and/or modifying " + filePath + ".", e, Project.MSG_ERR );
-                    //throw new BuildException( "Error checking and/or modifying " + filePath + ".", e );
                 }
             }
         }
 
+        //Log the time
+        trackTime( "Changes applied to Dependencies!!", startDependenciesChanges );
+
         if ( !isSkipJpsFiles() ) {//This can be use for testing purposes
+
+            //Track the time
+            long startJSPsChanges = System.currentTimeMillis();
 
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //APPLY THE SAME RULES TO JSP's UNDER THE DOTCMS FOLDER
@@ -293,32 +313,80 @@ public class PackagerTask extends JarJarTask {
             log( "-----------------------------------------" );
             log( "Updating JSP's" );
 
+            /*
+             The faster way to replacing content on the jsp files is for sure executing shell commands.
+             The combination of find and perl do the job, but in order to make it work more efficiently we need to use the multiple replace ('s/op1/np1/g;s/op2/np2/g;...'),
+              replacing rule by rule is very slow.
+             BTW, we must use chunks of rules to replace, sending all of them with cause a nice "java.io.IOException: error=7, Argument list too long"
+             */
+            int chunks = 200;
+            int i = 0;
+            String searchPatters = "";
             for ( Rule rule : rulesToApply.values() ) {
 
                 //Clean-up the pattern
                 String pattern = rule.getPattern();
                 pattern = pattern.replaceAll( "\\*\\*", "" );
+                String patternFinal = pattern.replaceAll( "\\.", "\\\\." );
 
                 //Clean up the result
                 String result = rule.getResult();
                 if ( result.lastIndexOf( "@" ) != -1 ) {
                     result = result.substring( 0, result.lastIndexOf( "@" ) );
                 }
+                String resultFinal = result.replaceAll( "\\.", "\\\\." );
 
-                String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/\"" + pattern + "/\"" + result + "/' {} \\;";
-                log( command );
+                if ( !searchPatters.isEmpty() ) {
+                    searchPatters += ";";
+                }
+                searchPatters += "s/((?<=\")|(?<=\\()|\\s)" + patternFinal + "/" + resultFinal + "/g";
+                i++;
 
-                try {
-                    Runtime.getRuntime().exec(
-                            new String[]{
-                                    "sh", "-l", "-c", command
-                            }
-                    );
-                } catch ( IOException e ) {
-                    log( "Error replacing JSP's Strings: " + pattern + ".", e, Project.MSG_ERR );
-                    //throw new BuildException( "Error replacing JSP's Strings: " + pattern + ".", e );
+                if ( i == chunks ) {
+                    executeCommand( jspFolderFile, searchPatters );
+                    i = 0;
+                    searchPatters = "";
                 }
             }
+
+            if ( i > 0 ) {
+                executeCommand( jspFolderFile, searchPatters );
+            }
+
+            //Log the time
+            trackTime( "Changes applied to JSPs!!", startJSPsChanges );
+        }
+
+        //Log the time
+        trackTime( "Finished Process!!", startProcessTime );
+    }
+
+    /**
+     * Finds and replaces in a given jsp folder a list of packages using regex
+     *
+     * @param jspFolderFile
+     * @param searchPatters
+     */
+    private void executeCommand ( File jspFolderFile, String searchPatters ) {
+
+        //find . -name '*.jsp' -exec perl -pi -e 's/((?<=")|(?<=\()|\s)org\.apache\.struts\.taglib\.tiles\./com\.dotcms\.repackage\.org\.apache\.struts\.taglib\.tiles\./' {} \;
+
+        //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/\"" + pattern + "/\"" + result + "/' {} \\;";
+        //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e 's/((?<=\")|(?<=\\()|\\s)" + patternFinal + "/" + resultFinal + "/g' {} \\;";
+        //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e '" + searchPatters + "' {} \\;";
+        String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e '" + searchPatters + "' {} +";
+        log( command );
+
+        try {
+            Process process = Runtime.getRuntime().exec(
+                    new String[]{
+                            "sh", "-l", "-c", command
+                    }
+            );
+            process.waitFor();
+        } catch ( Exception e ) {
+            log( "Error replacing JSP's Strings: " + searchPatters + ".", e, Project.MSG_ERR );
+            //throw new BuildException( "Error replacing JSP's Strings: " + pattern + ".", e );
         }
     }
 
@@ -412,6 +480,30 @@ public class PackagerTask extends JarJarTask {
 
         //Clean everything and get ready to start again
         super.reset();
+    }
+
+    /**
+     * Tracks processing times
+     *
+     * @param title
+     * @param startProcessTime
+     */
+    private void trackTime ( String title, long startProcessTime ) {
+
+        long milliseconds = System.currentTimeMillis() - startProcessTime;
+        DateFormat dateFormat = new SimpleDateFormat( "HH:mm:ss" );
+        dateFormat.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
+
+        Date date = new Date( milliseconds );
+        String formattedDate = dateFormat.format( date );
+
+        log( "" );
+        log( "" );
+        log( "-------------------------------------------------------" );
+        log( "-------------------------------------------------------" );
+        log( title + " - Elapsed time: " + formattedDate );
+        log( "-------------------------------------------------------" );
+        log( "-------------------------------------------------------" );
     }
 
     private void logJars ( Collection<File> jars ) {
