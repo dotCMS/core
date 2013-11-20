@@ -26,7 +26,8 @@ sql/cms/dotcms_postgresql.sql
 sql/cms/dotcms_h2.sql
 dotCMS/email_backups
 dotCMS/WEB-INF/felix/felix-cache
-
+dotCMS/WEB-INF/felix/osgi-extra-generated.conf
+dotCMS/WEB-INF/felix/osgi-extra.conf
 dotCMS/html/js/tinymce/jscripts/tiny_mce/*.gz
 
 _original
