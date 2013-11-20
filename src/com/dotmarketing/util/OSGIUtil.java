@@ -47,6 +47,7 @@ public class OSGIUtil {
     public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
     public String FELIX_EXTRA_PACKAGES_FILE;
+    public String FELIX_EXTRA_PACKAGES_FILE_GENERATED;
 
     private static OSGIUtil instance;
 
@@ -79,6 +80,7 @@ public class OSGIUtil {
 
         String felixDirectory = context.getServletContext().getRealPath( File.separator + "WEB-INF" + File.separator + "felix" );
         FELIX_EXTRA_PACKAGES_FILE = felixDirectory + File.separator + "osgi-extra.conf";
+        FELIX_EXTRA_PACKAGES_FILE_GENERATED = felixDirectory + File.separator + "osgi-extra-generated.conf";
 
         Logger.info( this, "Felix dir: " + felixDirectory );
         String bundleDir = felixDirectory + File.separator + "bundle";
@@ -256,11 +258,14 @@ public class OSGIUtil {
         			"org.osgi.service.startlevel," +
         			"org.osgi.service.url," +
         			"org.osgi.util.tracker," +
-        			"org.osgi.service.http");
+        			"org.osgi.service.http," +
+        			"javax.inject.Qualifier," +
+        			"javax.servlet.resources," +
+        			"javax.servlet;javax.servlet.http");
         	
         	BufferedWriter writer = null;
         	try {
-        	    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(FELIX_EXTRA_PACKAGES_FILE), "utf-8"));
+        	    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream( FELIX_EXTRA_PACKAGES_FILE_GENERATED ), "utf-8"));
         	    writer.write(bob.toString());
         	} catch (IOException ex) {
         		Logger.error(this, ex.getMessage(), ex);
@@ -268,9 +273,14 @@ public class OSGIUtil {
         	   try {writer.close();} catch (Exception ex) {Logger.error(this, ex.getMessage(), ex);}
         	}
         }
-                
+        
         //Reading the file with the extra packages
-        FileInputStream inputStream = new FileInputStream( FELIX_EXTRA_PACKAGES_FILE );
+        FileInputStream inputStream = null;
+        if(f.exists()){
+        	inputStream = new FileInputStream( FELIX_EXTRA_PACKAGES_FILE );
+        }else{
+        	inputStream = new FileInputStream( FELIX_EXTRA_PACKAGES_FILE_GENERATED );
+        }
         try {
             extraPackages = IOUtils.toString( inputStream );
         } finally {
