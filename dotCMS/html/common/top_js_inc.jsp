@@ -9,30 +9,28 @@
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
 <%@page import="com.liferay.portal.NoSuchUserException"%>
-<%@ page import="org.apache.struts.Globals"%>
+<%
+	HttpSession sess = request.getSession(false);
+	Locale locale = null;
+	User user = null;
+	try {
+		user = PortalUtil.getUser(request);
+	} catch (NoSuchUserException nsue) {
+	}
+	
 
-        <%
-            HttpSession sess = request.getSession(false);
-            Locale locale = null;
-            User user = null;
-            try {
-                user = PortalUtil.getUser(request);
-            } catch (NoSuchUserException nsue) {
-            }
-
-
-            if(sess != null){
-                 locale = (Locale) sess.getAttribute(Globals.LOCALE_KEY);
-            }
-            if (locale == null && user != null) {
-                // Locale should never be null except when the TCK tests invalidate the session
-                locale = user.getLocale();
-            }
-            if(locale ==null){
-                locale = PublicCompanyFactory.getDefaultCompany().getLocale();
-
-            }
-        %>
+	if(sess != null){
+	 	locale = (Locale) sess.getAttribute(org.apache.struts.Globals.LOCALE_KEY);
+	}
+	if (locale == null && user != null) {
+		// Locale should never be null except when the TCK tests invalidate the session
+		locale = user.getLocale();
+	}
+	if(locale ==null){
+		locale = PublicCompanyFactory.getDefaultCompany().getLocale();
+		
+	}
+%>
 
 	var n1Portlets = new Array();
 	var n2Portlets = new Array();
