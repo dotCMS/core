@@ -1434,4 +1434,31 @@ public interface ContentletAPI {
      * @return
      */
 	public List<Map<String, String>> getMostViewedContent(String structureVariableName,String startDate, String endDate, User user);
+	
+	/**
+	 * Tasks should be done after a content publish. It is intended to clean up properly the system state after
+	 * doing a content publish directly on db and not by calling the proper method conAPI.publish
+	 * 
+	 * @param contentlet
+	 * @param isNew whetever it is a new content. when true ContentService and ContentMapService is invalidated
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotContentletStateException
+	 * @throws DotStateException
+	 */
+	public void finishPublish(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+	
+	/**
+	 * Tasks should be done after a content publish. It is intended to clean up properly the system state after
+     * doing a content publish directly on db and not by calling the proper method conAPI.publish
+     * 
+	 * @param contentlet
+	 * @param isNew whetever it is a new content. when true ContentService and ContentMapService is invalidated
+	 * @param isNewVersion whetherver mod_date and mod_user should be updated
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotContentletStateException
+	 * @throws DotStateException
+	 */
+	public void finishPublish(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 }
