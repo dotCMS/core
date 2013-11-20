@@ -253,6 +253,8 @@ public class PushPublisher extends Publisher {
         boolean buildUsers = false;
         boolean buildCategories = false;
         boolean buildOSGIBundle = false;
+        boolean buildAsset = false;
+        List<Class> list = new ArrayList<Class>();
         for ( PublishQueueElement element : config.getAssets() ) {
             if ( element.getType().equals( "category" ) ) {
                 buildCategories = true;
@@ -260,25 +262,25 @@ public class PushPublisher extends Publisher {
                 buildOSGIBundle = true;
             } else if ( element.getType().equals( "user" ) ) {
                 buildUsers = true;
+            } else {
+                buildAsset = true;
             }
         }
 
-        List<Class> list = new ArrayList<Class>();
-
-        //The order is important cause
-        //I need to add all containers associated with templates
-
-        /**
-         * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
-         *
-         */
+        
         if ( buildUsers ) {
             list.add( UserBundler.class );
-        } else if ( buildCategories ) {
+        }
+        
+        if ( buildCategories ) {
             list.add( CategoryBundler.class );
-        } else if ( buildOSGIBundle ) {
+        }
+        
+        if ( buildOSGIBundle ) {
             list.add( OSGIBundler.class );
-        } else {
+        } 
+        
+        if ( buildAsset ) {
             list.add( DependencyBundler.class );
             list.add( HostBundler.class );
             list.add( ContentBundler.class );
@@ -299,8 +301,9 @@ public class PushPublisher extends Publisher {
             list.add( LanguageBundler.class );
             list.add( WorkflowBundler.class );
         }
-
+    
         return list;
+        
     }
 
 }
