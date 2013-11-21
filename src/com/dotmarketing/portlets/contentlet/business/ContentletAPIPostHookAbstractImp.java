@@ -21,8 +21,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
-import org.apache.lucene.queryParser.ParseException;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
