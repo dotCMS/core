@@ -1437,7 +1437,7 @@ public interface ContentletAPI {
 	
 	/**
 	 * Tasks should be done after a content publish. It is intended to clean up properly the system state after
-	 * doing a content publish directly on db and not by calling the proper method conAPI.publish
+	 * doing a content publish directly on db or versionableAPI and not by calling the proper method conAPI.publish
 	 * 
 	 * @param contentlet
 	 * @param isNew whetever it is a new content. when true ContentService and ContentMapService is invalidated
@@ -1446,11 +1446,11 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException
 	 * @throws DotStateException
 	 */
-	public void finishPublish(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+	public void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 	
 	/**
 	 * Tasks should be done after a content publish. It is intended to clean up properly the system state after
-     * doing a content publish directly on db and not by calling the proper method conAPI.publish
+     * doing a content publish directly on db or versionableAPI and not by calling the proper method conAPI.publish
      * 
 	 * @param contentlet
 	 * @param isNew whetever it is a new content. when true ContentService and ContentMapService is invalidated
@@ -1460,5 +1460,5 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException
 	 * @throws DotStateException
 	 */
-	public void finishPublish(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+	public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 }

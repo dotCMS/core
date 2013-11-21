@@ -571,14 +571,14 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 	}
 
 	@Override
-	public boolean finishPublish(Contentlet contentlet, boolean isNew)
+	public boolean publishAssociated(Contentlet contentlet, boolean isNew)
 	        throws DotSecurityException, DotDataException,
 	        DotContentletStateException, DotStateException {
 	    return true;
 	}
 	
 	@Override
-	public boolean finishPublish(Contentlet contentlet, boolean isNew,
+	public boolean publishAssociated(Contentlet contentlet, boolean isNew,
 	        boolean isNewVersion) throws DotSecurityException,
 	        DotDataException, DotContentletStateException, DotStateException {
 	    return true;
