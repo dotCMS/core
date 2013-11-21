@@ -106,6 +106,7 @@ import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -2532,6 +2533,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 						LiveCache.getPrimaryGroup() + "_" + host.getIdentifier());
 
 
+				String velocityResourcePath = "working/" + contentlet.getIdentifier() + "_" + contentlet.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION","content");
+				if(CacheLocator.getVeloctyResourceCache().isMiss(velocityResourcePath))
+					CacheLocator.getVeloctyResourceCache().remove(velocityResourcePath);
+				if(contentlet.isLive()){
+					velocityResourcePath = "live/" + contentlet.getIdentifier() + "_" + contentlet.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION","content");
+					if(CacheLocator.getVeloctyResourceCache().isMiss(velocityResourcePath))
+						CacheLocator.getVeloctyResourceCache().remove(velocityResourcePath);
+				}
 
 			} catch (Exception e) {//DOTCMS-6946
             	if(createNewVersion && workingContentlet!= null && UtilMethods.isSet(workingContentlet.getInode())){
