@@ -2212,32 +2212,32 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
     @Override
-    public void finishPublish(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException {
+    public void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException {
         for(ContentletAPIPreHook pre : preHooks){
-            boolean preResult = pre.finishPublish(contentlet,isNew);
+            boolean preResult = pre.publishAssociated(contentlet,isNew);
             if(!preResult){
                 Logger.error(this, "The following prehook failed " + pre.getClass().getName());
                 throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
             }
         }
-        conAPI.finishPublish(contentlet,isNew);
+        conAPI.publishAssociated(contentlet,isNew);
         for(ContentletAPIPostHook post : postHooks){
-            post.finishPublish(contentlet,isNew);
+            post.publishAssociated(contentlet,isNew);
         }
     }
 
     @Override
-    public void finishPublish(Contentlet contentlet, boolean isNew,  boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException {
+    public void publishAssociated(Contentlet contentlet, boolean isNew,  boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException {
         for(ContentletAPIPreHook pre : preHooks){
-            boolean preResult = pre.finishPublish(contentlet,isNew,isNewVersion);
+            boolean preResult = pre.publishAssociated(contentlet,isNew,isNewVersion);
             if(!preResult){
                 Logger.error(this, "The following prehook failed " + pre.getClass().getName());
                 throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
             }
         }
-        conAPI.finishPublish(contentlet,isNew,isNewVersion);
+        conAPI.publishAssociated(contentlet,isNew,isNewVersion);
         for(ContentletAPIPostHook post : postHooks){
-            post.finishPublish(contentlet,isNew,isNewVersion);
+            post.publishAssociated(contentlet,isNew,isNewVersion);
         }
     }
 }

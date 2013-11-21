@@ -449,13 +449,13 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
     }
     
     @Override
-    public void finishPublish(Contentlet contentlet, boolean isNew)
+    public void publishAssociated(Contentlet contentlet, boolean isNew)
             throws DotSecurityException, DotDataException,
             DotContentletStateException, DotStateException {
         
     }
     @Override
-    public void finishPublish(Contentlet contentlet, boolean isNew,
+    public void publishAssociated(Contentlet contentlet, boolean isNew,
             boolean isNewVersion) throws DotSecurityException,
             DotDataException, DotContentletStateException, DotStateException {        
     }

@@ -1215,8 +1215,8 @@ public interface ContentletAPIPreHook {
      */
 	public boolean getMostViewedContent(String structureVariableName, String startDate, String endDate, User user);
 
-    public boolean finishPublish(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+    public boolean publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
-    public boolean finishPublish(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+    public boolean publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
 }

@@ -328,7 +328,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getVersionableAPI().setLive(contentlet);
             //APILocator.getVersionableAPI().setLocked(contentlet.getIdentifier(), false, user);
 
-            finishPublish(contentlet, false);
+            publishAssociated(contentlet, false);
 
         }
     }
@@ -356,13 +356,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }*/
 
-    public void finishPublish(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException,
+    public void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException,
             DotContentletStateException, DotStateException {
-        finishPublish(contentlet, isNew, true);
+        publishAssociated(contentlet, isNew, true);
 
     }
 
-    public void finishPublish(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException,
+    public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException,
     DotContentletStateException, DotStateException {
 
         if (!contentlet.isWorking())
@@ -2483,7 +2483,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				}
 				if (contentlet.isLive()) {
-				    finishPublish(contentlet, isNewContent, createNewVersion);
+				    publishAssociated(contentlet, isNewContent, createNewVersion);
 				} else {
 				    if (!isNewContent) {
 				        ContentletServices.invalidate(contentlet, true);
