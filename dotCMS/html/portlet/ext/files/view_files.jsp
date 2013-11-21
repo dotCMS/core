@@ -108,7 +108,7 @@ function submitfmDelete() {
 }
 
 function addAsset() {
-	window.location.href = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="edit" /><portlet:param name="referer" value="<%=referer%>" /></portlet:actionURL>';
+	showDotCMSSystemMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Legacy-File-Info-Message")) %>");
 }
 
 function checkAll() {
