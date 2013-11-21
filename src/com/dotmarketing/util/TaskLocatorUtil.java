@@ -65,6 +65,7 @@ import com.dotmarketing.startup.runonce.Task00950AddTablePublishingEndpoint;
 import com.dotmarketing.startup.runonce.Task01000LinkChequerTable;
 import com.dotmarketing.startup.runonce.Task01005TemplateThemeField;
 import com.dotmarketing.startup.runonce.Task01015AddPublishExpireDateToIdentifier;
+import com.dotmarketing.startup.runonce.Task01016AddStructureExpireFields;
 import com.dotmarketing.startup.runonce.Task01020CreateDefaultWorkflow;
 import com.dotmarketing.startup.runonce.Task01030AddSiteSearchAuditTable;
 import com.dotmarketing.startup.runonce.Task01035FixTriggerVarLength;
@@ -75,6 +76,7 @@ import com.dotmarketing.startup.runonce.Task01060CreatePushPublishPushedAssets;
 import com.dotmarketing.startup.runonce.Task01065IndexOnPublishingQueueAuditStatus;
 import com.dotmarketing.startup.runonce.Task01070BundleNameDropUnique;
 import com.dotmarketing.startup.runonce.Task01075AddModDateToWorkflowScheme;
+
 
 public class TaskLocatorUtil {
 
@@ -142,6 +144,7 @@ public class TaskLocatorUtil {
         ret.add(Task01000LinkChequerTable.class);
         ret.add(Task01005TemplateThemeField.class);
         ret.add(Task01015AddPublishExpireDateToIdentifier.class);
+        ret.add(Task01016AddStructureExpireFields.class);
         ret.add(Task01020CreateDefaultWorkflow.class);
         ret.add(Task01030AddSiteSearchAuditTable.class);
         ret.add(Task01035FixTriggerVarLength.class);
