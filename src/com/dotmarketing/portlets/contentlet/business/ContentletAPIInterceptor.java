@@ -2210,4 +2210,34 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
+
+    @Override
+    public void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.publishAssociated(contentlet,isNew);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        conAPI.publishAssociated(contentlet,isNew);
+        for(ContentletAPIPostHook post : postHooks){
+            post.publishAssociated(contentlet,isNew);
+        }
+    }
+
+    @Override
+    public void publishAssociated(Contentlet contentlet, boolean isNew,  boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.publishAssociated(contentlet,isNew,isNewVersion);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        conAPI.publishAssociated(contentlet,isNew,isNewVersion);
+        for(ContentletAPIPostHook post : postHooks){
+            post.publishAssociated(contentlet,isNew,isNewVersion);
+        }
+    }
 }
