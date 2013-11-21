@@ -197,7 +197,7 @@ public class H2CacheLoader implements CacheLoader{
 				JdbcConnectionPool cp = JdbcConnectionPool.create(connectURI, "sa", "sa");
 				cp.setMaxConnections(1000);
 				cp.setLoginTimeout(3);
-				conPool.put(x, cp);
+				addConPoolToPoolMap(x, cp);
 				//make sure we can connect 
 				conn = createConnection(true,x);
 			}catch (Exception e) {
@@ -216,6 +216,10 @@ public class H2CacheLoader implements CacheLoader{
 			File trashDir = new File(ConfigUtils.getDynamicContentPath() + File.separator + "trash");
 			FileUtil.deltree(trashDir, false);
 		}
+	}
+	
+	private synchronized void addConPoolToPoolMap(int dbNumber,JdbcConnectionPool cp){
+		conPool.put(dbNumber, cp);
 	}
 	
 	private synchronized void addDbsInited(){
