@@ -21,9 +21,28 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.VelocityUtil;
 
 public class Task00768CreateTagStorageFieldOnHostStructure implements StartupTask {
+    
+    protected void upgradeStructureFields() throws DotDataException {
+        try { 
+            DotConnect dc=new DotConnect();
+            if(DbConnectionFactory.isOracle()) {
+                dc.executeStatement("alter table structure add expire_date_var varchar2(255)");
+                dc.executeStatement("alter table structure add publish_date_var varchar2(255)");
+            }
+            else {
+                dc.executeStatement("alter table structure add expire_date_var varchar(255)");
+                dc.executeStatement("alter table structure add publish_date_var varchar(255)");
+            }
+        }
+        catch(Exception ex) {
+            throw new DotDataException(ex.getMessage(),ex);
+        }
+    }
 
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		
+	    upgradeStructureFields();
+	    
 		Structure structure = StructureFactory.getStructureByVelocityVarName("Host");
 		String structureInode = structure.getInode();
 		
