@@ -24,6 +24,7 @@ public class PackagerTask extends JarJarTask {
     private String dotcmsJar;
     private String jspFolder;
     private String dotVersion;
+    private String onlyJar;
     private boolean multipleJars;
 
     private boolean generateRulesFromParentFolder;
@@ -192,6 +193,12 @@ public class PackagerTask extends JarJarTask {
 
                 //Repackage jar by jar
                 for ( File jar : toTransform ) {
+
+                    //This can be use for testing purposes
+                    if ( getOnlyJar() != null && !getOnlyJar().isEmpty()
+                            && !getOnlyJar().equals( jar.getName() ) ) {
+                        continue;
+                    }
 
                     //Repackaging this single jar
                     Collection<File> transform = new ArrayList<File>();
@@ -542,6 +549,14 @@ public class PackagerTask extends JarJarTask {
 
     public void setDotVersion ( String dotVersion ) {
         this.dotVersion = dotVersion;
+    }
+
+    public String getOnlyJar () {
+        return onlyJar;
+    }
+
+    public void setOnlyJar ( String onlyJar ) {
+        this.onlyJar = onlyJar;
     }
 
     public String getOutputFolder () {
