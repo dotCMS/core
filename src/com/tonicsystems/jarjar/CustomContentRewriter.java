@@ -1,7 +1,7 @@
 package com.tonicsystems.jarjar;
 
 import com.tonicsystems.jarjar.ext_util.EntryStruct;
-import com.tonicsystems.jarjar.resource.LineRewriter;
+import com.tonicsystems.jarjar.resource.ContentRewriter;
 import com.tonicsystems.jarjar.resource.MatchableRule;
 
 import java.util.Collection;
@@ -12,11 +12,11 @@ import java.util.List;
  * @author Jonathan Gamba
  *         Date: 11/15/13
  */
-public class CustomLineRewriter implements LineRewriter {
+public class CustomContentRewriter implements ContentRewriter {
 
     private final List<MatchableRule> rules = new LinkedList<MatchableRule>();
 
-    public CustomLineRewriter ( Collection<Rule> ruleList ) {
+    public CustomContentRewriter ( Collection<Rule> ruleList ) {
         for ( Rule rule : ruleList ) {
             rules.add( new MatchableRule( rule ) );
         }
@@ -29,14 +29,12 @@ public class CustomLineRewriter implements LineRewriter {
                 && !struct.name.endsWith( "MANIFEST.MF" );
     }
 
-    public String replaceLine ( String line ) {
+    public String replace ( String content ) {
+        String replacement = content;
         for ( MatchableRule rule : rules ) {
-            String replacement = rule.replace( line );
-            if ( !replacement.equals( line ) ) {
-                return replacement;
-            }
+            replacement = rule.replace( replacement );
         }
-        return line;
+        return replacement;
     }
 
     @Override
