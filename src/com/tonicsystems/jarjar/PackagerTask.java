@@ -138,6 +138,13 @@ public class PackagerTask extends JarJarTask {
             if ( name.lastIndexOf( "." ) != -1 ) {
                 //Get the package of the class (from my.package.myClassName to my.package)
                 packageName = name.substring( 0, name.lastIndexOf( "." ) );
+
+                if ( !packageName.contains( "." ) && packageName.equals( "common" ) ) {
+                    /*
+                     FIXME: We don't want something like common.**, a very small an common package, replacing this is dangerous
+                     */
+                    continue;
+                }
             } else {
                 //On the root??, no package??
                 continue;
@@ -208,7 +215,7 @@ public class PackagerTask extends JarJarTask {
         //APPLY THE SAME RULES TO GIVEN FILES,JAR's,  XML's, .PROPERTIES, ETC...
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        ResourceRewriter resourceRewriter = new ResourceRewriter( new CustomLineRewriter( rulesToApply.values() ), initialVerbose, initialRenameServices );
+        ResourceRewriter resourceRewriter = new ResourceRewriter( new CustomContentRewriter( rulesToApply.values() ), initialVerbose, initialRenameServices );
 
         //Add the dotcms jar as a dependency we need to check and modify
         Dependency dotcmsJarDependency = new Dependency();
@@ -268,21 +275,6 @@ public class PackagerTask extends JarJarTask {
                         FileOutputStream outputStream = new FileOutputStream( new File( filePath ) );
                         outputStream.write( struct.data );
                         outputStream.close();
-
-                        //Reading the file to check
-                        /*FileInputStream inputStream = new FileInputStream( filePath );
-                        String fileContent = IOUtils.toString( inputStream );
-
-                        log( "Searching on " + filePath + " for packages strings." );
-
-                        for ( Rule rule : rulesToApply.values() ) {
-                            PackagerWildcard wildcard = new PackagerWildcard( rule );
-                            fileContent = wildcard.replace( fileContent );
-                        }
-
-                        BufferedWriter writer = new BufferedWriter( new FileWriter( filePath ) );
-                        writer.write( fileContent );
-                        writer.close();*/
 
                     } catch ( FileNotFoundException e ) {
                         log( "File " + filePath + " not found.", e, Project.MSG_ERR );

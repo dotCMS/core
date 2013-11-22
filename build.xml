@@ -1168,11 +1168,11 @@
         <delete dir="${tomcat7.home}/webapps/ROOT"/>
     </target>
 
-    <target name="deploy-war-tomcat7" depends="undeploy-war-tomcat7, clone-pull-tomcat7, war">
+    <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war">
         <antcall target="move-war-tomcat7"/>
     </target>
 
-    <target name="move-war-tomcat7">
+    <target name="move-war-tomcat7" depends="undeploy-war-tomcat7">
         <copy todir="${tomcat7.home}/lib/">
             <fileset dir="libs/buildlibs/">
                 <include name="log4j-1.2.16.jar"/>
