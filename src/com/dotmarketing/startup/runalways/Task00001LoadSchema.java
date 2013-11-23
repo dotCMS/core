@@ -24,19 +24,21 @@ public class Task00001LoadSchema implements StartupTask {
 
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		Logger.info(this.getClass(), "Loading schema");
-		String dbType = DbConnectionFactory.getDBType();
 		String schemaFile = null;
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.POSTGRESQL)) {
+		if (DbConnectionFactory.isPostgres()) {
 			schemaFile = "postgres.sql";
 		}
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.MSSQL)) {
+		if (DbConnectionFactory.isMsSql()) {
 			schemaFile = "mssql.sql";
 		}
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.MYSQL)) {
+		if (DbConnectionFactory.isMySql()) {
 			schemaFile = "mysql.sql";
 		}
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.ORACLE)) {
+		if (DbConnectionFactory.isOracle()) {
 			schemaFile = "oracle.sql";
+		}
+		if(DbConnectionFactory.isH2()) {
+		    schemaFile = "h2.sql";
 		}
 		StringBuilder schema = new StringBuilder();
 		int processedStatementCount = 0;
@@ -63,7 +65,7 @@ public class Task00001LoadSchema implements StartupTask {
 			// Close the input stream
 			in.close();
 			String schemaString = schema.toString();
-			if (dbType.equalsIgnoreCase(DbConnectionFactory.MYSQL)) {
+			if (DbConnectionFactory.isMySql()) {
 				schemaString = schema.toString().toLowerCase();
 			}
 			List<String> tokens = SQLUtil.tokenize(schemaString);
@@ -71,7 +73,7 @@ public class Task00001LoadSchema implements StartupTask {
 
 			DotConnect dc = new DotConnect();
 			java.sql.Connection con = DbConnectionFactory.getConnection();
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+			if(DbConnectionFactory.isMySql()){
 				dc.executeStatement("SET storage_engine=INNODB", con);
 			}
 			for (String token : tokens) {

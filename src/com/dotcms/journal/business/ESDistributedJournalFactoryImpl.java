@@ -53,15 +53,15 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             serversIds = new String[] { serverId };
         }
 
-        if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+        if (DbConnectionFactory.isMsSql()) {
             TIMESTAMPSQL = "GETDATE()";
-        } else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+        } else if (DbConnectionFactory.isOracle()) {
             if(DbConnectionFactory.getDbVersion() >= 10)
                REINDEXENTRIESSELECTSQL = ORACLEREINDEXENTRIESSELECTSQL;
             else
                 REINDEXENTRIESSELECTSQL = "SELECT * FROM table(CAST(load_records_to_index(?, ?)))";
             TIMESTAMPSQL = "CAST(SYSTIMESTAMP AS TIMESTAMP)";
-        } else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)) {
+        } else if (DbConnectionFactory.isMySql()) {
             REINDEXENTRIESSELECTSQL = MYSQLREINDEXENTRIESSELECTSQL;
 
         }
@@ -256,16 +256,16 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         if(!add)
             sign = "-";
 
-        if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))
+        if (DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2())
             reindexJournalCleanupSql.append("DELETE FROM dist_reindex_journal " +
-            		" WHERE time_entered < DATEADD("+ type.toString() +", "+ sign + "" + time +", GETDATE()) ");
-        else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))
+            		" WHERE time_entered < DATEADD("+ type.toString() +", "+ sign + "" + time +", "+DbConnectionFactory.getDBDateTimeFunction()+") ");
+        else if(DbConnectionFactory.isMySql())
             reindexJournalCleanupSql.append("DELETE FROM dist_reindex_journal " +
             		" WHERE time_entered < DATE_ADD(NOW(), INTERVAL "+ sign + "" + time +" " + type.toString()+") ");
-        else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL))
+        else if(DbConnectionFactory.isPostgres())
             reindexJournalCleanupSql.append("DELETE FROM dist_reindex_journal " +
             		" WHERE time_entered < NOW() "+ sign + " INTERVAL '"+ time +" " + type.toString()  +"' ");
-        else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+        else if(DbConnectionFactory.isOracle())
             reindexJournalCleanupSql.append("DELETE FROM dist_reindex_journal " +
             		" WHERE CAST(time_entered AS TIMESTAMP) <  CAST(SYSTIMESTAMP "+ sign +
             		     "  INTERVAL '"+time+"' "+ type.toString() + " AS TIMESTAMP)");
@@ -277,7 +277,6 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
         reindexJournalCleanupSql.append(" AND serverid = ?");
 
-        Connection conn = null;
         DotConnect dc = new DotConnect();
         dc.setSQL(reindexJournalCleanupSql.toString());
         dc.addParam(serverId);
@@ -373,6 +372,11 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                 dc.setSQL("load_records_to_index @server_id='"+serverId+"', @records_to_fetch=50");
                 dc.setForceQuery(true);
                 results = dc.loadObjectResults(con);
+            } if(DbConnectionFactory.isH2()) {
+                dc.setSQL("call load_records_to_index(?,?)");
+                dc.addParam(serverId);
+                dc.addParam(50);
+                results = dc.loadObjectResults();
             } else {
                 dc.setSQL(REINDEXENTRIESSELECTSQL);
                 dc.addParam(serverId);
@@ -548,7 +552,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         private String myCommit = "unlock tables";
 
         private String msLock = "SELECT * FROM dist_lock WITH (XLOCK)";
-
+        private String h2Lock = "select * from dist_lock for update";
 
         private String oraClusterLock = "LOCK TABLE DIST_JOURNAL IN EXCLUSIVE MODE";
         private String pgLock = "lock table DIST_JOURNAL;";
@@ -560,8 +564,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         Connection conn1 = null;
 
         public void lockTable() throws SQLException {
-            if (DbConnectionFactory.getDBType().equals(
-                    DbConnectionFactory.MYSQL)) {
+            if (DbConnectionFactory.isMySql()) {
                 // We need another connection, to get around mysqls limitations
                 // with locks (the need to lock all or no tables in a query)
                 conn1 = DbConnectionFactory.getDataSource().getConnection();
@@ -571,32 +574,34 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             }
 
 
-            if (DbConnectionFactory.getDBType().equals(
-                    DbConnectionFactory.ORACLE)) {
+            if (DbConnectionFactory.isOracle()) {
                 conn1.setAutoCommit(false);
                 Statement s = conn1.createStatement();
                 s.execute(oraClusterLock);
             }
 
-            if (DbConnectionFactory.getDBType().equals(
-                    DbConnectionFactory.MSSQL)) {
+            if (DbConnectionFactory.isMsSql()) {
                 conn1.setAutoCommit(false);
                 Statement s = conn1.createStatement();
                 s.execute(msLock);
             }
 
-            if (DbConnectionFactory.getDBType().equals(
-                    DbConnectionFactory.POSTGRESQL)) {
+            if (DbConnectionFactory.isPostgres()) {
                 conn1.setAutoCommit(false);
                 Statement s = conn1.createStatement();
                 s.execute(pgLock);
+            }
+            
+            if (DbConnectionFactory.isH2()) {
+                conn1.setAutoCommit(false);
+                Statement s = conn1.createStatement();
+                s.execute(h2Lock);
             }
 
         }
 
         public void unlockTable() throws SQLException {
-            if (DbConnectionFactory.getDBType().equals(
-                    DbConnectionFactory.MYSQL)) {
+            if (DbConnectionFactory.isMySql()) {
                 Statement s = conn1.createStatement();
                 s.execute(myCommit);
                 conn1.commit();

@@ -273,7 +273,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		} else {
 
 			r = role;
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+			if(DbConnectionFactory.isMsSql()){
 				String roleKey= VelocityUtil.convertToVelocityVariable(r.getName());
 				DotConnect dc = new DotConnect();
 				dc.setSQL("select count(*) as total from cms_role where role_key =?");
