@@ -78,6 +78,7 @@ public class ClusterResource extends WebResource {
 //        	jsonClusterStatusObject.put( "sentMessages", channel.getSentMessages());
 //        }
 
+
         return responseResource.response( jsonClusterStatusObject.toString() );
 
     }
@@ -236,6 +237,7 @@ public class ClusterResource extends WebResource {
      * @throws JSONException
      */
     @POST
+
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Path ("/updateESConfigProperties/{params:.*}")
     @Produces ("application/json")
@@ -243,6 +245,7 @@ public class ClusterResource extends WebResource {
 
 //        InitDataObject initData = init( params, true, request, false );
 //        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+
 
         JSONObject clusterProps = new JSONObject();
         Iterator<String> keys = DotConfig.getKeys();
@@ -302,6 +305,7 @@ public class ClusterResource extends WebResource {
 
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         return responseResource.response( );
+
 
     }
 
