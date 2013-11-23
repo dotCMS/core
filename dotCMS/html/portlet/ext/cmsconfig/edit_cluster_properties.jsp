@@ -97,20 +97,11 @@
 
 		deferred = dojo.xhrGet(xhrArgs);
 
-<<<<<<< HEAD
 		var html = "<table class='listingTable' style='width:90%'>";
 
 		for(var key in properties){
 			var value = properties[key];
 			html += "<tr><td class='left_td' style='font-size:11px'>"+key+"</td><td><input style='width: 95%; font-size:11px' type='text' data-dojo-type='dijit/form/TextBox' id='"+key+"+' name='"+key+"+' value="+value+"></input></td></tr>"
-=======
-		var html = "<table class='listingTable'>";
-
-		for(var key in properties){
-			var value = properties[key];
-			html += "<tr><td class='left_td'>"+key+"</td><td><input style='width: 95%' type='text' data-dojo-type='dijit/form/TextBox' name='"+key+"+' value="+value+"></input></td></tr>"
->>>>>>> 22b1a2c18ccade61c0bf18fcf210d0b88c6689f9
-
 		}
 
 		html += "</table>"
