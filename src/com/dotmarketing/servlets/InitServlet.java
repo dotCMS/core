@@ -3,8 +3,10 @@ package com.dotmarketing.servlets;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
@@ -27,6 +29,10 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.lucene.search.BooleanQuery;
 import org.quartz.SchedulerException;
 
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.business.ClusterFactory;
+import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
@@ -80,7 +86,7 @@ public class InitServlet extends HttpServlet {
     	new ESClient().shutDownNode();
         Logger.info(this, "dotCMS shutting down");
 
-        
+
     }
 
     public static Date startupDate;
@@ -96,9 +102,9 @@ public class InitServlet extends HttpServlet {
         // Config class Initialization
 //        Config.initializeConfig();
 //        com.dotmarketing.util.Config.setMyApp(config.getServletContext());
-        
-       
-		
+
+
+
         Company company = PublicCompanyFactory.getDefaultCompany();
         TimeZone companyTimeZone = company.getTimeZone();
         TimeZone.setDefault(companyTimeZone);
@@ -118,49 +124,92 @@ public class InitServlet extends HttpServlet {
         Logger.info(this, "   Using dialect : " + _dailect);
         Logger.info(this, "   Company Name  : " + _companyId);
 		if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
-				
+
 		Logger.info(this, "   Clustering    : Enabled");
 		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
 				try{
-					((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();	
+					((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
 		Logger.info(this, "     Ping Sent");
 				}
 				catch(Exception e){
 					Logger.error(this, "   Ping Error: " + e.getMessage());
-					
+
 				}
 			}
 			else{
 				Logger.info(this, "   Clustering    : Disabled");
 			}
-        
-        
-        
+
+
+		// Clustering
+		try {
+			ClusterFactory.generateClusterId();
+		} catch (DotDataException e) {
+			Logger.error(getClass(), "Unable to generate Cluster ID", e);
+		}
+
+		try {
+
+			ServerAPI serverAPI = APILocator.getServerAPI();
+			String serverId = serverAPI.readServerId();
+			Server server = serverAPI.getServer(serverId);
+
+			if(!UtilMethods.isSet(serverId) || server==null)  {
+				InetAddress addr = InetAddress.getLocalHost();
+		        // Get IP Address
+		        byte[] ipAddr = addr.getAddress();
+		        addr = InetAddress.getByAddress(ipAddr);
+		        String address = addr.getHostAddress();
+		        // Get hostname
+		        String hostname = addr.getHostName();
+		        server = new Server();
+		        server.setIpAddress(address);
+		        serverAPI.saveServer(server);
+		        try {
+		        	serverAPI.writeServerId(server.getServerId().getBytes());
+				} catch (IOException e) {
+					Logger.error(ServerAPIImpl.class, "Could not write Server ID to file system" , e);
+				}
+
+		        serverId = server.getServerId();
+			}
+
+	        serverAPI.createServerUptime(serverId);
+
+		} catch (UnknownHostException e3) {
+			Logger.error(getClass(), "Could not get Local Host", e3);
+		} catch (DotDataException e) {
+			Logger.error(getClass(), "Could not save Server to DB", e);
+		}
+
+		// END Clustering
+
+
         Logger.info(this, "");
-        
+
         //Check and start the ES Content Store
         APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
         Logger.info(this, "");
-	
+
 		Logger.info(this, "");
-			
+
         String classPath = config.getServletContext().getRealPath("WEB-INF/lib");
-    
-    	new PluginLoader().loadPlugins(config.getServletContext().getRealPath("."),classPath);        
-    
-        
-        
-        
-        
-        
-        
-        
-        
+
+    	new PluginLoader().loadPlugins(config.getServletContext().getRealPath("."),classPath);
+
+
+
+
+
+
+
+
+
         int mc = Config.getIntProperty("lucene_max_clause_count", 4096);
-        BooleanQuery.setMaxClauseCount(mc); 
-        
+        BooleanQuery.setMaxClauseCount(mc);
+
         ImportAuditUtil.voidValidateAuditTableOnStartup();
-       
+
         // Set up the database
 //        try {
 //            DotCMSInitDb.InitializeDb();
@@ -168,7 +217,7 @@ public class InitServlet extends HttpServlet {
 //            throw new ServletException(e1);
 //        }
 
-      
+
 
         // set the application context for use all over the site
         Logger.debug(this, "");
@@ -234,14 +283,14 @@ public class InitServlet extends HttpServlet {
 			Logger.fatal(InitServlet.class, e.getMessage(), e);
 			throw new ServletException("Unable to initialize system host", e);
 		}
-		
+
 		try {
 			APILocator.getFolderAPI().findSystemFolder();
 		} catch (DotDataException e1) {
 			Logger.error(InitServlet.class, e1.getMessage(), e1);
 			throw new ServletException("Unable to initialize system folder", e1);
 		}
-		
+
 		if(Config.getBooleanProperty("ESCALATION_ENABLE",false)) {
 		    EscalationThread.getInstace().start();
 		}
@@ -254,12 +303,12 @@ public class InitServlet extends HttpServlet {
 		} catch (DotHibernateException e1) {
 			Logger.error(InitServlet.class, e1.getMessage(), e1);
 		}
-        
-                
+
+
 			try {
-				MBeanServer mbs = ManagementFactory.getPlatformMBeanServer(); 
-				ObjectName name = new ObjectName("org.dotcms:type=Log4J"); 
-				Log4jConfig mbean = new Log4jConfig(); 
+				MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+				ObjectName name = new ObjectName("org.dotcms:type=Log4J");
+				Log4jConfig mbean = new Log4jConfig();
 				mbs.registerMBean(mbean, name);
 			} catch (MalformedObjectNameException e) {
 				Logger.debug(InitServlet.class,"MalformedObjectNameException: " + e.getMessage(),e);
@@ -271,16 +320,16 @@ public class InitServlet extends HttpServlet {
 				Logger.debug(InitServlet.class,"NotCompliantMBeanException: " + e.getMessage(),e);
 			} catch (NullPointerException e) {
 				Logger.debug(InitServlet.class,"NullPointerException: " + e.getMessage(),e);
-			}		
-			
-			
+			}
+
+
 			//Just get the Engine to make sure it gets inited on time before the first request
 			VelocityUtil.getEngine();
 
 
 
-			
-			
+
+
 
     }
 
