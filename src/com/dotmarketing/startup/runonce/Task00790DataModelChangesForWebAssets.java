@@ -47,7 +47,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 	private void containerTableChanges() throws DotDataException, SQLException {
 		DotConnect dc = new DotConnect();
 		String addStructure = "ALTER TABLE containers add structure_inode varchar(36)";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+		if(DbConnectionFactory.isOracle())
 		    addStructure=addStructure.replaceAll("varchar\\(", "varchar2\\(");
 		String addFK = "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode)";
 		String containerQuery = "Select * from tree where child in(Select inode from inode where type='containers') and " 
@@ -70,7 +70,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 	private void htmlpageTableChanges() throws SQLException, DotDataException {
 		DotConnect dc = new DotConnect();
 		String addtemplate = "ALTER TABLE htmlpage add template_id varchar(36)";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+		if(DbConnectionFactory.isOracle())
 		    addtemplate=addtemplate.replaceAll("varchar\\(", "varchar2\\(");
 		String addFK = "ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) references identifier(id)";
 		String htmlQuery = "Select * from tree where child in(Select inode from inode where type='htmlpage') and " 
@@ -95,7 +95,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 	private void triggerChanges() throws SQLException {
 		DotConnect dc = new DotConnect();
 		String trigger = "";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+		if(DbConnectionFactory.isPostgres()){
 		   trigger =   "CREATE OR REPLACE FUNCTION structure_host_folder_check() RETURNS trigger AS '\n" +
 								"DECLARE\n" +
 								   "folderInode varchar(36);\n" +
@@ -126,7 +126,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 					    		   "RETURN NULL;\n" +
 					    		"END\n" +
 					    	    "' LANGUAGE plpgsql;";
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		}else if(DbConnectionFactory.isOracle()){
 			trigger = "CREATE OR REPLACE TRIGGER structure_host_folder_trigger\n" +
 							   "BEFORE INSERT OR UPDATE ON structure\n" +
 							   "FOR EACH ROW\n" +
@@ -152,7 +152,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 							   			"END IF;\n" +
 							   	"END;\n" +
 							   	"/";
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		}else if(DbConnectionFactory.isMsSql()){
 			trigger = "ALTER TRIGGER structure_host_folder_trigger\n" +
 							   "ON structure\n" +
 							   "FOR INSERT, UPDATE AS\n" +
@@ -189,7 +189,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 	private void addTriggerToHTMLPage() throws SQLException {
 		DotConnect dc = new DotConnect();
 		String trigger="";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+		if(DbConnectionFactory.isPostgres()){
 			trigger = "CREATE OR REPLACE FUNCTION check_template_id()RETURNS trigger AS '\n" +
 			  		  "DECLARE\n" +        
 			  		  	  "templateId varchar(36);\n" +   
@@ -211,7 +211,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 			  		  "ON htmlpage\n" +
 			  		  "FOR EACH ROW\n" +
 			  		  "EXECUTE PROCEDURE check_template_id();";
-		} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		} else if(DbConnectionFactory.isMsSql()){
              trigger = "CREATE Trigger check_template_identifier\n" +
              		   "ON htmlpage\n" +
              		   "FOR INSERT,UPDATE AS\n" +  
@@ -233,7 +233,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
              		   "END\n"+ 
              		   "fetch next from htmlpage_cur_Inserted into @templateId\n" +
              		   "END;"; 			
-		} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		} else if(DbConnectionFactory.isOracle()){
 			trigger = "CREATE OR REPLACE TRIGGER  check_template_identifier \n" + 
 			          "BEFORE INSERT OR UPDATE ON htmlpage\n" + 
 				      "FOR EACH ROW\n" +
@@ -284,7 +284,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 	private void addTriggerToFolder() throws SQLException {
 		DotConnect dc = new DotConnect();
 		String trigger = "";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+		if(DbConnectionFactory.isPostgres()){
 			trigger = "CREATE OR REPLACE FUNCTION folder_identifier_check() RETURNS trigger AS '\n" +
 			  		  "DECLARE\n" +
 			  		  		"versionsCount integer;\n" +
@@ -303,7 +303,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 			  		  	"CREATE TRIGGER folder_identifier_check_trigger AFTER DELETE\n" + 
 			  		  	"ON folder FOR EACH ROW\n" + 
 			  		  	"EXECUTE PROCEDURE folder_identifier_check();\n";
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+		}else if(DbConnectionFactory.isMsSql()){
 			trigger = "CREATE Trigger folder_identifier_check\n" +
 			  		  "ON folder\n" +
 			  		  "FOR DELETE AS\n" +
@@ -324,7 +324,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 			  	  			"END\n" + 
 			  	  			"fetch next from folder_cur_Deleted into @identifier\n" +
 			  	  		"END;\n";
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		}else if(DbConnectionFactory.isOracle()){
 			String oracleTrigger = "CREATE OR REPLACE PACKAGE folder_pkg as\n" +
 			     				   "type array is table of folder%rowtype index by binary_integer;\n" +
 			     				   "oldvals array;\n" +
@@ -419,7 +419,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 		DotConnect dc = new DotConnect();
 		HibernateUtil.startTransaction();
 		try {
-			if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))
+			if (DbConnectionFactory.isMsSql())
 				  dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 			containerTableChanges();
 			htmlpageTableChanges();

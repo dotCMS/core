@@ -32,6 +32,10 @@
 	<property name="sql.dotcms.mysql" value="dotcms_mysql.sql" />
 	<property name="sql.liferay.mysql" value="portal-mysql.sql" />
 	<property name="sql.quartz.mysql" value="tables_mysql.sql" />
+	<property name="sql.dotcms.h2" value="dotcms_h2.sql" />
+	<property name="sql.liferay.h2" value="portal-hypersonic.sql" />
+	<property name="sql.quartz.h2" value="tables_h2.sql" />
+	<property name="sql.dotcms.extra.h2" value="dotcms_extra_h2.sql" />
 	<property name="build.dir" value="build" />
 	<property name="build.classes" value="${build.dir}/classes" />
 	<property name="build.ant" value="${build.dir}/ant" />
@@ -342,6 +346,7 @@
 
 		<buildSQLTask dialect="net.sf.hibernate.dialect.PostgreSQLDialect" />
 		<buildSQLTask dialect="net.sf.hibernate.dialect.OracleDialect" />
+		
 		<concat destfile="${build.dir}/sql/postgres.sql" fixlastline="yes">
 			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.postgres}" />
 			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.postgres}" />
@@ -355,14 +360,15 @@
 			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.oracle}" />
 			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.oracle}" />
 		</concat>
-
+		
 		<replaceregexp byline="true" file="${build.dir}/sql/oracle.sql">
 			<regexp pattern="nclob_description" />
 			<substitution expression="long_description" />
 		</replaceregexp>
+		
 		<copy file="${build.dir}/sql/oracle.sql" todir="${classes.app}"/>
 		<copy file="${build.dir}/sql/postgres.sql" todir="${classes.app}"/>
-
+		
 	</target>
 
 	<target name="buildmXsql" depends="compile" description="builds the mssql and mysql sql schema for dotcms. Leaves Inode.hbm.xml in a state for mssql/mysql">
@@ -375,6 +381,8 @@
 
 		<buildSQLTask dialect="net.sf.hibernate.dialect.MySQLDialect" />
 		<buildSQLTask dialect="net.sf.hibernate.dialect.SybaseDialect" />
+		<buildSQLTask dialect="net.sf.hibernate.dialect.HSQLDialect" />
+				
 
 		<concat destfile="${build.dir}/sql/mssql.sql" fixlastline="yes">
 			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.mssql}" />
@@ -389,6 +397,14 @@
 			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.mysql}" />
 			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.mysql}" />
 		</concat>
+		
+		<concat destfile="${build.dir}/sql/h2.sql" fixlastline="yes">
+			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.h2}" />
+			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.h2}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.h2}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.h2}" />
+		</concat>
+		
 		<replace file="${build.dir}/sql/mysql.sql">
 			<replacetoken>VARCHAR(1)</replacetoken>
 			<replacevalue>tinyint(1)</replacevalue>
@@ -398,9 +414,12 @@
 			<replacetoken>varchar(1)</replacetoken>
 			<replacevalue>tinyint(1)</replacevalue>
 		</replace>
+		
 		<mkdir dir="dotCMS/WEB-INF/classes"/>
+		
 		<copy file="${build.dir}/sql/mysql.sql" todir="${classes.app}"/>
 		<copy file="${build.dir}/sql/mssql.sql" todir="${classes.app}"/>
+		<copy file="${build.dir}/sql/h2.sql" todir="${classes.app}"/>
 	</target>
 
 	<target name="create-dist" description="creates a zip file for dbs that autoincrement like MSSQL and MySQL distribution">

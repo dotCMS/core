@@ -89,16 +89,16 @@ public class FixTask00040CheckFileAssetsMimeType implements FixTask {
 					dc.loadResult();
 				}
 				
-				if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)) {
+				if (DbConnectionFactory.isPostgres()) {
 					dc.setSQL(addFileAssetMimeTypeNotNullPostgres);
 					dc.loadResult();
-				} else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)) {
+				} else if (DbConnectionFactory.isMySql()) {
 					dc.setSQL(addFileAssetMimeTypeNotNullMySQL);
 					dc.loadResult();
-				} else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				} else if (DbConnectionFactory.isOracle()) {
 					dc.setSQL(addFileAssetMimeTypeNotNullOracle);
 					dc.loadResult();
-				} else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+				} else if (DbConnectionFactory.isMsSql()) {
 					dc.setSQL(addFileAssetMimeTypeNotNullMSSQL);
 					dc.loadResult();
 				}
