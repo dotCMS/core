@@ -105,11 +105,8 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	}
 
-
-
 	public DotGuavaCacheAdministratorImpl() {
 		journalAPI = APILocator.getDistributedJournalAPI();
-
 		boolean initDiskCache = false;
 		Iterator<String> it = Config.getKeys();
 		availableCaches.add(DEFAULT_CACHE);
@@ -665,6 +662,16 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 		if (v.toString().equals("TESTINGCLUSTER")) {
 			Logger.info(this, "Received Message Ping " + new Date());
+			try {
+				channel.send(null, null, "ACK");
+			} catch (ChannelNotConnectedException e) {
+				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
+			} catch (ChannelClosedException e) {
+				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
+			}
+
+		} else if (v.toString().equals("ACK")) {
+			Logger.info(this, "ACK Received " + new Date());
 		} else {
 			invalidateCacheFromCluster(v.toString());
 		}
@@ -688,6 +695,16 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		try {
 			channel.send(msg);
 			Logger.info(this, "Sending Ping to Cluster " + new Date());
+		} catch (ChannelNotConnectedException e) {
+			Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
+		} catch (ChannelClosedException e) {
+			Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
+		}
+	}
+
+	public void testNode(Address nodeAdr) {
+		try {
+			channel.send(nodeAdr, null, "TESTNODE");
 		} catch (ChannelNotConnectedException e) {
 			Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
 		} catch (ChannelClosedException e) {
@@ -840,5 +857,16 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
     @Override
     public DotCacheAdministrator getImplementationObject() {
         return this;
+    }
+
+    public View getView() {
+    	if(channel!=null)
+    		return channel.getView();
+    	else
+    		return null;
+    }
+
+    public JChannel getChannel() {
+    	return channel;
     }
 }
