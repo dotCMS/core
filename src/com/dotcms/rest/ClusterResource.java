@@ -1,6 +1,8 @@
 package com.dotcms.rest;
 
+import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -25,6 +27,8 @@ import org.jgroups.PhysicalAddress;
 import org.jgroups.View;
 import org.jgroups.stack.IpAddress;
 
+import com.dotcms.cluster.bean.ClusterProperty;
+import com.dotcms.cluster.business.ClusterFactory;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
 import com.dotmarketing.business.DotStateException;
@@ -58,21 +62,21 @@ public class ClusterResource extends WebResource {
 
         InitDataObject initData = init( params, true, request, false );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-        View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
-        JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
+//        View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
+//        JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
         JSONObject jsonClusterStatusObject = new JSONObject();
 
-        if(view!=null) {
-        	List<Address> members = view.getMembers();
-        	jsonClusterStatusObject.put( "clusterName", channel.getClusterName());
-        	jsonClusterStatusObject.put( "open", channel.isOpen());
-        	jsonClusterStatusObject.put( "numerOfNodes", members.size());
-        	jsonClusterStatusObject.put( "address", channel.getAddressAsString());
-        	jsonClusterStatusObject.put( "receivedBytes", channel.getReceivedBytes());
-        	jsonClusterStatusObject.put( "receivedMessages", channel.getReceivedMessages());
-        	jsonClusterStatusObject.put( "sentBytes", channel.getSentBytes());
-        	jsonClusterStatusObject.put( "sentMessages", channel.getSentMessages());
-        }
+//        if(view!=null) {
+//        	List<Address> members = view.getMembers();
+//        	jsonClusterStatusObject.put( "clusterName", channel.getClusterName());
+//        	jsonClusterStatusObject.put( "open", channel.isOpen());
+//        	jsonClusterStatusObject.put( "numerOfNodes", members.size());
+//        	jsonClusterStatusObject.put( "address", channel.getAddressAsString());
+//        	jsonClusterStatusObject.put( "receivedBytes", channel.getReceivedBytes());
+//        	jsonClusterStatusObject.put( "receivedMessages", channel.getReceivedMessages());
+//        	jsonClusterStatusObject.put( "sentBytes", channel.getSentBytes());
+//        	jsonClusterStatusObject.put( "sentMessages", channel.getSentMessages());
+//        }
 
         return responseResource.response( jsonClusterStatusObject.toString() );
 
@@ -96,26 +100,26 @@ public class ClusterResource extends WebResource {
 
         InitDataObject initData = init( params, true, request, false );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-        View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
-        Channel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
+//        View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
+//        Channel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
         JSONArray jsonNodes = new JSONArray();
 
-        if(view!=null) {
-
-        	List<Address> members = view.getMembers();
-
-        	for ( Address member : members ) {
-
-        		PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, member));
-        		IpAddress ipAddr = (IpAddress)physicalAddr;
-
-        		JSONObject jsonNode = new JSONObject();
-        		jsonNode.put( "id", member.toString());
-        		jsonNode.put( "ip", ipAddr.toString());
-        		//Added to the response list
-        		jsonNodes.add( jsonNode );
-        	}
-        }
+//        if(view!=null) {
+//
+//        	List<Address> members = view.getMembers();
+//
+//        	for ( Address member : members ) {
+//
+//        		PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, member));
+//        		IpAddress ipAddr = (IpAddress)physicalAddr;
+//
+//        		JSONObject jsonNode = new JSONObject();
+//        		jsonNode.put( "id", member.toString());
+//        		jsonNode.put( "ip", ipAddr.toString());
+//        		//Added to the response list
+//        		jsonNodes.add( jsonNode );
+//        	}
+//        }
 
         return responseResource.response( jsonNodes.toString() );
 
@@ -250,6 +254,54 @@ public class ClusterResource extends WebResource {
 
 //        return responseResource.response( clusterProps.toString() );
         return "true";
+
+    }
+
+    /**
+     * Wires a new node to the Cache and ES Cluster
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws JSONException
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path ("/wirenode/{params:.*}")
+    @Produces ("application/json")
+    public Response wireNode ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init( params, true, request, false ); // TODO rejectWhenNoUser has to be true
+
+        if(request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
+            HashMap<String,String> map=new HashMap<String,String>();
+
+            try {
+	            JSONObject obj = new JSONObject(IOUtils.toString(request.getInputStream()));
+
+	            Iterator<String> keys = obj.keys();
+	            while(keys.hasNext()) {
+	                String key=keys.next();
+	                Object value=obj.get(key);
+	                List<String> validProperties = ClusterProperty.getPropertiesList();
+
+	                if(validProperties.contains(key)) {
+	                	map.put(key, value.toString());
+	                }
+
+	                ClusterFactory.addNode(map);
+	            }
+            } catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+
+
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        return responseResource.response( );
 
     }
 

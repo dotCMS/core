@@ -79,6 +79,7 @@ import com.dotmarketing.startup.runonce.Task01055CreatePushPublishEnvironmentTab
 import com.dotmarketing.startup.runonce.Task01305CreateModDateForMissingObjects;
 import com.dotmarketing.startup.runonce.Task01306CreateModDateForFieldIfNeeded;
 import com.dotmarketing.startup.runonce.Task01310AddContentletIdentifierIndex;
+import com.dotmarketing.startup.runonce.Task01311CreateClusterConfigModel;
 
 
 public class TaskLocatorUtil {
@@ -161,6 +162,7 @@ public class TaskLocatorUtil {
         ret.add(Task01305CreateModDateForMissingObjects.class);
         ret.add(Task01306CreateModDateForFieldIfNeeded.class);
         ret.add(Task01310AddContentletIdentifierIndex.class);
+        ret.add(Task01311CreateClusterConfigModel.class);
         return ret;
     }
 
