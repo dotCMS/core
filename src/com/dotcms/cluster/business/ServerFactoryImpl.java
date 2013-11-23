@@ -19,9 +19,9 @@ public class ServerFactoryImpl extends ServerFactory {
 	public ServerFactoryImpl() {
 		dc = new DotConnect();
 
-		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+		if (DbConnectionFactory.isMsSql()) {
             TIMESTAMPSQL = "GETDATE()";
-        } else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+        } else if (DbConnectionFactory.isOracle()) {
             TIMESTAMPSQL = "CAST(SYSTIMESTAMP AS TIMESTAMP)";
         }
 	}
@@ -72,12 +72,12 @@ public class ServerFactoryImpl extends ServerFactory {
 
 		String id = null;
 
-		if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+		if (DbConnectionFactory.isMsSql()) {
 			dc.setSQL("SELECT TOP 1 id FROM server_uptime ORDER BY startup DESC");
-		} else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)
-				|| DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)) {
+		} else if (DbConnectionFactory.isMySql()
+				|| DbConnectionFactory.isPostgres()) {
 			dc.setSQL("select id from server_uptime order by startup desc limit 1");
-		} else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+		} else if (DbConnectionFactory.isOracle()) {
 			dc.setSQL("select id from (select id from server_uptime order by startup desc ) where rownum = 1");
 		}
 
