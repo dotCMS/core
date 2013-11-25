@@ -692,16 +692,19 @@
 	            </sql>
 			</then>
 		</elseif>
-		<else>
-    		<sql driver="${db.driver}"
-    			url="${db.base.url}"
-    			userid="${db.username}"
-    			password="${db.password}"
-    			autocommit="true"
-    			classpathref="files-classpath">
-    			CREATE DATABASE ${db.name};
-    		</sql>
-		</else>
+		<elseif>
+			<equals arg1="${db.driver}" arg2="org.postgresql.Driver"/>
+			<then>
+	    		<sql driver="${db.driver}"
+	    			url="${db.base.url}"
+	    			userid="${db.username}"
+	    			password="${db.password}"
+	    			autocommit="true"
+	    			classpathref="files-classpath">
+	    			CREATE DATABASE ${db.name};
+	    		</sql>
+		    </then>
+		</elseif>
 		</if>
 	</target>
 
