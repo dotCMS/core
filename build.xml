@@ -717,7 +717,7 @@
                 url="${db.base.url}"
                 userid="${db.oracleadmin.user}"
                 password="${db.oracleadmin.pass}"
-                autocommit="true"
+                autocommit="true" onerror="continue"
                 classpathref="files-classpath">
 				drop user ${db.username} cascade;
             </sql>
@@ -729,7 +729,7 @@
                     url="${db.admin.url}"
                     userid="${db.username}"
                     password="${db.password}"
-                    autocommit="true"
+                    autocommit="true" onerror="continue"
                     classpathref="files-classpath">
                 	DROP DATABASE ${db.name};
             	</sql>
@@ -745,7 +745,7 @@
 	    			url="${db.base.url}"
 	    			userid="${db.username}"
 	    			password="${db.password}"
-	    			autocommit="true"
+	    			autocommit="true" onerror="continue"
 	    			classpathref="files-classpath">
 	    			DROP DATABASE IF EXISTS ${db.name};
 	    		</sql>
