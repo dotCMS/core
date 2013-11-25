@@ -9,15 +9,15 @@ To install all you need to do is build the JAR. to do this run
 *./gradlew jar*
 This will build a jar in the build/libs directory
 
-    1. To install this bundle:
-        Copy the bundle jar file inside the Felix OSGI container (dotCMS/felix/load).
-                OR
-        Upload the bundle jar file using the dotCMS UI (CMS Admin->Dynamic Plugins->Upload Plugin).
+* To install this bundle:
+    Copy the bundle jar file inside the Felix OSGI container (dotCMS/felix/load).
+            OR
+    Upload the bundle jar file using the dotCMS UI (CMS Admin->Dynamic Plugins->Upload Plugin).
 
-    2. To uninstall this bundle:
-        Remove the bundle jar file from the Felix OSGI container (dotCMS/felix/load).
-                OR
-        Undeploy the bundle using the dotCMS UI (CMS Admin->Dynamic Plugins->Undeploy).
+* To uninstall this bundle:
+    Remove the bundle jar file from the Felix OSGI container (dotCMS/felix/load).
+            OR
+    Undeploy the bundle using the dotCMS UI (CMS Admin->Dynamic Plugins->Undeploy).
 
 h2. How to create a bundle plugin for Schedule Quartz Jobs
 
