@@ -735,16 +735,22 @@
             	</sql>
         	</then>
     	 </elseif>
-		 <else>
-    		<sql driver="${db.driver}"
-    			url="${db.base.url}"
-    			userid="${db.username}"
-    			password="${db.password}"
-    			autocommit="true"
-    			classpathref="files-classpath">
-    			DROP DATABASE IF EXISTS ${db.name};
-    		</sql>
-		 </else>
+		 <elseif>
+		 	<or>
+				<equals arg1="${db.driver}" arg2="org.postgresql.Driver"/>
+		 		<equals arg1="${db.driver}" arg2="com.mysql.jdbc.Driver"/>
+		 	</or>
+			<then>
+	    		<sql driver="${db.driver}"
+	    			url="${db.base.url}"
+	    			userid="${db.username}"
+	    			password="${db.password}"
+	    			autocommit="true"
+	    			classpathref="files-classpath">
+	    			DROP DATABASE IF EXISTS ${db.name};
+	    		</sql>
+			</then>
+		 </elseif>
 	    </if>
 	</target>
 
