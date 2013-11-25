@@ -374,7 +374,7 @@ function showLanguageSelector(){
 			   </div>
 
 			<%--  Language Selector --%>
-			
+
 			<div class="inputCaption" style="float:right;">
             	<a href="javascript:showForgot()"><%= LanguageUtil.get(pageContext, "forgot-password") %></a>
             </div>
@@ -415,7 +415,8 @@ function showLanguageSelector(){
 </form>
 
 <div class="inputCaption" style="color:#dddddd;text-align:right;position:absolute;bottom:10px; right:10px;">
-	<%String serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");%>
+<%-- 	<%String serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");%> --%>
+	<%String serverId = APILocator.getServerAPI().readServerId();%>
 	<% if (UtilMethods.isSet(serverId)){ %>
 		<%= LanguageUtil.get(pageContext, "Server") %>: <%=serverId%> <br />
 	<%} %>

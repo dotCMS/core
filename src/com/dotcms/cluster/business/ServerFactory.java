@@ -13,4 +13,6 @@ public abstract class ServerFactory {
 
 	public abstract void updateHeartbeat(String serverId) throws DotDataException;
 
+	public abstract String getAliveServersIds() throws DotDataException;
+
 }

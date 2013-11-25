@@ -38,15 +38,15 @@ public class ServerAPIImpl implements ServerAPI {
 			br = new BufferedReader(new FileReader(new File(realPath)));
 			serverId = br.readLine();
 		} catch (FileNotFoundException e) {
-			Logger.debug(getClass(), "Server ID not found");
+			Logger.debug(ServerAPIImpl.class, "Server ID not found");
 		} catch (IOException e) {
-			Logger.error(getClass(), "Could not read Server ID from File", e);
+			Logger.error(ServerAPIImpl.class, "Could not read Server ID from File", e);
 		} finally {
 			try {
 				if(br!=null)
 					br.close();
 			} catch (IOException e) {
-				Logger.error(getClass(), "Could not close BufferedReader for Server File", e);
+				Logger.error(ServerAPIImpl.class, "Could not close BufferedReader for Server File", e);
 			}
 		}
 
@@ -67,6 +67,10 @@ public class ServerAPIImpl implements ServerAPI {
 		os.flush();
 		os.close();
 
+	}
+
+	public String getAliveServersIds() throws DotDataException {
+		return serverFactory.getAliveServersIds();
 	}
 
 	public void createServerUptime(String serverId) throws DotDataException {

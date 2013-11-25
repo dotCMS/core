@@ -19,4 +19,6 @@ public interface ServerAPI {
 
 	public void updateHeartbeat() throws DotDataException;
 
+	public String getAliveServersIds() throws DotDataException;
+
 }

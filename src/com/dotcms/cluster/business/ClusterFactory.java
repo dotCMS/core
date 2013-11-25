@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.dotcms.cluster.bean.ClusterProperty;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
 import com.dotmarketing.common.db.DotConnect;
@@ -48,7 +49,7 @@ public class ClusterFactory {
 		return clusterId;
 	}
 
-	public static String getNextAvailableCachePort() {
+	public static String getNextAvailableCachePort() {  // TODO: REMOVE THIS METHOD
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select max(cache_port) as port from server");
 		String maxPort = null;
@@ -68,7 +69,7 @@ public class ClusterFactory {
 		return freePort.toString();
 	}
 
-	public static String getCacheTCPInitialHosts() {
+	public static String getCacheTCPInitialHosts() { // TODO: REMOVE THIS METHOD
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select host, cache_port from server");
 		String tcpInitialHosts = "";
@@ -102,8 +103,16 @@ public class ClusterFactory {
 		return tcpInitialHosts;
 	}
 
+	public static void addNode() {
+		addNode(new HashMap<String, String>());
+	}
+
 	public static void addNode(Map<String,String> properties) {
 		Map<ClusterProperty, String> cacheProperties = new HashMap<ClusterProperty, String>();
+
+		if(properties==null) {
+			properties = new HashMap<String, String>();
+		}
 
 		cacheProperties.put(CACHE_PROTOCOL,
 				UtilMethods.isSet(properties.get(CACHE_PROTOCOL.toString())) ? properties.get(CACHE_PROTOCOL.toString()) : CACHE_PROTOCOL.getDefaultValue() );
@@ -127,11 +136,9 @@ public class ClusterFactory {
 		esProperties.put(ES_NETWORK_HOST,
 				UtilMethods.isSet(properties.get(ES_NETWORK_HOST.toString())) ? properties.get(ES_NETWORK_HOST.toString()) : ES_NETWORK_HOST.getDefaultValue() );
 		esProperties.put(ES_TRANSPORT_TCP_PORT,
-				UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : ES_TRANSPORT_TCP_PORT.getDefaultValue() );
-		esProperties.put(ES_NETWORK_PORT,
-				UtilMethods.isSet(properties.get(ES_NETWORK_PORT.toString())) ? properties.get(ES_NETWORK_PORT.toString()) : ES_NETWORK_PORT.getDefaultValue() );
+				UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : null );
 		esProperties.put(ES_HTTP_PORT,
-				UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : ES_HTTP_PORT.getDefaultValue() );
+				UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : null );
 		esProperties.put(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED,
 				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()))
 				? properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()) : ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.getDefaultValue() );
@@ -140,8 +147,10 @@ public class ClusterFactory {
 				? properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()) : ES_DISCOVERY_ZEN_PING_TIMEOUT.getDefaultValue() );
 		esProperties.put(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS,
 				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()))
-				? properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()) : ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.getDefaultValue() );
+				? properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()) : null);
 
+		ESClient esClient = new ESClient();
+		esClient.setClusterNode(esProperties);
 
 	}
 

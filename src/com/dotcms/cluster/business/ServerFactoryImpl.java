@@ -8,7 +8,9 @@ import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 
 public class ServerFactoryImpl extends ServerFactory {
@@ -92,6 +94,44 @@ public class ServerFactoryImpl extends ServerFactory {
 		dc.addParam(serverId);
 		dc.addParam(id);
 		dc.loadResult();
+	}
+
+	public String getAliveServersIds() throws DotDataException {
+		String serversIds = "";
+
+		if (DbConnectionFactory.isMsSql()) {
+			dc.setSQL("select s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+					+ "where DATEDIFF(SECOND, heartbeat, GETDATE()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
+		} else if (DbConnectionFactory.isMySql()) {
+			dc.setSQL("select s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+					+ "where TIMESTAMPDIFF(SECOND, heartbeat, now()) > " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
+		} else if(DbConnectionFactory.isPostgres()) {
+			dc.setSQL("select s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+					+ "where EXTRACT(EPOCH from now()-heartbeat) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
+		} else if (DbConnectionFactory.isOracle()) {
+			dc.setSQL("select s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+					+ "where (extract( second from (sysdate-heartbeat) ) "
+					+ " + extract( minute from (sysdate-heartbeat) ) * 60 "
+					+ " + extract( hour from (sysdate-heartbeat) ) * 60 * 60 "
+					+ " + extract( day from (sysdate-heartbeat) ) * 60*60* 24) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
+		}
+
+		try {
+			List<Map<String, Object>> results = dc.loadObjectResults();
+
+			for (Map<String, Object> map : results) {
+				serversIds += map.get("server_id").toString() + ", ";
+			}
+
+			if(UtilMethods.isSet(serversIds)) {
+				serversIds = serversIds.substring(0, serversIds.length()-2);
+			}
+
+		} catch (DotDataException e) {
+			Logger.error(ServerFactoryImpl.class, "Could not get alive Servers Ids", e);
+		}
+
+		return serversIds;
 	}
 
 }
