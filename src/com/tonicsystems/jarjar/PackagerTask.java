@@ -338,7 +338,7 @@ public class PackagerTask extends JarJarTask {
                 if ( !searchPatters.isEmpty() ) {
                     searchPatters += ";";
                 }
-                searchPatters += "s/((?<=\")|(?<=\\()|\\s)" + patternFinal + "/" + resultFinal + "/g";
+                searchPatters += "s/((?<=\")|(?<=\\()|(?<=,)|\\s)" + patternFinal + "/" + resultFinal + "/g";
                 i++;
 
                 if ( i == chunks ) {
