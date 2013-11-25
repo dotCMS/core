@@ -151,12 +151,18 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	}
 
-
+	public void setCluster() {
+		setCluster(null);
+	}
 
 	public void setCluster(Map<ClusterProperty, String> cacheProperties) {
 		Logger.info(this, "***\t Starting JGroups Cluster Setup");
 
 		try {
+			if(cacheProperties==null || cacheProperties.isEmpty()) {
+				cacheProperties = ClusterProperty.getDefaultMap();
+			}
+
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 			String cacheFile = "cache-jgroups-" + cacheProperties.get(CACHE_PROTOCOL) + ".xml";
 

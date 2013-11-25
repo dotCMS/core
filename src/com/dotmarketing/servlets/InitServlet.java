@@ -126,7 +126,7 @@ public class InitServlet extends HttpServlet {
 		if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
 
 		Logger.info(this, "   Clustering    : Enabled");
-		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
+//		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
 				try{
 					((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
 		Logger.info(this, "     Ping Sent");
@@ -175,6 +175,10 @@ public class InitServlet extends HttpServlet {
 			}
 
 	        serverAPI.createServerUptime(serverId);
+	        String serversIds = serverAPI.getAliveServersIds();
+
+	        ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).setCluster();
+	        ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
 
 		} catch (UnknownHostException e3) {
 			Logger.error(getClass(), "Could not get Local Host", e3);

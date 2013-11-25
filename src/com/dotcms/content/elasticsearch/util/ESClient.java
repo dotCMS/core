@@ -3,11 +3,15 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
+import com.dotcms.cluster.bean.ClusterProperty;
+import com.dotcms.cluster.business.ServerAPI;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 
 public class ESClient {
@@ -29,7 +33,8 @@ public class ESClient {
 	}
 
 	private void initNode(){
-		String node_id = "dotCMS_" + Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
+//		String node_id = "dotCMS_" + Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
+		String node_id = "dotCMS_" + APILocator.getServerAPI().readServerId();
 		_nodeInstance = nodeBuilder().
         settings(ImmutableSettings.settingsBuilder().put("name", node_id).build()).build().start();
 
@@ -74,4 +79,22 @@ public class ESClient {
 			}
 		}
 	}
+
+	public void setClusterNode(Map<ClusterProperty, String> properties) {
+
+		if(properties!=null) {
+			for (ClusterProperty key : properties.keySet()) {
+				String value = properties.get(key);
+
+				if(value!=null) {
+					System.setProperty(key.getKeyName(),value);
+				}
+			}
+		}
+
+		loadConfig();
+		initNode();
+	}
+
+
 }
