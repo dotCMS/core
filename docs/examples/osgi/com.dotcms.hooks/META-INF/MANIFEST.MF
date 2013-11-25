@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Bundle-Name: dotCMS OSGI Hooks example
-Bundle-SymbolicName: com.dotmarketing.osgi.hooks
-Bundle-Description: dotCMS OSGI Hooks example
-Bundle-Version: 1.0
-Bundle-Activator: com.dotmarketing.osgi.hooks.Activator
-DynamicImport-Package: *
-Import-Package:  org.osgi.service.http,
- org.apache.felix.http.api
