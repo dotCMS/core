@@ -762,6 +762,12 @@
 		<copy file="${src.tests.dir}/server.xml" todir="tomcat/conf"/>
 		<copy file="${src.tests.dir}/ROOT.xml" todir="tomcat/conf/Catalina/localhost"/>
 		<replace file="tomcat/conf/server.xml" token="{port}" value="${server.port}"/>
+		<replace file="tomcat/conf/server.xml" token="{shutdown_port}" value="${server.shutdown.port}"/>
+		<replace file="src-conf/dotmarketing-config.properties">
+			<replacefilter token="es.http.enabled" value="#es.http.enabled"/>
+			<replacefilter token="es.transport.tcp.port" value="#es.transport.tcp.port"/>
+		</replace>
+		<echo file="src-conf/dotmarketing-config.properties" append="true">${line.separator}es.http.enabled=false${line.separator}es.transport.tcp.port=${es.network.port}${line.separator}</echo>
 		<replace file="tomcat/conf/Catalina/localhost/ROOT.xml">
 			<replacefilter token="{driver}" value="${db.driver}"/>
 			<replacefilter token="{url}" value="${db.url}"/>
