@@ -5,14 +5,35 @@ README
 This bundle plugin is an example of how to add Spring support to a bundle plugin, creates
 and registers a simple Spring Controller.
 
+How to build this example
+-------------------------
+
+To install all you need to do is build the JAR. to do this run
+./gradlew jar
+This will build a jar in the build/libs directory
+
+1. To install this bundle:
+
+Copy the bundle jar file inside the Felix OSGI container (dotCMS/felix/load).
+        OR
+Upload the bundle jar file using the dotCMS UI (CMS Admin->Dynamic Plugins->Upload Plugin).
+
+2. To uninstall this bundle:
+
+Remove the bundle jar file from the Felix OSGI container (dotCMS/felix/load).
+        OR
+Undeploy the bundle using the dotCMS UI (CMS Admin->Dynamic Plugins->Undeploy).
+
 How to create a bundle plugin with Spring support
 -------------------------------------------
 
 --
-In order to create this OSGI plugin, you must write the META-INF/MANIFEST
-to be inserted into OSGI jar.
+In order to create this OSGI plugin, you must create a META-INF/MANIFEST to be inserted into OSGI jar.
+This file is being created for you by Gradle. If you need you can alter our config for this but in general our out of the box config should work.
+The Gradle plugin uses BND to generate the Manifest. The main reason you need to alter the config is when you need to exclude a package you are including on your Bundle-ClassPath
 
-In this MANIFEST you must specify (see template plugin):
+If you are building the MANIFEST on your own or desire more info on it below is a description of what is required
+in this MANIFEST you must specify (see template plugin):
 
 Bundle-Name: The name of your bundle
 
