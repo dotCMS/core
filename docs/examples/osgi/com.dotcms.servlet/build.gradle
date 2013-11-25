@@ -1,0 +1,39 @@
+apply plugin: 'application'
+apply plugin: 'osgi'
+apply plugin: 'war'
+apply plugin: 'eclipse'
+
+sourceCompatibility = '1.6'
+version = '0.1'
+
+
+repositories {
+	maven {
+        url "http://repo.dotcms.com/artifactory/libs-release"
+    }
+}
+dependencies {
+	compile fileTree(dir: '../../../../dotCMS/WEB-INF/felix/load', include: '*.jar')//As this example depends on the com.dotcms.service example
+	compile fileTree(dir: 'src/main/resources/libs', include: '*.jar')
+	compile (group: 'com.dotcms', name: 'dotcms', version: '2.5.1'){
+		transitive = true
+	}
+	providedCompile "javax.servlet:servlet-api:2.5"
+}
+
+jar {
+    manifest {
+        name = 'Osgi Servlet'
+        instruction 'Bundle-Vendor', 'dotcms'
+        instruction 'Bundle-Description', 'dotCMS Osgi Servlet example'
+        instruction 'Bundle-DocURL', 'http://www.dotcms.com'
+        instruction 'Bundle-Activator', 'com.dotmarketing.osgi.servlet.Activator'
+        instruction 'DynamicImport-Package', '*'
+        instruction 'Import-Package', '*;version=0'
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.8'
+}
+
