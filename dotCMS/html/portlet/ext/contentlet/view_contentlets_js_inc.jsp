@@ -741,7 +741,14 @@
                                 fieldsValues[fieldsValues.length] = folderValue;
                         }
                 }
+                
+				var allField = dijit.byId("allFieldTB").getValue();
+				if (allField != undefined && allField.length>0 ) {
 
+                        fieldsValues[fieldsValues.length] = "_all";
+                        fieldsValues[fieldsValues.length] = allField + "*";
+				}
+				
                 for (var j = 0; j < currentStructureFields.length; j++) {
                         var field = currentStructureFields[j];
             var fieldId = selectedStruct+"."+field["fieldVelocityVarName"] + "Field";
@@ -838,22 +845,44 @@
                         }
                 }
 
+                 var filterSystemHost = false;
+                if (document.getElementById("filterSystemHostCB").checked && document.getElementById("filterSystemHostTable").style.display != "none") {
+                        filterSystemHost = true;
+                }
+
+                var filterLocked = false;
+
+                if (dijit.byId("showingSelect").getValue() == "locked") {
+                        filterLocked = true;
+                }
+
+                var filterUnpublish = false;
+                if (dijit.byId("showingSelect").getValue() == "unpublished") {
+                       filterUnpublish = true;
+                }
+
                 var showDeleted = false;
                 if (dijit.byId("showingSelect").getValue() == "archived") {
                         showDeleted = true;
                 }
 
+                dijit.byId("searchButton").attr("disabled", true);
+                //dijit.byId("clearButton").attr("disabled", false);
+
                 document.getElementById('fieldsValues').value = fieldsValues;
                 document.getElementById('categoriesValues').value = categoriesValues;
                 document.getElementById('showDeleted').value = showDeleted;
                 document.getElementById('currentSortBy').value = currentSortBy;
+                document.getElementById('filterSystemHost').value = filterSystemHost;
+                document.getElementById('filterLocked').value = filterLocked;
+                document.getElementById('filterUnpublish').value = filterUnpublish;
 
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
                 href += "<portlet:param name='cmd' value='export' />";
                 href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
                 href += "</portlet:actionURL>";
-                href += "&expStructureInode="+structureInode+"&expFieldsValues="+fieldsValues+"&expCategoriesValues="+categoriesValues+"&showDeleted="+showDeleted;
+                href += "&expStructureInode="+structureInode+"&expFieldsValues="+fieldsValues+"&expCategoriesValues="+categoriesValues+"&showDeleted="+showDeleted+"&currentSortBy="+currentSortBy+"&filterSystemHost="+filterSystemHost+"&filterLocked="+filterLocked+"&filterUnpublish="+filterUnpublish;
 
                 /*if we have a date*/
                         var dateFrom= null;
