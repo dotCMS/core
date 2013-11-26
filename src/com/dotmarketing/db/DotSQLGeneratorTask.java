@@ -39,6 +39,7 @@ public final class DotSQLGeneratorTask extends Task {
 			Class.forName("com.mysql.jdbc.Driver");
 			Class.forName("org.postgresql.Driver");
 			Class.forName("net.sourceforge.jtds.jdbc.Driver");	
+			Class.forName("org.h2.Driver");
 		}
 		catch(Exception e){
 			 Logger.info(this, "Driver not found dialect:" + e);
@@ -58,9 +59,12 @@ public final class DotSQLGeneratorTask extends Task {
 			}else if(dialect.equals("net.sf.hibernate.dialect.OracleDialect")){
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "oracle.jdbc.driver.OracleDriver");
-			}else{
+			}else if(dialect.equals("net.sf.hibernate.dialect.PostgreSQLDialect")) {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");
+			}else if(dialect.equals("net.sf.hibernate.dialect.HSQLDialect")) {
+			    cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
+			    cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
 			}
 
             SchemaExport sexp = new SchemaExport(cfg);
@@ -70,7 +74,7 @@ public final class DotSQLGeneratorTask extends Task {
             File in = new File(basedir, "sql/sql.tmp"); 
 			String[] x = dialect.split("[.]");
 			String sqlFileName = ("sql/cms/dotcms_" + x[x.length - 1].replaceAll("Dialect", "") + ".sql").toLowerCase();
-			sqlFileName = sqlFileName.replaceAll("sybase", "mssql-sybase");
+			sqlFileName = sqlFileName.replaceAll("sybase", "mssql-sybase").replaceAll("hsql", "h2");
             Logger.info(this, "writing file:" + sqlFileName);
             //DOTCMS-2915
             //File out = new File(sqlFileName);
@@ -81,29 +85,32 @@ public final class DotSQLGeneratorTask extends Task {
 			sexp.create(false, false);
 			BufferedReader r = new BufferedReader(new FileReader(in));
 			BufferedWriter wr = new BufferedWriter(new FileWriter(out));
+			java.util.regex.Pattern p = java.util.regex.Pattern.compile("[a-zA-Z][A-Z,a-z,0-9]*\\s[A-Z,a-z,0-9]*\\s[a-zA-Z][A-Z,a-z,0-9]*\\s\\([a-zA-Z][A-Z,a-z,0-9]*.*");
 			while (r.ready()) {
 				String myLine = r.readLine().toLowerCase();
 				
 				if (myLine.startsWith("create table")) {
 					afterDrops = true;
-					java.util.regex.Pattern p = java.util.regex.Pattern.compile("[a-zA-Z][A-Z,a-z,0-9]*\\s[A-Z,a-z,0-9]*\\s[a-zA-Z][A-Z,a-z,0-9]*\\s\\([a-zA-Z][A-Z,a-z,0-9]*.*");
+					
 					Matcher m = p.matcher(myLine);
 					if(m.matches()){
 						//System.out.println("matches " + myLine);
 						String [] fields = myLine.split(", ");
-						StringBuffer s = new StringBuffer("");
+						StringBuilder s = new StringBuilder();
 						for(int i = 0; i < fields.length; i++){
 							if(i != fields.length - 1){
-								s.append("\t" + fields[i] + "," + "\n");
+								s.append("\t").append(fields[i]).append(",").append("\n");
 							}else{
-								s.append("\t" + fields[i]);
+								s.append("\t").append(fields[i]);
 							}
 							
 						}
 						myLine = s.toString();
 					}
 				}
-                if (dialect.equals("net.sf.hibernate.dialect.PostgreSQLDialect")) {
+                if (dialect.equals("net.sf.hibernate.dialect.PostgreSQLDialect") 
+                        || dialect.equals("net.sf.hibernate.dialect.SybaseDialect")
+                        || dialect.equals("net.sf.hibernate.dialect.HSQLDialect")) {
                     if (myLine.contains("varchar(123456789)")) {
                         myLine = myLine.replaceAll("varchar\\(123456789\\)", "text");
                     }
@@ -120,10 +127,6 @@ public final class DotSQLGeneratorTask extends Task {
                     }
                     if(myLine.contains("bit,")) {
                         myLine = myLine.replaceAll("bit,", "varchar(1),");
-                    }
-                } else if (dialect.equals("net.sf.hibernate.dialect.SybaseDialect")) {
-                    if (myLine.contains("varchar(123456789)")) {
-                        myLine = myLine.replaceAll("varchar\\(123456789\\)", "text");
                     }
                 }
 				if (afterDrops) {

@@ -24,18 +24,17 @@ public class SQLUtil {
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
 		if (schema!=null) {
-		String dbType = DbConnectionFactory.getDBType();
 		QueryTokenizer tokenizer=new QueryTokenizer(";","--",true);
 		QueryTokenizer extraTokenizer=null;
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.MSSQL)) {
+		if (DbConnectionFactory.isMsSql()) {
 			//";","--",true
 			IQueryTokenizerPreferenceBean prefs = new MSSQLPreferenceBean();
 			//prefs.setStatementSeparator("GO");
 			extraTokenizer=new MSSQLQueryTokenizer(prefs);
-		}else if(dbType.equalsIgnoreCase(DbConnectionFactory.ORACLE)){
+		}else if(DbConnectionFactory.isOracle()){
 			IQueryTokenizerPreferenceBean prefs = new OraclePreferenceBean();
 			tokenizer=new OracleQueryTokenizer(prefs);
-		}else if(dbType.equalsIgnoreCase(DbConnectionFactory.MYSQL)){
+		}else if(DbConnectionFactory.isMySql()){
 			IQueryTokenizerPreferenceBean prefs = new BaseQueryTokenizerPreferenceBean();
 			prefs.setProcedureSeparator("#");
 			tokenizer=new MysqlQueryTokenizer(prefs);
@@ -86,12 +85,12 @@ public class SQLUtil {
 		StringBuilder bob = new StringBuilder();
 		boolean first = true;
 		for (String col : dbColumns) {
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+			if(DbConnectionFactory.isMsSql()){
 				if(!first){
 					bob.append(" + ");
 				}
-				bob.append("cast( " + col + " as varchar(512))");
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				bob.append("cast( " ).append( col ).append( " as varchar(512))");
+			}else if(DbConnectionFactory.isMySql()){
 				if(first){
 					bob.append("CONCAT(");
 				}else{
@@ -106,7 +105,7 @@ public class SQLUtil {
 			}
 			first = false;
 		}
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+		if(DbConnectionFactory.isMySql()){
 			bob.append(")");
 		}
 		return bob.toString();
@@ -121,12 +120,12 @@ public class SQLUtil {
 		if(!UtilMethods.isSet(query)|| !query.toLowerCase().trim().contains("select")|| query.contains("?")||count>1){
 			return query;			
 		}else{	
-		     if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)||
-				DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+		     if(DbConnectionFactory.isPostgres()||
+				DbConnectionFactory.isMySql() || DbConnectionFactory.isH2()){
 			   query = query +" LIMIT "+limit+" OFFSET " +offSet;
 			   queryString.append(query);
 			
-	         }else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+	         }else if(DbConnectionFactory.isMsSql()){
 	        	 String str = "";	 
 		    	   if(query.toLowerCase().startsWith("select")){
 					  query = query.substring(6);
@@ -139,7 +138,7 @@ public class SQLUtil {
 		    		  	 + " OVER ("+str+") AS RowNumber,"+query+") temp " 
 		    		  	 + " WHERE RowNumber >"+offSet;	
 		    	   queryString.append(query);
-	        }else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+	        }else if(DbConnectionFactory.isOracle()){
 	        	limit = limit + offSet;
 	        	query = "select * from ( select temp.*, ROWNUM rnum from ( "+
 	    	             query+" ) temp where ROWNUM <= "+limit+" ) where rnum > "+offSet;

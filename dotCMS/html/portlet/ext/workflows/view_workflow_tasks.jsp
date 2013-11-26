@@ -207,9 +207,10 @@
 		    required:false,
 		    value:"<%=assignedTo.getId()%>",
 		    onClick:function(){
-		    	dijit.byId("assignedTo").set("displayedValue","");
-		        dijit.byId("assignedTo").loadDropDown();
-
+		    	if(show4All==false){
+		    		dijit.byId("assignedTo").set("displayedValue","");
+		        	dijit.byId("assignedTo").loadDropDown();
+		    	}
 		    },
 		    onChange:doFilter
 	
@@ -222,15 +223,15 @@
 		var stepId = new dijit.form.FilteringSelect({
 		    id: "stepId",
 		    name: "stepId",
-		    store: stepStore,
+		    store: emptyStore,
 		    searchDelay:300,
 		    pageSize:20,
 		    required:false,
-		    onClick:function(){
-		    	dijit.byId("stepId").displayedValue="";
+		    onChange:function(){
+		    	doFilter();
 		    }
-		},
-		"stepId");
+		    	
+		},"stepId");
 		
 		var olderThanCombo = new dijit.form.ComboBox({
 	        id:"daysold",
@@ -251,11 +252,16 @@
             
           
             
-	function updateSteps(){
+	function updateSteps(){	
 		var schemeId = dijit.byId("schemeId").value;
-		var myUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme&schemeId=" + schemeId;
-		dijit.byId("stepId").attr('value','');
-		dijit.byId("stepId").set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
+		var stepId = dijit.byId("stepId");
+		stepId.store= emptyStore;
+		dojo.byId("stepId").value ="";
+		if(schemeId){
+			var myUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme&schemeId=" + schemeId;		
+			dijit.byId("stepId").set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
+		}
+		
 	}
 	
 	function assignedToMe(){
@@ -292,6 +298,7 @@
 		}
 	<%}%>
 	function resetFilters(){
+		
 		dijit.byId("daysold").setValue("");	
 		var stepId = dijit.byId("stepId");
 		stepId.store= emptyStore;
@@ -303,16 +310,12 @@
 		<%if(isAdministrator){%>
 		     disable4AllUsers();
 		<%}%>
-		var schemeId = dijit.byId("schemeId");
-
-		schemeId.setValue("");
 		
 		dijit.byId("keywords").setValue("");
 		dijit.byId("showOpen").setValue(true);
-		dijit.byId("showClosed").setValue(false);
-		
-		
-		doFilter();
+		dijit.byId("showClosed").setValue(false);		
+		var schemeId = dijit.byId("schemeId");
+		schemeId.setValue("");
 	}
 	
 	function editTask(id,langId){
@@ -400,8 +403,6 @@
 				contentAdmin.saveAssign();
 			}
 		}});
-		
-		
 	}
 
 	var contentAdmin = {
@@ -436,13 +437,22 @@
 					doFilter();
 				}
 			});
-			
-
 		}
 	};
 
 </script>
 
+<style>
+	 #container {
+	   display: table;
+	   }
+	 #table-row  {
+	   display: table-row;
+	   }
+	 #cell-left, #cell-right{
+	   display: table-cell;
+	   }
+</style>
 <liferay:box top="/html/common/box_top.jsp"
 bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "Filtered-Tasks") %>' />
@@ -462,19 +472,29 @@ bottom="/html/common/box_bottom.jsp">
 			<div  id="filterTasksFrm">
 				<input type="hidden" name="cmd" value="filterTasks">
 				<input type="hidden" name="orderBy" id="orderBy" value="mod_date desc">
-
-
-
 				<dl>
 					<dt><%=LanguageUtil.get(pageContext, "Keywords")%>:</dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox" name="keywords" id="keywords" value="<%=UtilMethods.webifyString(searcher.getKeywords())%>" /></dd>
 					<dt><%=LanguageUtil.get(pageContext, "Assigned-To")%>:</dt>
 					<dd>	
-						<input type="hidden" id="assignedTo" name="assignedTo" value="<%=myRole.getId() %>" />
-						<%if(isAdministrator) { %>
-						<a id="showAllLink" href="#" onclick="showTasks4AllUsers()"><%=LanguageUtil.get(pageContext, "all") %></a>
-                        <%} %>
-				        <a href="#" onclick="assignedToMe()"><%=LanguageUtil.get(pageContext, "me") %></a> 
+					<div id="container">
+					  <div id="table-row">
+						  <div id="cell-left">
+							<input type="hidden" id="assignedTo" name="assignedTo" value="<%=myRole.getId() %>" /> 
+						  </div>
+						  <div id="cell-right">
+							<%if(isAdministrator) { %>
+							<input type="radio" dojoType="dijit.form.RadioButton" id="showAllLink" name="assignedto" onclick="showTasks4AllUsers()"><%=LanguageUtil.get(pageContext, "all") %> </input>
+	                        <%} %>
+	                      </div>
+					  </div>
+					  <div id="table-row"> 
+					  	 <div id="cell-left"> </div>
+					     <div id="cell-right">
+                       		 <input type="radio" dojoType="dijit.form.RadioButton" id="showme" name="assignedto" checked="true" onclick="assignedToMe()"><%=LanguageUtil.get(pageContext, "me") %></input>
+						</div>
+					 </div>	
+					</div>
 					</dd>
 					<dt><%=LanguageUtil.get(pageContext, "Older_than_(days)") %></dt>
 					<dd>
@@ -482,8 +502,6 @@ bottom="/html/common/box_bottom.jsp">
 					</dd>
 					<dt><%=LanguageUtil.get(pageContext, "Scheme")%>:</dt>
 					<dd>
-					
-						
 						<select name="schemeId" id="schemeId" dojoType="dijit.form.FilteringSelect" value="<%=UtilMethods.webifyString(searcher.getSchemeId())%>" onChange="updateSteps();doFilter();">
 							<option value=""></option>
 							<%for(WorkflowScheme scheme : schemes) {%>

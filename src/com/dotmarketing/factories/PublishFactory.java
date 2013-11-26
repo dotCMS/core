@@ -266,7 +266,7 @@ public class PublishFactory {
 				//publishes each one
 				Contentlet contentlet = (Contentlet)contentletsIter.next();
 				Logger.debug(PublishFactory.class, "*****I'm a Folder -- Publishing my Inode Child=" + contentlet.getInode());
-				if(!contentlet.isLive() && (permissionAPI.doesUserHavePermission(contentlet, PERMISSION_PUBLISH, user, respectFrontendRoles))) {
+				if(!contentlet.isLive() && !contentlet.isArchived() && (permissionAPI.doesUserHavePermission(contentlet, PERMISSION_PUBLISH, user, respectFrontendRoles))) {
 					APILocator.getContentletAPI().publish(contentlet, user, false);
 				}
 			}

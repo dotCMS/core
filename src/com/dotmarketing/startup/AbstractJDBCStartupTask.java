@@ -154,23 +154,25 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 		List<String> schemaList = new ArrayList<String>();
 
 		//Execute the SQL Script in accordance with the database type
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+		if(DbConnectionFactory.isPostgres()){
 			schemaList = SQLUtil.tokenize(getPostgresScript());
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+		}else if(DbConnectionFactory.isMySql()){
 			schemaList = SQLUtil.tokenize(getMySQLScript());
-		}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+		}else if(DbConnectionFactory.isOracle()){
 			schemaList = SQLUtil.tokenize(getOracleScript());
-		}else{
+		}else if(DbConnectionFactory.isMsSql()) {
 			schemaList = SQLUtil.tokenize(getMSSQLScript());
+		}else {
+		    schemaList = SQLUtil.tokenize(getH2Script());
 		}
 
 		try {
 		    conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(false);
 		    
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+			if(DbConnectionFactory.isMySql()){
 				dc.executeStatement("SET storage_engine=INNODB", conn);
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+			}else if(DbConnectionFactory.isMsSql()){
 				dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;", conn);
 			}
 			
@@ -272,9 +274,9 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 		
 		PreparedStatement preparedStatement = null;
 		String sql="";
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)) {
+		if(DbConnectionFactory.isOracle() || DbConnectionFactory.isPostgres()) {
 			sql="drop index " + constraintName; 
-		} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
+		} else if(DbConnectionFactory.isMsSql()) {
 			sql="drop index " + tableName + "." + constraintName; 
 		} else {
 			sql="ALTER TABLE " + tableName + " DROP INDEX " + constraintName;
@@ -359,8 +361,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 
 			for (String t : tables) {
 				String schema = null;
-				if (DbConnectionFactory.getDBType().equals(
-						DbConnectionFactory.ORACLE)) {
+				if (DbConnectionFactory.isOracle()) {
 					t = t.toUpperCase();
 					schema = dbmd.getUserName();
 				}
@@ -384,13 +385,13 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 			}
 			if (executeDrop) {
 				for (ForeignKey key:ret) {
-					if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL) ||
-							DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL) ||
-							DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+					if(DbConnectionFactory.isPostgres() ||
+							DbConnectionFactory.isMsSql() ||
+							DbConnectionFactory.isOracle()){
 
 							 executeDropConstraint(conn, key.FKTABLE_NAME, key.FK_NAME);
 
-						} else if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)) {
+						} else if (DbConnectionFactory.isMySql()) {
 							executeDropForeignKeyMySql(conn, key.FKTABLE_NAME, key.FK_NAME);
 
 						}
@@ -411,8 +412,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 			for (String t : tables) {
 				String schema = null;
 
-				if (DbConnectionFactory.getDBType().equals(
-						DbConnectionFactory.ORACLE)) {
+				if (DbConnectionFactory.isOracle()) {
 					t = t.toUpperCase();
 					schema = dbmd.getUserName();
 				}
@@ -592,6 +592,12 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 * @return
 	 */
 	abstract public String getMSSQLScript();
+	
+	/**
+	 * The SQL for H2
+	 * @return
+	 */
+	abstract public String getH2Script();
 
 	/**
 	 * This is a list of tables which will get the constraints dropped prior to the task executing and then get recreated afer the execution of the DB Specific SQL

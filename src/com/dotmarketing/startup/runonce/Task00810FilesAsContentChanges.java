@@ -37,7 +37,7 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		    DbConnectionFactory.getConnection().setAutoCommit(true);  
 			DotConnect dc = new DotConnect();
 			String addDefaultFileType = "alter table folder add default_file_type varchar(36)";
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))
+			if(DbConnectionFactory.isOracle())
 			    addDefaultFileType=addDefaultFileType.replaceAll("varchar\\(", "varchar2\\(");
 			
 			String addFK = "alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode)";
@@ -87,7 +87,7 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		dc.addParam(inode);
 		dc.addParam(APILocator.getUserAPI().getSystemUser().getUserId());
 		dc.addParam(new Date());
-		dc.addParam(fileAsset.getPermissionType());
+		dc.addParam(fileAsset.getType());
 		dc.loadResult();
 		
 		
@@ -105,11 +105,21 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		dc.loadResult();
 		
 		
-		
+		upgradeFieldTableWithModDate();
 		
 		APILocator.getFileAssetAPI().createBaseFileAssetFields(fileAsset);
 		StructureCache.addStructure(fileAsset);
 		return fileAsset;
+	}
+	
+	protected void upgradeFieldTableWithModDate() throws DotDataException {
+	    DotConnect dc=new DotConnect();
+	    try {
+    	    dc.executeStatement("alter table field add mod_date "+DbConnectionFactory.getDBDateTimeType()+" null");
+    	    dc.executeStatement("update field set mod_date = "+DbConnectionFactory.getDBDateTimeFunction());
+	    }catch(Exception ex) {
+	        throw new DotDataException(ex.getMessage(),ex);
+	    }
 	}
 
 }

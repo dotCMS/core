@@ -486,7 +486,7 @@
 	                                     <dt><%= LanguageUtil.get(pageContext, "Show") %>:</dt>
 	                                     <dd>
 
-	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch();displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
+	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch(1);displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
 	                                     		<option value="all"><%= LanguageUtil.get(pageContext, "All") %></option>
 	                                     		<option value="locked"><%= LanguageUtil.get(pageContext, "Locked") %></option>
 	                                     		<option value="unpublished"><%= LanguageUtil.get(pageContext, "Unpublished") %></option>

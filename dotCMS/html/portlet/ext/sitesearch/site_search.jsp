@@ -464,7 +464,7 @@ dojo.ready(function() {
     }else{
       dojo.require("dojox.form.uploader.plugins.IFrame");
     }*/
-	if(dojo.isIE && dojo.isIE<10) dojo.require("dojox.form.uploader.plugins.Flash");
+	if(dojo.isIE && dojo.isIE<10) dojo.require("dojox.form.uploader.plugins.IFrame");
 	else dojo.require("dojox.form.uploader.plugins.HTML5");
 });
 

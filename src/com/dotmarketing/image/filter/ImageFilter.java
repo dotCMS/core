@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -171,7 +172,8 @@ public abstract class ImageFilter implements ImageFilterIf {
 				catch (Exception e){
 					inode = parameters.get("assetInodeOrIdentifier")[0];
 				}
-				File dirs = new File(Config.CONTEXT.getRealPath("/assets/dotGenerated/" + inode.charAt(0) + "/" + inode.charAt(1)));
+				String realAssetPath = APILocator.getFileAPI().getRealAssetPath();
+				File dirs = new File(realAssetPath + File.separator + "dotGenerated" + File.separator + inode.charAt(0) + File.separator + inode.charAt(1));
 				dirs.mkdirs();
 				String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);
 				String resultFilePath = dirs.getCanonicalPath() + File.separator + fileNameNoExt + "." + fileExt;

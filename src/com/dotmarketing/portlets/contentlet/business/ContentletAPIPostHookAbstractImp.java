@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -443,6 +444,18 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
     }
 
     public void isInodeIndexed ( String inode, boolean live, boolean returnValue ) {
+    }
+    
+    @Override
+    public void publishAssociated(Contentlet contentlet, boolean isNew)
+            throws DotSecurityException, DotDataException,
+            DotContentletStateException, DotStateException {
+        
+    }
+    @Override
+    public void publishAssociated(Contentlet contentlet, boolean isNew,
+            boolean isNewVersion) throws DotSecurityException,
+            DotDataException, DotContentletStateException, DotStateException {        
     }
 
 }

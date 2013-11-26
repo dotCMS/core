@@ -186,4 +186,9 @@ public class Task00805AddRenameFolderProcedure extends AbstractJDBCStartupTask {
 		return true;
 	}
 
+    @Override
+    public String getH2Script() {
+        return null;
+    }
+
 }

@@ -36,4 +36,9 @@ public class Task01065IndexOnPublishingQueueAuditStatus extends AbstractJDBCStar
         return null;
     }
 
+    @Override
+    public String getH2Script() {
+        return null;
+    }
+
 }

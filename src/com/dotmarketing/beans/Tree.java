@@ -17,10 +17,10 @@ public class Tree implements Serializable, Comparable {
     private static final long serialVersionUID = 1L;
 
 	/** identifier field */
-    private String parent;
+    private String parent="";
 
     /** identifier field */
-    private String child;
+    private String child="";
 
     /** nullable persistent field */
     private String relationType;
@@ -47,21 +47,15 @@ public class Tree implements Serializable, Comparable {
         this.relationType = "child";
     }
 
-    public String getParent() {
-    	if(InodeUtils.isSet(this.parent))
-    		return this.parent;
-    	
-    	return "";
+    public String getParent() {    	
+    	return parent;
     }
 
     public void setParent(String parent) {
         this.parent = parent;
     }
     public String getChild() {
-    	if(InodeUtils.isSet(this.child))
-    		return this.child;
-    	
-    	return "";
+    	return child;
     }
 
     public void setChild(String child) {

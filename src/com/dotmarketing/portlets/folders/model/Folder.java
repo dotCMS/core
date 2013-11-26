@@ -64,11 +64,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	 * @return String
 	 */
 	public String getInode() {
-		if(InodeUtils.isSet(inode))
-			return inode;
-		else if(UtilMethods.isSet(inode)&& inode.equalsIgnoreCase(FolderAPI.SYSTEM_FOLDER))// DOTCMS-3232
-			return FolderAPI.SYSTEM_FOLDER;
-		return "";
+		return inode;
 	}
 
 	/**

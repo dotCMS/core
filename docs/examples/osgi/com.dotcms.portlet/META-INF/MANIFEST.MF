@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Bundle-Name: Dinamyc Portlets
-Bundle-SymbolicName: com.dotmarketing.osgi.portlet
-Bundle-Description: Dinamyc Portlets
-Bundle-Version: 1.0
-Bundle-Activator: com.dotmarketing.osgi.portlet.Activator
-DynamicImport-Package: *
-Import-Package:  org.osgi.framework,
- org.osgi.util.tracker
