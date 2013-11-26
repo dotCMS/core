@@ -129,7 +129,7 @@
 
 </style>
 
-<div style="margin:auto; width:580px; height:360px; overflow:auto;">
+<div style="margin:auto; width:580px; height:240px; overflow:auto;">
 	<div dojoType="dijit.form.Form"  name="formSaveEnvironment"  id="formSaveEnvironment" onsubmit="return false;">
 		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEnvironment.getId())) %>">
 		<table class="myTable" border=0 style="margin: auto" align="center">
@@ -152,7 +152,7 @@
 				<td>
 					<input id="actionWhoCanUseSelect" />
 					<div class="wfWhoCanUseDiv">
-						<table class="listingTable" id="whoCanUseTbl">
+						<table class="listingTable" id="whoCanUseTbl" id="whoCanUseTbl" style="height: 90px;overflow-y: scroll;display: block;overflow: auto;">
 						</table>
 					</div>
 
