@@ -261,7 +261,7 @@ public class OSGIUtil {
         			"org.osgi.service.http," +
         			"javax.inject.Qualifier," +
         			"javax.servlet.resources," +
-        			"javax.servlet;javax.servlet.http");
+        			"javax.servlet;javax.servlet.http;version=2.5");
         	
         	BufferedWriter writer = null;
         	try {
