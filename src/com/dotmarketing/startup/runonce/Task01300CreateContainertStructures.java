@@ -24,10 +24,10 @@ public class Task01300CreateContainertStructures implements StartupTask{
 		 					 "structure_id varchar(36) NOT NULL, "
 		 					 + "code text)";
 
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+		if(DbConnectionFactory.isOracle()) {
 			createTable=createTable.replaceAll("varchar\\(", "varchar2\\(");
 		    createTable=createTable.replaceAll("text", "nclob");
-		} else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)) {
+		} else if(DbConnectionFactory.isMySql()) {
 			createTable=createTable.replaceAll("text", "longtext");
 		}
 
@@ -44,7 +44,7 @@ public class Task01300CreateContainertStructures implements StartupTask{
 
 		HibernateUtil.startTransaction();
 		try {
-			if (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))
+			if (DbConnectionFactory.isMsSql())
 				  dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 
 			dc.executeStatement(createTable);

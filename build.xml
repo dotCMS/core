@@ -32,6 +32,10 @@
 	<property name="sql.dotcms.mysql" value="dotcms_mysql.sql" />
 	<property name="sql.liferay.mysql" value="portal-mysql.sql" />
 	<property name="sql.quartz.mysql" value="tables_mysql.sql" />
+	<property name="sql.dotcms.h2" value="dotcms_h2.sql" />
+	<property name="sql.liferay.h2" value="portal-hypersonic.sql" />
+	<property name="sql.quartz.h2" value="tables_h2.sql" />
+	<property name="sql.dotcms.extra.h2" value="dotcms_extra_h2.sql" />
 	<property name="build.dir" value="build" />
 	<property name="build.classes" value="${build.dir}/classes" />
 	<property name="build.ant" value="${build.dir}/ant" />
@@ -315,6 +319,7 @@
 
 		<buildSQLTask dialect="net.sf.hibernate.dialect.PostgreSQLDialect" />
 		<buildSQLTask dialect="net.sf.hibernate.dialect.OracleDialect" />
+		
 		<concat destfile="${build.dir}/sql/postgres.sql" fixlastline="yes">
 			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.postgres}" />
 			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.postgres}" />
@@ -328,14 +333,15 @@
 			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.oracle}" />
 			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.oracle}" />
 		</concat>
-
+		
 		<replaceregexp byline="true" file="${build.dir}/sql/oracle.sql">
 			<regexp pattern="nclob_description" />
 			<substitution expression="long_description" />
 		</replaceregexp>
+		
 		<copy file="${build.dir}/sql/oracle.sql" todir="${classes.app}"/>
 		<copy file="${build.dir}/sql/postgres.sql" todir="${classes.app}"/>
-
+		
 	</target>
 
 	<target name="buildmXsql" depends="compile" description="builds the mssql and mysql sql schema for dotcms. Leaves Inode.hbm.xml in a state for mssql/mysql">
@@ -348,6 +354,8 @@
 
 		<buildSQLTask dialect="net.sf.hibernate.dialect.MySQLDialect" />
 		<buildSQLTask dialect="net.sf.hibernate.dialect.SybaseDialect" />
+		<buildSQLTask dialect="net.sf.hibernate.dialect.HSQLDialect" />
+				
 
 		<concat destfile="${build.dir}/sql/mssql.sql" fixlastline="yes">
 			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.mssql}" />
@@ -362,6 +370,14 @@
 			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.mysql}" />
 			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.mysql}" />
 		</concat>
+		
+		<concat destfile="${build.dir}/sql/h2.sql" fixlastline="yes">
+			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.h2}" />
+			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.h2}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.h2}" />
+			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.h2}" />
+		</concat>
+		
 		<replace file="${build.dir}/sql/mysql.sql">
 			<replacetoken>VARCHAR(1)</replacetoken>
 			<replacevalue>tinyint(1)</replacevalue>
@@ -371,9 +387,12 @@
 			<replacetoken>varchar(1)</replacetoken>
 			<replacevalue>tinyint(1)</replacevalue>
 		</replace>
+		
 		<mkdir dir="dotCMS/WEB-INF/classes"/>
+		
 		<copy file="${build.dir}/sql/mysql.sql" todir="${classes.app}"/>
 		<copy file="${build.dir}/sql/mssql.sql" todir="${classes.app}"/>
+		<copy file="${build.dir}/sql/h2.sql" todir="${classes.app}"/>
 	</target>
 
 	<target name="create-dist" description="creates a zip file for dbs that autoincrement like MSSQL and MySQL distribution">
@@ -638,16 +657,19 @@
 	            </sql>
 			</then>
 		</elseif>
-		<else>
-    		<sql driver="${db.driver}"
-    			url="${db.base.url}"
-    			userid="${db.username}"
-    			password="${db.password}"
-    			autocommit="true"
-    			classpathref="files-classpath">
-    			CREATE DATABASE ${db.name};
-    		</sql>
-		</else>
+		<elseif>
+			<equals arg1="${db.driver}" arg2="org.postgresql.Driver"/>
+			<then>
+	    		<sql driver="${db.driver}"
+	    			url="${db.base.url}"
+	    			userid="${db.username}"
+	    			password="${db.password}"
+	    			autocommit="true"
+	    			classpathref="files-classpath">
+	    			CREATE DATABASE ${db.name};
+	    		</sql>
+		    </then>
+		</elseif>
 		</if>
 	</target>
 
@@ -660,7 +682,7 @@
                 url="${db.base.url}"
                 userid="${db.oracleadmin.user}"
                 password="${db.oracleadmin.pass}"
-                autocommit="true"
+                autocommit="true" onerror="continue"
                 classpathref="files-classpath">
 				drop user ${db.username} cascade;
             </sql>
@@ -672,22 +694,28 @@
                     url="${db.admin.url}"
                     userid="${db.username}"
                     password="${db.password}"
-                    autocommit="true"
+                    autocommit="true" onerror="continue"
                     classpathref="files-classpath">
                 	DROP DATABASE ${db.name};
             	</sql>
         	</then>
     	 </elseif>
-		 <else>
-    		<sql driver="${db.driver}"
-    			url="${db.base.url}"
-    			userid="${db.username}"
-    			password="${db.password}"
-    			autocommit="true"
-    			classpathref="files-classpath">
-    			DROP DATABASE IF EXISTS ${db.name};
-    		</sql>
-		 </else>
+		 <elseif>
+		 	<or>
+				<equals arg1="${db.driver}" arg2="org.postgresql.Driver"/>
+		 		<equals arg1="${db.driver}" arg2="com.mysql.jdbc.Driver"/>
+		 	</or>
+			<then>
+	    		<sql driver="${db.driver}"
+	    			url="${db.base.url}"
+	    			userid="${db.username}"
+	    			password="${db.password}"
+	    			autocommit="true" onerror="continue"
+	    			classpathref="files-classpath">
+	    			DROP DATABASE IF EXISTS ${db.name};
+	    		</sql>
+			</then>
+		 </elseif>
 	    </if>
 	</target>
 
@@ -699,6 +727,12 @@
 		<copy file="${src.tests.dir}/server.xml" todir="tomcat/conf"/>
 		<copy file="${src.tests.dir}/ROOT.xml" todir="tomcat/conf/Catalina/localhost"/>
 		<replace file="tomcat/conf/server.xml" token="{port}" value="${server.port}"/>
+		<replace file="tomcat/conf/server.xml" token="{shutdown_port}" value="${server.shutdown.port}"/>
+		<replace file="dotCMS/WEB-INF/classes/dotmarketing-config.properties">
+			<replacefilter token="es.http.enabled" value="#es.http.enabled"/>
+			<replacefilter token="es.transport.tcp.port" value="#es.transport.tcp.port"/>
+		</replace>
+		<echo file="dotCMS/WEB-INF/classes/dotmarketing-config.properties" append="true">${line.separator}es.http.enabled=false${line.separator}es.transport.tcp.port=${es.network.port}${line.separator}</echo>
 		<replace file="tomcat/conf/Catalina/localhost/ROOT.xml">
 			<replacefilter token="{driver}" value="${db.driver}"/>
 			<replacefilter token="{url}" value="${db.url}"/>

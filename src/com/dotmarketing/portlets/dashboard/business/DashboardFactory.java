@@ -28,19 +28,19 @@ public abstract class DashboardFactory {
 	
     protected String getSummaryPagesQuery(){
     	
-    	return (DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))?
+    	return (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2())?
 			" select count(*) as hits, htmlpage.inode as inode, identifier.parent_path || identifier.asset_name as uri " +
 			" from clickstream_request join identifier on identifier.id = associated_identifier "+
 			" join htmlpage on htmlpage.identifier = identifier.id  where extract(day from timestampper) = ? "+
 			" and extract(month from timestampper) = ? and extract(year from timestampper) = ? "+
 			" and host_id = ? group by associated_identifier, identifier.parent_path || identifier.asset_name ,htmlpage.inode "
-			:DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)?
+			:DbConnectionFactory.isMySql()?
 					" select count(*) as hits, htmlpage.inode as inode, CONCAT(identifier.parent_path,identifier.asset_name) as uri " +
 					" from clickstream_request join identifier on identifier.id = associated_identifier "+
 					" join htmlpage on htmlpage.identifier = identifier.id where DAY(timestampper) = ? "+
 					" and MONTH(timestampper) = ? and YEAR(timestampper) = ? and host_id = ?"+
 					" group by associated_identifier, CONCAT(identifier.parent_path,identifier.asset_name) ,htmlpage.inode "
-					:DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+					:DbConnectionFactory.isMsSql()?
 							" select count(*) as hits, htmlpage.inode as inode,(identifier.parent_path + identifier.asset_name) as uri " +
 							" from clickstream_request join identifier on identifier.id = associated_identifier "+
 							" join htmlpage on htmlpage.identifier = identifier.id where DATEPART(day, timestampper) = ? "+
@@ -49,18 +49,18 @@ public abstract class DashboardFactory {
     };
 
 	protected String getSummaryContentQuery(){
-		return (DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))?
+		return (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) ?
 			" select count(*) as hits, identifier.parent_path as uri ,contentlet.identifier as inode, contentlet.title as title  from clickstream_request "+
 			" join identifier on identifier.id = associated_identifier join contentlet on contentlet.identifier = identifier.id  "+
 			" where extract(day from timestampper) = ? and extract(month from timestampper) = ? and "+
 			" extract(year from timestampper) = ? and host_id = ?"+
 			" group by associated_identifier, identifier.parent_path,contentlet.identifier,contentlet.title "
-			:DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)?
+			:DbConnectionFactory.isMySql() ?
 					" select count(*) as hits, identifier.parent_path as uri ,contentlet.identifier as inode, contentlet.title as title  from clickstream_request "+
 					" join identifier on identifier.id = associated_identifier join contentlet on contentlet.identifier = identifier.id  "+
 					" where DAY(timestampper) = ? and MONTH(timestampper) = ? and YEAR(timestampper) = ? "+
 					" and host_id = ? group by associated_identifier, identifier.parent_path,contentlet.identifier,contentlet.title "
-					:DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?
+					:DbConnectionFactory.isMsSql() ?
 							" select count(*) as hits, identifier.parent_path as uri ,contentlet.identifier as inode, contentlet.title as title  from clickstream_request "+
 							" join identifier on identifier.id = associated_identifier join contentlet on contentlet.identifier = identifier.id  "+
 							" where DATEPART(day, timestampper) = ? and DATEPART(month, timestampper) = ? and DATEPART(year, timestampper) = ? "+
@@ -75,16 +75,16 @@ public abstract class DashboardFactory {
 		" join structure st on (contentlet.structure_inode=st.inode) "+
 		" UNION ALL "+ 
 		" select htmlpage.inode as inode, 'htmlpage' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, page_info.live_inode, page_info.working_inode, page_info.deleted, " +
-		((DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)||(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)))?"identifier.parent_path || identifier.asset_name ":
-			(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))?" CONCAT(identifier.parent_path,identifier.asset_name) ": " identifier.parent_path + identifier.asset_name ")+" as name "+  
+		((DbConnectionFactory.isPostgres()||(DbConnectionFactory.isOracle())||DbConnectionFactory.isH2())?"identifier.parent_path || identifier.asset_name ":
+			(DbConnectionFactory.isMySql())?" CONCAT(identifier.parent_path,identifier.asset_name) ": " identifier.parent_path + identifier.asset_name ")+" as name "+  
 			" from htmlpage_version_info page_info join htmlpage on(htmlpage.identifier = page_info.identifier) join identifier identifier on (identifier.id = htmlpage.identifier) "+ 
 			" UNION ALL "+ 
 			" select template.inode as inode, 'template' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, temp_info.live_inode,temp_info.working_inode,temp_info.deleted, coalesce(template.title,template.identifier) as name "+ 
 			" from template_version_info temp_info join template on(template.identifier = temp_info.identifier) join identifier identifier on identifier.id = template.identifier "+ 
 			" UNION ALL "+ 
 			" select file_asset.inode as inode, 'file_asset' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, file_info.live_inode,file_info.working_inode,file_info.deleted, "+
-			((DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)||(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)))?"identifier.parent_path || identifier.asset_name ":
-				(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))?" CONCAT(identifier.parent_path,identifier.asset_name) ": " identifier.parent_path + identifier.asset_name ")+" as name "+ 
+			((DbConnectionFactory.isPostgres()||(DbConnectionFactory.isOracle())||DbConnectionFactory.isH2())?"identifier.parent_path || identifier.asset_name ":
+				(DbConnectionFactory.isMySql())?" CONCAT(identifier.parent_path,identifier.asset_name) ": " identifier.parent_path + identifier.asset_name ")+" as name "+ 
 				" from fileasset_version_info file_info join file_asset on(file_asset.identifier = file_info.identifier) join identifier identifier on identifier.id = file_asset.identifier "+ 
 				" UNION ALL "+ 
 				" select containers.inode as inode, 'container' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, con_info.live_inode,con_info.working_inode,con_info.deleted, coalesce(containers.title,containers.identifier) as name "+ 
@@ -93,10 +93,10 @@ public abstract class DashboardFactory {
 				" select links.inode as inode, 'link' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, links_info.live_inode,links_info.working_inode,links_info.deleted, coalesce(links.title,links.identifier) as name "+ 
 				" from link_version_info links_info join links on(links_info.identifier= links.identifier) join identifier identifier on (identifier.id = links.identifier) "+ 
 				" )assets where mod_date>(select coalesce(max(mod_date),"
-				+(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)?"'1970-01-01 00:00:00')"
-						:(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE))?"TO_TIMESTAMP('1970-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))"
-								:(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL))?"STR_TO_DATE('1970-01-01','%Y-%m-%d'))"
-										:(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL))?"CAST('1970-01-01' AS DATETIME))":"")+
+				+(DbConnectionFactory.isPostgres()||DbConnectionFactory.isH2()?"'1970-01-01 00:00:00')"
+						:(DbConnectionFactory.isOracle())?"TO_TIMESTAMP('1970-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))"
+								:(DbConnectionFactory.isMySql())?"STR_TO_DATE('1970-01-01','%Y-%m-%d'))"
+										:(DbConnectionFactory.isMsSql())?"CAST('1970-01-01' AS DATETIME))":"")+
 										" from analytic_summary_workstream) and host_id = '"+hostId+"' order by assets.mod_date,assets.name asc ";
 	}
 
@@ -146,7 +146,7 @@ public abstract class DashboardFactory {
 	
 	protected StringBuffer getHostListQuery(boolean hasCategory, String selectedCategories,  String runDashboardFieldContentlet){
 		StringBuffer query = new StringBuffer();
-		query.append("select "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE) || DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?"":" distinct ")+ (" {contentlet.*}, ")    + 
+		query.append("select "+ (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()?"":" distinct ")+ (" {contentlet.*}, ")    + 
 				"coalesce(d.page_views,0) as totalpageviews,  " +
 				"CASE WHEN contentinfo.live_inode is not null THEN 'Live' "+
                 " ELSE 'Stopped' "+
@@ -158,7 +158,7 @@ public abstract class DashboardFactory {
 				  "analytic_summary_period on analytic_summary.summary_period_id = analytic_summary_period.id "+
 				  "and analytic_summary_period.full_date > ? and analytic_summary_period.full_date < ? "+
 				  "group by host_id" +
-				") "+ (DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)?" as d": DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)? " d " : " as d") +" on d.host_id = contentlet.identifier " +
+				") "+ (DbConnectionFactory.isMsSql()?" as d": DbConnectionFactory.isOracle()? " d " : " as d") +" on d.host_id = contentlet.identifier " +
 				(hasCategory?" join tree on tree.child = contentlet.inode and tree.parent in("+selectedCategories+") ":"") +
 				"join structure s on contentlet.structure_inode = s.inode " +
 				"where contentlet_1_.type = 'contentlet' and contentlet.inode = contentlet_1_.inode and s.name ='Host' and contentlet.identifier = contentinfo.identifier "+ 

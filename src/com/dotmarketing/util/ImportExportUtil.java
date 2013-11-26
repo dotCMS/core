@@ -77,7 +77,6 @@ public class ImportExportUtil {
     private Map<String, String> sequences;
     private Map<String, String> tableIDColumns;
     private Map<String, String> tableNames;
-    private String dbType = DbConnectionFactory.getDBType();
     private static String assetRealPath = null;
     private static String assetPath = "/assets";
     private File companyXML;
@@ -167,7 +166,7 @@ public class ImportExportUtil {
         tableNames.put("DashboardSummary", "analytic_summary");
         tableNames.put("DashboardSummaryContent", "analytic_summary_content");
         tableNames.put("DashboardSummaryVisits", "analytic_summary_visits");
-        if(dbType.equals(DbConnectionFactory.POSTGRESQL) || dbType.equals(DbConnectionFactory.ORACLE)){
+        if(DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle()){
             sequences = new HashMap<String, String>();
             //sequences.put("inode", "inode_seq");
             sequences.put("content_rating", "content_rating_sequence");
@@ -1284,7 +1283,7 @@ public class ImportExportUtil {
                     Image im = (Image)l.get(j);
                     DotConnect dc = new DotConnect();
                     dc.setSQL("insert into image values (?,?)");
-                    if(!UtilMethods.isSet(im.getImageId()) && com.dotmarketing.db.DbConnectionFactory.getDBType().equals(com.dotmarketing.db.DbConnectionFactory.ORACLE)){
+                    if(!UtilMethods.isSet(im.getImageId()) && DbConnectionFactory.isOracle()){
                         continue;
                     }
                     dc.addParam(im.getImageId());
@@ -1382,7 +1381,7 @@ public class ImportExportUtil {
 
 
                 String tableName = "";
-                if(classesWithIdentity.contains(cName) && dbType.equals(DbConnectionFactory.MSSQL) && !cName.equalsIgnoreCase("inode")){
+                if(classesWithIdentity.contains(cName) && DbConnectionFactory.isMsSql() && !cName.equalsIgnoreCase("inode")){
                     tableName = tableNames.get(cName);
                     turnIdentityOnMSSQL(tableName);
                     identityOn = true;
@@ -1392,7 +1391,7 @@ public class ImportExportUtil {
 				}*/
                 for (int j = 0; j < l.size(); j++) {
                     Object obj = l.get(j);
-                    if(l.get(j) instanceof com.dotmarketing.portlets.contentlet.business.Contentlet && dbType.equals(DbConnectionFactory.MSSQL)){
+                    if(l.get(j) instanceof com.dotmarketing.portlets.contentlet.business.Contentlet && DbConnectionFactory.isMsSql()){
                         com.dotmarketing.portlets.contentlet.business.Contentlet contentlet = (com.dotmarketing.portlets.contentlet.business.Contentlet)l.get(j);
                         changeDateForSQLServer(contentlet, out);
                     }
@@ -1534,8 +1533,8 @@ public class ImportExportUtil {
         String dbType = DbConnectionFactory.getDBType();
         DotConnect dc = new DotConnect();
         try {
-            if(dbType.equals(DbConnectionFactory.MSSQL)){
-            }else if(dbType.equals(DbConnectionFactory.ORACLE)){
+            if(DbConnectionFactory.isMsSql()){
+            }else if(DbConnectionFactory.isOracle()){
                 for (String clazz : classesWithIdentity) {
                     String tableName = tableNames.get(clazz);
                     dc.setSQL("drop sequence " + sequences.get(tableName));
@@ -1546,7 +1545,7 @@ public class ImportExportUtil {
                     dc.setSQL("CREATE SEQUENCE " + sequences.get(tableName) + " MINVALUE 1 START WITH " + (max + 100) + " INCREMENT BY 1");
                     dc.getResults();
                 }
-            }else if(dbType.equals(DbConnectionFactory.POSTGRESQL)){
+            }else if(DbConnectionFactory.isPostgres()){
                 for (String clazz : classesWithIdentity) {
                     String tableName = tableNames.get(clazz);
                     dc.setSQL("select max(" + tableIDColumns.get(tableName) + ") as maxID from " + tableName);

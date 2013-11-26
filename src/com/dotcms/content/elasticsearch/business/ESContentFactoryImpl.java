@@ -137,12 +137,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if(field.getFieldContentlet().indexOf("bool") != -1){
             sql.append(DbConnectionFactory.getDBFalse());
         }else if(field.getFieldContentlet().indexOf("date") != -1){
-            if(DbConnectionFactory.isOracle())
-                sql.append("CURRENT_DATE");
-            else if(DbConnectionFactory.isMsSql())
-                sql.append("GETDATE()");
-            else
-                sql.append("NOW()");
+            sql.append(DbConnectionFactory.getDBDateTimeFunction());
         }else if(field.getFieldContentlet().indexOf("float") != -1){
             sql.append(0.0);
         }else if(field.getFieldContentlet().indexOf("integer") != -1){
@@ -213,7 +208,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	protected long contentletIdentifierCount() throws DotDataException {
 	    DotConnect dc = new DotConnect();
-        if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)){
+        if(DbConnectionFactory.isOracle()){
             dc.setSQL("select count(*) as count from (select distinct identifier from contentlet)");
         }else{
             dc.setSQL("select count(*) as count from (select distinct identifier from contentlet) as t");
@@ -254,7 +249,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
         fatty.setInode(cont.getInode());
-        fatty.setIdentifier(cont.getIdentifier());
+        fatty.setIdentifier(UtilMethods.isSet(cont.getIdentifier())?cont.getIdentifier():null);
         fatty.setSortOrder(new Long(cont.getSortOrder()).intValue());
         fatty.setStructureInode(cont.getStructureInode());
         fatty.setLanguageId(cont.getLanguageId());

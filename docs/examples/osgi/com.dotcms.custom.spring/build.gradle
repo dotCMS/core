@@ -1,0 +1,42 @@
+apply plugin: 'application'
+apply plugin: 'osgi'
+apply plugin: 'war'
+apply plugin: 'eclipse'
+
+sourceCompatibility = '1.6'
+version = '0.1'
+
+
+repositories {
+	maven {
+        url "http://repo.dotcms.com/artifactory/libs-release"
+    }
+}
+
+dependencies {
+	compile fileTree(dir: 'src/main/resources/libs', include: '*.jar')
+	compile (group: 'com.dotcms', name: 'dotcms', version: '2.5.1'){
+		transitive = true
+	}
+	providedCompile "javax.servlet:servlet-api:2.5"
+}
+
+jar {
+    manifest {
+        name = 'Example Custom Spring controller'
+        instruction 'Private-Package', 'com.dotmarketing.osgi.custom.spring'
+        instruction '-includeresource', 'spring=spring, libs'
+        instruction 'Bundle-Vendor', 'dotcms'
+        instruction 'Bundle-Description', 'Spring OSGi Example providing its own Spring for dotcms '
+        instruction 'Bundle-DocURL', 'http://www.dotcms.com'
+        instruction 'Bundle-Activator', 'com.dotmarketing.osgi.custom.spring.Activator'        
+        instruction 'Bundle-ClassPath', '.,libs/com.springsource.org.aopalliance-1.0.0.jar,libs/com.springsource.org.apache.commons.logging-1.1.1.jar,libs/com.springsource.org.apache.log4j-1.2.15.jar,libs/org.springframework.aop-3.1.1.RELEASE.jar,libs/org.springframework.asm-3.1.1.RELEASE.jar,libs/org.springframework.beans-3.1.1.RELEASE.jar,libs/org.springframework.context-3.1.1.RELEASE.jar,libs/org.springframework.context.support-3.1.1.RELEASE.jar,libs/org.springframework.core-3.1.1.RELEASE.jar,libs/org.springframework.expression-3.1.1.RELEASE.jar,libs/org.springframework.web-3.1.1.RELEASE.jar,libs/org.springframework.web.servlet-3.1.1.RELEASE.jar,libs/com.springsource.net.sf.cglib-2.2.0.jar,libs/com.springsource.org.codehaus.jackson-1.4.3.jar,libs/dotcms_log4j.jar'
+        instruction 'DynamicImport-Package', '*'
+        instruction 'Import-Package', '!org.springframework.*,*;version=0'
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.8'
+}
+

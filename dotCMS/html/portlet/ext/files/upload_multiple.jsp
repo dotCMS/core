@@ -101,7 +101,7 @@ if(request.getParameter("in_frame")!=null){
 				text-align: left;
  			}
 			.dojoxUploaderSize{
-				width:50px;
+				width:150px;
 				text-align: left;
 				<% if(request.getHeader("User-Agent").contains("MSIE")){ %>
 					display:none; 

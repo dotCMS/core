@@ -70,6 +70,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	@Override
 	protected Category find(String id) throws DotDataException {
+	    if(!UtilMethods.isSet(id)) return null;
+	    
 		Category cat = catCache.get(id);
 		if(cat == null) {
 			try {

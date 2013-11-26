@@ -70,8 +70,7 @@ public class HibernateConfiguration extends SessionConfiguration {
 
 			cfg.setProperties(SystemProperties.getProperties());
 			//http://jira.dotmarketing.net/browse/DOTCMS-4937
-			String _dbType = DbConnectionFactory.getDBType();
-			if (_dbType!=null && DbConnectionFactory.MYSQL.equals(_dbType)) {
+			if (DbConnectionFactory.isMySql()) {
 				cfg.setNamingStrategy(new LowercaseNamingStrategy());
 				Table liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.CompanyHBM.class).getTable();
 				liferayTable.setName("company");

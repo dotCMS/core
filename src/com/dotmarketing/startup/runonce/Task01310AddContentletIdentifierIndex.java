@@ -39,6 +39,11 @@ public class Task01310AddContentletIdentifierIndex extends AbstractJDBCStartupTa
 	@Override
 	protected List<String> getTablesToDropConstraints() {
 		return null;
-	}	
+	}
+
+    @Override
+    public String getH2Script() {
+        return null;
+    }	
     
 }

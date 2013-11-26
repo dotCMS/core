@@ -23,29 +23,32 @@ import edu.emory.mathcs.backport.java.util.Collections;
 
 public class StartupTasksExecutor {
 
-	private final String runOncePackage = Config.getStringProperty("RUNONCEPACKAGE","com.dotmarketing.startup.runonce");
-	private final String runAlwaysPackage = Config.getStringProperty("RUNALWAYSPACKAGE", "com.dotmarketing.startup.runalways");
+	
 	private static StartupTasksExecutor executor;
 
 	private String pgLock = "lock table db_version;";
 	private String myLock = "lock table db_version write;";
 	private String oraLock = "LOCK TABLE DB_VERSION IN EXCLUSIVE MODE";
 	private String msLock = "SELECT * FROM db_version WITH (XLOCK)";
+	private String h2Lock = "SELECT * FROM db_version FOR UPDATE";
 
 	private String pgCommit = "commit;";
 	private String myCommit = "unlock tables";
 	private String oraCommit = "COMMIT";
 	private String msCommit = "COMMIT";
+	private String h2Commit = "COMMIT";
 
 	private String pgCreate = "CREATE TABLE db_version (db_version integer NOT NULL, date_update timestamp with time zone NOT NULL, CONSTRAINT db_version_pkey PRIMARY KEY (db_version));";
 	private String myCreate = "CREATE TABLE `db_version` (`db_version` INTEGER UNSIGNED NOT NULL,`date_update` DATETIME NOT NULL, PRIMARY KEY (`db_version`))";
 	private String oraCreate = "CREATE TABLE \"DB_VERSION\" ( \"DB_VERSION\" INTEGER NOT NULL , \"DATE_UPDATE\" TIMESTAMP NOT NULL, PRIMARY KEY (\"DB_VERSION\") )";
 	private String msCreate ="CREATE TABLE db_version (	db_version int NOT NULL , date_update datetime NOT NULL, PRIMARY KEY (db_version) )";
+	private String h2Create = "CREATE TABLE db_version (db_version integer NOT NULL, date_update timestamp NOT NULL, CONSTRAINT db_version_pkey PRIMARY KEY (db_version))";
 	
 	private String pgSelect = "SELECT max(db_version) AS db_version FROM db_version";
 	private String mySelect = "SELECT max(db_version) AS db_version FROM db_version";
 	private String oraSelect = "SELECT max(db_version) AS db_version FROM db_version";
 	private String msSelect = "SELECT max(db_version) AS db_version FROM db_version";
+	private String h2Select = "SELECT max(db_version) AS db_version FROM db_version";
 
 //	private String pgSelect = "SELECT * FROM db_version ORDER BY db_version DESC LIMIT 1;";
 //	private String mySelect = "SELECT * FROM db_version ORDER BY db_version DESC LIMIT 1;";
@@ -74,32 +77,38 @@ public class StartupTasksExecutor {
 	 * different method to avoid further clutter
 	 */
 	private void setupSQL() {
-		String dbType = DbConnectionFactory.getDBType();
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.POSTGRESQL)) {
+		if (DbConnectionFactory.isPostgres()) {
 			lock = pgLock;
 			commit = pgCommit;
 			create = pgCreate;
 			select = pgSelect;
 		}
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.MYSQL)) {
+		else if (DbConnectionFactory.isMySql()) {
 			lock = myLock.toLowerCase();
 			commit = myCommit.toLowerCase();
 			create = myCreate.toLowerCase();
 			select = mySelect.toLowerCase();
 		}
 		
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.ORACLE)) {
+		else if (DbConnectionFactory.isOracle()) {
 			lock = oraLock;
 			commit = oraCommit;
 			create = oraCreate;
 			select = oraSelect;
 		}
 		
-		if (dbType.equalsIgnoreCase(DbConnectionFactory.MSSQL)) {
+		else if (DbConnectionFactory.isMsSql()) {
 			lock = msLock;
 			commit = msCommit;
 			create = msCreate;
 			select = msSelect;
+		}
+		
+		else if(DbConnectionFactory.isH2()) {
+		    lock = h2Lock;
+		    commit = h2Commit;
+		    create = h2Create;
+		    select = h2Select;
 		}
 
 	}
@@ -145,10 +154,14 @@ public class StartupTasksExecutor {
 			Logger.debug(this.getClass(), "Trying to create db_version table");
 			try {
 				conn.rollback();
-				if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+				if(DbConnectionFactory.isMySql()){
 					s.execute("SET storage_engine=INNODB");
 				}
 				s.execute(create);
+				if(update==null) {
+				    // looks like H2 do an early table name check
+				    update = conn.prepareStatement("INSERT INTO db_version (db_version,date_update) VALUES (?,?)");
+				}
 				update.setInt(1, 0);
 				Date date = new Date(Calendar.getInstance().getTimeInMillis());
 				update.setDate(2, date);
@@ -307,7 +320,7 @@ public class StartupTasksExecutor {
 			try {
 				if(conn != null && !conn.isClosed()){
 					Statement s1 = conn.createStatement();
-					if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+					if(DbConnectionFactory.isMySql()){
 						s1.execute(commit);
 					}
 					if(!conn.getAutoCommit()){

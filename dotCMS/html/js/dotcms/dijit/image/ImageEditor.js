@@ -456,7 +456,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
                     sync:true,
                     url:url,
                     handle:function(data){
-                        window.parent.document.getElementById(field).value=fileName;
+                        window.parent.document.getElementById(field).value=this.fileName;                       
                     },
                     preventCache:true,
                     binaryFieldId:field,
