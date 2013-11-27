@@ -532,9 +532,9 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		</dt>
 		<dd>
 			<% if(fixed) { %>
-			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" readonly="readonly" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? fieldForm.getFieldName() : "" %>" />
+			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" readonly="readonly" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
 			<% } else { %>
-			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? fieldForm.getFieldName() : "" %>" />
+			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
 			<% }  %>
 		</dd>
 	</dl>
@@ -625,7 +625,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	<dl id="validationRow" style="display:none">
 		<dt><%= LanguageUtil.get(pageContext, "Validation-RegEx") %>:</dt>
 		<dd>
-			<input type="text" dojoType="dijit.form.TextBox" name="regexCheck" id="regexCheck" style="width:250px" readonly="<%=fieldForm.isFixed() || fieldForm.isReadOnly()%>" value="<%= UtilMethods.isSet(fieldForm.getRegexCheck()) ? fieldForm.getRegexCheck() : "" %>" />
+			<input type="text" dojoType="dijit.form.TextBox" name="regexCheck" id="regexCheck" style="width:250px" readonly="<%=fieldForm.isFixed() || fieldForm.isReadOnly()%>" value="<%= UtilMethods.isSet(fieldForm.getRegexCheck()) ? UtilMethods.webifyString(fieldForm.getRegexCheck()) : "" %>" />
 			<select dojoType="dijit.form.FilteringSelect" name="validation" id="validation" onchange="fillRegexp(this)">
 				<option value=""><--<%= LanguageUtil.get(pageContext, "Select-validation") %>--></option>
 				<option value="^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,4})$"><%= LanguageUtil.get(pageContext, "Email") %></option>
@@ -643,11 +643,11 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		
 	<dl id="defaultText" style="display:none">
 		<dt><span id="defaultText" ><%= LanguageUtil.get(pageContext, "Default-Value") %>:</span></dt>
-		<dd><input type="text" dojoType="dijit.form.TextBox" name="defaultValue" style="width:250px" onblur="validateCategories(this);" value="<%= UtilMethods.isSet(fieldForm.getDefaultValue()) ? fieldForm.getDefaultValue() : "" %>" /></span></dd>
+		<dd><input type="text" dojoType="dijit.form.TextBox" name="defaultValue" style="width:250px" onblur="validateCategories(this);" value="<%= UtilMethods.isSet(fieldForm.getDefaultValue()) ? UtilMethods.webifyString(fieldForm.getDefaultValue()) : "" %>" /></span></dd>
 	</dl>
 	<dl id="hintText" style="display:none">
 		<dt><%= LanguageUtil.get(pageContext, "Hint") %>:</dt>
-		<dd><input type="text" dojoType="dijit.form.TextBox" name="hint" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getHint()) ? UtilMethods.escapeDoubleQuotes(fieldForm.getHint()) : "" %>" /></dd>
+		<dd><input type="text" dojoType="dijit.form.TextBox" name="hint" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getHint()) ? UtilMethods.webifyString(fieldForm.getHint()) : "" %>" /></dd>
 	</dl>
 	<!-- END Field Options -->
 		
