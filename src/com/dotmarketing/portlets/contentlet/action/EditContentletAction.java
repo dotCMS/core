@@ -1039,21 +1039,22 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					if(field.getFieldContentlet().startsWith("binary")){
 						httpReq.getSession().setAttribute(field.getFieldContentlet() + "-sibling", sib+","+field.getVelocityVarName());
 						java.io.File inputFile = APILocator.getContentletAPI().getBinaryFile(sib, field.getVelocityVarName(), user);
-						java.io.File acopyFolder=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
-                                + java.io.File.separator + user.getUserId() + java.io.File.separator + field.getFieldContentlet()
-                                + java.io.File.separator + UUIDGenerator.generateUuid());
-						
-						if(!acopyFolder.exists())
-                            acopyFolder.mkdir();
-						
-						String shortFileName = FileUtil.getShortFileName(inputFile.getAbsolutePath());
-						
-						java.io.File binaryFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
-								+ java.io.File.separator + user.getUserId() + java.io.File.separator + field.getFieldContentlet()
-								+ java.io.File.separator + shortFileName.trim());
-						
-						FileUtil.copyFile(inputFile, binaryFile);
-						
+						if(inputFile != null){
+							java.io.File acopyFolder=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+									+ java.io.File.separator + user.getUserId() + java.io.File.separator + field.getFieldContentlet()
+	                                + java.io.File.separator + UUIDGenerator.generateUuid());
+							
+							if(!acopyFolder.exists())
+	                            acopyFolder.mkdir();
+							
+							String shortFileName = FileUtil.getShortFileName(inputFile.getAbsolutePath());
+							
+							java.io.File binaryFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+									+ java.io.File.separator + user.getUserId() + java.io.File.separator + field.getFieldContentlet()
+									+ java.io.File.separator + shortFileName.trim());
+							
+							FileUtil.copyFile(inputFile, binaryFile);
+						}
 					}
 				}
 			}
