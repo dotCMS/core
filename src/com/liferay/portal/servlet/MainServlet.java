@@ -25,7 +25,10 @@ package com.liferay.portal.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -48,8 +51,15 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.business.ClusterFactory;
+import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
+import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -58,6 +68,7 @@ import com.dotmarketing.startup.StartupTasksExecutor;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DotConfig;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.httpbridge.webproxy.http.TaskController;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyLocalManagerUtil;
@@ -121,9 +132,72 @@ public class MainServlet extends ActionServlet {
 				throw new ServletException(e1);
 			}
 
+			// Clustering
+			try {
+				ClusterFactory.generateClusterId();
+			} catch (DotDataException e) {
+				Logger.error(getClass(), "Unable to generate Cluster ID", e);
+			}
+
+			try {
+
+				ServerAPI serverAPI = APILocator.getServerAPI();
+				String serverId = serverAPI.readServerId();
+				Server server = serverAPI.getServer(serverId);
+
+				if(!UtilMethods.isSet(serverId) || server==null)  {
+					InetAddress addr = InetAddress.getLocalHost();
+			        // Get IP Address
+			        byte[] ipAddr = addr.getAddress();
+			        addr = InetAddress.getByAddress(ipAddr);
+			        String address = addr.getHostAddress();
+			        server = new Server();
+			        server.setIpAddress(address);
+			        serverAPI.saveServer(server);
+
+			        try {
+			        	serverAPI.writeServerIdToDisk(server.getServerId());
+			        	serverAPI.writeHeartBeatToDisk(server.getServerId());
+					} catch (IOException e) {
+						Logger.error(ServerAPIImpl.class, "Could not write Server ID to file system" , e);
+					}
+
+			        serverId = server.getServerId();
+				}
+
+		        serverAPI.createServerUptime(serverId);
+		        List<Server> aliveServers = serverAPI.getAliveServers();
+		        boolean sameAssetsDir = false;
+		        boolean anyOtherServerAlive = false;
+
+		        if(aliveServers!=null && !aliveServers.isEmpty()) {
+		        	Server randomAliveServer = aliveServers.get(0);
+		        	String randomServerId = randomAliveServer.getServerId();
+		        	anyOtherServerAlive = UtilMethods.isSet(randomServerId);
+
+		        	if(anyOtherServerAlive) {
+			        	String serverFilePath = Config.getStringProperty("ASSET_REAL_PATH", Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")))
+			        			+ java.io.File.separator + "server" + java.io.File.separator + randomServerId + java.io.File.separator + "heartbeat.dat";
+			        	File file = new File(serverFilePath);
+			        	sameAssetsDir = file.exists();
+		        	}
+		        }
+
+		        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) && (!anyOtherServerAlive || (anyOtherServerAlive && sameAssetsDir))) {
+		        	ClusterFactory.addNodeToCluster(serverId);
+		        }
+
+			} catch (UnknownHostException e3) {
+				Logger.error(getClass(), "Could not get Local Host", e3);
+			} catch (DotDataException e) {
+				Logger.error(getClass(), "Could not save Server to DB", e);
+			}
+
+			// END Clustering
+
 			// Starting the reindexation threads
 			ClusterThreadProxy.createThread();
-			if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED")) {
+			if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {
 				ClusterThreadProxy.startThread(Config.getIntProperty("DIST_INDEXATION_SLEEP", 500), Config.getIntProperty("DIST_INDEXATION_INIT_DELAY", 5000));
 			}
 

@@ -25,7 +25,9 @@ import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 
-import com.dotcms.cluster.bean.ClusterProperty;
+import com.dotcms.cluster.bean.ESProperty;
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -42,8 +44,7 @@ import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 
 import edu.emory.mathcs.backport.java.util.Collections;
-
-import static com.dotcms.cluster.bean.ClusterProperty.*;
+import static com.dotcms.cluster.bean.ESProperty.*;
 
 /**
  * The Guava cache administrator uses Google's Guave code
@@ -106,7 +107,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	}
 
 	public DotGuavaCacheAdministratorImpl() {
-		journalAPI = APILocator.getDistributedJournalAPI();
+//		journalAPI = APILocator.getDistributedJournalAPI();
 		boolean initDiskCache = false;
 		Iterator<String> it = Config.getKeys();
 		availableCaches.add(DEFAULT_CACHE);
@@ -142,33 +143,33 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			}
 		}
 
-
-
-		if ((Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false) == false)
-				&& Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {
-//			setCluster();
-		}
-
 	}
 
-	public void setCluster() {
-		setCluster(null);
+	public void setCluster(String serverId) {
+		setCluster(null, serverId);
 	}
 
-	public void setCluster(Map<ClusterProperty, String> cacheProperties) {
+	public void setCluster(Map<String, String> cacheProperties, String serverId) {
 		Logger.info(this, "***\t Starting JGroups Cluster Setup");
 
 		try {
-			if(cacheProperties==null || cacheProperties.isEmpty()) {
-				cacheProperties = ClusterProperty.getDefaultMap();
+
+			journalAPI = APILocator.getDistributedJournalAPI();
+
+			if(cacheProperties==null) {
+				cacheProperties = new HashMap<String, String>();
 			}
 
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-			String cacheFile = "cache-jgroups-" + cacheProperties.get(CACHE_PROTOCOL) + ".xml";
+			String cacheProtocol = UtilMethods.isSet(cacheProperties.get("CACHE_PROTOCOL"))?cacheProperties.get("CACHE_PROTOCOL")
+					:Config.getStringProperty("CACHE_PROTOCOL", "tcp");
+
+			String cacheFile = "cache-jgroups-" + cacheProtocol + ".xml";
 
 			Logger.info(this, "***\t Going to load JGroups with this Classpath file " + cacheFile);
 
-			String bindAddr = cacheProperties.get(CACHE_BINDADDRESS);
+			String bindAddr = UtilMethods.isSet(cacheProperties.get("CACHE_BINDADDRESS"))?cacheProperties.get("CACHE_BINDADDRESS")
+					:Config.getStringProperty("CACHE_BINDADDRESS", "localhost");
 
 			if (bindAddr != null) {
 				Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
@@ -180,7 +181,8 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				System.setProperty("jgroups.bind_addr", bindAddr);
 			}
 
-			String bindPort = cacheProperties.get(CACHE_BINDPORT);
+			String bindPort = UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
+					:Config.getStringProperty("CACHE_BINDPORT", null);
 
 			if (bindPort != null) {
 				Logger.info(this, "***\t Using " + bindPort + " as the bindport");
@@ -192,26 +194,49 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				System.setProperty("jgroups.bind_port", bindPort);
 			}
 
-			String protocol = cacheProperties.get(CACHE_PROTOCOL);
+			ServerAPI serverAPI = APILocator.getServerAPI();
+			List<Server> aliveServers = serverAPI.getAliveServers();
+			Server currentServer = serverAPI.getServer(serverId);
+			aliveServers.add(currentServer);
 
-			if (protocol.equals("tcp")) {
+			String initalHosts = "";
+
+			int i=0;
+			for (Server server : aliveServers) {
+				if(i>0) {
+					initalHosts += ", ";
+				}
+				initalHosts += server.getHost() + "[" + server.getCachePort() + "]";
+				i++;
+			}
+
+			if (cacheProtocol.equals("tcp")) {
 				Logger.info(this, "***\t Setting up TCP Prperties");
-				System.setProperty("jgroups.tcpping.initial_hosts",	cacheProperties.get(CACHE_TCP_INITIAL_HOSTS));
-			} else if (protocol.equals("udp")) {
+				System.setProperty("jgroups.tcpping.initial_hosts",	UtilMethods.isSet(cacheProperties.get("CACHE_TCP_INITIAL_HOSTS"))?cacheProperties.get("CACHE_TCP_INITIAL_HOSTS")
+						:Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initalHosts));
+			} else if (cacheProtocol.equals("udp")) {
 				Logger.info(this, "***\t Setting up UDP Prperties");
-				System.setProperty("jgroups.udp.mcast_port", cacheProperties.get(CACHE_MULTICAST_PORT));
-				System.setProperty("jgroups.udp.mcast_addr", cacheProperties.get(CACHE_MULTICAST_ADDRESS));
+				System.setProperty("jgroups.udp.mcast_port", UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_PORT"))?cacheProperties.get("CACHE_MULTICAST_PORT")
+						:Config.getStringProperty("CACHE_MULTICAST_PORT", "45588"));
+				System.setProperty("jgroups.udp.mcast_addr", UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_ADDRESS"))?cacheProperties.get("CACHE_MULTICAST_ADDRESS")
+						:Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10"));
 			} else {
 				Logger.info(this, "Not Setting up any Properties as no protocal was found");
 			}
 
-			System.setProperty("java.net.preferIPv4Stack", cacheProperties.get(CACHE_FORCE_IPV4));
+			System.setProperty("java.net.preferIPv4Stack", UtilMethods.isSet(cacheProperties.get("CACHE_FORCE_IPV4"))?cacheProperties.get("CACHE_FORCE_IPV4")
+					:Config.getStringProperty("CACHE_FORCE_IPV4", "true"));
 			Logger.info(this, "***\t Setting up JCannel");
 			channel = new JChannel(classLoader.getResource(cacheFile));
 			channel.setReceiver(this);
 			channel.connect("dotCMSCluster");
 			channel.setOpt(JChannel.LOCAL, false);
 			useJgroups = true;
+			List<Address> members = channel.getView().getMembers();
+
+			for (Address address : members) {
+				System.out.println(address);
+			}
 
 			Logger.info(this, "***\t " + channel.toString(true));
 			Logger.info(this, "***\t Ending JGroups Cluster Setup");

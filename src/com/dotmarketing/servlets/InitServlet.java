@@ -123,70 +123,23 @@ public class InitServlet extends HttpServlet {
         Logger.info(this, "   Using database: " + _dbType);
         Logger.info(this, "   Using dialect : " + _dailect);
         Logger.info(this, "   Company Name  : " + _companyId);
-		if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
 
-		Logger.info(this, "   Clustering    : Enabled");
-//		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
-				try{
-					((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
-		Logger.info(this, "     Ping Sent");
-				}
-				catch(Exception e){
-					Logger.error(this, "   Ping Error: " + e.getMessage());
+        if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
 
-				}
-			}
-			else{
-				Logger.info(this, "   Clustering    : Disabled");
-			}
+        	Logger.info(this, "   Clustering    : Enabled");
+        	//		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
+        	try{
+        		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
+        		Logger.info(this, "     Ping Sent");
+        	}
+        	catch(Exception e){
+        		Logger.error(this, "   Ping Error: " + e.getMessage());
 
-
-		// Clustering
-		try {
-			ClusterFactory.generateClusterId();
-		} catch (DotDataException e) {
-			Logger.error(getClass(), "Unable to generate Cluster ID", e);
-		}
-
-		try {
-
-			ServerAPI serverAPI = APILocator.getServerAPI();
-			String serverId = serverAPI.readServerId();
-			Server server = serverAPI.getServer(serverId);
-
-			if(!UtilMethods.isSet(serverId) || server==null)  {
-				InetAddress addr = InetAddress.getLocalHost();
-		        // Get IP Address
-		        byte[] ipAddr = addr.getAddress();
-		        addr = InetAddress.getByAddress(ipAddr);
-		        String address = addr.getHostAddress();
-		        // Get hostname
-		        String hostname = addr.getHostName();
-		        server = new Server();
-		        server.setIpAddress(address);
-		        serverAPI.saveServer(server);
-		        try {
-		        	serverAPI.writeServerId(server.getServerId().getBytes());
-				} catch (IOException e) {
-					Logger.error(ServerAPIImpl.class, "Could not write Server ID to file system" , e);
-				}
-
-		        serverId = server.getServerId();
-			}
-
-	        serverAPI.createServerUptime(serverId);
-	        String serversIds = serverAPI.getAliveServersIds();
-
-	        ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).setCluster();
-	        ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
-
-		} catch (UnknownHostException e3) {
-			Logger.error(getClass(), "Could not get Local Host", e3);
-		} catch (DotDataException e) {
-			Logger.error(getClass(), "Could not save Server to DB", e);
-		}
-
-		// END Clustering
+        	}
+        }
+        else{
+        	Logger.info(this, "   Clustering    : Disabled");
+        }
 
 
         Logger.info(this, "");

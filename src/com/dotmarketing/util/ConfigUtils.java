@@ -14,12 +14,12 @@ import com.dotmarketing.business.APILocator;
  * Generic class to get return configuration parameters, and any logic required
  * for those paramenters. This is different from the Config class, which only
  * reads from the config file.
- * 
+ *
  * @author andres
- * 
+ *
  */
 public class ConfigUtils {
-	
+
 	public static String getDynamicContentPath() {
 		String realPath = Config.getStringProperty("DYNAMIC_CONTENT_PATH");
 		if (UtilMethods.isSet(realPath)) {
@@ -49,7 +49,7 @@ public class ConfigUtils {
 	public static String getBackupPath() {
 		return getDynamicContentPath() + File.separator + "backup";
 	}
-	
+
 	public static String getBundlePath() {
 		String path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "bundles";
 		File pathDir=new File(path);
@@ -57,36 +57,35 @@ public class ConfigUtils {
 		    pathDir.mkdirs();
 		return path;
 	}
-	
-	
+
+
 	public static String getTimeMachinePath(){
-		
+
 		String path = Config.getStringProperty("TIMEMACHINE_PATH", null);
-		
+
 		if(path ==null){
 			path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "timemachine";
 			File pathDir=new File(path);
 			if(!pathDir.exists())
 			    pathDir.mkdirs();
 		}
-		
+
 		return path;
 	}
-	
-	
-	
-	
+
+
+
+
 	public static String getServerId(){
 		String serverId;
 		if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID")==null || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
 			serverId=deduceHostName();
 		} else {
 			serverId= Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
-			Logger.info(ConfigUtils.class, "Using configured hostname: " + serverId);
 		}
 		return serverId;
 	}
-	
+
 	private static String deduceHostName() {
 		String hostName=null;
 		try {
@@ -101,7 +100,7 @@ public class ConfigUtils {
 			Enumeration<NetworkInterface> en=null;
 			try {
 				en=NetworkInterface.getNetworkInterfaces();
-				
+
 			} catch (SocketException e) {
 				Logger.error(ConfigUtils.class, "Error getting interfaces: " + e.getMessage());
 			}
@@ -115,7 +114,7 @@ public class ConfigUtils {
 						 if (findServerId(interfaceName)) {
 							 hostName=interfaceName;
 						 }
-						
+
 					 }
 				}
 			}
@@ -127,7 +126,7 @@ public class ConfigUtils {
 		}
 		return hostName;
 	}
-	
+
 	private static boolean findServerId(String id) {
 		if (id!=null) {
 				for (String s: ClusterThreadProxy.getClusteredServerIds()) {
@@ -138,5 +137,5 @@ public class ConfigUtils {
 		}
 		return false;
 	}
-	
+
 }

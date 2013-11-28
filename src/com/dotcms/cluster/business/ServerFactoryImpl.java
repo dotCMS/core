@@ -1,5 +1,6 @@
 package com.dotcms.cluster.business;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -96,42 +97,43 @@ public class ServerFactoryImpl extends ServerFactory {
 		dc.loadResult();
 	}
 
-	public String getAliveServersIds() throws DotDataException {
-		String serversIds = "";
-
+	public List<Server> getAliveServers() throws DotDataException {
 		if (DbConnectionFactory.isMsSql()) {
-			dc.setSQL("select s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+			dc.setSQL("select DISTINCT s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
 					+ "where DATEDIFF(SECOND, heartbeat, GETDATE()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
 		} else if (DbConnectionFactory.isMySql()) {
-			dc.setSQL("select s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
-					+ "where TIMESTAMPDIFF(SECOND, heartbeat, now()) > " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
+			dc.setSQL("select DISTINCT s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+					+ "where TIMESTAMPDIFF(SECOND, heartbeat, now()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
 		} else if(DbConnectionFactory.isPostgres()) {
-			dc.setSQL("select s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+			dc.setSQL("select DISTINCT s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
 					+ "where EXTRACT(EPOCH from now()-heartbeat) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
 		} else if (DbConnectionFactory.isOracle()) {
-			dc.setSQL("select s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+			dc.setSQL("select DISTINCT s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
 					+ "where (extract( second from (sysdate-heartbeat) ) "
 					+ " + extract( minute from (sysdate-heartbeat) ) * 60 "
 					+ " + extract( hour from (sysdate-heartbeat) ) * 60 * 60 "
 					+ " + extract( day from (sysdate-heartbeat) ) * 60*60* 24) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
 		}
 
+		List<Server> aliveServers = new ArrayList<Server>();
+
 		try {
 			List<Map<String, Object>> results = dc.loadObjectResults();
 
-			for (Map<String, Object> map : results) {
-				serversIds += map.get("server_id").toString() + ", ";
-			}
-
-			if(UtilMethods.isSet(serversIds)) {
-				serversIds = serversIds.substring(0, serversIds.length()-2);
+			for (Map<String, Object> row : results) {
+				Server server = new Server();
+				server.setServerId(row.get("server_id").toString());
+				server.setClusterId(row.get("cluster_id").toString());
+				server.setIpAddress(row.get("ip_address").toString());
+				server.setCachePort(Integer.parseInt(row.get("cache_port").toString()));
+				aliveServers.add(server);
 			}
 
 		} catch (DotDataException e) {
 			Logger.error(ServerFactoryImpl.class, "Could not get alive Servers Ids", e);
 		}
 
-		return serversIds;
+		return aliveServers;
 	}
 
 }
