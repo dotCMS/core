@@ -1470,7 +1470,9 @@
                 else
                         currentPage = page;
 
-                if (sortBy != null  && sortBy != "undefined") {
+
+                if (sortBy != null && sortBy != "undefined") {
+
                         if (sortBy == currentSortBy && sortBy.indexOf("desc")==-1)
                                 sortBy = sortBy + " desc";
                         currentSortBy = sortBy;
