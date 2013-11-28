@@ -229,7 +229,9 @@ public class CMSFilter implements Filter {
 
         /* if edit mode */
         if (PREVIEW_MODE || EDIT_MODE) {
-			try {
+			try {				
+				if (uri.endsWith("/"))
+					uri = uri.substring(0, uri.length() - 1);
 				pointer = LiveCache.getPathFromCache(uri, host);
 
 				if(!UtilMethods.isSet(pointer)){//DOTCMS-7062
@@ -505,7 +507,7 @@ public class CMSFilter implements Filter {
             }
             LogFactory.getLog(this.getClass()).debug("CMS Filter going to redirect to pointer");
 
-            if (0 < pointer.indexOf(dotExtension)) {
+            if((pointer.substring(pointer.lastIndexOf(".") + 1)).equals(dotExtension)){
             	//Serving a page through the velocity servlet
                 request.getRequestDispatcher(pointer).forward(request, response);
             } else {
