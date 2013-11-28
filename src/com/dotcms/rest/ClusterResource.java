@@ -27,7 +27,7 @@ import org.jgroups.PhysicalAddress;
 import org.jgroups.View;
 import org.jgroups.stack.IpAddress;
 
-import com.dotcms.cluster.bean.ClusterProperty;
+import com.dotcms.cluster.bean.ESProperty;
 import com.dotcms.cluster.business.ClusterFactory;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
@@ -288,13 +288,13 @@ public class ClusterResource extends WebResource {
 	            while(keys.hasNext()) {
 	                String key=keys.next();
 	                Object value=obj.get(key);
-	                List<String> validProperties = ClusterProperty.getPropertiesList();
+	                List<String> validProperties = ESProperty.getPropertiesList();
 
 	                if(validProperties.contains(key)) {
 	                	map.put(key, value.toString());
 	                }
 
-	                ClusterFactory.addNode(map);
+	                ClusterFactory.addNodeToCluster(map, "SERVER_ID");
 	            }
             } catch (IOException e) {
 				// TODO Auto-generated catch block

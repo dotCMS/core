@@ -9,7 +9,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
-import com.dotcms.cluster.bean.ClusterProperty;
+import com.dotcms.cluster.bean.ESProperty;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
@@ -80,10 +80,10 @@ public class ESClient {
 		}
 	}
 
-	public void setClusterNode(Map<ClusterProperty, String> properties) {
+	public void setClusterNode(Map<ESProperty, String> properties) {
 
 		if(properties!=null) {
-			for (ClusterProperty key : properties.keySet()) {
+			for (ESProperty key : properties.keySet()) {
 				String value = properties.get(key);
 
 				if(value!=null) {

@@ -1,6 +1,7 @@
 package com.dotcms.cluster.business;
 
 import java.io.IOException;
+import java.util.List;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.exception.DotDataException;
@@ -15,10 +16,12 @@ public interface ServerAPI {
 
 	public String readServerId();
 
-	public  void writeServerId(byte[] data) throws IOException;
+	public  void writeServerIdToDisk(String serverId) throws IOException;
 
 	public void updateHeartbeat() throws DotDataException;
 
-	public String getAliveServersIds() throws DotDataException;
+	public List<Server> getAliveServers() throws DotDataException;
+
+	public  void writeHeartBeatToDisk(String serverId) throws IOException;
 
 }

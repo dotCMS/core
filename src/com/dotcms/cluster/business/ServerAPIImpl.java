@@ -7,12 +7,15 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Date;
+import java.util.List;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class ServerAPIImpl implements ServerAPI {
 
@@ -55,7 +58,7 @@ public class ServerAPIImpl implements ServerAPI {
 
 	}
 
-	public  void writeServerId(byte[] data) throws IOException {
+	public  void writeServerIdToDisk(String serverId) throws IOException {
 		String realPath = Config.CONTEXT.getRealPath("dotsecure") + java.io.File.separator + "server_id.dat";
 		File serverFile = new File(realPath);
 
@@ -63,14 +66,32 @@ public class ServerAPIImpl implements ServerAPI {
 			serverFile.delete();
 
 		OutputStream os = new FileOutputStream(serverFile);
-		os.write(data);
+		os.write(serverId.getBytes());
 		os.flush();
 		os.close();
 
 	}
 
-	public String getAliveServersIds() throws DotDataException {
-		return serverFactory.getAliveServersIds();
+	public  void writeHeartBeatToDisk(String serverId) throws IOException {
+		String realPath = Config.getStringProperty("ASSET_REAL_PATH", Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")))
+    			+ java.io.File.separator + "server" + java.io.File.separator + serverId;
+		File serverDir = new File(realPath);
+
+		if(!serverDir.exists()) {
+			serverDir.mkdirs();
+		}
+
+		File heartBeat = new File(realPath + java.io.File.separator + "heartbeat.dat");
+
+		OutputStream os = new FileOutputStream(heartBeat);
+		os.write(UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd H:mm:ss").getBytes());
+		os.flush();
+		os.close();
+
+	}
+
+	public List<Server> getAliveServers() throws DotDataException {
+		return serverFactory.getAliveServers();
 	}
 
 	public void createServerUptime(String serverId) throws DotDataException {
