@@ -48,8 +48,7 @@
 		},
 
 		loadTextCallback: function(file) {
-			debugger
-			switch(file.extension) {
+				switch(file.extension) {
 				case 'css':
 					var parser="CSSParser";
 					break;
@@ -75,7 +74,7 @@
 				    var parser = "PHPHTMLMixedParser";
 					break;
 			}
-			debugger
+
 			codeMirrorAreaParser(parser, file);			
 			dijit.byId('editTextDialog').show();	
 			

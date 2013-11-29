@@ -131,7 +131,6 @@ THIS FILE AND ITS INCLUDES
 		});
 
 		function DWRErrorHandler(msg, e) {
-			//debugger;
 			console.log(msg, e);
 		}
 		var dojoDom=dojo.require("dojo.dom");

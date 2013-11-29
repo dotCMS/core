@@ -356,8 +356,6 @@
 
 	//The logic is executed deferred within 50 ms to handle multiple user keystrokes
 	function filterRolesDeferred () {
-
-		debugger;
 		var tree = dijit.byId('rolesTree');
 		var matchesCount = 0;
 
