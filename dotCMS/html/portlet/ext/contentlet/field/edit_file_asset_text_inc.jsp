@@ -47,8 +47,7 @@
 		},
 
 		loadTextCallback: function(file) {
-			debugger
-			switch(file.extension) {
+				switch(file.extension) {
 				case 'css':
 					var parser="css";
 					break;
@@ -74,7 +73,6 @@
 				    var parser = "php";
 					break;
 			}
-			debugger
 			aceAreaParser(parser, file);			
 			dijit.byId('editTextDialog').show();	
 			
