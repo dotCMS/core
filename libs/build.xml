@@ -61,7 +61,6 @@
                 <exclude name="tika-app-1.3.jar"/>
                 <exclude name="**/org.springframework*.jar"/>
                 <exclude name="jna.jar"/>
-                <!--<exclude name="jaxen-1.1.3.jar"/>-->
                 <!--TODO: JUST FOR TESTING-->
             </fileset>
 
