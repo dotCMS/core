@@ -18,8 +18,8 @@
     </path>
 
     <target name="clean">
-        <delete dir="${lib.app}/repackage" failonerror="false"/>
-        <mkdir dir="${lib.app}/repackage"/>
+        <delete dir="${basedir}/repackage" failonerror="false"/>
+        <mkdir dir="${basedir}/repackage"/>
     </target>
 
     <target name="repackage" depends="clean">
@@ -30,8 +30,7 @@
             </classpath>
         </taskdef>
 
-        <packagerTask outputFolder="${lib.app}/repackage"
-                      outputFile="com.dotcms.repackage.elasticsearch.jar"
+        <packagerTask outputFolder="${basedir}/repackage"
                       dotcmsJar="${lib.app}/dotcms_${dotcms.release.version}.jar"
                       dotVersion="${dotcms.release.version}"
                       renameservices="true"
@@ -43,10 +42,10 @@
                 <exclude name="jamm-0.2.5.jar"/>
 
                 <exclude name="dotcms_${dotcms.release.version}.jar"/>
-                <exclude name="ee-96daf56ad45c.jar"/>
+                <exclude name="ee-a9031a10.jar"/>
                 <exclude name="dotcms_ant.jar"/>
                 <exclude name="packager-taks.jar"/>
-                <exclude name="jarjar-1.4.jar"/><!--Wont work later if we apply jarjar on it-->
+                <exclude name="jarjar-1.4.jar"/>
 
                 <exclude name="**/org.apache.felix.*.jar"/>
                 <exclude name="**/felix-4.2.1.jar"/>
@@ -54,39 +53,35 @@
                 <exclude name="quartz-all-1.8.6.jar"/><!--FIXME: I found a bug in jarjar that replace some properties keys in the .class's because it thinks they are packages....-->
 
                 <!--We can repackage them but not rename their services files-->
-                <exclude name="xstream-1.4.4.jar"/>
                 <exclude name="xpp3_min-1.1.4c.jar"/>
-                <exclude name="xmlpull-1.1.3.1.jar"/>
+                <exclude name="h2-1.3.169.jar"/>
                 <!--We can repackage them but not rename their services files-->
 
                 <!--TODO: JUST FOR TESTING-->
-                <exclude name="dwr_3rc2modified.jar"/>
-                <exclude name="urlrewritefilter-4.0.3.jar"/>
                 <exclude name="tika-app-1.3.jar"/>
                 <exclude name="**/org.springframework*.jar"/>
-                <exclude name="h2-1.3.169.jar"/><!--Has a zip inside it and I think it is causing problems-->
                 <exclude name="jna.jar"/>
+                <!--<exclude name="jaxen-1.1.3.jar"/>-->
                 <!--TODO: JUST FOR TESTING-->
             </fileset>
 
             <!--We can repackage them but not rename their services files-->
-            <dependency path="${lib.app}/xstream-1.4.4.jar" generate="true" renameServices="false"/>
             <dependency path="${lib.app}/xpp3_min-1.1.4c.jar" generate="true" renameServices="false"/>
-            <dependency path="${lib.app}/xmlpull-1.1.3.1.jar" generate="true" renameServices="false"/>
+            <dependency path="${lib.app}/h2-1.3.169.jar" generate="true" renameServices="false"/>
             <!--We can repackage them but not rename their services files-->
-
-            <!--TODO: JUST FOR TESTING-->
-            <!--<dependency path="${lib.app}/urlrewritefilter-4.0.3.jar" generate="true" renameServices="false"/>-->
-            <!--TODO: JUST FOR TESTING-->
+            <dependency path="${lib.app}/jaxen-1.1.3.jar" generate="true">
+                <ignore parentpackage="org.w3c"/><!--Contains just ONE class and it is a common package, using it as a rule breaks the code-->
+            </dependency>
 
             <!--List of dependencies to check if there are dependencies to old packages -->
             <dependency path="${lib.app}/dotcms_ant.jar"/>
             <dependency path="${lib.app}/packager-taks.jar"/>
-            <dependency path="${lib.app}/ee-96daf56ad45c.jar"/>
+            <dependency path="${lib.app}/ee-a9031a10.jar"/>
 
             <dependency path="${web-inf.dir}/web.xml"/>
+            <dependency path="${web-inf.dir}/dwr.xml"/>
             <dependency path="${web-inf.dir}/springmvc-servlet.xml"/>
-            <dependency path="${web-inf.dir}/felix/osgi-extra.conf"/>
+            <!--<dependency path="${web-inf.dir}/felix/osgi-extra.conf"/>-->
 
             <dependency path="${web-inf.dir}/struts-config.xml"/>
             <dependency path="${web-inf.dir}/struts-config-ext.xml"/>
@@ -115,6 +110,8 @@
             <dependency path="${web-inf.dir}/tld/old/struts-nested.tld"/>
             <dependency path="${web-inf.dir}/tld/old/struts-template.tld"/>
             <dependency path="${web-inf.dir}/tld/old/struts-tiles.tld"/>
+
+            <dependency path="${basedir}/buildlibs/log4j.xml"/>
 
             <dependency path="${src-conf.dir}/dotmarketing-config.properties"/>
             <dependency path="${src-conf.dir}/system.properties"/>

@@ -151,6 +151,31 @@ public class PackagerTask extends JarJarTask {
                 continue;
             }
 
+            //Handle the packages we marked to exclude by jar
+            Boolean ignorePackage = false;
+            for ( Dependency dependency : dependencies ) {
+
+                //Verify if we have packages to ignore on this dependency
+                List<Dependency.Ignore> toIgnore = dependency.getPackagesToIgnore();
+                if ( toIgnore != null && !toIgnore.isEmpty() ) {
+
+                    for ( Dependency.Ignore ignore : toIgnore ) {
+                        File owner = new File( dependency.getPath() );
+                        if ( packageName.startsWith( ignore.getParentPackage() ) && jarFile.getName().equals( owner.getName() ) ) {
+                            ignorePackage = true;
+                            break;
+                        }
+                    }
+                }
+
+                if ( ignorePackage ) {
+                    break;
+                }
+            }
+            if ( ignorePackage ) {
+                continue;
+            }
+
             //Create a name to be part of the resulting package name
             String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
             //String jarNameForPackage = "_" + getDotVersion() + "_";
