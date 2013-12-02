@@ -38,7 +38,9 @@
                       jspFolder="${dotcms.dir}">
 
             <fileset dir="${lib.app}" id="">
+
                 <include name="**/*.jar"/>
+
                 <exclude name="jamm-0.2.5.jar"/>
 
                 <exclude name="dotcms_${dotcms.release.version}.jar"/>
@@ -50,24 +52,25 @@
                 <exclude name="**/org.apache.felix.*.jar"/>
                 <exclude name="**/felix-4.2.1.jar"/>
 
-                <exclude name="quartz-all-1.8.6.jar"/><!--FIXME: I found a bug in jarjar that replace some properties keys in the .class's because it thinks they are packages....-->
-
-                <!--We can repackage them but not rename their services files-->
+                <!--We can repackage them but under special rules-->
                 <exclude name="xpp3_min-1.1.4c.jar"/>
                 <exclude name="h2-1.3.169.jar"/>
-                <!--We can repackage them but not rename their services files-->
+                <exclude name="jaxen-1.1.3.jar"/>
+                <!--We can repackage them but under special rules-->
 
-                <!--TODO: JUST FOR TESTING-->
+                <!--TODO: TESTING-->
+                <exclude name="quartz-all-1.8.6.jar"/><!--FIXME: I found a bug in jarjar that replace some properties keys in the .class's because it thinks they are packages....-->
                 <exclude name="tika-app-1.3.jar"/>
                 <exclude name="**/org.springframework*.jar"/>
                 <exclude name="jna.jar"/>
-                <!--TODO: JUST FOR TESTING-->
+                <!--TODO: TESTING-->
             </fileset>
 
             <!--We can repackage them but not rename their services files-->
             <dependency path="${lib.app}/xpp3_min-1.1.4c.jar" generate="true" renameServices="false"/>
             <dependency path="${lib.app}/h2-1.3.169.jar" generate="true" renameServices="false"/>
             <!--We can repackage them but not rename their services files-->
+
             <dependency path="${lib.app}/jaxen-1.1.3.jar" generate="true">
                 <ignore parentpackage="org.w3c"/><!--Contains just ONE class and it is a common package, using it as a rule breaks the code-->
             </dependency>
