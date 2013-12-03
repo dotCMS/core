@@ -51,7 +51,12 @@ public class ServerFactoryImpl extends ServerFactory {
 
 			if(results!=null && !results.isEmpty()) {
 				Map<String, Object> row = results.get(0);
-				server = getFilledServerFromRow(row);
+				server = new Server();
+				server.setServerId((String)row.get("server_id"));
+				server.setClusterId((String)row.get("cluster_id"));
+				server.setIpAddress((String)row.get("ip_address"));
+				server.setHost((String)row.get("host"));
+				server.setCachePort((Long)row.get("cache_port"));
 
 			}
 		} catch (DotDataException e) {
@@ -123,7 +128,7 @@ public class ServerFactoryImpl extends ServerFactory {
 			List<Map<String, Object>> results = dc.loadObjectResults();
 
 			for (Map<String, Object> row : results) {
-				aliveServers.add(getFilledServerFromRow(row));
+				aliveServers.add(getServer((String)row.get("server_id")));
 			}
 
 		} catch (DotDataException e) {
@@ -141,16 +146,6 @@ public class ServerFactoryImpl extends ServerFactory {
 		dc.addParam(server.getCachePort());
 		dc.addParam(server.getServerId());
 		dc.loadResult();
-	}
-
-	private Server getFilledServerFromRow(Map<String, Object> row) {
-		Server server = new Server();
-		server.setServerId((String)row.get("server_id"));
-		server.setClusterId((String)row.get("cluster_id"));
-		server.setIpAddress((String)row.get("ip_address"));
-		server.setHost((String)row.get("host"));
-		server.setCachePort((Long)row.get("cache_port"));
-		return server;
 	}
 
 }
