@@ -6,6 +6,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.UUID;
 
 import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotmarketing.business.APILocator;
@@ -79,7 +80,15 @@ public class ConfigUtils {
 	public static String getServerId(){
 		String serverId;
 		if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID")==null || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
-			serverId=deduceHostName();
+			serverId = APILocator.getServerAPI().readServerId();
+
+			if(!UtilMethods.isSet(serverId)) {
+				serverId = UUID.randomUUID().toString();
+
+			}
+
+			Config.setProperty("DIST_INDEXATION_SERVER_ID", serverId);
+//			serverId=deduceHostName();
 		} else {
 			serverId= Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
 		}

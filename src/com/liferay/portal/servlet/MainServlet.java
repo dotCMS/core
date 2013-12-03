@@ -152,6 +152,9 @@ public class MainServlet extends ActionServlet {
 			        addr = InetAddress.getByAddress(ipAddr);
 			        String address = addr.getHostAddress();
 			        server = new Server();
+			        if(UtilMethods.isSet(serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID"))) {
+			        	server.setServerId(serverId);
+			        }
 			        server.setIpAddress(address);
 			        serverAPI.saveServer(server);
 

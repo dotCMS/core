@@ -102,4 +102,8 @@ public class ServerAPIImpl implements ServerAPI {
 		serverFactory.updateHeartbeat(readServerId());
 	}
 
+	public void updateServer(Server server) throws DotDataException{
+		serverFactory.updateServer(server);
+	}
+
 }

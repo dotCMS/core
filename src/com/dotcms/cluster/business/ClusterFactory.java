@@ -54,6 +54,27 @@ public class ClusterFactory {
 		return clusterId;
 	}
 
+	public static String getNextAvailableCachePort(String serverId) {
+		DotConnect dc = new DotConnect();
+		dc.setSQL("select max(cache_port) as port from server where ip_address = (select s.ip_address from server s where s.server_id = ?)");
+		dc.addParam(serverId);
+		Long maxPort = null;
+		String freePort = Config.getStringProperty("CACHE_BINDPORT", "7800");
+
+		try {
+			List<Map<String,Object>> results = dc.loadObjectResults();
+			if(!results.isEmpty()) {
+				maxPort = (Long) results.get(0).get("port");
+				freePort = UtilMethods.isSet(maxPort)?Long.toString(maxPort+1):freePort;
+			}
+
+		} catch (DotDataException e) {
+			Logger.error(ClusterFactory.class, "Could not get Cluster ID", e);
+		}
+
+		return freePort.toString();
+	}
+
 	public static void addNodeToCluster(String serverId) {
 		addNodeToCluster(null, serverId);
 	}
@@ -66,20 +87,20 @@ public class ClusterFactory {
 
 		addNodeToCacheCluster(properties, serverId);
 
-//		Map<ESProperty, String> esProperties = new HashMap<ESProperty, String>();
-//
-//		esProperties.put(ES_NETWORK_HOST,
-//				UtilMethods.isSet(properties.get(ES_NETWORK_HOST.toString())) ? properties.get(ES_NETWORK_HOST.toString()) : ES_NETWORK_HOST.getDefaultValue() );
-//		esProperties.put(ES_TRANSPORT_TCP_PORT,
-//				UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : null );
-//		esProperties.put(ES_HTTP_PORT,
-//				UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : null );
-//		esProperties.put(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED,
-//				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()))
-//				? properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()) : ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.getDefaultValue() );
-//		esProperties.put(ES_DISCOVERY_ZEN_PING_TIMEOUT,
-//				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()))
-//				? properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()) : ES_DISCOVERY_ZEN_PING_TIMEOUT.getDefaultValue() );
+		Map<ESProperty, String> esProperties = new HashMap<ESProperty, String>();
+
+		esProperties.put(ES_NETWORK_HOST,
+				UtilMethods.isSet(properties.get(ES_NETWORK_HOST.toString())) ? properties.get(ES_NETWORK_HOST.toString()) : ES_NETWORK_HOST.getDefaultValue() );
+		esProperties.put(ES_TRANSPORT_TCP_PORT,
+				UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : null );
+		esProperties.put(ES_HTTP_PORT,
+				UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : null );
+		esProperties.put(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED,
+				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()))
+				? properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()) : ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.getDefaultValue() );
+		esProperties.put(ES_DISCOVERY_ZEN_PING_TIMEOUT,
+				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()))
+				? properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()) : ES_DISCOVERY_ZEN_PING_TIMEOUT.getDefaultValue() );
 //
 //		ServerAPI serverAPI = APILocator.getServerAPI();
 //		List<Server> aliveServers = serverAPI.getAliveServers();
@@ -101,13 +122,14 @@ public class ClusterFactory {
 //				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()))
 //				? properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()) : null);
 
+		addNodeToESCluster(esProperties);
+
 	}
 
 	private static void addNodeToCacheCluster(Map<String, String> cacheProperties, String serverId) {
 		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).setCluster(cacheProperties, serverId);
 		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
 		Config.setProperty("DIST_INDEXATION_ENABLED", true);
-    	Config.setProperty("DIST_INDEXATION_SERVER_ID", APILocator.getServerAPI().readServerId());
 
     	try {
 			H2CacheLoader.getInstance().moveh2dbDir();
@@ -121,7 +143,6 @@ public class ClusterFactory {
 		ESClient esClient = new ESClient();
 		esClient.setClusterNode(esProperties);
 
-//		setNode()
 	}
 
 }

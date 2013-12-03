@@ -17,4 +17,6 @@ public abstract class ServerFactory {
 
 	public abstract List<Server> getAliveServers() throws DotDataException;
 
+	public abstract void updateServer(Server server) throws DotDataException;
+
 }
