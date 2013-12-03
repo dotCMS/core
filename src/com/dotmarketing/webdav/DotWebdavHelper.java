@@ -506,6 +506,7 @@ public class DotWebdavHelper {
 	}
 	
 	public java.io.File createTempFile(String path) throws IOException{
+	    path=stripMapping(path);
 		java.io.File file = new java.io.File(tempHolderDir.getPath() + path);
 		String p = file.getPath().substring(0,file.getPath().lastIndexOf(java.io.File.separator));
 		java.io.File f = new java.io.File(p);
@@ -871,8 +872,10 @@ public class DotWebdavHelper {
 					fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAsset.setHost(host.getIdentifier());
 					fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
-					if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user))
+					boolean publish=isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user);
+					if(publish)
 					    APILocator.getContentletAPI().publish(fileAsset, user, false);
+					APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode(), publish);
 				}
 			}else{
 
@@ -1041,6 +1044,12 @@ public class DotWebdavHelper {
 	public void move(String fromPath, String toPath, User user,boolean autoPublish)throws IOException, DotDataException {
 		fromPath = stripMapping(fromPath);
 		toPath = stripMapping(toPath);
+		
+		if(fromPath.equals(toPath)) {
+		    Logger.info(this, "webdav client sent a move from "+fromPath+" to same path. Ignoring request");
+		    return;
+		}
+		
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 
 		String hostName = getHostname(fromPath);

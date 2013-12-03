@@ -79,7 +79,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         if(!p.endsWith("/")){
             p = p + "/";
         }
-        File f = dotDavHelper.createTempFile("/" + host.getHostname() + p + newName);
+        File f = dotDavHelper.createTempFile(p + newName);
         FileUtils.copyStreamToFile(f, in, null);
         TempFileResourceImpl tr = new TempFileResourceImpl(f, path + newName, isAutoPub);
         return tr;
