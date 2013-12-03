@@ -1,6 +1,5 @@
 package com.dotcms.cluster.business;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,12 +51,7 @@ public class ServerFactoryImpl extends ServerFactory {
 
 			if(results!=null && !results.isEmpty()) {
 				Map<String, Object> row = results.get(0);
-				server = new Server();
-				server.setServerId((String)row.get("server_id"));
-				server.setClusterId((String)row.get("cluster_id"));
-				server.setIpAddress((String)row.get("ip_address"));
-				server.setHost((String)row.get("host"));
-				server.setCachePort((Long)row.get("cache_port"));
+				server = getFilledServerFromRow(row);
 
 			}
 		} catch (DotDataException e) {
@@ -129,12 +123,7 @@ public class ServerFactoryImpl extends ServerFactory {
 			List<Map<String, Object>> results = dc.loadObjectResults();
 
 			for (Map<String, Object> row : results) {
-				Server server = new Server();
-				server.setServerId(row.get("server_id").toString());
-				server.setClusterId(row.get("cluster_id").toString());
-				server.setIpAddress(row.get("ip_address").toString());
-				server.setCachePort((Long)row.get("cache_port"));
-				aliveServers.add(server);
+				aliveServers.add(getFilledServerFromRow(row));
 			}
 
 		} catch (DotDataException e) {
@@ -152,6 +141,16 @@ public class ServerFactoryImpl extends ServerFactory {
 		dc.addParam(server.getCachePort());
 		dc.addParam(server.getServerId());
 		dc.loadResult();
+	}
+
+	private Server getFilledServerFromRow(Map<String, Object> row) {
+		Server server = new Server();
+		server.setServerId((String)row.get("server_id"));
+		server.setClusterId((String)row.get("cluster_id"));
+		server.setIpAddress((String)row.get("ip_address"));
+		server.setHost((String)row.get("host"));
+		server.setCachePort((Long)row.get("cache_port"));
+		return server;
 	}
 
 }
