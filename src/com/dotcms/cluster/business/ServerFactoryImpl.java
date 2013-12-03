@@ -1,5 +1,6 @@
 package com.dotcms.cluster.business;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,9 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public void saveServer(Server server) throws DotDataException {
-		server.setServerId(UUID.randomUUID().toString());
+		if(!UtilMethods.isSet(server.getServerId())) {
+			server.setServerId(UUID.randomUUID().toString());
+		}
 		server.setClusterId(ClusterFactory.getClusterId());
 		dc.setSQL("insert into server(server_id, cluster_id, ip_address) values(?,?,?)");
 		dc.addParam(server.getServerId());
@@ -50,9 +53,11 @@ public class ServerFactoryImpl extends ServerFactory {
 			if(results!=null && !results.isEmpty()) {
 				Map<String, Object> row = results.get(0);
 				server = new Server();
-				server.setServerId(row.get("server_id").toString());
-				server.setClusterId(row.get("cluster_id").toString());
-				server.setIpAddress(row.get("ip_address").toString());
+				server.setServerId((String)row.get("server_id"));
+				server.setClusterId((String)row.get("cluster_id"));
+				server.setIpAddress((String)row.get("ip_address"));
+				server.setHost((String)row.get("host"));
+				server.setCachePort((Long)row.get("cache_port"));
 
 			}
 		} catch (DotDataException e) {
@@ -62,6 +67,7 @@ public class ServerFactoryImpl extends ServerFactory {
 		return server;
 
 	}
+
 
 	public void createServerUptime(String serverId) throws DotDataException {
 		dc.setSQL("insert into server_uptime(id, server_id, startup) values(?,?, " + TIMESTAMPSQL + ")");
@@ -76,13 +82,15 @@ public class ServerFactoryImpl extends ServerFactory {
 		String id = null;
 
 		if (DbConnectionFactory.isMsSql()) {
-			dc.setSQL("SELECT TOP 1 id FROM server_uptime ORDER BY startup DESC");
+			dc.setSQL("SELECT TOP 1 id FROM server_uptime where server_id = ? ORDER BY startup DESC");
 		} else if (DbConnectionFactory.isMySql()
 				|| DbConnectionFactory.isPostgres()) {
-			dc.setSQL("select id from server_uptime order by startup desc limit 1");
+			dc.setSQL("select id from server_uptime where server_id = ? order by startup desc limit 1");
 		} else if (DbConnectionFactory.isOracle()) {
-			dc.setSQL("select id from (select id from server_uptime order by startup desc ) where rownum = 1");
+			dc.setSQL("select id from (select id from server_uptime where server_id = order by startup desc ) where rownum = 1");
 		}
+
+		dc.addParam(serverId);
 
 		List<Map<String, Object>> results = dc.loadObjectResults();
 
@@ -125,7 +133,7 @@ public class ServerFactoryImpl extends ServerFactory {
 				server.setServerId(row.get("server_id").toString());
 				server.setClusterId(row.get("cluster_id").toString());
 				server.setIpAddress(row.get("ip_address").toString());
-				server.setCachePort(Integer.parseInt(row.get("cache_port").toString()));
+				server.setCachePort((Long)row.get("cache_port"));
 				aliveServers.add(server);
 			}
 
@@ -134,6 +142,16 @@ public class ServerFactoryImpl extends ServerFactory {
 		}
 
 		return aliveServers;
+	}
+
+	public void updateServer(Server server) throws DotDataException {
+		dc.setSQL("update server set cluster_id = ?, ip_address = ?, host = ?, cache_port = ? where server_id = ?");
+		dc.addParam(server.getClusterId());
+		dc.addParam(server.getIpAddress());
+		dc.addParam(server.getHost());
+		dc.addParam(server.getCachePort());
+		dc.addParam(server.getServerId());
+		dc.loadResult();
 	}
 
 }

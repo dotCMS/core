@@ -24,4 +24,6 @@ public interface ServerAPI {
 
 	public  void writeHeartBeatToDisk(String serverId) throws IOException;
 
+	public void updateServer(Server server) throws DotDataException;
+
 }

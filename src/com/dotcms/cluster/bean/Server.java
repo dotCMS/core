@@ -9,7 +9,7 @@ public class Server {
 	private Integer esTransportTcpPort;
 	private Integer esNetworkPort;
 	private Integer esHttpPort;
-	private Integer cachePort;
+	private Long cachePort;
 
 	public String getServerId() {
 		return serverId;
@@ -54,10 +54,10 @@ public class Server {
 	public void setEsHttpPort(Integer esHttpPort) {
 		this.esHttpPort = esHttpPort;
 	}
-	public Integer getCachePort() {
+	public Long getCachePort() {
 		return cachePort;
 	}
-	public void setCachePort(Integer cachePort) {
+	public void setCachePort(Long cachePort) {
 		this.cachePort = cachePort;
 	}
 

@@ -27,6 +27,7 @@ import org.jgroups.View;
 
 import com.dotcms.cluster.bean.ESProperty;
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -181,8 +182,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				System.setProperty("jgroups.bind_addr", bindAddr);
 			}
 
-			String bindPort = UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
-					:Config.getStringProperty("CACHE_BINDPORT", null);
+			Server localServer = APILocator.getServerAPI().getServer(serverId);
+
+			String bindPort = localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
+					:UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
+					:ClusterFactory.getNextAvailableCachePort(serverId);
 
 			if (bindPort != null) {
 				Logger.info(this, "***\t Using " + bindPort + " as the bindport");
@@ -196,24 +200,26 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 			ServerAPI serverAPI = APILocator.getServerAPI();
 			List<Server> aliveServers = serverAPI.getAliveServers();
-			Server currentServer = serverAPI.getServer(serverId);
-			aliveServers.add(currentServer);
 
-			String initalHosts = "";
+			String initialHosts = "";
 
 			int i=0;
 			for (Server server : aliveServers) {
 				if(i>0) {
-					initalHosts += ", ";
+					initialHosts += ", ";
 				}
-				initalHosts += server.getHost() + "[" + server.getCachePort() + "]";
+				initialHosts += server.getHost() + "[" + server.getCachePort() + "]";
 				i++;
+			}
+
+			if(initialHosts.equals("")) {
+				initialHosts += bindAddr + "[" + bindPort + "]";
 			}
 
 			if (cacheProtocol.equals("tcp")) {
 				Logger.info(this, "***\t Setting up TCP Prperties");
 				System.setProperty("jgroups.tcpping.initial_hosts",	UtilMethods.isSet(cacheProperties.get("CACHE_TCP_INITIAL_HOSTS"))?cacheProperties.get("CACHE_TCP_INITIAL_HOSTS")
-						:Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initalHosts));
+						:Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initialHosts));
 			} else if (cacheProtocol.equals("udp")) {
 				Logger.info(this, "***\t Setting up UDP Prperties");
 				System.setProperty("jgroups.udp.mcast_port", UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_PORT"))?cacheProperties.get("CACHE_MULTICAST_PORT")
@@ -237,6 +243,10 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			for (Address address : members) {
 				System.out.println(address);
 			}
+
+			localServer.setCachePort(Long.parseLong(bindPort));
+			localServer.setHost(bindAddr);
+			serverAPI.updateServer(localServer);
 
 			Logger.info(this, "***\t " + channel.toString(true));
 			Logger.info(this, "***\t Ending JGroups Cluster Setup");
