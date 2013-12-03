@@ -71,7 +71,7 @@
 		var buffer = '<tr class="' + alternate + '" id="row-' + currentIndex + '">';
 
 		buffer += '<td width="6%" align="center"><input type="hidden" id="' + currentLanguage + '-' + currentIndex + '-new" name="' + currentLanguage + '-' + currentIndex + '-new" value="true"/>' +
-			'<input id="' + currentLanguage + '-' + currentIndex + '-remove" onchange="removeChanged(' + currentIndex + ')" ' +
+			'<input id="' + currentLanguage + '-' + currentIndex + '-remove" ' +
 			'type="checkbox" name="' + currentLanguage + '-' + currentIndex + '-remove" value=""/></td>';
 
 		buffer += '<td width="14%"><input id="' + currentLanguage + '-' + currentIndex + '-key" onchange="keyChanged(' + currentIndex + ');refreshAddKeys(' + currentIndex + ');" ' +
@@ -218,7 +218,6 @@
 			var returnStr = "";			
 			returnStr += "<input type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" "
 				+ " id=\"<%= language.getLanguageCode() %>-" + data['idx'] + "-remove\" "
-				+ " onchange=\"removeChanged(" + data['idx'] + ")\" "
 				+ " name=\"<%= language.getLanguageCode() %>-" + data['idx'] + "-remove\" "
 				+ " value=\"\"/>";				
 			return returnStr; 
@@ -283,7 +282,7 @@
 
 	
 	function viewLanguageKeysCallback(data){
-		if(data.length > 1){
+		if(data.length > 0){
 
 			var counters = data[0];
 			var hasNext = counters["hasNext"];
@@ -314,21 +313,28 @@
 			data.length = data.length - 1;
 								
 			dwr.util.removeAllRows('propertiesTable');
-			dwr.util.addRows( "propertiesTable",data, cellFuncs, { 
-				rowCreator:function(options) {
-			    var row = document.createElement("tr");
-			    row.id = "row-"+data[options.rowIndex]['idx'];
-			    row.className = data[options.rowIndex]['alternate'];
-			    return row;
-			  },
-			  cellCreator:function(options) {
-				var td = document.createElement("td");
-				if(options.cellNum == 0){
-					td.align = "center";
+			if(data.length > 0){
+				dwr.util.addRows( "propertiesTable",data, cellFuncs, { 
+					rowCreator:function(options) {
+				    var row = document.createElement("tr");
+				    row.id = "row-"+data[options.rowIndex]['idx'];
+				    row.className = data[options.rowIndex]['alternate'];
+				    return row;
+				  },
+				  cellCreator:function(options) {
+					var td = document.createElement("td");
+					if(options.cellNum == 0){
+						td.align = "center";
+					}
+					return td;
+				  },
+				  escapeHtml:false });
+				}else{
+					currentIndex = 0;
 				}
-				return td;
-			  },
-			  escapeHtml:false });
+			keysToAdd.length = 0;
+			keysToUpdate.length = 0; 
+			keysToDelete.length = 0;
 		}
 		loadProgressToggle.hide();
 	}	
