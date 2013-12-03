@@ -92,9 +92,9 @@ public class ClusterFactory {
 		esProperties.put(ES_NETWORK_HOST,
 				UtilMethods.isSet(properties.get(ES_NETWORK_HOST.toString())) ? properties.get(ES_NETWORK_HOST.toString()) : ES_NETWORK_HOST.getDefaultValue() );
 		esProperties.put(ES_TRANSPORT_TCP_PORT,
-				UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : null );
+				UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : ES_TRANSPORT_TCP_PORT.getDefaultValue() );
 		esProperties.put(ES_HTTP_PORT,
-				UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : null );
+				UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : ES_HTTP_PORT.getDefaultValue() );
 		esProperties.put(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED,
 				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()))
 				? properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()) : ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.getDefaultValue() );
