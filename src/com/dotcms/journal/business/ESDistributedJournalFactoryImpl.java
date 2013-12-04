@@ -74,7 +74,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     protected void addCacheEntry(String key, String group)
             throws DotDataException {
         Connection con = null;
-        String[] serversIds = ClusterThreadProxy.getClusteredServerIds();
+        String[] serversIds = APILocator.getServerAPI().getAliveServersIds();
         String serverId = ConfigUtils.getServerId();
         try {
             if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {

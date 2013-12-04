@@ -124,18 +124,27 @@ public class ServerFactoryImpl extends ServerFactory {
 
 		List<Server> aliveServers = new ArrayList<Server>();
 
-		try {
-			List<Map<String, Object>> results = dc.loadObjectResults();
+		List<Map<String, Object>> results = dc.loadObjectResults();
 
-			for (Map<String, Object> row : results) {
-				aliveServers.add(getServer((String)row.get("server_id")));
-			}
-
-		} catch (DotDataException e) {
-			Logger.error(ServerFactoryImpl.class, "Could not get alive Servers Ids", e);
+		for (Map<String, Object> row : results) {
+			aliveServers.add(getServer((String)row.get("server_id")));
 		}
 
+
 		return aliveServers;
+	}
+
+	public String[] getAliveServersIds() throws DotDataException {
+		List<Server> servers = getAliveServers();
+		String[] serversIds = new String[servers.size()];
+
+		int i=0;
+		for (Server server : servers) {
+			serversIds[i] = server.getServerId();
+			i ++;
+		}
+
+		return serversIds;
 	}
 
 	public void updateServer(Server server) throws DotDataException {

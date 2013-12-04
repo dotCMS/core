@@ -106,4 +106,8 @@ public class ServerAPIImpl implements ServerAPI {
 		serverFactory.updateServer(server);
 	}
 
+	public String[] getAliveServersIds() throws DotDataException {
+		return serverFactory.getAliveServersIds();
+	}
+
 }
