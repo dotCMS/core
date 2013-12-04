@@ -56,7 +56,7 @@ public class ServerFactoryImpl extends ServerFactory {
 				server.setClusterId((String)row.get("cluster_id"));
 				server.setIpAddress((String)row.get("ip_address"));
 				server.setHost((String)row.get("host"));
-				server.setCachePort((Short)row.get("cache_port"));
+				server.setCachePort((Integer)row.get("cache_port"));
 
 			}
 		} catch (DotDataException e) {
