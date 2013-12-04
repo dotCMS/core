@@ -80,13 +80,13 @@ public class ClusterFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select max(cache_port) as port from server where ip_address = (select s.ip_address from server s where s.server_id = ?)");
 		dc.addParam(serverId);
-		Long maxPort = null;
+		Short maxPort = null;
 		String freePort = Config.getStringProperty("CACHE_BINDPORT", "7800");
 
 		try {
 			List<Map<String,Object>> results = dc.loadObjectResults();
 			if(!results.isEmpty()) {
-				maxPort = (Long) results.get(0).get("port");
+				maxPort = (Short) results.get(0).get("port");
 				freePort = UtilMethods.isSet(maxPort)?Long.toString(maxPort+1):freePort;
 			}
 
