@@ -186,7 +186,7 @@ public class MainServlet extends ActionServlet {
 		        	}
 		        }
 
-		        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) && (!anyOtherServerAlive || (anyOtherServerAlive && sameAssetsDir))) {
+		        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) /*&& (!anyOtherServerAlive || (anyOtherServerAlive && sameAssetsDir))*/) {
 		        	ClusterFactory.addNodeToCluster(serverId);
 		        }
 
