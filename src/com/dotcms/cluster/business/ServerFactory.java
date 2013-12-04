@@ -19,4 +19,6 @@ public abstract class ServerFactory {
 
 	public abstract void updateServer(Server server) throws DotDataException;
 
+	public abstract String[] getAliveServersIds() throws DotDataException;
+
 }

@@ -26,4 +26,6 @@ public interface ServerAPI {
 
 	public void updateServer(Server server) throws DotDataException;
 
+	public String[] getAliveServersIds() throws DotDataException;
+
 }
