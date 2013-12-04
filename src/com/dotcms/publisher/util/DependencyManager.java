@@ -798,8 +798,9 @@ public class DependencyManager {
 			if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true)) {
 				Structure struct = StructureCache.getStructureByInode(con.getStructureInode());
             	structures.addOrClean( con.getStructureInode(), struct.getModDate());
-			}
-		}
+            	structureDependencyHelper(con.getStructureInode());
+            }
+        }
 
 	}
 

@@ -15,7 +15,6 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -24,12 +23,10 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -51,7 +48,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	private BrowserAPI browser = new BrowserAPI();
 
 	public void init(Object obj) {
-
+	
 	}
 
 	public List getfileRepository(String folderPath, String searchFolder,
@@ -307,48 +304,80 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	}
 
 	   public ArrayList<HashMap<String, String>> getSQLResults(String dataSource, String sql, int startRow, int maxRow) {
-	        ArrayList<HashMap<String, String>> errorResults = new ArrayList<HashMap<String, String>>();
-	        if (!UtilMethods.isSet(sql)) {
-	            return new ArrayList<HashMap<String, String>>();
-	        }
-	        if (sql.toLowerCase().indexOf("user_") > -1) {
-	            Logger.error(this,"getSQLResults macro is trying to pull from the users table");
+		   
+		   ArrayList<HashMap<String, String>> errorResults = new ArrayList<HashMap<String, String>>();
+		   
+		   if(!canUserEvaluate()){
 	            HashMap<String, String> map = new HashMap<String, String>();
 	            map.put("hasDotConnectSQLError", "true");
-	            map.put("dotConnectSQLError", "getSQLResults macro is trying to pull from the user_ table");
-	            errorResults.add(map);
-	            return new ArrayList<HashMap<String, String>>();
-	        }
-	        if (sql.toLowerCase().indexOf("role_") > -1) {
-	            Logger.error(this,"getSQLResults macro is trying to pull from the role_ table");
-	            HashMap<String, String> map = new HashMap<String, String>();
-	            map.put("hasDotConnectSQLError", "true");
-	            map.put("dotConnectSQLError", "getSQLResults macro is trying to pull from the role_ table");
-	            errorResults.add(map);
-	            return new ArrayList<HashMap<String, String>>();
-	        }
-	        try {
-	            DotConnect dc = new DotConnect();
-
-	            dc.setSQL(sql);
-	            if (startRow > 0) {
-	                dc.setStartRow(startRow);
-	            }
-	            if (maxRow > 0) {
-	                dc.setMaxRows(maxRow);
-	            }
-	            if (dataSource.equals("default")) {
-	                return dc.getResults();
-	            } else {
-	                return dc.getResults(dataSource);
-	            }
-	        } catch (Exception e) {
-	            HashMap<String, String> map = new HashMap<String, String>();
-	            map.put("hasDotConnectSQLError", "true");
-	            map.put("dotConnectSQLError", "There was a sql error:" + e.getMessage());
+	            map.put("dotConnectSQLError", "External scripting is disabled in your dotcms instance.");
 	            errorResults.add(map);
 	            return errorResults;
-	        }
+		   }
+		   else{
+			   if (!UtilMethods.isSet(sql)) {
+		            return new ArrayList<HashMap<String, String>>();
+		        }
+		        if (sql.toLowerCase().indexOf("user_") > -1) {
+		            Logger.error(this,"getSQLResults macro is trying to pull from the users table");
+		            HashMap<String, String> map = new HashMap<String, String>();
+		            map.put("hasDotConnectSQLError", "true");
+		            map.put("dotConnectSQLError", "getSQLResults macro is trying to pull from the user_ table");
+		            errorResults.add(map);
+		            return new ArrayList<HashMap<String, String>>();
+		        }
+		        if (sql.toLowerCase().indexOf("cms_role") > -1) {
+		            Logger.error(this,"getSQLResults macro is trying to pull from the cms_role table");
+		            HashMap<String, String> map = new HashMap<String, String>();
+		            map.put("hasDotConnectSQLError", "true");
+		            map.put("dotConnectSQLError", "getSQLResults macro is trying to pull from the cms_role table");
+		            errorResults.add(map);
+		            return new ArrayList<HashMap<String, String>>();
+		        }
+		        if (sql.toLowerCase().indexOf("delete from") > -1 || sql.toLowerCase().indexOf("drop") > -1
+		        		|| sql.toLowerCase().indexOf("truncate") > -1) {
+		            Logger.error(this,"getSQLResults macro is trying to run a DELETE/DROP/TRUNCATE query");
+		            HashMap<String, String> map = new HashMap<String, String>();
+		            map.put("hasDotConnectSQLError", "true");
+		            map.put("dotConnectSQLError", "getSQLResults macro is trying to run a DELETE/DROP/TRUNCATE query");
+		            errorResults.add(map);
+		            return new ArrayList<HashMap<String, String>>();
+		        }
+		        
+		        try {
+		            DotConnect dc = new DotConnect();
+
+		            dc.setSQL(sql);
+		            if (startRow > 0) {
+		                dc.setStartRow(startRow);
+		            }
+		            if (maxRow > 0) {
+		                dc.setMaxRows(maxRow);
+		            }
+		            if (dataSource.equals("default")) {
+		            	if(!Config.getBooleanProperty("ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB", false)){
+		            		Logger.error(this,"getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
+				            HashMap<String, String> map = new HashMap<String, String>();
+				            map.put("hasDotConnectSQLError", "true");
+				            map.put("dotConnectSQLError", "getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
+				            errorResults.add(map);
+				            return new ArrayList<HashMap<String, String>>();
+		            	}
+		            	else{
+		            		return dc.getResults();
+		            	}
+		            } else {
+		                return dc.getResults(dataSource);
+		            }
+		        } catch (Exception e) {
+		            HashMap<String, String> map = new HashMap<String, String>();
+		            map.put("hasDotConnectSQLError", "true");
+		            map.put("dotConnectSQLError", "There was a sql error:" + e.getMessage());
+		            errorResults.add(map);
+		            return errorResults;
+		        }
+		   }
+		   
 	    }
 
 
@@ -618,4 +647,12 @@ public class DotCMSMacroWebAPI implements ViewTool {
     public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, long hostId) throws DotDataException {
         return getMediaGalleryFolderFiles(folderPath, String.valueOf(hostId));
     }
+	
+	protected boolean canUserEvaluate(){
+		if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
+			Logger.warn(this.getClass(), "Scripting called and ENABLE_SCRIPTING set to false");
+			return false;
+		}
+		return true;
+	}
 }

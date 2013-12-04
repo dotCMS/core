@@ -370,7 +370,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                 dc.setSQL("load_records_to_index @server_id='"+serverId+"', @records_to_fetch=50");
                 dc.setForceQuery(true);
                 results = dc.loadObjectResults(con);
-            } if(DbConnectionFactory.isH2()) {
+            } else if(DbConnectionFactory.isH2()) {
                 dc.setSQL("call load_records_to_index(?,?)");
                 dc.addParam(serverId);
                 dc.addParam(50);
