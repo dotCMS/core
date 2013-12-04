@@ -789,6 +789,6 @@ CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
 --Cluster Tables
 
-CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port numeric(5,0), es_transport_tcp_port numeric(5,0), es_network_port numeric(5,0), es_http_port numeric(5,0) );
+CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT );
 CREATE TABLE server_uptime(id varchar(36) NOT NULL, server_id varchar(36) NOT NULL, startup datetime null, heartbeat datetime null );
 CREATE TABLE cluster(cluster_id varchar(36) );

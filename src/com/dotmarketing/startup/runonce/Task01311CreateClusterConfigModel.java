@@ -12,19 +12,19 @@ public class Task01311CreateClusterConfigModel implements StartupTask {
 
 	private void createPushedAssetsTable(DotConnect dc) throws SQLException, DotDataException {
 		if(DbConnectionFactory.isMsSql()) {
-			dc.executeStatement("CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port numeric(5,0), es_transport_tcp_port numeric(5,0), es_network_port numeric(5,0), es_http_port numeric(5,0) );");
+			dc.executeStatement("CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT );");
 			dc.executeStatement("CREATE TABLE server_uptime(id varchar(36) NOT NULL, server_id varchar(36) NOT NULL, startup datetime null, heartbeat datetime null );");
 			dc.executeStatement("CREATE TABLE cluster(cluster_id varchar(36) );");
 		}else if(DbConnectionFactory.isOracle()) {
-			dc.executeStatement("CREATE TABLE server(server_id varchar2(36) NOT NULL, cluster_id varcha2r(36) NOT NULL,ip_address varchar2(39) NOT NULL, host varchar2(36), cache_port number(5,0), es_transport_tcp_port number(5,0), es_network_port number(5,0), es_http_port number(5,0) );");
+			dc.executeStatement("CREATE TABLE server(server_id varchar2(36) NOT NULL, cluster_id varcha2r(36) NOT NULL,ip_address varchar2(39) NOT NULL, host varchar2(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT );");
 			dc.executeStatement("CREATE TABLE server_uptime(id varchar2(36) NOT NULL,server_id varchar2(36) NOT NULL, startup TIMESTAMP, heartbeat TIMESTAMP);");
 			dc.executeStatement("CREATE TABLE cluster(cluster_id varchar2(36) );");
 		}else if(DbConnectionFactory.isMySql()) {
-			dc.executeStatement("CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port bigint, es_transport_tcp_port bigint, es_network_port bigint, es_http_port bigint );");
+			dc.executeStatement("CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT );");
 			dc.executeStatement("CREATE TABLE server_uptime(id varchar(36) NOT NULL,server_id varchar(36) NOT NULL, startup datetime, heartbeat datetime;");
 			dc.executeStatement("CREATE TABLE cluster(cluster_id varchar(36) );");
 		}else if(DbConnectionFactory.isPostgres()) {
-			dc.executeStatement("CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port numeric(5,0), es_transport_tcp_port numeric(5,0), es_network_port numeric(5,0), es_http_port numeric(5,0) );");
+			dc.executeStatement("CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT );");
 			dc.executeStatement("CREATE TABLE server_uptime(id varchar(36) NOT NULL,server_id varchar(36) NOT NULL, startup timestamp without time zone null, heartbeat timestamp without time zone null);");
 			dc.executeStatement("CREATE TABLE cluster(cluster_id varchar(36) );");
 		}
