@@ -507,7 +507,7 @@ public class CMSFilter implements Filter {
             }
             LogFactory.getLog(this.getClass()).debug("CMS Filter going to redirect to pointer");
 
-            if((pointer.substring(pointer.lastIndexOf(".") + 1)).equals(dotExtension)){
+            if(pointer.endsWith(dotExtension)){
             	//Serving a page through the velocity servlet
                 request.getRequestDispatcher(pointer).forward(request, response);
             } else {
