@@ -708,6 +708,6 @@ alter table publishing_bundle add force_push varchar(1) ;
 
 -- Cluster Tables
 
-CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port bigint, es_transport_tcp_port bigint, es_network_port bigint, es_http_port bigint );
+CREATE TABLE server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL,ip_address varchar(39) NOT NULL, host varchar(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT );
 CREATE TABLE server_uptime(id varchar(36) NOT NULL,server_id varchar(36) NOT NULL, startup datetime, heartbeat datetime);
 CREATE TABLE cluster(cluster_id varchar(36) );

@@ -244,7 +244,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				System.out.println(address);
 			}
 
-			localServer.setCachePort(Long.parseLong(bindPort));
+			localServer.setCachePort(Short.parseShort(bindPort));
 			localServer.setHost(bindAddr);
 			serverAPI.updateServer(localServer);
 

@@ -1,5 +1,6 @@
 package com.dotcms.cluster.business;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,27 @@ public class ClusterFactory {
 		return freePort.toString();
 	}
 
+	public static String getNextAvailableESPort(String serverId) {
+		DotConnect dc = new DotConnect();
+		dc.setSQL("select max(cache_port) as port from server where ip_address = (select s.ip_address from server s where s.server_id = ?)");
+		dc.addParam(serverId);
+		Long maxPort = null;
+		String freePort = Config.getStringProperty("CACHE_BINDPORT", "7800");
+
+		try {
+			List<Map<String,Object>> results = dc.loadObjectResults();
+			if(!results.isEmpty()) {
+				maxPort = (Long) results.get(0).get("port");
+				freePort = UtilMethods.isSet(maxPort)?Long.toString(maxPort+1):freePort;
+			}
+
+		} catch (DotDataException e) {
+			Logger.error(ClusterFactory.class, "Could not get Cluster ID", e);
+		}
+
+		return freePort.toString();
+	}
+
 	public static void addNodeToCluster(String serverId) {
 		addNodeToCluster(null, serverId);
 	}
@@ -102,8 +124,15 @@ public class ClusterFactory {
 				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()))
 				? properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()) : ES_DISCOVERY_ZEN_PING_TIMEOUT.getDefaultValue() );
 //
-//		ServerAPI serverAPI = APILocator.getServerAPI();
-//		List<Server> aliveServers = serverAPI.getAliveServers();
+		ServerAPI serverAPI = APILocator.getServerAPI();
+		List<Server> aliveServers = new ArrayList<Server>();
+
+		try {
+			aliveServers = serverAPI.getAliveServers();
+		} catch (DotDataException e) {
+			Logger.error(ClusterFactory.class, "Error getting alive Servers", e);
+		}
+
 //		Server currentServer = serverAPI.getServer(serverId);
 //		aliveServers.add(currentServer);
 //
@@ -121,8 +150,8 @@ public class ClusterFactory {
 //		esProperties.put(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS,
 //				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()))
 //				? properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()) : null);
-
-		addNodeToESCluster(esProperties);
+//
+//		addNodeToESCluster(esProperties);
 
 	}
 

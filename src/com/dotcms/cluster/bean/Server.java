@@ -6,10 +6,10 @@ public class Server {
 	private String clusterId;
 	private String ipAddress;
 	private String host;
-	private Integer esTransportTcpPort;
-	private Integer esNetworkPort;
-	private Integer esHttpPort;
-	private Long cachePort;
+	private Short esTransportTcpPort;
+	private Short esNetworkPort;
+	private Short esHttpPort;
+	private Short cachePort;
 
 	public String getServerId() {
 		return serverId;
@@ -36,28 +36,28 @@ public class Server {
 		this.host = host;
 	}
 
-	public Integer getEsTransportTcpPort() {
+	public Short getEsTransportTcpPort() {
 		return esTransportTcpPort;
 	}
-	public void setEsTransportTcpPort(Integer esTransportTcpPort) {
+	public void setEsTransportTcpPort(Short esTransportTcpPort) {
 		this.esTransportTcpPort = esTransportTcpPort;
 	}
-	public Integer getEsNetworkPort() {
+	public Short getEsNetworkPort() {
 		return esNetworkPort;
 	}
-	public void setEsNetworkPort(Integer esNetworkPort) {
+	public void setEsNetworkPort(Short esNetworkPort) {
 		this.esNetworkPort = esNetworkPort;
 	}
-	public Integer getEsHttpPort() {
+	public Short getEsHttpPort() {
 		return esHttpPort;
 	}
-	public void setEsHttpPort(Integer esHttpPort) {
+	public void setEsHttpPort(Short esHttpPort) {
 		this.esHttpPort = esHttpPort;
 	}
-	public Long getCachePort() {
+	public Short getCachePort() {
 		return cachePort;
 	}
-	public void setCachePort(Long cachePort) {
+	public void setCachePort(Short cachePort) {
 		this.cachePort = cachePort;
 	}
 
