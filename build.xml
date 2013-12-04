@@ -90,7 +90,7 @@
 		</fileset>
 		<fileset dir="${lib.app}">
 			<include name="log4j.jar" />
-			<include name="dotcms_ant.jar" />
+			<include name="ant-tooling.jar" />
 			<include name="commons-lang-2.4.jar" />
 		</fileset>
 	</path>
@@ -152,18 +152,6 @@
         </copy>
 	</target>
 
-	<target name="compile-anttasks" depends="prepare" description="Compiles source code need for clean and deploy plugins.">
-		<mkdir dir="${build.ant}" />
-		<javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.ant}"
-			source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
-			memoryinitialsize="256m" memorymaximumsize="512m" >
-			<classpath refid="files-classpath" />
-			<include name="com/dotmarketing/plugin/ant/**"/>
-			<include name="com/dotmarketing/plugin/util/**"/>
-
-		</javac>
-	</target>
-
 	<target name="compile-log4jappends" depends="prepare" description="Compiles source code need for our async appender.">
 		<mkdir dir="${build.log4j}" />
 		<javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}"
@@ -210,10 +198,6 @@
 			<exclude name="com/dotmarketing/plugin/ant/**"/>
 			<exclude name="com/dotmarketing/plugin/util/**"/>
 		</jar>
-	</target>
-
-	<target name="jar-anttasks" depends="compile-anttasks" description="Generates dotcms-ant.jar in the 'lib' directory.">
-		<jar jarfile="${build.lib}/dotcms_ant.jar" basedir="${build.ant}"/>
 	</target>
 
 	<target name="jar-log4jtasks" depends="compile-log4jappends" description="Generates dotcms-log4j.jar in the 'tomcat/lib' directory.">
@@ -267,13 +251,6 @@
 		</delete>
 		<copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
 		<antcall target="deploy-plugins" />
-	</target>
-
-	<target name="deploy-anttasks" depends="jar-anttasks" description="builds and deploys core and plugins">
-		<delete>
-			<fileset dir="${deploy.dir}" includes="dotcms_ant.jar" />
-		</delete>
-		<copy file="${build.lib}/dotcms_ant.jar" tofile="${deploy.dir}/dotcms_ant.jar" />
 	</target>
 
 	<target name="rep">
