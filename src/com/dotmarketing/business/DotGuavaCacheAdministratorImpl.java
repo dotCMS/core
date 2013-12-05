@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.cache.Fqn;
 import org.jgroups.Address;
 import org.jgroups.ChannelClosedException;
+import org.jgroups.ChannelException;
 import org.jgroups.ChannelNotConnectedException;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
@@ -69,6 +70,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	static final String LIVE_CACHE_PREFIX = "livecache";
 	static final String WORKING_CACHE_PREFIX = "workingcache";
 	static final String DEFAULT_CACHE = "default";
+	public static final String TEST_MESSAGE = "HELLO CLUSTER!";
 
 	private NullCallable nullCallable = new NullCallable();
 
@@ -146,6 +148,29 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	}
 
+//	public void setCluster() {
+//		JChannel channel;
+//		try {
+//			System.setProperty("java.net.preferIPv4Stack", "true");
+//
+//			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+//			String cacheFile = "udp.xml";
+//			channel = new JChannel(classLoader.getResource(cacheFile));
+//
+//			channel.setReceiver(new ReceiverAdapter() {
+//				public void receive(Message msg) {
+//					System.out.println("received msg from " + msg.getSrc() + ": " + msg.getObject());
+//				}
+//			});
+//			channel.connect("MyCluster");
+//			channel.send(new Message(null, null, "hello world"));
+////			channel.close();
+//		} catch (ChannelException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//	}
+
 	public void setCluster(String serverId) {
 		setCluster(null, serverId);
 	}
@@ -161,6 +186,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				cacheProperties = new HashMap<String, String>();
 			}
 
+			Server localServer = APILocator.getServerAPI().getServer(serverId);
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 			String cacheProtocol = UtilMethods.isSet(cacheProperties.get("CACHE_PROTOCOL"))?cacheProperties.get("CACHE_PROTOCOL")
 					:Config.getStringProperty("CACHE_PROTOCOL", "tcp");
@@ -170,7 +196,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			Logger.info(this, "***\t Going to load JGroups with this Classpath file " + cacheFile);
 
 			String bindAddr = UtilMethods.isSet(cacheProperties.get("CACHE_BINDADDRESS"))?cacheProperties.get("CACHE_BINDADDRESS")
-					:Config.getStringProperty("CACHE_BINDADDRESS", "localhost");
+					:Config.getStringProperty("CACHE_BINDADDRESS", localServer.getIpAddress());
 
 			if (bindAddr != null) {
 				Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
@@ -181,8 +207,6 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			if (UtilMethods.isSet(bindAddr)) {
 				System.setProperty("jgroups.bind_addr", bindAddr);
 			}
-
-			Server localServer = APILocator.getServerAPI().getServer(serverId);
 
 			String bindPort = localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
 					:UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
@@ -198,8 +222,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				System.setProperty("jgroups.bind_port", bindPort);
 			}
 
+			localServer.setCachePort(Integer.parseInt(bindPort));
+
 			ServerAPI serverAPI = APILocator.getServerAPI();
 			List<Server> aliveServers = serverAPI.getAliveServers();
+			aliveServers.add(localServer);
 
 			String initialHosts = "";
 
@@ -208,7 +235,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				if(i>0) {
 					initialHosts += ", ";
 				}
-				initialHosts += server.getHost() + "[" + server.getCachePort() + "]";
+				initialHosts += server.getIpAddress() + "[" + server.getCachePort() + "]";
 				i++;
 			}
 
@@ -216,10 +243,12 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				initialHosts += bindAddr + "[" + bindPort + "]";
 			}
 
+			String cacheTCPInitialHosts = UtilMethods.isSet(cacheProperties.get("CACHE_TCP_INITIAL_HOSTS"))?cacheProperties.get("CACHE_TCP_INITIAL_HOSTS")
+					:Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initialHosts);
+
 			if (cacheProtocol.equals("tcp")) {
 				Logger.info(this, "***\t Setting up TCP Prperties");
-				System.setProperty("jgroups.tcpping.initial_hosts",	UtilMethods.isSet(cacheProperties.get("CACHE_TCP_INITIAL_HOSTS"))?cacheProperties.get("CACHE_TCP_INITIAL_HOSTS")
-						:Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initialHosts));
+				System.setProperty("jgroups.tcpping.initial_hosts",	cacheTCPInitialHosts);
 			} else if (cacheProtocol.equals("udp")) {
 				Logger.info(this, "***\t Setting up UDP Prperties");
 				System.setProperty("jgroups.udp.mcast_port", UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_PORT"))?cacheProperties.get("CACHE_MULTICAST_PORT")
@@ -232,20 +261,20 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 			System.setProperty("java.net.preferIPv4Stack", UtilMethods.isSet(cacheProperties.get("CACHE_FORCE_IPV4"))?cacheProperties.get("CACHE_FORCE_IPV4")
 					:Config.getStringProperty("CACHE_FORCE_IPV4", "true"));
-			Logger.info(this, "***\t Setting up JCannel");
+			Logger.info(this, "***\t Setting up JChannel");
 			channel = new JChannel(classLoader.getResource(cacheFile));
 			channel.setReceiver(this);
+//			channel.setReceiver(new ReceiverAdapter() {
+//				public void receive(Message msg) {
+//					System.out.println("received msg from " + msg.getSrc() + ": " + msg.getObject());
+//				}
+//			});
 			channel.connect("dotCMSCluster");
 			channel.setOpt(JChannel.LOCAL, false);
 			useJgroups = true;
-			List<Address> members = channel.getView().getMembers();
+			channel.send(new Message(null, null, TEST_MESSAGE));
+			List<Address> members = channel.getView().getMembers();;
 
-			for (Address address : members) {
-				System.out.println(address);
-			}
-
-			localServer.setCachePort(Integer.parseInt(bindPort));
-			localServer.setHost(bindAddr);
 			serverAPI.updateServer(localServer);
 
 			Logger.info(this, "***\t " + channel.toString(true));
@@ -701,7 +730,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			return;
 		}
 
-		if (v.toString().equals("TESTINGCLUSTER")) {
+		if (v.toString().equals(TEST_MESSAGE)) {
 			Logger.info(this, "Received Message Ping " + new Date());
 			try {
 				channel.send(null, null, "ACK");
@@ -732,7 +761,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	}
 
 	public void testCluster() {
-		Message msg = new Message(null, null, "TESTINGCLUSTER");
+		Message msg = new Message(null, null, TEST_MESSAGE);
 		try {
 			channel.send(msg);
 			Logger.info(this, "Sending Ping to Cluster " + new Date());
