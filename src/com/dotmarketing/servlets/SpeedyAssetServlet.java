@@ -89,11 +89,14 @@ public class SpeedyAssetServlet extends HttpServlet {
 		boolean PREVIEW_MODE = false;
 		boolean EDIT_MODE = false;
 		HttpSession session = request.getSession(false);
+		boolean serveWorkingVersion = false;
+		boolean isLoggedToBackend = false;
 
 		if(session != null) {
 			PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
 			try {
-				EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)) || WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
+				EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)));
+				isLoggedToBackend = WebAPILocator.getUserWebAPI().isLoggedToBackend(request);
 			} catch (DotRuntimeException e) {
 				Logger.error(this, "Error: Unable to determine if there's a logged user.", e);
 			} catch (PortalException e) {
@@ -102,6 +105,15 @@ public class SpeedyAssetServlet extends HttpServlet {
 				Logger.error(this, "Error: Unable to determine if there's a logged user.", e);
 			}
 
+		}
+		//GIT-4506
+		if(isLoggedToBackend){
+			if(!EDIT_MODE && !PREVIEW_MODE)// LIVE_MODE
+				serveWorkingVersion = false;
+			else
+				serveWorkingVersion = true;
+		}else{
+			serveWorkingVersion = false;//Frontend
 		}
 
         User user = null;
@@ -143,7 +155,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 				}
 				if(ident != null && ident.getURI() != null && !ident.getURI().equals("")){
 
-					if(PREVIEW_MODE || EDIT_MODE){
+					if(serveWorkingVersion){
 						uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId());
 						if(!UtilMethods.isSet(realPath)){
 							f = new File(Config.CONTEXT.getRealPath(assetPath + uri));
@@ -167,7 +179,17 @@ public class SpeedyAssetServlet extends HttpServlet {
 						}
 
 					}else {
-						uri = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId());
+						try{
+							uri = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId());
+						}catch (Exception e) {
+							if(isLoggedToBackend){
+								response.setHeader( "Pragma", "no-cache" );
+								response.setHeader( "Cache-Control", "no-cache" );
+								response.setDateHeader( "Expires", 0 );
+								response.sendError(404);
+								return;
+							}
+						}
 						if(!UtilMethods.isSet(realPath)){
 							f = new File(Config.CONTEXT.getRealPath(assetPath + uri));
 						}else{
