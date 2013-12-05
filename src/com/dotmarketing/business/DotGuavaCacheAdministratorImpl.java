@@ -28,6 +28,7 @@ import org.jgroups.View;
 
 import com.dotcms.cluster.bean.ESProperty;
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotmarketing.cache.H2CacheLoader;
@@ -210,7 +211,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 			String bindPort = localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
 					:UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
-					:ClusterFactory.getNextAvailableCachePort(serverId);
+					:ClusterFactory.getNextAvailablePort(serverId, ServerPort.CACHE_PORT);
 
 			if (bindPort != null) {
 				Logger.info(this, "***\t Using " + bindPort + " as the bindport");
