@@ -449,6 +449,9 @@
 		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
 		        <include name="**/*.sh"/>
 		    </tarfileset>
+			<tarfileset dir="${distribution.output}/dotserver/tomcat/bin" prefix="/dotserver/tomcat/bin" filemode="755">
+		        <include name="**/*.sh"/>
+		    </tarfileset>
 		</tar>
 		
 		<delete dir="${distribution.output}" />
