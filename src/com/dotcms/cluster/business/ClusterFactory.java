@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import com.dotcms.cluster.bean.ESProperty;
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -55,12 +56,12 @@ public class ClusterFactory {
 		return clusterId;
 	}
 
-	public static String getNextAvailableCachePort(String serverId) {
+	public static String getNextAvailablePort(String serverId, ServerPort port) {
 		DotConnect dc = new DotConnect();
-		dc.setSQL("select max(cache_port) as port from server where ip_address = (select s.ip_address from server s where s.server_id = ?)");
+		dc.setSQL("select max(" + port.getTableName()+ ") as port from server where ip_address = (select s.ip_address from server s where s.server_id = ?)");
 		dc.addParam(serverId);
 		Integer maxPort = null;
-		String freePort = Config.getStringProperty("CACHE_BINDPORT", "7800");
+		String freePort = Config.getStringProperty(port.getPropertyName(), port.getDefaultValue());
 
 		try {
 			List<Map<String,Object>> results = dc.loadObjectResults();
@@ -70,28 +71,7 @@ public class ClusterFactory {
 			}
 
 		} catch (DotDataException e) {
-			Logger.error(ClusterFactory.class, "Could not get Cluster ID", e);
-		}
-
-		return freePort.toString();
-	}
-
-	public static String getNextAvailableESPort(String serverId) {
-		DotConnect dc = new DotConnect();
-		dc.setSQL("select max(cache_port) as port from server where ip_address = (select s.ip_address from server s where s.server_id = ?)");
-		dc.addParam(serverId);
-		Integer maxPort = null;
-		String freePort = Config.getStringProperty("CACHE_BINDPORT", "7800");
-
-		try {
-			List<Map<String,Object>> results = dc.loadObjectResults();
-			if(!results.isEmpty()) {
-				maxPort = (Integer) results.get(0).get("port");
-				freePort = UtilMethods.isSet(maxPort)?Integer.toString(maxPort+1):freePort;
-			}
-
-		} catch (DotDataException e) {
-			Logger.error(ClusterFactory.class, "Could not get Cluster ID", e);
+			Logger.error(ClusterFactory.class, "Could not get Available server port", e);
 		}
 
 		return freePort.toString();
@@ -109,22 +89,24 @@ public class ClusterFactory {
 
 		addNodeToCacheCluster(properties, serverId);
 
+		ServerAPI serverAPI = APILocator.getServerAPI();
+		Server currentServer = serverAPI.getServer(serverId);
+
 		Map<ESProperty, String> esProperties = new HashMap<ESProperty, String>();
 
 		esProperties.put(ES_NETWORK_HOST,
-				UtilMethods.isSet(properties.get(ES_NETWORK_HOST.toString())) ? properties.get(ES_NETWORK_HOST.toString()) : ES_NETWORK_HOST.getDefaultValue() );
+				UtilMethods.isSet(properties.get(ES_NETWORK_HOST.toString())) ? properties.get(ES_NETWORK_HOST.toString()) : currentServer.getIpAddress() );
 		esProperties.put(ES_TRANSPORT_TCP_PORT,
-				UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : ES_TRANSPORT_TCP_PORT.getDefaultValue() );
+				UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT) );
 		esProperties.put(ES_HTTP_PORT,
-				UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : ES_HTTP_PORT.getDefaultValue() );
+				UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT) );
 		esProperties.put(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED,
 				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()))
 				? properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()) : ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.getDefaultValue() );
 		esProperties.put(ES_DISCOVERY_ZEN_PING_TIMEOUT,
 				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()))
 				? properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()) : ES_DISCOVERY_ZEN_PING_TIMEOUT.getDefaultValue() );
-//
-		ServerAPI serverAPI = APILocator.getServerAPI();
+
 		List<Server> aliveServers = new ArrayList<Server>();
 
 		try {
@@ -133,25 +115,24 @@ public class ClusterFactory {
 			Logger.error(ClusterFactory.class, "Error getting alive Servers", e);
 		}
 
-//		Server currentServer = serverAPI.getServer(serverId);
-//		aliveServers.add(currentServer);
-//
-//		String initalHosts = "";
-//
-//		int i=0;
-//		for (Server server : aliveServers) {
-//			if(i>0) {
-//				initalHosts += ", ";
-//			}
-//			initalHosts += server.getHost() + "[" + server.getCachePort() + "]";
-//			i++;
-//		}
-//
-//		esProperties.put(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS,
-//				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()))
-//				? properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()) : null);
-//
-//		addNodeToESCluster(esProperties);
+		aliveServers.add(currentServer);
+
+		String initialHosts = "";
+
+		int i=0;
+		for (Server server : aliveServers) {
+			if(i>0) {
+				initialHosts += ", ";
+			}
+			initialHosts += server.getIpAddress() + "[" + server.getCachePort() + "]";
+			i++;
+		}
+
+		esProperties.put(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS,
+				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()))
+				? properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()) : initialHosts);
+
+		addNodeToESCluster(esProperties);
 
 	}
 

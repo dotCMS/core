@@ -11,8 +11,8 @@ public enum ESProperty {
 	ES_NETWORK_HOST(Config.getStringProperty("es.network.host", "localhost"), "es.network.host"),
 	ES_TRANSPORT_TCP_PORT(Config.getStringProperty("es.transport.tcp.port", null), "es.transport.tcp.port"),
 	ES_HTTP_PORT(Config.getStringProperty("es.http.port", null), "es.http.port"),
-	ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED(Config.getStringProperty("es.discovery.zen.ping.multicast.enabled", "true"), "es.discovery.zen.ping.multicast.enabled"),
-	ES_DISCOVERY_ZEN_PING_TIMEOUT(Config.getStringProperty("es.discovery.zen.ping.timeout", null), "es.discovery.zen.ping.timeout"),
+	ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED(Config.getStringProperty("es.discovery.zen.ping.multicast.enabled", "false"), "es.discovery.zen.ping.multicast.enabled"),
+	ES_DISCOVERY_ZEN_PING_TIMEOUT(Config.getStringProperty("es.discovery.zen.ping.timeout", "5s"), "es.discovery.zen.ping.timeout"),
 	ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS(Config.getStringProperty("es.discovery.zen.ping.unicast.hosts", null), "es.discovery.zen.ping.unicast.hosts");
 
 	private String defaultValue;
