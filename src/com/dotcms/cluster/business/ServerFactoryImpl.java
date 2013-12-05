@@ -58,6 +58,7 @@ public class ServerFactoryImpl extends ServerFactory {
 				server.setHost((String)row.get("host"));
 				server.setCachePort((Integer)row.get("cache_port"));
 				server.setEsTransportTcpPort((Integer)row.get("es_transport_tcp_port"));
+				server.setEsHttpPort((Integer)row.get("es_http_port"));
 
 			}
 		} catch (DotDataException e) {
@@ -149,12 +150,13 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public void updateServer(Server server) throws DotDataException {
-		dc.setSQL("update server set cluster_id = ?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ? where server_id = ?");
+		dc.setSQL("update server set cluster_id = ?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ? where server_id = ?");
 		dc.addParam(server.getClusterId());
 		dc.addParam(server.getIpAddress());
 		dc.addParam(server.getHost());
 		dc.addParam(server.getCachePort());
 		dc.addParam(server.getEsTransportTcpPort());
+		dc.addParam(server.getEsHttpPort());
 		dc.addParam(server.getServerId());
 		dc.loadResult();
 	}
