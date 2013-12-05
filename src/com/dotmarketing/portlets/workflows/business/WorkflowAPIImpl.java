@@ -103,11 +103,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     }
 
     public void registerBundleService () {
-
-        // Register main service
-        BundleContext context = HostActivator.instance().getBundleContext();
-        Hashtable<String, String> props = new Hashtable<String, String>();
-        context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+    	if(Config.getBooleanProperty("felix.osgi.enable", true)){
+	        // Register main service
+	        BundleContext context = HostActivator.instance().getBundleContext();
+	        Hashtable<String, String> props = new Hashtable<String, String>();
+	        context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+    	}
     }
 
     public WorkFlowActionlet newActionlet(String className) throws DotDataException {

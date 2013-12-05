@@ -8,12 +8,18 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.servlets.ajax.AjaxAction;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 
 abstract class OSGIBaseAJAX extends AjaxAction {
 
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
+    		return ;
+    	}
+		
 		String cmd = request.getParameter("cmd");
 		java.lang.reflect.Method meth = null;
 		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
