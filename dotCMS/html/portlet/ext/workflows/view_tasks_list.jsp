@@ -1,3 +1,5 @@
+<%@page import="java.util.HashMap"%>
+<%@page import="java.util.Map"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="org.apache.commons.beanutils.BeanUtils"%>
@@ -14,7 +16,9 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowTask"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowSearcher"%>
 <%
-	WorkflowSearcher searcher = new WorkflowSearcher(request.getParameterMap(), user);
+	Map<String, Object>  newMap = new HashMap<String, Object>();
+	newMap.putAll(request.getParameterMap());
+	WorkflowSearcher searcher = new WorkflowSearcher(newMap, user);
 	session.setAttribute(com.dotmarketing.util.WebKeys.WORKFLOW_SEARCHER, searcher);	
 	WorkflowSearcher fakeSearcher =(WorkflowSearcher) BeanUtils.cloneBean(searcher) ;
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
