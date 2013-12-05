@@ -35,6 +35,7 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -232,10 +233,10 @@ public class CMSFilter implements Filter {
 			try {				
 				if (uri.endsWith("/"))
 					uri = uri.substring(0, uri.length() - 1);
-				pointer = LiveCache.getPathFromCache(uri, host);
+				pointer = WorkingCache.getPathFromCache(uri, host);
 
 				if(!UtilMethods.isSet(pointer)){//DOTCMS-7062
-					pointer = WorkingCache.getPathFromCache(uri, host);
+					pointer = LiveCache.getPathFromCache(uri, host);
 				}
 
             if (!UtilMethods.isSet(pointer) && (uri.endsWith(dotExtension) || InodeUtils.isSet(APILocator.getFolderAPI().findFolderByPath(uri, host,APILocator.getUserAPI().getSystemUser(),false).getInode()))) {
@@ -258,6 +259,17 @@ public class CMSFilter implements Filter {
 				pointer = LiveCache.getPathFromCache(uri, host);
 			} catch (Exception e) {
 				Logger.debug(this.getClass(), "Can't find pointer " + uri);
+				try {
+					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(request)){
+						response.setHeader( "Pragma", "no-cache" );
+						response.setHeader( "Cache-Control", "no-cache" );
+						response.setDateHeader( "Expires", 0 );
+						response.sendError(404);
+						return;
+					}
+				} catch (Exception e1) {
+					Logger.debug(this.getClass(), "Can't find pointer " + uri);
+				}
 			}
             // If the cache hits the db the connection needs to be manually
             // closed
@@ -449,7 +461,11 @@ public class CMSFilter implements Filter {
 
                 		try{
                 			ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
-                			Contentlet proxy  = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
+                			Contentlet proxy  = new Contentlet();
+                			if(UtilMethods.isSet(cinfo.getLiveInode()))
+                				proxy = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
+                			else if(WebAPILocator.getUserWebAPI().isLoggedToBackend(request))
+                				proxy = APILocator.getContentletAPI().find(cinfo.getWorkingInode(), user, true);
                 			canRead = UtilMethods.isSet(proxy.getInode());
                 		}catch(Exception e){
     						Logger.warn(this, "Unable to find file asset contentlet with identifier " + ident.getId(), e);
