@@ -331,10 +331,7 @@ function showLanguageSelector(){
 			<dd>
 				<c:if test="<%= company.isAutoLogin()%>">
 					<input id="rememberMe" tabindex="3" <%= rememberMe ? "checked" : "" %> type="checkbox"  dojoType="dijit.form.CheckBox"
-					onclick="
-					<c:if test="<%= company.isAutoLogin() && !request.isSecure() %>">
-						if (this.checked) {document.fm.my_account_r_m.value = 'on';}else {document.fm.my_account_r_m.value = 'off';}
-					</c:if>">
+					onclick="if (this.checked) {document.fm.my_account_r_m.value = 'on';}else {document.fm.my_account_r_m.value = 'off';}">
 				</c:if>
 			</dd>
 		</dl>
