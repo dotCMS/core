@@ -600,7 +600,8 @@
 		    testurl="http://localhost:${server.port}"
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
-		    testtarget="test-all-junits"/>
+		    testtarget="test-all-junits"
+			timeout="600"/>
 		<antcall target="restore-files"/>
 		<!--<antcall target="drop-db"/>-->
 	</target>
