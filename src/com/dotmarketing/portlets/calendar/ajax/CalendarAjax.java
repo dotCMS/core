@@ -265,8 +265,8 @@ public class CalendarAjax {
 		//Retrieving the current user
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
-
-		Event ev = eventAPI.find(identifier, false, user, respectFrontendRoles);
+		String baseIdent = RecurrenceUtil.getBaseEventIdentifier(identifier);		
+		Event ev = eventAPI.find(baseIdent, false, user, respectFrontendRoles);
 		try{
 			contAPI.publish(ev, user, respectFrontendRoles);
 		}catch(Exception e){Logger.error(this, e.getMessage());}
