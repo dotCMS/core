@@ -117,6 +117,7 @@ public class ClusterFactory {
 
 
 		currentServer.setEsTransportTcpPort(Integer.parseInt(esProperties.get(ES_TRANSPORT_TCP_PORT)));
+		currentServer.setEsHttpPort(Integer.parseInt(esProperties.get(ES_HTTP_PORT)));
 		aliveServers.add(currentServer);
 
 		String initialHosts = "";
