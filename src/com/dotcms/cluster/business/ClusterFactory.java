@@ -115,6 +115,8 @@ public class ClusterFactory {
 			Logger.error(ClusterFactory.class, "Error getting alive Servers", e);
 		}
 
+
+		currentServer.setEsTransportTcpPort(Integer.parseInt(esProperties.get(ES_TRANSPORT_TCP_PORT)));
 		aliveServers.add(currentServer);
 
 		String initialHosts = "";
@@ -124,7 +126,7 @@ public class ClusterFactory {
 			if(i>0) {
 				initialHosts += ", ";
 			}
-			initialHosts += server.getIpAddress() + "[" + server.getCachePort() + "]";
+			initialHosts += server.getIpAddress() + "[" + server.getEsTransportTcpPort() + "]";
 			i++;
 		}
 
@@ -133,6 +135,12 @@ public class ClusterFactory {
 				? properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()) : initialHosts);
 
 		addNodeToESCluster(esProperties);
+
+		try {
+			serverAPI.updateServer(currentServer);
+		} catch (DotDataException e) {
+			Logger.error(ClusterFactory.class, "Error trying to update server. Server Id: " + currentServer.getServerId());
+		}
 
 	}
 
