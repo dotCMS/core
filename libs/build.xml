@@ -85,9 +85,9 @@
 
             <!--++++++++++++++++++++++++++++++++++++++-->
             <!--List of dependencies to check if there are dependencies to old packages -->
-            <dependency path="${lib.app}/dotcms_ant.jar"/>
+            <dependency path="${lib.app}/ant-tooling.jar"/>
             <dependency path="${lib.app}/packager-taks.jar"/>
-            <dependency path="${lib.app}/ee-a9031a10.jar"/>
+            <dependency path="${lib.app}/ee-af5bcc3ddb.jar"/>
 
             <!--++++++++++++++++++++++++++++++++++++++-->
             <!--++++++++++++++Resources+++++++++++++++-->
