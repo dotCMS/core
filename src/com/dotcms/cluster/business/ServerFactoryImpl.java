@@ -1,6 +1,7 @@
 package com.dotcms.cluster.business;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -104,6 +105,31 @@ public class ServerFactoryImpl extends ServerFactory {
 		dc.addParam(serverId);
 		dc.addParam(id);
 		dc.loadResult();
+	}
+
+	public List<Server> getAllServers() throws DotDataException {
+		List<Server> servers = new ArrayList<Server>();
+
+		dc.setSQL("select server_id, cluster_id, ip_address, cache_port, es_transport_tcp_port, es_network_port, es_http_port, "
+				+ "(select max(heartbeat) as last_heartbeat from server_uptime where server_id = s.server_id) as last_heartbeat"
+				+ " from server s");
+		List<Map<String, Object>> results = dc.loadObjectResults();
+
+
+		for (Map<String, Object> row : results) {
+			Server server = new Server();
+			server.setServerId((String)row.get("server_id"));
+			server.setClusterId((String)row.get("cluster_id"));
+			server.setIpAddress((String)row.get("ip_address"));
+			server.setHost((String)row.get("host"));
+			server.setCachePort((Integer)row.get("cache_port"));
+			server.setEsTransportTcpPort((Integer)row.get("es_transport_tcp_port"));
+			server.setEsHttpPort((Integer)row.get("es_http_port"));
+			server.setLastHeartBeat((Date)row.get("last_heartbeat"));
+			servers.add(server);
+		}
+
+		return servers;
 	}
 
 	public List<Server> getAliveServers() throws DotDataException {

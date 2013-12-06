@@ -172,14 +172,12 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 //		}
 //	}
 
-	public void setCluster(String serverId) {
+	public void setCluster(String serverId) throws Exception {
 		setCluster(null, serverId);
 	}
 
-	public void setCluster(Map<String, String> cacheProperties, String serverId) {
-		Logger.info(this, "***\t Starting JGroups Cluster Setup");
-
-		try {
+	public void setCluster(Map<String, String> cacheProperties, String serverId) throws Exception {
+			Logger.info(this, "***\t Starting JGroups Cluster Setup");
 
 			journalAPI = APILocator.getDistributedJournalAPI();
 
@@ -224,6 +222,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			}
 
 			localServer.setCachePort(Integer.parseInt(bindPort));
+			localServer.setIpAddress(bindAddr);
 
 			ServerAPI serverAPI = APILocator.getServerAPI();
 			List<Server> aliveServers = serverAPI.getAliveServers();
@@ -280,10 +279,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 			Logger.info(this, "***\t " + channel.toString(true));
 			Logger.info(this, "***\t Ending JGroups Cluster Setup");
-		} catch (Exception e1) {
-			Logger.info(this, "Error During JGroups Cluster Setup");
-			Logger.fatal(DotGuavaCacheAdministratorImpl.class, e1.getMessage(), e1);
-		}
+
 	}
 
 	/*

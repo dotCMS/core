@@ -28,4 +28,6 @@ public interface ServerAPI {
 
 	public String[] getAliveServersIds() throws DotDataException;
 
+	public List<Server> getAllServers() throws DotDataException;
+
 }

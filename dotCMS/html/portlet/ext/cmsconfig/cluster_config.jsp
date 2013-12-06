@@ -64,143 +64,170 @@ div.centre
 }
 
 .left_td {
-	background: #ececec;
+/* 	background: #ececec; */
+	width: 50%;
+	text-align: left;
 }
+
+.statusTable {
+ 	background: white;
+	width: 100%;
+	text-align: right;
+	border-color: white;
+}
+
+.listingTable {
+border-collapse: collapse;
+font-size: 11px;
+}
+
+.listingTable td {
+font-size: 11px;
+}
+
+.listingTable tbody table {
+border-color: white;
+border : 0;
+}
+
 </style>
 <script type="text/javascript">
 
-dojo.require("dojox.data.QueryReadStore");
-dojo.require("dojox.grid.DataGrid");
 
 // Cache Cluster Status
-var cacheClusterStatus;
+function renderCacheClusterStatus() {
+	var cacheClusterStatus;
 
-var xhrArgs = {
-	url : "/api/cluster/getCacheClusterStatus/",
-	handleAs : "json",
-	sync: true,
-	load : function(data) {
-		cacheClusterStatus = data;
-	},
-	error : function(error) {
-		targetNode.innerHTML = "An unexpected error occurred: " + error;
+	var xhrArgs = {
+		url : "/api/cluster/getCacheClusterStatus/",
+		handleAs : "json",
+		sync: true,
+		load : function(data) {
+			cacheClusterStatus = data;
+		},
+		error : function(error) {
+			targetNode.innerHTML = "An unexpected error occurred: " + error;
+		}
 	}
-}
 
-var deferred = dojo.xhrGet(xhrArgs);
+	var deferred = dojo.xhrGet(xhrArgs);
 
-var clusterStatusDiv = dojo.create("div",
-		{ innerHTML: "<table class='listingTable' style='background:white; width:100%'>"
-						+ "<tr><td class='left_td'>Cluster Name</td><td>"+cacheClusterStatus.clusterName+"</td></tr>"
-						+ "<tr><td class='left_td'>Channel Open</td><td>"+cacheClusterStatus.open+"</td></tr>"
-						+ "<tr><td class='left_td'>Number of Nodes</td><td>"+cacheClusterStatus.numerOfNodes+"</td></tr>"
-						+ "<tr><td class='left_td'>Address</td><td>"+cacheClusterStatus.address+"</td></tr>"
-						+ "<tr><td class='left_td'>Received Bytes</td><td>"+cacheClusterStatus.receivedBytes+"</td></tr>"
-						+ "<tr><td class='left_td'>Received Messages</td><td>"+cacheClusterStatus.receivedMessages+"</td></tr>"
-						+ "<tr><td class='left_td'>Sent Bytes</td><td>"+cacheClusterStatus.sentBytes+"</td></tr>"
-						+ "<tr><td class='left_td'>Sent Messages</td><td>"+cacheClusterStatus.sentMessages+"</td></tr>"
-// 							+ "<tr><td class='left_td'>Cache Status</td><td><div id='cache_"+item.id+"'style='cursor:pointer;background:GREEN; width:20px;height:20px;'></td></tr>"
-						+ "</table>"
-		});
-dojo.place(clusterStatusDiv, dojo.byId("cacheClusterStatus"))
-
-
-// Cache Cluster Nodes Status
-var cacheClusterNodes;
-
-xhrArgs = {
-	url : "/api/cluster/getCacheNodesStatus/",
-	handleAs : "json",
-	sync: true,
-	load : function(data) {
-		cacheClusterNodes = data;
-	},
-	error : function(error) {
-		targetNode.innerHTML = "An unexpected error occurred: " + error;
-	}
-}
-
-deferred = dojo.xhrGet(xhrArgs);
-
-dojo.forEach(cacheClusterNodes, function(item, index){
-	var nodeDiv = dojo.create("div",
-			{ innerHTML: "<table class='listingTable' style='background:white; width:auto'>"
-							+ "<tr><td class='left_td'>ID</td><td>"+item.id+"</td></tr>"
-							+ "<tr><td class='left_td'>Physical Address</td><td>"+item.ip+"</td></tr>"
+	var clusterStatusDiv = dojo.create("div",
+			{ innerHTML: "<table class='statusTable' style='background:white; width:100%;'>"
+							+ "<tr><td class='left_td'>Cluster Name</td><td>"+cacheClusterStatus.clusterName+"</td></tr>"
+							+ "<tr><td class='left_td'>Channel Open</td><td>"+cacheClusterStatus.open+"</td></tr>"
+							+ "<tr><td class='left_td'>Number of Nodes</td><td>"+cacheClusterStatus.numerOfNodes+"</td></tr>"
+							+ "<tr><td class='left_td'>Address</td><td>"+cacheClusterStatus.address+"</td></tr>"
+							+ "<tr><td class='left_td'>Received Bytes</td><td>"+cacheClusterStatus.receivedBytes+"</td></tr>"
+							+ "<tr><td class='left_td'>Received Messages</td><td>"+cacheClusterStatus.receivedMessages+"</td></tr>"
+							+ "<tr><td class='left_td'>Sent Bytes</td><td>"+cacheClusterStatus.sentBytes+"</td></tr>"
+							+ "<tr><td class='left_td'>Sent Messages</td><td>"+cacheClusterStatus.sentMessages+"</td></tr>"
+	// 							+ "<tr><td class='left_td'>Cache Status</td><td><div id='cache_"+item.id+"'style='cursor:pointer;background:GREEN; width:20px;height:20px;'></td></tr>"
 							+ "</table>"
 			});
-	dojo.attr(nodeDiv, "class", "node");
-	dojo.place(nodeDiv, dojo.byId("cacheClusterNodeStatus"))
 
-});
-
-
-// ES Cluster Status
-var esClusterStatus;
-
-xhrArgs = {
-	url : "/api/cluster/getESClusterStatus/",
-	handleAs : "json",
-	sync: true,
-	load : function(data) {
-		esClusterStatus = data;
-	},
-	error : function(error) {
-		targetNode.innerHTML = "An unexpected error occurred: " + error;
-	}
+	dojo.empty(dojo.byId("cacheClusterStatus"));
+	dojo.place(clusterStatusDiv, dojo.byId("cacheClusterStatus"))
 }
 
-deferred = dojo.xhrGet(xhrArgs);
 
-var esClusterStatusDiv = dojo.create("div",
-		{ innerHTML: "<table class='listingTable' style='background:white; width:100%'>"
-						+ "<tr><td class='left_td'>Cluster Name</td><td>"+esClusterStatus.cluster_name+"</td></tr>"
-						+ "<tr><td class='left_td'>Status</td><td>"+esClusterStatus.status+"</td></tr>"
-						+ "<tr><td class='left_td'>Number of Nodes</td><td>"+esClusterStatus.number_of_nodes+"</td></tr>"
-						+ "<tr><td class='left_td'>active_primary_shards</td><td>"+esClusterStatus.active_primary_shards+"</td></tr>"
-						+ "<tr><td class='left_td'>active_shards</td><td>"+esClusterStatus.active_shards+"</td></tr>"
-						+ "<tr><td class='left_td'>relocating_shards</td><td>"+esClusterStatus.relocating_shards+"</td></tr>"
-						+ "<tr><td class='left_td'>initializing_shards</td><td>"+esClusterStatus.initializing_shards+"</td></tr>"
-						+ "<tr><td class='left_td'>unassigned_shards</td><td>"+esClusterStatus.unassigned_shards+"</td></tr>"
-// 							+ "<tr><td class='left_td'>Cache Status</td><td><div id='cache_"+item.id+"'style='cursor:pointer;background:GREEN; width:20px;height:20px;'></td></tr>"
-						+ "</table>"
-		});
-dojo.place(esClusterStatusDiv, dojo.byId("esClusterStatus"))
+function renderESClusterStatus() {
 
-// ES Cluster Nodes Status
-var esClusterNodes;
+	// ES Cluster Status
+	var esClusterStatus;
 
-xhrArgs = {
-	url : "/api/cluster/getESNodesStatus/",
-	handleAs : "json",
-	sync: true,
-	load : function(data) {
-		esClusterNodes = data.nodes;
-	},
-	error : function(error) {
-		targetNode.innerHTML = "An unexpected error occurred: " + error;
+
+	xhrArgs = {
+		url : "/api/cluster/getESClusterStatus/",
+		handleAs : "json",
+		sync: true,
+		load : function(data) {
+			esClusterStatus = data;
+		},
+		error : function(error) {
+			targetNode.innerHTML = "An unexpected error occurred: " + error;
+		}
 	}
-}
 
-deferred = dojo.xhrGet(xhrArgs);
+	deferred = dojo.xhrGet(xhrArgs);
 
-
-for(var prop in esClusterNodes){
-	var node = esClusterNodes[prop];
-	var nodeDiv = dojo.create("div",
-			{ innerHTML: "<table class='listingTable' style='background:white; width:auto'>"
-							+ "<tr><td class='left_td'>Name</td><td>"+node.name+"</td></tr>"
-							+ "<tr><td class='left_td'>Transport Address</td><td>"+node.transport_address+"</td></tr>"
-							+ "<tr><td class='left_td'>Hostname</td><td>"+node.hostname+"</td></tr>"
-							+ "<tr><td class='left_td'>Http Address</td><td>"+node.http_address+"</td></tr>"
+	var esClusterStatusDiv = dojo.create("div",
+			{ innerHTML: "<table class='statusTable' style='background:white; width:100%; font-size:8px'>"
+							+ "<tr><td class='left_td'>Cluster Name</td><td>"+esClusterStatus.clusterName+"</td></tr>"
+							+ "<tr><td class='left_td'>Status</td><td>"+esClusterStatus.status+"</td></tr>"
+							+ "<tr><td class='left_td'>Number of Nodes</td><td>"+esClusterStatus.numerOfNodes+"</td></tr>"
+							+ "<tr><td class='left_td'>active_primary_shards</td><td>"+esClusterStatus.activePrimaryShards+"</td></tr>"
+							+ "<tr><td class='left_td'>active_shards</td><td>"+esClusterStatus.activeShards+"</td></tr>"
+							+ "<tr><td class='left_td'>unassigned_shards</td><td>"+esClusterStatus.unasignedPrimaryShards+"</td></tr>"
+	// 							+ "<tr><td class='left_td'>Cache Status</td><td><div id='cache_"+item.id+"'style='cursor:pointer;background:GREEN; width:20px;height:20px;'></td></tr>"
 							+ "</table>"
 			});
-	dojo.attr(nodeDiv, "class", "node");
-	dojo.place(nodeDiv, dojo.byId("esClusterNodeStatus"))
 
+	dojo.empty(dojo.byId("esClusterStatus"));
+	dojo.place(esClusterStatusDiv, dojo.byId("esClusterStatus"));
+
+}
+
+function renderNodesStatus() {
+
+	//Node List
+	var nodeList;
+
+	xhrArgs = {
+		url : "/api/cluster/getNodesStatus/",
+		handleAs : "json",
+		sync: true,
+		load : function(data) {
+			nodeList = data;
+		},
+		error : function(error) {
+			targetNode.innerHTML = "An unexpected error occurred: " + error;
+		}
+	}
+
+	deferred = dojo.xhrGet(xhrArgs);
+
+
+	var nodesTableHTML = "<table class='listingTable' style='background:white; width:100%'> "
+	+ "<tr><th>Server ID</th>"
+	+ "<th>IP Address</th>"
+	+ "<th>Contacted</th>"
+	+ "<th>Cache Status</th>"
+	+ "<th>ES Status</th>"
+	+ "<th>Rewiring</th>"
+	+ "</tr>";
+
+	dojo.forEach(nodeList, function(item, index){
+		nodesTableHTML +=	"<tr><td style='vertical-align:middle'><span class='backupIcon' style='margin-left:-10px; margin-right:20px'></span>"
+								+ item.serverId+(item.myself?"<span class='femaleIcon' style='margin-left:10px; margin-right:0px'></span>":"")+"</td>"
+								+ "<td>"+item.ipAddress+"</td>"
+								+ "<td>"+item.contacted+" secs ago</td>"
+								+ "<td align='center'><div style='background:"+(item.cacheStatus?"GREEN":"RED")+"; width:20px;height:20px;'></div></td>"
+								+ "<td align='center'><div style='background:"+(item.esStatus?"GREEN":"RED")+"; width:20px;height:20px;'></div></td>"
+								+ "<td align='center' style='padding: 0; margin: 0'><button dojoType='dijit.form.Button' iconClass='resetIcon'>Rewire</button></td>"
+								+ "</tr>";
+				});
+
+	nodesTableHTML += "</table>"
+
+	var nodesTable = dojo.create("div", { innerHTML: nodesTableHTML });
+
+	dojo.empty(dojo.byId("nodes"));
+	dojo.place(nodesTable, dojo.byId("nodes"));
+
+}
+
+
+function refreshStatus() {
+	renderCacheClusterStatus();
+	renderESClusterStatus();
+	renderNodesStatus();
 }
 
 function showClusterPropertiesDialog() {
+
+	dojo.destroy("nodes");
+	dojo.create("div", { id: 'nodes' }, "nodesTD");
 
 	//ES Cluster Nodes Status
 	var properties;
@@ -271,48 +298,60 @@ function showClusterPropertiesDialog() {
 
 }
 
+renderCacheClusterStatus();
+renderESClusterStatus();
+renderNodesStatus();
+
+
 
 </script>
 
-<div class="yui-g portlet-toolbar" align="center" style="width: 98%">
-     <div class="yui-u first" style="width: 100%">
-        <span  style="line-height:20px;font-weight: bold;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Cache") %></span>
-    </div>
-</div>
-
-<div >
-<table id="cacheCluster" class="listingTable shadowBox" >
-    <tr>
-        <th style="font-size: 8pt;" width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Status") %></th>
-        <th style="font-size: 8pt;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Node_Status") %></th>
-    </tr>
-    <tr style="text-align: center">
-        <td width="30%" style="padding:0px"><div id='cacheClusterStatus'></div></td>
-        <td><div id='cacheClusterNodeStatus'></div></td>
-    </tr>
-</table><br>
-
-<div class="yui-g portlet-toolbar" align="center" style="width: 98%">
-    <div class="yui-u first" style="width: 100%">
-        <span  style="font-weight: bold;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_ES") %></span>
+<div class="yui-g portlet-toolbar">
+    <div class="yui-u first">
+        <span class="rServerIcon"></span>
+        <span  style="line-height:20px;font-weight: bold;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Status") %></span>
     </div>
     <div class="yui-u" style="text-align:right;">
-        <button dojoType="dijit.form.Button" onClick="showClusterPropertiesDialog();" iconClass="plusIcon">
-            <%= LanguageUtil.get(pageContext, "configuration_Cluster_Edit_Config") %>
+    	<button  dojoType="dijit.form.Button" onClick="refreshStatus();" iconClass="resetIcon">
+            <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
+        </button>
+        <button dojoType="dijit.form.Button" onClick="refreshStatus();" iconClass="plusIcon">
+            <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
         </button>
     </div>
 </div>
-<table class="listingTable shadowBox" >
+
+<table id="cacheCluster" class="listingTable shadowBox">
     <tr>
-        <th style="font-size: 8pt;" "width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Status") %></th>
-        <th style="font-size: 8pt;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Node_Status") %></th>
+        <th style="font-size: 8pt;" width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_General_Status") %></th>
+        <th style="font-size: 8pt;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Servers") %></th>
     </tr>
     <tr style="text-align: center">
-        <td width="30%" style="padding:0px"><div id='esClusterStatus'></div></td>
-        <td><div id='esClusterNodeStatus'></div></td>
+        <td width="30%" style="padding:0px">
+        	<div id='generalStatus'>
+        		<table border="0">
+					    <tr>
+					        <td style="font-size: 8pt; font-weight: bold" width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Cache") %></td>
+					    </tr>
+					    <tr>
+					        <td width="30%" style="padding:0px"><div id='cacheClusterStatus'></div></td>
+					    </tr>
+					    <tr>
+					        <td style="font-size: 8pt; font-weight: bold" width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_ES") %></td>
+					    </tr>
+					    <tr>
+					        <td width="30%" style="padding:0px"><div id='esClusterStatus'></div></td>
+					    </tr>
+					</table>
+        	</div>
+        </td>
+        <td valign="top" id="nodesTD">
+        	<div id='nodes' style="width: 100%">
+        	</div>
+        </td>
     </tr>
-</table>
-</div>
+</table><br>
+
 
 
 <div id="clusterPropertiesDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "configuration_Cluster_Edit_Config")%>" style="display: none; height: 470px; width:500px">

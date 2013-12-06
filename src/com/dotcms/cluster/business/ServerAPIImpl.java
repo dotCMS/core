@@ -110,4 +110,8 @@ public class ServerAPIImpl implements ServerAPI {
 		return serverFactory.getAliveServersIds();
 	}
 
+	public List<Server> getAllServers() throws DotDataException {
+		return serverFactory.getAllServers();
+	}
+
 }

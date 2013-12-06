@@ -77,11 +77,11 @@ public class ClusterFactory {
 		return freePort.toString();
 	}
 
-	public static void addNodeToCluster(String serverId) {
+	public static void addNodeToCluster(String serverId) throws Exception {
 		addNodeToCluster(null, serverId);
 	}
 
-	public static void addNodeToCluster(Map<String,String> properties, String serverId) {
+	public static void addNodeToCluster(Map<String,String> properties, String serverId) throws Exception {
 
 		if(properties==null) {
 			properties = new HashMap<String, String>();
@@ -96,10 +96,15 @@ public class ClusterFactory {
 
 		esProperties.put(ES_NETWORK_HOST,
 				UtilMethods.isSet(properties.get(ES_NETWORK_HOST.toString())) ? properties.get(ES_NETWORK_HOST.toString()) : currentServer.getIpAddress() );
-		esProperties.put(ES_TRANSPORT_TCP_PORT,
-				UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT) );
-		esProperties.put(ES_HTTP_PORT,
-				UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT) );
+
+		esProperties.put(ES_TRANSPORT_TCP_PORT, UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString()
+				:UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT) );
+
+		if(Config.getStringProperty("es.http.enabled", "false").equalsIgnoreCase("true")) {
+			esProperties.put(ES_HTTP_PORT, UtilMethods.isSet(currentServer.getEsHttpPort())?currentServer.getEsHttpPort().toString()
+				:UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT) );
+		}
+
 		esProperties.put(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED,
 				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()))
 				? properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()) : ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.getDefaultValue() );
@@ -145,7 +150,7 @@ public class ClusterFactory {
 
 	}
 
-	private static void addNodeToCacheCluster(Map<String, String> cacheProperties, String serverId) {
+	private static void addNodeToCacheCluster(Map<String, String> cacheProperties, String serverId) throws Exception {
 		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).setCluster(cacheProperties, serverId);
 		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
 		Config.setProperty("DIST_INDEXATION_ENABLED", true);
