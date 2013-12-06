@@ -106,6 +106,17 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		}			
 	}
 
+	function ifShowInListingChecked(){
+		var form = document.getElementById("field");
+		if(form.listedCB.checked){
+			dijit.byId('indexedCB').attr('disabled', true);
+		}else{
+			if(!form.unique.checked){
+				dijit.byId('indexedCB').attr('disabled', false);
+			}
+		}			
+	}
+	
 	function ifRequiredCBChecked(){
 		var form = document.getElementById("field");
 		if(form.requiredCB.checked){
@@ -321,6 +332,31 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		}      
 		ifUserSearchableChecked();
 	}
+	
+	function setShowInListing(){
+		var form = document.getElementById("field");
+		var indexed = <%=fieldForm.isIndexed()%>;
+	
+		if(form.listedCB.checked){
+			dijit.byId("indexedCB").attr('value', 'on')
+		   <%if(!hasInode){%>
+		   	dijit.byId("indexedCB").attr('value', 'on')
+		 	<%}%>
+		}else{
+		    
+		if(!dijit.byId("uniqueCB").attr('value') == 'on'){ 
+		 if(form.fieldType.value != "category"){ 
+		  if(!indexed){
+			  dijit.byId("indexedCB").attr('value', 'off')
+		  }
+		   <%if(!hasInode){%>
+		   		dijit.byId("indexedCB").attr('value', 'off')
+		   <%}%>
+		  } 
+		 }
+		}      
+		ifShowInListingChecked();
+	}
   
 	function showCategories(show){ 
 	  if(show){
@@ -450,6 +486,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				//ifRequiredCBChecked();
 				ifUniqueChecked();
 				ifUserSearchableChecked();
+				ifShowInListingChecked();
 				//setInitialValues();
                 //ifRequiredCBChecked;
                 
@@ -676,7 +713,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	<dl id="listed" style="display:none">
 		<dt>&nbsp;</dt>
 		<dd>
-			<input type="checkbox" dojoType="dijit.form.CheckBox" name="listed" id="listedCB" <% if(fieldForm.isListed()){ %> checked="checked" <% } %> />
+			<input type="checkbox" dojoType="dijit.form.CheckBox" name="listed" id="listedCB" onClick="setShowInListing();" <% if(fieldForm.isListed()){ %> checked="checked" <% } %> />
 			<label for="listedCB"><%= LanguageUtil.get(pageContext, "Show-in-listing") %></label>
 		</dd>
 	</dl>
