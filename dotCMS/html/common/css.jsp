@@ -109,24 +109,23 @@
 	}
 
 	for(String x : files){
-		String y = FileUtil.getRealPath(x);
-		if(y!=null){
-			File f = new File(y);
-			if (f.exists()) {
-				FileInputStream fis = new FileInputStream(f);
-				BufferedInputStream bis = new BufferedInputStream(fis);
-				DataInputStream dis = new DataInputStream(bis);
-	
-				while (dis.available() != 0) {
-	
-					out.println(dis.readLine());
-	
-				}
-	
-				fis.close();
-				bis.close();
-				dis.close();
+		File f = new File(FileUtil.getRealPath(x));
+			
+		if (f.exists()) {
+			FileInputStream fis = new FileInputStream(f);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			DataInputStream dis = new DataInputStream(bis);
+
+			while (dis.available() != 0) {
+
+				out.println(dis.readLine());
+
 			}
+
+			fis.close();
+			bis.close();
+			dis.close();
+			
 		} else {
 			Logger.fatal(this.getClass(), "Cannot find " + f.getAbsolutePath());
 			response.sendError(500, "id10t ERROR " + f.getAbsolutePath() + " not found");
