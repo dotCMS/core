@@ -604,7 +604,7 @@ public class ContentletBaseTest extends TestBase {
                 "copy" + java.io.File.separator;
 
         //Reading the file
-        String testFilePath = Config.CONTEXT.getRealPath( testFilesPath + fileName );
+        String testFilePath = FileUtil.getRealPath( testFilesPath + fileName );
         java.io.File tempTestFile = new java.io.File( testFilePath );
         if ( !tempTestFile.exists() ) {
             String message = "File does not exist: '" + testFilePath + "'";
@@ -612,7 +612,7 @@ public class ContentletBaseTest extends TestBase {
         }
 
         //Copying the file
-        String copyTestFilePath = Config.CONTEXT.getRealPath( copyTestFilesPath + fileName );
+        String copyTestFilePath = FileUtil.getRealPath( copyTestFilesPath + fileName );
         java.io.File copyTempTestFile = new java.io.File( copyTestFilePath );
         if ( !copyTempTestFile.exists() ) {
             if ( !copyTempTestFile.createNewFile() ) {

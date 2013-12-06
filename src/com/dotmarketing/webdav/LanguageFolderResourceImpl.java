@@ -54,7 +54,7 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 		this.path = path;
 		if(!UtilMethods.isSet(path)){
 			isLanguageRoot = true;
-			folder = new File(Config.CONTEXT.getRealPath("/assets/messages"));
+			folder = new File(FileUtil.getRealPath("/assets/messages"));
 			path = "";
 		}else{
 			if(path.contains("/")){
@@ -78,7 +78,7 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 				}
 			}
 			isLanguageRoot = false;
-			folder = new File(Config.CONTEXT.getRealPath("/assets/messages") + File.separator + path);
+			folder = new File(FileUtil.getRealPath("/assets/messages") + File.separator + path);
 		}
 	}
 
@@ -237,9 +237,9 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 		if(!(newName.endsWith(".properties") || newName.endsWith(".native"))){
 			throw new RuntimeException("You cannot add/edit languages files that are not properties files.");
 		}
-		File f = new File(Config.CONTEXT.getRealPath("/assets/messages") + File.separator + newName);
+		File f = new File(FileUtil.getRealPath("/assets/messages") + File.separator + newName);
 		if(f.exists()){
-			File folder = new File(Config.CONTEXT.getRealPath("/assets/messages") + File.separator + "archived" + File.separator + f.getName());
+			File folder = new File(FileUtil.getRealPath("/assets/messages") + File.separator + "archived" + File.separator + f.getName());
 			folder.mkdirs();
 			String date = new Date().toString();
 			date = date.replace(":", "");

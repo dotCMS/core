@@ -903,7 +903,7 @@ public class ImportExportUtil {
     private void copyAssetDir(File fromAssetDir){
         File ad;
         if(!UtilMethods.isSet(assetRealPath)){
-            ad = new File(Config.CONTEXT.getRealPath(assetPath));
+            ad = new File(FileUtil.getRealPath(assetPath));
         }else{
             ad = new File(assetRealPath);
         }
@@ -1023,7 +1023,7 @@ public class ImportExportUtil {
         }
         File ad;
         if(!UtilMethods.isSet(assetRealPath)){
-            ad = new File(Config.CONTEXT.getRealPath(assetPath));
+            ad = new File(FileUtil.getRealPath(assetPath));
         }else{
             ad = new File(assetRealPath);
         }

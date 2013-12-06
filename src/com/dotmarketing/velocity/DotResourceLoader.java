@@ -42,6 +42,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class DotResourceLoader extends ResourceLoader {
 
@@ -87,7 +88,7 @@ public class DotResourceLoader extends ResourceLoader {
 
         String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
         if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
         }
 
         VELOCITY_ROOT = velocityRootPath + File.separator;
@@ -114,7 +115,7 @@ public class DotResourceLoader extends ResourceLoader {
 
         try {
             if(UtilMethods.isSet(Config.getStringProperty("ASSET_PATH"))){
-                f = new File(Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")));
+                f = new File(FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH")));
                 if(f.exists()){
                     assetCanoncalPath = f.getCanonicalPath();
                 }

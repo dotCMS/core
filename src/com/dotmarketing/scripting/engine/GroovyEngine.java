@@ -48,6 +48,7 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * A BSF Engine for the <a href="http://groovy.codehaus.org/">Groovy</a>
@@ -215,7 +216,7 @@ public class GroovyEngine extends BSFEngineImpl {
 			
 			String uri = LiveCache.getPathFromCache(ident.getURI(), h);
 
-			String inode = UtilMethods.getFileName(new File(Config.CONTEXT.getRealPath(assetPath + uri)).getName());
+			String inode = UtilMethods.getFileName(new File(FileUtil.getRealPath(assetPath + uri)).getName());
 			com.dotmarketing.portlets.files.model.File file = fileAPI.find(inode,userAPI.getSystemUser(),false);
 
 			User mu = userAPI.loadUserById(file.getModUser(), userAPI.getSystemUser(), true);
@@ -229,7 +230,7 @@ public class GroovyEngine extends BSFEngineImpl {
 			InputStream is;
 			FileReader fr = null;
 			if(!UtilMethods.isSet(realPath)){
-				is = new BufferedInputStream(new FileInputStream(Config.CONTEXT.getRealPath(assetPath + uri)));
+				is = new BufferedInputStream(new FileInputStream(FileUtil.getRealPath(assetPath + uri)));
 			}else{
 				is = new BufferedInputStream(new FileInputStream(realPath + uri));
 			}
@@ -251,7 +252,7 @@ public class GroovyEngine extends BSFEngineImpl {
 	    	
 			String uri = LiveCache.getPathFromCache(ident.getURI(), h);
 
-			String inode = UtilMethods.getFileName(new File(Config.CONTEXT.getRealPath(assetPath + uri)).getName());
+			String inode = UtilMethods.getFileName(new File(FileUtil.getRealPath(assetPath + uri)).getName());
 			com.dotmarketing.portlets.files.model.File file = fileAPI.find(inode,userAPI.getSystemUser(),false);
 
 			if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
@@ -264,7 +265,7 @@ public class GroovyEngine extends BSFEngineImpl {
 
 			FileReader fr = null;
 			if(!UtilMethods.isSet(realPath)){
-				fr = new FileReader(Config.CONTEXT.getRealPath(assetPath + uri));
+				fr = new FileReader(FileUtil.getRealPath(assetPath + uri));
 			}else{
 				fr = new FileReader(realPath + uri);
 			}

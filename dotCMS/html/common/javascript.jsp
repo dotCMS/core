@@ -1,3 +1,4 @@
+<%@page import="com.liferay.util.FileUtil"%>
 <%@page import="com.dotmarketing.util.Constants"%>
 <%@ page contentType="text/javascript;charset=UTF-8" language="java" session="false" %>
 <%@page import="java.util.Locale"%>
@@ -124,7 +125,7 @@
 	}
 
 	for(String x : files){
-		File f = new File(Config.CONTEXT.getRealPath(x));
+		File f = new File(FileUtil.getRealPath(x));
 		if (f.exists()) {
 			FileInputStream fis = new FileInputStream(f);
 			BufferedInputStream bis = new BufferedInputStream(fis);

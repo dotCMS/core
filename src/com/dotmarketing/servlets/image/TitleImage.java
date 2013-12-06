@@ -34,6 +34,7 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.FileUtil;
 
 @Deprecated
 public class TitleImage extends HttpServlet {
@@ -219,7 +220,7 @@ public class TitleImage extends HttpServlet {
         hm.put("&yuml;", "%FF");
 
         String assetPath = Config.getStringProperty("ASSET_PATH");
-        File file = new File(Config.CONTEXT.getRealPath(assetPath + "/titleservlet"));
+        File file = new File(FileUtil.getRealPath(assetPath + "/titleservlet"));
        // File file = new File(config.getServletContext().getRealPath(Config.getStringProperty("PATH_TO_TITLE_IMAGES")));
         file.mkdirs();
 
@@ -300,10 +301,10 @@ public class TitleImage extends HttpServlet {
         
         String ret="";
         String assetPath = Config.getStringProperty("ASSET_PATH");
-        File file = new File(Config.CONTEXT.getRealPath(assetPath + "/titleservlet"));
+        File file = new File(FileUtil.getRealPath(assetPath + "/titleservlet"));
         if (!file.exists())
         	file.mkdirs();
-        ret=Config.CONTEXT.getRealPath(assetPath + "/titleservlet/"+myFile + ".png");
+        ret=FileUtil.getRealPath(assetPath + "/titleservlet/"+myFile + ".png");
         
         file = new File(ret);
         

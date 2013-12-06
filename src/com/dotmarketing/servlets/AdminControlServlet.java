@@ -13,6 +13,7 @@ import javax.servlet.http.HttpSession;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.FileUtil;
 
 public class AdminControlServlet extends HttpServlet {
 
@@ -24,7 +25,7 @@ public class AdminControlServlet extends HttpServlet {
 
 			ServletOutputStream out = response.getOutputStream();
 			response.setContentType("image/gif");
-			FileInputStream fis = new FileInputStream(Config.CONTEXT.getRealPath("/images/shim.gif"));
+			FileInputStream fis = new FileInputStream(FileUtil.getRealPath("/images/shim.gif"));
 
 			byte[] buf = new byte[1024];
 			int i = 0;

@@ -91,7 +91,7 @@ public class CMISBaseTest extends TestBase {
                 "test_files" + java.io.File.separator;
         
         //Reading the file
-        String testFilePath = Config.CONTEXT.getRealPath( testFilesPath + fileName );
+        String testFilePath = FileUtil.getRealPath( testFilesPath + fileName );
         java.io.File tempTestFile = new java.io.File( testFilePath );
         if ( !tempTestFile.exists() ) {
             String message = "File does not exist: '" + testFilePath + "'";

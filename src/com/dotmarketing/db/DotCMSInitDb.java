@@ -20,6 +20,7 @@ import com.dotmarketing.util.ImportExportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class DotCMSInitDb {
 
@@ -84,12 +85,12 @@ public class DotCMSInitDb {
 		File starterZip = null;
 		
 		if(UtilMethods.isSet(starter)){
-            starterZip = new File(Config.CONTEXT.getRealPath(starter));
+            starterZip = new File(FileUtil.getRealPath(starter));
 		}
 		
 		if(starterZip==null || (starterZip!=null && !starterZip.exists())){
 			String starterSitePath = "starter.zip";
-			String zipPath = Config.CONTEXT.getRealPath(starterSitePath);
+			String zipPath = FileUtil.getRealPath(starterSitePath);
 			starterZip = new File(zipPath); 
 		 }
 		
