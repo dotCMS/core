@@ -35,6 +35,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.XMLUtils;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class SlideShowServlet extends HttpServlet {
 
@@ -42,7 +43,7 @@ public class SlideShowServlet extends HttpServlet {
 
 	@Override
 	public void init() throws ServletException {
-		java.io.File dir = new java.io.File(Config.CONTEXT.getRealPath("/WEB-INF/velocity/static/xspf/"));
+		java.io.File dir = new java.io.File(FileUtil.getRealPath("/WEB-INF/velocity/static/xspf/"));
 		dir.mkdirs();
 	}
 

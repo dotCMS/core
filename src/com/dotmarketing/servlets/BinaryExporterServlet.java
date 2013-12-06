@@ -306,13 +306,13 @@ public class BinaryExporterServlet extends HttpServlet {
 					if(realPath != null){
 						inputFile = new File(realPath + LiveCache.getPathFromCache(id.getURI(), id.getHostId()));
 					}else{
-						inputFile = new File(Config.CONTEXT.getRealPath(assetPath + LiveCache.getPathFromCache(id.getURI(), id.getHostId())));
+						inputFile = new File(FileUtil.getRealPath(assetPath + LiveCache.getPathFromCache(id.getURI(), id.getHostId())));
 					}
 				}else{
 					if(realPath != null){
 						inputFile = new File(realPath + WorkingCache.getPathFromCache(id.getURI(), id.getHostId()));
 					}else{
-						inputFile = new File(Config.CONTEXT.getRealPath(assetPath + WorkingCache.getPathFromCache(id.getURI(), id.getHostId())));
+						inputFile = new File(FileUtil.getRealPath(assetPath + WorkingCache.getPathFromCache(id.getURI(), id.getHostId())));
 					}
 				}
 

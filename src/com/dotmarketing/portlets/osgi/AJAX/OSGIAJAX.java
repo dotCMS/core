@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.osgi.AJAX;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
+import com.liferay.util.FileUtil;
+
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -26,8 +28,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     public void undeploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
         String jar = request.getParameter( "jar" );
-        File from = new File( Config.CONTEXT.getRealPath( "/WEB-INF/felix/load/" + jar ) );
-        File to = new File( Config.CONTEXT.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
+        File from = new File( FileUtil.getRealPath( "/WEB-INF/felix/load/" + jar ) );
+        File to = new File( FileUtil.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
         from.renameTo( to );
         writeSuccess( response, "OSGI Bundle Undeployed" );
     }
@@ -35,8 +37,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     public void deploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
         String jar = request.getParameter( "jar" );
-        File from = new File( Config.CONTEXT.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
-        File to = new File( Config.CONTEXT.getRealPath( "/WEB-INF/felix/load/" + jar ) );
+        File from = new File( FileUtil.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
+        File to = new File( FileUtil.getRealPath( "/WEB-INF/felix/load/" + jar ) );
         from.renameTo( to );
         writeSuccess( response, "OSGI Bundle Loaded" );
     }
@@ -89,7 +91,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                         break;
                     }
 
-                    File to = new File( Config.CONTEXT.getRealPath( "/WEB-INF/felix/load/" + fname ) );
+                    File to = new File(FileUtil.getRealPath( "/WEB-INF/felix/load/" + fname ) );
                     FileOutputStream out = new FileOutputStream( to );
                     IOUtils.copyLarge( in, out );
                     IOUtils.closeQuietly( out );

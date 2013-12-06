@@ -19,6 +19,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * @author Jason Tesser
@@ -115,7 +116,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			// handle language files
 			if(actualPath.endsWith("system/languages") || actualPath.endsWith("system/languages/") 
 					|| actualPath.endsWith("system/languages/archived") || actualPath.endsWith("system/languages/archived/")){
-		        java.io.File file = new java.io.File(Config.CONTEXT.getRealPath("/assets/messages"));
+		        java.io.File file = new java.io.File(FileUtil.getRealPath("/assets/messages"));
 				if(file.exists() && file.isDirectory()){
 					if(actualPath.contains("/archived") && actualPath.endsWith("/")){
 						actualPath = actualPath.replace("system/languages/", "");
@@ -140,7 +141,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 				if(actualPath.contains("system/languages/")){
 					fileRelPath = actualPath.replace("system/languages/", "");
 					if(fileRelPath.contains("archived")){
-						java.io.File file = new java.io.File(Config.CONTEXT.getRealPath("/assets/messages") + java.io.File.separator + fileRelPath);
+						java.io.File file = new java.io.File(FileUtil.getRealPath("/assets/messages") + java.io.File.separator + fileRelPath);
 						//fileRelPath = fileRelPath.replace("archived/", "");
 						if(fileRelPath.contains(".properties/")){
 							LanguageFileResourceImpl lfr = new LanguageFileResourceImpl(fileRelPath);
@@ -153,7 +154,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 					}
 
 				}
-				java.io.File file = new java.io.File(Config.CONTEXT.getRealPath("/assets/messages") + java.io.File.separator + fileRelPath);
+				java.io.File file = new java.io.File(FileUtil.getRealPath("/assets/messages") + java.io.File.separator + fileRelPath);
 				if(file.exists()){
 					LanguageFileResourceImpl lfr = new LanguageFileResourceImpl(fileRelPath);
 					return lfr;

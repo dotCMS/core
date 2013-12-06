@@ -374,7 +374,7 @@ public class ContentletMapServices {
 				String velocityRootPath=Config.getStringProperty("VELOCITY_ROOT");
 
 				if (velocityRootPath.startsWith("/WEB-INF")) {
-					velocityRootPath=Config.CONTEXT.getRealPath(velocityRootPath);
+					velocityRootPath=FileUtil.getRealPath(velocityRootPath);
 				}
 				velocityRootPath += java.io.File.separator;
 
@@ -461,7 +461,7 @@ public class ContentletMapServices {
 
 	public static void removeContentletMapFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath=(!EDIT_MODE) ? "live/" : "working/";
-		String velocityRoot=Config.CONTEXT.getRealPath("/WEB-INF/velocity/") + folderPath;
+		String velocityRoot=FileUtil.getRealPath("/WEB-INF/velocity/") + folderPath;
 	
 		String filePath=  folderPath + identifier.getInode() + "_" + asset.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION");
 		java.io.File f=new java.io.File (velocityRoot + filePath);

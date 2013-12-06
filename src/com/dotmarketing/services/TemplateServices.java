@@ -19,6 +19,7 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
+import com.liferay.util.FileUtil;
 
 /**
  * @author will
@@ -56,7 +57,7 @@ public class TemplateServices {
         try {
             String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
             if (velocityRootPath.startsWith("/WEB-INF")) {
-                velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+                velocityRootPath = FileUtil.getRealPath(velocityRootPath);
             }
             velocityRootPath += java.io.File.separator;
 
@@ -113,7 +114,7 @@ public class TemplateServices {
     public static void removeTemplateFile (Template asset, Identifier identifier, boolean EDIT_MODE) {
         String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
         if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
         }
         velocityRootPath += java.io.File.separator;
 
