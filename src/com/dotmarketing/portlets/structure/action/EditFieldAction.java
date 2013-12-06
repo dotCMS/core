@@ -225,6 +225,10 @@ public class EditFieldAction extends DotPortletAction {
 
 			String dataType = fieldForm.getDataType();
 
+			if (fieldForm.isListed()) {
+				fieldForm.setIndexed(true);
+			}
+			
 			if (fieldForm.isSearchable()) {
 				fieldForm.setIndexed(true);
 			}
