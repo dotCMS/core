@@ -42,6 +42,7 @@ import com.google.common.io.Files;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class SpeedyAssetServlet extends HttpServlet {
 
@@ -158,7 +159,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 					if(serveWorkingVersion){
 						uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId());
 						if(!UtilMethods.isSet(realPath)){
-							f = new File(Config.CONTEXT.getRealPath(assetPath + uri));
+							f = new File(FileUtil.getRealPath(assetPath + uri));
 						}else{
 							f = new File(realPath + uri);
 						}
@@ -191,7 +192,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 							}
 						}
 						if(!UtilMethods.isSet(realPath)){
-							f = new File(Config.CONTEXT.getRealPath(assetPath + uri));
+							f = new File(FileUtil.getRealPath(assetPath + uri));
 						}else{
 							f = new File(realPath + uri);
 						}

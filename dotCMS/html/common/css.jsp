@@ -1,3 +1,4 @@
+<%@page import="com.liferay.util.FileUtil"%>
 <%@page import="com.dotmarketing.util.Constants"%>
 <%@ page contentType="text/javascript;charset=UTF-8" language="java" session="false" %>
 <%@page import="java.util.Locale"%>
@@ -108,22 +109,24 @@
 	}
 
 	for(String x : files){
-		File f = new File(Config.CONTEXT.getRealPath(x));
-		if (f.exists()) {
-			FileInputStream fis = new FileInputStream(f);
-			BufferedInputStream bis = new BufferedInputStream(fis);
-			DataInputStream dis = new DataInputStream(bis);
-
-			while (dis.available() != 0) {
-
-				out.println(dis.readLine());
-
+		String y = FileUtil.getRealPath(x);
+		if(y!=null){
+			File f = new File(y);
+			if (f.exists()) {
+				FileInputStream fis = new FileInputStream(f);
+				BufferedInputStream bis = new BufferedInputStream(fis);
+				DataInputStream dis = new DataInputStream(bis);
+	
+				while (dis.available() != 0) {
+	
+					out.println(dis.readLine());
+	
+				}
+	
+				fis.close();
+				bis.close();
+				dis.close();
 			}
-
-			fis.close();
-			bis.close();
-			dis.close();
-
 		} else {
 			Logger.fatal(this.getClass(), "Cannot find " + f.getAbsolutePath());
 			response.sendError(500, "id10t ERROR " + f.getAbsolutePath() + " not found");

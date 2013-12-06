@@ -55,6 +55,7 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.ActionResponseImpl;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
 
@@ -205,7 +206,7 @@ public class EditReportAction extends DotPortletAction {
 										+ File.separator
 										+ Config.getStringProperty("REPORT_PATH");
 						} else {
-							jrxmlPath = Config.CONTEXT
+							jrxmlPath = FileUtil
 									.getRealPath(File.separator
 											+ Config
 													.getStringProperty("ASSET_PATH")
@@ -214,7 +215,7 @@ public class EditReportAction extends DotPortletAction {
 													.getStringProperty("REPORT_PATH")
 											+ File.separator
 											+ report.getInode() + ".jrxml");
-							jasperPath = Config.CONTEXT
+							jasperPath = FileUtil
 									.getRealPath(File.separator
 											+ Config
 													.getStringProperty("ASSET_PATH")
@@ -223,7 +224,7 @@ public class EditReportAction extends DotPortletAction {
 													.getStringProperty("REPORT_PATH")
 											+ File.separator
 											+ report.getInode() + ".jasper");
-							reportPath = Config.CONTEXT
+							reportPath = FileUtil
 							              .getRealPath(File.separator
 									      + Config
 											.getStringProperty("ASSET_PATH")
