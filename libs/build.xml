@@ -43,8 +43,8 @@
 
                 <!--dotcms jars-->
                 <exclude name="dotcms_${dotcms.release.version}.jar"/>
-                <exclude name="ee-a9031a10.jar"/>
-                <exclude name="dotcms_ant.jar"/>
+                <exclude name="ee-af5bcc3ddb.jar"/>
+                <exclude name="ant-tooling.jar"/>
                 <exclude name="packager-taks.jar"/>
                 <exclude name="jarjar-1.4.jar"/>
                 <!--dotcms jars-->
@@ -76,7 +76,9 @@
                 <ignore parentpackage="org.w3c"/><!--Contains just ONE class and it is a common package, using it as a rule breaks the code-->
             </dependency>
             <!--We can repackage them but not rename their services files-->
-            <dependency path="${lib.app}/tika-app-1.3.jar" generate="true" renameservices="true"><!--We have to exclude some packages in here, tomcat complains-->
+
+            <!--We have to exclude some packages in here, tomcat complains-->
+            <dependency path="${lib.app}/tika-app-1.3.jar" generate="true" renameservices="true">
                 <ignore parentpackage="org.apache.commons.logging"/>
                 <ignore parentpackage="org.apache.log4j"/>
             </dependency>
