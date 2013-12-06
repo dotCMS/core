@@ -187,7 +187,11 @@ public class MainServlet extends ActionServlet {
 		        }
 
 		        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) /*&& (!anyOtherServerAlive || (anyOtherServerAlive && sameAssetsDir))*/) {
-		        	ClusterFactory.addNodeToCluster(serverId);
+		        	try {
+						ClusterFactory.addNodeToCluster(serverId);
+					} catch (Exception e) {
+						Logger.error(MainServlet.class, "Error trying to wire node to the Cluster", e);
+					}
 		        }
 
 			} catch (UnknownHostException e3) {

@@ -21,4 +21,6 @@ public abstract class ServerFactory {
 
 	public abstract String[] getAliveServersIds() throws DotDataException;
 
+	public abstract List<Server> getAllServers() throws DotDataException;
+
 }

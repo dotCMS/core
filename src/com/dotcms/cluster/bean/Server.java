@@ -1,5 +1,7 @@
 package com.dotcms.cluster.bean;
 
+import java.util.Date;
+
 
 public class Server {
 	private String serverId;
@@ -10,6 +12,7 @@ public class Server {
 	private Integer esNetworkPort;
 	private Integer esHttpPort;
 	private Integer cachePort;
+	private Date lastHeartBeat;
 
 	public String getServerId() {
 		return serverId;
@@ -59,6 +62,12 @@ public class Server {
 	}
 	public void setCachePort(Integer cachePort) {
 		this.cachePort = cachePort;
+	}
+	public Date getLastHeartBeat() {
+		return lastHeartBeat;
+	}
+	public void setLastHeartBeat(Date lastHeartBeat) {
+		this.lastHeartBeat = lastHeartBeat;
 	}
 
 }
