@@ -31,6 +31,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.RenderRequestImpl;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 public class UserManagerPropertiesFactory {
@@ -137,7 +138,7 @@ public class UserManagerPropertiesFactory {
 	private static String getUserManagerConfigPath() {
 		String userManagerConfigPath = Config.getStringProperty("GLOBAL_VARIABLES_PATH");
 		if (!UtilMethods.isSet(userManagerConfigPath)) {
-			userManagerConfigPath = Config.CONTEXT.getRealPath(File.separator + "WEB-INF" + File.separator + "classes" + File.separator);
+			userManagerConfigPath = FileUtil.getRealPath(File.separator + "WEB-INF" + File.separator + "classes" + File.separator);
 		}
 		if (!userManagerConfigPath.endsWith(File.separator))
 			userManagerConfigPath = userManagerConfigPath + File.separator;

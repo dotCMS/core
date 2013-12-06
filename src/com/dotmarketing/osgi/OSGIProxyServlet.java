@@ -3,6 +3,8 @@ package com.dotmarketing.osgi;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.osgi.framework.BundleContext;
 
+import com.dotmarketing.util.Config;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -22,30 +24,34 @@ public class OSGIProxyServlet extends HttpServlet {
 
     @Override
     public void init ( ServletConfig config ) throws ServletException {
-
-        super.init( config );
-
-        try {
-            doInit();
-        } catch ( ServletException e ) {
-            throw e;
-        } catch ( Exception e ) {
-            throw new ServletException( e );
-        }
+    	if(Config.getBooleanProperty("felix.osgi.enable", true)){
+	        super.init( config );
+	
+	        try {
+	            doInit();
+	        } catch ( ServletException e ) {
+	            throw e;
+	        } catch ( Exception e ) {
+	            throw new ServletException( e );
+	        }
+    	}
     }
 
     private void doInit () throws Exception {
-
-        tracker = new DispatcherTracker( getBundleContext(), null, getServletConfig() );
-        tracker.open();
-
-        servletConfig = getServletConfig();
-        bundleContext = getBundleContext();
+    	if(Config.getBooleanProperty("felix.osgi.enable", true)){
+	        tracker = new DispatcherTracker( getBundleContext(), null, getServletConfig() );
+	        tracker.open();
+	
+	        servletConfig = getServletConfig();
+	        bundleContext = getBundleContext();
+    	}
     }
 
     @Override
     protected void service ( HttpServletRequest req, HttpServletResponse res ) throws ServletException, IOException {
-
+    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
+    		return;
+    	}
         HttpServlet dispatcher = tracker.getDispatcher();
         if ( dispatcher != null ) {
             dispatcher.service( req, res );
@@ -56,7 +62,9 @@ public class OSGIProxyServlet extends HttpServlet {
 
     @Override
     public void destroy () {
-
+    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
+    		return;
+    	}
         if ( tracker != null ) {
             tracker.close();
             tracker = null;
@@ -65,7 +73,9 @@ public class OSGIProxyServlet extends HttpServlet {
     }
 
     private BundleContext getBundleContext () throws ServletException {
-
+    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
+    		return null;
+    	}
         Object context = getServletContext().getAttribute( BundleContext.class.getName() );
         if ( context instanceof BundleContext ) {
             return (BundleContext) context;

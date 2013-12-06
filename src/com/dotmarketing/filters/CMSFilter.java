@@ -52,6 +52,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
 
@@ -518,7 +519,7 @@ public class CMSFilter implements Filter {
 					Logger.error(CMSFilter.class,e.getMessage(),e);
 					throw new IOException(e.getMessage());
 				}
-                String mimeType = APILocator.getFileAPI().getMimeType(Config.CONTEXT.getRealPath(pointer));
+                String mimeType = APILocator.getFileAPI().getMimeType(FileUtil.getRealPath(pointer));
                 response.setContentType(mimeType);
             }
             LogFactory.getLog(this.getClass()).debug("CMS Filter going to redirect to pointer");
@@ -648,24 +649,34 @@ public class CMSFilter implements Filter {
     }
     
     public static boolean excludeURI(String uri) {
+
         if (uri.trim().equals("/c")
                 || uri.endsWith(".php")
         		|| uri.trim().startsWith("/c/")
-        		|| (uri.indexOf("/ajaxfileupload/upload") != -1)
-        		||  new File(Config.CONTEXT.getRealPath(uri)).exists()
-        		&& !"/".equals(uri)) {
+        		|| (uri.indexOf("/ajaxfileupload/upload") != -1))
+        	 {
         	return true;
         }
-        
+
         if(excludeList==null) buildExcludeList();
 
         if(excludeList.contains(uri)) return true;
-
+        
         for ( String exclusion : excludeList ) {
             if ( RegEX.contains( uri, exclusion ) ) {
                 return true;
             }
         }
+        
+        // finally, if we have the file, serve it
+        if(!"/".equals(uri)){
+			File f = new File(FileUtil.getRealPath(uri));
+			if( f.exists()){
+				return true;
+    			
+    		}
+        }
+
         return false;
    }
 

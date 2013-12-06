@@ -389,7 +389,7 @@ public class ContentletServices {
 				String velocityRootPath= Config.getStringProperty("VELOCITY_ROOT");
 
 				if (velocityRootPath.startsWith("/WEB-INF")) {
-					velocityRootPath= Config.CONTEXT.getRealPath(velocityRootPath);
+					velocityRootPath= FileUtil.getRealPath(velocityRootPath);
 				}
 				velocityRootPath += java.io.File.separator;
 
@@ -505,7 +505,7 @@ public class ContentletServices {
 		String folderPath= (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
 		String velocityRootPath= Config.getStringProperty("VELOCITY_ROOT");
 		if (velocityRootPath.startsWith("/WEB-INF")) {
-			velocityRootPath= Config.CONTEXT.getRealPath(velocityRootPath);
+			velocityRootPath= FileUtil.getRealPath(velocityRootPath);
 		}
 		velocityRootPath += java.io.File.separator;
 		

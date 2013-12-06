@@ -86,6 +86,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 public abstract class VelocityServlet extends HttpServlet {
@@ -155,7 +156,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			// /html/js/tinymce/jscripts/tiny_mce/plugins/advlink/link.htm
 			String uri = request.getRequestURI();
 			uri = URLDecoder.decode(uri, "UTF-8");
-			File file = new File(Config.CONTEXT.getRealPath(uri));
+			File file = new File(FileUtil.getRealPath(uri));
 			if (file.exists()) {
 				if(file.isDirectory()){
 					file = new File(file.getAbsolutePath() + File.separator + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));

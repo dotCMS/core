@@ -46,6 +46,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.oreilly.servlet.MultipartRequest;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
@@ -70,9 +71,9 @@ public class ImportExportXMLServlet extends HttpServlet {
 
 	public void init(ServletConfig config) throws ServletException {
 		// Create backup and temp directory
-		File f = new File(Config.CONTEXT.getRealPath(backupFilePath));
+		File f = new File(FileUtil.getRealPath(backupFilePath));
 		f.mkdirs();
-		f = new File(Config.CONTEXT.getRealPath(backupTempFilePath));
+		f = new File(FileUtil.getRealPath(backupTempFilePath));
 		f.mkdirs();
 		deleteTempFiles();
 	}
@@ -98,7 +99,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				response.getWriter().println("Creating XML Files");
 				createXMLFiles();
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
-				File zipFile = new File(Config.CONTEXT.getRealPath(backupFilePath + "/backup_" + x + "_.zip"));
+				File zipFile = new File(FileUtil.getRealPath(backupFilePath + "/backup_" + x + "_.zip"));
 				response.getWriter().println("Zipping up to file:" + zipFile.getAbsolutePath());
 				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(zipFile));
 
@@ -121,7 +122,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			if ("downloadZip".equals(action)) {
 
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
-				File zipFile = new File(Config.CONTEXT.getRealPath(backupFilePath + "/backup_" + x + "_.zip"));
+				File zipFile = new File(FileUtil.getRealPath(backupFilePath + "/backup_" + x + "_.zip"));
 
 				response.setHeader("Content-type", "");
 				response.setHeader("Content-Disposition", "attachment; filename=" + zipFile.getName());
@@ -176,7 +177,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 	 */
 	private void doUpload(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		deleteTempFiles();
-		String tempdir = Config.CONTEXT.getRealPath(backupTempFilePath);
+		String tempdir = FileUtil.getRealPath(backupTempFilePath);
 
 		MultipartRequest mpr;
 		try {
@@ -203,12 +204,12 @@ public class ImportExportXMLServlet extends HttpServlet {
 			// TODO Auto-generated catch block
 			Logger.error(this,e.getMessage(),e);
 		}
-		File f = new File(Config.CONTEXT.getRealPath(backupTempFilePath));
+		File f = new File(FileUtil.getRealPath(backupTempFilePath));
 		String[] _tempFiles = f.list(new XMLFileNameFilter());
 		PrintWriter out = response.getWriter();
 		out.println("<pre>Found " + _tempFiles.length + " files to import");
 		for (int i = 0; i < _tempFiles.length; i++) {
-			File _importFile = new File(Config.CONTEXT.getRealPath(backupTempFilePath + "/" + _tempFiles[i]));
+			File _importFile = new File(FileUtil.getRealPath(backupTempFilePath + "/" + _tempFiles[i]));
 			System.gc();
 			doXMLFileImport(_importFile, out);
 			out.flush();
@@ -342,7 +343,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				 * xstream.alias(_shortClassName, clazz);
 				 */
 
-				_writing = new File(Config.CONTEXT.getRealPath(backupTempFilePath + "/" + clazz.getName() + ".xml"));
+				_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + clazz.getName() + ".xml"));
 				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 				_dh = new HibernateUtil(clazz);
 				_dh.setQuery("from " + clazz.getName());
@@ -362,7 +363,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			/* Companies */
 			_list = PublicCompanyFactory.getCompanies();
 			_xstream = new XStream(new DomDriver());
-			_writing = new File(Config.CONTEXT.getRealPath(backupTempFilePath + "/" + Company.class.getName() + ".xml"));
+			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + Company.class.getName() + ".xml"));
 			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 			_xstream.toXML(_list, _bout);
 			_bout.close();
@@ -372,7 +373,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			/* Users */
 			_list = APILocator.getUserAPI().findAllUsers();
 			_xstream = new XStream(new DomDriver());
-			_writing = new File(Config.CONTEXT.getRealPath(backupTempFilePath + "/" + User.class.getName() + ".xml"));
+			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + User.class.getName() + ".xml"));
 			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 			_xstream.toXML(_list, _bout);
 			_bout.close();
@@ -399,10 +400,10 @@ public class ImportExportXMLServlet extends HttpServlet {
 
 		byte b[] = new byte[512];
 		ZipOutputStream zout = new ZipOutputStream(out);
-		File f = new File(Config.CONTEXT.getRealPath(backupTempFilePath));
+		File f = new File(FileUtil.getRealPath(backupTempFilePath));
 		String[] s = f.list();
 		for (int i = 0; i < s.length; i++) {
-			InputStream in = new BufferedInputStream(new FileInputStream(f = new File(Config.CONTEXT.getRealPath(backupTempFilePath + "/" + s[i]))));
+			InputStream in = new BufferedInputStream(new FileInputStream(f = new File(FileUtil.getRealPath(backupTempFilePath + "/" + s[i]))));
 			ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
 			zout.putNextEntry(e);
 			int len = 0;
@@ -421,10 +422,10 @@ public class ImportExportXMLServlet extends HttpServlet {
 	 * 
 	 */
 	private void deleteTempFiles() {
-		File f = new File(Config.CONTEXT.getRealPath(backupTempFilePath));
+		File f = new File(FileUtil.getRealPath(backupTempFilePath));
 		String[] _tempFiles = f.list();
 		for (int i = 0; i < _tempFiles.length; i++) {
-			f = new File(Config.CONTEXT.getRealPath(backupTempFilePath + "/" + _tempFiles[i]));
+			f = new File(FileUtil.getRealPath(backupTempFilePath + "/" + _tempFiles[i]));
 			f.delete();
 		}
 
@@ -442,7 +443,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 	 */
 	private void unzip(ZipInputStream zin, String s) throws IOException {
 		Logger.info(this, "unzipping " + s);
-		File f = new File(Config.CONTEXT.getRealPath(backupTempFilePath + "/" + s));
+		File f = new File(FileUtil.getRealPath(backupTempFilePath + "/" + s));
 		BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
 		byte[] b = new byte[512];
 		int len = 0;

@@ -3,6 +3,8 @@ package com.dotmarketing.servlets.test;
 import com.dotmarketing.listeners.TestTextRingingListener;
 import com.dotmarketing.listeners.TestXmlRingingListener;
 import com.dotmarketing.util.Config;
+import com.liferay.util.FileUtil;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -106,7 +108,7 @@ public class ServletTestRunner extends HttpServlet {
 
         //Preparing the reports folder
         String logsDirectory = ".." + File.separator + "tomcat" + File.separator + "logs" + File.separator + "test" + File.separator;
-        File reportDirectory = new File( Config.CONTEXT.getRealPath( logsDirectory ) );
+        File reportDirectory = new File( FileUtil.getRealPath( logsDirectory ) );
         FileUtils.deleteDirectory( reportDirectory );
         reportDirectory.mkdirs();
 

@@ -26,6 +26,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
@@ -411,7 +412,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 + java.io.File.separator + _inode+ java.io.File.separator + "fileAsset" + java.io.File.separator + fileName + "." + ext;
 
         if (!UtilMethods.isSet(realPath))
-            return Config.CONTEXT.getRealPath(path);
+            return FileUtil.getRealPath(path);
         else
             return path;
 
@@ -450,7 +451,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 + java.io.File.separator + _inode+ java.io.File.separator + "fileAsset" + java.io.File.separator;
 
         if (!UtilMethods.isSet(realPath))
-            return Config.CONTEXT.getRealPath(path);
+            return FileUtil.getRealPath(path);
         else
             return path;
 

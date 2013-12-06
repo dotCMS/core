@@ -29,6 +29,7 @@ import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.events.InitAction;
@@ -48,6 +49,9 @@ public class InitServlet extends HttpServlet {
 			// Initialize
 
 			super.init();
+			if(Config.CONTEXT ==null){
+				Config.CONTEXT = this.getServletContext();
+			}
 			try{
 				ClusterThreadProxy.loadLevel();
 			}
