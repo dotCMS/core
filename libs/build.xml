@@ -41,23 +41,26 @@
 
                 <include name="**/*.jar"/>
 
-                <exclude name="jamm-0.2.5.jar"/>
-
+                <!--dotcms jars-->
                 <exclude name="dotcms_${dotcms.release.version}.jar"/>
                 <exclude name="ee-a9031a10.jar"/>
                 <exclude name="dotcms_ant.jar"/>
                 <exclude name="packager-taks.jar"/>
                 <exclude name="jarjar-1.4.jar"/>
+                <!--dotcms jars-->
 
+                <!--We can NOT alter these jars manifest-->
+                <exclude name="jamm-0.2.5.jar"/>
                 <exclude name="**/org.apache.felix.*.jar"/>
                 <exclude name="**/felix-4.2.1.jar"/>
+                <!--We can NOT alter these jars manifest-->
 
-                <!--We can repackage them but applying special rules-->
+                <!--We CAN repackage them but applying special rules-->
                 <exclude name="xpp3_min-1.1.4c.jar"/>
                 <exclude name="h2-1.3.169.jar"/>
                 <exclude name="jaxen-1.1.3.jar"/>
                 <exclude name="tika-app-1.3.jar"/>
-                <!--We can repackage them but applying special rules-->
+                <!--We CAN repackage them but applying special rules-->
 
                 <!--FIXME-->
                 <exclude name="**/org.springframework*.jar"/>
