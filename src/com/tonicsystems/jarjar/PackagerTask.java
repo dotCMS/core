@@ -183,8 +183,19 @@ public class PackagerTask extends JarJarTask {
             jarNameForPackage = jarNameForPackage.replaceAll( "\\.", "_" );
             jarNameForPackage = jarNameForPackage.toLowerCase();
 
+            if (jarNameForPackage.contains( "jersey" )) {
+                jarNameForPackage = "jersey";
+            } else if (jarNameForPackage.contains( "lucene" )) {
+                jarNameForPackage = "lucene";
+            } else if (jarNameForPackage.contains( "sslext" )) {
+                jarNameForPackage = "struts";
+            }
+
             //Create the rule for this class and add it to the list of rules for this jar
-            String pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
+            String pattern = packageName + ".*";//Example: "org.apache.xerces.dom.*"
+            if (packageName.equals( "org.elasticsearch.common.joda.time.tz" )) {//For this package we can not be so strict as is not contains .class files but instead a lot of resources
+                pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
+            }
             String result = "com.dotcms.repackage." + jarNameForPackage + "." + packageName + ".@1";
 
             Rule rule = new Rule();
@@ -350,7 +361,7 @@ public class PackagerTask extends JarJarTask {
 
                 //Clean-up the pattern
                 String pattern = rule.getPattern();
-                pattern = pattern.replaceAll( "\\*\\*", "" );
+                pattern = pattern.replaceAll( "\\*", "" );
                 String patternFinal = pattern.replaceAll( "\\.", "\\\\." );
 
                 //Clean up the result
