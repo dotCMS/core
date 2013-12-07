@@ -63,6 +63,7 @@
                 <!--We CAN repackage them but applying special rules-->
 
                 <!--FIXME-->
+                <exclude name="**/quartz-all-1.8.6.jar"/>
                 <exclude name="**/org.springframework*.jar"/>
                 <!--FIXME-->
             </fileset>
