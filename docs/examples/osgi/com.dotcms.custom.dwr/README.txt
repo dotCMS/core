@@ -48,7 +48,7 @@ a plugin can Import the packages to use them inside the OSGI blundle.
 --
 
 com.dotmarketing.osgi.custom.dwr.ajax
--------------------------------------------
+-------------------------------------
 
 com.dotmarketing.osgi.custom.dwr.ajax.CustomDWRAjax 
 ----------
@@ -56,7 +56,7 @@ This class will provide a simple implementation class to use with DWR.
 --
 
 com.dotmarketing.osgi.custom.dwr.osgi
--------------------------------------------
+-------------------------------------
 
 com.dotmarketing.osgi.custom.dwr.osgi.Activator
 ---------
