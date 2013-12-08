@@ -58,7 +58,10 @@ public class ClusterFactory {
 
 	public static String getNextAvailablePort(String serverId, ServerPort port) {
 		DotConnect dc = new DotConnect();
-		dc.setSQL("select max(" + port.getTableName()+ ") as port from server where ip_address = (select s.ip_address from server s where s.server_id = ?)");
+		dc.setSQL("select max(" + port.getTableName()+ ") as port from server where ip_address = (select s.ip_address from server s where s.server_id = ?) "
+				+ "or ('localhost' = (select s.ip_address from server s where s.server_id = '2fc4ff9f-205e-4b42-a65b-abe1f8a92f9f') and ip_address = '127.0.0.1') "
+				+ "or('127.0.0.1' = (select s.ip_address from server s where s.server_id = '2fc4ff9f-205e-4b42-a65b-abe1f8a92f9f') and ip_address = 'localhost') ");
+
 		dc.addParam(serverId);
 		Integer maxPort = null;
 		String freePort = Config.getStringProperty(port.getPropertyName(), port.getDefaultValue());
