@@ -184,6 +184,8 @@ public class ClusterResource extends WebResource {
     		jsonNode.put("cacheStatus", cacheStatus);
     		jsonNode.put("esStatus", esStatus);
     		jsonNode.put("myself", myServerId.equals(server.getServerId()));
+    		jsonNode.put("cachePort", server.getCachePort());
+    		jsonNode.put("esPort", server.getEsTransportTcpPort());
 
 
     		//Added to the response list

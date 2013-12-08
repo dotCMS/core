@@ -70,25 +70,16 @@ div.centre
 }
 
 .statusTable {
- 	background: white;
-	width: 100%;
 	text-align: right;
-	border-color: white;
 }
 
-.listingTable {
-border-collapse: collapse;
+
+.listingTable2  th, .listingTable2 td {
 font-size: 11px;
+padding:5px 8px;
+border:0px solid #d0d0d0;
 }
 
-.listingTable td {
-font-size: 11px;
-}
-
-.listingTable tbody table {
-border-color: white;
-border : 0;
-}
 
 </style>
 <script type="text/javascript">
@@ -113,7 +104,8 @@ function renderCacheClusterStatus() {
 	var deferred = dojo.xhrGet(xhrArgs);
 
 	var clusterStatusDiv = dojo.create("div",
-			{ innerHTML: "<table class='statusTable' style='background:white; width:100%;'>"
+			{ innerHTML: "<table class='statusTable listingTable2' style='background:white; width:100%;'>"
+							+ "<tr><td colspan='2' align='center' style='font-weight:bold'><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Cache") %></td></tr>"
 							+ "<tr><td class='left_td'>Cluster Name</td><td>"+cacheClusterStatus.clusterName+"</td></tr>"
 							+ "<tr><td class='left_td'>Channel Open</td><td>"+cacheClusterStatus.open+"</td></tr>"
 							+ "<tr><td class='left_td'>Number of Nodes</td><td>"+cacheClusterStatus.numerOfNodes+"</td></tr>"
@@ -152,7 +144,8 @@ function renderESClusterStatus() {
 	deferred = dojo.xhrGet(xhrArgs);
 
 	var esClusterStatusDiv = dojo.create("div",
-			{ innerHTML: "<table class='statusTable' style='background:white; width:100%; font-size:8px'>"
+			{ innerHTML: "<table class='statusTable listingTable2' style='background:white; width:100%; font-size:8px'>"
+							+ "<tr><td colspan='2' align='center' style='font-weight:bold'><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_ES") %></td></tr>"
 							+ "<tr><td class='left_td'>Cluster Name</td><td>"+esClusterStatus.clusterName+"</td></tr>"
 							+ "<tr><td class='left_td'>Status</td><td>"+esClusterStatus.status+"</td></tr>"
 							+ "<tr><td class='left_td'>Number of Nodes</td><td>"+esClusterStatus.numerOfNodes+"</td></tr>"
@@ -188,23 +181,25 @@ function renderNodesStatus() {
 	deferred = dojo.xhrGet(xhrArgs);
 
 
-	var nodesTableHTML = "<table class='listingTable' style='background:white; width:100%'> "
-	+ "<tr><th>Server ID</th>"
-	+ "<th>IP Address</th>"
-	+ "<th>Contacted</th>"
-	+ "<th>Cache Status</th>"
-	+ "<th>ES Status</th>"
-	+ "<th>Rewiring</th>"
+	var nodesTableHTML = "<table style='width:100%; font-size:11px'> "
+	+ "<tr ><th style='background: #F7F7F7'>Server ID</th>"
+	+ "<th style='background: #F7F7F7'>IP Address</th>"
+	+ "<th style='background: #F7F7F7'>Contacted</th>"
+	+ "<th style='background: #F7F7F7'>Cache Status</th>"
+	+ "<th style='background: #F7F7F7'>Cache Port</th>"
+	+ "<th style='background: #F7F7F7'>ES Status</th>"
+	+ "<th style='background: #F7F7F7'>ES Port</th>"
 	+ "</tr>";
 
 	dojo.forEach(nodeList, function(item, index){
-		nodesTableHTML +=	"<tr><td style='vertical-align:middle'><span class='backupIcon' style='margin-left:-10px; margin-right:20px'></span>"
-								+ item.serverId+(item.myself?"<span class='femaleIcon' style='margin-left:10px; margin-right:0px'></span>":"")+"</td>"
-								+ "<td>"+item.ipAddress+"</td>"
-								+ "<td>"+item.contacted+" secs ago</td>"
+		nodesTableHTML +=	"<tr><td style='vertical-align:middle'><table class='listingTable2'><td width=3px'><span class='backupIcon' ></span></td>"
+								+ "<td width='240px' style='text-align:left;'>" + item.serverId + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
+								+ "<td align='left'>"+item.ipAddress+"</td>"
+								+ "<td align='left'>"+item.contacted+" secs ago</td>"
 								+ "<td align='center'><div style='background:"+(item.cacheStatus?"GREEN":"RED")+"; width:20px;height:20px;'></div></td>"
+								+ "<td align='left'>"+item.cachePort+"</td>"
 								+ "<td align='center'><div style='background:"+(item.esStatus?"GREEN":"RED")+"; width:20px;height:20px;'></div></td>"
-								+ "<td align='center' style='padding: 0; margin: 0'><button dojoType='dijit.form.Button' iconClass='resetIcon'>Rewire</button></td>"
+								+ "<td align='left'>"+item.esPort+"</td>"
 								+ "</tr>";
 				});
 
@@ -214,6 +209,7 @@ function renderNodesStatus() {
 
 	dojo.empty(dojo.byId("nodes"));
 	dojo.place(nodesTable, dojo.byId("nodes"));
+	dojo.parser.parse("nodes");
 
 }
 
@@ -316,28 +312,22 @@ renderNodesStatus();
             <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
         </button>
         <button dojoType="dijit.form.Button" onClick="refreshStatus();" iconClass="plusIcon">
-            <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
+            Wire This Node
         </button>
     </div>
 </div>
 
 <table id="cacheCluster" class="listingTable shadowBox">
     <tr>
-        <th style="font-size: 8pt;" width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_General_Status") %></th>
-        <th style="font-size: 8pt;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Servers") %></th>
+        <th style="font-size: 8pt;" width="20%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_General_Status") %></th>
+        <th style="font-size: 8pt;text-align: center"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Servers") %></th>
     </tr>
     <tr style="text-align: center">
-        <td width="30%" style="padding:0px">
+        <td width="25%" style="padding:0px">
         	<div id='generalStatus'>
-        		<table border="0">
-					    <tr>
-					        <td style="font-size: 8pt; font-weight: bold" width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Cache") %></td>
-					    </tr>
+        		<table>
 					    <tr>
 					        <td width="30%" style="padding:0px"><div id='cacheClusterStatus'></div></td>
-					    </tr>
-					    <tr>
-					        <td style="font-size: 8pt; font-weight: bold" width="30%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_ES") %></td>
 					    </tr>
 					    <tr>
 					        <td width="30%" style="padding:0px"><div id='esClusterStatus'></div></td>
@@ -345,7 +335,7 @@ renderNodesStatus();
 					</table>
         	</div>
         </td>
-        <td valign="top" id="nodesTD">
+        <td valign="top" id="nodesTD" style="padding: 0;">
         	<div id='nodes' style="width: 100%">
         	</div>
         </td>
