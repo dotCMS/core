@@ -1310,7 +1310,7 @@ public class ContentletAjax {
 						}
 					}
 				}else{
-					elementValue = null;
+					elementValue = new File(binaryFileValue);
 				}
 			}
 			contentletFormData.put(elementName, elementValue);
