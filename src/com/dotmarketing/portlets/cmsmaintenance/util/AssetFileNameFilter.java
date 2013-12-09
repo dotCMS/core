@@ -5,6 +5,7 @@ import java.io.FileFilter;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.FileUtil;
 
 public class AssetFileNameFilter implements FileFilter {
 
@@ -31,7 +32,7 @@ public class AssetFileNameFilter implements FileFilter {
 		String[] test = new String[0];
 		String assetPath=null;
         try {
-        	assetPath = Config.getStringProperty("ASSET_REAL_PATH", Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")));
+        	assetPath = Config.getStringProperty("ASSET_REAL_PATH", FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH")));
         	test = new File(assetPath).getAbsolutePath().split(File.separator);
         } catch (Exception e) {
         	Logger.debug(this.getClass(), e.getMessage());

@@ -61,6 +61,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * DOCUMENT ME!
@@ -431,7 +432,7 @@ public class EmailFactory {
 
 				// Saving email backup in a file
 				try {
-					String filePath = Config.CONTEXT.getRealPath(Config.getStringProperty("EMAIL_BACKUPS"));
+					String filePath = FileUtil.getRealPath(Config.getStringProperty("EMAIL_BACKUPS"));
 					new File(filePath).mkdir();
 
 					File file = null;

@@ -22,6 +22,7 @@
 
 package com.liferay.util;
 
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import org.apache.commons.io.FileUtils;
@@ -267,6 +268,33 @@ public class FileUtil {
 		return out.toByteArray();
 	}
 
+	public static boolean isWindows(){
+		return File.separatorChar == '\\';
+		
+	}
+	
+	/*
+	 * This will return a path whether the file exists or not
+	 * (Websphere returns a null if the file does not exist, which throws a lot of NPEs)
+	 */
+	public static String getRealPath(String relativePath){
+		
+		if(Config.CONTEXT ==null){
+			Logger.fatal(FileUtil.class, "Config.CONTEXT not initialized with a servlet context, dying");
+			throw new DotStateException("Config.CONTEXT not initialized with a servlet context, dying");
+		}
+		String ret = Config.CONTEXT.getRealPath(relativePath);	
+		if(ret !=null) return ret;
+		String base = Config.CONTEXT.getRealPath("/");
+		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ?  base.substring(0, base.lastIndexOf(File.separatorChar)):base;
+		relativePath = relativePath.replace('/', File.separatorChar);
+		
+		return base + relativePath;
+
+	}
+	
+	
+	
 	public static String getPath(String fullFileName) {
 		int pos = fullFileName.lastIndexOf("/");
 
@@ -348,28 +376,35 @@ public class FileUtil {
 	}
 	
 	public static File[] listFileHandles(File dir, Boolean includeSubDirs) throws IOException {
+		
+	    if(!dir.exists() || ! dir.isDirectory()){
+	    	return new File[0];
+	    }
+		
+		
 		FileFilter fileFilter = new FileFilter() {
 	        public boolean accept(File file) {
 	            return file.isDirectory();
 	        }
 	    };
-	File[] subFolders = dir.listFiles(fileFilter);
 
-	List<File> files = new ArrayList<File>();
-
-	List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
-
-	for (File file : fileArray) {
-		if(file.isFile()) {
-			if(includeSubDirs && containsParentFolder(file, subFolders)) {
-				files.add(file);
-			} else {
-				files.add(file);
+		File[] subFolders = dir.listFiles(fileFilter);
+	
+		List<File> files = new ArrayList<File>();
+	
+		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
+	
+		for (File file : fileArray) {
+			if(file.isFile()) {
+				if(includeSubDirs && containsParentFolder(file, subFolders)) {
+					files.add(file);
+				} else {
+					files.add(file);
+				}
 			}
 		}
-	}
-
-	return (File[])files.toArray(new File[0]);
+	
+		return (File[])files.toArray(new File[0]);
 	}
 	
 	public static String[] listFiles(File dir, Boolean includeSubDirs) throws IOException {

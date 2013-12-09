@@ -154,24 +154,11 @@
         </copy>
 	</target>
 
-	<target name="compile-log4jappends" depends="prepare" description="Compiles source code need for our async appender.">
-		<mkdir dir="${build.log4j}" />
-		<javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}"
-			source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
-			memoryinitialsize="256m" memorymaximumsize="512m" >
-			<classpath refid="files-classpath" />
-			<include name="org/apache/log4j/appender/**"/>
-
-		</javac>
-	</target>
-
 	<target name="checkWindows">
 		<condition property="isWindows">
 			<os family="windows" />
 		</condition>
 	</target>
-
-
 
 
 	<target name="jar" depends="compile" description="Generates dotcms.jar in the 'lib' directory.">
@@ -182,10 +169,7 @@
 		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
 		<copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" >
-			<exclude name="com/dotmarketing/plugin/ant/**"/>
-			<exclude name="com/dotmarketing/plugin/util/**"/>
-		</jar>
+		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" />
 	</target>
 
     <target name="jar-with-tests" depends="compile, compile-tests" description="Generates dotcms.jar in the 'lib' directory includind tests classes.">
@@ -196,14 +180,7 @@
 		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
 		<copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" >
-			<exclude name="com/dotmarketing/plugin/ant/**"/>
-			<exclude name="com/dotmarketing/plugin/util/**"/>
-		</jar>
-	</target>
-
-	<target name="jar-log4jtasks" depends="compile-log4jappends" description="Generates dotcms-log4j.jar in the 'tomcat/lib' directory.">
-		<jar jarfile="${build.lib}/dotcms_log4j.jar" basedir="${build.log4j}"/>
+		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" />
 	</target>
 
 	<!-- Configure the directory into which the web application is built -->
@@ -418,6 +395,9 @@
 		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
 		        <include name="**/*.sh"/>
 		    </tarfileset>
+			<tarfileset dir="${distribution.output}/dotserver/tomcat/bin" prefix="/dotserver/tomcat/bin" filemode="755">
+		        <include name="**/*.sh"/>
+		    </tarfileset>
 		</tar>
 		
 		<delete dir="${distribution.output}" />
@@ -540,7 +520,8 @@
 		    testurl="http://localhost:${server.port}"
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
-		    testtarget="test-all-junits"/>
+		    testtarget="test-all-junits"
+			timeout="600"/>
 		<antcall target="restore-files"/>
 		<!--<antcall target="drop-db"/>-->
 	</target>
