@@ -1,15 +1,10 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.rest.servlet.ReloadableServletContainer;
-import com.dotmarketing.util.Logger;
 
 
 
 public class RestServiceUtil {
-	
-	
-
-
 	
 	public synchronized static void addResource(Class clazz){
 		
@@ -34,9 +29,7 @@ public class RestServiceUtil {
 		}
 	}
 	
-	public synchronized static void reloadRest(){
-
-		Logger.error(RestServiceUtil.class, "RELOADING DOES NOT WORK YET");
+	public synchronized static void reloadRest() {
 		ReloadableServletContainer.reload(new DotRestApplication());
 		
 	}
