@@ -310,7 +310,7 @@ function enableCustomProps() {
 }
 
 function wireNode() {
-	var json = "";
+	var json = "{}";
 	var props = dojo.query(".props");
 
 	var usingCustomProps = dojo.byId("customPropsRadio").checked;
@@ -326,14 +326,12 @@ function wireNode() {
 		});
 
 		json += "}";
-
-		console.log(json)
 	}
 
 	xhrArgs = {
 			url : "/api/cluster/wirenode/",
 			handleAs : "json",
-			data: dojo.toJson(json),
+			postData: json,
 			headers: { "Content-Type": "application/json"},
 			sync: true,
 			load : function(data) {
