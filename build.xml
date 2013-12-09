@@ -604,7 +604,7 @@
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
 		    testtarget="test-all-junits"
-			timeout="600"/>
+			timeout="600000"/>
 		<antcall target="restore-files"/>
 		<!--<antcall target="drop-db"/>-->
 	</target>
