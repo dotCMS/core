@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
+import com.dotcms.rest.config.RestServiceUtil;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -32,6 +33,7 @@ public class WebResourceTest extends TestBase  {
 		serverName = request.getServerName();
 		serverPort = request.getServerPort();
 		webResource = client.resource("http://"+serverName+":"+serverPort+"/api/role");
+		RestServiceUtil.addResource(DummyResource.class);
 	}
 
 	@Test(expected=UniformInterfaceException.class)
