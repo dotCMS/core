@@ -97,11 +97,12 @@ public class ResourceCollectorUtil{
             final String fileName = ze.getName();
             final boolean accept = pattern.matcher(fileName).matches();
             if(accept){
-            	try{
-            		retval.add(fileName.substring(0, fileName.lastIndexOf(File.separator)));
-            	}catch (StringIndexOutOfBoundsException e1) {
-            		//do nothing
-				}
+                try {
+                    //Zip entries have '/' as separator on all platforms
+                    retval.add( fileName.substring( 0, fileName.lastIndexOf( "/" ) ) );
+                } catch ( StringIndexOutOfBoundsException e1 ) {
+                    //do nothing
+                }
             }
         }
         try{
