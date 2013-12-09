@@ -347,7 +347,8 @@ public class ClusterResource extends WebResource {
             HashMap<String,String> map=new HashMap<String,String>();
 
             try {
-	            JSONObject obj = new JSONObject(IOUtils.toString(request.getInputStream()));
+            	String payload = IOUtils.toString(request.getInputStream());
+	            JSONObject obj = new JSONObject(payload);
 
 	            Iterator<String> keys = obj.keys();
 	            while(keys.hasNext()) {
@@ -359,8 +360,10 @@ public class ClusterResource extends WebResource {
 	                	map.put(key, value.toString());
 	                }
 
-	                ClusterFactory.addNodeToCluster(map, "SERVER_ID");
 	            }
+
+	            ClusterFactory.addNodeToCluster(map, APILocator.getServerAPI().readServerId());
+
             } catch (Exception e) {
             	initData.getParamsMap().put("error", e.getMessage());
 				Logger.error(ClusterResource.class, "Error wiring a new node to the Cluster", e);

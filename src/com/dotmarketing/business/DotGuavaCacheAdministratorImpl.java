@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import java.net.InetAddress;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -172,11 +173,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 //		}
 //	}
 
-	public void setCluster(String serverId) throws Exception {
-		setCluster(null, serverId);
+	public void setCluster(Server localServer) throws Exception {
+		setCluster(null, localServer);
 	}
 
-	public void setCluster(Map<String, String> cacheProperties, String serverId) throws Exception {
+	public void setCluster(Map<String, String> cacheProperties, Server localServer) throws Exception {
 			Logger.info(this, "***\t Starting JGroups Cluster Setup");
 
 			journalAPI = APILocator.getDistributedJournalAPI();
@@ -185,7 +186,6 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				cacheProperties = new HashMap<String, String>();
 			}
 
-			Server localServer = APILocator.getServerAPI().getServer(serverId);
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 			String cacheProtocol = UtilMethods.isSet(cacheProperties.get("CACHE_PROTOCOL"))?cacheProperties.get("CACHE_PROTOCOL")
 					:Config.getStringProperty("CACHE_PROTOCOL", "tcp");
@@ -209,7 +209,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 			String bindPort = localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
 					:UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
-					:ClusterFactory.getNextAvailablePort(serverId, ServerPort.CACHE_PORT);
+					:ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
 
 			if (bindPort != null) {
 				Logger.info(this, "***\t Using " + bindPort + " as the bindport");

@@ -1,5 +1,6 @@
 package com.dotcms.cluster.business;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -90,10 +91,13 @@ public class ClusterFactory {
 			properties = new HashMap<String, String>();
 		}
 
-		addNodeToCacheCluster(properties, serverId);
-
 		ServerAPI serverAPI = APILocator.getServerAPI();
 		Server currentServer = serverAPI.getServer(serverId);
+		InetAddress addr = InetAddress.getLocalHost();
+		String address = addr.getHostAddress();
+		currentServer.setIpAddress(address);
+
+		addNodeToCacheCluster(properties, currentServer);
 
 		Map<ESProperty, String> esProperties = new HashMap<ESProperty, String>();
 
@@ -153,8 +157,8 @@ public class ClusterFactory {
 
 	}
 
-	private static void addNodeToCacheCluster(Map<String, String> cacheProperties, String serverId) throws Exception {
-		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).setCluster(cacheProperties, serverId);
+	private static void addNodeToCacheCluster(Map<String, String> cacheProperties, Server localServer) throws Exception {
+		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).setCluster(cacheProperties, localServer);
 		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
 		Config.setProperty("DIST_INDEXATION_ENABLED", true);
 
