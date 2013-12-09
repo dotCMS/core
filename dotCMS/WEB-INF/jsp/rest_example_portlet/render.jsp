@@ -1,5 +1,5 @@
 
-<%@page import="com.dotcms.portlets.TestingPortlet"%>
+<%@page import="com.dotcms.rest.RestExamplePortlet"%>
 <%@page import="com.dotcms.rest.config.RestServiceUtil"%>
 <div class="portlet-wrapper">
 
@@ -11,6 +11,6 @@
 		<a href="javascript:dotAjaxNav.show('/api/restexample/test/');">get me some json</a>
 	</div>
 <% 
-RestServiceUtil.removeResource(TestingPortlet.class);
+RestServiceUtil.removeResource(RestExamplePortlet.class);
 %>
 </div>
