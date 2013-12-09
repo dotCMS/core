@@ -16,6 +16,8 @@
 
 <style>
 
+html {overflow-y: scroll;}
+
 .node {
   margin: 20px;
   padding: 2px;
@@ -106,14 +108,14 @@ function renderCacheClusterStatus() {
 	var clusterStatusDiv = dojo.create("div",
 			{ innerHTML: "<table class='statusTable listingTable2' style='background:white; width:100%;'>"
 							+ "<tr><td colspan='2' align='center' style='font-weight:bold'><%= LanguageUtil.get(pageContext, "configuration_cluster_config_cache") %></td></tr>"
-							+ "<tr><td class='left_td'>Cluster Name</td><td>"+(cacheClusterStatus.clusterName?cacheClusterStatus.clusterName:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-							+ "<tr><td class='left_td'>Channel Open</td><td>"+(cacheClusterStatus.open?cacheClusterStatus.open:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-							+ "<tr><td class='left_td'>Number of Nodes</td><td>"+(cacheClusterStatus.numberOfNodes?cacheClusterStatus.numberOfNodes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-							+ "<tr><td class='left_td'>Address</td><td>"+(cacheClusterStatus.address?cacheClusterStatus.address:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-							+ "<tr><td class='left_td'>Received Bytes</td><td>"+(cacheClusterStatus.receivedBytes?cacheClusterStatus.receivedBytes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-							+ "<tr><td class='left_td'>Received Messages</td><td>"+(cacheClusterStatus.receivedMessages?cacheClusterStatus.receivedMessages:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-							+ "<tr><td class='left_td'>Sent Bytes</td><td>"+(cacheClusterStatus.sentBytes?cacheClusterStatus.sentBytes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-							+ "<tr><td class='left_td'>Sent Messages</td><td>"+(cacheClusterStatus.sendMessages?cacheClusterStatus.sendMessages:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_name") %></td><td>"+(cacheClusterStatus.clusterName?cacheClusterStatus.clusterName:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_channel_open") %></td><td>"+(cacheClusterStatus.open?cacheClusterStatus.open:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_number_of_nodes") %></td><td>"+(cacheClusterStatus.numberOfNodes?cacheClusterStatus.numberOfNodes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_address") %></td><td>"+(cacheClusterStatus.address?cacheClusterStatus.address:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_received_bytes") %></td><td>"+(cacheClusterStatus.receivedBytes?cacheClusterStatus.receivedBytes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_received_messages") %></td><td>"+(cacheClusterStatus.receivedMessages?cacheClusterStatus.receivedMessages:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_sent_bytes") %></td><td>"+(cacheClusterStatus.sentBytes?cacheClusterStatus.sentBytes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_sent_messages") %></td><td>"+(cacheClusterStatus.sendMessages?cacheClusterStatus.sendMessages:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
 	// 							+ "<tr><td class='left_td'>Cache Status</td><td><div id='cache_"+item.id+"'style='cursor:pointer;background:GREEN; width:20px;height:20px;'></td></tr>"
 							+ "</table>"
 			});
@@ -146,12 +148,12 @@ function renderESClusterStatus() {
 	var esClusterStatusDiv = dojo.create("div",
 			{ innerHTML: "<table class='statusTable listingTable2' style='background:white; width:100%; font-size:8px'>"
 			+ "<tr><td colspan='2' align='center' style='font-weight:bold'><%= LanguageUtil.get(pageContext, "configuration_cluster_config_es") %></td></tr>"
-			+ "<tr><td class='left_td'>Cluster Name</td><td>"+(esClusterStatus.clusterName?esClusterStatus.clusterName:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-			+ "<tr><td class='left_td'>Status</td><td>"+(esClusterStatus.status?esClusterStatus.status:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-			+ "<tr><td class='left_td'>Number of Nodes</td><td>"+(esClusterStatus.numberOfNodes?esClusterStatus.numberOfNodes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-			+ "<tr><td class='left_td'>active_primary_shards</td><td>"+(esClusterStatus.activePrimaryShards?esClusterStatus.activePrimaryShards:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-			+ "<tr><td class='left_td'>active_shards</td><td>"+(esClusterStatus.activeShards?esClusterStatus.activeShards:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-			+ "<tr><td class='left_td'>unassigned_shards</td><td>"+(esClusterStatus.unasignedPrimaryShards?esClusterStatus.unasignedPrimaryShards:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_name") %></td><td>"+(esClusterStatus.clusterName?esClusterStatus.clusterName:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "status") %></td><td>"+(esClusterStatus.status?esClusterStatus.status:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_number_of_nodes") %></td><td>"+(esClusterStatus.numberOfNodes?esClusterStatus.numberOfNodes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_active_primary_shards") %></td><td>"+(esClusterStatus.activePrimaryShards?esClusterStatus.activePrimaryShards:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_active_shards") %></td><td>"+(esClusterStatus.activeShards?esClusterStatus.activeShards:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_unassigned_shards") %></td><td>"+(esClusterStatus.unasignedPrimaryShards?esClusterStatus.unasignedPrimaryShards:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
 			+ "</table>"
 			});
 
@@ -185,8 +187,8 @@ function renderNodesStatus() {
 	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
 	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
 	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_cache_status") %></th>"
-	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_es_status") %></th>"
 	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_cache_port") %></th>"
+	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_es_status") %></th>"
 	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_es_port") %></th>"
 	+ "</tr>";
 
@@ -226,9 +228,6 @@ function refreshStatus() {
 
 function showClusterPropertiesDialog() {
 
-	dojo.destroy("nodes");
-	dojo.create("div", { id: 'nodes' }, "nodesTD");
-
 	//ES Cluster Nodes Status
 	var properties;
 
@@ -246,63 +245,119 @@ function showClusterPropertiesDialog() {
 
 	deferred = dojo.xhrGet(xhrArgs);
 
-	var html = "<table class='listingTable' style='width:90%'>";
+	var html = "<table style='width:100%'>";
 
 	for(var key in properties){
 		var value = properties[key];
-		html += "<tr><td class='left_td' style='font-size:11px'>"+key+"</td><td><input style='width: 95%; font-size:11px' type='text' data-dojo-type='dijit/form/TextBox' name='"+key+"+' value="+value+"></input></td></tr>"
-
-	}
+		html += "<tr><td style='font-size:11px; width:50%'><span style='padding-left:15px; font-size:11px;'>"+key+"</span></td><td style='padding:5px'><input class='props' size='40' style='width: 100%; font-size:11px' type='text' data-dojo-type='dijit/form/TextBox' name='"+key+"' value='"+value+"'></input></td></tr>"
+	};
 
 	html += "</table>"
 
-	var nodeDiv = dojo.create("div",
-			{ innerHTML: html
-			});
-
 	dojo.empty(dojo.byId("propertiesDiv"));
-	dojo.place(nodeDiv, dojo.byId("propertiesDiv"))
+	dojo.place(html, dojo.byId("propertiesDiv"))
 
-	var form = dojo.byId("propertiesForm");
+// 	var form = dojo.byId("propertiesForm");
 
+// 	dojo.connect(form, "onSubmit", function(event){
 
-	dojo.connect(form, "onSubmit", function(event){
+// 	    // Stop the submit event since we want to control form submission.
+// 	    dojo.stopEvent(event);
 
-	    // Stop the submit event since we want to control form submission.
-	    dojo.stopEvent(event);
+// 	    // The parameters to pass to xhrPost, the form, how to handle it, and the callbacks.
+// 	    // Note that there isn't a url passed.  xhrPost will extract the url to call from the form's
+// 	    //'action' attribute.  You could also leave off the action attribute and set the url of the xhrPost object
+// 	    // either should work.
 
-	    // The parameters to pass to xhrPost, the form, how to handle it, and the callbacks.
-	    // Note that there isn't a url passed.  xhrPost will extract the url to call from the form's
-	    //'action' attribute.  You could also leave off the action attribute and set the url of the xhrPost object
-	    // either should work.
+// 	    var xhrArgs = {
+// 	      form: dojo.byId("propertiesForm"),
+// 	      handleAs: "text",
+// 	      load: function(data){
+// 	        dojo.byId("response").innerHTML = "Form posted.";
+// 	      },
+// 	      error: function(error){
+// 	        // We'll 404 in the demo, but that's okay.  We don't have a 'postIt' service on the
+// 	        // docs server.
+// 	        dojo.byId("response").innerHTML = "Form posted.";
+// 	      }
+// 	    }
+// 	    // Call the asynchronous xhrPost
+// 	    dojo.byId("response").innerHTML = "Form being sent..."
+// 	    var deferred = dojo.xhrPost(xhrArgs);
+// 	  });
 
-	    var xhrArgs = {
-	      form: dojo.byId("propertiesForm"),
-	      handleAs: "text",
-	      load: function(data){
-	        dojo.byId("response").innerHTML = "Form posted.";
-	      },
-	      error: function(error){
-	        // We'll 404 in the demo, but that's okay.  We don't have a 'postIt' service on the
-	        // docs server.
-	        dojo.byId("response").innerHTML = "Form posted.";
-	      }
-	    }
-	    // Call the asynchronous xhrPost
-	    dojo.byId("response").innerHTML = "Form being sent..."
-	    var deferred = dojo.xhrPost(xhrArgs);
-	  });
-
+	disableCustomProps();
 	dijit.byId('clusterPropertiesDialog').show();
 
+}
 
+function disableCustomProps() {
+	var props = dojo.query(".props");
+
+	dojo.forEach(props, function(entry, i){
+		  entry.disabled = 'disabled';
+		  entry.style = 'color:#d0d0d0'
+		});
+}
+
+function enableCustomProps() {
+	var props = dojo.query(".props");
+
+	dojo.forEach(props, function(entry, i){
+		  entry.disabled = '';
+		  entry.style = 'color:#555555'
+		});
+}
+
+function wireNode() {
+	var json = "";
+	var props = dojo.query(".props");
+
+	var usingCustomProps = dojo.byId("customPropsRadio").checked;
+
+	if(usingCustomProps) {
+		json = "{";
+		dojo.forEach(props, function(entry, i){
+			  json += "'"+entry.name+"':'"+entry.value+"'";
+
+			  if(i<props.length-1) {
+				  json += ",";
+			  }
+		});
+
+		json += "}";
+
+		console.log(json)
+	}
+
+	xhrArgs = {
+			url : "/api/cluster/wirenode/",
+			handleAs : "json",
+			data: dojo.toJson(json),
+			headers: { "Content-Type": "application/json"},
+			sync: true,
+			load : function(data) {
+				nodeList = data;
+			},
+			error : function(error) {
+// 				targetNode.innerHTML = "An unexpected error occurred: " + error;
+				console.log(error)
+			}
+		}
+
+	deferred = dojo.xhrPost(xhrArgs);
+
+	closeDialog();
+
+}
+
+function closeDialog() {
+	dijit.byId("clusterPropertiesDialog").hide();
 }
 
 renderCacheClusterStatus();
 renderESClusterStatus();
 renderNodesStatus();
-
-
 
 </script>
 
@@ -315,7 +370,7 @@ renderNodesStatus();
     	<button  dojoType="dijit.form.Button" onClick="refreshStatus();" iconClass="resetIcon">
             <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
         </button>
-        <button dojoType="dijit.form.Button" onClick="refreshStatus();" iconClass="plusIcon">
+        <button dojoType="dijit.form.Button" onClick="showClusterPropertiesDialog();" iconClass="plusIcon">
            <%= LanguageUtil.get(pageContext, "configuration_cluster_wire_node") %>
         </button>
     </div>
@@ -348,21 +403,24 @@ renderNodesStatus();
 
 
 
-<div id="clusterPropertiesDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "configuration_Cluster_Edit_Config")%>" style="display: none; height: 470px; width:500px">
-    <div style="padding:10px 15px;">
-      <form action="/api/cluster/updateESConfigProperties/" id="propertiesForm" method="post">
-            <div style="height: 380px;">
-                <div id='propertiesDiv'></div>
-            </div>
-            <div align="center">
+<div id="clusterPropertiesDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "configuration_Cluster_Edit_Config")%>"
+	style="display: none; width:550px">
+    <div style="padding:0px 15px;">
+<!--       <form action="/api/cluster/wirenode/" id="propertiesForm" method="post"> -->
+      		<div style="padding-top: 10px; padding-bottom: 20px; text-align: center; font-size: 12px">
+				<input type="radio" dojoType="dijit.form.RadioButton" onChange="enableCustomProps()" value="" name="propsRadio" id="defaultPropsRadio" checked="checked"><label for="defaultPropsRadio"><%= LanguageUtil.get(pageContext, "configuration_cluster_use_default_properties") %></label>&nbsp;
+				<input type="radio" dojoType="dijit.form.RadioButton" onChange="disableCustomProps()" value="" name="propsRadio" id="customPropsRadio" ><label for="customPropsRadio"><%= LanguageUtil.get(pageContext, "configuration_cluster_use_custom_properties") %></label>
+			</div>
+            <div id='propertiesDiv' style="height: 170px;overflow: scroll; border:1px solid #d0d0d0;"></div>
+            <div align="center" style="padding-top: 10px">
                <button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
-					iconClass="saveIcon"
-					type="submit"><%=LanguageUtil.get(pageContext, "Save")%></button>
+					iconClass="saveIcon" onclick="wireNode()"
+					type="button"><%=LanguageUtil.get(pageContext, "Wire")%></button>
 				<button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
-					onClick='bundles.modifyExtraPackages()' iconClass="cancelIcon"
+					onClick='closeDialog()' iconClass="cancelIcon"
 					type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
 			</div>
-        </form>
+<!--         </form> -->
     </div>
 </div>
 

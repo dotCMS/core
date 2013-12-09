@@ -1,13 +1,10 @@
 package com.dotcms.rest;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -32,7 +29,6 @@ import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.jgroups.Address;
-import org.jgroups.Channel;
 import org.jgroups.Event;
 import org.jgroups.JChannel;
 import org.jgroups.PhysicalAddress;
@@ -41,6 +37,7 @@ import org.jgroups.stack.IpAddress;
 
 import com.dotcms.cluster.bean.ESProperty;
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -275,15 +272,21 @@ public class ClusterResource extends WebResource {
         InitDataObject initData = init( params, true, request, false );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
-        JSONObject clusterProps = new JSONObject();
-        Iterator<String> keys = DotConfig.getKeys();
+//        Iterator<String> keys = DotConfig.getKeys();
+        JSONObject jsonNode = new JSONObject();
+        ServerAPI serverAPI = APILocator.getServerAPI();
 
-        while ( keys.hasNext() ) {
-        	String key = keys.next();
-        	clusterProps.put( key, DotConfig.getStringProperty(key));
-		}
+        String serverId = serverAPI.readServerId();
+        String cachePort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.CACHE_PORT);
+        String esPort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
 
-        return responseResource.response( clusterProps.toString() );
+        jsonNode.put("CACHE_PROTOCOL", "tcp");
+        jsonNode.put("CACHE_BINDPORT", cachePort);
+        jsonNode.put("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
+        jsonNode.put("CACHE_MULTICAST_PORT", "45589");
+        jsonNode.put("ES_TRANSPORT_TCP_PORT", esPort);
+
+        return responseResource.response( jsonNode.toString() );
 
     }
 
