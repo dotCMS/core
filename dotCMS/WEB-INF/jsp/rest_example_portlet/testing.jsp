@@ -1,5 +1,4 @@
 
-<%@page import="com.dotcms.portlets.TestingPortlet"%>
 <%@page import="com.dotcms.rest.config.RestServiceUtil"%>
 <%@page import="com.dotcms.rest.config.DotRestApplication"%>
 <div class="portlet-wrapper">
