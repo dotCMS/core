@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.dotcms.cluster.bean.Server;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
