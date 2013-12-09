@@ -105,15 +105,15 @@ function renderCacheClusterStatus() {
 
 	var clusterStatusDiv = dojo.create("div",
 			{ innerHTML: "<table class='statusTable listingTable2' style='background:white; width:100%;'>"
-							+ "<tr><td colspan='2' align='center' style='font-weight:bold'><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_Cache") %></td></tr>"
-							+ "<tr><td class='left_td'>Cluster Name</td><td>"+cacheClusterStatus.clusterName+"</td></tr>"
-							+ "<tr><td class='left_td'>Channel Open</td><td>"+cacheClusterStatus.open+"</td></tr>"
-							+ "<tr><td class='left_td'>Number of Nodes</td><td>"+cacheClusterStatus.numerOfNodes+"</td></tr>"
-							+ "<tr><td class='left_td'>Address</td><td>"+cacheClusterStatus.address+"</td></tr>"
-							+ "<tr><td class='left_td'>Received Bytes</td><td>"+cacheClusterStatus.receivedBytes+"</td></tr>"
-							+ "<tr><td class='left_td'>Received Messages</td><td>"+cacheClusterStatus.receivedMessages+"</td></tr>"
-							+ "<tr><td class='left_td'>Sent Bytes</td><td>"+cacheClusterStatus.sentBytes+"</td></tr>"
-							+ "<tr><td class='left_td'>Sent Messages</td><td>"+cacheClusterStatus.sentMessages+"</td></tr>"
+							+ "<tr><td colspan='2' align='center' style='font-weight:bold'><%= LanguageUtil.get(pageContext, "configuration_cluster_config_cache") %></td></tr>"
+							+ "<tr><td class='left_td'>Cluster Name</td><td>"+(cacheClusterStatus.clusterName?cacheClusterStatus.clusterName:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'>Channel Open</td><td>"+(cacheClusterStatus.open?cacheClusterStatus.open:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'>Number of Nodes</td><td>"+(cacheClusterStatus.numberOfNodes?cacheClusterStatus.numberOfNodes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'>Address</td><td>"+(cacheClusterStatus.address?cacheClusterStatus.address:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'>Received Bytes</td><td>"+(cacheClusterStatus.receivedBytes?cacheClusterStatus.receivedBytes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'>Received Messages</td><td>"+(cacheClusterStatus.receivedMessages?cacheClusterStatus.receivedMessages:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'>Sent Bytes</td><td>"+(cacheClusterStatus.sentBytes?cacheClusterStatus.sentBytes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+							+ "<tr><td class='left_td'>Sent Messages</td><td>"+(cacheClusterStatus.sendMessages?cacheClusterStatus.sendMessages:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
 	// 							+ "<tr><td class='left_td'>Cache Status</td><td><div id='cache_"+item.id+"'style='cursor:pointer;background:GREEN; width:20px;height:20px;'></td></tr>"
 							+ "</table>"
 			});
@@ -145,15 +145,14 @@ function renderESClusterStatus() {
 
 	var esClusterStatusDiv = dojo.create("div",
 			{ innerHTML: "<table class='statusTable listingTable2' style='background:white; width:100%; font-size:8px'>"
-							+ "<tr><td colspan='2' align='center' style='font-weight:bold'><%= LanguageUtil.get(pageContext, "configuration_Cluster_Config_ES") %></td></tr>"
-							+ "<tr><td class='left_td'>Cluster Name</td><td>"+esClusterStatus.clusterName+"</td></tr>"
-							+ "<tr><td class='left_td'>Status</td><td>"+esClusterStatus.status+"</td></tr>"
-							+ "<tr><td class='left_td'>Number of Nodes</td><td>"+esClusterStatus.numerOfNodes+"</td></tr>"
-							+ "<tr><td class='left_td'>active_primary_shards</td><td>"+esClusterStatus.activePrimaryShards+"</td></tr>"
-							+ "<tr><td class='left_td'>active_shards</td><td>"+esClusterStatus.activeShards+"</td></tr>"
-							+ "<tr><td class='left_td'>unassigned_shards</td><td>"+esClusterStatus.unasignedPrimaryShards+"</td></tr>"
-	// 							+ "<tr><td class='left_td'>Cache Status</td><td><div id='cache_"+item.id+"'style='cursor:pointer;background:GREEN; width:20px;height:20px;'></td></tr>"
-							+ "</table>"
+			+ "<tr><td colspan='2' align='center' style='font-weight:bold'><%= LanguageUtil.get(pageContext, "configuration_cluster_config_es") %></td></tr>"
+			+ "<tr><td class='left_td'>Cluster Name</td><td>"+(esClusterStatus.clusterName?esClusterStatus.clusterName:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'>Status</td><td>"+(esClusterStatus.status?esClusterStatus.status:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'>Number of Nodes</td><td>"+(esClusterStatus.numberOfNodes?esClusterStatus.numberOfNodes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'>active_primary_shards</td><td>"+(esClusterStatus.activePrimaryShards?esClusterStatus.activePrimaryShards:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'>active_shards</td><td>"+(esClusterStatus.activeShards?esClusterStatus.activeShards:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "<tr><td class='left_td'>unassigned_shards</td><td>"+(esClusterStatus.unasignedPrimaryShards?esClusterStatus.unasignedPrimaryShards:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
+			+ "</table>"
 			});
 
 	dojo.empty(dojo.byId("esClusterStatus"));
@@ -182,25 +181,30 @@ function renderNodesStatus() {
 
 
 	var nodesTableHTML = "<table style='width:100%; font-size:11px'> "
-	+ "<tr ><th style='background: #F7F7F7'>Server ID</th>"
-	+ "<th style='background: #F7F7F7'>IP Address</th>"
-	+ "<th style='background: #F7F7F7'>Contacted</th>"
-	+ "<th style='background: #F7F7F7'>Cache Status</th>"
-	+ "<th style='background: #F7F7F7'>Cache Port</th>"
-	+ "<th style='background: #F7F7F7'>ES Status</th>"
-	+ "<th style='background: #F7F7F7'>ES Port</th>"
+	+ "<tr ><th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
+	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
+	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
+	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_cache_status") %></th>"
+	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_es_status") %></th>"
+	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_cache_port") %></th>"
+	+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_es_port") %></th>"
 	+ "</tr>";
 
 	dojo.forEach(nodeList, function(item, index){
+		var cacheBg = (item.cacheStatus=='true'?"GREEN":item.cacheStatus=='false'?"RED":"");
+		var esBg = (item.esStatus=='true'?"GREEN":item.esStatus=='false'?"RED":"");
+		var cacheText = (item.cacheStatus=='N/A'?"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>":"");
+		var esText = (item.cacheStatus=='N/A'?"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>":"");
+
 		nodesTableHTML +=	"<tr><td style='vertical-align:middle'><table class='listingTable2'><td width=3px'><span class='backupIcon' ></span></td>"
-								+ "<td width='240px' style='text-align:left;'>" + item.serverId + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
-								+ "<td align='left'>"+item.ipAddress+"</td>"
-								+ "<td align='left'>"+item.contacted+" secs ago</td>"
-								+ "<td align='center'><div style='background:"+(item.cacheStatus?"GREEN":"RED")+"; width:20px;height:20px;'></div></td>"
-								+ "<td align='left'>"+item.cachePort+"</td>"
-								+ "<td align='center'><div style='background:"+(item.esStatus?"GREEN":"RED")+"; width:20px;height:20px;'></div></td>"
-								+ "<td align='left'>"+item.esPort+"</td>"
-								+ "</tr>";
+		+ "<td width='240px' style='text-align:left;'>" + item.serverId + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
+		+ "<td align='left'>"+item.ipAddress+"</td>"
+		+ "<td align='left'>"+item.contacted+" secs ago</td>"
+		+ "<td align='center'><div style='background:"+cacheBg+"; width:20px;height:20px;'>"+cacheText+"</div></td>"
+		+ "<td align='left'>"+item.cachePort+"</td>"
+		+ "<td align='center'><div style='background:"+esBg+"; width:20px;height:20px;'>"+esText+"</div></td>"
+		+ "<td align='left'>"+item.esPort+"</td>"
+		+ "</tr>";
 				});
 
 	nodesTableHTML += "</table>"
@@ -305,22 +309,22 @@ renderNodesStatus();
 <div class="yui-g portlet-toolbar">
     <div class="yui-u first">
         <span class="rServerIcon"></span>
-        <span  style="line-height:20px;font-weight: bold;"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Status") %></span>
+        <span  style="line-height:20px;font-weight: bold;"><%= LanguageUtil.get(pageContext, "configuration_cluster_status") %></span>
     </div>
     <div class="yui-u" style="text-align:right;">
     	<button  dojoType="dijit.form.Button" onClick="refreshStatus();" iconClass="resetIcon">
             <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
         </button>
         <button dojoType="dijit.form.Button" onClick="refreshStatus();" iconClass="plusIcon">
-            Wire This Node
+           <%= LanguageUtil.get(pageContext, "configuration_cluster_wire_node") %>
         </button>
     </div>
 </div>
 
 <table id="cacheCluster" class="listingTable shadowBox">
     <tr>
-        <th style="font-size: 8pt;" width="20%"><%= LanguageUtil.get(pageContext, "configuration_Cluster_General_Status") %></th>
-        <th style="font-size: 8pt;text-align: center"><%= LanguageUtil.get(pageContext, "configuration_Cluster_Servers") %></th>
+        <th style="font-size: 8pt;" width="20%"><%= LanguageUtil.get(pageContext, "configuration_cluster_general_status") %></th>
+        <th style="font-size: 8pt;text-align: center"><%= LanguageUtil.get(pageContext, "configuration_cluster_servers") %></th>
     </tr>
     <tr style="text-align: center">
         <td width="25%" style="padding:0px">
