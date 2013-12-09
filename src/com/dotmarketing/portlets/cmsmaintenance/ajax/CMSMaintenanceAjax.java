@@ -344,7 +344,7 @@ public class CMSMaintenanceAjax {
 			backupDir.mkdirs();
 			Logger.info(this, "Moving assets to back up directory: " + backupTempFilePath);
 			if(!UtilMethods.isSet(assetRealPath)){
-				assetDir = Config.CONTEXT.getRealPath(assetPath);
+				assetDir = FileUtil.getRealPath(assetPath);
 			}else{
 				assetDir = assetRealPath;
 			}

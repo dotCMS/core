@@ -26,6 +26,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * 
@@ -59,7 +60,7 @@ public class LanguageFileResourceImpl implements FileResource, LockableResource 
 			}
 		}
 		dotDavHelper = new DotWebdavHelper();
-		file = new File(Config.CONTEXT.getRealPath("/assets/messages") + File.separator + path);
+		file = new File(FileUtil.getRealPath("/assets/messages") + File.separator + path);
 
 	}
 

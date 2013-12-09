@@ -58,6 +58,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
@@ -237,8 +238,8 @@ public class ViewReportsAction extends DotPortletAction {
 	    	jrxmlPath = Config.getStringProperty("ASSET_REAL_PATH") + File.separator + Config.getStringProperty("REPORT_PATH") + File.separator + report.getInode() + ".jrxml";
 		    jasperPath = Config.getStringProperty("ASSET_REAL_PATH") + File.separator + Config.getStringProperty("REPORT_PATH") + File.separator + report.getInode() + ".jasper";
 	    } else {
-	    	jrxmlPath = Config.CONTEXT.getRealPath(File.separator + Config.getStringProperty("ASSET_PATH") + File.separator + Config.getStringProperty("REPORT_PATH") + File.separator + report.getInode() + ".jrxml");
-	    	jasperPath = Config.CONTEXT.getRealPath(File.separator + Config.getStringProperty("ASSET_PATH") + File.separator + Config.getStringProperty("REPORT_PATH") + File.separator + report.getInode() + ".jasper");
+	    	jrxmlPath = FileUtil.getRealPath(File.separator + Config.getStringProperty("ASSET_PATH") + File.separator + Config.getStringProperty("REPORT_PATH") + File.separator + report.getInode() + ".jrxml");
+	    	jasperPath = FileUtil.getRealPath(File.separator + Config.getStringProperty("ASSET_PATH") + File.separator + Config.getStringProperty("REPORT_PATH") + File.separator + report.getInode() + ".jasper");
 	    }
 		f = new File(jrxmlPath);
 		f.delete();

@@ -27,7 +27,7 @@ public class JBossRulesUtils {
 		try {
 			String fileName = Config.getStringProperty("CONFIGURED_JBOSS_RULES_FILE_NAME");
 			if (UtilMethods.isSet(fileName)) {
-				String XMLFileName = com.dotmarketing.util.Config.CONTEXT.getRealPath(fileName);
+				String XMLFileName = com.liferay.util.FileUtil.getRealPath(fileName);
 				XMLRuleBase = readRulesFromXML(XMLFileName);
 				
 				XMLRuleBaseLastModified = new File(XMLFileName).lastModified();
@@ -69,7 +69,7 @@ public class JBossRulesUtils {
 		try {
 			String fileName = Config.getStringProperty("CONFIGURED_JBOSS_RULES_FILE_NAME");
 			if (UtilMethods.isSet(fileName)) {
-				String XMLFileName = com.dotmarketing.util.Config.CONTEXT.getRealPath(fileName);
+				String XMLFileName = com.liferay.util.FileUtil.getRealPath(fileName);
 				
 				if (XMLRuleBaseLastModified  < (new File(XMLFileName).lastModified()))
 					loadJBossRulesFiles();

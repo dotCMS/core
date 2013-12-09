@@ -9,6 +9,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
 import com.dotmarketing.util.Config;
+import com.liferay.util.FileUtil;
 
 public class ESClient {
 
@@ -76,7 +77,7 @@ public class ESClient {
                       if( new File(esPath).isAbsolute()){
                     	  System.setProperty(key,esPath);
                       }else                    	
-                        System.setProperty(key, Config.CONTEXT.getRealPath(esPath));
+                        System.setProperty(key, FileUtil.getRealPath(esPath));
                     }
 					else{
                         System.setProperty(key, Config.getStringProperty(key));

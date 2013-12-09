@@ -32,6 +32,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.struts.MultiMessageResources;
+import com.liferay.util.FileUtil;
 
 /**
  *
@@ -239,7 +240,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
         String assetPath = Config.getStringProperty("ASSET_PATH");
     	if(!UtilMethods.isSet(realPath)){
-			ret=Config.CONTEXT.getRealPath(assetPath + "/messages");
+			ret=FileUtil.getRealPath(assetPath + "/messages");
 		}else{
 			ret=realPath +File.separator+"messages";
 		}
