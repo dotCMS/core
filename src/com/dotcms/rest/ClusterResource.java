@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -86,7 +87,7 @@ public class ClusterResource extends WebResource {
         	List<Address> members = view.getMembers();
         	jsonClusterStatusObject.put( "clusterName", channel.getClusterName());
         	jsonClusterStatusObject.put( "open", channel.isOpen());
-        	jsonClusterStatusObject.put( "numerOfNodes", members.size());
+        	jsonClusterStatusObject.put( "numberOfNodes", members.size());
         	jsonClusterStatusObject.put( "address", channel.getAddressAsString());
         	jsonClusterStatusObject.put( "receivedBytes", channel.getReceivedBytes());
         	jsonClusterStatusObject.put( "receivedMessages", channel.getReceivedMessages());
@@ -119,11 +120,15 @@ public class ClusterResource extends WebResource {
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         ServerAPI serverAPI = APILocator.getServerAPI();
         List<Server> servers = serverAPI.getAllServers();
+        List<Address> members = new ArrayList<Address>();
 
         // JGroups Cache
         View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
         JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
-        List<Address> members = view.getMembers();
+
+        if(view!=null) {
+        	members = view.getMembers();
+        }
 
         // ES Clustering
         AdminClient esClient = null;
@@ -181,8 +186,15 @@ public class ClusterResource extends WebResource {
     			jsonNode.put("contacted", difference);
     		}
 
-    		jsonNode.put("cacheStatus", cacheStatus);
-    		jsonNode.put("esStatus", esStatus);
+    		if(view==null && !myServerId.equals(server.getServerId())) {
+    			jsonNode.put("cacheStatus", "N/A");
+        		jsonNode.put("esStatus", "N/A");
+    		} else {
+    			jsonNode.put("cacheStatus", cacheStatus.toString());
+        		jsonNode.put("esStatus", esStatus.toString());
+    		}
+
+
     		jsonNode.put("myself", myServerId.equals(server.getServerId()));
     		jsonNode.put("cachePort", server.getCachePort());
     		jsonNode.put("esPort", server.getEsTransportTcpPort());
@@ -233,7 +245,7 @@ public class ClusterResource extends WebResource {
 
 
 		jsonNode.put("clusterName", clusterRes.getClusterName());
-		jsonNode.put("numerOfNodes", clusterRes.getNumberOfNodes());
+		jsonNode.put("numberOfNodes", clusterRes.getNumberOfNodes());
 		jsonNode.put("activeShards", clusterRes.getActiveShards());
 		jsonNode.put("activePrimaryShards", clusterRes.getActivePrimaryShards());
 		jsonNode.put("unasignedPrimaryShards", clusterRes.getUnassignedShards());
