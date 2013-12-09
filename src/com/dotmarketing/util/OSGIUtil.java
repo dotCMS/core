@@ -253,10 +253,15 @@ public class OSGIUtil {
         if(!f.exists()){
         	StringBuilder bob = new StringBuilder();
         	final Collection<String> list = ResourceCollectorUtil.getResources();
-        	for(final String name : list){
-        		bob.append(name.replace(File.separator, ".") + "," + "\n");
-        	}
-        	bob.append("org.osgi.framework," +
+            for ( final String name : list ) {
+                if ( File.separator.equals( "/" ) ) {
+                    bob.append( name.replace( File.separator, "." ) + "," + "\n" );
+                } else {
+                    //Zip entries have '/' as separator on all platforms
+                    bob.append( (name.replace( File.separator, "." ).replace( "/", "." )) + "," + "\n" );
+                }
+            }
+            bob.append("org.osgi.framework," +
         			"org.osgi.service.packageadmin," +
         			"org.osgi.service.startlevel," +
         			"org.osgi.service.url," +
