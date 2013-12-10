@@ -2605,22 +2605,22 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		StringBuilder query = new StringBuilder();
 		query.append("select {permission.*} from permission ");
-		query.append(" where permission.roleid = ? ");
 		if(onlyFoldersAndHosts) {
-			query.append(" and (permission.inode_id in " +
-					"(select contentlet.identifier from contentlet, inode cont_inode where cont_inode.inode = contentlet.inode and " +
-					"contentlet.structure_inode = ?) " +
-					"or permission.inode_id in (select inode from folder)) ");
+		    query.append("  join contentlet on (contentlet.identifier=permission.inode_id and structure_inode=?) ")
+		         .append("  where permission.roleid =? ")
+		         .append("  union all ")
+		         .append("  select {permission.*} from permission join folder on (permission.inode_id=folder.inode) ");
 		}
+		query.append(" where permission.roleid = ? ");
 
 		HibernateUtil persistenceService = new HibernateUtil(Permission.class);
 		persistenceService.setSQLQuery(query.toString());
-		persistenceService.setParam(role.getId());
 		if(onlyFoldersAndHosts) {
-			Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
-			persistenceService.setParam(hostStructure.getInode());
-		}
-
+            Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
+            persistenceService.setParam(hostStructure.getInode());
+            persistenceService.setParam(role.getId());
+        }
+		persistenceService.setParam(role.getId());
 
 		List<Permission> bitPermissionsList = (List<Permission>) persistenceService.list();
 
