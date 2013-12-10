@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import net.sf.hibernate.ObjectNotFoundException;
 
@@ -18,6 +19,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -214,6 +216,26 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		}
 
 	}
+	
+	private List<Category> readCatFromDotConnect(List<Map<String,Object>> list) {
+	    List<Category> cats = new ArrayList<Category>();
+	    for(Map<String,Object> m : list) {
+            cats.add(readCatFromDotConnect(m));
+        }
+	    return cats;
+	}
+	
+	private Category readCatFromDotConnect(Map<String,Object> m) {
+	    Category cat = new Category();
+        cat.setActive(m.get("active").equals(DbConnectionFactory.getDBTrue()));
+        cat.setInode(m.get("inode").toString());
+        cat.setCategoryName(m.get("category_name")!=null ? m.get("category_name").toString() : null);
+        cat.setCategoryVelocityVarName(m.get("category_velocity_var_name")!=null?m.get("category_velocity_var_name").toString():null);
+        cat.setKey(m.get("category_key")!=null?m.get("category_key").toString():null);
+        cat.setKeywords(m.get("keywords")!=null?m.get("keywords").toString():null);
+        cat.setSortOrder(m.get("sort_order")!=null ? m.get("sort_order").toString() : "0");
+        return cat;
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -222,12 +244,13 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		List<String> childrenIds = catCache.getChildren(parent);
 		List<Category> children = null;
 		if(childrenIds == null) {
-			HibernateUtil hu = new HibernateUtil(Category.class);
-			hu.setSQLQuery("select {category.*} from inode category_1_, category, tree " +
-					"where tree.child = category.inode and tree.parent = ? and category_1_.inode = category.inode " +
-			"and category_1_.type = 'category' order by sort_order asc, category_name asc");
-			hu.setParam(parent.getCategoryId());
-			children = (List<Category>) hu.list();
+		    DotConnect dc = new DotConnect();
+		    dc.setSQL("select inode,category_name,category_key,sort_order,active,keywords,category_velocity_var_name "+
+		              " from category join tree on (category.inode = tree.child) where tree.parent = ? "+
+		              " order by sort_order, category_name;");
+		    dc.addParam(parent.getCategoryId());
+		    children = readCatFromDotConnect(dc.loadObjectResults());
+			
 			try {
 				catCache.putChildren(parent, children);
 			} catch (DotCacheException e) {
