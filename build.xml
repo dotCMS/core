@@ -73,13 +73,23 @@
 		<pathelement location="${java.home}/../lib/tools.jar"/>
 
         <fileset dir="libs/buildlibs">
-            <include name="**/*.jar" />
+            <include name="*.jar" />
         </fileset>
+
+        <!--We should be able to remove it soon-->
+        <fileset dir="libs/buildlibs/jsp">
+            <include name="jasper.jar" />
+            <include name="jasper-el.jar" />
+            <include name="el-api.jar" />
+            <include name="tomcat-util.jar" />
+            <include name="tomcat-juli.jar" />
+            <include name="tomcat-api.jar" />
+        </fileset>
+        <!--We should be able to remove it soon-->
 
 		<fileset dir="${lib.app}">
 			<include name="**/*.jar" />
 			<exclude name="**/dotcms*.jar" />
-			<exclude name="**/com.dotcms.repackage*.jar" />
 		</fileset>
 		<pathelement path="${build.classes}" />
 	</path>
@@ -257,7 +267,36 @@
 
 	<target name="jsp" depends="compile">
 
+		<taskdef classname="com.dotmarketing.util.jasper.DotJasperTask" name="jasper2" >
+			<classpath id="jspc.classpath" refid="files-classpath">
+			</classpath>
+		</taskdef>
 
+
+		<jasper2
+             validateXml="false"
+             uriroot="dotCMS"
+             javaEncoding="UTF-8"
+             webXmlFragment="dotCMS/WEB-INF/generated_web.xml"
+             outputDir="${src.jsp}/">
+
+		</jasper2>
+		<javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8"
+		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.6"
+		target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
+		memoryinitialsize="256m" memorymaximumsize="512m">
+			<classpath refid="files-classpath" />
+		</javac>
+
+		<loadfile property="generated.web"
+	      srcFile="dotCMS/WEB-INF/generated_web.xml"/>
+
+		<replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
+		  	replace="&lt;!-- BEGIN JSPS --&gt; ${generated.web} &lt;!-- END JSPS --&gt;">
+			<fileset dir="dotCMS/WEB-INF/">
+				<include name="web.xml"/>
+			</fileset>
+		</replaceregexp>
 	</target>
 
 	<target name="buildsql" depends="buildseqsql, buildmXsql">
