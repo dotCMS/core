@@ -278,6 +278,13 @@ public class PackagerTask extends JarJarTask {
 
                 if ( !isSkipDependenciesJars() ) {//This can be use for testing purposes
 
+                    //This can be use for testing purposes
+                    File jarToVerify = new File( filePath );
+                    if ( getOnlyJar() != null && !getOnlyJar().isEmpty()
+                            && !getOnlyJar().equals( jarToVerify.getName() ) ) {
+                        continue;
+                    }
+
                     if ( dependency.isGenerate() ) {
 
                         //Repackaging this single jar
