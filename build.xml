@@ -897,11 +897,13 @@
 
 <target name="build" depends="build-core,build-plugins" description="build the dotCMS core and plugins" />
 
+<target name="build-no-jsp" depends="build-core-no-jsp,build-plugins" description="build the dotCMS core and plugins" />
+
 <target name="deploy" depends="build, deploy-core, deploy-plugins" description="builds and deploys core and plugins" />
 
 <target name="deploy-tests" depends="uncomment-test-servlet, build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
-<target name="deploy-tests-no-jsp" depends="uncomment-test-servlet, deploy-core-with-tests-no-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
+<target name="deploy-tests-no-jsp" depends="uncomment-test-servlet, build-no-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
 <target name="deploy-dev" depends="deploy-plugins"/>
 
@@ -1129,7 +1131,10 @@
     </target>-->
 
     <!--<target name="war" depends="deploy-no-jsp,repackage-libraries,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">-->
-    <target name="war" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
+    <target name="war" depends="deploy-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
+        <antcall target="war-file"/>
+    </target>
+    <target name="war-tests" depends="deploy-tests-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
         <antcall target="war-file"/>
     </target>
 
@@ -1171,6 +1176,9 @@
     </target>
 
     <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war">
+        <antcall target="move-war-tomcat7"/>
+    </target>
+    <target name="deploy-war-tomcat7-tests" depends="clone-pull-tomcat7, war-tests">
         <antcall target="move-war-tomcat7"/>
     </target>
 
