@@ -227,7 +227,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	
 	private Category readCatFromDotConnect(Map<String,Object> m) {
 	    Category cat = new Category();
-        cat.setActive(m.get("active").equals(DbConnectionFactory.getDBTrue()));
+        cat.setActive(DbConnectionFactory.getDBTrue().equals(m.get("active")));
         cat.setInode(m.get("inode").toString());
         cat.setCategoryName(m.get("category_name")!=null ? m.get("category_name").toString() : null);
         cat.setCategoryVelocityVarName(m.get("category_velocity_var_name")!=null?m.get("category_velocity_var_name").toString():null);
