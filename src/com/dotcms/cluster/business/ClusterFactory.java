@@ -1,13 +1,11 @@
 package com.dotcms.cluster.business;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.dotcms.cluster.bean.ESProperty;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -21,8 +19,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.servlet.MainServlet;
-
-import static com.dotcms.cluster.bean.ESProperty.*;
 
 public class ClusterFactory {
 
@@ -99,61 +95,10 @@ public class ClusterFactory {
 
 		addNodeToCacheCluster(properties, currentServer);
 
-		Map<ESProperty, String> esProperties = new HashMap<ESProperty, String>();
-
-		esProperties.put(ES_NETWORK_HOST,
-				UtilMethods.isSet(properties.get(ES_NETWORK_HOST.toString())) ? properties.get(ES_NETWORK_HOST.toString()) : currentServer.getIpAddress() );
-
-		esProperties.put(ES_TRANSPORT_TCP_PORT, UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString())
-				:UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT) );
-
-		if(Config.getStringProperty("es.http.enabled", "false").equalsIgnoreCase("true")) {
-			esProperties.put(ES_HTTP_PORT, UtilMethods.isSet(currentServer.getEsHttpPort())?currentServer.getEsHttpPort().toString()
-				:UtilMethods.isSet(properties.get(ES_HTTP_PORT.toString())) ? properties.get(ES_HTTP_PORT.toString()) : getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT) );
-		}
-
-		esProperties.put(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED,
-				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()))
-				? properties.get(ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.toString()) : ES_DISCOVERY_ZEN_PING_MULTICAST_ENABLED.getDefaultValue() );
-		esProperties.put(ES_DISCOVERY_ZEN_PING_TIMEOUT,
-				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()))
-				? properties.get(ES_DISCOVERY_ZEN_PING_TIMEOUT.toString()) : ES_DISCOVERY_ZEN_PING_TIMEOUT.getDefaultValue() );
-
-		List<Server> aliveServers = new ArrayList<Server>();
-
-		try {
-			aliveServers = serverAPI.getAliveServers();
-		} catch (DotDataException e) {
-			Logger.error(ClusterFactory.class, "Error getting alive Servers", e);
-		}
+//		properties.put("ES_NODE_LOCAL", "false");
+		addNodeToESCluster(properties);
 
 
-		currentServer.setEsTransportTcpPort(Integer.parseInt(esProperties.get(ES_TRANSPORT_TCP_PORT)));
-		currentServer.setEsHttpPort(Integer.parseInt(esProperties.get(ES_HTTP_PORT)));
-		aliveServers.add(currentServer);
-
-		String initialHosts = "";
-
-		int i=0;
-		for (Server server : aliveServers) {
-			if(i>0) {
-				initialHosts += ", ";
-			}
-			initialHosts += server.getIpAddress() + "[" + server.getEsTransportTcpPort() + "]";
-			i++;
-		}
-
-		esProperties.put(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS,
-				UtilMethods.isSet(properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()))
-				? properties.get(ES_DISCOVERY_ZEN_PING_UNICAST_HOSTS.toString()) : initialHosts);
-
-		addNodeToESCluster(esProperties);
-
-		try {
-			serverAPI.updateServer(currentServer);
-		} catch (DotDataException e) {
-			Logger.error(ClusterFactory.class, "Error trying to update server. Server Id: " + currentServer.getServerId());
-		}
 
 	}
 
@@ -170,7 +115,7 @@ public class ClusterFactory {
 
 	}
 
-	private static void addNodeToESCluster(Map<ESProperty, String> esProperties) {
+	private static void addNodeToESCluster(Map<String, String> esProperties) throws Exception {
 		ESClient esClient = new ESClient();
 		esClient.setClusterNode(esProperties);
 

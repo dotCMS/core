@@ -182,11 +182,11 @@ public class ClusterResource extends WebResource {
 
     		if(view==null && !myServerId.equals(server.getServerId())) {
     			jsonNode.put("cacheStatus", "N/A");
-        		jsonNode.put("esStatus", "N/A");
     		} else {
     			jsonNode.put("cacheStatus", cacheStatus.toString());
-        		jsonNode.put("esStatus", esStatus.toString());
     		}
+
+    		jsonNode.put("esStatus", esStatus.toString());
 
 
     		jsonNode.put("myself", myServerId.equals(server.getServerId()));

@@ -194,6 +194,8 @@ public class MainServlet extends ActionServlet {
 					}
 		        }
 
+		        serverAPI.updateHeartbeat();
+
 			} catch (UnknownHostException e3) {
 				Logger.error(getClass(), "Could not get Local Host", e3);
 			} catch (DotDataException e) {

@@ -2,31 +2,40 @@ package com.dotcms.content.elasticsearch.util;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
-import com.dotcms.cluster.bean.ESProperty;
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.bean.ServerPort;
+import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class ESClient {
 
 	private static Node _nodeInstance;
 	final String syncMe = "esSync";
 
-	public Client getClient(){
+	public Client getClient() {
 		if(_nodeInstance ==null){
 			synchronized (syncMe) {
 				if(_nodeInstance ==null){
-					loadConfig();
-					initNode();
-
+					try{
+						setClusterNode();
+					}catch (Exception e) {
+						Logger.error(ESClient.class, "Could not initialize ES Node", e);
+					}
 				}
 			}
 		}
@@ -81,20 +90,77 @@ public class ESClient {
 		}
 	}
 
-	public void setClusterNode(Map<ESProperty, String> properties) {
+	public void setClusterNode() throws Exception {
+		setClusterNode(null);
+	}
 
-		if(properties!=null) {
-			for (ESProperty key : properties.keySet()) {
-				String value = properties.get(key);
+	public void setClusterNode(Map<String, String> properties) throws Exception {
 
-				if(value!=null) {
-					System.setProperty(key.getKeyName(),value);
-				}
+			String serverId = ConfigUtils.getServerId();
+
+			ServerAPI serverAPI = APILocator.getServerAPI();
+			Server currentServer = serverAPI.getServer(serverId);
+			InetAddress addr = InetAddress.getLocalHost();
+			String address = addr.getHostAddress();
+			currentServer.setIpAddress(address);
+
+
+			System.setProperty("es.network.host", currentServer.getIpAddress() );
+
+			String transportTCPPort = properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT")) ? properties.get("ES_TRANSPORT_TCP_PORT")
+					:UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
+
+			System.setProperty("es.transport.tcp.port",  transportTCPPort);
+
+			if(Config.getStringProperty("es.http.enabled", "false").equalsIgnoreCase("true")) {
+				String httpPort = properties!=null &&   UtilMethods.isSet(properties.get("ES_HTTP_PORT")) ? properties.get("ES_HTTP_PORT")
+						:UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
+						:ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT);
+
+				System.setProperty("es.http.port",  httpPort);
+
+				currentServer.setEsHttpPort(Integer.parseInt(httpPort));
 			}
-		}
 
-		loadConfig();
-		initNode();
+			System.setProperty("es.discovery.zen.ping.multicast.enabled",
+					Config.getStringProperty("es.discovery.zen.ping.multicast.enabled", "false") );
+
+			System.setProperty("es.discovery.zen.ping.timeout",
+					Config.getStringProperty("es.discovery.zen.ping.timeout", "5s") );
+
+			List<Server> aliveServers = serverAPI.getAliveServers();
+
+			currentServer.setEsTransportTcpPort(Integer.parseInt(transportTCPPort));
+
+			aliveServers.add(currentServer);
+
+			String initialHosts = "";
+
+			int i=0;
+			for (Server server : aliveServers) {
+				if(i>0) {
+					initialHosts += ", ";
+				}
+				initialHosts += server.getIpAddress() + "[" + server.getEsTransportTcpPort() + "]";
+				i++;
+			}
+
+			System.setProperty("es.discovery.zen.ping.unicast.hosts",initialHosts);
+
+//			if(Config.getStringProperty("CLUSTER_AUTOWIRE", "true").equals("false") && (properties!=null && properties.get("ES_NODE_LOCAL")!=null
+//					&& properties.get("ES_NODE_LOCAL").equals("true"))) {
+//				System.setProperty("es.node.local", "true");
+//			}
+
+			loadConfig();
+			initNode();
+
+			try {
+				serverAPI.updateServer(currentServer);
+			} catch (DotDataException e) {
+				Logger.error(ClusterFactory.class, "Error trying to update server. Server Id: " + currentServer.getServerId());
+			}
+
 	}
 
 

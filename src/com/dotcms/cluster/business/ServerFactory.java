@@ -17,6 +17,8 @@ public abstract class ServerFactory {
 
 	public abstract List<Server> getAliveServers() throws DotDataException;
 
+	public abstract List<Server> getAliveServers(List<String> toExclude) throws DotDataException;
+
 	public abstract void updateServer(Server server) throws DotDataException;
 
 	public abstract String[] getAliveServersIds() throws DotDataException;

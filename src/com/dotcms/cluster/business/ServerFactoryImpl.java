@@ -134,6 +134,10 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public List<Server> getAliveServers() throws DotDataException {
+		return getAliveServers(new ArrayList<String>());
+	}
+
+	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException {
 		if (DbConnectionFactory.isMsSql()) {
 			dc.setSQL("select DISTINCT s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
 					+ "where DATEDIFF(SECOND, heartbeat, GETDATE()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
@@ -156,7 +160,19 @@ public class ServerFactoryImpl extends ServerFactory {
 		List<Map<String, Object>> results = dc.loadObjectResults();
 
 		for (Map<String, Object> row : results) {
-			aliveServers.add(getServer((String)row.get("server_id")));
+			String serverId = (String)row.get("server_id");
+
+			boolean excluding = false;
+			for (String toExcludeId : toExclude) {
+				if(serverId.equals(toExcludeId)) {
+					excluding = true;
+					break;
+				}
+			}
+
+			if(excluding) continue;
+
+			aliveServers.add(getServer(serverId));
 		}
 
 
