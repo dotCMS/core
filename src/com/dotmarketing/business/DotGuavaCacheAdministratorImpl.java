@@ -227,8 +227,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			localServer.setIpAddress(bindAddr);
 
 			ServerAPI serverAPI = APILocator.getServerAPI();
-			List<Server> aliveServers = serverAPI.getAliveServers();
-			aliveServers.add(localServer);
+
+			List<String> myself = new ArrayList<String>();
+			myself.add(localServer.getServerId());
+
+			List<Server> aliveServers = serverAPI.getAliveServers(myself);
 
 			String initialHosts = "";
 
@@ -237,6 +240,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				if(i>0) {
 					initialHosts += ", ";
 				}
+
 				initialHosts += server.getIpAddress() + "[" + server.getCachePort() + "]";
 				i++;
 			}
@@ -264,13 +268,14 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			System.setProperty("java.net.preferIPv4Stack", UtilMethods.isSet(cacheProperties.get("CACHE_FORCE_IPV4"))?cacheProperties.get("CACHE_FORCE_IPV4")
 					:Config.getStringProperty("CACHE_FORCE_IPV4", "true"));
 			Logger.info(this, "***\t Setting up JChannel");
-			channel = new JChannel(classLoader.getResource(cacheFile));
-			channel.setReceiver(this);
-//			channel.setReceiver(new ReceiverAdapter() {
-//				public void receive(Message msg) {
-//					System.out.println("received msg from " + msg.getSrc() + ": " + msg.getObject());
-//				}
-//			});
+
+			if(channel==null) {
+				channel = new JChannel(classLoader.getResource(cacheFile));
+				channel.setReceiver(this);
+			} else {
+				channel.disconnect();
+			}
+
 			channel.connect("dotCMSCluster");
 			channel.setOpt(JChannel.LOCAL, false);
 			useJgroups = true;

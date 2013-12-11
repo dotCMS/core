@@ -94,6 +94,10 @@ public class ServerAPIImpl implements ServerAPI {
 		return serverFactory.getAliveServers();
 	}
 
+	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException {
+		return serverFactory.getAliveServers(toExclude);
+	}
+
 	public void createServerUptime(String serverId) throws DotDataException {
 		serverFactory.createServerUptime(serverId);
 	}

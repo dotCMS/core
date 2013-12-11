@@ -22,6 +22,8 @@ public interface ServerAPI {
 
 	public List<Server> getAliveServers() throws DotDataException;
 
+	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException;
+
 	public  void writeHeartBeatToDisk(String serverId) throws IOException;
 
 	public void updateServer(Server server) throws DotDataException;
