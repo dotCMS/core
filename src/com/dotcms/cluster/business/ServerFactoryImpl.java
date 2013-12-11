@@ -111,7 +111,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	public List<Server> getAllServers() throws DotDataException {
 		List<Server> servers = new ArrayList<Server>();
 
-		dc.setSQL("select server_id, cluster_id, ip_address, cache_port, es_transport_tcp_port, es_network_port, es_http_port, "
+		dc.setSQL("select server_id, cluster_id, ip_address, host, cache_port, es_transport_tcp_port, es_network_port, es_http_port, "
 				+ "(select max(heartbeat) as last_heartbeat from server_uptime where server_id = s.server_id) as last_heartbeat"
 				+ " from server s");
 		List<Map<String, Object>> results = dc.loadObjectResults();
