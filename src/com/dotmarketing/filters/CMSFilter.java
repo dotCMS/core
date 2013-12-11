@@ -360,15 +360,17 @@ public class CMSFilter implements Filter {
                 	String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
                 	if (!pointer.contains("." + ext + "?")) {
                 		boolean isDotPage = true;
-                		if(!pointer.contains("." + ext) && !pointer.endsWith("/")
-                				&& pointer.substring(pointer.lastIndexOf("/")).contains(".")){
-                			uri = pointer;
-                			try {
-								pointer = LiveCache.getPathFromCache(uri, host);
-							} catch (Exception e) {
-								Logger.debug(this.getClass(), "Can't find pointer " + uri);
-							}
-							isDotPage = false;
+                		if(!pointer.contains("." + ext) && !pointer.endsWith("/") && pointer.contains("/")){
+                			
+                			if(pointer.substring(pointer.lastIndexOf("/")).contains(".")){
+	                			uri = pointer;
+	                			try {
+									pointer = LiveCache.getPathFromCache(uri, host);
+								} catch (Exception e) {
+									Logger.debug(this.getClass(), "Can't find pointer " + uri);
+								}
+								isDotPage = false;
+                			}
                 		}
 
                 		if(isDotPage){
@@ -383,6 +385,9 @@ public class CMSFilter implements Filter {
                 				if(pointer.endsWith("/")){
                 					pointer = pointer.substring(0, pointer.lastIndexOf("/"));
                 				}
+                				if(!pointer.startsWith("/")){
+                					pointer = "/" + pointer;
+                				}     
                 				String endSlash = pointer.substring(pointer.lastIndexOf("/"));
                 				if (!pointer.endsWith("." + ext) && !endSlash.contains("#")) {
                 					if (!pointer.endsWith("/"))
