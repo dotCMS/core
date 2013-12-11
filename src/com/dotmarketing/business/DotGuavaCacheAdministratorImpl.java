@@ -196,8 +196,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 			Logger.info(this, "***\t Going to load JGroups with this Classpath file " + cacheFile);
 
+			String storedBindAddr = (UtilMethods.isSet(localServer.getHost()) && !localServer.getHost().equals("localhost"))
+					?localServer.getHost():localServer.getIpAddress();
+
 			String bindAddr = UtilMethods.isSet(cacheProperties.get("CACHE_BINDADDRESS"))?cacheProperties.get("CACHE_BINDADDRESS")
-					:Config.getStringProperty("CACHE_BINDADDRESS", localServer.getIpAddress());
+					:Config.getStringProperty("CACHE_BINDADDRESS", storedBindAddr );
 
 			if (bindAddr != null) {
 				Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
@@ -224,7 +227,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			}
 
 			localServer.setCachePort(Integer.parseInt(bindPort));
-			localServer.setIpAddress(bindAddr);
+			localServer.setHost(bindAddr);
 
 			ServerAPI serverAPI = APILocator.getServerAPI();
 
@@ -241,12 +244,20 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 					initialHosts += ", ";
 				}
 
-				initialHosts += server.getIpAddress() + "[" + server.getCachePort() + "]";
+				if(UtilMethods.isSet(server.getHost()) && !server.getHost().equals("localhost")) {
+					initialHosts += server.getHost() + "[" + server.getCachePort() + "]";
+				} else {
+					initialHosts += server.getIpAddress() + "[" + server.getCachePort() + "]";
+				}
 				i++;
 			}
 
 			if(initialHosts.equals("")) {
-				initialHosts += bindAddr + "[" + bindPort + "]";
+				if(bindAddr.equals("localhost")) {
+					initialHosts += localServer.getIpAddress() + "[" + bindPort + "]";
+				} else {
+					initialHosts += bindAddr + "[" + bindPort + "]";
+				}
 			}
 
 			String cacheTCPInitialHosts = UtilMethods.isSet(cacheProperties.get("CACHE_TCP_INITIAL_HOSTS"))?cacheProperties.get("CACHE_TCP_INITIAL_HOSTS")

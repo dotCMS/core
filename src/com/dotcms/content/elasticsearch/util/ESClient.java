@@ -104,8 +104,13 @@ public class ESClient {
 			String address = addr.getHostAddress();
 			currentServer.setIpAddress(address);
 
+			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
+					?currentServer.getHost():currentServer.getIpAddress();
 
-			System.setProperty("es.network.host", currentServer.getIpAddress() );
+			String bindAddr = properties!=null && UtilMethods.isSet(properties.get("ES_NETWORK_HOST")) ? properties.get("ES_NETWORK_HOST")
+					:Config.getStringProperty("es.network.host", storedBindAddr);
+
+			System.setProperty("es.network.host", bindAddr );
 
 			String transportTCPPort = properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT")) ? properties.get("ES_TRANSPORT_TCP_PORT")
 					:UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
@@ -141,8 +146,22 @@ public class ESClient {
 				if(i>0) {
 					initialHosts += ", ";
 				}
-				initialHosts += server.getIpAddress() + "[" + server.getEsTransportTcpPort() + "]";
+
+				if(UtilMethods.isSet(server.getHost()) && !server.getHost().equals("localhost")) {
+					initialHosts += server.getHost() + "[" + server.getEsTransportTcpPort() + "]";
+				} else {
+					initialHosts += server.getIpAddress() + "[" + server.getEsTransportTcpPort() + "]";
+				}
+
 				i++;
+			}
+
+			if(initialHosts.equals("")) {
+				if(bindAddr.equals("localhost")) {
+					initialHosts += currentServer.getIpAddress() + "[" + transportTCPPort + "]";
+				} else {
+					initialHosts += bindAddr + "[" + transportTCPPort + "]";
+				}
 			}
 
 			System.setProperty("es.discovery.zen.ping.unicast.hosts",initialHosts);

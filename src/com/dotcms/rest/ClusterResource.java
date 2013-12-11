@@ -139,6 +139,7 @@ public class ClusterResource extends WebResource {
         	JSONObject jsonNode = new JSONObject();
     		jsonNode.put( "serverId", server.getServerId());
     		jsonNode.put( "ipAddress", server.getIpAddress());
+    		jsonNode.put( "host", server.getHost());
 
     		Boolean cacheStatus = false;
     		Boolean esStatus = false;
@@ -148,9 +149,14 @@ public class ClusterResource extends WebResource {
     		for ( Address member : members ) {
     			PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, member));
     			IpAddress ipAddr = (IpAddress)physicalAddr;
+    			String[] addrParts = physicalAddr.toString().split(":");
+    			String cacheLivePort = addrParts[addrParts.length-1];
 
-    			if(nodeCacheWholeAddr.equals(ipAddr.toString()) || (nodeCacheWholeAddr.replace("localhost", "127.0.0.1").equals(ipAddr.toString()))
-    					|| (nodeCacheWholeAddr.replace("127.0.0.1", "localhost").equals(ipAddr.toString()))) {
+    			if(nodeCacheWholeAddr.equals(ipAddr.toString())
+    					|| ( cacheLivePort.equals(server.getCachePort().toString()) &&
+    							(ipAddr.toString().contains("localhost") || ipAddr.toString().contains("127.0.0.1"))
+    						)
+    			   ) {
     				cacheStatus = true;
     				break;
     			}
@@ -166,7 +172,11 @@ public class ClusterResource extends WebResource {
 					DiscoveryNode node = nodeInfo.getNode();
 					String address = node.getAddress().toString();
 
-					if(address.contains(nodeESWholeAddr) || address.contains(nodeESWholeAddr.replace("localhost", "127.0.0.1"))) {
+					if(address.contains(nodeESWholeAddr)
+							|| (address.contains(":" + server.getEsTransportTcpPort())
+									&& (address.contains("localhost") || address.contains("127.0.0.1"))
+								)
+						) {
 						esStatus = true;
 						break;
 					}

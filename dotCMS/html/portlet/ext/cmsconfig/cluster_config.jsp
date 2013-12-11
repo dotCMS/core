@@ -39,7 +39,7 @@ html {overflow-y: scroll;}
 
 .node > h1 {
   margin-bottom: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
   text-align: left;
   text-shadow: 0 -1px rgba(0, 0, 0, 0.4);
@@ -77,10 +77,22 @@ div.centre
 
 
 .listingTable2  th, .listingTable2 td {
-font-size: 11px;
 padding:5px 8px;
 border:0px solid #d0d0d0;
 }
+
+.listingTable2 td {
+font-size: 11px
+}
+
+.listingTable td {
+font-size: 11px
+}
+
+.nodesTable th {
+background: #F7F7F7
+}
+
 
 </style>
 <script type="text/javascript">
@@ -107,7 +119,6 @@ function renderCacheClusterStatus() {
 									+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_received_messages") %></td><td>"+(cacheClusterStatus.receivedMessages?cacheClusterStatus.receivedMessages:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
 									+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_sent_bytes") %></td><td>"+(cacheClusterStatus.sentBytes?cacheClusterStatus.sentBytes:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
 									+ "<tr><td class='left_td'><%= LanguageUtil.get(pageContext, "configuration_cluster_sent_messages") %></td><td>"+(cacheClusterStatus.sendMessages?cacheClusterStatus.sendMessages:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>")+"</td></tr>"
-			// 							+ "<tr><td class='left_td'>Cache Status</td><td><div id='cache_"+item.id+"'style='cursor:pointer;background:GREEN; width:20px;height:20px;'></td></tr>"
 									+ "</table>"
 					});
 
@@ -168,14 +179,15 @@ function renderNodesStatus() {
 		handleAs : "json",
 		load : function(data) {
 			nodeList = data;
-			var nodesTableHTML = "<table style='width:100%; font-size:11px; '> "
-				+ "<tr ><th style='background: #F7F7F7; border-left:0px'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
-				+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
-				+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
-				+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_cache_status") %></th>"
-				+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_cache_port") %></th>"
-				+ "<th style='background: #F7F7F7'><%= LanguageUtil.get(pageContext, "configuration_cluster_es_status") %></th>"
-				+ "<th style='background: #F7F7F7; border-right:0px'><%= LanguageUtil.get(pageContext, "configuration_cluster_es_port") %></th>"
+			var nodesTableHTML = "<table style='width:100%; font-size:11px;' class='nodesTable'> "
+				+ "<tr ><th style='border-left:0px'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
+				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
+				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
+				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
+				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_config_cache") %></th>"
+				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_cache_port") %></th>"
+				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_es_status") %></th>"
+				+ "<th style='border-right:0px'><%= LanguageUtil.get(pageContext, "configuration_cluster_es_port") %></th>"
 				+ "</tr>";
 
 				dojo.forEach(nodeList, function(item, index){
@@ -190,14 +202,15 @@ function renderNodesStatus() {
 						dijit.byId("wireButton").setLabel('<%= LanguageUtil.get(pageContext, "configuration_cluster_rewire_node") %>');
 					}
 
-					nodesTableHTML +=	"<tr><td style='vertical-align:middle; border-left:0px'><table class='listingTable2'><td width=3px'><span class='backupIcon' ></span></td>"
-					+ "<td width='240px' style='text-align:left; '>" + item.serverId + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
+					nodesTableHTML +=	"<tr><td style='vertical-align:middle; border-left:0px'><table class='listingTable2' style='width:100%'><td width=3px'><span class='backupIcon' ></span></td>"
+					+ "<td width='240px' style='text-align:left;'>" + item.serverId + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
+					+ "<td align='left'>"+item.host+"</td>"
 					+ "<td align='left'>"+item.ipAddress+"</td>"
 					+ "<td align='left'>"+item.contacted+" secs ago</td>"
 					+ "<td align='center'><div style='background:"+cacheBg+"; width:20px;height:20px;'>"+cacheText+"</div></td>"
 					+ "<td align='left'>"+(item.cachePort?item.cachePort:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>") +"</td>"
 					+ "<td align='center'><div style='background:"+esBg+"; width:20px;height:20px;'>"+esText+"</div></td>"
-					+ "<td align='left' style='border-right:0px'>"+(item.esPort?item.esPort:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>") +"</td>"
+					+ "<td align='left' style='border-right:0px; font-size:11px'>"+(item.esPort?item.esPort:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>") +"</td>"
 					+ "</tr>";
 				});
 
@@ -414,7 +427,7 @@ function hideErrorDetail(element) {
 	style="display: none; width:550px">
     <div style="padding:0px 15px;">
 <!--       <form action="/api/cluster/wirenode/" id="propertiesForm" method="post"> -->
-      		<div style="padding-top: 10px; padding-bottom: 10px; text-align: center; font-size: 12px">
+      		<div style="padding-top: 10px; padding-bottom: 10px; text-align: center; font-size: 11px">
 				<input type="radio" dojoType="dijit.form.RadioButton" onChange="enableCustomProps()" value=""
 					name="propsRadio" id="defaultPropsRadio" checked="checked"><label for="defaultPropsRadio"><%= LanguageUtil.get(pageContext, "configuration_cluster_use_default_properties") %></label>&nbsp;
 				<input type="radio" dojoType="dijit.form.RadioButton" onChange="disableCustomProps()" value=""
