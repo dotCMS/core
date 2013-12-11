@@ -3,6 +3,7 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -132,8 +133,11 @@ public class ESClient {
 
 			System.setProperty("es.discovery.zen.ping.timeout",
 					Config.getStringProperty("es.discovery.zen.ping.timeout", "5s") );
+			
+			List<String> myself = new ArrayList<String>();
+			myself.add(currentServer.getServerId());
 
-			List<Server> aliveServers = serverAPI.getAliveServers();
+			List<Server> aliveServers = serverAPI.getAliveServers(myself);
 
 			currentServer.setEsTransportTcpPort(Integer.parseInt(transportTCPPort));
 
