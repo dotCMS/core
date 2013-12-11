@@ -104,8 +104,8 @@ public class ClusterFactory {
 		esProperties.put(ES_NETWORK_HOST,
 				UtilMethods.isSet(properties.get(ES_NETWORK_HOST.toString())) ? properties.get(ES_NETWORK_HOST.toString()) : currentServer.getIpAddress() );
 
-		esProperties.put(ES_TRANSPORT_TCP_PORT, UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString()
-				:UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString()) : getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT) );
+		esProperties.put(ES_TRANSPORT_TCP_PORT, UtilMethods.isSet(properties.get(ES_TRANSPORT_TCP_PORT.toString())) ? properties.get(ES_TRANSPORT_TCP_PORT.toString())
+				:UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT) );
 
 		if(Config.getStringProperty("es.http.enabled", "false").equalsIgnoreCase("true")) {
 			esProperties.put(ES_HTTP_PORT, UtilMethods.isSet(currentServer.getEsHttpPort())?currentServer.getEsHttpPort().toString()

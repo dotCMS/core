@@ -22,8 +22,10 @@ import org.jgroups.Address;
 import org.jgroups.ChannelClosedException;
 import org.jgroups.ChannelException;
 import org.jgroups.ChannelNotConnectedException;
+import org.jgroups.Event;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
+import org.jgroups.PhysicalAddress;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 
@@ -207,8 +209,8 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				System.setProperty("jgroups.bind_addr", bindAddr);
 			}
 
-			String bindPort = localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
-					:UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
+			String bindPort = UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
+					:localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
 					:ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
 
 			if (bindPort != null) {
@@ -273,8 +275,12 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			channel.setOpt(JChannel.LOCAL, false);
 			useJgroups = true;
 			channel.send(new Message(null, null, TEST_MESSAGE));
-			List<Address> members = channel.getView().getMembers();;
+			Address channelAddress = channel.getAddress();
+			PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, channelAddress));
+			String[] addrParts = physicalAddr.toString().split(":");
+			String usedPort = addrParts[addrParts.length-1];
 
+			localServer.setCachePort(Integer.parseInt(usedPort));
 			serverAPI.updateServer(localServer);
 
 			Logger.info(this, "***\t " + channel.toString(true));

@@ -8,7 +8,6 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -35,7 +34,6 @@ import org.jgroups.PhysicalAddress;
 import org.jgroups.View;
 import org.jgroups.stack.IpAddress;
 
-import com.dotcms.cluster.bean.ESProperty;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ClusterFactory;
@@ -47,7 +45,6 @@ import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.DotConfig;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -277,51 +274,17 @@ public class ClusterResource extends WebResource {
         ServerAPI serverAPI = APILocator.getServerAPI();
 
         String serverId = serverAPI.readServerId();
+        Server server = serverAPI.getServer(serverId);
         String cachePort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.CACHE_PORT);
         String esPort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
 
         jsonNode.put("CACHE_PROTOCOL", "tcp");
-        jsonNode.put("CACHE_BINDPORT", cachePort);
+        jsonNode.put("CACHE_BINDPORT", server!=null&&UtilMethods.isSet(server.getCachePort())?server.getCachePort():cachePort);
         jsonNode.put("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
         jsonNode.put("CACHE_MULTICAST_PORT", "45589");
-        jsonNode.put("ES_TRANSPORT_TCP_PORT", esPort);
+        jsonNode.put("ES_TRANSPORT_TCP_PORT", server!=null&&UtilMethods.isSet(server.getEsTransportTcpPort())?server.getEsTransportTcpPort():esPort);
 
         return responseResource.response( jsonNode.toString() );
-
-    }
-
-    /**
-     * Returns a Map of the ES Cluster Nodes Status
-     *
-     * @param request
-     * @param params
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws JSONException
-     */
-    @POST
-
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Path ("/updateESConfigProperties/{params:.*}")
-    @Produces ("application/json")
-    public String updateESConfigProperties ( @Context HttpServletRequest request, @FormParam("accept") String accept ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
-
-//        InitDataObject initData = init( params, true, request, false );
-//        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-
-
-        JSONObject clusterProps = new JSONObject();
-        Iterator<String> keys = DotConfig.getKeys();
-
-        while ( keys.hasNext() ) {
-        	String key = keys.next();
-        	clusterProps.put( key, DotConfig.getStringProperty(key));
-		}
-
-//        return responseResource.response( clusterProps.toString() );
-        return "true";
 
     }
 
@@ -342,6 +305,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response wireNode ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
         InitDataObject initData = init( params, true, request, false ); // TODO rejectWhenNoUser has to be true
+        JSONObject jsonNode = new JSONObject();
 
         if(request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
             HashMap<String,String> map=new HashMap<String,String>();
@@ -354,24 +318,22 @@ public class ClusterResource extends WebResource {
 	            while(keys.hasNext()) {
 	                String key=keys.next();
 	                Object value=obj.get(key);
-	                List<String> validProperties = ESProperty.getPropertiesList();
-
-	                if(validProperties.contains(key)) {
-	                	map.put(key, value.toString());
-	                }
-
+	                map.put(key, value.toString());
 	            }
 
 	            ClusterFactory.addNodeToCluster(map, APILocator.getServerAPI().readServerId());
 
+	            jsonNode.put("result", "OK");
+
             } catch (Exception e) {
-            	initData.getParamsMap().put("error", e.getMessage());
 				Logger.error(ClusterResource.class, "Error wiring a new node to the Cluster", e);
+				jsonNode.put("result", "ERROR:" + e.getMessage());
+				jsonNode.put("detail", e.getCause());
 			}
         }
 
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-        return responseResource.response( );
+        return responseResource.response(jsonNode.toString());
 
 
     }
