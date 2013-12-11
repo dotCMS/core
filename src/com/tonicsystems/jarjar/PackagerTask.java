@@ -35,6 +35,7 @@ public class PackagerTask extends JarJarTask {
 
     private Vector<FileSet> filesets = new Vector<FileSet>();
     private List<Dependency> dependencies = new ArrayList<Dependency>();
+    private List<NamingRule> namingRules = new ArrayList<NamingRule>();
 
     private boolean initialRenameServices;
     private boolean initialVerbose;
@@ -123,7 +124,7 @@ public class PackagerTask extends JarJarTask {
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //PREPARE ALL THE JARS AND RULES TO APPLY
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        HashMap<String, Rule> rulesToApply = new HashMap<String, Rule>();
+        HashMap<String, CustomRule> rulesToApply = new HashMap<String, CustomRule>();
 
         //Get all the classes we found
         HashMap<String, List<Inspector.PathInfo>> classes = inspector.getClasses();
@@ -131,80 +132,69 @@ public class PackagerTask extends JarJarTask {
 
             //Collection with the info of found for each class
             List<Inspector.PathInfo> details = classes.get( name );
-            Inspector.PathInfo detail = details.get( 0 );//Grabbing the first one, could be more than one for duplicated classes
-            File jarFile = detail.base;
+            for ( Inspector.PathInfo detail : details ) {//Duplicated classes as present in multiple jars
+                File jarFile = detail.base;
 
-            //Handle some strings to use in the rules
-            String packageName;
-            if ( name.lastIndexOf( "." ) != -1 ) {
-                //Get the package of the class (from my.package.myClassName to my.package)
-                packageName = name.substring( 0, name.lastIndexOf( "." ) );
+                //Handle some strings to use in the rules
+                String packageName;
+                if ( name.lastIndexOf( "." ) != -1 ) {
+                    //Get the package of the class (from my.package.myClassName to my.package)
+                    packageName = name.substring( 0, name.lastIndexOf( "." ) );
 
-                if ( !packageName.contains( "." ) && packageName.equals( "common" ) ) {
+                    if ( !packageName.contains( "." ) && packageName.equals( "common" ) ) {
                     /*
                      FIXME: We don't want something like common.**, a very small an common package, replacing this is dangerous
                      */
+                        continue;
+                    }
+                } else {
+                    //On the root??, no package??
                     continue;
                 }
-            } else {
-                //On the root??, no package??
-                continue;
-            }
 
-            //Handle the packages we marked to exclude by jar
-            Boolean ignorePackage = false;
-            for ( Dependency dependency : dependencies ) {
+                //Handle the packages we marked to exclude by jar
+                Boolean ignorePackage = ignorePackage( jarFile, packageName );
+                if ( ignorePackage ) {
+                    continue;
+                }
 
-                //Verify if we have packages to ignore on this dependency
-                List<Dependency.Ignore> toIgnore = dependency.getPackagesToIgnore();
-                if ( toIgnore != null && !toIgnore.isEmpty() ) {
+                //Create a name to be part of the resulting package name
+                String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
+                //String jarNameForPackage = "_" + getDotVersion() + "_";
+                jarNameForPackage = jarNameForPackage.replaceAll( "-", "_" );
+                jarNameForPackage = jarNameForPackage.replaceAll( "\\.", "_" );
+                jarNameForPackage = jarNameForPackage.toLowerCase();
 
-                    for ( Dependency.Ignore ignore : toIgnore ) {
-                        File owner = new File( dependency.getPath() );
-                        if ( packageName.startsWith( ignore.getParentPackage() ) && jarFile.getName().equals( owner.getName() ) ) {
-                            ignorePackage = true;
-                            break;
-                        }
+                /*
+                 Verify if we have some explicit naming rules for this jar.
+                 How it works:
+                    Example: all the jars that contains the word jersey (jersey-client-1.12.jar, jersey-core-1.12.jar, jersey-json-1.12.jar, etc)
+                    will share the same repackaged name "jersey_1_12" --> com.dot.repackage.jersey_1_12
+                 */
+                for ( NamingRule namingRule : namingRules ) {
+                    if ( jarNameForPackage.contains( namingRule.getPattern() ) ) {
+                        jarNameForPackage = namingRule.getReplacement();
+                        break;
                     }
                 }
 
-                if ( ignorePackage ) {
-                    break;
+                //Create the rule for this class and add it to the list of rules for this jar
+                String pattern = packageName + ".*";//Example: "org.apache.xerces.dom.*"
+                if ( packageName.equals( "org.elasticsearch.common.joda.time.tz" ) ) {//For this package we can not be so strict as is not contains .class files but instead a lot of resources
+                    pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
                 }
-            }
-            if ( ignorePackage ) {
-                continue;
-            }
+                String result = "com.dotcms.repackage." + jarNameForPackage + "." + packageName + ".@1";
 
-            //Create a name to be part of the resulting package name
-            String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
-            //String jarNameForPackage = "_" + getDotVersion() + "_";
-            jarNameForPackage = jarNameForPackage.replaceAll( "-", "_" );
-            jarNameForPackage = jarNameForPackage.replaceAll( "\\.", "_" );
-            jarNameForPackage = jarNameForPackage.toLowerCase();
+                CustomRule rule = new CustomRule();
+                rule.setPattern( pattern );
+                rule.setResult( result );
+                rule.setParent( jarFile.getName() );
 
-            if (jarNameForPackage.contains( "jersey" )) {
-                jarNameForPackage = "jersey";
-            } else if (jarNameForPackage.contains( "lucene" )) {
-                jarNameForPackage = "lucene";
-            } else if (jarNameForPackage.contains( "sslext" )) {
-                jarNameForPackage = "struts";
-            }
+                //Global list of rules to apply
+                if ( !rulesToApply.containsKey( pattern + result ) ) {
+                    rulesToApply.put( pattern + result, rule );
+                }
 
-            //Create the rule for this class and add it to the list of rules for this jar
-            String pattern = packageName + ".*";//Example: "org.apache.xerces.dom.*"
-            if (packageName.equals( "org.elasticsearch.common.joda.time.tz" )) {//For this package we can not be so strict as is not contains .class files but instead a lot of resources
-                pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
-            }
-            String result = "com.dotcms.repackage." + jarNameForPackage + "." + packageName + ".@1";
-
-            Rule rule = new Rule();
-            rule.setPattern( pattern );
-            rule.setResult( result );
-
-            //Global list of rules to apply
-            if ( !rulesToApply.containsKey( pattern + result ) ) {
-                rulesToApply.put( pattern + result, rule );
             }
         }
 
@@ -364,7 +354,7 @@ public class PackagerTask extends JarJarTask {
             int chunks = 200;
             int i = 0;
             String searchPatters = "";
-            for ( Rule rule : rulesToApply.values() ) {
+            for ( CustomRule rule : rulesToApply.values() ) {
 
                 //Clean-up the pattern
                 String pattern = rule.getPattern();
@@ -438,7 +428,7 @@ public class PackagerTask extends JarJarTask {
      * @param jarPath
      * @param rulesToApply
      */
-    private void repackageDependent ( String jarPath, HashMap<String, Rule> rulesToApply ) {
+    private void repackageDependent ( String jarPath, HashMap<String, CustomRule> rulesToApply ) {
 
         File jarFile = new File( jarPath );
         String jarName = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
@@ -476,7 +466,7 @@ public class PackagerTask extends JarJarTask {
      * @param rules   rules to apply
      * @param jars    jars to integrate into one
      */
-    private void generate ( File outFile, Collection<Rule> rules, Collection<File> jars ) {
+    private void generate ( File outFile, Collection<CustomRule> rules, Collection<File> jars ) {
         generate( outFile, rules, jars, initialRenameServices );
     }
 
@@ -488,7 +478,11 @@ public class PackagerTask extends JarJarTask {
      * @param jars           jars to integrate into one
      * @param renameServices rename the services files
      */
-    private void generate ( File outFile, Collection<Rule> rules, Collection<File> jars, boolean renameServices ) {
+    private void generate ( File outFile, Collection<CustomRule> rules, Collection<File> jars, boolean renameServices ) {
+
+        //First lets sort the rules collection, first the rules created from this jar
+        List<CustomRule> rulesList = new ArrayList<CustomRule>( rules );
+        Collections.sort( rulesList, new CustomRule().new RuleSortByParent( outFile.getName() ) );
 
         //Destiny file
         setDestFile( outFile );
@@ -505,7 +499,16 @@ public class PackagerTask extends JarJarTask {
 
         //Prepare the rules for these groups of jar
         List<PatternElement> patterns = new ArrayList<PatternElement>();
-        for ( Rule rule : rules ) {
+        for ( CustomRule rule : rulesList ) {
+
+            if ( jars.size() == 1 ) {
+                //Handle the packages we marked to exclude by jar
+                Boolean ignorePackage = ignorePackage( jars.iterator().next(), rule.getPattern() );
+                if ( ignorePackage ) {
+                    continue;
+                }
+            }
+
             addConfiguredRule( rule );
             patterns.add( rule );
         }
@@ -522,6 +525,43 @@ public class PackagerTask extends JarJarTask {
 
         //Clean everything and get ready to start again
         super.reset();
+    }
+
+    /**
+     * Verify if a package was marked to be exclude on this jar
+     *
+     * @param jarFile
+     * @param packageName
+     * @return
+     */
+    private Boolean ignorePackage ( File jarFile, String packageName ) {
+
+        packageName = packageName.replace( ".**", "" );
+        packageName = packageName.replace( ".*", "" );
+
+        //Handle the packages we marked to exclude by jar
+        Boolean ignorePackage = false;
+        for ( Dependency dependency : dependencies ) {
+
+            //Verify if we have packages to ignore on this dependency
+            List<Dependency.Ignore> toIgnore = dependency.getPackagesToIgnore();
+            if ( toIgnore != null && !toIgnore.isEmpty() ) {
+
+                for ( Dependency.Ignore ignore : toIgnore ) {
+                    File owner = new File( dependency.getPath() );
+                    if ( packageName.startsWith( ignore.getParentPackage() ) && jarFile.getName().equals( owner.getName() ) ) {
+                        ignorePackage = true;
+                        break;
+                    }
+                }
+            }
+
+            if ( ignorePackage ) {
+                break;
+            }
+        }
+
+        return ignorePackage;
     }
 
     /**
@@ -555,6 +595,7 @@ public class PackagerTask extends JarJarTask {
         log( "" );
         log( "-----------------------------------------" );
         log( "Repackaging... " );
+        log( "" );
         for ( File jar : jars ) {
             log( jar.getName() );
         }
@@ -562,14 +603,14 @@ public class PackagerTask extends JarJarTask {
         //-------------------------------
     }
 
-    private void logRules ( Collection<Rule> rules ) {
+    private void logRules ( Collection<CustomRule> rules ) {
 
         //-------------------------------
         //SOME LOGGING
         log( "" );
         log( "-----------------------------------------" );
         log( "Rules to apply: " );
-        for ( Rule rule : rules ) {
+        for ( CustomRule rule : rules ) {
             log( rule.getPattern() + " --> " + rule.getResult() );
         }
         //-------------------------------
@@ -684,6 +725,13 @@ public class PackagerTask extends JarJarTask {
 
     public void addFileset ( FileSet fileset ) {
         filesets.add( fileset );
+    }
+
+    public NamingRule createNamingRule () {
+        NamingRule namingRule = new NamingRule();
+        namingRules.add( namingRule );
+
+        return namingRule;
     }
 
     public Dependency createDependency () {

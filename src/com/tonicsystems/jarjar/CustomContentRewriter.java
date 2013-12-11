@@ -16,7 +16,7 @@ public class CustomContentRewriter implements ContentRewriter {
 
     private final List<MatchableRule> rules = new LinkedList<MatchableRule>();
 
-    public CustomContentRewriter ( Collection<Rule> ruleList ) {
+    public CustomContentRewriter ( Collection<? extends Rule> ruleList ) {
         for ( Rule rule : ruleList ) {
             rules.add( new MatchableRule( rule ) );
         }

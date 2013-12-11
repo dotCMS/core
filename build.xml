@@ -903,7 +903,7 @@
 
 <target name="deploy-tests" depends="uncomment-test-servlet, build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
-<target name="deploy-tests-no-jsp" depends="uncomment-test-servlet, build-no-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
+<target name="deploy-tests-no-jsp" depends="uncomment-test-servlet, build-no-jsp, deploy-core-with-tests-no-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
 <target name="deploy-dev" depends="deploy-plugins"/>
 
