@@ -1186,7 +1186,7 @@
         <copy todir="${tomcat7.home}/lib/">
             <fileset dir="libs/buildlibs/">
                 <include name="log4j-1.2.16.jar"/>
-                <include name="dotcms_log4j.jar"/>
+                <include name="log4j-appenders-1.0.jar"/>
                 <include name="log4j.xml"/>
 
                 <include name="mysql-connector-java-5.1.23-bin.jar"/>
