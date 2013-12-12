@@ -25,12 +25,8 @@ package com.liferay.portal.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -136,7 +132,7 @@ public class MainServlet extends ActionServlet {
 				throw new ServletException(e1);
 			}
 
-			// BEGIN Clustering
+			// Clustering
 			try {
 				ClusterFactory.generateClusterId();
 			} catch (DotDataException e) {
@@ -150,11 +146,16 @@ public class MainServlet extends ActionServlet {
 				Server server = serverAPI.getServer(serverId);
 
 				if(!UtilMethods.isSet(serverId) || server==null)  {
-
+					InetAddress addr = InetAddress.getLocalHost();
+			        // Get IP Address
+			        byte[] ipAddr = addr.getAddress();
+			        addr = InetAddress.getByAddress(ipAddr);
+			        String address = addr.getHostAddress();
 			        server = new Server();
 			        if(UtilMethods.isSet(serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID"))) {
 			        	server.setServerId(serverId);
 			        }
+			        server.setIpAddress(address);
 			        serverAPI.saveServer(server);
 
 			        try {
@@ -180,8 +181,8 @@ public class MainServlet extends ActionServlet {
 
 		        serverAPI.updateHeartbeat();
 
-//			} catch (UnknownHostException e3) {
-//				Logger.error(getClass(), "Could not get Local Host", e3);
+			} catch (UnknownHostException e3) {
+				Logger.error(getClass(), "Could not get Local Host", e3);
 			} catch (DotDataException e) {
 				Logger.error(getClass(), "Could not save Server to DB", e);
 			}
