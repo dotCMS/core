@@ -169,24 +169,9 @@ public class MainServlet extends ActionServlet {
 				}
 
 		        serverAPI.createServerUptime(serverId);
-		        List<Server> aliveServers = serverAPI.getAliveServers();
-		        boolean sameAssetsDir = false;
-		        boolean anyOtherServerAlive = false;
 
-		        if(aliveServers!=null && !aliveServers.isEmpty()) {
-		        	Server randomAliveServer = aliveServers.get(0);
-		        	String randomServerId = randomAliveServer.getServerId();
-		        	anyOtherServerAlive = UtilMethods.isSet(randomServerId);
 
-		        	if(anyOtherServerAlive) {
-			        	String serverFilePath = Config.getStringProperty("ASSET_REAL_PATH", Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")))
-			        			+ java.io.File.separator + "server" + java.io.File.separator + randomServerId + java.io.File.separator + "heartbeat.dat";
-			        	File file = new File(serverFilePath);
-			        	sameAssetsDir = file.exists();
-		        	}
-		        }
-
-		        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) && (!anyOtherServerAlive || (anyOtherServerAlive && sameAssetsDir))) {
+		        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)) {
 		        	try {
 						ClusterFactory.addNodeToCluster(serverId);
 					} catch (Exception e) {

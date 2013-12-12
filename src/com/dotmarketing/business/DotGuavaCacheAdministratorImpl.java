@@ -152,29 +152,6 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	}
 
-//	public void setCluster() {
-//		JChannel channel;
-//		try {
-//			System.setProperty("java.net.preferIPv4Stack", "true");
-//
-//			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-//			String cacheFile = "udp.xml";
-//			channel = new JChannel(classLoader.getResource(cacheFile));
-//
-//			channel.setReceiver(new ReceiverAdapter() {
-//				public void receive(Message msg) {
-//					System.out.println("received msg from " + msg.getSrc() + ": " + msg.getObject());
-//				}
-//			});
-//			channel.connect("MyCluster");
-//			channel.send(new Message(null, null, "hello world"));
-////			channel.close();
-//		} catch (ChannelException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//	}
-
 	public void setCluster(Server localServer) throws Exception {
 		setCluster(null, localServer);
 	}

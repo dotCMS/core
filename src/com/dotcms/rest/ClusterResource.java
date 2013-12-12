@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -144,7 +146,6 @@ public class ClusterResource extends WebResource {
     		Boolean cacheStatus = false;
     		Boolean esStatus = false;
     		String nodeCacheWholeAddr = server.getIpAddress() + ":" + server.getCachePort();
-    		String nodeESWholeAddr = server.getIpAddress() + ":" + server.getEsTransportTcpPort();
 
     		for ( Address member : members ) {
     			PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, member));
@@ -153,13 +154,14 @@ public class ClusterResource extends WebResource {
     			String cacheLivePort = addrParts[addrParts.length-1];
 
     			if(nodeCacheWholeAddr.equals(ipAddr.toString())
-    					|| ( cacheLivePort.equals(server.getCachePort().toString()) &&
+    					|| ( server.getCachePort()!=null && cacheLivePort.equals(server.getCachePort().toString()) &&
     							(ipAddr.toString().contains("localhost") || ipAddr.toString().contains("127.0.0.1"))
     						)
     			   ) {
     				cacheStatus = true;
     				break;
     			}
+
     		}
 
     		if(esClient!=null) {
@@ -170,13 +172,8 @@ public class ClusterResource extends WebResource {
 
 	    		for (NodeInfo nodeInfo : esNodes) {
 					DiscoveryNode node = nodeInfo.getNode();
-					String address = node.getAddress().toString();
 
-					if(address.contains(nodeESWholeAddr)
-							|| (address.contains(":" + server.getEsTransportTcpPort())
-									&& (address.contains("localhost") || address.contains("127.0.0.1"))
-								)
-						) {
+					if(node.getName().equals(server.getServerId())) {
 						esStatus = true;
 						break;
 					}
@@ -202,6 +199,17 @@ public class ClusterResource extends WebResource {
     		jsonNode.put("myself", myServerId.equals(server.getServerId()));
     		jsonNode.put("cachePort", server.getCachePort());
     		jsonNode.put("esPort", server.getEsTransportTcpPort());
+
+    		String hostName = "";
+    		try {
+    			hostName = InetAddress.getLocalHost().getHostName();
+
+			} catch (UnknownHostException e) {
+				Logger.error(ClusterResource.class, "Error trying to get the host name. ", e);
+			}
+
+
+    		jsonNode.put("friendlyName", hostName);
 
 
     		//Added to the response list
@@ -288,10 +296,9 @@ public class ClusterResource extends WebResource {
         String cachePort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.CACHE_PORT);
         String esPort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
 
-        jsonNode.put("CACHE_PROTOCOL", "tcp");
         jsonNode.put("CACHE_BINDPORT", server!=null&&UtilMethods.isSet(server.getCachePort())?server.getCachePort():cachePort);
-        jsonNode.put("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
-        jsonNode.put("CACHE_MULTICAST_PORT", "45589");
+//        jsonNode.put("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
+//        jsonNode.put("CACHE_MULTICAST_PORT", "45589");
         jsonNode.put("ES_TRANSPORT_TCP_PORT", server!=null&&UtilMethods.isSet(server.getEsTransportTcpPort())?server.getEsTransportTcpPort():esPort);
 
         return responseResource.response( jsonNode.toString() );

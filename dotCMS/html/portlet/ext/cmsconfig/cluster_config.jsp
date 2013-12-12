@@ -97,7 +97,6 @@ background: #F7F7F7
 </style>
 <script type="text/javascript">
 
-
 // Cache Cluster Status
 function renderCacheClusterStatus() {
 	var cacheClusterStatus;
@@ -180,7 +179,7 @@ function renderNodesStatus() {
 		load : function(data) {
 			nodeList = data;
 			var nodesTableHTML = "<table style='width:100%; font-size:11px;' class='nodesTable'> "
-				+ "<tr ><th style='border-left:0px'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
+				+ "<tr>"
 				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
 				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
 				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
@@ -188,6 +187,7 @@ function renderNodesStatus() {
 				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_cache_port") %></th>"
 				+ "<th><%= LanguageUtil.get(pageContext, "configuration_cluster_es_status") %></th>"
 				+ "<th style='border-right:0px'><%= LanguageUtil.get(pageContext, "configuration_cluster_es_port") %></th>"
+				+ "<th style='border-right:0px'><%= LanguageUtil.get(pageContext, "configuration_cluster_wire_node") %></th>"
 				+ "</tr>";
 
 				dojo.forEach(nodeList, function(item, index){
@@ -196,21 +196,19 @@ function renderNodesStatus() {
 					var cacheText = (item.cacheStatus=='N/A'?"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>":"");
 					var esText = (item.cacheStatus=='N/A'?"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>":"");
 
-					if(item.myself && cacheBg!='GREEN' || esBg!='GREEN') {
-						dijit.byId("wireButton").setDisabled(false);
-					} else {
-						dijit.byId("wireButton").setLabel('<%= LanguageUtil.get(pageContext, "configuration_cluster_rewire_node") %>');
-					}
-
 					nodesTableHTML +=	"<tr><td style='vertical-align:middle; border-left:0px'><table class='listingTable2' style='width:100%'><td width=3px'><span class='backupIcon' ></span></td>"
-					+ "<td width='240px' style='text-align:left;'>" + item.serverId + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
-					+ "<td align='left'>"+item.host+"</td>"
+					+ "<td width='240px' style='text-align:left;'>" + item.friendlyName + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
 					+ "<td align='left'>"+item.ipAddress+"</td>"
 					+ "<td align='left'>"+item.contacted+" secs ago</td>"
 					+ "<td align='center'><div style='background:"+cacheBg+"; width:20px;height:20px;'>"+cacheText+"</div></td>"
 					+ "<td align='left'>"+(item.cachePort?item.cachePort:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>") +"</td>"
 					+ "<td align='center'><div style='background:"+esBg+"; width:20px;height:20px;'>"+esText+"</div></td>"
 					+ "<td align='left' style='border-right:0px; font-size:11px'>"+(item.esPort?item.esPort:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>") +"</td>"
+					+ "<td align='left' style='border-right:0px; font-size:11px'>"
+						+ (item.myself?"<button dojoType='dijit.form.Button' onClick='showClusterPropertiesDialog();' iconClass='plusIcon' id='wireButtonx'> "
+							+ "<%= LanguageUtil.get(pageContext, "configuration_cluster_wire_node") %>"
+			        	+ "</button>":"")
+			        + "</td>"
 					+ "</tr>";
 				});
 
@@ -243,24 +241,40 @@ function showClusterPropertiesDialog() {
 	//ES Cluster Nodes Status
 	var properties;
 
+
 	xhrArgs = {
 		url : "/api/cluster/getESConfigProperties/",
 		handleAs : "json",
 		load : function(data) {
 			properties = data;
-			var html = "<table style='width:100%'>";
+
+			dojo.destroy("propsTable");
+
+			var html = "<table style='width:100%' id='propsTable'>";
 
 			for(var key in properties){
 				var value = properties[key];
-				html += "<tr><td style='font-size:11px; width:50%'><span style='padding-left:15px; font-size:11px;'>"+key+"</span></td><td style='padding:5px'><input class='props' size='40' style='width: 100%; font-size:11px' type='text' data-dojo-type='dijit/form/TextBox' name='"+key+"' value='"+value+"'></input></td></tr>"
+
+				  var checkbox = dijit.byId("use_"+key);
+				  var input = dijit.byId(key);
+
+				  if(checkbox) {
+					  checkbox.destroyRecursive(false);
+				  }
+
+				  if(input) {
+					  input.destroyRecursive(false);
+				  }
+
+				html += "<tr><td><input type='checkbox' data-dojo-type='dijit/form/CheckBox' id='use_"+key+"' onChange='enableDisableProp(\""+key+"\")'></td><td style='font-size:11px; width:50%' ><span style='padding-left:15px; color:#d0d0d0; font-size:11px;' id='label_"+key+"'>"+key+"</span></td><td style='padding:5px; text-align:center'><input class='props' style='font-size:11px; width:50px' type='text' data-dojo-type='dijit/form/TextBox' disabled='disabled'  id='"+key+"' value='"+value+"'></input></td></tr>"
 			};
 
 			html += "</table>"
 
 			dojo.empty(dojo.byId("propertiesDiv"));
 			dojo.place(html, dojo.byId("propertiesDiv"))
+			dojo.parser.parse("propertiesDiv");
 
-			disableCustomProps();
 			dijit.byId('clusterPropertiesDialog').show();
 		},
 		error : function(error) {
@@ -270,18 +284,20 @@ function showClusterPropertiesDialog() {
 
 	deferred = dojo.xhrGet(xhrArgs);
 	dijit.byId('dialogWireButton').setDisabled(false);
-	dijit.byId("defaultPropsRadio").setChecked(true);
+// 	dijit.byId("defaultPropsRadio").setChecked(true);
 	dojo.byId("wiringResult").style.display = 'none';
 
 }
 
-function disableCustomProps() {
-	var props = dojo.query(".props");
+function enableDisableProp(key) {
 
-	dojo.forEach(props, function(entry, i){
-		  entry.disabled = 'disabled';
-		  entry.style = 'color:#d0d0d0'
-		});
+	if(dijit.byId(key).get("disabled")) {
+		dijit.byId(key).set("disabled", false);
+		dojo.byId("label_"+key).style.color = '#555';
+	} else {
+		dijit.byId(key).set("disabled", true);
+		dojo.byId("label_"+key).style.color = '#d0d0d0';
+	}
 }
 
 function enableCustomProps() {
@@ -297,20 +313,23 @@ function wireNode() {
 	var json = "{}";
 	var props = dojo.query(".props");
 
-	var usingCustomProps = dojo.byId("customPropsRadio").checked;
+	json = "{";
+	dojo.forEach(props, function(entry, i){
 
-	if(usingCustomProps) {
-		json = "{";
-		dojo.forEach(props, function(entry, i){
-			  json += "'"+entry.name+"':'"+entry.value+"'";
+		  var realId = entry.id.substring(7, entry.id.length);
+		  var widget = dijit.byId(realId);
 
-			  if(i<props.length-1) {
-				  json += ",";
-			  }
-		});
+		  if(!widget.get("disabled")) {
+		  	json += "'"+widget.get("id")+"':'"+widget.get("value")+"'";
+		  }
 
-		json += "}";
-	}
+		  if(i<props.length-1 && json!="{") {
+			  json += ",";
+		  }
+	});
+
+	json += "}";
+
 
 	xhrArgs = {
 			url : "/api/cluster/wirenode/",
@@ -335,7 +354,7 @@ function wireNode() {
 				}
 			},
 			error : function(error) {
-// 				targetNode.innerHTML = "An unexpected error occurred: " + error;
+				targetNode.innerHTML = "An unexpected error occurred: " + error;
 			}
 		}
 
@@ -393,10 +412,6 @@ function hideErrorDetail(element) {
 			<button  dojoType="dijit.form.Button" onClick="refreshStatus();" iconClass="resetIcon">
             <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
 	        </button>
-<!-- 	        <button dojoType="dijit.form.Button" onClick="showClusterPropertiesDialog();" iconClass="plusIcon" id="wireButton" disabled="disabled"> -->
-	        <button dojoType="dijit.form.Button" onClick="showClusterPropertiesDialog();" iconClass="plusIcon" id="wireButton" >
-	           <%= LanguageUtil.get(pageContext, "configuration_cluster_wire_node") %>
-	        </button>
 		</td>
 	</tr>
    </table>
@@ -424,25 +439,18 @@ function hideErrorDetail(element) {
 
 
 <div id="clusterPropertiesDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "configuration_Cluster_Edit_Config")%>"
-	style="display: none; width:550px">
+	style="display: none; width:350px">
     <div style="padding:0px 15px;">
-<!--       <form action="/api/cluster/wirenode/" id="propertiesForm" method="post"> -->
-      		<div style="padding-top: 10px; padding-bottom: 10px; text-align: center; font-size: 11px">
-				<input type="radio" dojoType="dijit.form.RadioButton" onChange="enableCustomProps()" value=""
-					name="propsRadio" id="defaultPropsRadio" checked="checked"><label for="defaultPropsRadio"><%= LanguageUtil.get(pageContext, "configuration_cluster_use_default_properties") %></label>&nbsp;
-				<input type="radio" dojoType="dijit.form.RadioButton" onChange="disableCustomProps()" value=""
-					name="propsRadio" id="customPropsRadio" ><label for="customPropsRadio"><%= LanguageUtil.get(pageContext, "configuration_cluster_use_custom_properties") %></label>
-			</div>
 			<div id="wiringResult" style="display: none; text-align: center; font-size:11px; padding-bottom: 10px">
 				<span id="wireResult"></span>
-				<a href='#' onclick="showErrorDetail(this)" id="showErrorDetailButton" ><%=LanguageUtil.get(pageContext, "show")%> <%=LanguageUtil.get(pageContext, "details")%></a>
+				<a href='#' onclick="showErrorDetail(this)" id="showErrorDetailButton" style="display: none"><%=LanguageUtil.get(pageContext, "show")%> <%=LanguageUtil.get(pageContext, "details")%></a>
 				<a href='#' onclick="hideErrorDetail(this)" id="hideErrorDetailButton" style="display: none"><%=LanguageUtil.get(pageContext, "hide")%> <%=LanguageUtil.get(pageContext, "details")%></a>
 <!-- 				<a href='#' onclick="hideStatusBar()">Clear</a> -->
 				<div id="errorDetail" style="display: none; text-align: center; width: 100%; font-size:11px"></div>
 			</div>
 			<div id="wiringNode" style="display: none; text-align: center; width: 100%; font-size:11px; padding-bottom: 10px">::: Wiring Node :::</div>
 
-            <div id='propertiesDiv' style="height: 170px;overflow: scroll; border:1px solid #d0d0d0;"></div>
+            <div id='propertiesDiv' style="height: auto;overflow: scroll;"></div>
             <div align="center" style="padding-top: 10px">
                <button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
 					iconClass="saveIcon" onclick="wireNode()" id="dialogWireButton"

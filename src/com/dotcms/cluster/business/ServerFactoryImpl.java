@@ -36,7 +36,7 @@ public class ServerFactoryImpl extends ServerFactory {
 			server.setServerId(UUID.randomUUID().toString());
 		}
 		server.setClusterId(ClusterFactory.getClusterId());
-		dc.setSQL("insert into server(server_id, cluster_id, ip_address) values(?,?,?)");
+		dc.setSQL("insert into cluster_server(server_id, cluster_id, ip_address) values(?,?,?)");
 		dc.addParam(server.getServerId());
 		dc.addParam(server.getClusterId());
 		dc.addParam(server.getIpAddress());
@@ -44,7 +44,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public Server getServer(String serverId) {
-		dc.setSQL("select * from server where server_id = ?");
+		dc.setSQL("select * from cluster_server where server_id = ?");
 		dc.addParam(serverId);
 		Server server = null;
 
@@ -73,7 +73,7 @@ public class ServerFactoryImpl extends ServerFactory {
 
 
 	public void createServerUptime(String serverId) throws DotDataException {
-		dc.setSQL("insert into server_uptime(id, server_id, startup) values(?,?, " + TIMESTAMPSQL + ")");
+		dc.setSQL("insert into cluster_server_uptime(id, server_id, startup) values(?,?, " + TIMESTAMPSQL + ")");
 		String serverUptimeId = UUID.randomUUID().toString();
 		dc.addParam(serverUptimeId);
 		dc.addParam(serverId);
@@ -85,12 +85,12 @@ public class ServerFactoryImpl extends ServerFactory {
 		String id = null;
 
 		if (DbConnectionFactory.isMsSql()) {
-			dc.setSQL("SELECT TOP 1 id FROM server_uptime where server_id = ? ORDER BY startup DESC");
+			dc.setSQL("SELECT TOP 1 id FROM cluster_server_uptime where server_id = ? ORDER BY startup DESC");
 		} else if (DbConnectionFactory.isMySql()
 				|| DbConnectionFactory.isPostgres()) {
-			dc.setSQL("select id from server_uptime where server_id = ? order by startup desc limit 1");
+			dc.setSQL("select id from cluster_server_uptime where server_id = ? order by startup desc limit 1");
 		} else if (DbConnectionFactory.isOracle()) {
-			dc.setSQL("select id from (select id from server_uptime where server_id = order by startup desc ) where rownum = 1");
+			dc.setSQL("select id from (select id from cluster_server_uptime where server_id = order by startup desc ) where rownum = 1");
 		}
 
 		dc.addParam(serverId);
@@ -102,7 +102,7 @@ public class ServerFactoryImpl extends ServerFactory {
 			id = row.get("id").toString();
 		}
 
-		dc.setSQL("update server_uptime set heartbeat = "+ TIMESTAMPSQL +" where server_id = ? and id = ?");
+		dc.setSQL("update cluster_server_uptime set heartbeat = "+ TIMESTAMPSQL +" where server_id = ? and id = ?");
 		dc.addParam(serverId);
 		dc.addParam(id);
 		dc.loadResult();
@@ -112,8 +112,8 @@ public class ServerFactoryImpl extends ServerFactory {
 		List<Server> servers = new ArrayList<Server>();
 
 		dc.setSQL("select server_id, cluster_id, ip_address, host, cache_port, es_transport_tcp_port, es_network_port, es_http_port, "
-				+ "(select max(heartbeat) as last_heartbeat from server_uptime where server_id = s.server_id) as last_heartbeat"
-				+ " from server s");
+				+ "(select max(heartbeat) as last_heartbeat from cluster_server_uptime where server_id = s.server_id) as last_heartbeat"
+				+ " from cluster_server s");
 		List<Map<String, Object>> results = dc.loadObjectResults();
 
 
@@ -139,16 +139,16 @@ public class ServerFactoryImpl extends ServerFactory {
 
 	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException {
 		if (DbConnectionFactory.isMsSql()) {
-			dc.setSQL("select DISTINCT s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
 					+ "where DATEDIFF(SECOND, heartbeat, GETDATE()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
 		} else if (DbConnectionFactory.isMySql()) {
-			dc.setSQL("select DISTINCT s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
 					+ "where TIMESTAMPDIFF(SECOND, heartbeat, now()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
 		} else if(DbConnectionFactory.isPostgres()) {
-			dc.setSQL("select DISTINCT s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
 					+ "where EXTRACT(EPOCH from now()-heartbeat) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
 		} else if (DbConnectionFactory.isOracle()) {
-			dc.setSQL("select DISTINCT s.server_id from server s join server_uptime sut on s.server_id = sut.server_id "
+			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
 					+ "where (extract( second from (sysdate-heartbeat) ) "
 					+ " + extract( minute from (sysdate-heartbeat) ) * 60 "
 					+ " + extract( hour from (sysdate-heartbeat) ) * 60 * 60 "
@@ -193,7 +193,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public void updateServer(Server server) throws DotDataException {
-		dc.setSQL("update server set cluster_id = ?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ? where server_id = ?");
+		dc.setSQL("update cluster_server set cluster_id = ?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ? where server_id = ?");
 		dc.addParam(server.getClusterId());
 		dc.addParam(server.getIpAddress());
 		dc.addParam(server.getHost());
