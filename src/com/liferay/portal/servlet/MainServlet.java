@@ -167,37 +167,6 @@ public class MainServlet extends ActionServlet {
 			        serverId = server.getServerId();
 				}
 
-				 // Get IP Address
-				InetAddress addr = InetAddress.getLocalHost();
-		        byte[] ipAddr = addr.getAddress();
-		        addr = InetAddress.getByAddress(ipAddr);
-		        String address = addr.getHostAddress();
-
-//		        if(address.equals("127.0.0.1")) {
-		        	try {
-		        		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-		        		while (interfaces.hasMoreElements()){
-		        			NetworkInterface current = interfaces.nextElement();
-		        			System.out.println(current);
-		        			if (!current.isUp() || current.isLoopback() || current.isVirtual()) continue;
-		        			Enumeration<InetAddress> addresses = current.getInetAddresses();
-		        			while (addresses.hasMoreElements()){
-		        				InetAddress current_addr = addresses.nextElement();
-		        				if (current_addr.isLoopbackAddress()) continue;
-		        				else if(current_addr instanceof Inet4Address) {
-		        					address = current_addr.toString();
-		        					address = address.replace("/", "");
-		        				}
-		        			}
-		        		}
-		        	}catch (SocketException e) {
-		        		Logger.error(MainServlet.class, "Error trying to get Server Ip Address.", e);
-		        	}
-//		        }
-
-		        server.setIpAddress(address);
-		        serverAPI.updateServer(server);
-
 		        serverAPI.createServerUptime(serverId);
 
 
@@ -211,8 +180,8 @@ public class MainServlet extends ActionServlet {
 
 		        serverAPI.updateHeartbeat();
 
-			} catch (UnknownHostException e3) {
-				Logger.error(getClass(), "Could not get Local Host", e3);
+//			} catch (UnknownHostException e3) {
+//				Logger.error(getClass(), "Could not get Local Host", e3);
 			} catch (DotDataException e) {
 				Logger.error(getClass(), "Could not save Server to DB", e);
 			}
