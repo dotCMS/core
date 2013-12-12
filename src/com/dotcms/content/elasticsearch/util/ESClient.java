@@ -101,9 +101,6 @@ public class ESClient {
 
 			ServerAPI serverAPI = APILocator.getServerAPI();
 			Server currentServer = serverAPI.getServer(serverId);
-			InetAddress addr = InetAddress.getLocalHost();
-			String address = addr.getHostAddress();
-			currentServer.setIpAddress(address);
 
 			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
 					?currentServer.getHost():currentServer.getIpAddress();
