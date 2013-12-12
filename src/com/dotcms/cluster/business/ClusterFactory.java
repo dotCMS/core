@@ -1,6 +1,7 @@
 package com.dotcms.cluster.business;
 
 import java.io.File;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
@@ -123,24 +124,6 @@ public class ClusterFactory {
         if(anyOtherServerAlive && !sameAssetsDir) {
         	throw new Exception("Assets folder of this node needs to point to /Assets of the master node to join the Cluster");
         }
-
-		InetAddress addr = InetAddress.getLocalHost();
-		String address = addr.getHostAddress();
-		currentServer.setIpAddress(address);
-
-		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-		while (interfaces.hasMoreElements()){
-		    NetworkInterface current = interfaces.nextElement();
-		    System.out.println(current);
-		    if (!current.isUp() || current.isLoopback() || current.isVirtual()) continue;
-		    Enumeration<InetAddress> addresses = current.getInetAddresses();
-		    while (addresses.hasMoreElements()){
-		        InetAddress current_addr = addresses.nextElement();
-		        if (current_addr.isLoopbackAddress()) continue;
-		        System.out.println(current_addr.getHostAddress());
-		    }
-		}
-
 
 		addNodeToCacheCluster(properties, currentServer);
 
