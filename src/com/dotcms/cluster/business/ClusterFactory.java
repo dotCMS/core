@@ -1,6 +1,8 @@
 package com.dotcms.cluster.business;
 
+import java.io.File;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +30,7 @@ public class ClusterFactory {
 
 		if(!UtilMethods.isSet(clusterId)) {
 			DotConnect dc = new DotConnect();
-			dc.setSQL("insert into cluster values (?)");
+			dc.setSQL("insert into dot_cluster values (?)");
 			clusterId = UUID.randomUUID().toString();
 			dc.addParam(clusterId);
 			dc.loadResult();
@@ -37,7 +39,7 @@ public class ClusterFactory {
 
 	public static String getClusterId() {
 		DotConnect dc = new DotConnect();
-		dc.setSQL("select cluster_id from cluster");
+		dc.setSQL("select cluster_id from dot_cluster");
 		String clusterId = null;
 
 		try {
@@ -55,11 +57,14 @@ public class ClusterFactory {
 
 	public static String getNextAvailablePort(String serverId, ServerPort port) {
 		DotConnect dc = new DotConnect();
-		dc.setSQL("select max(" + port.getTableName()+ ") as port from server where ip_address = (select s.ip_address from server s where s.server_id = ?) "
-				+ "or ('localhost' = (select s.ip_address from server s where s.server_id = '2fc4ff9f-205e-4b42-a65b-abe1f8a92f9f') and ip_address = '127.0.0.1') "
-				+ "or('127.0.0.1' = (select s.ip_address from server s where s.server_id = '2fc4ff9f-205e-4b42-a65b-abe1f8a92f9f') and ip_address = 'localhost') ");
+		dc.setSQL("select max(" + port.getTableName()+ ") as port from cluster_server where ip_address = (select s.ip_address from cluster_server s where s.server_id = ?) "
+				+ "or ('localhost' = (select s.ip_address from cluster_server s where s.server_id = ?) and ip_address = '127.0.0.1') "
+				+ "or('127.0.0.1' = (select s.ip_address from cluster_server s where s.server_id = ?) and ip_address = 'localhost') ");
 
 		dc.addParam(serverId);
+		dc.addParam(serverId);
+		dc.addParam(serverId);
+
 		Integer maxPort = null;
 		String freePort = Config.getStringProperty(port.getPropertyName(), port.getDefaultValue());
 
@@ -89,6 +94,31 @@ public class ClusterFactory {
 
 		ServerAPI serverAPI = APILocator.getServerAPI();
 		Server currentServer = serverAPI.getServer(serverId);
+
+		List<String> myself = new ArrayList<String>();
+		myself.add(serverId);
+
+		List<Server> aliveServers = serverAPI.getAliveServers(myself);
+        boolean sameAssetsDir = false;
+        boolean anyOtherServerAlive = false;
+
+        if(aliveServers!=null && !aliveServers.isEmpty()) {
+        	Server randomAliveServer = aliveServers.get(0);
+        	String randomServerId = randomAliveServer.getServerId();
+        	anyOtherServerAlive = UtilMethods.isSet(randomServerId);
+
+        	if(anyOtherServerAlive) {
+	        	String serverFilePath = Config.getStringProperty("ASSET_REAL_PATH", Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")))
+	        			+ java.io.File.separator + "server" + java.io.File.separator + randomServerId + java.io.File.separator + "heartbeat.dat";
+	        	File file = new File(serverFilePath);
+	        	sameAssetsDir = file.exists();
+        	}
+        }
+
+        if(anyOtherServerAlive && !sameAssetsDir) {
+        	throw new Exception("Assets folder of this node needs to point to /Assets of the master node to join the Cluster");
+        }
+
 		InetAddress addr = InetAddress.getLocalHost();
 		String address = addr.getHostAddress();
 		currentServer.setIpAddress(address);

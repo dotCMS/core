@@ -45,6 +45,9 @@ public class ESClient {
 
 	private void initNode(){
 //		String node_id = "dotCMS_" + Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
+
+		shutDownNode();
+
 		String node_id = ConfigUtils.getServerId();
 		_nodeInstance = nodeBuilder().
         settings(ImmutableSettings.settingsBuilder().put("name", node_id).build()).build().start();
@@ -133,7 +136,7 @@ public class ESClient {
 
 			System.setProperty("es.discovery.zen.ping.timeout",
 					Config.getStringProperty("es.discovery.zen.ping.timeout", "5s") );
-			
+
 			List<String> myself = new ArrayList<String>();
 			myself.add(currentServer.getServerId());
 
