@@ -136,7 +136,7 @@ public class MainServlet extends ActionServlet {
 				throw new ServletException(e1);
 			}
 
-			// Clustering
+			// BEGIN Clustering
 			try {
 				ClusterFactory.generateClusterId();
 			} catch (DotDataException e) {
@@ -150,42 +150,11 @@ public class MainServlet extends ActionServlet {
 				Server server = serverAPI.getServer(serverId);
 
 				if(!UtilMethods.isSet(serverId) || server==null)  {
-					InetAddress addr = InetAddress.getLocalHost();
-			        // Get IP Address
-			        byte[] ipAddr = addr.getAddress();
-			        addr = InetAddress.getByAddress(ipAddr);
-			        String address = addr.getHostAddress();
-
-			        if(address.equals("127.0.0.1")) {
-			        	try {
-			        		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-			        		while (interfaces.hasMoreElements()){
-			        			NetworkInterface current = interfaces.nextElement();
-			        			System.out.println(current);
-			        			if (!current.isUp() || current.isLoopback() || current.isVirtual()) continue;
-			        			Enumeration<InetAddress> addresses = current.getInetAddresses();
-			        			while (addresses.hasMoreElements()){
-			        				InetAddress current_addr = addresses.nextElement();
-			        				if (current_addr.isLoopbackAddress()) continue;
-			        				else if(current_addr instanceof Inet4Address) {
-			        					address = current_addr.toString();
-			        					address = address.replace("/", "");
-			        					break;
-			        				}
-			        			}
-			        		}
-			        	}catch (SocketException e) {
-			        		Logger.error(MainServlet.class, "Error trying to get Server Ip Address.", e);
-			        	}
-			        }
-
-
 
 			        server = new Server();
 			        if(UtilMethods.isSet(serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID"))) {
 			        	server.setServerId(serverId);
 			        }
-			        server.setIpAddress(address);
 			        serverAPI.saveServer(server);
 
 			        try {
@@ -197,6 +166,37 @@ public class MainServlet extends ActionServlet {
 
 			        serverId = server.getServerId();
 				}
+
+				 // Get IP Address
+				InetAddress addr = InetAddress.getLocalHost();
+		        byte[] ipAddr = addr.getAddress();
+		        addr = InetAddress.getByAddress(ipAddr);
+		        String address = addr.getHostAddress();
+
+//		        if(address.equals("127.0.0.1")) {
+		        	try {
+		        		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+		        		while (interfaces.hasMoreElements()){
+		        			NetworkInterface current = interfaces.nextElement();
+		        			System.out.println(current);
+		        			if (!current.isUp() || current.isLoopback() || current.isVirtual()) continue;
+		        			Enumeration<InetAddress> addresses = current.getInetAddresses();
+		        			while (addresses.hasMoreElements()){
+		        				InetAddress current_addr = addresses.nextElement();
+		        				if (current_addr.isLoopbackAddress()) continue;
+		        				else if(current_addr instanceof Inet4Address) {
+		        					address = current_addr.toString();
+		        					address = address.replace("/", "");
+		        				}
+		        			}
+		        		}
+		        	}catch (SocketException e) {
+		        		Logger.error(MainServlet.class, "Error trying to get Server Ip Address.", e);
+		        	}
+//		        }
+
+		        server.setIpAddress(address);
+		        serverAPI.updateServer(server);
 
 		        serverAPI.createServerUptime(serverId);
 
