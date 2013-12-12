@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -124,6 +125,34 @@ public class ClusterFactory {
         if(anyOtherServerAlive && !sameAssetsDir) {
         	throw new Exception("Assets folder of this node needs to point to /Assets of the master node to join the Cluster");
         }
+
+        // Get IP Address
+		InetAddress addr = InetAddress.getLocalHost();
+        byte[] ipAddr = addr.getAddress();
+        addr = InetAddress.getByAddress(ipAddr);
+        String address = addr.getHostAddress();
+
+//        if(address.equals("127.0.0.1")) {
+        	try {
+        		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        		while (interfaces.hasMoreElements()){
+        			NetworkInterface current = interfaces.nextElement();
+        			System.out.println(current);
+        			if (!current.isUp() || current.isLoopback() || current.isVirtual()) continue;
+        			Enumeration<InetAddress> addresses = current.getInetAddresses();
+        			while (addresses.hasMoreElements()){
+        				InetAddress current_addr = addresses.nextElement();
+        				if (current_addr.isLoopbackAddress()) continue;
+        				else if(current_addr instanceof Inet4Address) {
+        					address = current_addr.toString();
+        					address = address.replace("/", "");
+        				}
+        			}
+        		}
+        	}catch (SocketException e) {
+        		Logger.error(MainServlet.class, "Error trying to get Server Ip Address.", e);
+        	}
+//        }
 
 		addNodeToCacheCluster(properties, currentServer);
 
