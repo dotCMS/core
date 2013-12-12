@@ -2,11 +2,16 @@ package com.dotcms.cluster.business;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
@@ -122,6 +127,20 @@ public class ClusterFactory {
 		InetAddress addr = InetAddress.getLocalHost();
 		String address = addr.getHostAddress();
 		currentServer.setIpAddress(address);
+
+		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+		while (interfaces.hasMoreElements()){
+		    NetworkInterface current = interfaces.nextElement();
+		    System.out.println(current);
+		    if (!current.isUp() || current.isLoopback() || current.isVirtual()) continue;
+		    Enumeration<InetAddress> addresses = current.getInetAddresses();
+		    while (addresses.hasMoreElements()){
+		        InetAddress current_addr = addresses.nextElement();
+		        if (current_addr.isLoopbackAddress()) continue;
+		        System.out.println(current_addr.getHostAddress());
+		    }
+		}
+
 
 		addNodeToCacheCluster(properties, currentServer);
 
