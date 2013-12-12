@@ -25,8 +25,12 @@ package com.liferay.portal.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -151,6 +155,32 @@ public class MainServlet extends ActionServlet {
 			        byte[] ipAddr = addr.getAddress();
 			        addr = InetAddress.getByAddress(ipAddr);
 			        String address = addr.getHostAddress();
+
+			        if(address.equals("127.0.0.1")) {
+			        	try {
+			        		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+			        		while (interfaces.hasMoreElements()){
+			        			NetworkInterface current = interfaces.nextElement();
+			        			System.out.println(current);
+			        			if (!current.isUp() || current.isLoopback() || current.isVirtual()) continue;
+			        			Enumeration<InetAddress> addresses = current.getInetAddresses();
+			        			while (addresses.hasMoreElements()){
+			        				InetAddress current_addr = addresses.nextElement();
+			        				if (current_addr.isLoopbackAddress()) continue;
+			        				else if(current_addr instanceof Inet4Address) {
+			        					address = current_addr.toString();
+			        					address = address.replace("/", "");
+			        					break;
+			        				}
+			        			}
+			        		}
+			        	}catch (SocketException e) {
+			        		Logger.error(MainServlet.class, "Error trying to get Server Ip Address.", e);
+			        	}
+			        }
+
+
+
 			        server = new Server();
 			        if(UtilMethods.isSet(serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID"))) {
 			        	server.setServerId(serverId);
