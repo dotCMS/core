@@ -33,7 +33,8 @@ public class ESClient {
 			synchronized (syncMe) {
 				if(_nodeInstance ==null){
 					try{
-						setClusterNode();
+						loadConfig();
+						initNode();
 					}catch (Exception e) {
 						Logger.error(ESClient.class, "Could not initialize ES Node", e);
 					}
@@ -92,10 +93,6 @@ public class ESClient {
 				}
 			}
 		}
-	}
-
-	public void setClusterNode() throws Exception {
-		setClusterNode(null);
 	}
 
 	public void setClusterNode(Map<String, String> properties) throws Exception {
@@ -172,12 +169,6 @@ public class ESClient {
 			}
 
 			System.setProperty("es.discovery.zen.ping.unicast.hosts",initialHosts);
-//			System.setProperty("es.discovery.zen.ping.unicast.hosts",Config.getStringProperty("es.discovery.zen.ping.unicast.hosts"));
-
-//			if(Config.getStringProperty("CLUSTER_AUTOWIRE", "true").equals("false") && (properties!=null && properties.get("ES_NODE_LOCAL")!=null
-//					&& properties.get("ES_NODE_LOCAL").equals("true"))) {
-//				System.setProperty("es.node.local", "true");
-//			}
 
 			loadConfig();
 			initNode();

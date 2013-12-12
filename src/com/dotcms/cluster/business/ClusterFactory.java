@@ -128,14 +128,14 @@ public class ClusterFactory {
 //		properties.put("ES_NODE_LOCAL", "false");
 		addNodeToESCluster(properties);
 
-
+		Config.setProperty("DIST_INDEXATION_ENABLED", true);
 
 	}
 
 	private static void addNodeToCacheCluster(Map<String, String> cacheProperties, Server localServer) throws Exception {
 		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).setCluster(cacheProperties, localServer);
 		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
-		Config.setProperty("DIST_INDEXATION_ENABLED", true);
+
 
     	try {
 			H2CacheLoader.getInstance().moveh2dbDir();
