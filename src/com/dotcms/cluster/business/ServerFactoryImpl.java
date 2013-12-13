@@ -208,4 +208,12 @@ public class ServerFactoryImpl extends ServerFactory {
 		dc.loadResult();
 	}
 
+	public void updateServerName(String serverId, String name) throws DotDataException {
+		dc.setSQL("update cluster_server set name=? where server_id = ?");
+		dc.addParam(name);
+		dc.addParam(serverId);
+		dc.loadResult();
+
+	}
+
 }

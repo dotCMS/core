@@ -32,4 +32,6 @@ public interface ServerAPI {
 
 	public List<Server> getAllServers() throws DotDataException;
 
+	public void updateServerName(String serverId, String name) throws DotDataException;
+
 }
