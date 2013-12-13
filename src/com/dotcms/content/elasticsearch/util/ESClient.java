@@ -110,6 +110,8 @@ public class ESClient {
 
 			System.setProperty("es.network.host", bindAddr );
 
+			currentServer.setHost(Config.getStringProperty("es.network.host", null));
+
 			String transportTCPPort = properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT")) ? properties.get("ES_TRANSPORT_TCP_PORT")
 					:UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
 
