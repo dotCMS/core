@@ -200,16 +200,7 @@ public class ClusterResource extends WebResource {
     		jsonNode.put("cachePort", server.getCachePort());
     		jsonNode.put("esPort", server.getEsTransportTcpPort());
 
-    		String hostName = "";
-    		try {
-    			hostName = InetAddress.getLocalHost().getHostName();
-
-			} catch (UnknownHostException e) {
-				Logger.error(ClusterResource.class, "Error trying to get the host name. ", e);
-			}
-
-
-    		jsonNode.put("friendlyName", hostName);
+    		jsonNode.put("friendlyName", server.getName());
 
 
     		//Added to the response list

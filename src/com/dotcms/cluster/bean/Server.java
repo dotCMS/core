@@ -8,6 +8,7 @@ public class Server {
 	private String clusterId;
 	private String ipAddress;
 	private String host;
+	private String name;
 	private Integer esTransportTcpPort;
 	private Integer esNetworkPort;
 	private Integer esHttpPort;
@@ -38,7 +39,12 @@ public class Server {
 	public void setHost(String host) {
 		this.host = host;
 	}
-
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
 	public Integer getEsTransportTcpPort() {
 		return esTransportTcpPort;
 	}

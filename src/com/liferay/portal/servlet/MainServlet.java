@@ -28,7 +28,6 @@ import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -56,10 +55,8 @@ import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.enterprise.ClusterThreadProxy;
+import com.dotcms.rest.ClusterResource;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
-import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -146,17 +143,23 @@ public class MainServlet extends ActionServlet {
 				Server server = serverAPI.getServer(serverId);
 
 				if(!UtilMethods.isSet(serverId) || server==null)  {
-					InetAddress addr = InetAddress.getLocalHost();
-			        // Get IP Address
-			        byte[] ipAddr = addr.getAddress();
-			        addr = InetAddress.getByAddress(ipAddr);
-			        String address = addr.getHostAddress();
+
 			        server = new Server();
 			        if(UtilMethods.isSet(serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID"))) {
 			        	server.setServerId(serverId);
 			        }
-			        server.setIpAddress(address);
-			        serverAPI.saveServer(server);
+			        server.setIpAddress("");
+
+			        String hostName = "";
+		    		try {
+		    			hostName = InetAddress.getLocalHost().getHostName();
+
+					} catch (UnknownHostException e) {
+						Logger.error(ClusterResource.class, "Error trying to get the host name. ", e);
+					}
+
+		    		server.setName(hostName);
+		    		serverAPI.saveServer(server);
 
 			        try {
 			        	serverAPI.writeServerIdToDisk(server.getServerId());
@@ -181,9 +184,7 @@ public class MainServlet extends ActionServlet {
 
 		        serverAPI.updateHeartbeat();
 
-			} catch (UnknownHostException e3) {
-				Logger.error(getClass(), "Could not get Local Host", e3);
-			} catch (DotDataException e) {
+			}  catch (DotDataException e) {
 				Logger.error(getClass(), "Could not save Server to DB", e);
 			}
 

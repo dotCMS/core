@@ -10,10 +10,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
@@ -132,9 +129,11 @@ public class ClusterFactory {
         addr = InetAddress.getByAddress(ipAddr);
         String address = addr.getHostAddress();
 
-//        if(address.equals("127.0.0.1")) {
+        // if we get 127.0.0.1, try get it from the network interfaces
+        if(address.equals("127.0.0.1")) {
         	try {
         		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        		my_loop:
         		while (interfaces.hasMoreElements()){
         			NetworkInterface current = interfaces.nextElement();
         			System.out.println(current);
@@ -142,17 +141,26 @@ public class ClusterFactory {
         			Enumeration<InetAddress> addresses = current.getInetAddresses();
         			while (addresses.hasMoreElements()){
         				InetAddress current_addr = addresses.nextElement();
-        				if (current_addr.isLoopbackAddress()) continue;
-        				else if(current_addr instanceof Inet4Address) {
-        					address = current_addr.toString();
-        					address = address.replace("/", "");
+        				if(current_addr.isLoopbackAddress()) continue;
+        				if(!current_addr.isLinkLocalAddress()) continue;
+        				else {
+        					current_addr = addresses.nextElement();
+        					if(current_addr instanceof Inet4Address) {
+        						address = current_addr.toString();
+        						address = address.replace("/", "");
+        						break my_loop;
+        					}
         				}
+
         			}
         		}
         	}catch (SocketException e) {
         		Logger.error(MainServlet.class, "Error trying to get Server Ip Address.", e);
         	}
-//        }
+        }
+
+        currentServer.setIpAddress(address);
+        serverAPI.updateServer(currentServer);
 
 		addNodeToCacheCluster(properties, currentServer);
 
