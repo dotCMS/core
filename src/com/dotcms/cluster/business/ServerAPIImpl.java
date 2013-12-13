@@ -118,4 +118,8 @@ public class ServerAPIImpl implements ServerAPI {
 		return serverFactory.getAllServers();
 	}
 
+	public void updateServerName(String serverId, String name) throws DotDataException {
+		serverFactory.updateServerName(serverId, name);
+	}
+
 }

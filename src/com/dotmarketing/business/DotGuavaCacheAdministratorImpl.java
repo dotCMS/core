@@ -212,13 +212,14 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			myself.add(localServer.getServerId());
 
 			List<Server> aliveServers = serverAPI.getAliveServers(myself);
+			aliveServers.add(localServer);
 
 			String initialHosts = "";
 
 			int i=0;
 			for (Server server : aliveServers) {
 				if(i>0) {
-					initialHosts += ", ";
+					initialHosts += ",";
 				}
 
 				if(UtilMethods.isSet(server.getHost()) && !server.getHost().equals("localhost")) {
@@ -262,6 +263,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				channel.setReceiver(this);
 			} else {
 				channel.disconnect();
+				channel = new JChannel(classLoader.getResource(cacheFile));
 			}
 
 			channel.connect("dotCMSCluster");
