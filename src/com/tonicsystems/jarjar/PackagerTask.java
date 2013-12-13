@@ -127,76 +127,9 @@ public class PackagerTask extends JarJarTask {
         HashMap<String, CustomRule> rulesToApply = new HashMap<String, CustomRule>();
 
         //Get all the classes we found
-        HashMap<String, List<Inspector.PathInfo>> classes = inspector.getClasses();
-        for ( String name : classes.keySet() ) {
-
-            //Collection with the info of found for each class
-            List<Inspector.PathInfo> details = classes.get( name );
-            for ( Inspector.PathInfo detail : details ) {//Duplicated classes as present in multiple jars
-                File jarFile = detail.base;
-
-                //Handle some strings to use in the rules
-                String packageName;
-                if ( name.lastIndexOf( "." ) != -1 ) {
-                    //Get the package of the class (from my.package.myClassName to my.package)
-                    packageName = name.substring( 0, name.lastIndexOf( "." ) );
-
-                    if ( !packageName.contains( "." ) && packageName.equals( "common" ) ) {
-                    /*
-                     FIXME: We don't want something like common.**, a very small an common package, replacing this is dangerous
-                     */
-                        continue;
-                    }
-                } else {
-                    //On the root??, no package??
-                    continue;
-                }
-
-                //Handle the packages we marked to exclude by jar
-                Boolean ignorePackage = ignorePackage( jarFile, packageName );
-                if ( ignorePackage ) {
-                    continue;
-                }
-
-                //Create a name to be part of the resulting package name
-                String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
-                //String jarNameForPackage = "_" + getDotVersion() + "_";
-                jarNameForPackage = jarNameForPackage.replaceAll( "-", "_" );
-                jarNameForPackage = jarNameForPackage.replaceAll( "\\.", "_" );
-                jarNameForPackage = jarNameForPackage.toLowerCase();
-
-                /*
-                 Verify if we have some explicit naming rules for this jar.
-                 How it works:
-                    Example: all the jars that contains the word jersey (jersey-client-1.12.jar, jersey-core-1.12.jar, jersey-json-1.12.jar, etc)
-                    will share the same repackaged name "jersey_1_12" --> com.dot.repackage.jersey_1_12
-                 */
-                for ( NamingRule namingRule : namingRules ) {
-                    if ( jarNameForPackage.contains( namingRule.getPattern() ) ) {
-                        jarNameForPackage = namingRule.getReplacement();
-                        break;
-                    }
-                }
-
-                //Create the rule for this class and add it to the list of rules for this jar
-                String pattern = packageName + ".*";//Example: "org.apache.xerces.dom.*"
-                if ( packageName.equals( "org.elasticsearch.common.joda.time.tz" ) ) {//For this package we can not be so strict as is not contains .class files but instead a lot of resources
-                    pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
-                }
-                String result = "com.dotcms.repackage." + jarNameForPackage + "." + packageName + ".@1";
-
-                CustomRule rule = new CustomRule();
-                rule.setPattern( pattern );
-                rule.setResult( result );
-                rule.setParent( jarFile.getName() );
-
-                //Global list of rules to apply
-                if ( !rulesToApply.containsKey( pattern + result ) ) {
-                    rulesToApply.put( pattern + result, rule );
-                }
-
-            }
-        }
+        createRules( inspector.getClasses(), rulesToApply );
+        //Get all the resources we found
+        createRules( inspector.getResources(), rulesToApply );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //NOW REPACKAGE THE JARS
@@ -391,6 +324,87 @@ public class PackagerTask extends JarJarTask {
 
         //Log the time
         trackTime( "Finished Process!!", startProcessTime );
+    }
+
+    /**
+     * Creates the rules for repackaging based on a list of given resources
+     *
+     * @param resources
+     * @param rulesToApply
+     */
+    private void createRules ( HashMap<String, List<Inspector.PathInfo>> resources, HashMap<String, CustomRule> rulesToApply ) {
+
+        for ( String name : resources.keySet() ) {
+
+            //Collection with the info of found for each class
+            List<Inspector.PathInfo> details = resources.get( name );
+            for ( Inspector.PathInfo detail : details ) {//Duplicated classes as present in multiple jars
+                File jarFile = detail.base;
+
+                //Handle some strings to use in the rules
+                String packageName;
+                if ( name.lastIndexOf( "." ) != -1 ) {
+                    //Get the package of the class (from my.package.myClassName to my.package)
+                    packageName = name.substring( 0, name.lastIndexOf( "." ) );
+
+                    if ( !packageName.contains( "." ) && packageName.equals( "common" ) ) {
+                        /*
+                         FIXME: We don't want something like common.**, a very small an common package, replacing this is dangerous
+                         */
+                        continue;
+                    } else if ( packageName.contains( "META-INF" ) ) {
+                        continue;
+                    }
+                } else {
+                    //On the root??, no package??
+                    continue;
+                }
+
+                //Handle the packages we marked to exclude by jar
+                Boolean ignorePackage = ignorePackage( jarFile, packageName );
+                if ( ignorePackage ) {
+                    continue;
+                }
+
+                //Create a name to be part of the resulting package name
+                String jarNameForPackage = jarFile.getName().substring( 0, jarFile.getName().lastIndexOf( "." ) );
+                //String jarNameForPackage = "_" + getDotVersion() + "_";
+                jarNameForPackage = jarNameForPackage.replaceAll( "-", "_" );
+                jarNameForPackage = jarNameForPackage.replaceAll( "\\.", "_" );
+                jarNameForPackage = jarNameForPackage.toLowerCase();
+
+                /*
+                 Verify if we have some explicit naming rules for this jar.
+                 How it works:
+                    Example: all the jars that contains the word jersey (jersey-client-1.12.jar, jersey-core-1.12.jar, jersey-json-1.12.jar, etc)
+                    will share the same repackaged name "jersey_1_12" --> com.dot.repackage.jersey_1_12
+                 */
+                for ( NamingRule namingRule : namingRules ) {
+                    if ( jarNameForPackage.contains( namingRule.getPattern() ) ) {
+                        jarNameForPackage = namingRule.getReplacement();
+                        break;
+                    }
+                }
+
+                //Create the rule for this class and add it to the list of rules for this jar
+                String pattern = packageName + ".*";//Example: "org.apache.xerces.dom.*"
+                if ( packageName.equals( "org.elasticsearch.common.joda.time.tz" ) ) {//For this package we can not be so strict as is not contains .class files but instead a lot of resources
+                    pattern = packageName + ".**";//Example: "org.apache.xerces.dom.**"
+                }
+                String result = "com.dotcms.repackage." + jarNameForPackage + "." + packageName + ".@1";
+
+                CustomRule rule = new CustomRule();
+                rule.setPattern( pattern );
+                rule.setResult( result );
+                rule.setParent( jarFile.getName() );
+
+                //Global list of rules to apply
+                if ( !rulesToApply.containsKey( pattern + result ) ) {
+                    rulesToApply.put( pattern + result, rule );
+                }
+
+            }
+        }
     }
 
     /**

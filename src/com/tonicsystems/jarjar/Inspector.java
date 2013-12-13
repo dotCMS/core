@@ -14,6 +14,7 @@ import java.util.jar.JarFile;
 public class Inspector {
 
     private HashMap<String, List<PathInfo>> classes = new HashMap<String, List<PathInfo>>();
+    private HashMap<String, List<PathInfo>> resources = new HashMap<String, List<PathInfo>>();
     private HashSet<Formatter> formatters = new HashSet<Formatter>();
 
     /**
@@ -84,8 +85,12 @@ public class Inspector {
             // Inspect class files and subdirectories
             for ( File child : children ) {
                 String name = prefix + "." + child.getName();
-                if ( child.isFile() && isMatchingClass( child.getName() ) ) {
-                    addClass( name, child.length(), base );
+                if ( child.isFile() ) {
+                    if ( isMatchingClass( child.getName() ) ) {
+                        addClass( name, child.length(), base );
+                    } else {
+                        addResource( name, child.length(), base );
+                    }
                 }
                 if ( child.isDirectory() ) {
                     inspectDir( base, child, name );
@@ -117,8 +122,12 @@ public class Inspector {
         Enumeration<JarEntry> enumeration = jar.entries();
         while ( enumeration.hasMoreElements() ) {
             JarEntry entry = enumeration.nextElement();
-            if ( (!entry.isDirectory()) && isMatchingClass( entry.getName() ) ) {
-                addClass( entry.getName(), entry.getSize(), jarfile );
+            if ( (!entry.isDirectory()) ) {
+                if ( isMatchingClass( entry.getName() ) ) {
+                    addClass( entry.getName(), entry.getSize(), jarfile );
+                } else {
+                    addResource( entry.getName(), entry.getSize(), jarfile );
+                }
             }
         }
     }
@@ -162,6 +171,38 @@ public class Inspector {
     }
 
     /**
+     * Add the given resource, found from the given base, to our list of resources
+     * that we've found so far.
+     *
+     * @param name     the fully-qualified name for this resource.
+     * @param fileSize the size of the file, in bytes.
+     * @param base     the base directory or archive in which this file was found.
+     */
+    private void addResource ( String name, long fileSize, File base ) {
+
+        if ( name.lastIndexOf( "." ) != -1 ) {
+            name = name.substring( 0, name.lastIndexOf( "." ) );
+        }
+        if ( name.lastIndexOf( "." ) != -1 ) {
+            name = name.substring( 0, name.lastIndexOf( "." ) );
+        }
+
+        // Convert resource name from possible file or jar entry format
+        name = name.replace( '/', '.' );
+        name = name.replace( '\\', '.' );
+
+        // Add to the list
+        List<PathInfo> files = resources.get( name );
+        if ( files == null ) {
+            files = new ArrayList<PathInfo>();
+            files.add( new PathInfo( base, fileSize ) );
+            resources.put( name, files );
+        } else {
+            files.add( new PathInfo( base, fileSize ) );
+        }
+    }
+
+    /**
      * Return true if the name corresponds to a jar file
      *
      * @param name The file name
@@ -196,6 +237,10 @@ public class Inspector {
 
     public HashMap<String, List<PathInfo>> getClasses () {
         return classes;
+    }
+
+    public HashMap<String, List<PathInfo>> getResources () {
+        return resources;
     }
 
     /**
