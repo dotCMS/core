@@ -36,9 +36,10 @@ public class ServerFactoryImpl extends ServerFactory {
 			server.setServerId(UUID.randomUUID().toString());
 		}
 		server.setClusterId(ClusterFactory.getClusterId());
-		dc.setSQL("insert into cluster_server(server_id, cluster_id, ip_address) values(?,?,?)");
+		dc.setSQL("insert into cluster_server(server_id, cluster_id, name, ip_address) values(?,?,?,?)");
 		dc.addParam(server.getServerId());
 		dc.addParam(server.getClusterId());
+		dc.addParam(server.getName());
 		dc.addParam(server.getIpAddress());
 		dc.loadResult();
 	}
@@ -57,6 +58,7 @@ public class ServerFactoryImpl extends ServerFactory {
 				server.setServerId((String)row.get("server_id"));
 				server.setClusterId((String)row.get("cluster_id"));
 				server.setIpAddress((String)row.get("ip_address"));
+				server.setName((String)row.get("name"));
 				server.setHost((String)row.get("host"));
 				server.setCachePort((Integer)row.get("cache_port"));
 				server.setEsTransportTcpPort((Integer)row.get("es_transport_tcp_port"));
@@ -111,7 +113,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	public List<Server> getAllServers() throws DotDataException {
 		List<Server> servers = new ArrayList<Server>();
 
-		dc.setSQL("select server_id, cluster_id, ip_address, host, cache_port, es_transport_tcp_port, es_network_port, es_http_port, "
+		dc.setSQL("select server_id, cluster_id, name, ip_address, host, cache_port, es_transport_tcp_port, es_network_port, es_http_port, "
 				+ "(select max(heartbeat) as last_heartbeat from cluster_server_uptime where server_id = s.server_id) as last_heartbeat"
 				+ " from cluster_server s");
 		List<Map<String, Object>> results = dc.loadObjectResults();
@@ -123,6 +125,7 @@ public class ServerFactoryImpl extends ServerFactory {
 			server.setClusterId((String)row.get("cluster_id"));
 			server.setIpAddress((String)row.get("ip_address"));
 			server.setHost((String)row.get("host"));
+			server.setName((String)row.get("name"));
 			server.setCachePort((Integer)row.get("cache_port"));
 			server.setEsTransportTcpPort((Integer)row.get("es_transport_tcp_port"));
 			server.setEsHttpPort((Integer)row.get("es_http_port"));
@@ -193,8 +196,9 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public void updateServer(Server server) throws DotDataException {
-		dc.setSQL("update cluster_server set cluster_id = ?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ? where server_id = ?");
+		dc.setSQL("update cluster_server set cluster_id = ?, name=?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ? where server_id = ?");
 		dc.addParam(server.getClusterId());
+		dc.addParam(server.getName());
 		dc.addParam(server.getIpAddress());
 		dc.addParam(server.getHost());
 		dc.addParam(server.getCachePort());

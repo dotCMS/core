@@ -196,6 +196,12 @@ function renderNodesStatus() {
 					var cacheText = (item.cacheStatus=='N/A'?"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>":"");
 					var esText = (item.cacheStatus=='N/A'?"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>":"");
 
+					var wireButton = dijit.byId("wireButton");
+
+					  if(wireButton) {
+						  wireButton.destroyRecursive(false);
+					  }
+
 					nodesTableHTML +=	"<tr><td style='vertical-align:middle; border-left:0px'><table class='listingTable2' style='width:100%'><td width=3px'><span class='backupIcon' ></span></td>"
 					+ "<td width='240px' style='text-align:left;'>" + item.friendlyName + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
 					+ "<td align='left'>"+item.ipAddress+"</td>"
@@ -205,7 +211,7 @@ function renderNodesStatus() {
 					+ "<td align='center'><div style='background:"+esBg+"; width:20px;height:20px;'>"+esText+"</div></td>"
 					+ "<td align='left' style='border-right:0px; font-size:11px'>"+(item.esPort?item.esPort:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>") +"</td>"
 					+ "<td align='left' style='border-right:0px; font-size:11px'>"
-						+ (item.myself?"<button dojoType='dijit.form.Button' onClick='showClusterPropertiesDialog();' iconClass='plusIcon' id='wireButtonx'> "
+						+ (item.myself?"<button dojoType='dijit.form.Button' onClick='showClusterPropertiesDialog();' iconClass='plusIcon' id='wireButton'> "
 							+ "<%= LanguageUtil.get(pageContext, "configuration_cluster_wire_node") %>"
 			        	+ "</button>":"")
 			        + "</td>"
