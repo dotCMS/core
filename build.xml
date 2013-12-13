@@ -1049,7 +1049,7 @@
     <!--++++++++++++++++++++++++++++++++++++++++++-->
     <!--++++++++++++++++++++++++++++++++++++++++++-->
 
-    <target name="find-duplicated-classes" depends="deploy-no-jsp">
+    <target name="find-duplicated-classes">
 
         <taskdef classname="com.tonicsystems.jarjar.InspectorTask" name="inspectorTask">
             <classpath>
@@ -1057,8 +1057,8 @@
             </classpath>
         </taskdef>
 
-        <inspectorTask librarypath="${lib.app}"/>
-        <!--<inspectorTask librarypath="libs/jersey"/>-->
+        <inspectorTask librarypath="${tomcat7.home}/webapps/ROOT/WEB-INF/lib"/>
+        <!--<inspectorTask librarypath="${lib.app}"/>-->
     </target>
 
     <target name="find-dependencies">
