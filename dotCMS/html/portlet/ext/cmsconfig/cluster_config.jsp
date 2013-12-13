@@ -194,7 +194,7 @@ function renderNodesStatus() {
 					var cacheBg = (item.cacheStatus=='true'?"GREEN":item.cacheStatus=='false'?"RED":"");
 					var esBg = (item.esStatus=='true'?"GREEN":item.esStatus=='false'?"RED":"");
 					var cacheText = (item.cacheStatus=='N/A'?"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>":"");
-					var esText = (item.cacheStatus=='N/A'?"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>":"");
+					var esText = (item.esStatus=='N/A'?"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>":"");
 
 					var wireButton = dijit.byId("wireButton");
 
@@ -203,9 +203,9 @@ function renderNodesStatus() {
 					  }
 
 					nodesTableHTML +=	"<tr><td style='vertical-align:middle; border-left:0px'><table class='listingTable2' style='width:100%'><td width=3px'><span class='backupIcon' ></span></td>"
-					+ "<td width='240px' style='text-align:left;'>" + item.friendlyName + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
+					+ "<td style='text-align:left;'>" + item.friendlyName + "</td><td width='3px'>" + (item.myself?"<span class='femaleIcon'></span>":"")+"</td></table></td>"
 					+ "<td align='left'>"+item.ipAddress+"</td>"
-					+ "<td align='left'>"+item.contacted+" secs ago</td>"
+					+ "<td align='left'>"+item.contacted+"</td>"
 					+ "<td align='center'><div style='background:"+cacheBg+"; width:20px;height:20px;'>"+cacheText+"</div></td>"
 					+ "<td align='left'>"+(item.cachePort?item.cachePort:"<%= LanguageUtil.get(pageContext, "configuration_cluster_NA") %>") +"</td>"
 					+ "<td align='center'><div style='background:"+esBg+"; width:20px;height:20px;'>"+esText+"</div></td>"
@@ -456,7 +456,7 @@ function hideErrorDetail(element) {
 			</div>
 			<div id="wiringNode" style="display: none; text-align: center; width: 100%; font-size:11px; padding-bottom: 10px">::: Wiring Node :::</div>
 
-            <div id='propertiesDiv' style="height: auto;overflow: scroll;"></div>
+            <div id='propertiesDiv' style="height: auto;"></div>
             <div align="center" style="padding-top: 10px">
                <button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
 					iconClass="saveIcon" onclick="wireNode()" id="dialogWireButton"
