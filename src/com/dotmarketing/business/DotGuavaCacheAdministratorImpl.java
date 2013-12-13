@@ -204,7 +204,8 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			}
 
 			localServer.setCachePort(Integer.parseInt(bindPort));
-			localServer.setHost(bindAddr);
+
+			localServer.setHost(Config.getStringProperty("CACHE_BINDADDRESS", null));
 
 			ServerAPI serverAPI = APILocator.getServerAPI();
 
