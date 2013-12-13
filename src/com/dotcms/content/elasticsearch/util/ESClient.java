@@ -123,6 +123,7 @@ public class ESClient {
 						:ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT);
 
 				System.setProperty("es.http.port",  httpPort);
+				System.setProperty("es.http.enabled", "true");
 
 				currentServer.setEsHttpPort(Integer.parseInt(httpPort));
 			}

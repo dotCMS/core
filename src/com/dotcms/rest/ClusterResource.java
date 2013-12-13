@@ -47,6 +47,7 @@ import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -181,10 +182,7 @@ public class ClusterResource extends WebResource {
     		}
 
     		if(UtilMethods.isSet(server.getLastHeartBeat())) {
-    			Date now = new Date();
-    			long difference = now.getTime() - server.getLastHeartBeat().getTime();
-    			difference /= 1000;
-    			jsonNode.put("contacted", difference);
+    			jsonNode.put("contacted", DateUtil.prettyDateSince(server.getLastHeartBeat()));
     		}
 
     		if(view==null && !myServerId.equals(server.getServerId())) {
