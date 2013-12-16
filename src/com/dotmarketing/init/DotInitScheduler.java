@@ -703,35 +703,36 @@ public class DotInitScheduler {
             }
 
 			//SCHEDULE SERVER HEARTBEAT JOB
+			String serverId = ConfigUtils.getServerId();
 			if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
 				try {
 					isNew = false;
 
 					try {
-						if ((job = sched.getJobDetail("ServerHeartbeatJob", "dotcms_jobs")) == null) {
-							job = new JobDetail("ServerHeartbeatJob", "dotcms_jobs", ServerHeartbeatJob.class);
+						if ((job = sched.getJobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs")) == null) {
+							job = new JobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs", ServerHeartbeatJob.class);
 							isNew = true;
 						}
 					} catch (SchedulerException se) {
-						sched.deleteJob("ServerHeartBeatJob", "dotcms_jobs");
-						job = new JobDetail("ServerHeartbeatJob", "dotcms_jobs", ServerHeartbeatJob.class);
+						sched.deleteJob("ServerHeartBeatJob_" + serverId, "dotcms_jobs");
+						job = new JobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs", ServerHeartbeatJob.class);
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-				    trigger = new CronTrigger("trigger20", "group20", "ServerHeartbeatJob", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION"));
+				    trigger = new CronTrigger("trigger21_" + serverId, "group21_" + serverId, "ServerHeartbeatJob_" + serverId, "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
 
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
-						sched.rescheduleJob("trigger20", "group20", trigger);
+						sched.rescheduleJob("trigger21_" + serverId, "group21_" + serverId, trigger);
 				} catch (Exception e) {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
 			} else {
-				if ((job = sched.getJobDetail("ServerHeartbeatJob", "dotcms_jobs")) != null) {
-					sched.deleteJob("ServerHeartbeatJob", "dotcms_jobs");
+				if ((job = sched.getJobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs")) != null) {
+					sched.deleteJob("ServerHeartbeatJob_" + serverId, "dotcms_jobs");
 				}
 			}
 
