@@ -3,9 +3,9 @@
  */
 package com.dotmarketing.quartz.job;
 
+import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -16,7 +16,7 @@ import com.dotmarketing.util.Logger;
  * The idea here is to act as a heart beat of the server for clustering purposes
  *
  */
-public class ServerHeartbeatJob implements StatefulJob {
+public class ServerHeartbeatJob implements Job {
 
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 		try {
