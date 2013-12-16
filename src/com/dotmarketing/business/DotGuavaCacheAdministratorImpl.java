@@ -54,11 +54,11 @@ import edu.emory.mathcs.backport.java.util.Collections;
 public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements DotCacheAdministrator {
 
 	private DistributedJournalAPI journalAPI;
-	private Map<String, Cache<String, Object>> groups = new HashMap<String, Cache<String, Object>>();
+	private final ConcurrentHashMap<String, Cache<String, Object>> groups = new ConcurrentHashMap<String, Cache<String, Object>>();
 	private JChannel channel;
 	private boolean useJgroups = false;
-	private ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<String, Boolean>();
-	private HashSet<String> availableCaches = new HashSet<String>();
+	private final ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<String, Boolean>();
+	private final HashSet<String> availableCaches = new HashSet<String>();
 	private H2CacheLoader diskCache = null;
 	
 	static final String LIVE_CACHE_PREFIX = "livecache";
@@ -275,7 +275,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		Set<String> myGroups = new HashSet<String>();
 
 		myGroups.addAll(groups.keySet());
-		groups = new HashMap<String, Cache<String,Object>>();
+		groups.clear();
 		if(diskCache != null){
 			try {
 				myGroups.addAll(H2CacheLoader.getGroups());
@@ -290,7 +290,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		if(diskCache != null){
 			diskCache.resetCannotCacheCache();
 		}
-		cacheToDisk = new ConcurrentHashMap<String, Boolean>();
+		cacheToDisk.clear();
 		
 	}
 
@@ -738,7 +738,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 		// init cache if it does not exist
 		if (cache == null) {
-			synchronized (cacheName) {
+			synchronized (cacheName.intern()) {
 				cache = groups.get(cacheName);
 				if (cache == null) {
 					
