@@ -282,8 +282,12 @@ public class PackagerTask extends JarJarTask {
              The faster way to replacing content on the jsp files is for sure executing shell commands.
              The combination of find and perl do the job, but in order to make it work more efficiently we need to use the multiple replace ('s/op1/np1/g;s/op2/np2/g;...'),
               replacing rule by rule is very slow.
-             BTW, we must use chunks of rules to replace, sending all of them with cause a nice "java.io.IOException: error=7, Argument list too long"
+             BTW, we must use chunks of rules to replace, sending all of them at the same time will cause a nice "java.io.IOException: error=7, Argument list too long"
              */
+            StringBuilder commands = new StringBuilder();
+            //commands.append( "folder=\".\"" );
+            commands.append( "folder=\"" ).append( jspFolderFile.getAbsolutePath() ).append( "\"" ).append( "\n" );
+
             int chunks = 200;
             int i = 0;
             String searchPatters = "";
@@ -304,19 +308,21 @@ public class PackagerTask extends JarJarTask {
                 if ( !searchPatters.isEmpty() ) {
                     searchPatters += ";";
                 }
-                searchPatters += "s/((?<=\")|(?<=\\()|(?<=,)|\\s)" + patternFinal + "/" + resultFinal + "/g";
+                searchPatters += "s/((?<=\")|(?<=\\()|(?<=,)|(?<=\\s))" + patternFinal + "/" + resultFinal + "/g";
                 i++;
 
                 if ( i == chunks ) {
-                    executeCommand( jspFolderFile, searchPatters );
+                    executeCommand( jspFolderFile, searchPatters, commands );
                     i = 0;
                     searchPatters = "";
                 }
             }
 
             if ( i > 0 ) {
-                executeCommand( jspFolderFile, searchPatters );
+                executeCommand( jspFolderFile, searchPatters, commands );
             }
+            //Write this list of commands into a bash file
+            writeToLog( commands, "replace.sh" );
 
             //Log the time
             trackTime( "Changes applied to JSPs!!", startJSPsChanges );
@@ -413,7 +419,7 @@ public class PackagerTask extends JarJarTask {
      * @param jspFolderFile
      * @param searchPatters
      */
-    private void executeCommand ( File jspFolderFile, String searchPatters ) {
+    private void executeCommand ( File jspFolderFile, String searchPatters, StringBuilder commands ) {
 
         //find . -name '*.jsp' -exec perl -pi -e 's/((?<=")|(?<=\()|\s)org\.apache\.struts\.taglib\.tiles\./com\.dotcms\.repackage\.org\.apache\.struts\.taglib\.tiles\./' {} \;
 
@@ -422,6 +428,9 @@ public class PackagerTask extends JarJarTask {
         //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e '" + searchPatters + "' {} \\;";
         String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e '" + searchPatters + "' {} +";
         log( command );
+
+        String externalCommand = "find $folder \\( -name '*.jsp' -o -name '*.java' \\) -exec perl -pi -e '" + searchPatters + "' {} +";
+        commands.append( externalCommand ).append( "\n" );
 
         try {
             Process process = Runtime.getRuntime().exec(
@@ -619,15 +628,50 @@ public class PackagerTask extends JarJarTask {
 
     private void logRules ( Collection<CustomRule> rules ) {
 
-        //-------------------------------
+        StringBuilder rulesBuilder = new StringBuilder();
+
         //SOME LOGGING
         log( "" );
         log( "-----------------------------------------" );
         log( "Rules to apply: " );
         for ( CustomRule rule : rules ) {
+            rulesBuilder.append( rule.getPattern() ).append( "-->" ).append( rule.getResult() ).append( "\n" );
             log( rule.getPattern() + " --> " + rule.getResult() );
         }
-        //-------------------------------
+
+        //Write this list of rules into a log file
+        writeToLog( rulesBuilder, "rules.log" );
+    }
+
+    /**
+     * Writes a given content inside file
+     *
+     * @param bob
+     * @param logName
+     */
+    private void writeToLog ( StringBuilder bob, String logName ) {
+
+        String baseDir = this.getProject().getBaseDir().getAbsolutePath();
+        File outputFile = new File( baseDir + File.separator + logName );
+        if ( outputFile.exists() ) {
+            outputFile.delete();
+        }
+
+        BufferedWriter writer = null;
+        try {
+            writer = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( outputFile ), "utf-8" ) );
+            writer.write( bob.toString() );
+        } catch ( IOException ex ) {
+            log( ex.getMessage(), ex, Project.MSG_ERR );
+        } finally {
+            try {
+                if ( writer != null ) {
+                    writer.close();
+                }
+            } catch ( Exception ex ) {
+                log( ex.getMessage(), ex, Project.MSG_ERR );
+            }
+        }
     }
 
     /**
