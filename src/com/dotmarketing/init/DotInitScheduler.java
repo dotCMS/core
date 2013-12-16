@@ -717,8 +717,8 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-					Integer milisecondsBetweenHeartbeat = Config.getIntProperty("SERVER_HEARTBEAT_FREQUENCY", 1000);
-				    SimpleTrigger simpleTrigger = new SimpleTrigger("trigger22", "group22", "HeartbeatJob", "dotcms_jobs", calendar.getTime(), null, SimpleTrigger.REPEAT_INDEFINITELY, milisecondsBetweenHeartbeat );
+					Integer secondsBetweenHeartbeat = Config.getIntProperty("SERVER_HEARTBEAT_FREQUENCY", 60);
+				    SimpleTrigger simpleTrigger = new SimpleTrigger("trigger22", "group22", "HeartbeatJob", "dotcms_jobs", calendar.getTime(), null, SimpleTrigger.REPEAT_INDEFINITELY, secondsBetweenHeartbeat*1000 );
 				    simpleTrigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 //					sched.unscheduleJob("trigger21", "group21");
 					sched.addJob(job, true);
