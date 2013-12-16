@@ -36,6 +36,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * This class provides methods that make it easier to
@@ -279,7 +280,7 @@ public class BSFUtil {
 		Identifier ident = APILocator.getIdentifierAPI().find(host, filePath);
 		String uri = LiveCache.getPathFromCache(ident.getURI(), host);
 
-		String inode = UtilMethods.getFileName(new File(Config.CONTEXT.getRealPath(assetPath + uri)).getName());
+		String inode = UtilMethods.getFileName(new File(FileUtil.getRealPath(assetPath + uri)).getName());
 		com.dotmarketing.portlets.files.model.File file = APILocator.getFileAPI().find(inode, APILocator.getUserAPI().getSystemUser(), false);
 
 		if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
@@ -292,7 +293,7 @@ public class BSFUtil {
 
 		FileReader fr = null;
 		if(!UtilMethods.isSet(realPath)){
-			fr = new FileReader(Config.CONTEXT.getRealPath(assetPath + uri));
+			fr = new FileReader(FileUtil.getRealPath(assetPath + uri));
 		}else{
 			fr = new FileReader(realPath + uri);
 		}

@@ -121,7 +121,6 @@
  <!-- END FILTER-MAPPINGS -->
 	<!--DOTMARKETING FILTER-MAPPINGS-->
 	
-
 	<filter-mapping>
 		<filter-name>SalesForceFilter</filter-name>
 		<url-pattern>/dotCMS/login</url-pattern>
@@ -613,11 +612,11 @@
     <servlet>
 		<servlet-name>RESTAPI</servlet-name>
 		<servlet-class>
-		  com.sun.jersey.spi.container.servlet.ServletContainer
+		  com.dotcms.rest.servlet.ReloadableServletContainer
 		</servlet-class>
 		<init-param>
-		  <param-name>com.sun.jersey.config.property.packages</param-name>
-		  <param-value>com.dotcms.rest</param-value>
+		  <param-name>javax.ws.rs.Application</param-name>
+		  <param-value>com.dotcms.rest.config.DotRestApplication</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
@@ -966,10 +965,6 @@
 		<taglib>
 			<taglib-uri>http://java.sun.com/jstl/xml</taglib-uri>
 			<taglib-location>/WEB-INF/tld/x-rt.tld</taglib-location>
-		</taglib>
-		<taglib>
-			<taglib-uri>http://displaytag.sourceforge.net</taglib-uri>
-			<taglib-location>/WEB-INF/tld/displaytag.tld</taglib-location>
 		</taglib>
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>

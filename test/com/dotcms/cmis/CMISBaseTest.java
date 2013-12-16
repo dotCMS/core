@@ -30,9 +30,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class CMISBaseTest extends TestBase {
 
@@ -91,7 +91,7 @@ public class CMISBaseTest extends TestBase {
                 "test_files" + java.io.File.separator;
         
         //Reading the file
-        String testFilePath = Config.CONTEXT.getRealPath( testFilesPath + fileName );
+        String testFilePath = FileUtil.getRealPath( testFilesPath + fileName );
         java.io.File tempTestFile = new java.io.File( testFilePath );
         if ( !tempTestFile.exists() ) {
             String message = "File does not exist: '" + testFilePath + "'";

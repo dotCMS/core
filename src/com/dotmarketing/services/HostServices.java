@@ -23,6 +23,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * @author will
@@ -75,7 +76,7 @@ public class HostServices {
 	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
 	            String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
 	            if (velocityRootPath.startsWith("/WEB-INF")) {
-	                velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+	                velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 	            }
 	            velocityRootPath += java.io.File.separator;
 			    
@@ -113,7 +114,7 @@ public class HostServices {
 		String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 		String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
 		if (velocityRootPath.startsWith("/WEB-INF")) {
-			velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+			velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 		}
 		String filePath = folderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
 		velocityRootPath += java.io.File.separator;

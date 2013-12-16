@@ -75,7 +75,10 @@ public class OSGIUtil {
     }
 
     public Framework initializeFramework ( ServletContextEvent context ) {
-
+    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
+    	
+    		return null;
+    	}
         servletContextEvent = context;
 
         String felixDirectory = context.getServletContext().getRealPath( File.separator + "WEB-INF" + File.separator + "felix" );

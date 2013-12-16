@@ -55,7 +55,13 @@
 
 	WorkflowSearcher searcher = (WorkflowSearcher) session.getAttribute(com.dotmarketing.util.WebKeys.WORKFLOW_SEARCHER);
 	if(searcher ==null){
-		searcher = new WorkflowSearcher(request.getParameterMap(), user);
+		
+		Map<String, Object>  newMap = new HashMap<String, Object>();
+
+
+		newMap.putAll(request.getParameterMap());
+		
+		searcher = new WorkflowSearcher(newMap, user);
 		
 	}
 	if(!searcher.isOpen() && ! searcher.isClosed()){

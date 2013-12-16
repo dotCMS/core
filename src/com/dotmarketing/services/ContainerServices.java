@@ -21,6 +21,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
+import com.liferay.util.FileUtil;
 
 /**
  * @author will
@@ -279,7 +280,7 @@ public class ContainerServices {
             String folderPath = (!EDIT_MODE) ? "live" + File.separator: "working" + File.separator;
             String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
             if (velocityRootPath.startsWith("/WEB-INF")) {
-                velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+                velocityRootPath = FileUtil.getRealPath(velocityRootPath);
             }
             velocityRootPath += File.separator;
             String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
@@ -326,7 +327,7 @@ public class ContainerServices {
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
         String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
         if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
         }
         velocityRootPath += java.io.File.separator;
         String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");

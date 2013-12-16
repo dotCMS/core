@@ -28,6 +28,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.XMLUtils;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.util.FileUtil;
 
 public class XSPFServlet extends HttpServlet {
 
@@ -36,7 +37,7 @@ public class XSPFServlet extends HttpServlet {
 
 	@Override
 	public void init() throws ServletException {
-		java.io.File dir = new java.io.File(Config.CONTEXT.getRealPath("/WEB-INF/velocity/static/xspf/"));
+		java.io.File dir = new java.io.File(FileUtil.getRealPath("/WEB-INF/velocity/static/xspf/"));
 		dir.mkdirs();
 	}
 
@@ -76,7 +77,7 @@ public class XSPFServlet extends HttpServlet {
 		List<File> mp3Files = InodeFactory.getChildrenClassByConditionAndOrderBy(folder, File.class,
 				"lower(file_name) like '%.mp3'", "sort_order");
 /*
-		java.io.File cachedFile = new java.io.File(Config.CONTEXT.getRealPath("/WEB-INF/velocity/static/xspf/"
+		java.io.File cachedFile = new java.io.File(FileUtil.getRealPath("/WEB-INF/velocity/static/xspf/"
 				+ URLEncoder.encode(path, "UTF-8") + ".xml"));
 		boolean useCache = cachedFile.exists();
 

@@ -25,6 +25,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  *@deprecated 
@@ -111,7 +112,7 @@ public class FileUtils {
                 + java.io.File.separator + _inode + "." + ext;
 
         if (!UtilMethods.isSet(realPath))
-            return Config.CONTEXT.getRealPath(path);
+            return FileUtil.getRealPath(path);
         else
             return path;
     	
@@ -133,7 +134,7 @@ public class FileUtils {
         } catch (Exception e) { }
         
         if(!UtilMethods.isSet(realPath)){
-        	return Config.CONTEXT.getRealPath(assetPath);
+        	return FileUtil.getRealPath(assetPath);
         }else{
         	return realPath;
         }
@@ -152,7 +153,7 @@ public class FileUtils {
         if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator))
             realPath = realPath + java.io.File.separator;
         if (!UtilMethods.isSet(realPath))
-            return Config.CONTEXT.getRealPath(getRelativeAssetsRootPath());
+            return FileUtil.getRealPath(getRelativeAssetsRootPath());
         else
             return realPath;
     }

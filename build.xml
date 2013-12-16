@@ -449,6 +449,9 @@
 		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
 		        <include name="**/*.sh"/>
 		    </tarfileset>
+			<tarfileset dir="${distribution.output}/dotserver/tomcat/bin" prefix="/dotserver/tomcat/bin" filemode="755">
+		        <include name="**/*.sh"/>
+		    </tarfileset>
 		</tar>
 		
 		<delete dir="${distribution.output}" />
@@ -600,7 +603,8 @@
 		    testurl="http://localhost:${server.port}"
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
-		    testtarget="test-all-junits"/>
+		    testtarget="test-all-junits"
+			timeout="600000"/>
 		<antcall target="restore-files"/>
 		<!--<antcall target="drop-db"/>-->
 	</target>

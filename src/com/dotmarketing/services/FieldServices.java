@@ -24,6 +24,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
+import com.liferay.util.FileUtil;
 
 /**
  * @author Jason Tesser
@@ -67,7 +68,7 @@ public class FieldServices {
 		 if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
 			if (velocityRootPath.startsWith("/WEB-INF")) {
-			    velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+			    velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 			}
 			velocityRootPath += java.io.File.separator;
 			
@@ -100,7 +101,7 @@ public class FieldServices {
 	public static void removeFieldFile (String fieldInode, String contentInode, boolean EDIT_MODE) {
         String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
         if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
         }
         velocityRootPath += java.io.File.separator;
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;

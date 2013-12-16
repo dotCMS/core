@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.util.Config;
+import com.liferay.util.FileUtil;
 
 /**
  * This class contains a list of utility's methods for the preview of the template.
@@ -61,7 +62,7 @@ public class PreviewTemplateUtil {
 	public static PreviewFileAsset savePreviewFileAsset(Versionable asset) throws IOException, DotDataException, DotSecurityException{
 		PreviewFileAsset result = new PreviewFileAsset();
 		String today = SDF.format(new GregorianCalendar().getTime());
-		java.io.File todayPreviewAssetDir = new java.io.File(new java.io.File(Config.CONTEXT.getRealPath(Config.getStringProperty("PREVIEW_ASSET_PATH"))), today);
+		java.io.File todayPreviewAssetDir = new java.io.File(new java.io.File(FileUtil.getRealPath(Config.getStringProperty("PREVIEW_ASSET_PATH"))), today);
 		if(!todayPreviewAssetDir.exists())
 			todayPreviewAssetDir.mkdir();
 		

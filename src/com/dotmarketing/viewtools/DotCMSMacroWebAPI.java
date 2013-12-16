@@ -43,6 +43,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class DotCMSMacroWebAPI implements ViewTool {
 
@@ -255,7 +256,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		}
 		*/
 		folder = UtilMethods.cleanFileSystemPathURI(folder);
-		java.io.File file = new java.io.File(Config.CONTEXT.getRealPath(folder));
+		java.io.File file = new java.io.File(FileUtil.getRealPath(folder));
 		if (!file.exists() || !file.isDirectory()) {
 			return list;
 		}

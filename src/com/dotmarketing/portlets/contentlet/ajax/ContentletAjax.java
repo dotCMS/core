@@ -1098,7 +1098,7 @@ public class ContentletAjax {
 	private String getGlobalVariablesPath() {
 		String globalVarsPath = Config.getStringProperty("GLOBAL_VARIABLES_PATH");
 		if (!UtilMethods.isSet(globalVarsPath)) {
-			globalVarsPath = Config.CONTEXT.getRealPath(File.separator + ".." + File.separator + "common"
+			globalVarsPath = FileUtil.getRealPath(File.separator + ".." + File.separator + "common"
 					+ File.separator + "ext-ejb" + File.separator + "content" + File.separator);
 		}
 		if (!globalVarsPath.endsWith(File.separator))

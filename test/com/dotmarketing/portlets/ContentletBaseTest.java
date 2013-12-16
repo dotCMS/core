@@ -1,5 +1,18 @@
 package com.dotmarketing.portlets;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -46,14 +59,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.*;
+import com.liferay.util.FileUtil;
 
 /**
  * Created by Jonathan Gamba.
@@ -604,7 +610,7 @@ public class ContentletBaseTest extends TestBase {
                 "copy" + java.io.File.separator;
 
         //Reading the file
-        String testFilePath = Config.CONTEXT.getRealPath( testFilesPath + fileName );
+        String testFilePath = FileUtil.getRealPath( testFilesPath + fileName );
         java.io.File tempTestFile = new java.io.File( testFilePath );
         if ( !tempTestFile.exists() ) {
             String message = "File does not exist: '" + testFilePath + "'";
@@ -612,7 +618,7 @@ public class ContentletBaseTest extends TestBase {
         }
 
         //Copying the file
-        String copyTestFilePath = Config.CONTEXT.getRealPath( copyTestFilesPath + fileName );
+        String copyTestFilePath = FileUtil.getRealPath( copyTestFilesPath + fileName );
         java.io.File copyTempTestFile = new java.io.File( copyTestFilePath );
         if ( !copyTempTestFile.exists() ) {
             if ( !copyTempTestFile.createNewFile() ) {
