@@ -183,6 +183,7 @@ public class ClusterResource extends WebResource {
 
     		if(UtilMethods.isSet(server.getLastHeartBeat())) {
     			jsonNode.put("contacted", DateUtil.prettyDateSince(server.getLastHeartBeat()));
+    			jsonNode.put("contactedSeconds", ((new Date()).getTime()-server.getLastHeartBeat().getTime())/1000);
     		}
 
     		if(view==null && !myServerId.equals(server.getServerId())) {
