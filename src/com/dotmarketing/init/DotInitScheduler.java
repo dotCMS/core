@@ -47,6 +47,7 @@ import com.dotmarketing.quartz.job.UsersToDeleteThread;
 import com.dotmarketing.quartz.job.WebDavCleanupJob;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -702,38 +703,33 @@ public class DotInitScheduler {
             }
 
 			//SCHEDULE SERVER HEARTBEAT JOB
-			if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", false)) {
+			if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
 				try {
 					isNew = false;
 
 					try {
-						if ((job = sched.getJobDetail("HeartbeatJob", "dotcms_jobs")) == null) {
-							job = new JobDetail("HeartbeatJob", "dotcms_jobs", ServerHeartbeatJob.class);
+						if ((job = sched.getJobDetail("ServerHeartbeatJob", "dotcms_jobs")) == null) {
+							job = new JobDetail("ServerHeartbeatJob", "dotcms_jobs", ServerHeartbeatJob.class);
 							isNew = true;
 						}
 					} catch (SchedulerException se) {
-						sched.deleteJob("HeartbeatJob", "dotcms_jobs");
-						job = new JobDetail("HeartbeatJob", "dotcms_jobs", ServerHeartbeatJob.class);
+						sched.deleteJob("ServerHeartBeatJob", "dotcms_jobs");
+						job = new JobDetail("ServerHeartbeatJob", "dotcms_jobs", ServerHeartbeatJob.class);
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-					Integer secondsBetweenHeartbeat = Config.getIntProperty("SERVER_HEARTBEAT_FREQUENCY", 60);
-				    SimpleTrigger simpleTrigger = new SimpleTrigger("trigger22", "group22", "HeartbeatJob", "dotcms_jobs", calendar.getTime(), null, SimpleTrigger.REPEAT_INDEFINITELY, secondsBetweenHeartbeat*1000 );
-				    simpleTrigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-//					sched.unscheduleJob("trigger21", "group21");
+				    trigger = new CronTrigger("trigger20", "group20", "ServerHeartbeatJob", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION"));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
 
 					if (isNew)
-						sched.scheduleJob(simpleTrigger);
+						sched.scheduleJob(trigger);
 					else
-						sched.rescheduleJob("trigger22", "group22", simpleTrigger);
-
-
+						sched.rescheduleJob("trigger20", "group20", trigger);
 				} catch (Exception e) {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
 			} else {
-		        Logger.info(DotInitScheduler.class, "ServerHeartBeat Cron Job schedule disabled on this server");
 				if ((job = sched.getJobDetail("ServerHeartbeatJob", "dotcms_jobs")) != null) {
 					sched.deleteJob("ServerHeartbeatJob", "dotcms_jobs");
 				}
