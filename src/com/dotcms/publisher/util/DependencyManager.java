@@ -681,7 +681,7 @@ public class DependencyManager {
 				    structureDependencyHelper( r.getChildStructureInode() );
 			}
 			if(!structures.contains(r.getParentStructureInode()) && config.getOperation().equals( Operation.PUBLISH)){
-				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
+				Structure struct = StructureCache.getStructureByInode(r.getParentStructureInode());
 				structures.addOrClean( r.getParentStructureInode(), struct.getModDate());
                                 if(st!=null)
 				    structureDependencyHelper( r.getParentStructureInode() );
