@@ -617,11 +617,11 @@
 	}
 
 	function fullDeleteContentlet (objId, userId, referer, live, working, write, contentStructureType, structure_id) {
-		//if (write=="1") {
+		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.confirm.delete")) %>')){
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&structure_id='+ structure_id + '&contentStructureType=' + contentStructureType + '&inode=' + objId + '&referer=' + encodeURIComponent(referer);
 			top.location = loc;
-		//}
+		}
 	}
 
 	function editPage (parentId, objId, userId, referer, live, working, write) {
