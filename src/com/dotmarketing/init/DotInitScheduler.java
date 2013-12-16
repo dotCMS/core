@@ -19,6 +19,7 @@ import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.LicenseUtil;
@@ -716,16 +717,16 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-					String cronExpression = Config.getStringProperty("SERVER_HEARTBEAT_CRON_EXPRESSION");
-				    trigger = new CronTrigger("trigger22", "group22", "HeartbeatJob", "dotcms_jobs", calendar.getTime(), null,cronExpression);
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					Integer milisecondsBetweenHeartbeat = Config.getIntProperty("SERVER_HEARTBEAT_CRON_EXPRESSION", 1000);
+				    SimpleTrigger simpleTrigger = new SimpleTrigger("trigger22", "group22", "HeartbeatJob", "dotcms_jobs", calendar.getTime(), null, milisecondsBetweenHeartbeat, SimpleTrigger.REPEAT_INDEFINITELY);
+				    simpleTrigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 //					sched.unscheduleJob("trigger21", "group21");
 					sched.addJob(job, true);
 
 					if (isNew)
-						sched.scheduleJob(trigger);
+						sched.scheduleJob(simpleTrigger);
 					else
-						sched.rescheduleJob("trigger22", "group22", trigger);
+						sched.rescheduleJob("trigger22", "group22", simpleTrigger);
 
 
 				} catch (Exception e) {
