@@ -210,6 +210,7 @@ public interface CategoryAPI {
 	 * @param orderBy - can be null
 	 * @return
 	 * @throws DotDataException
+	 * @deprecated this version doesn't leverage cache at all (!)
 	 */
 	public List<Category> getChildren(Categorizable parent, String relationType, boolean onlyActive,String orderBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
@@ -237,6 +238,7 @@ public interface CategoryAPI {
 	 * @param orderBy
 	 * @return
 	 * @throws DotDataException
+	 * @deprecated this version doesn't leverage cache at all (!)
 	 */
 	public List<Category> getChildren(Categorizable parent, boolean onlyActive, String orderBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
@@ -251,6 +253,7 @@ public interface CategoryAPI {
 	 * @param orderBy
 	 * @return
 	 * @throws DotDataException
+	 * @deprecated this version doesn't leverage cache at all (!)
 	 */
 	public List<Category> getChildren(Categorizable parent, String orderBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
