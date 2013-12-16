@@ -309,6 +309,9 @@
 		var stepId = dijit.byId("stepId");
 		stepId.store= emptyStore;
 		stepId.displayedValue="";
+		document.getElementById("assignedTo").value = "";
+		dijit.byId('showAllLink').set("checked", false);
+		dijit.byId('showme').set("checked", false);
 		var assignedTo = dijit.byId("assignedTo");
 		assignedTo.store= emptyStore;
 		assignedTo.displayedValue="";
