@@ -286,6 +286,7 @@ public class ClusterResource extends WebResource {
         String cachePort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.CACHE_PORT);
         String esPort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
 
+        jsonNode.put("BIND_ADDRESS", server!=null&&UtilMethods.isSet(server.getIpAddress())?server.getIpAddress():"");
         jsonNode.put("CACHE_BINDPORT", server!=null&&UtilMethods.isSet(server.getCachePort())?server.getCachePort():cachePort);
 //        jsonNode.put("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
 //        jsonNode.put("CACHE_MULTICAST_PORT", "45589");

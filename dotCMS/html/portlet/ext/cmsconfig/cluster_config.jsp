@@ -274,7 +274,7 @@ function showClusterPropertiesDialog() {
 					  input.destroyRecursive(false);
 				  }
 
-				html += "<tr><td><input type='checkbox' data-dojo-type='dijit/form/CheckBox' id='use_"+key+"' onChange='enableDisableProp(\""+key+"\")'></td><td style='font-size:11px; width:50%' ><span style='padding-left:15px; color:#d0d0d0; font-size:11px;' id='label_"+key+"'>"+key+"</span></td><td style='padding:5px; text-align:center'><input class='props' style='font-size:11px; width:50px' type='text' data-dojo-type='dijit/form/TextBox' disabled='disabled'  id='"+key+"' value='"+value+"'></input></td></tr>"
+				html += "<tr><td><input type='checkbox' data-dojo-type='dijit/form/CheckBox' id='use_"+key+"' onChange='enableDisableProp(\""+key+"\")'></td><td style='font-size:11px; width:50%' ><span style='padding-left:15px; color:#d0d0d0; font-size:11px;' id='label_"+key+"'>"+key+"</span></td><td style='padding:5px; text-align:center'><input class='props' style='font-size:11px; width:100px' type='text' data-dojo-type='dijit/form/TextBox' disabled='disabled'  id='"+key+"' value='"+value+"'></input></td></tr>"
 			};
 
 			html += "</table>"
