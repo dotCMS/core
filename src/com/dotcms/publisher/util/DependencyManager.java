@@ -195,7 +195,7 @@ public class DependencyManager {
 				workflows.add(asset.getAsset(),scheme.getModDate());
 			}
 		}
-		
+
 		setHostDependencies();
         setFolderDependencies();
         setHTMLPagesDependencies();
@@ -638,14 +638,14 @@ public class DependencyManager {
 		for (Relationship r : relations) {
 			relationships.addOrClean( r.getInode(), r.getModDate());
 
-			if(!structures.contains(r.getChildStructureInode())){
+			if(!structures.contains(r.getChildStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
 				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
 				structures.addOrClean( r.getChildStructureInode(), struct.getModDate());
                                 if(st!=null)
 				    structureDependencyHelper( r.getChildStructureInode() );
 			}
-			if(!structures.contains(r.getParentStructureInode())){
-				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
+			if(!structures.contains(r.getParentStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
+				Structure struct = StructureCache.getStructureByInode(r.getParentStructureInode());
 				structures.addOrClean( r.getParentStructureInode(), struct.getModDate());
                                 if(st!=null)
 				    structureDependencyHelper( r.getParentStructureInode() );
