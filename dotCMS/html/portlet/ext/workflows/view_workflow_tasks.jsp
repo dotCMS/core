@@ -309,6 +309,9 @@
 		var stepId = dijit.byId("stepId");
 		stepId.store= emptyStore;
 		stepId.displayedValue="";
+		document.getElementById("assignedTo").value = "";
+		dijit.byId('showAllLink').set("checked", false);
+		dijit.byId('showme').set("checked", false);
 		var assignedTo = dijit.byId("assignedTo");
 		assignedTo.store= emptyStore;
 		assignedTo.displayedValue="";
@@ -325,7 +328,7 @@
 	}
 	
 	function editTask(id,langId){
-		var url = "<portlet:actionURL windowState="maximized"><portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" /><portlet:param name="cmd" value="view" /><portlet:param name="taskId" value="REPLACEME" /><portlet:param name="langId" value="LANGUAGE" /></portlet:actionURL>";
+		var url = "<portlet:actionURL windowState="maximized"><portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" /><portlet:param name="cmd" value="view" /><portlet:param name="taskId" value="REPLACEME" /><portlet:param name="language" value="LANGUAGE" /></portlet:actionURL>";
 		url = url.replace("REPLACEME", id);
 		url = url.replace("LANGUAGE", langId);
 		window.location=url;
