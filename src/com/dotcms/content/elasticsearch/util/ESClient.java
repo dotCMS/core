@@ -1,13 +1,18 @@
 package com.dotcms.content.elasticsearch.util;
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
+import org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
@@ -52,6 +57,19 @@ public class ESClient {
 		String node_id = ConfigUtils.getServerId();
 		_nodeInstance = nodeBuilder().
         settings(ImmutableSettings.settingsBuilder().put("name", node_id).build()).build().start();
+
+		try {
+			UpdateSettingsResponse resp=_nodeInstance.client().admin().indices().updateSettings(
+			          new UpdateSettingsRequest().settings(
+			                jsonBuilder().startObject()
+			                     .startObject("index")
+			                        .field("auto_expand_replicas","0-all")
+			                     .endObject()
+			               .endObject().string()
+			        )).actionGet();
+		}  catch (Exception e) {
+			Logger.error(ESClient.class, "Unable to set ES property auto_expand_replicas.", e);
+		}
 
 		try {
 		    // wait a bit while the node gets available for requests
@@ -105,7 +123,7 @@ public class ESClient {
 			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
 					?currentServer.getHost():currentServer.getIpAddress();
 
-			String bindAddr = properties!=null && UtilMethods.isSet(properties.get("ES_NETWORK_HOST")) ? properties.get("ES_NETWORK_HOST")
+			String bindAddr = properties!=null && UtilMethods.isSet(properties.get("BIND_ADDRESS")) ? properties.get("BIND_ADDRESS")
 					:Config.getStringProperty("es.network.host", storedBindAddr);
 
 			System.setProperty("es.network.host", bindAddr );

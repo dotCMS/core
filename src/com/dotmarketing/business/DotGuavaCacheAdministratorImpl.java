@@ -176,7 +176,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			String storedBindAddr = (UtilMethods.isSet(localServer.getHost()) && !localServer.getHost().equals("localhost"))
 					?localServer.getHost():localServer.getIpAddress();
 
-			String bindAddr = UtilMethods.isSet(cacheProperties.get("CACHE_BINDADDRESS"))?cacheProperties.get("CACHE_BINDADDRESS")
+			String bindAddr = UtilMethods.isSet(cacheProperties.get("BIND_ADDRESS"))?cacheProperties.get("BIND_ADDRESS")
 					:Config.getStringProperty("CACHE_BINDADDRESS", storedBindAddr );
 
 			if (bindAddr != null) {

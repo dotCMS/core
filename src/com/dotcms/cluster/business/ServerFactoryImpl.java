@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.dotcms.cluster.bean.Server;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -20,6 +19,7 @@ public class ServerFactoryImpl extends ServerFactory {
 
 	private DotConnect dc;
 	private String TIMESTAMPSQL = "NOW()";
+	private static final String HEARTBEAT_TIMEOUT_DEFAULT_VALUE = "300";
 
 	public ServerFactoryImpl() {
 		dc = new DotConnect();
@@ -84,6 +84,7 @@ public class ServerFactoryImpl extends ServerFactory {
 
 	public void updateHeartbeat(String serverId) throws DotDataException {
 
+		dc = new DotConnect();
 		String id = null;
 
 		if (DbConnectionFactory.isMsSql()) {
@@ -143,19 +144,19 @@ public class ServerFactoryImpl extends ServerFactory {
 	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException {
 		if (DbConnectionFactory.isMsSql()) {
 			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
-					+ "where DATEDIFF(SECOND, heartbeat, GETDATE()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
+					+ "where DATEDIFF(SECOND, heartbeat, GETDATE()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT_DEFAULT_VALUE));
 		} else if (DbConnectionFactory.isMySql()) {
 			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
-					+ "where TIMESTAMPDIFF(SECOND, heartbeat, now()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
+					+ "where TIMESTAMPDIFF(SECOND, heartbeat, now()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT_DEFAULT_VALUE));
 		} else if(DbConnectionFactory.isPostgres()) {
 			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
-					+ "where EXTRACT(EPOCH from now()-heartbeat) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
+					+ "where EXTRACT(EPOCH from now()-heartbeat) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT_DEFAULT_VALUE));
 		} else if (DbConnectionFactory.isOracle()) {
 			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
 					+ "where (extract( second from (sysdate-heartbeat) ) "
 					+ " + extract( minute from (sysdate-heartbeat) ) * 60 "
 					+ " + extract( hour from (sysdate-heartbeat) ) * 60 * 60 "
-					+ " + extract( day from (sysdate-heartbeat) ) * 60*60* 24) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", "60"));
+					+ " + extract( day from (sysdate-heartbeat) ) * 60*60* 24) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT_DEFAULT_VALUE));
 		}
 
 		List<Server> aliveServers = new ArrayList<Server>();
