@@ -12,7 +12,7 @@
 </style>
 
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<script src="/html/js/ace-builds-1.1.01/src-noconflict/ace.js" type="text/javascript"></script>
+
 <script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
 
 <script language="JavaScript">
