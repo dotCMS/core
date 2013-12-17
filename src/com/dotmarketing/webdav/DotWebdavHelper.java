@@ -71,8 +71,10 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.auth.AuthException;
@@ -305,18 +307,23 @@ public class DotWebdavHelper {
 		}
 		
 		IFileAsset f =null;
-		Identifier id  = APILocator.getIdentifierAPI().find(host, url);
-		if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
-			Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-			if(cont!=null && InodeUtils.isSet(cont.getIdentifier())){
-				f = APILocator.getFileAssetAPI().fromContentlet(cont);
-			}
-		}else{
-
-			 f = fileAPI.getFileByURI(url, host, false, user, false);
+		try {
+    		Identifier id  = APILocator.getIdentifierAPI().find(host, url);
+    		if(id!=null && InodeUtils.isSet(id.getId())) { 
+    		    if(id.getAssetType().equals("contentlet")){
+    		        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+    	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier())){
+    	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
+    	            }
+    		    }
+    		    else {
+    	             f = fileAPI.getFileByURI(url, host, false, user, false);
+    	        }
+    		}
+		}catch (Exception ex) {
+		    f = null;
 		}
 		
-
 		return f;
 	}
 	
@@ -1083,17 +1090,42 @@ public class DotWebdavHelper {
 
 			try{
 				Identifier identifier  = APILocator.getIdentifierAPI().find(host, getPath(fromPath));
+				
+				Identifier identTo  = APILocator.getIdentifierAPI().find(host, getPath(toPath));
+				boolean destinationExists=identTo!=null && InodeUtils.isSet(identTo.getId());
+				
 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 					Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-					if (getFolderName(fromPath).equals(getFolderName(toPath))) {
-
-						String fileName = getFileName(toPath);
-						if(fileName.contains(".")){
-							fileName = fileName.substring(0, fileName.lastIndexOf("."));
-						}
-						APILocator.getFileAssetAPI().renameFile(fileAssetCont, fileName, user, false);
-					} else {
-						APILocator.getFileAssetAPI().moveFile(fileAssetCont, toParentFolder, user, false);
+					if(!destinationExists) {
+    					if (getFolderName(fromPath).equals(getFolderName(toPath))) {
+    						String fileName = getFileName(toPath);
+    						if(fileName.contains(".")){
+    							fileName = fileName.substring(0, fileName.lastIndexOf("."));
+    						}
+    						APILocator.getFileAssetAPI().renameFile(fileAssetCont, fileName, user, false);
+    					} else {
+    						APILocator.getFileAssetAPI().moveFile(fileAssetCont, toParentFolder, user, false);
+    					}
+					}
+					else {
+					    // if the destination exists lets just create a new version and delete the original file
+					    Contentlet origin = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+					    Contentlet toContentlet = APILocator.getContentletAPI().findContentletByIdentifier(identTo.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+					    Contentlet newversion = APILocator.getContentletAPI().checkout(toContentlet.getInode(), user, false);
+					    
+					    // get a copy in a tmp folder to avoid filename change
+					    java.io.File tmpDir=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+                                +java.io.File.separator+UUIDGenerator.generateUuid());
+					    java.io.File tmp=new java.io.File(tmpDir, toContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+					    FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
+					    
+					    newversion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
+					    newversion = APILocator.getContentletAPI().checkin(newversion, user, false);
+					    if(autoPublish) {
+					        APILocator.getContentletAPI().publish(newversion, user, false);
+					    }
+					    APILocator.getContentletAPI().delete(origin, user, false);
+					    while(APILocator.getContentletAPI().isInodeIndexed(origin.getInode(),1));
 					}
 				}else{
 					File f = fileAPI.getFileByURI(getPath(fromPath), host, false, user, false);
