@@ -20,10 +20,10 @@ import java.util.*;
  */
 public class PackagerTask extends JarJarTask {
 
+    private String dotcmsHome;
     private String outputFolder;
     private String outputFile;
     private String dotcmsJar;
-    private String jspFolder;
     private String dotVersion;
     private String onlyJar;
     private boolean multipleJars;
@@ -269,7 +269,7 @@ public class PackagerTask extends JarJarTask {
         //APPLY THE SAME RULES TO JSP's UNDER THE DOTCMS FOLDER
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         long startJSPsChanges = System.currentTimeMillis();//Track the time
-        File jspFolderFile = new File( getJspFolder() );
+        File jspFolderFile = new File( getDotcmsHome() + File.separator + "dotCMS" );
 
         log( "" );
         log( "-----------------------------------------" );
@@ -289,8 +289,8 @@ public class PackagerTask extends JarJarTask {
          We will keep in a different string builder the commands to apply and will write them in a bash file in case
          that someone needs to apply these rules to external folders and/or files.
          */
-        StringBuilder commands = new StringBuilder();
-        commands.append( "folder=\"" ).append( jspFolderFile.getAbsolutePath() ).append( "\"" ).append( "\n" );
+        StringBuilder replaceCommands = new StringBuilder();
+        replaceCommands.append( "folder=\"" ).append( jspFolderFile.getAbsolutePath() ).append( "\"" ).append( "\n" );
 
         for ( CustomRule rule : rulesToApply.values() ) {
 
@@ -317,7 +317,7 @@ public class PackagerTask extends JarJarTask {
                  Executes the replacing command on all the jsp files under the given folder, also adds the this used command to
                  the string builder with the total of executed commands for a possible manual use.
                  */
-                executeCommand( jspFolderFile, searchPatters, commands );
+                executeCommand( jspFolderFile, searchPatters, replaceCommands );
                 i = 0;
                 searchPatters = new StringBuilder();
             }
@@ -328,7 +328,7 @@ public class PackagerTask extends JarJarTask {
              Executes the replacing command on all the jsp files under the given folder, also adds the this used command to
              the string builder with the total of executed commands for a possible manual use.
              */
-            executeCommand( jspFolderFile, searchPatters, commands );
+            executeCommand( jspFolderFile, searchPatters, replaceCommands );
         }
 
         //Log the time
@@ -338,47 +338,14 @@ public class PackagerTask extends JarJarTask {
          We already have the commands to apply to jsp and java files, now lets create the commands for the
          remaining resources: xml, xsd, tld, properties, etc...
          After collecting all this commands we will write them in a file and will be ready for "migrate" external content.
+         ALSO a script for "undo" modified resources with repackaged packages will be created.
          */
-        chunks = 100;
-        i = 0;
-        searchPatters = new StringBuilder();
-        for ( CustomRule rule : rulesToApply.values() ) {
-
-            String currentPattern = rule.getPattern();
-
-            Boolean strict = true;
-            if ( currentPattern.contains( ".**" ) ) {
-                currentPattern = currentPattern.replace( ".**", ".*" );
-            }
-
-            //Clean-up the pattern
-            String packagePattern = MatchableRule.PackagePattern( currentPattern, strict );
-            String pathPattern = MatchableRule.PathPattern( currentPattern, strict );
-            //Clean up the result
-            String packageResult = MatchableRule.PackageReplacement( rule.getResult(), strict );
-            String pathResult = MatchableRule.PathReplacement( rule.getResult(), strict );
-
-            if ( searchPatters.length() > 0 ) {
-                searchPatters.append( ";" );
-            }
-            searchPatters.append( "s{" ).append( packagePattern ).append( "}{" ).append( packageResult ).append( "}g;s{" ).append( pathPattern ).append( "}{" ).append( pathResult ).append( "}g" );
-            i++;
-
-            if ( i == chunks ) {
-                String externalCommand = "find $folder \\( -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchPatters.toString() + "' {} +";
-                commands.append( externalCommand ).append( "\n" );
-                i = 0;
-                searchPatters = new StringBuilder();
-            }
-        }
-
-        if ( i > 0 ) {
-            String externalCommand = "find $folder \\( -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchPatters.toString() + "' {} +";
-            commands.append( externalCommand ).append( "\n" );
-        }
+        StringBuilder undoCommands = new StringBuilder();
+        generateResourcesCommands( rulesToApply.values(), replaceCommands, undoCommands );
 
         //Write this list of commands into a bash file
-        writeToLog( commands, "replace.sh" );
+        writeToLog( replaceCommands, "replace.sh" );
+        writeToLog( undoCommands, "undo.sh" );
 
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         //Log the total time
@@ -406,9 +373,14 @@ public class PackagerTask extends JarJarTask {
                     //Get the package of the class (from my.package.myClassName to my.package)
                     packageName = name.substring( 0, name.lastIndexOf( "." ) );
 
-                    if ( !packageName.contains( "." ) && (packageName.equals( "common" ) || packageName.equals( "schema" )) ) {
+                    if ( !packageName.contains( "." ) && (
+                            packageName.equals( "common" )
+                                    || packageName.equals( "schema" )
+                                    || packageName.equals( "conf" )
+                                    || packageName.equals( "images" )
+                                    || packageName.equals( "config" )) ) {
                         /*
-                         FIXME: We don't want something like common.**, a very small an common package, replacing this is dangerous
+                          We don't want something like common.**, a very small an common package, replacing this is dangerous
                          */
                         continue;
                     } else if ( packageName.contains( "META-INF" ) ) {
@@ -498,6 +470,94 @@ public class PackagerTask extends JarJarTask {
                 log( "Error replacing JSP's Strings: " + searchPatters.toString() + ".", e, Project.MSG_ERR );
                 //throw new BuildException( "Error replacing JSP's Strings: " + pattern + ".", e );
             }
+        }
+    }
+
+    /**
+     * Generates the commands required to build a script able to replace old packages to new ones (repackaged packages)
+     * and the commands required to build a script able to replace new packages (repackaged packages) to old one.
+     *
+     * @param rulesToApply
+     * @param replaceCommands
+     * @param undoCommands
+     */
+    private void generateResourcesCommands ( Collection<CustomRule> rulesToApply, StringBuilder replaceCommands, StringBuilder undoCommands ) {
+
+        //Folders where to search resources to undo
+        String jspDir = getDotcmsHome() + File.separator + "dotCMS";
+        String srcConfDir = getDotcmsHome() + File.separator + "src-conf";
+        String buildLibsDir = getDotcmsHome() + File.separator + "libs" + File.separator + "buildlibs";
+        undoCommands.append( "folder=\"" ).append( jspDir ).append( " " ).append( srcConfDir ).append( " " ).append( buildLibsDir ).append( "\"" ).append( "\n" );
+
+        int chunks = 100;
+        int i = 0;
+        StringBuilder searchReplacePatters = new StringBuilder();
+        StringBuilder searchUndoPatters = new StringBuilder();
+        for ( CustomRule rule : rulesToApply ) {
+
+            /*
+             -----------------------------------------------------------------
+             Prepare the commands for replacement
+             */
+            String currentPattern = rule.getPattern();
+
+            Boolean strict = true;
+            if ( currentPattern.contains( ".**" ) ) {
+                currentPattern = currentPattern.replace( ".**", ".*" );
+            }
+
+            //Clean-up the pattern
+            String packagePattern = MatchableRule.PackagePattern( currentPattern, strict );
+            String pathPattern = MatchableRule.PathPattern( currentPattern, strict );
+            //Clean up the result
+            String packageResult = MatchableRule.PackageReplacement( rule.getResult(), strict );
+            String pathResult = MatchableRule.PathReplacement( rule.getResult(), strict );
+
+            if ( searchReplacePatters.length() > 0 ) {
+                searchReplacePatters.append( ";" );
+            }
+            searchReplacePatters.append( "s{" ).append( packagePattern ).append( "}{" ).append( packageResult ).append( "}g;s{" ).append( pathPattern ).append( "}{" ).append( pathResult ).append( "}g" );
+
+            /*
+             -----------------------------------------------------------------
+             Prepare the commands for undo
+             */
+            packagePattern = currentPattern.replace( ".*", "" );
+            packagePattern = packagePattern.replaceAll( "\\.", "\\\\." );
+            pathPattern = packagePattern.replaceAll( "\\.", "/" );
+
+            packageResult = rule.getResult().replace( ".@1", "" );
+            packageResult = packageResult.replaceAll( "\\.", "\\\\." );
+            pathResult = packageResult.replaceAll( "\\.", "/" );
+
+            if ( searchUndoPatters.length() > 0 ) {
+                searchUndoPatters.append( ";" );
+            }
+            searchUndoPatters.append( "s{" ).append( packageResult ).append( "}{" ).append( packagePattern ).append( "}g;s{" ).append( pathResult ).append( "}{" ).append( pathPattern ).append( "}g" );
+
+            i++;
+            if ( i == chunks ) {
+
+                //Replacements
+                String externalCommand = "find $folder \\( -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchReplacePatters.toString() + "' {} +";
+                replaceCommands.append( externalCommand ).append( "\n" );
+                //Undo
+                externalCommand = "find $folder \\( -name '*.jsp' -o -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
+                undoCommands.append( externalCommand ).append( "\n" );
+
+                i = 0;
+                searchReplacePatters = new StringBuilder();
+                searchUndoPatters = new StringBuilder();
+            }
+        }
+
+        if ( i > 0 ) {
+            //Replacements
+            String externalCommand = "find $folder \\( -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchReplacePatters.toString() + "' {} +";
+            replaceCommands.append( externalCommand ).append( "\n" );
+            //Undo
+            externalCommand = "find $folder \\( -name '*.jsp' -o -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
+            undoCommands.append( externalCommand ).append( "\n" );
         }
     }
 
@@ -757,6 +817,14 @@ public class PackagerTask extends JarJarTask {
         this.onlyJar = onlyJar;
     }
 
+    public String getDotcmsHome () {
+        return dotcmsHome;
+    }
+
+    public void setDotcmsHome ( String dotcmsHome ) {
+        this.dotcmsHome = dotcmsHome;
+    }
+
     public String getOutputFolder () {
         return outputFolder;
     }
@@ -771,14 +839,6 @@ public class PackagerTask extends JarJarTask {
 
     public void setOutputFile ( String outputFile ) {
         this.outputFile = outputFile;
-    }
-
-    public String getJspFolder () {
-        return jspFolder;
-    }
-
-    public void setJspFolder ( String jspFolder ) {
-        this.jspFolder = jspFolder;
     }
 
     public String getDotcmsJar () {
