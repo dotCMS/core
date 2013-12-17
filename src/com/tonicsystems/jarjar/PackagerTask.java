@@ -1,6 +1,7 @@
 package com.tonicsystems.jarjar;
 
 import com.tonicsystems.jarjar.ext_util.EntryStruct;
+import com.tonicsystems.jarjar.resource.MatchableRule;
 import com.tonicsystems.jarjar.resource.ResourceRewriter;
 import org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.BuildException;
@@ -264,71 +265,123 @@ public class PackagerTask extends JarJarTask {
         //Log the time
         trackTime( "Changes applied to Dependencies!!", startDependenciesChanges );
 
-        if ( !isSkipJpsFiles() ) {//This can be use for testing purposes
+        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //APPLY THE SAME RULES TO JSP's UNDER THE DOTCMS FOLDER
+        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        long startJSPsChanges = System.currentTimeMillis();//Track the time
+        File jspFolderFile = new File( getJspFolder() );
 
-            //Track the time
-            long startJSPsChanges = System.currentTimeMillis();
+        log( "" );
+        log( "-----------------------------------------" );
+        log( "Updating JSP's" );
 
-            //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            //APPLY THE SAME RULES TO JSP's UNDER THE DOTCMS FOLDER
-            //++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            File jspFolderFile = new File( getJspFolder() );
+        /*
+         The faster way to replacing content on the jsp files is for sure executing shell commands.
+         The combination of find and perl do the job, but in order to make it work more efficiently we need to use the multiple replace ('s/op1/np1/g;s/op2/np2/g;...'),
+          replacing rule by rule is very slow.
+         BTW, we must use chunks of rules to replace, sending all of them at the same time will cause a nice "java.io.IOException: error=7, Argument list too long"
+         */
+        int chunks = 200;
+        int i = 0;
+        StringBuilder searchPatters = new StringBuilder();
 
-            log( "" );
-            log( "-----------------------------------------" );
-            log( "Updating JSP's" );
+        /*
+         We will keep in a different string builder the commands to apply and will write them in a bash file in case
+         that someone needs to apply these rules to external folders and/or files.
+         */
+        StringBuilder commands = new StringBuilder();
+        commands.append( "folder=\"" ).append( jspFolderFile.getAbsolutePath() ).append( "\"" ).append( "\n" );
 
-            /*
-             The faster way to replacing content on the jsp files is for sure executing shell commands.
-             The combination of find and perl do the job, but in order to make it work more efficiently we need to use the multiple replace ('s/op1/np1/g;s/op2/np2/g;...'),
-              replacing rule by rule is very slow.
-             BTW, we must use chunks of rules to replace, sending all of them at the same time will cause a nice "java.io.IOException: error=7, Argument list too long"
-             */
-            StringBuilder commands = new StringBuilder();
-            //commands.append( "folder=\".\"" );
-            commands.append( "folder=\"" ).append( jspFolderFile.getAbsolutePath() ).append( "\"" ).append( "\n" );
+        for ( CustomRule rule : rulesToApply.values() ) {
 
-            int chunks = 200;
-            int i = 0;
-            String searchPatters = "";
-            for ( CustomRule rule : rulesToApply.values() ) {
+            //Clean-up the pattern
+            String pattern = rule.getPattern();
+            pattern = pattern.replaceAll( "\\*", "" );
+            String patternFinal = pattern.replaceAll( "\\.", "\\\\." );
 
-                //Clean-up the pattern
-                String pattern = rule.getPattern();
-                pattern = pattern.replaceAll( "\\*", "" );
-                String patternFinal = pattern.replaceAll( "\\.", "\\\\." );
-
-                //Clean up the result
-                String result = rule.getResult();
-                if ( result.lastIndexOf( "@" ) != -1 ) {
-                    result = result.substring( 0, result.lastIndexOf( "@" ) );
-                }
-                String resultFinal = result.replaceAll( "\\.", "\\\\." );
-
-                if ( !searchPatters.isEmpty() ) {
-                    searchPatters += ";";
-                }
-                searchPatters += "s/((?<=\")|(?<=\\()|(?<=,)|(?<=\\s))" + patternFinal + "/" + resultFinal + "/g";
-                i++;
-
-                if ( i == chunks ) {
-                    executeCommand( jspFolderFile, searchPatters, commands );
-                    i = 0;
-                    searchPatters = "";
-                }
+            //Clean up the result
+            String result = rule.getResult();
+            if ( result.lastIndexOf( "@" ) != -1 ) {
+                result = result.substring( 0, result.lastIndexOf( "@" ) );
             }
+            String resultFinal = result.replaceAll( "\\.", "\\\\." );
 
-            if ( i > 0 ) {
+            if ( searchPatters.length() > 0 ) {
+                searchPatters.append( ";" );
+            }
+            searchPatters.append( "s/((?<=\")|(?<=\\()|(?<=,)|(?<=\\s))" ).append( patternFinal ).append( "/" ).append( resultFinal ).append( "/g" );
+            i++;
+
+            if ( i == chunks ) {
+                /*
+                 Executes the replacing command on all the jsp files under the given folder, also adds the this used command to
+                 the string builder with the total of executed commands for a possible manual use.
+                 */
                 executeCommand( jspFolderFile, searchPatters, commands );
+                i = 0;
+                searchPatters = new StringBuilder();
             }
-            //Write this list of commands into a bash file
-            writeToLog( commands, "replace.sh" );
+        }
 
-            //Log the time
-            trackTime( "Changes applied to JSPs!!", startJSPsChanges );
+        if ( i > 0 ) {
+            /*
+             Executes the replacing command on all the jsp files under the given folder, also adds the this used command to
+             the string builder with the total of executed commands for a possible manual use.
+             */
+            executeCommand( jspFolderFile, searchPatters, commands );
         }
 
         //Log the time
+        trackTime( "Changes applied to JSPs!!", startJSPsChanges );
+
+        /*
+         We already have the commands to apply to jsp and java files, now lets create the commands for the
+         remaining resources: xml, xsd, tld, properties, etc...
+         After collecting all this commands we will write them in a file and will be ready for "migrate" external content.
+         */
+        chunks = 100;
+        i = 0;
+        searchPatters = new StringBuilder();
+        for ( CustomRule rule : rulesToApply.values() ) {
+
+            String currentPattern = rule.getPattern();
+
+            Boolean strict = true;
+            if ( currentPattern.contains( ".**" ) ) {
+                currentPattern = currentPattern.replace( ".**", ".*" );
+            }
+
+            //Clean-up the pattern
+            String packagePattern = MatchableRule.PackagePattern( currentPattern, strict );
+            String pathPattern = MatchableRule.PathPattern( currentPattern, strict );
+            //Clean up the result
+            String packageResult = MatchableRule.PackageReplacement( rule.getResult(), strict );
+            String pathResult = MatchableRule.PathReplacement( rule.getResult(), strict );
+
+            if ( searchPatters.length() > 0 ) {
+                searchPatters.append( ";" );
+            }
+            searchPatters.append( "s{" ).append( packagePattern ).append( "}{" ).append( packageResult ).append( "}g;s{" ).append( pathPattern ).append( "}{" ).append( pathResult ).append( "}g" );
+            i++;
+
+            if ( i == chunks ) {
+                String externalCommand = "find $folder \\( -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchPatters.toString() + "' {} +";
+                commands.append( externalCommand ).append( "\n" );
+                i = 0;
+                searchPatters = new StringBuilder();
+            }
+        }
+
+        if ( i > 0 ) {
+            String externalCommand = "find $folder \\( -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchPatters.toString() + "' {} +";
+            commands.append( externalCommand ).append( "\n" );
+        }
+
+        //Write this list of commands into a bash file
+        writeToLog( commands, "replace.sh" );
+
+        //++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //Log the total time
         trackTime( "Finished Process!!", startProcessTime );
     }
 
@@ -353,7 +406,7 @@ public class PackagerTask extends JarJarTask {
                     //Get the package of the class (from my.package.myClassName to my.package)
                     packageName = name.substring( 0, name.lastIndexOf( "." ) );
 
-                    if ( !packageName.contains( "." ) && packageName.equals( "common" ) ) {
+                    if ( !packageName.contains( "." ) && (packageName.equals( "common" ) || packageName.equals( "schema" )) ) {
                         /*
                          FIXME: We don't want something like common.**, a very small an common package, replacing this is dangerous
                          */
@@ -419,29 +472,32 @@ public class PackagerTask extends JarJarTask {
      * @param jspFolderFile
      * @param searchPatters
      */
-    private void executeCommand ( File jspFolderFile, String searchPatters, StringBuilder commands ) {
+    private void executeCommand ( File jspFolderFile, StringBuilder searchPatters, StringBuilder commands ) {
 
         //find . -name '*.jsp' -exec perl -pi -e 's/((?<=")|(?<=\()|\s)org\.apache\.struts\.taglib\.tiles\./com\.dotcms\.repackage\.org\.apache\.struts\.taglib\.tiles\./' {} \;
 
         //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/\"" + pattern + "/\"" + result + "/' {} \\;";
         //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e 's/((?<=\")|(?<=\\()|\\s)" + patternFinal + "/" + resultFinal + "/g' {} \\;";
         //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e '" + searchPatters + "' {} \\;";
-        String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e '" + searchPatters + "' {} +";
+        String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e '" + searchPatters.toString() + "' {} +";
         log( command );
 
-        String externalCommand = "find $folder \\( -name '*.jsp' -o -name '*.java' \\) -exec perl -pi -e '" + searchPatters + "' {} +";
+        String externalCommand = "find $folder \\( -name '*.jsp' -o -name '*.java' \\) -exec perl -pi -e '" + searchPatters.toString() + "' {} +";
         commands.append( externalCommand ).append( "\n" );
 
-        try {
-            Process process = Runtime.getRuntime().exec(
-                    new String[]{
-                            "sh", "-l", "-c", command
-                    }
-            );
-            process.waitFor();
-        } catch ( Exception e ) {
-            log( "Error replacing JSP's Strings: " + searchPatters + ".", e, Project.MSG_ERR );
-            //throw new BuildException( "Error replacing JSP's Strings: " + pattern + ".", e );
+        if ( !isSkipJpsFiles() ) {//This can be use for testing purposes
+
+            try {
+                Process process = Runtime.getRuntime().exec(
+                        new String[]{
+                                "sh", "-l", "-c", command
+                        }
+                );
+                process.waitFor();
+            } catch ( Exception e ) {
+                log( "Error replacing JSP's Strings: " + searchPatters.toString() + ".", e, Project.MSG_ERR );
+                //throw new BuildException( "Error replacing JSP's Strings: " + pattern + ".", e );
+            }
         }
     }
 
