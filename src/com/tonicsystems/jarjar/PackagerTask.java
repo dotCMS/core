@@ -489,6 +489,8 @@ public class PackagerTask extends JarJarTask {
         String buildLibsDir = getDotcmsHome() + File.separator + "libs" + File.separator + "buildlibs";
         undoCommands.append( "folder=\"" ).append( jspDir ).append( " " ).append( srcConfDir ).append( " " ).append( buildLibsDir ).append( "\"" ).append( "\n" );
 
+        String fileTypes = "-name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' -o -name '*.MF'";
+
         int chunks = 100;
         int i = 0;
         StringBuilder searchReplacePatters = new StringBuilder();
@@ -539,10 +541,10 @@ public class PackagerTask extends JarJarTask {
             if ( i == chunks ) {
 
                 //Replacements
-                String externalCommand = "find $folder \\( -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchReplacePatters.toString() + "' {} +";
+                String externalCommand = "find $folder \\( " + fileTypes + " \\) -exec perl -pi -e '" + searchReplacePatters.toString() + "' {} +";
                 replaceCommands.append( externalCommand ).append( "\n" );
                 //Undo
-                externalCommand = "find $folder \\( -name '*.jsp' -o -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
+                externalCommand = "find $folder \\( " + fileTypes + " \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
                 undoCommands.append( externalCommand ).append( "\n" );
 
                 i = 0;
@@ -553,10 +555,10 @@ public class PackagerTask extends JarJarTask {
 
         if ( i > 0 ) {
             //Replacements
-            String externalCommand = "find $folder \\( -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchReplacePatters.toString() + "' {} +";
+            String externalCommand = "find $folder \\( " + fileTypes + " \\) -exec perl -pi -e '" + searchReplacePatters.toString() + "' {} +";
             replaceCommands.append( externalCommand ).append( "\n" );
             //Undo
-            externalCommand = "find $folder \\( -name '*.jsp' -o -name '*.xml' -o -name '*.xsd' -o -name '*.tld' -o -name '*.properties' -o -name '*.conf' -o -name '*.txt' \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
+            externalCommand = "find $folder \\( " + fileTypes + " \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
             undoCommands.append( externalCommand ).append( "\n" );
         }
     }
