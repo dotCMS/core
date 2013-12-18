@@ -5,9 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,18 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.tika.Tika;
-import org.apache.tika.mime.MimeType;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -66,10 +58,8 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
-import com.google.gson.Gson;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
@@ -631,66 +621,38 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	protected void loadRelationshipFields(Contentlet con, Map<String,String> m) throws DotStateException, DotDataException {
-	    List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(con.getStructure());
-
-	    if(relationships==null || relationships.isEmpty())
-	        // if no relationships then nothing to do here
-	        return;
-
-	    Identifier identifier = APILocator.getIdentifierAPI().find(con);
-
-	    String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
-        DotConnect db = new DotConnect();
-        db.setSQL(relatedSQL);
-        db.addParam(identifier.getInode());
-        db.addParam(identifier.getInode());
-        ArrayList<HashMap<String, String>> relatedContentlets = db.loadResults();
-
-        for(Relationship rel : relationships) {
-
-            boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
-            String propName = rel.getRelationTypeValue();
-            String propValues = "";
-
-            for(HashMap<String, String> relatedEntry : relatedContentlets) {
-                String childId = relatedEntry.get("child");
-                String parentId = relatedEntry.get("parent");
-                Long order = Long.parseLong(relatedEntry.get("tree_order"));
-                if(isSameStructRelationship) {
-                    propName = identifier.getInode().equals(parentId)?rel.getRelationTypeValue() + "-child":rel.getRelationTypeValue() + "-parent";
-                }
+	    DotConnect db = new DotConnect();
+        db.setSQL("select * from tree where parent = ? or child = ?");
+        db.addParam(con.getIdentifier());
+        db.addParam(con.getIdentifier());
+        
+        for(Map<String, Object> relatedEntry : db.loadObjectResults()) {
+            
+            String childId = relatedEntry.get("child").toString();
+            String parentId = relatedEntry.get("parent").toString();
+            String relType=relatedEntry.get("relation_type").toString();
+            String order = relatedEntry.get("tree_order").toString();
+            
+            Relationship rel = RelationshipFactory.getRelationshipByRelationTypeValue(relType);
+            
+            if(rel!=null && InodeUtils.isSet(rel.getInode())) {
+                boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+                
+                String propName = isSameStructRelationship ? 
+                        (con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + "-child":rel.getRelationTypeValue() + "-parent") 
+                        : rel.getRelationTypeValue();
+                
+                String orderKey = rel.getRelationTypeValue()+"-order";
+                
                 if(relatedEntry.get("relation_type").equals(rel.getRelationTypeValue())) {
-                    if(identifier.getInode().equalsIgnoreCase(childId)) {
-                        //Index property value
-                        //Index property name if the content is on a same structure (same structure child and parent) kind of relationships
-                        //The we append "-child" at the end of the property to distinguish when indexing the children or the parents
-                        //side of the relationship
-                        //checking if there already values saved on the relationship property, if it's true then
-                        //appending the new values to the property
-                        if(m.get(propName) != null) {
-                            propValues = m.get(propName) + parentId + " ";
-                            m.remove(propName);
-                        } else {
-                            propValues = parentId + " ";
-                        }
-                        m.put(propName, propValues);
-                        //Adding the order of the content to be able to search order by the relationship implicit tree order
-                        m.put(rel.getRelationTypeValue() + "-" + parentId + "-order", NumberUtil.pad(order));
-                    } else {
-                        //Index property value
-                        //Index property name if the content is on a same structure (same structure child and parent) kind of relationships
-                        //The we append "-child" at the end of the property to distinguish when indexing the children or the parents
-                        //side of the relationship
-                        if(m.get(propName) != null) {
-                            propValues = m.get(propName) + childId + " ";
-                            m.remove(propName);
-                        } else {
-                            propValues = childId + " ";
-                        }
-                        m.put(propName, propValues);
-                        //Adding the order of the content to be able to search order by the relationship implicit tree order
-                        m.put(rel.getRelationTypeValue() + "-" + childId + "-order", NumberUtil.pad(order));
-                    }
+                    String me = con.getIdentifier();
+                    String related = me.equals(childId)? parentId : childId;
+                    
+                    // put a pointer to the related content
+                    m.put(propName, (m.get(propName) != null ? m.get(propName) : "") + related + " " );
+                    
+                    // make a way to sort
+                    m.put(orderKey, (m.get(orderKey)!=null ? m.get(orderKey) : "") + related + "_" + order + " ");
                 }
             }
         }
