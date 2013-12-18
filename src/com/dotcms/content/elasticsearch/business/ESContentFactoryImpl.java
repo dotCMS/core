@@ -1332,6 +1332,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
             	if(sortBy.equals("random")) {
             		srb.addSort(SortBuilders.scriptSort("Math.random()", "number"));
             	}
+            	else if(sortBy.endsWith("-order")) {
+            	    // related content ordering
+            	    int ind0=sortBy.indexOf('-'); // relationships tipicaly have a format stname1-stname2
+            	    int ind1=ind0>0 ? sortBy.indexOf('-',ind0+1) : -1;
+            	    if(ind1>0) {
+            	        String relName=sortBy.substring(0, ind1);
+            	        if((ind1+1)<sortBy.length()) {
+                	        String identifier=sortBy.substring(ind1+1, sortBy.length()-6);
+                	        if(UtilMethods.isSet(identifier)) {
+                	            srb.addSort(SortBuilders.scriptSort("related", "number")
+                	                                    .lang("native")
+                	                                    .param("relName", relName)
+                	                                    .param("identifier", identifier)
+                	                                    .order(SortOrder.ASC));
+                	        }
+            	        }
+            	    }
+            	}
             	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw")) {
             		String[] sortbyArr=sortBy.split(",");
 	            	for (String sort : sortbyArr) {
