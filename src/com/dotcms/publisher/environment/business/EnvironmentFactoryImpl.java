@@ -34,6 +34,21 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 	}
 
 	@Override
+	public List<Environment> getEnvironmentsWithServers() throws DotDataException {
+		List<Environment> environments = new ArrayList<Environment>();
+		DotConnect dc = new DotConnect();
+		dc.setSQL(SELECT_ENVIRONMENTS_WITH_SERVERS);
+		List<Map<String, Object>> res = dc.loadObjectResults();
+
+		for(Map<String, Object> row : res){
+			Environment environment = PublisherUtil.getEnvironmentByMap(row);
+			environments.add(environment);
+		}
+
+		return environments;
+	}
+
+	@Override
 	public Environment getEnvironmentById(String id) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ENVIRONMENT_BY_ID);

@@ -62,6 +62,15 @@ public interface EnvironmentAPI {
 	public List<Environment> findAllEnvironments() throws DotDataException;
 
 	/**
+	 * Returns a List of all Environment objects which have Servers (or Endpoints) in it, empty list if not environments are found
+	 *
+	 * @return			the list of environments
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+
+	public List<Environment> findEnvironmentsWithServers() throws DotDataException;
+
+	/**
 	 * deletes the Environment object with the given id and its permissions from the underlying data layer
 	 *
 	 * @param	id	the id of the environment to be deleted
