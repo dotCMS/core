@@ -28,7 +28,7 @@ import com.liferay.portal.model.User;
 public class EnvironmentResource extends WebResource {
 
 	/**
-	 * <p>Returns a JSON representation of the environments that the Role with the given roleid can push to
+	 * <p>Returns a JSON representation of the environments (with servers) that the Role with the given roleid can push to
 	 * <br>Each Environment node contains: id, name.
 	 *
 	 * Usage: /loadenvironments/{roleid}
@@ -59,7 +59,7 @@ public class EnvironmentResource extends WebResource {
 		List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(),true);
 		Set<Environment> environments = new HashSet<Environment>();
 		if(isAdmin){
-			List<Environment> app = APILocator.getEnvironmentAPI().findAllEnvironments();
+			List<Environment> app = APILocator.getEnvironmentAPI().findEnvironmentsWithServers();
 			for(Environment e:app)
 				environments.add(e);
 		}

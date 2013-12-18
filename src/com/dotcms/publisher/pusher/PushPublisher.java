@@ -128,7 +128,8 @@ public class PushPublisher extends Publisher {
 
 				if(!environment.getPushToAll()) {
 					Collections.shuffle(endpoints);
-					endpoints = endpoints.subList(0, 1);
+					if(!endpoints.isEmpty())
+						endpoints = endpoints.subList(0, 1);
 				}
 
 				for (PublishingEndPoint endpoint : endpoints) {
@@ -144,7 +145,7 @@ public class PushPublisher extends Publisher {
 	        			form.field("BUNDLE_NAME", b.getName());
 	        			form.field("ENDPOINT_ID", endpoint.getId());
 	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
-	        			
+
 
 	        			//Sending bundle to endpoint
 	        			WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
@@ -267,19 +268,19 @@ public class PushPublisher extends Publisher {
             }
         }
 
-        
+
         if ( buildUsers ) {
             list.add( UserBundler.class );
         }
-        
+
         if ( buildCategories ) {
             list.add( CategoryBundler.class );
         }
-        
+
         if ( buildOSGIBundle ) {
             list.add( OSGIBundler.class );
-        } 
-        
+        }
+
         if ( buildAsset ) {
             list.add( DependencyBundler.class );
             list.add( HostBundler.class );
@@ -301,9 +302,9 @@ public class PushPublisher extends Publisher {
             list.add( LanguageBundler.class );
             list.add( WorkflowBundler.class );
         }
-    
+
         return list;
-        
+
     }
 
 }

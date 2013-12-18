@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
@@ -16,6 +17,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
+
 import org.apache.commons.httpclient.HttpStatus;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,6 +25,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -419,8 +422,33 @@ public class CMSConfigResource extends WebResource {
         try {
             PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 
+            PublishingEndPoint pep = pepAPI.findEndPointById(endPoint);
+            String environmentId = pep.getGroupId();
+
             //Delete the end point
             pepAPI.deleteEndPointById( endPoint );
+
+            // if the environment is now empty, lets remove it from session
+            if(pepAPI.findSendingEndPointsByEnvironment(environmentId).isEmpty()) {
+            	//If it was deleted successfully lets remove it from session
+                if ( UtilMethods.isSet( request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS ) ) ) {
+
+                    //Get the selected environments from the session
+                    List<Environment> lastSelectedEnvironments = (List<Environment>) request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS );
+                    Iterator<Environment> environmentsIterator = lastSelectedEnvironments.iterator();
+
+                    while ( environmentsIterator.hasNext() ) {
+
+                        Environment currentEnv = environmentsIterator.next();
+                        //Verify if the current env is on the ones stored in session
+                        if ( currentEnv.getId().equals( environmentId ) ) {
+                            //If we found it lets remove it
+                            environmentsIterator.remove();
+                        }
+                    }
+                }
+            }
+
 
             //And prepare the response
             JSONObject jsonResponse = new JSONObject();
