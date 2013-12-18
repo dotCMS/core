@@ -544,7 +544,7 @@ public class PackagerTask extends JarJarTask {
                 String externalCommand = "find $folder \\( " + fileTypes + " \\) -exec perl -pi -e '" + searchReplacePatters.toString() + "' {} +";
                 replaceCommands.append( externalCommand ).append( "\n" );
                 //Undo
-                externalCommand = "find $folder \\( " + fileTypes + " \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
+                externalCommand = "find $folder \\( -name '*.jsp' -o " + fileTypes + " \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
                 undoCommands.append( externalCommand ).append( "\n" );
 
                 i = 0;
@@ -558,7 +558,7 @@ public class PackagerTask extends JarJarTask {
             String externalCommand = "find $folder \\( " + fileTypes + " \\) -exec perl -pi -e '" + searchReplacePatters.toString() + "' {} +";
             replaceCommands.append( externalCommand ).append( "\n" );
             //Undo
-            externalCommand = "find $folder \\( " + fileTypes + " \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
+            externalCommand = "find $folder \\( -name '*.jsp' -o " + fileTypes + " \\) -exec perl -pi -e '" + searchUndoPatters.toString() + "' {} +";
             undoCommands.append( externalCommand ).append( "\n" );
         }
     }
