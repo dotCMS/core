@@ -737,14 +737,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
 				selectedStructure = req.getParameter("selectedStructure");
 				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
+			} else if (InodeUtils.isSet(req.getParameter("sibblingStructure"))) {
+				selectedStructure = req.getParameter("sibblingStructure");
+				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
 			} else if (InodeUtils.isSet(req.getParameter("contentcontainer_inode"))) {
 				String containerInode = req.getParameter("contentcontainer_inode");
 				Container container = (Container) InodeFactory.getInode(containerInode, Container.class);
 				st = (Structure) InodeFactory.getInode(container.getStructureInode(), Structure.class);
-			}else if (InodeUtils.isSet(req.getParameter("sibblingStructure"))) {
-				selectedStructure = req.getParameter("sibblingStructure");
-				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
-			}else{
+			} else {
 				st = StructureFactory.getDefaultStructure();
 				((ContentletForm)form).setAllowChange(true);
 			}
