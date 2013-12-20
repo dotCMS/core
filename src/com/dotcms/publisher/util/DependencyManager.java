@@ -322,18 +322,20 @@ public class DependencyManager {
 		try {
 			List<Folder> folderList = new ArrayList<Folder>();
 
+			HashSet<String> parentFolders = new HashSet<String>();
+
 			for (String id : foldersSet) {
 				Folder f = APILocator.getFolderAPI().find(id, user, false);
 				// Parent folder
 				Folder parent = APILocator.getFolderAPI().findParentFolder(f, user, false);
 				if(UtilMethods.isSet(parent)) {
 					folders.addOrClean( parent.getInode(), parent.getModDate());
-					foldersSet.add(parent.getInode());
+					parentFolders.add(parent.getInode());
 				}
 
 				folderList.add(f);
 			}
-
+			foldersSet.addAll(parentFolders);
 			setFolderListDependencies(folderList);
 		} catch (DotSecurityException e) {
 
