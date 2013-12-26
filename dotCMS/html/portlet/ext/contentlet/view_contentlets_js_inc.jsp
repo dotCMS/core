@@ -38,7 +38,7 @@
         var structureInode;
         var currentStructureFields;
         var currentPage = 1;
-        var currentSortBy;
+        var currentSortBy = "modDate desc";
         var setDotFieldTypeStr = "";
         var DOT_FIELD_TYPE = "dotFieldType";
         var cbContentInodeList = new Array();
@@ -1500,7 +1500,7 @@
                 else
                         currentPage = page;
 
-                if (sortBy != null) {
+                if (sortBy != null && sortBy != "undefined") {
                         if (sortBy == currentSortBy && sortBy.indexOf("desc")==-1)
                                 sortBy = sortBy + " desc";
                         currentSortBy = sortBy;
@@ -1902,8 +1902,8 @@
                                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                           }
                         }
-                        //if (deleted && (write == "1"))
-                                //popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"deleteIcon\" onClick=\"fullDeleteContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Delete-Contentlet") %></div>";
+                        if (deleted && (write == "1"))
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"deleteIcon\" onClick=\"fullDeleteContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Delete-Contentlet") %></div>";
                         popupMenus += "</div>";
                 }
 

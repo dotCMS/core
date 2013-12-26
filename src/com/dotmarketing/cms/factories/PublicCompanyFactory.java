@@ -38,6 +38,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.CompanyUtil;
 import com.liferay.portal.ejb.ImageManagerUtil;
 import com.liferay.portal.model.Company;
+import com.liferay.util.FileUtil;
 
 /**
  * <a href="AddressUtil.java.html"><b><i>View Source</i></b></a>
@@ -116,7 +117,7 @@ public class PublicCompanyFactory extends CompanyUtil {
 			CompanyUtil.update(c);
 
 			/* Set the DM logo */
-			File f = new File(Config.CONTEXT.getRealPath("/html/images/shim.gif"));
+			File f = new File(FileUtil.getRealPath("/html/images/shim.gif"));
 
 			BufferedInputStream in = new BufferedInputStream(new FileInputStream(f));
 

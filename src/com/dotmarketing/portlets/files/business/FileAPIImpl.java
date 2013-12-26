@@ -47,6 +47,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 @Deprecated
 public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
@@ -225,7 +226,7 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 		if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator))
 			realPath = realPath + java.io.File.separator;
 		if (!UtilMethods.isSet(realPath))
-			return Config.CONTEXT.getRealPath(getRelativeAssetsRootPath());
+			return FileUtil.getRealPath(getRelativeAssetsRootPath());
 		else
 			return realPath;
 	}
@@ -734,7 +735,7 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
                 + java.io.File.separator + _inode + "." + ext;
 
         if (!UtilMethods.isSet(realPath))
-            return Config.CONTEXT.getRealPath(path);
+            return FileUtil.getRealPath(path);
         else
             return path;
     	
@@ -761,7 +762,7 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
         } catch (Exception e) { }
         
         if(!UtilMethods.isSet(realPath)){
-        	return Config.CONTEXT.getRealPath(assetPath);
+        	return FileUtil.getRealPath(assetPath);
         }else{
         	return realPath;
         }

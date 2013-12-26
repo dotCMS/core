@@ -106,6 +106,17 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		}			
 	}
 
+	function ifShowInListingChecked(){
+		var form = document.getElementById("field");
+		if(form.listedCB.checked){
+			dijit.byId('indexedCB').attr('disabled', true);
+		}else{
+			if(!form.unique.checked){
+				dijit.byId('indexedCB').attr('disabled', false);
+			}
+		}			
+	}
+	
 	function ifRequiredCBChecked(){
 		var form = document.getElementById("field");
 		if(form.requiredCB.checked){
@@ -321,6 +332,31 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		}      
 		ifUserSearchableChecked();
 	}
+	
+	function setShowInListing(){
+		var form = document.getElementById("field");
+		var indexed = <%=fieldForm.isIndexed()%>;
+	
+		if(form.listedCB.checked){
+			dijit.byId("indexedCB").attr('value', 'on')
+		   <%if(!hasInode){%>
+		   	dijit.byId("indexedCB").attr('value', 'on')
+		 	<%}%>
+		}else{
+		    
+		if(!dijit.byId("uniqueCB").attr('value') == 'on'){ 
+		 if(form.fieldType.value != "category"){ 
+		  if(!indexed){
+			  dijit.byId("indexedCB").attr('value', 'off')
+		  }
+		   <%if(!hasInode){%>
+		   		dijit.byId("indexedCB").attr('value', 'off')
+		   <%}%>
+		  } 
+		 }
+		}      
+		ifShowInListingChecked();
+	}
   
 	function showCategories(show){ 
 	  if(show){
@@ -450,6 +486,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				//ifRequiredCBChecked();
 				ifUniqueChecked();
 				ifUserSearchableChecked();
+				ifShowInListingChecked();
 				//setInitialValues();
                 //ifRequiredCBChecked;
                 
@@ -532,9 +569,9 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		</dt>
 		<dd>
 			<% if(fixed) { %>
-			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" readonly="readonly" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? fieldForm.getFieldName() : "" %>" />
+			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" readonly="readonly" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
 			<% } else { %>
-			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? fieldForm.getFieldName() : "" %>" />
+			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
 			<% }  %>
 		</dd>
 	</dl>
@@ -625,7 +662,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	<dl id="validationRow" style="display:none">
 		<dt><%= LanguageUtil.get(pageContext, "Validation-RegEx") %>:</dt>
 		<dd>
-			<input type="text" dojoType="dijit.form.TextBox" name="regexCheck" id="regexCheck" style="width:250px" readonly="<%=fieldForm.isFixed() || fieldForm.isReadOnly()%>" value="<%= UtilMethods.isSet(fieldForm.getRegexCheck()) ? fieldForm.getRegexCheck() : "" %>" />
+			<input type="text" dojoType="dijit.form.TextBox" name="regexCheck" id="regexCheck" style="width:250px" readonly="<%=fieldForm.isFixed() || fieldForm.isReadOnly()%>" value="<%= UtilMethods.isSet(fieldForm.getRegexCheck()) ? UtilMethods.webifyString(fieldForm.getRegexCheck()) : "" %>" />
 			<select dojoType="dijit.form.FilteringSelect" name="validation" id="validation" onchange="fillRegexp(this)">
 				<option value=""><--<%= LanguageUtil.get(pageContext, "Select-validation") %>--></option>
 				<option value="^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,4})$"><%= LanguageUtil.get(pageContext, "Email") %></option>
@@ -643,11 +680,11 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		
 	<dl id="defaultText" style="display:none">
 		<dt><span id="defaultText" ><%= LanguageUtil.get(pageContext, "Default-Value") %>:</span></dt>
-		<dd><input type="text" dojoType="dijit.form.TextBox" name="defaultValue" style="width:250px" onblur="validateCategories(this);" value="<%= UtilMethods.isSet(fieldForm.getDefaultValue()) ? fieldForm.getDefaultValue() : "" %>" /></span></dd>
+		<dd><input type="text" dojoType="dijit.form.TextBox" name="defaultValue" style="width:250px" onblur="validateCategories(this);" value="<%= UtilMethods.isSet(fieldForm.getDefaultValue()) ? UtilMethods.webifyString(fieldForm.getDefaultValue()) : "" %>" /></span></dd>
 	</dl>
 	<dl id="hintText" style="display:none">
 		<dt><%= LanguageUtil.get(pageContext, "Hint") %>:</dt>
-		<dd><input type="text" dojoType="dijit.form.TextBox" name="hint" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getHint()) ? UtilMethods.escapeDoubleQuotes(fieldForm.getHint()) : "" %>" /></dd>
+		<dd><input type="text" dojoType="dijit.form.TextBox" name="hint" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getHint()) ? UtilMethods.webifyString(fieldForm.getHint()) : "" %>" /></dd>
 	</dl>
 	<!-- END Field Options -->
 		
@@ -676,7 +713,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	<dl id="listed" style="display:none">
 		<dt>&nbsp;</dt>
 		<dd>
-			<input type="checkbox" dojoType="dijit.form.CheckBox" name="listed" id="listedCB" <% if(fieldForm.isListed()){ %> checked="checked" <% } %> />
+			<input type="checkbox" dojoType="dijit.form.CheckBox" name="listed" id="listedCB" onClick="setShowInListing();" <% if(fieldForm.isListed()){ %> checked="checked" <% } %> />
 			<label for="listedCB"><%= LanguageUtil.get(pageContext, "Show-in-listing") %></label>
 		</dd>
 	</dl>

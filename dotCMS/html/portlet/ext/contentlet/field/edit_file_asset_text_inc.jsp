@@ -12,7 +12,7 @@
 </style>
 
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<script src="/html/js/ace-builds-1.1.01/src-noconflict/ace.js" type="text/javascript"></script>
+
 <script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
 
 <script language="JavaScript">
@@ -47,8 +47,7 @@
 		},
 
 		loadTextCallback: function(file) {
-			debugger
-			switch(file.extension) {
+				switch(file.extension) {
 				case 'css':
 					var parser="css";
 					break;
@@ -74,7 +73,6 @@
 				    var parser = "php";
 					break;
 			}
-			debugger
 			aceAreaParser(parser, file);			
 			dijit.byId('editTextDialog').show();	
 			
