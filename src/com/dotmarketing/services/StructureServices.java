@@ -17,6 +17,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
+import com.liferay.util.FileUtil;
 
 /**
  * @author will
@@ -152,7 +153,7 @@ public class StructureServices {
 			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			    String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
 	            if (velocityRootPath.startsWith("/WEB-INF")) {
-	                velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+	                velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 	            }
 	            velocityRootPath += java.io.File.separator;
 
@@ -180,7 +181,7 @@ public class StructureServices {
 	public static void removeStructureFile(Structure structure) {
 		String folderPath = "working/";
 		String filePath=folderPath + structure.getInode() + "." + Config.getStringProperty("VELOCITY_STRUCTURE_EXTENSION");
-		String absolutPath = Config.CONTEXT.getRealPath("/WEB-INF/velocity/" +filePath);
+		String absolutPath = FileUtil.getRealPath("/WEB-INF/velocity/" +filePath);
 		java.io.File f = new java.io.File(absolutPath);
 		f.delete();
 		DotResourceCache vc = CacheLocator.getVeloctyResourceCache();

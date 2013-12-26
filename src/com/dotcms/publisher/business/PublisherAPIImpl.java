@@ -1,6 +1,8 @@
 package com.dotcms.publisher.business;
 
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.beans.Identifier;
@@ -115,9 +117,9 @@ public class PublisherAPIImpl extends PublisherAPI{
         List<String> errorsList = new ArrayList<String>();
 
     	  if ( identifiers != null ) {
-    		  
+
     		  boolean localTransaction = false;
-    			
+
     		  try {
     			  localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
     		  } catch(DotDataException dde) {
@@ -545,15 +547,15 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * @throws DotPublisherException
 	 */
 	public void updateElementStatusFromPublishQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException {
-		
+
 		boolean localTransaction = false;
-		
+
 		try {
 			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 		} catch(DotDataException dde) {
 			throw new DotPublisherException("Error starting Transaction", dde);
 		}
-		
+
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(UPDATEELEMENTFROMQUEUESQL);
@@ -563,7 +565,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			dc.addParam(last_results);
 			dc.addParam(id);
 			dc.loadResult();
-			
+
 			if(localTransaction){
                 HibernateUtil.commitTransaction();
             }
@@ -592,19 +594,19 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 */
 	public void deleteElementFromPublishQueueTable(String identifier) throws DotPublisherException{
 		boolean localTransaction = false;
-		
+
 		try {
 			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 		} catch(DotDataException dde) {
 			throw new DotPublisherException("Error starting Transaction", dde);
 		}
-		
+
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(DELETEELEMENTFROMQUEUESQL);
 			dc.addParam(identifier);
 			dc.loadResult();
-			
+
 			if(localTransaction) {
 			    HibernateUtil.commitTransaction();
 			}
@@ -633,19 +635,19 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 */
 	public void deleteElementsFromPublishQueueTable(String bundleId) throws DotPublisherException{
 		boolean localTransaction = false;
-		
+
 		try {
 			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 		} catch(DotDataException dde) {
 			throw new DotPublisherException("Error starting Transaction", dde);
 		}
-		
+
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(DELETEELEMENTSFROMQUEUESQL);
 			dc.addParam(bundleId);
 			dc.loadResult();
-			
+
 			if(localTransaction) {
 			    HibernateUtil.commitTransaction();
 			}
@@ -669,18 +671,18 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 */
 	public void deleteAllElementsFromPublishQueueTable() throws DotPublisherException{
 		boolean localTransaction = false;
-		
+
 		try {
 			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 		} catch(DotDataException dde) {
 			throw new DotPublisherException("Error starting Transaction", dde);
 		}
-		
+
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(DELETEALLELEMENTFROMQUEUESQL);
 			dc.loadResult();
-			
+
 			if(localTransaction) {
                 HibernateUtil.commitTransaction();
             }
@@ -765,7 +767,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 		publishBundleAssets(bundleId, publishDate);
 
-        // insert a new version of each asset but with the unpublish operation and the expiration date
+        // insert a new version of each asset but with the unpublish operation, the expiration date AND a NEW BUNDLE ID
 
 		List<PublishQueueElement> assets = getQueueElementsByBundleId(bundleId);
 
@@ -775,7 +777,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 			ids.add(asset.getAsset());
 		}
 
-		addAssetsToQueue(ids, bundleId, expireDate, user, DELETE_ELEMENT);
+		try {
+
+			Bundle publishBundle = APILocator.getBundleAPI().getBundleById(bundleId);
+			List<Environment> envsToSendTo = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleId);
+
+			Bundle deleteBundle = new Bundle(publishBundle.getName(), publishDate, expireDate, user.getUserId(), publishBundle.isForcePush());
+	    	APILocator.getBundleAPI().saveBundle(deleteBundle, envsToSendTo);
+
+	        addContentsToUnpublish( ids, deleteBundle.getId(), expireDate, user );
+
+		} catch (DotDataException e) {
+			throw new DotPublisherException(e);
+		}
+
 	}
 
 }

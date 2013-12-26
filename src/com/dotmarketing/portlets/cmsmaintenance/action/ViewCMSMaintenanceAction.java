@@ -347,7 +347,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 			String velocityRootPath =ConfigUtils.getDynamicVelocityPath();
 			if (velocityRootPath.startsWith("/WEB-INF")) {
-				velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+				velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 			}
 
 			if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES))
@@ -423,7 +423,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			Logger.debug(this, "Initializing Cache Values");
 			String velocityRootPath =ConfigUtils.getDynamicVelocityPath();
 			if (velocityRootPath.startsWith("/WEB-INF")) {
-				velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+				velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 			}
 			String livePath = velocityRootPath + File.separator + "live";
 			String workingPath = velocityRootPath + File.separator + "working";
@@ -516,7 +516,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		backupDir.mkdirs();
 		Logger.info(this, "Moving assets to back up directory: " + backupTempFilePath);
 		if(!UtilMethods.isSet(assetRealPath)){
-			assetDir = Config.CONTEXT.getRealPath(assetPath);
+			assetDir = FileUtil.getRealPath(assetPath);
 		}else{
 			assetDir = assetRealPath;
 		}

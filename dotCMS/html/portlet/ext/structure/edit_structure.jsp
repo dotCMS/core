@@ -681,9 +681,9 @@ function disableFormFields(){
 					</dd>
 
 					<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" name="name" style="width:250px" <%if(structure.isFixed()){%> readonly="readonly"  <%} %>value="<%= UtilMethods.isSet(form.getName()) ? form.getName() : "" %>" /></dd>
+					<dd><input type="text" dojoType="dijit.form.TextBox" name="name" maxlength="255" style="width:250px" <%if(structure.isFixed()){%> readonly="readonly"  <%} %>value="<%= UtilMethods.isSet(form.getName()) ? form.getName() : "" %>" /></dd>
 					<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" name="description" style="width:250px" value="<%= UtilMethods.isSet(form.getDescription()) ? form.getDescription() : "" %>" /></dd>
+					<dd><input type="text" dojoType="dijit.form.TextBox" name="description" maxlength="255" style="width:250px" value="<%= UtilMethods.isSet(form.getDescription()) ? form.getDescription() : "" %>" /></dd>
 
 					<% if(UtilMethods.isSet(structure.getInode())) { %>
 						<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>

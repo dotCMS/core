@@ -35,6 +35,7 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -51,6 +52,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
 
@@ -229,11 +231,13 @@ public class CMSFilter implements Filter {
 
         /* if edit mode */
         if (PREVIEW_MODE || EDIT_MODE) {
-			try {
-				pointer = LiveCache.getPathFromCache(uri, host);
+			try {				
+				if (uri.endsWith("/"))
+					uri = uri.substring(0, uri.length() - 1);
+				pointer = WorkingCache.getPathFromCache(uri, host);
 
 				if(!UtilMethods.isSet(pointer)){//DOTCMS-7062
-					pointer = WorkingCache.getPathFromCache(uri, host);
+					pointer = LiveCache.getPathFromCache(uri, host);
 				}
 
             if (!UtilMethods.isSet(pointer) && (uri.endsWith(dotExtension) || InodeUtils.isSet(APILocator.getFolderAPI().findFolderByPath(uri, host,APILocator.getUserAPI().getSystemUser(),false).getInode()))) {
@@ -256,6 +260,17 @@ public class CMSFilter implements Filter {
 				pointer = LiveCache.getPathFromCache(uri, host);
 			} catch (Exception e) {
 				Logger.debug(this.getClass(), "Can't find pointer " + uri);
+				try {
+					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(request)){
+						response.setHeader( "Pragma", "no-cache" );
+						response.setHeader( "Cache-Control", "no-cache" );
+						response.setDateHeader( "Expires", 0 );
+						response.sendError(404);
+						return;
+					}
+				} catch (Exception e1) {
+					Logger.debug(this.getClass(), "Can't find pointer " + uri);
+				}
 			}
             // If the cache hits the db the connection needs to be manually
             // closed
@@ -345,15 +360,17 @@ public class CMSFilter implements Filter {
                 	String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
                 	if (!pointer.contains("." + ext + "?")) {
                 		boolean isDotPage = true;
-                		if(!pointer.contains("." + ext) && !pointer.endsWith("/")
-                				&& pointer.substring(pointer.lastIndexOf("/")).contains(".")){
-                			uri = pointer;
-                			try {
-								pointer = LiveCache.getPathFromCache(uri, host);
-							} catch (Exception e) {
-								Logger.debug(this.getClass(), "Can't find pointer " + uri);
-							}
-							isDotPage = false;
+                		if(!pointer.contains("." + ext) && !pointer.endsWith("/") && pointer.contains("/")){
+                			
+                			if(pointer.substring(pointer.lastIndexOf("/")).contains(".")){
+	                			uri = pointer;
+	                			try {
+									pointer = LiveCache.getPathFromCache(uri, host);
+								} catch (Exception e) {
+									Logger.debug(this.getClass(), "Can't find pointer " + uri);
+								}
+								isDotPage = false;
+                			}
                 		}
 
                 		if(isDotPage){
@@ -368,6 +385,9 @@ public class CMSFilter implements Filter {
                 				if(pointer.endsWith("/")){
                 					pointer = pointer.substring(0, pointer.lastIndexOf("/"));
                 				}
+                				if(!pointer.startsWith("/")){
+                					pointer = "/" + pointer;
+                				}     
                 				String endSlash = pointer.substring(pointer.lastIndexOf("/"));
                 				if (!pointer.endsWith("." + ext) && !endSlash.contains("#")) {
                 					if (!pointer.endsWith("/"))
@@ -447,7 +467,11 @@ public class CMSFilter implements Filter {
 
                 		try{
                 			ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
-                			Contentlet proxy  = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
+                			Contentlet proxy  = new Contentlet();
+                			if(UtilMethods.isSet(cinfo.getLiveInode()))
+                				proxy = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
+                			else if(WebAPILocator.getUserWebAPI().isLoggedToBackend(request))
+                				proxy = APILocator.getContentletAPI().find(cinfo.getWorkingInode(), user, true);
                 			canRead = UtilMethods.isSet(proxy.getInode());
                 		}catch(Exception e){
     						Logger.warn(this, "Unable to find file asset contentlet with identifier " + ident.getId(), e);
@@ -500,12 +524,12 @@ public class CMSFilter implements Filter {
 					Logger.error(CMSFilter.class,e.getMessage(),e);
 					throw new IOException(e.getMessage());
 				}
-                String mimeType = APILocator.getFileAPI().getMimeType(Config.CONTEXT.getRealPath(pointer));
+                String mimeType = APILocator.getFileAPI().getMimeType(FileUtil.getRealPath(pointer));
                 response.setContentType(mimeType);
             }
             LogFactory.getLog(this.getClass()).debug("CMS Filter going to redirect to pointer");
 
-            if (0 < pointer.indexOf(dotExtension)) {
+            if(pointer.endsWith(dotExtension)){
             	//Serving a page through the velocity servlet
                 request.getRequestDispatcher(pointer).forward(request, response);
             } else {
@@ -630,24 +654,34 @@ public class CMSFilter implements Filter {
     }
     
     public static boolean excludeURI(String uri) {
+
         if (uri.trim().equals("/c")
                 || uri.endsWith(".php")
         		|| uri.trim().startsWith("/c/")
-        		|| (uri.indexOf("/ajaxfileupload/upload") != -1)
-        		||  new File(Config.CONTEXT.getRealPath(uri)).exists()
-        		&& !"/".equals(uri)) {
+        		|| (uri.indexOf("/ajaxfileupload/upload") != -1))
+        	 {
         	return true;
         }
-        
+
         if(excludeList==null) buildExcludeList();
 
         if(excludeList.contains(uri)) return true;
-
+        
         for ( String exclusion : excludeList ) {
             if ( RegEX.contains( uri, exclusion ) ) {
                 return true;
             }
         }
+        
+        // finally, if we have the file, serve it
+        if(!"/".equals(uri)){
+			File f = new File(FileUtil.getRealPath(uri));
+			if( f.exists()){
+				return true;
+    			
+    		}
+        }
+
         return false;
    }
 

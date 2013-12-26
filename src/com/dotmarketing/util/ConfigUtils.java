@@ -27,7 +27,7 @@ public class ConfigUtils {
 				realPath = realPath + java.io.File.separator;
 			}
 		} else {
-			realPath = Config.CONTEXT.getRealPath("dotsecure");
+			realPath = com.liferay.util.FileUtil.getRealPath("dotsecure");
 		}
 		return realPath;
 
@@ -39,7 +39,7 @@ public class ConfigUtils {
 	}
 
 	public static String getACheckerPath() {
-		return Config.CONTEXT.getRealPath("/WEB-INF/achecker_sql");
+		return com.liferay.util.FileUtil.getRealPath("/WEB-INF/achecker_sql");
 	}
 
 	public static String getLucenePath() {

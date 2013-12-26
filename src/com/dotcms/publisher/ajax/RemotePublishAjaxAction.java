@@ -15,6 +15,7 @@ import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -28,6 +29,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
@@ -39,6 +41,7 @@ import org.apache.hadoop.mapred.lib.Arrays;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.*;
 import java.lang.reflect.Method;
 import java.text.ParseException;
@@ -793,10 +796,15 @@ public class RemotePublishAjaxAction extends AjaxAction {
             for (String envId : whereToSend) {
             	Environment e = APILocator.getEnvironmentAPI().findEnvironmentById(envId);
 
-            	if(e!=null) {
+            	if(e!=null && APILocator.getPermissionAPI().doesUserHavePermission(e, PermissionAPI.PERMISSION_USE, getUser())) {
             		envsToSendTo.add(e);
             	}
 			}
+            
+            if(envsToSendTo.isEmpty()) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
 
             //Put the selected environments in session in order to have the list of the last selected environments
             request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS, envsToSendTo );

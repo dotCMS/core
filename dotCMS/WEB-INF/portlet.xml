@@ -3503,7 +3503,13 @@
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>	
 	</portlet>
-
+	
+	<portlet>
+		<portlet-name>REST_EXAMPLE_PORTLET</portlet-name>
+		<display-name>Broken Links</display-name>
+		<portlet-class>com.dotcms.rest.RestExamplePortlet</portlet-class>
+	</portlet>
+	
 	<custom-window-state>
 		<window-state>exclusive</window-state>
 	</custom-window-state>

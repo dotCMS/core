@@ -21,6 +21,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class CampaignReportingServlet extends HttpServlet {
 
@@ -92,7 +93,7 @@ public class CampaignReportingServlet extends HttpServlet {
 
 			ServletOutputStream out = response.getOutputStream();
 			response.setContentType("image/gif");
-			FileInputStream fis = new FileInputStream(Config.CONTEXT.getRealPath("/html/images/shim.gif"));
+			FileInputStream fis = new FileInputStream(FileUtil.getRealPath("/html/images/shim.gif"));
 
 			byte[] buf = new byte[1024];
 			int i = 0;

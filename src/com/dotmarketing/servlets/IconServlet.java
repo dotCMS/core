@@ -19,6 +19,7 @@ import org.apache.commons.lang.time.FastDateFormat;
 
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.FileUtil;
 
 public class IconServlet extends HttpServlet {
 
@@ -90,9 +91,9 @@ public class IconServlet extends HttpServlet {
         response.setHeader("Cache-Control", "max-age=" +(60*60*24*30*12));
 
 		
-		File f = new File(com.dotmarketing.util.Config.CONTEXT.getRealPath("/html/images/icons/" + icon + ".png"));
+		File f = new File(FileUtil.getRealPath("/html/images/icons/" + icon + ".png"));
 		if(!f.exists()){
-			f = new File(com.dotmarketing.util.Config.CONTEXT.getRealPath("/html/images/icons/ukn.png"));
+			f = new File(FileUtil.getRealPath("/html/images/icons/ukn.png"));
 		}
         response.setHeader("Content-Length", String.valueOf(f.length()));       
         BufferedInputStream fis = null;

@@ -211,7 +211,7 @@ public class StringUtil {
 		throws IOException {
 		InputStream is=classLoader.getResourceAsStream(name);
 		if (is==null) {
-			File f=new File(Config.CONTEXT.getRealPath("WEB-INF/"+name));
+			File f=new File(FileUtil.getRealPath("WEB-INF/"+name));
 			is=new FileInputStream(f);
 		}
 

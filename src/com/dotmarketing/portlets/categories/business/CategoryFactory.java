@@ -94,6 +94,7 @@ public abstract class CategoryFactory {
 	 * @param id
 	 * @return
 	 * @throws DotDataException
+	 * @deprecated this version doesn't leverage cache at all (!)
 	 */
 	abstract protected List<Category> getChildren(Categorizable parent, String orderBy) throws DotDataException;
 	
@@ -109,6 +110,7 @@ public abstract class CategoryFactory {
 	 * @param orderBy - can be null
 	 * @return
 	 * @throws DotDataException
+	 * @deprecated this version doesn't leverage cache at all (!)
 	 */
 	abstract protected List<Category> getChildren(Categorizable parent, String orderBy, String relationType) throws DotDataException;
 
