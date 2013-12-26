@@ -22,6 +22,7 @@ import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
+import com.liferay.util.Validator;
 
 /**
  * @author will
@@ -43,10 +44,13 @@ public class LoginFactory {
     public static boolean doCookieLogin(String encryptedId, HttpServletRequest request, HttpServletResponse response) {
 
         try {
-            String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
-            //User user = APILocator.getUserAPI().loadUserById(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
+            String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);           
             /*Custom Code*/
-            User user = APILocator.getUserAPI().loadByUserByEmail(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
+            User user = null;
+            if(Validator.isEmailAddress(decryptedId))
+                user = APILocator.getUserAPI().loadByUserByEmail(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
+             else
+                user = APILocator.getUserAPI().loadUserById(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
             /* End of Custom Code */
             try {
                 String userName = user.getEmailAddress();
