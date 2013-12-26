@@ -437,7 +437,7 @@ function getCleanAssetsStatusCallback(status) {
 
     document.getElementById("cleanAssetsMessage").innerHTML =
      	                      '<table> <tr><td>Deleted</td><td>'+status['deleted']+'</td></tr>'+
-     	                              '<tr><td>Analized</td><td>'+status['currentFiles']+'</td></tr>'+
+     	                              '<tr><td>Analyzed</td><td>'+status['currentFiles']+'</td></tr>'+
      	                              '<tr><td>Total Files</td><td>'+status['totalFiles']+'</td></tr>'+
      	                              ((status['running']=='true' && parseInt(status['totalFiles'])>0) ?
      	                              ('<tr><td>Progress</td><td>'+Math.round(100*(parseInt(status['currentFiles'])/parseInt(status['totalFiles'])))+'%</td></tr>') : '')+
