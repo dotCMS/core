@@ -1,0 +1,35 @@
+Manifest-Version: 1.0
+Bundle-Name: Example Custom DWR Servlet OSGI
+Bundle-SymbolicName: Example Custom DWR Servlet OSGI
+Bundle-Description: Example Custom DWR Servlet OSGI
+Bundle-Version: 2.5.1
+Bundle-Activator: com.dotmarketing.osgi.custom.dwr.osgi.Activator
+DynamicImport-Package: *
+Bundle-ClassPath: .,
+ lib/dwr_3rc2modified.jar
+Import-Package: org.osgi.framework,
+ org.directwebremoting,
+ org.directwebremoting.annotations,
+ org.directwebremoting.beehive,
+ org.directwebremoting.contrib,
+ org.directwebremoting.convert,
+ org.directwebremoting.create,
+ org.directwebremoting.dwrp,
+ org.directwebremoting.extend,
+ org.directwebremoting.faces,
+ org.directwebremoting.filter,
+ org.directwebremoting.fluent,
+ org.directwebremoting.guice,
+ org.directwebremoting.guice.spring,
+ org.directwebremoting.hibernate,
+ org.directwebremoting.impl,
+ org.directwebremoting.proxy,
+ org.directwebremoting.proxy.dwr,
+ org.directwebremoting.proxy.scriptaculous,
+ org.directwebremoting.servlet,
+ org.directwebremoting.spring,
+ org.directwebremoting.struts,
+ org.directwebremoting.util,
+ org.directwebremoting.webwork
+Export-Package: com.dotmarketing.osgi.custom.dwr.osgi,
+ com.dotmarketing.osgi.custom.dwr.ajax
