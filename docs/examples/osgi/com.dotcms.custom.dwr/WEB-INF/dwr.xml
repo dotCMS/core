@@ -1,0 +1,8 @@
+<!DOCTYPE dwr PUBLIC "-//GetAhead Limited//DTD Direct Web Remoting 3.0//EN" "http://getahead.org/dwr//dwr30.dtd">
+<dwr>
+	<allow>
+		<create creator="new" javascript="CustomDWRAjax" scope="application">
+			<param name="class" value="com.dotmarketing.osgi.custom.dwr.ajax.CustomDWRAjax"/>
+		</create>
+	</allow>
+</dwr>
