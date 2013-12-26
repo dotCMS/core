@@ -5,6 +5,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.beans.Host;
@@ -24,6 +26,7 @@ import com.dotmarketing.portlets.links.model.Link.LinkType;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.velocity.VelocityServlet;
 
 public class SiteMapWebAPI implements ViewTool {
 
@@ -58,7 +61,7 @@ public class SiteMapWebAPI implements ViewTool {
             stringbuf.append("<strong><A href='/'>Home</a></strong></td><br></tr>\n");
             stringbuf.append("<tr><td valign=top width=\"" + percent + "%\">");
 
-            stringbuf = getEntries(itemsChildrenList, host, stringbuf, level);
+            stringbuf = getEntries(itemsChildrenList, host, stringbuf, level, request);
 
             stringbuf.append("</td></tr></table><BR><BR><BR>");
 
@@ -72,7 +75,7 @@ public class SiteMapWebAPI implements ViewTool {
         return stringbuf.toString();
     }
 
-    private StringBuffer getEntries(List itemsChildrenList, Host parentHost, StringBuffer stringbuf, int level) throws DotStateException, DotDataException, DotSecurityException {
+    private StringBuffer getEntries(List itemsChildrenList, Host parentHost, StringBuffer stringbuf, int level, HttpServletRequest request) throws DotStateException, DotDataException, DotSecurityException {
 
         //gets menu items for this folder
         java.util.Iterator itemsChildrenListIter = itemsChildrenList.iterator();
@@ -119,7 +122,11 @@ public class SiteMapWebAPI implements ViewTool {
                 if (((Link) childItem).isWorking() && !((Link) childItem).isDeleted()) {
                 	Link link = (Link) childItem;
                 	if(link.getLinkType().equals(LinkType.CODE.toString())) {
-	                    stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('" + UtilMethods.espaceVariableForVelocity(link.getLinkCode()) + "'), $velocityContext)\n");
+                		if ( request.getAttribute( VelocityServlet.VELOCITY_CONTEXT ) != null && request.getAttribute( VelocityServlet.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
+                			stringbuf.append(UtilMethods.evaluateVelocity(UtilMethods.restoreVariableForVelocity(UtilMethods.espaceVariableForVelocity(link.getLinkCode())), (Context) request.getAttribute( VelocityServlet.VELOCITY_CONTEXT )));
+                        }else{
+                        	stringbuf.append("$UtilMethods.evaluateVelocity($UtilMethods.restoreVariableForVelocity('" + UtilMethods.espaceVariableForVelocity(link.getLinkCode()) + "'), $velocityContext)\n");
+                        }
                 	} else {
 	                    stringbuf.append("<li><a href=\"" + ((Link) childItem).getProtocal() + ((Link) childItem).getUrl()
 	                            + "\" target=\"" + ((Link) childItem).getTarget() + "\">\n");
