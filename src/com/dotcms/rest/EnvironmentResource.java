@@ -9,7 +9,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.dotcms.publisher.environment.bean.Environment;
@@ -83,8 +85,10 @@ public class EnvironmentResource extends WebResource {
 
 		json.append("]");
 
+		CacheControl cc = new CacheControl();
+		cc.setNoCache(true);
+		return Response.ok(json.toString(), MediaType.APPLICATION_JSON_TYPE).cacheControl(cc).build();
 
-		return responseResource.response( json.toString() );
 	}
 
 }
