@@ -5,6 +5,7 @@
 		#set($referer =	"$request.getAttribute('com.dotmarketing.clickstream.uri.override')?")
 	#end
 #end
+$import.read("/html/common/messages_inc.jsp") 
 <script type="text/javascript" src="/dwr/engine.js"></script>
 <script type="text/javascript" src="/dwr/util.js"></script>
 <script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
@@ -812,5 +813,17 @@
 	</div>
 </div>
 
-
+#set($duplicatedError = '')
+#if($UtilMethods.isSet($!session.getAttribute("duplicatedErrorMessage")))
+		#set($duplicatedError = $session.getAttribute("duplicatedErrorMessage"))
+#end
+$session.removeAttribute("duplicatedErrorMessage")
+<script type="text/javascript">
+	dojo.addOnLoad(function () {
+	var duplicatedContentError = '${duplicatedError}';
+	if(duplicatedContentError){
+      showDotCMSSystemMessage(duplicatedContentError);
+	}	
+	});
+</script>
 
