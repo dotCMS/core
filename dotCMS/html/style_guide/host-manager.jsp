@@ -114,7 +114,12 @@
 			position:absolute;
 			border:1px solid #D0D0D0;
 			background:#fff;
+			bottom:0px;
 
+		}
+		#actionPanelTableHeader{
+			padding:0px;
+			margin:0px;
 		}
 		.green{
 			color:#8c9ca9;
@@ -205,38 +210,42 @@
 					id:"display-arrow",
 					},dojo.body());
 				
+				
 			},
 			
 			
 			placeActionPanel:function(){
-				var tableHeader = dojo.position(dojo.byId("actionPanelTableHeader"));
+				var tableHeader = dojo.position(dojo.byId("actionPanelTableHeader"), true);
 				var actionPanel = dojo.position(dojo.byId("actionPanel"), true);
 				var scroll = dojo.body().scrollTop;
 				var bottomOfTheHeader =tableHeader.y+tableHeader.h;
+
 				if(bottomOfTheHeader - scroll < 0 ){
+					console.log("bottomOfTheHeader:" + bottomOfTheHeader);
+					console.log("scroll:" + scroll);
 					dojo.style("actionPanel", "top", "0px");
-					
 					dojo.style("actionPanel", "position","fixed");
 					return;
 				}
 				else{
 					dojo.style("actionPanel", "position","absolute");
-					
 				}
 				var topOfThePanel = (tableHeader.y+tableHeader.h)<0 ? scroll: tableHeader.y+tableHeader.h;
 
 				
-				/*
-					console.log("tableHeader y:" + dojo.position(dojo.byId("actionPanelTableHeader")).y);
+					console.log("zadsada w:" + dojo.position("zadsada").w);
+					console.log("tableHeader y:" + tableHeader.y);
+					console.log("tableHeader w:" + tableHeader.w);
 					console.log("actionPanel y:" + actionPanel.y);
+					console.log("actionPanel x:" + actionPanel.x);
 					console.log("topOfThePanel:" + topOfThePanel);
 					console.log("Scroll:" +scroll);
-				*/
+				
 				
 
 				
 				dojo.style("actionPanel", "top", topOfThePanel + "px");
-				dojo.style("actionPanel", "width", (tableHeader.w - actionPanel.x-1) + "px");
+				dojo.style("actionPanel", "width", tableHeader.w -1 + "px");
 				dojo.style("actionPanel", "left", tableHeader.x  + "px");
 			}
 
@@ -268,18 +277,18 @@
 					<th width="25%">IP Address</th>
 					<th width="20%">Contacted</th>
 					<th width="6%" style="text-align:center;">Status</th>
-					<th id="actionPanelTableHeader"><div style="width:290px;">&nbsp;</div></th>
+					<th id="actionPanelTableHeader"><div id="zadsada" style="width:290px;">&nbsp;</div></th>
 				</tr>
-				<%for(int i=0;i<100;i++){ %>
-				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle('<%=i%>','/html/style_guide/host-manager-action-pallete.jsp');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center" style="color:#8c9ca9;"><i class="fa fa-user fa-3x"></i></td>
-					<td>My Dotcms Node <%=i+1 %></td>
-					<td>192.168.1.<%=5+i %></td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td></td>
-				</tr>
+				<%for(int i=0;i<1;i++){ %>
+					<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle('<%=i%>','/html/style_guide/host-manager-action-pallete.jsp');">
+						<td align="center"><img src="images/icon-server.png"></td>
+						<td align="center" style="color:#8c9ca9;"><i class="fa fa-user fa-3x"></i></td>
+						<td>My Dotcms Node <%=i+1 %></td>
+						<td>192.168.1.<%=5+i %></td>
+						<td>1 min ago</td>
+						<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
+						<td></td>
+					</tr>
 				<%} %>
 			</table>
 			
