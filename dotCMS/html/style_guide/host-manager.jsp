@@ -268,34 +268,34 @@
 	</script>
 	
 	<div>
-			<table class="listingTable">
-				
-				<tr>
-				    <th width="7%">&nbsp;</th>
-				    <th width="7%">&nbsp;</th>
-					<th width="35%">Name</th>
-					<th width="25%">IP Address</th>
-					<th width="20%">Contacted</th>
-					<th width="6%" style="text-align:center;">Status</th>
-					<th id="actionPanelTableHeader"><div id="zadsada" style="width:290px;">&nbsp;</div></th>
+		<table class="listingTable">
+			
+			<tr>
+			    <th width="7%">&nbsp;</th>
+			    <th width="7%">&nbsp;</th>
+				<th width="35%">Name</th>
+				<th width="25%">IP Address</th>
+				<th width="20%">Contacted</th>
+				<th width="6%" style="text-align:center;">Status</th>
+				<th id="actionPanelTableHeader"><div id="zadsada" style="width:290px;">&nbsp;</div></th>
+			</tr>
+			<%for(int i=0;i<1;i++){ %>
+				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle('<%=i%>','/html/style_guide/host-manager-action-pallete.jsp');">
+					<td align="center"><img src="images/icon-server.png"></td>
+					<td align="center" style="color:#8c9ca9;"><i class="fa fa-user fa-3x"></i></td>
+					<td>My Dotcms Node <%=i+1 %></td>
+					<td>192.168.1.<%=5+i %></td>
+					<td>1 min ago</td>
+					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
+					<td></td>
 				</tr>
-				<%for(int i=0;i<1;i++){ %>
-					<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle('<%=i%>','/html/style_guide/host-manager-action-pallete.jsp');">
-						<td align="center"><img src="images/icon-server.png"></td>
-						<td align="center" style="color:#8c9ca9;"><i class="fa fa-user fa-3x"></i></td>
-						<td>My Dotcms Node <%=i+1 %></td>
-						<td>192.168.1.<%=5+i %></td>
-						<td>1 min ago</td>
-						<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-						<td></td>
-					</tr>
-				<%} %>
-			</table>
-			
-			
-			<div id="actionPanel" class="hideMe" style="background:white">
+			<%} %>
+		</table>
+		
+		
+		<div id="actionPanel" class="hideMe" style="background:white">
 
-			</div>
+		</div>
 			
 	</div>
 
