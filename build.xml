@@ -445,6 +445,7 @@
 		<tar destfile="${distribution.output}/../dotcms_${dotcms.release.version}.tar.gz" compression="gzip" longfile="gnu">
 			<tarfileset dir="${distribution.output}">
 		        <include name="**/**"/>
+				<exclude name="**/*.sh"/>
 		    </tarfileset>
 		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
 		        <include name="**/*.sh"/>
