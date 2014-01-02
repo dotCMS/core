@@ -189,18 +189,16 @@
 				var actionPanel = dojo.position('actionPanel');
 
 				var actionPanelRight = actionPanel.x-20;
+
+				var style="top:"+ selectedRowY +"px;left:"+actionPanelRight+"px;position:absolute;z-index:9999";
+				/*
+				console.log("style:" + style);
+				console.log("selectedRowY:" + selectedRowY);
+				console.log("actionPanelRight:" + actionPanelRight);
+				*/
+				
 				
 
-				
-				
-				//console.log("selectedRowY:" + selectedRowY);
-				//console.log("actionPanelRight:" + actionPanelRight);
-	
-				
-				
-				//dojo.style("insideWrapper", "height", y + "px");
-				var style="top:"+ selectedRowY +"px;left:"+actionPanelRight+"px;position:absolute;z-index:9999";
-				//console.log("style:" + style);
 				var n = dojo.create("div", { 
 					innerHTML: "<img src='images/arrow.png' border='4'>",
 					style:style,
@@ -213,15 +211,29 @@
 			placeActionPanel:function(){
 				var tableHeader = dojo.position(dojo.byId("actionPanelTableHeader"));
 				var actionPanel = dojo.position(dojo.byId("actionPanel"), true);
+				var scroll = dojo.body().scrollTop;
+				var bottomOfTheHeader =tableHeader.y+tableHeader.h;
+				if(bottomOfTheHeader - scroll < 0 ){
+					dojo.style("actionPanel", "top", "0px");
+					
+					dojo.style("actionPanel", "position","fixed");
+					return;
+				}
+				else{
+					dojo.style("actionPanel", "position","absolute");
+					
+				}
+				var topOfThePanel = (tableHeader.y+tableHeader.h)<0 ? scroll: tableHeader.y+tableHeader.h;
+
 				
+				/*
+					console.log("tableHeader y:" + dojo.position(dojo.byId("actionPanelTableHeader")).y);
+					console.log("actionPanel y:" + actionPanel.y);
+					console.log("topOfThePanel:" + topOfThePanel);
+					console.log("Scroll:" +scroll);
+				*/
 				
 
-				var topOfThePanel = (tableHeader.y+tableHeader.h)<0 ? dojo.body().scrollTop: tableHeader.y+tableHeader.h;
-
-				console.log("tableHeader y:" + dojo.position(dojo.byId("actionPanelTableHeader")).y);
-				console.log("tableHeader width:" + (tableHeader.w - actionPanel.x));
-				console.log("topOfThePanel:" + topOfThePanel);
-				console.log("Scroll:" + dojo.body().scrollTop);
 				
 				dojo.style("actionPanel", "top", topOfThePanel + "px");
 				dojo.style("actionPanel", "width", (tableHeader.w - actionPanel.x-1) + "px");
@@ -237,7 +249,12 @@
 
 		});
 		
-	
+		
+		dojo.connect(window, 'onresize', this, function(event) {
+			actionPanelTable.placeActionPanel();
+
+		});
+		
 
 	</script>
 	
