@@ -47,6 +47,7 @@
 		dojo.require("dijit.Tooltip");
 		dojo.require("dojo.parser");
 		dojo.require("dojo.fx");
+		dojo.require("dojox.layout.ContentPane");
 	</script>
 
 </head>
@@ -58,7 +59,7 @@
 
 	<div id="hd" style="background: #666;">
 		<div class="yui-g">
-			<div class="yui-u first"><img alt="dotCMS" src="//dotcms.com/application/themes/dotcms/img/logo.png" style="height:30px;"></div>
+			<div class="yui-u first"><img alt="dotCMS" src="//dotcms.com/application/themes/dotcms/img/logo.png" style="height:40px;"></div>
 			<div class="yui-u" style="text-align:right;padding: 10px 10px 0 0;">
 				<div style="font-size:85%;">
 					<b><a href="/html/style_guide/code_style_guide.jsp">Code Style Guide</a></b> |
@@ -88,10 +89,7 @@
 			background-color: #eff3f8;
 			cursor: pointer;
 		}
-		.arrowWrapper{
-			position:relative;
-			height:41px;
-		}
+
 		.arrow{
 			position:absolute;
 			width:23px;
@@ -112,16 +110,11 @@
 		tr.active {
 			background-color: #eff3f8;
 		}
-		#pannel{
+		#actionPanel{
 			position:absolute;
-			top: 35px;
-			bottom: 0px;
-			right:0px;
-			width:288px;
-			min-height:450px;
 			border:1px solid #D0D0D0;
 			background:#fff;
-			padding-bottom:30px;
+
 		}
 		.green{
 			color:#8c9ca9;
@@ -135,20 +128,122 @@
 	</style>
 	
 	<script>
-		function toggle1(row){
-			dojo.toggleClass("panel", "hideMe");
-			dojo.toggleClass('row-' + row, "active");
-			if (row > 7){
-				y = (row - 7) * 60;
-			}else{
-				y = 0;
+		var actionPanelTable = {
+			lastRow:undefined,
+			
+			
+			
+			toggle:function(row, jspToShow){
+	
+				dojo.addClass("actionPanel", "hideMe");
+				dojo.destroy("display-arrow");
+					
+	
+	
+				// deactivate last clicked row
+				if(this.lastRow != undefined){
+					dojo.removeClass('row-' + this.lastRow, "active");
+					if(this.lastRow == row){
+						this.lastRow = null;
+						return;
+					}
+				}
+				
+				dojo.addClass('row-' + row, "active");
+	
+				this.lastRow=row;
+				
+				
+				var myCp = dijit.byId("actionPanelContainer");
+				var hanger = dojo.byId("actionPanel");
+				if(!hanger){
+					return;
+				}
+				if (myCp) {
+					myCp.attr("content","");
+					myCp.destroyRecursive(true);
+				}
+				
+				myCp = new dojox.layout.ContentPane({
+					id : "actionPanelContainer"
+					}).placeAt("actionPanel");
+				
+				
+				var r = Math.floor(Math.random() * 1000000000);
+	
+				if(jspToShow.indexOf("?")<0){
+					jspToShow = jspToShow +"?";
+				}
+	
+				
+				var selectedRow = dojo.position('row-' + row, true);
+				var selectedRowY = (selectedRow.y + (selectedRow.h/2) - 19);
+				this.placeActionPanel();
+				dojo.removeClass("actionPanel", "hideMe");	
+				myCp.attr("href", jspToShow + "&rand=" + r);
+				//dojo.parser.parse("actionPanel");
+				
+				
+				
+
+				var actionPanel = dojo.position('actionPanel');
+
+				var actionPanelRight = actionPanel.x-20;
+				
+
+				
+				
+				//console.log("selectedRowY:" + selectedRowY);
+				//console.log("actionPanelRight:" + actionPanelRight);
+	
+				
+				
+				//dojo.style("insideWrapper", "height", y + "px");
+				var style="top:"+ selectedRowY +"px;left:"+actionPanelRight+"px;position:absolute;z-index:9999";
+				//console.log("style:" + style);
+				var n = dojo.create("div", { 
+					innerHTML: "<img src='images/arrow.png' border='4'>",
+					style:style,
+					id:"display-arrow",
+					},dojo.body());
+				
+			},
+			
+			
+			placeActionPanel:function(){
+				var tableHeader = dojo.position(dojo.byId("actionPanelTableHeader"));
+				var actionPanel = dojo.position(dojo.byId("actionPanel"), true);
+				
+				
+
+				var topOfThePanel = (tableHeader.y+tableHeader.h)<0 ? dojo.body().scrollTop: tableHeader.y+tableHeader.h;
+
+				console.log("tableHeader y:" + dojo.position(dojo.byId("actionPanelTableHeader")).y);
+				console.log("tableHeader width:" + (tableHeader.w - actionPanel.x));
+				console.log("topOfThePanel:" + topOfThePanel);
+				console.log("Scroll:" + dojo.body().scrollTop);
+				
+				dojo.style("actionPanel", "top", topOfThePanel + "px");
+				dojo.style("actionPanel", "width", (tableHeader.w - actionPanel.x-1) + "px");
+				dojo.style("actionPanel", "left", tableHeader.x  + "px");
 			}
-			dojo.style("insideWrapper", "height", y + "px");
-		}
+
+		};
+		
+		
+		
+		dojo.connect(window, 'onscroll', this, function(event) {
+			actionPanelTable.placeActionPanel();
+
+		});
+		
+	
+
 	</script>
 	
-	<div style="position:relative;">
+	<div>
 			<table class="listingTable">
+				
 				<tr>
 				    <th width="7%">&nbsp;</th>
 				    <th width="7%">&nbsp;</th>
@@ -156,179 +251,24 @@
 					<th width="25%">IP Address</th>
 					<th width="20%">Contacted</th>
 					<th width="6%" style="text-align:center;">Status</th>
-					<th><div style="width:290px;">&nbsp;</div></th>
+					<th id="actionPanelTableHeader"><div style="width:290px;">&nbsp;</div></th>
 				</tr>
-				<tr id="row-0" onclick="javascript:toggle1('0');">
+				<%for(int i=0;i<100;i++){ %>
+				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle('<%=i%>','/html/style_guide/host-manager-action-pallete.jsp');">
 					<td align="center"><img src="images/icon-server.png"></td>
 					<td align="center" style="color:#8c9ca9;"><i class="fa fa-user fa-3x"></i></td>
-					<td>My Dotcms Node 1</td>
-					<td>255.255.255:7801</td>
+					<td>My Dotcms Node <%=i+1 %></td>
+					<td>192.168.1.<%=5+i %></td>
 					<td>1 min ago</td>
 					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
+					<td></td>
 				</tr>
-				<tr id="row-1" onclick="javascript:toggle1('1');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 2</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x red"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
-				<tr id="row-2" onclick="javascript:toggle1('2');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 3</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x yellow"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
-				<tr id="row-3" onclick="javascript:toggle1('3');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 4</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
-				<tr id="row-4" onclick="javascript:toggle1('4');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 4</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
-				<tr id="row-5" onclick="javascript:toggle1('5');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 4</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
-				<tr id="row-6" onclick="javascript:toggle1('6');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 4</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
-				<tr id="row-7" onclick="javascript:toggle1('7');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 4</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
-				<tr id="row-8" onclick="javascript:toggle1('8');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 4</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
-				<tr id="row-9" onclick="javascript:toggle1('9');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 4</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
-				<tr id="row-10" onclick="javascript:toggle1('10');">
-					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center">&nbsp;</td>
-					<td>My Dotcms Node 4</td>
-					<td>255.255.255:7801</td>
-					<td>1 min ago</td>
-					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td><div class="arrowWrapper"><div class="arrow"><img src="images/arrow.png"></div></div></td>
-				</tr>
+				<%} %>
 			</table>
 			
 			
-			<div id="panel" class="hideMe">
-				<div id="insideWrapper"></div>
-				<div style="margin:15px;padding:0 0 10px 0;border-bottom:1px solid #D0D0D0">
-					<b>Action Pallete</b>
-				</div>
-				
-				<div style="margin:15px;padding:0 0 20px 0;border-bottom:1px solid #D0D0D0; font-size: 88%;">
-					<table>
-						<tr>
-							<td style="width:15px;padding: 0 5px;"><i style="color: #f6d57e;" class="fa fa-circle"></i></td>
-							<td style="width:100%;padding: 0 5px;"><b>Cache</b></td>
-							<td style="width:15px;padding: 0 5px;">&nbsp;</td>
-						</tr>
-						<tr>
-							<td style="padding: 0 5px;">&nbsp;</td>
-							<td style="padding: 0 5px;">Nodes(s)</td>
-							<td  style="padding: 0 5px;" align="right">3</td>
-						</tr>
-					</table>
-				</div>
-				
-				<div style="margin:15px;padding:0 0 20px 0;border-bottom:1px solid #D0D0D0; font-size: 88%;">
-					<table>
-						<tr>
-							<td style="width:15px;padding: 0 5px;"><i style="color: #6baf73;" class="fa fa-circle"></i></td>
-							<td style="width:100%;padding: 0 5px;"><b>Index</b></td>
-							<td style="width:15px;padding: 0 5px;">&nbsp;</td>
-						</tr>
-						<tr>
-							<td style="padding: 0 5px;">&nbsp;</td>
-							<td style="padding: 0 5px;">Nodes(s)</td>
-							<td  style="padding: 0 5px;" align="right">4</td>
-						</tr>
-					</table>
-				</div>
-				
-				<div style="margin:15px;padding:0 0 20px 0;border-bottom:1px solid #D0D0D0; font-size: 88%;">
-					<table>
-						<tr>
-							<td style="width:15px;padding: 0 5px;"><i style="color: #6baf73;" class="fa fa-circle"></i></td>
-							<td style="width:100%;padding: 0 5px;"><b>Assets</b></td>
-							<td style="width:15px;padding: 0 5px;">&nbsp;</td>
-						</tr>
-						<tr>
-							<td style="padding: 0 5px;">&nbsp;</td>
-							<td style="padding: 0 5px;">Read/Write</td>
-							<td  style="padding: 0 5px;" align="right">YES</td>
-						</tr>
-						<tr>
-							<td style="padding: 0 5px;">&nbsp;</td>
-							<td style="padding: 0 5px;">Started</td>
-							<td  style="padding: 0 5px;" align="right">01/12/2013</td>
-						</tr>
-						<tr>
-							<td style="padding: 0 5px;">&nbsp;</td>
-							<td style="padding: 0 5px;"colspan="2">
-								Address:  /nfshare/dotcms/assets
-							</td>
-						</tr>
-					</table>
-				</div>
-				
-				<div style="margin:15px;padding:0 0 20px 0;border-bottom:1px solid #D0D0D0; font-size: 88%;text-align:center;">
-					<button dojoType="dijit.form.Button"><div style="width:200px;padding:8px 0;">Edit Node</div></button>
-				</div>
-				
-				<div style="margin:15px;padding:0 0 20px 0;font-size: 88%;text-align:center;">
-					<a href="#">Delete Node</a> &nbsp;  &nbsp; | &nbsp;  &nbsp;  <a href="#">Refresh Status</a>
-				</div>
+			<div id="actionPanel" class="hideMe" style="background:white">
+
 			</div>
 			
 	</div>
