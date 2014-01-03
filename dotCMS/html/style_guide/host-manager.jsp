@@ -90,32 +90,31 @@
 			cursor: pointer;
 		}
 
-		.arrow{
-			position:absolute;
+		#arrow{
 			width:23px;
 			height:36px;
-			right:277px;
-			top:3px;
-			z-index:9999;
+			z-index: 9999;
+			left:-23px;
+			position: absolute;
 		}
 		.hideMe {
 			display:none;
-		}
-		tr .arrow {
-			display:none;
-		}
-		tr.active .arrow {
-			display: block;
-		}
+		}}
 		tr.active {
 			background-color: #eff3f8;
 		}
 		#actionPanel{
-			position:absolute;
+			position: absolute;
 			border:1px solid #D0D0D0;
 			background:#fff;
-			bottom:0px;
+			bottom: 0;
+			top: 0;
+			right: 0;
+			z-index: 9999;
 
+		}
+		#actionPanelContainer{
+			background: #fff;
 		}
 		#actionPanelTableHeader{
 			padding:0px;
@@ -136,15 +135,11 @@
 		var actionPanelTable = {
 			lastRow:undefined,
 			
-			
-			
 			toggle:function(row, jspToShow){
 	
 				dojo.addClass("actionPanel", "hideMe");
 				dojo.destroy("display-arrow");
 					
-	
-	
 				// deactivate last clicked row
 				if(this.lastRow != undefined){
 					dojo.removeClass('row-' + this.lastRow, "active");
@@ -193,22 +188,17 @@
 
 				var actionPanel = dojo.position('actionPanel');
 
-				var actionPanelRight = actionPanel.x-20;
+				var actionPanelRight = actionPanel.x-179;
 
-				var style="top:"+ selectedRowY +"px;left:"+actionPanelRight+"px;position:absolute;z-index:9999";
 				/*
+				var style="top:"+ selectedRowY +"px;right:266px;position:absolute;z-index:9999";
+				
 				console.log("style:" + style);
 				console.log("selectedRowY:" + selectedRowY);
 				console.log("actionPanelRight:" + actionPanelRight);
 				*/
 				
-				
-
-				var n = dojo.create("div", { 
-					innerHTML: "<img src='images/arrow.png' border='4'>",
-					style:style,
-					id:"display-arrow",
-					},dojo.body());
+				 dojo.style("arrow", "top", selectedRowY-85 + "px");
 				
 				
 			},
@@ -244,9 +234,9 @@
 				
 
 				
-				dojo.style("actionPanel", "top", topOfThePanel + "px");
-				dojo.style("actionPanel", "width", tableHeader.w -1 + "px");
-				dojo.style("actionPanel", "left", tableHeader.x  + "px");
+				//dojo.style("actionPanel", "top", topOfThePanel + "px");
+				//dojo.style("actionPanel", "width", tableHeader.w -1 + "px");
+				//dojo.style("actionPanel", "left", tableHeader.x  + "px");
 			}
 
 		};
@@ -267,9 +257,9 @@
 
 	</script>
 	
-	<div>
+	<div style="position: relative;">
+		
 		<table class="listingTable">
-			
 			<tr>
 			    <th width="7%">&nbsp;</th>
 			    <th width="7%">&nbsp;</th>
@@ -279,7 +269,7 @@
 				<th width="6%" style="text-align:center;">Status</th>
 				<th id="actionPanelTableHeader"><div id="zadsada" style="width:290px;">&nbsp;</div></th>
 			</tr>
-			<%for(int i=0;i<1;i++){ %>
+			<%for(int i=0;i<10;i++){ %>
 				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle('<%=i%>','/html/style_guide/host-manager-action-pallete.jsp');">
 					<td align="center"><img src="images/icon-server.png"></td>
 					<td align="center" style="color:#8c9ca9;"><i class="fa fa-user fa-3x"></i></td>
@@ -287,14 +277,14 @@
 					<td>192.168.1.<%=5+i %></td>
 					<td>1 min ago</td>
 					<td align="center"><i class="fa fa-circle fa-2x green"></i></td>
-					<td></td>
+					<td id="td-<%=i%>"></td>
 				</tr>
 			<%} %>
 		</table>
 		
 		
-		<div id="actionPanel" class="hideMe" style="background:white">
-
+		<div id="actionPanel" class="hideMe">
+			<div id="arrow"><img src='images/arrow.png'></div>
 		</div>
 			
 	</div>
