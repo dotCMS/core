@@ -103,6 +103,7 @@ echo "Using DOTCMS_HOME = $DOTCMS_HOME"
 echo "Using DOTSERVER = $DOTSERVER"
 echo "Using CATALINA_PID = $CATALINA_PID"
 echo "Using JAVA_OPTS = $JAVA_OPTS"
+cd $DOTCMS_HOME
 
 if [ -z $1 ]; then
     cmd="start"
