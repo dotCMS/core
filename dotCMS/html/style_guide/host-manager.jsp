@@ -99,7 +99,7 @@
 		}
 		.hideMe {
 			display:none;
-		}}
+		}
 		tr.active {
 			background-color: #eff3f8;
 		}
@@ -111,7 +111,7 @@
 			top: 0;
 			right: 0;
 			z-index: 9999;
-
+			width:290px;
 		}
 		#actionPanelContainer{
 			background: #fff;
