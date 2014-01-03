@@ -125,17 +125,17 @@ public class WebKeys {
 
 	public static final String LAYOUTS = "LAYOUTS";
 
-	public static final String JAVAX_PORTLET_CONFIG = "javax.portlet.config";
+	public static final String JAVAX_PORTLET_CONFIG = "com.dotcms.repackage.portlet.javax.portlet.config";
 
-	public static final String JAVAX_PORTLET_KEYWORDS = "javax.portlet.keywords";
+	public static final String JAVAX_PORTLET_KEYWORDS = "com.dotcms.repackage.portlet.javax.portlet.keywords";
 
-	public static final String JAVAX_PORTLET_REQUEST = "javax.portlet.request";
+	public static final String JAVAX_PORTLET_REQUEST = "com.dotcms.repackage.portlet.javax.portlet.request";
 
-	public static final String JAVAX_PORTLET_RESPONSE = "javax.portlet.response";
+	public static final String JAVAX_PORTLET_RESPONSE = "com.dotcms.repackage.portlet.javax.portlet.response";
 
-	public static final String JAVAX_PORTLET_SHORT_TITLE = "javax.portlet.short-title";
+	public static final String JAVAX_PORTLET_SHORT_TITLE = "com.dotcms.repackage.portlet.javax.portlet.short-title";
 
-	public static final String JAVAX_PORTLET_TITLE = "javax.portlet.title";
+	public static final String JAVAX_PORTLET_TITLE = "com.dotcms.repackage.portlet.javax.portlet.title";
 
 	public static final String JOURNAL_ARTICLE = "JOURNAL_ARTICLE";
 

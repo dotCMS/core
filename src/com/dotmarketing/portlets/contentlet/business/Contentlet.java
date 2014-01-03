@@ -9,11 +9,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.EqualsBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.HashCodeBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -1711,7 +1711,7 @@ public class Contentlet extends WebAsset implements Serializable {
 
 		Object value = null;
 		try{
-			value = org.apache.commons.beanutils.PropertyUtils.getProperty(this, fieldName);
+			value = com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils.getProperty(this, fieldName);
 		}catch(Exception e){
 			Logger
 			.error(this,

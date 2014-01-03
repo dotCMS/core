@@ -2,7 +2,7 @@
 <%@page import="java.util.Map"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="org.apache.commons.beanutils.BeanUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>

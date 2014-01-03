@@ -22,9 +22,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Vector;
 
-import org.apache.bsf.BSFEngine;
-import org.apache.bsf.BSFException;
-import org.apache.bsf.BSFManager;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFEngine;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFException;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFManager;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -75,8 +75,8 @@ public class BSFUtil {
 	
 	private BSFManager initManager(){
 		// Register the JRuby engine with BSF.
-		BSFManager.registerScriptingEngine(LANGUAGE_RUBY, "org.jruby.javasupport.bsf.JRubyEngine", new String[] {"rb"});
-		BSFManager.registerScriptingEngine(LANGUAGE_PYTHON,"org.apache.bsf.engines.jython.JythonEngine", new String[] {"py"});
+		BSFManager.registerScriptingEngine(LANGUAGE_RUBY, "com.dotcms.repackage.jruby.org.jruby.javasupport.bsf.JRubyEngine", new String[] {"rb"});
+		BSFManager.registerScriptingEngine(LANGUAGE_PYTHON,"com.dotcms.repackage.bsf.org.apache.bsf.engines.jython.JythonEngine", new String[] {"py"});
 		BSFManager.registerScriptingEngine(LANGUAGE_JAVASCRIPT,"com.dotmarketing.scripting.engine.JSRhinoEngine", new String[] {"js"});
 		BSFManager.registerScriptingEngine(LANGUAGE_GROOVY,"com.dotmarketing.scripting.engine.GroovyEngine", new String[] {"groovy,gy"});
 		BSFManager.registerScriptingEngine(LANGUAGE_PHP,"com.dotmarketing.scripting.engine.PHPEngine", new String[] {"php"});

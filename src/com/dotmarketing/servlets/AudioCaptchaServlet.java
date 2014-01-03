@@ -13,23 +13,23 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
-import nl.captcha.Captcha;
+import com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.Captcha;
 
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.octo.captcha.component.sound.soundconfigurator.FreeTTSSoundConfigurator;
-import com.octo.captcha.component.sound.soundconfigurator.SoundConfigurator;
-import com.octo.captcha.component.sound.wordtosound.FreeTTSWordToSound;
-import com.octo.captcha.component.sound.wordtosound.WordToSound;
-import com.octo.captcha.component.word.worddecorator.SpellerWordDecorator;
-import com.octo.captcha.component.word.wordgenerator.DummyWordGenerator;
-import com.octo.captcha.component.word.wordgenerator.WordGenerator;
-import com.octo.captcha.service.CaptchaServiceException;
-import com.octo.captcha.service.sound.DefaultManageableSoundCaptchaService;
-import com.octo.captcha.service.sound.SoundCaptchaService;
-import com.octo.captcha.sound.SoundCaptcha;
-import com.octo.captcha.sound.SoundCaptchaFactory;
-import com.octo.captcha.sound.speller.SpellerSoundFactory;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.component.sound.soundconfigurator.FreeTTSSoundConfigurator;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.component.sound.soundconfigurator.SoundConfigurator;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.component.sound.wordtosound.FreeTTSWordToSound;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.component.sound.wordtosound.WordToSound;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.component.word.worddecorator.SpellerWordDecorator;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.component.word.wordgenerator.DummyWordGenerator;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.component.word.wordgenerator.WordGenerator;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.CaptchaServiceException;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.sound.DefaultManageableSoundCaptchaService;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.sound.SoundCaptchaService;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.sound.SoundCaptcha;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.sound.SoundCaptchaFactory;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.sound.speller.SpellerSoundFactory;
 
 
 public class AudioCaptchaServlet extends HttpServlet {
@@ -54,7 +54,7 @@ public class AudioCaptchaServlet extends HttpServlet {
 		AudioInputStream challenge = null;
 		try {
 
-			//String captchaSession =  (String) .getAttribute(nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);	
+			//String captchaSession =  (String) .getAttribute(com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);	
 			Captcha captcha = (Captcha) request.getSession().getAttribute(Captcha.NAME);
 			String captchaSession=captcha!=null ? captcha.getAnswer() : null;
 			if(UtilMethods.isSet(captchaSession)){

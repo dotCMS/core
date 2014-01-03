@@ -8,7 +8,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.jhlabs.image.GammaFilter;
+import com.dotcms.repackage.com_dotmarketing_jhlabs_images_filters.com.dotmarketing.jhlabs.image.GammaFilter;
 
 public class GammaImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters() {

@@ -4,9 +4,9 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.engine.SessionImplementor;
-import net.sf.hibernate.id.IdentifierGenerator;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.engine.SessionImplementor;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.id.IdentifierGenerator;
 
 import com.dotmarketing.common.db.DotConnect;
 

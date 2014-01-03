@@ -26,8 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.digester.Digester;
-import org.apache.commons.digester.RuleSet;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.Digester;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.RuleSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.context.ToolboxContext;

@@ -13,7 +13,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.liferay.portal.model.User;
-import org.elasticsearch.search.SearchHits;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHits;
 
 import java.io.Serializable;
 import java.util.Date;

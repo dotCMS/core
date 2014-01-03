@@ -1,4 +1,4 @@
-<%@ page import="javax.portlet.WindowState" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.WindowState" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>

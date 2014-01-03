@@ -25,7 +25,7 @@ package com.liferay.util;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 
-import org.apache.oro.text.perl.Perl5Util;
+import com.dotcms.repackage.oro.org.apache.oro.text.perl.Perl5Util;
 
 /**
  * <a href="JS.java.html"><b><i>View Source</i></b></a>

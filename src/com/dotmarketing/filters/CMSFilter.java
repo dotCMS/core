@@ -18,9 +18,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.LogFactory;
-import org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

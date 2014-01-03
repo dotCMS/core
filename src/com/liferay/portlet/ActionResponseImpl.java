@@ -27,12 +27,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletMode;
-import javax.portlet.PortletModeException;
-import javax.portlet.PortletURL;
-import javax.portlet.WindowState;
-import javax.portlet.WindowStateException;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletMode;
+import com.dotcms.repackage.portlet.javax.portlet.PortletModeException;
+import com.dotcms.repackage.portlet.javax.portlet.PortletURL;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.WindowStateException;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;

@@ -74,7 +74,7 @@ if ((cachePortlet != null) && cachePortlet.isStrutsPortlet()) {
 
 	// Make sure the Tiles context is reset for the next portlet
 
-	request.removeAttribute(org.apache.struts.taglib.tiles.ComponentConstants.COMPONENT_CONTEXT);
+	request.removeAttribute(com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.ComponentConstants.COMPONENT_CONTEXT);
 }
 
 boolean portletException = false;

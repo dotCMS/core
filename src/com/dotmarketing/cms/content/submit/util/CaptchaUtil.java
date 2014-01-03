@@ -3,13 +3,13 @@ package com.dotmarketing.cms.content.submit.util;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import nl.captcha.Captcha;
+import com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.Captcha;
 
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.octo.captcha.service.CaptchaServiceException;
-import com.octo.captcha.service.sound.SoundCaptchaService;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.CaptchaServiceException;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.sound.SoundCaptchaService;
 
 /**
  * This util validate the captcha value

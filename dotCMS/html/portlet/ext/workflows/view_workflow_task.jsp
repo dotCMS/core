@@ -19,8 +19,8 @@
 <%@page import="com.dotmarketing.portlets.templates.model.Template"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
-<%@page import="org.apache.commons.beanutils.BeanUtils"%>
-<%@page import="org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="java.util.Calendar"%>
 <%@page import="java.util.Date"%>
@@ -29,7 +29,7 @@
 <%@page import="java.util.Locale"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@ page import="com.dotmarketing.util.Config" %>

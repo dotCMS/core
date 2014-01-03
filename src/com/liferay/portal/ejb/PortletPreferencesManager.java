@@ -33,12 +33,12 @@ public interface PortletPreferencesManager {
 //	public void deleteAllByGroup(java.lang.String groupId)
 //		throws java.rmi.RemoteException;
 
-	public javax.portlet.PortletPreferences getDefaultPreferences(
+	public com.dotcms.repackage.portlet.javax.portlet.PortletPreferences getDefaultPreferences(
 		java.lang.String companyId, java.lang.String portletId)
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
 
-	public javax.portlet.PortletPreferences getPreferences(
+	public com.dotcms.repackage.portlet.javax.portlet.PortletPreferences getPreferences(
 		java.lang.String companyId,
 		com.liferay.portal.ejb.PortletPreferencesPK pk)
 		throws com.liferay.portal.PortalException, 

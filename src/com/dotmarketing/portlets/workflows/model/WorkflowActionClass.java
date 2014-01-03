@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.workflows.model;
 
 import java.io.Serializable;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.dotcms.repackage.jackson_core_asl_1_9_2.org.codehaus.jackson.annotate.JsonIgnore;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;

@@ -3,10 +3,10 @@ package com.dotmarketing.viewtools;
 import java.io.StringWriter;
 
 import org.apache.velocity.tools.view.tools.ViewTool;
-import org.eclipse.mylyn.wikitext.core.parser.MarkupParser;
-import org.eclipse.mylyn.wikitext.core.parser.builder.HtmlDocumentBuilder;
-import org.eclipse.mylyn.wikitext.core.parser.markup.MarkupLanguage;
-import org.eclipse.mylyn.wikitext.core.util.ServiceLocator;
+import com.dotcms.repackage.org_eclipse_mylyn_wikitext_core_1_8_0_i20120918_1109.org.eclipse.mylyn.wikitext.core.parser.MarkupParser;
+import com.dotcms.repackage.org_eclipse_mylyn_wikitext_core_1_8_0_i20120918_1109.org.eclipse.mylyn.wikitext.core.parser.builder.HtmlDocumentBuilder;
+import com.dotcms.repackage.org_eclipse_mylyn_wikitext_core_1_8_0_i20120918_1109.org.eclipse.mylyn.wikitext.core.parser.markup.MarkupLanguage;
+import com.dotcms.repackage.org_eclipse_mylyn_wikitext_core_1_8_0_i20120918_1109.org.eclipse.mylyn.wikitext.core.util.ServiceLocator;
 
 import com.dotmarketing.util.UtilMethods;
 

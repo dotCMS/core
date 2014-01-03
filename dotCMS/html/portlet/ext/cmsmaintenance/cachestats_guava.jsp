@@ -1,10 +1,10 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="com.google.common.cache.Cache"%>
+<%@page import="com.dotcms.repackage.guava_11_0_1.com.google.common.cache.Cache"%>
 <%@page import="org.github.jamm.MemoryMeter"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.google.common.cache.CacheStats"%>
+<%@page import="com.dotcms.repackage.guava_11_0_1.com.google.common.cache.CacheStats"%>
 <%@page import="com.dotmarketing.business.DotGuavaCacheAdministratorImpl"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>

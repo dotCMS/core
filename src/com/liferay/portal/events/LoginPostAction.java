@@ -29,7 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 
 import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserTracker;

@@ -27,15 +27,15 @@ import java.util.Set;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import org.apache.commons.collections.map.LRUMap;
-import org.h2.jdbcx.JdbcConnectionPool;
-import org.jboss.cache.CacheException;
-import org.jboss.cache.CacheSPI;
-import org.jboss.cache.Fqn;
-import org.jboss.cache.Modification;
-import org.jboss.cache.RegionManager;
-import org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
-import org.jboss.cache.loader.CacheLoader;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.map.LRUMap;
+import com.dotcms.repackage.h2_1_3_169.org.h2.jdbcx.JdbcConnectionPool;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.CacheException;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.CacheSPI;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Fqn;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Modification;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.RegionManager;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.loader.CacheLoader;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
@@ -271,7 +271,7 @@ public class H2CacheLoader implements CacheLoader{
 					Connection conn = createConnection(true,x,true);
 					try{
 						conn.createStatement().execute(Config.getBooleanProperty("H2_SHUTDOWN_IMEDIATELY",true) ? "SHUTDOWN IMMEDIATELY" : "SHUTDOWN");
-					}catch(org.h2.jdbc.JdbcSQLException ac){
+					}catch(com.dotcms.repackage.h2_1_3_169.org.h2.jdbc.JdbcSQLException ac){
 						if(ac.getMessage().contains("already closed")){
 							//ignore
 						}else{

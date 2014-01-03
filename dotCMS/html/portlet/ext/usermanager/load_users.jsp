@@ -8,7 +8,7 @@
 <%
 	UserManagerListSearchForm form = (UserManagerListSearchForm)request.getAttribute(com.dotmarketing.util.WebKeys.USERMANAGERLISTFORM);
 	//by setting the bean on context we can use the form tag instead of the struts form tag, and use the autocomplete=off on the form
-	pageContext.setAttribute("org.apache.struts.taglib.html.BEAN",form);
+	pageContext.setAttribute("com.dotcms.repackage.struts.org.apache.struts.taglib.html.BEAN",form);
 
 	int numberGenericVariables = Config.getIntProperty("MAX_NUMBER_VARIABLES_TO_SHOW");
 

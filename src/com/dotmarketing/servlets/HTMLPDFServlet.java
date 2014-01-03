@@ -25,23 +25,23 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilder;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.tools.view.context.ChainedContext;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.tidy.Tidy;
-import org.xhtmlrenderer.pdf.ITextRenderer;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
+import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Document;
+import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Node;
+import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.NodeList;
+import com.dotcms.repackage.tidy.org.w3c.tidy.Tidy;
+import com.dotcms.repackage.core_renderer_modified.org.xhtmlrenderer.pdf.ITextRenderer;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.EntityResolver;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.InputSource;
 
 import com.dotmarketing.beans.BrowserSniffer;
 import com.dotmarketing.beans.Host;
@@ -73,7 +73,7 @@ import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import com.lowagie.text.DocumentException;
+import com.dotcms.repackage.itext_2_1_0.com.lowagie.text.DocumentException;
 
 /**
  * @author Jason Tesser

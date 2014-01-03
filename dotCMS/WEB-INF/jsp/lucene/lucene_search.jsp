@@ -10,7 +10,7 @@
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.liferay.util.cal.CalendarUtil"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>

@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.ArrayList;
 
-import org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.directive.Directive;

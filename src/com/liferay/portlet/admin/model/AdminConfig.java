@@ -22,7 +22,7 @@
 
 package com.liferay.portlet.admin.model;
 
-import org.exolab.castor.xml.CastorException;
+import com.dotcms.repackage.castor.org.exolab.castor.xml.CastorException;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.SystemException;

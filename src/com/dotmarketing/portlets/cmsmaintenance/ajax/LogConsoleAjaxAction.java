@@ -3,9 +3,9 @@ package com.dotmarketing.portlets.cmsmaintenance.ajax;
 import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.util.Logger;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.dotcms.repackage.json.org.json.JSONArray;
+import com.dotcms.repackage.json.org.json.JSONException;
+import com.dotcms.repackage.json.org.json.JSONObject;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;

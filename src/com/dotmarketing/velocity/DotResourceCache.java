@@ -7,10 +7,10 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.MatchResult;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.MalformedPatternException;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.MatchResult;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Compiler;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Matcher;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceCache;
@@ -41,8 +41,8 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	};
 
 	
-	private static org.apache.oro.text.regex.Pattern assetPattern;
-	private static org.apache.oro.text.regex.Pattern menuPattern;
+	private static com.dotcms.repackage.oro.org.apache.oro.text.regex.Pattern assetPattern;
+	private static com.dotcms.repackage.oro.org.apache.oro.text.regex.Pattern menuPattern;
 	
 //	private Pattern assetPattern=Pattern.compile("[/,\\\\][0-9][/,\\\\][0-9][/,\\\\][0-9]*.[a-zA-Z]*");
 //	private Pattern menuPattern=Pattern.compile("static[/,\\\\]menus[/,\\\\].*");

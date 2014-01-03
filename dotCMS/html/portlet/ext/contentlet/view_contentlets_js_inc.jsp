@@ -5,7 +5,7 @@
 <%@page import="com.dotmarketing.business.RoleAPI"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
 <%@page import="com.liferay.portal.model.User"%>
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>

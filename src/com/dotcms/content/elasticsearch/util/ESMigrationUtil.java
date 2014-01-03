@@ -2,9 +2,9 @@ package com.dotcms.content.elasticsearch.util;
 
 import java.util.List;
 
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.bulk.BulkRequestBuilder;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.bulk.BulkResponse;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;

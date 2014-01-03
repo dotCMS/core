@@ -21,8 +21,8 @@ package org.apache.velocity.runtime.parser.node;
 
 import java.lang.reflect.InvocationTargetException;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.ArrayUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
 import org.apache.velocity.app.event.EventHandlerUtil;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;

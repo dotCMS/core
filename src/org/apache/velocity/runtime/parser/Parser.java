@@ -10,7 +10,7 @@ import org.apache.velocity.runtime.directive.Directive;
 import org.apache.velocity.runtime.directive.Macro;
 import org.apache.velocity.runtime.directive.MacroParseException;
 import org.apache.velocity.util.StringUtils;
-import org.apache.commons.lang.text.StrBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.runtime.RuntimeConstants;
 
 import com.dotmarketing.util.Logger;

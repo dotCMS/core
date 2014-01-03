@@ -18,12 +18,12 @@ package com.dotmarketing.util.diff.html;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.eclipse.compare.internal.LCSSettings;
-import org.eclipse.compare.rangedifferencer.RangeDifference;
-import org.eclipse.compare.rangedifferencer.RangeDifferencer;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.internal.LCSSettings;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.RangeDifference;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.RangeDifferencer;
 import com.dotmarketing.util.diff.output.DiffOutput;
 import com.dotmarketing.util.diff.output.Differ;
-import org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
 
 /**
  * Takes two {@link TextNodeComparator} instances, computes the difference

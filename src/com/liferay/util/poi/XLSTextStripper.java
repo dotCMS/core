@@ -25,10 +25,10 @@ package com.liferay.util.poi;
 import java.io.FileInputStream;
 import java.util.Iterator;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import com.dotcms.repackage.tika_app_1_3.org.apache.poi.hssf.usermodel.HSSFCell;
+import com.dotcms.repackage.tika_app_1_3.org.apache.poi.hssf.usermodel.HSSFRow;
+import com.dotcms.repackage.tika_app_1_3.org.apache.poi.hssf.usermodel.HSSFSheet;
+import com.dotcms.repackage.tika_app_1_3.org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
 import com.dotmarketing.util.Logger;
 

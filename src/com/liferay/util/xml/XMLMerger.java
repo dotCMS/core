@@ -28,8 +28,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import org.dom4j.Document;
-import org.dom4j.Element;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
 
 import com.liferay.util.xml.descriptor.XMLDescriptor;
 

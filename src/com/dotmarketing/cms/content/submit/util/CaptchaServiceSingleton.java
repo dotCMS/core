@@ -1,7 +1,7 @@
 package com.dotmarketing.cms.content.submit.util;
 
-import com.octo.captcha.service.sound.DefaultManageableSoundCaptchaService;
-import com.octo.captcha.service.sound.SoundCaptchaService;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.sound.DefaultManageableSoundCaptchaService;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.sound.SoundCaptchaService;
 
 public class CaptchaServiceSingleton {
     

@@ -102,15 +102,15 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
 
-<%@ page import="javax.portlet.PortletConfig" %>
-<%@ page import="javax.portlet.PortletContext" %>
-<%@ page import="javax.portlet.PortletException" %>
-<%@ page import="javax.portlet.PortletMode" %>
-<%@ page import="javax.portlet.PortletPreferences" %>
-<%@ page import="javax.portlet.PortletURL" %>
-<%@ page import="javax.portlet.UnavailableException" %>
-<%@ page import="javax.portlet.ValidatorException" %>
-<%@ page import="javax.portlet.WindowState" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletConfig" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletContext" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletException" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletMode" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletPreferences" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletURL" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.UnavailableException" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.ValidatorException" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.WindowState" %>
 
 <%
 String CTX_PATH = (String)application.getAttribute(WebKeys.CTX_PATH);
@@ -158,7 +158,7 @@ else {
 	signedIn = true;
 }
 
-Locale locale = (Locale)session.getAttribute(org.apache.struts.Globals.LOCALE_KEY);
+Locale locale = (Locale)session.getAttribute(com.dotcms.repackage.struts.org.apache.struts.Globals.LOCALE_KEY);
 if (locale == null) {
 
 	// Locale should never be null except when the TCK tests invalidate the session

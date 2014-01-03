@@ -7,8 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.regex.Matcher;
 
-import net.sf.hibernate.cfg.Configuration;
-import net.sf.hibernate.tool.hbm2ddl.SchemaExport;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.tool.hbm2ddl.SchemaExport;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
@@ -39,7 +39,7 @@ public final class DotSQLGeneratorTask extends Task {
 			Class.forName("com.mysql.jdbc.Driver");
 			Class.forName("org.postgresql.Driver");
 			Class.forName("net.sourceforge.jtds.jdbc.Driver");	
-			Class.forName("org.h2.Driver");
+			Class.forName("com.dotcms.repackage.h2_1_3_169.org.h2.Driver");
 		}
 		catch(Exception e){
 			 Logger.info(this, "Driver not found dialect:" + e);
@@ -50,20 +50,20 @@ public final class DotSQLGeneratorTask extends Task {
 			Configuration cfg = new Configuration();
 			cfg.setProperty("hibernate.dialect", dialect);
             
-			if (dialect.equals("net.sf.hibernate.dialect.MySQLDialect")){
+			if (dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.MySQLDialect")){
                 cfg.setProperty("hibernate.connection.driver_class", "com.mysql.jdbc.Driver");
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
-			}else if (dialect.equals("net.sf.hibernate.dialect.SybaseDialect")){
+			}else if (dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.SybaseDialect")){
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "net.sourceforge.jtds.jdbc.Driver");
-			}else if(dialect.equals("net.sf.hibernate.dialect.OracleDialect")){
+			}else if(dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.OracleDialect")){
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "oracle.jdbc.driver.OracleDriver");
-			}else if(dialect.equals("net.sf.hibernate.dialect.PostgreSQLDialect")) {
+			}else if(dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.PostgreSQLDialect")) {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");
-			}else if(dialect.equals("net.sf.hibernate.dialect.HSQLDialect")) {
-			    cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
+			}else if(dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.HSQLDialect")) {
+			    cfg.setProperty("hibernate.connection.driver_class", "com.dotcms.repackage.h2_1_3_169.org.h2.Driver");
 			    cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
 			}
 
@@ -108,20 +108,20 @@ public final class DotSQLGeneratorTask extends Task {
 						myLine = s.toString();
 					}
 				}
-                if (dialect.equals("net.sf.hibernate.dialect.PostgreSQLDialect") 
-                        || dialect.equals("net.sf.hibernate.dialect.SybaseDialect")
-                        || dialect.equals("net.sf.hibernate.dialect.HSQLDialect")) {
+                if (dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.PostgreSQLDialect") 
+                        || dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.SybaseDialect")
+                        || dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.HSQLDialect")) {
                     if (myLine.contains("varchar(123456789)")) {
                         myLine = myLine.replaceAll("varchar\\(123456789\\)", "text");
                     }
-                } else if (dialect.equals("net.sf.hibernate.dialect.OracleDialect")) {
+                } else if (dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.OracleDialect")) {
                     if (myLine.contains("varchar2(123456789)")) {
                         myLine = myLine.replaceAll("varchar2\\(123456789\\)", "clob");
                     }
                     else if (myLine.contains(" long ") || myLine.contains(" long,")) {
                         myLine = myLine.replaceAll("long", "nclob");
                     }
-                } else if (dialect.equals("net.sf.hibernate.dialect.MySQLDialect")) {
+                } else if (dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.MySQLDialect")) {
                     if (myLine.contains("varchar(123456789)")) {
                         myLine = myLine.replaceAll("varchar\\(123456789\\)", "longtext");
                     }

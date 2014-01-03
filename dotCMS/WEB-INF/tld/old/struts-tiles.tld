@@ -14,7 +14,7 @@
 <uri>http://struts.apache.org/tags-tiles</uri>
 <tag>
 <name>insert</name>
-<tagclass>org.apache.struts.taglib.tiles.InsertTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.InsertTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>template</name>
@@ -89,7 +89,7 @@
 </tag>
 <tag>
 <name>definition</name>
-<tagclass>org.apache.struts.taglib.tiles.DefinitionTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.DefinitionTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>id</name>
@@ -124,7 +124,7 @@
 </tag>
 <tag>
 <name>put</name>
-<tagclass>org.apache.struts.taglib.tiles.PutTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.PutTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -174,7 +174,7 @@
 </tag>
 <tag>
 <name>putList</name>
-<tagclass>org.apache.struts.taglib.tiles.PutListTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.PutListTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -184,7 +184,7 @@
 </tag>
 <tag>
 <name>add</name>
-<tagclass>org.apache.struts.taglib.tiles.AddTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.AddTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>value</name>
@@ -229,7 +229,7 @@
 </tag>
 <tag>
 <name>get</name>
-<tagclass>org.apache.struts.taglib.tiles.GetTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.GetTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>name</name>
@@ -254,7 +254,7 @@
 </tag>
 <tag>
 <name>getAsString</name>
-<tagclass>org.apache.struts.taglib.tiles.GetAttributeTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.GetAttributeTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>name</name>
@@ -274,8 +274,8 @@
 </tag>
 <tag>
 <name>useAttribute</name>
-<tagclass>org.apache.struts.taglib.tiles.UseAttributeTag</tagclass>
-<teiclass>org.apache.struts.taglib.tiles.UseAttributeTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.UseAttributeTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.UseAttributeTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>id</name>
@@ -305,7 +305,7 @@
 </tag>
 <tag>
 <name>importAttribute</name>
-<tagclass>org.apache.struts.taglib.tiles.ImportAttributeTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.ImportAttributeTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>name</name>
@@ -325,7 +325,7 @@
 </tag>
 <tag>
 <name>initComponentDefinitions</name>
-<tagclass>org.apache.struts.taglib.tiles.InitDefinitionsTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.tiles.InitDefinitionsTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>file</name>

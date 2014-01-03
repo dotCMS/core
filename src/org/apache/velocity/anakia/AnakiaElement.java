@@ -19,9 +19,9 @@ package org.apache.velocity.anakia;
  * under the License.    
  */
 
-import org.jdom.Element;
-import org.jdom.Namespace;
-import org.jdom.output.XMLOutputter;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Namespace;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.output.XMLOutputter;
 import java.util.List;
 
 /**
@@ -158,10 +158,10 @@ public class AnakiaElement extends Element
      *
      * @return a <code>List</code> containing the mixed content of the
      *         element: may contain <code>String</code>,
-     *         <code>{@link Element}</code>, <code>{@link org.jdom.Comment}</code>,
-     *         <code>{@link org.jdom.ProcessingInstruction}</code>,
-     *         <code>{@link org.jdom.CDATA}</code>, and
-     *         <code>{@link org.jdom.EntityRef}</code> objects.
+     *         <code>{@link Element}</code>, <code>{@link com.dotcms.repackage.tika_app_1_3.org.jdom.Comment}</code>,
+     *         <code>{@link com.dotcms.repackage.tika_app_1_3.org.jdom.ProcessingInstruction}</code>,
+     *         <code>{@link com.dotcms.repackage.tika_app_1_3.org.jdom.CDATA}</code>, and
+     *         <code>{@link com.dotcms.repackage.tika_app_1_3.org.jdom.EntityRef}</code> objects.
      */
     public List getContent()
     {

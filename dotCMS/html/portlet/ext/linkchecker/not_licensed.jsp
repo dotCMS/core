@@ -12,7 +12,7 @@
 <div class="greyBg"></div>
 <div class="wrapper">
 	<div class="content">
-		<h2><%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_BROKEN_LINKS")%></h2>
+		<h2><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_BROKEN_LINKS")%></h2>
 		<p><%= LanguageUtil.get(pageContext, "LINKCHECKER-NOT-LICENSED") %></p>
 
 	</div>

@@ -91,7 +91,7 @@ for(File x : oldfiles.listFiles() ){
 		keys.add(key);
 		
 		
-		if(key.startsWith("javax.portlet.title") 
+		if(key.startsWith("com.dotcms.repackage.portlet.javax.portlet.title") 
 				|| key.startsWith("message.") 
 				|| key.startsWith("errors.") 
 				|| key.startsWith("prompt.") 

@@ -91,7 +91,7 @@ public class LinkTool implements ViewTool, Cloneable
     private static Method encode = null;
     
     /* Initialize the encode variable with the 1.4 method if available.
-     * this code was adapted from org.apache.struts.utils.RequestUtils */
+     * this code was adapted from com.dotcms.repackage.struts.org.apache.struts.utils.RequestUtils */
     static
     {
         try

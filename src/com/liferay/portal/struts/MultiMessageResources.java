@@ -36,7 +36,7 @@ import javax.servlet.ServletContext;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.struts.util.MessageResourcesFactory;
+import com.dotcms.repackage.struts.org.apache.struts.util.MessageResourcesFactory;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -44,7 +44,7 @@ import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
-import com.oroad.stxx.util.PropertyMessageResources;
+import com.dotcms.repackage.stxx.com.oroad.stxx.util.PropertyMessageResources;
 
 /**
  * <a href="MultiMessageResources.java.html"><b><i>View Source </i></b></a>

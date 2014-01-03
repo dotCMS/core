@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
@@ -156,7 +156,7 @@ public class ResourceManagerImpl
 
         Object cacheObject = null;
 
-        if (org.apache.commons.lang.StringUtils.isNotEmpty(cacheClassName))
+        if (com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils.isNotEmpty(cacheClassName))
         {
             try
             {
@@ -530,7 +530,7 @@ public class ResourceManagerImpl
              *  this strikes me as bad...
              */
 
-            if (!org.apache.commons.lang.StringUtils.equals(resource.getEncoding(), encoding))
+            if (!com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils.equals(resource.getEncoding(), encoding))
             {
                 Logger.warn(this,"Declared encoding for template '" +
                              resource.getName() +

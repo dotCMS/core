@@ -36,7 +36,7 @@ public interface PortletPreferencesLocalManager {
 	public void deleteAllByUser(java.lang.String userId)
 		throws com.liferay.portal.SystemException;
 
-	public javax.portlet.PortletPreferences getDefaultPreferences(
+	public com.dotcms.repackage.portlet.javax.portlet.PortletPreferences getDefaultPreferences(
 		java.lang.String companyId, java.lang.String portletId)
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException;
@@ -45,7 +45,7 @@ public interface PortletPreferencesLocalManager {
 		throws com.liferay.portal.PortalException,
 			com.liferay.portal.SystemException;
 
-	public javax.portlet.PortletPreferences getPreferences(
+	public com.dotcms.repackage.portlet.javax.portlet.PortletPreferences getPreferences(
 		java.lang.String companyId,
 		com.liferay.portal.ejb.PortletPreferencesPK pk)
 		throws com.liferay.portal.PortalException, 

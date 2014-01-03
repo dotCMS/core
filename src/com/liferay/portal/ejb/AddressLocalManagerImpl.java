@@ -25,7 +25,7 @@ package com.liferay.portal.ejb;
 import java.util.Date;
 import java.util.List;
 
-import com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterManagerUtil;
 import com.liferay.portal.AddressCellException;
 import com.liferay.portal.AddressCityException;
 import com.liferay.portal.AddressCountryException;

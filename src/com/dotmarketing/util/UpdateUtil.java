@@ -2,10 +2,10 @@ package com.dotmarketing.util;
 
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.util.ReleaseInfo;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.NameValuePair;
-import org.apache.commons.httpclient.methods.PostMethod;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpClient;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpException;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.NameValuePair;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.methods.PostMethod;
 
 import java.io.IOException;
 import java.io.InputStream;

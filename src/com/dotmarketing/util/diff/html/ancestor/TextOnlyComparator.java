@@ -18,10 +18,10 @@ package com.dotmarketing.util.diff.html.ancestor;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.compare.internal.LCSSettings;
-import org.eclipse.compare.rangedifferencer.IRangeComparator;
-import org.eclipse.compare.rangedifferencer.RangeDifference;
-import org.eclipse.compare.rangedifferencer.RangeDifferencer;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.internal.LCSSettings;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.IRangeComparator;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.RangeDifference;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.RangeDifferencer;
 import com.dotmarketing.util.diff.html.dom.Node;
 import com.dotmarketing.util.diff.html.dom.TagNode;
 import com.dotmarketing.util.diff.html.dom.TextNode;

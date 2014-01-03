@@ -24,12 +24,12 @@ package com.liferay.portlet;
 
 import java.io.IOException;
 
-import javax.portlet.GenericPortlet;
-import javax.portlet.PortletException;
-import javax.portlet.PortletMode;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.GenericPortlet;
+import com.dotcms.repackage.portlet.javax.portlet.PortletException;
+import com.dotcms.repackage.portlet.javax.portlet.PortletMode;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 
 /**
  * <a href="LiferayPortlet.java.html"><b><i>View Source</i></b></a>

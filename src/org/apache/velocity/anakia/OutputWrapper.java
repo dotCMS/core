@@ -22,9 +22,9 @@ package org.apache.velocity.anakia;
 import java.io.IOException;
 import java.io.StringWriter;
 
-import org.jdom.Element;
-import org.jdom.output.XMLOutputter;
-import org.jdom.output.Format;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.output.XMLOutputter;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.output.Format;
 
 /**
  * This class extends XMLOutputter in order to provide

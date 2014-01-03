@@ -99,15 +99,15 @@
 	import="java.util.TimeZone"
 %><%@ page import="java.util.TreeMap"%><%@ page
 	import="java.util.TreeSet"
-%><%@ page import="javax.portlet.PortletConfig"%><%@ page
-	import="javax.portlet.PortletContext"
-%><%@ page import="javax.portlet.PortletException"%><%@ page
-	import="javax.portlet.PortletMode"
-%><%@ page import="javax.portlet.PortletPreferences"%><%@ page
-	import="javax.portlet.PortletURL"
-%><%@ page import="javax.portlet.UnavailableException"%><%@ page
-	import="javax.portlet.ValidatorException"
-%><%@ page import="javax.portlet.WindowState"%><%@page
+%><%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletConfig"%><%@ page
+	import="com.dotcms.repackage.portlet.javax.portlet.PortletContext"
+%><%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletException"%><%@ page
+	import="com.dotcms.repackage.portlet.javax.portlet.PortletMode"
+%><%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletPreferences"%><%@ page
+	import="com.dotcms.repackage.portlet.javax.portlet.PortletURL"
+%><%@ page import="com.dotcms.repackage.portlet.javax.portlet.UnavailableException"%><%@ page
+	import="com.dotcms.repackage.portlet.javax.portlet.ValidatorException"
+%><%@ page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%><%@page
 	import="com.dotmarketing.portlets.common.bean.CrumbTrailEntry"
 %><%@page import="java.util.HashMap"%><%@ page
 	import="com.liferay.portal.language.LanguageUtil"
@@ -156,7 +156,7 @@
 	}
 
 	Locale locale = (Locale) session
-			.getAttribute(org.apache.struts.Globals.LOCALE_KEY);
+			.getAttribute(com.dotcms.repackage.struts.org.apache.struts.Globals.LOCALE_KEY);
 	if (locale == null) {
 
 		// Locale should never be null except when the TCK tests invalidate the session
@@ -169,13 +169,13 @@
 			String test = locales[i].getLanguage() + "_" + locales[i].getCountry();
 			if(test.equals(request.getParameter("switchLocale"))){
 				locale = locales[i];
-				session.setAttribute(org.apache.struts.Globals.LOCALE_KEY, locale);
+				session.setAttribute(com.dotcms.repackage.struts.org.apache.struts.Globals.LOCALE_KEY, locale);
 				break;
 			}
 		}
 		
 	}else{//DOTCMS-5013
-		session.setAttribute(org.apache.struts.Globals.LOCALE_KEY, locale);
+		session.setAttribute(com.dotcms.repackage.struts.org.apache.struts.Globals.LOCALE_KEY, locale);
 	}
 
 	TimeZone timeZone = user.getTimeZone();

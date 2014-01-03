@@ -320,8 +320,8 @@
 			</classpath>
 		</taskdef>
 
-		<buildSQLTask dialect="net.sf.hibernate.dialect.PostgreSQLDialect" />
-		<buildSQLTask dialect="net.sf.hibernate.dialect.OracleDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.PostgreSQLDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.OracleDialect" />
 		
 		<concat destfile="${build.dir}/sql/postgres.sql" fixlastline="yes">
 			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.postgres}" />
@@ -355,9 +355,9 @@
 			</classpath>
 		</taskdef>
 
-		<buildSQLTask dialect="net.sf.hibernate.dialect.MySQLDialect" />
-		<buildSQLTask dialect="net.sf.hibernate.dialect.SybaseDialect" />
-		<buildSQLTask dialect="net.sf.hibernate.dialect.HSQLDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.MySQLDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.SybaseDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.HSQLDialect" />
 				
 
 		<concat destfile="${build.dir}/sql/mssql.sql" fixlastline="yes">

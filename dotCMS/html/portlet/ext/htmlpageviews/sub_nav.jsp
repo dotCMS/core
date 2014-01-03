@@ -51,7 +51,7 @@ function doSearchPageStatistics() {
 		Map params = new HashMap();
 		params.put("struts_action", new String[] {"/ext/browser/view_browser"});
 		String crumbTrailReferer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), params);
-		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer));
+		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer));
 		
 		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "modes.Page-Statistics"), null));
 		

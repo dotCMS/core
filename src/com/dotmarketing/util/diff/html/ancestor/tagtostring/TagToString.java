@@ -23,7 +23,7 @@ import com.dotmarketing.util.diff.html.ancestor.TagChangeSematic;
 import com.dotmarketing.util.diff.html.dom.TagNode;
 import com.dotmarketing.util.diff.html.modification.HtmlLayoutChange;
 import com.dotmarketing.util.diff.html.modification.HtmlLayoutChange.Type;
-import org.xml.sax.Attributes;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
 
 public class TagToString {
 

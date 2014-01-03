@@ -25,8 +25,8 @@ import java.util.Map;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import org.apache.commons.collections.ExtendedProperties;
-import org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.resource.Resource;
@@ -208,7 +208,7 @@ public class StringResourceLoader extends ResourceLoader
 
 
     /**
-     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
+     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties)
      */
     public void init(final ExtendedProperties configuration)
     {

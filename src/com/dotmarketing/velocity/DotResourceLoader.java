@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
-import org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
@@ -71,7 +71,7 @@ public class DotResourceLoader extends ResourceLoader {
     private static DotResourceLoader instance;
 
     /* (non-Javadoc)
-     * @see org.apache.velocity.runtime.resource.loader.FileResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
+     * @see org.apache.velocity.runtime.resource.loader.FileResourceLoader#init(com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties)
      */
     @Override
     public void init(ExtendedProperties extProps) {

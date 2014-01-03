@@ -15,10 +15,10 @@
  */
 package com.dotmarketing.scripting.engine;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
-import groovy.lang.GroovyShell;
+import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.Closure;
+import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.GroovyClassLoader;
+import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.GroovyObject;
+import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.GroovyShell;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -30,11 +30,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
-import org.apache.bsf.BSFDeclaredBean;
-import org.apache.bsf.BSFException;
-import org.apache.bsf.BSFManager;
-import org.apache.bsf.util.BSFEngineImpl;
-import org.apache.bsf.util.BSFFunctions;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFDeclaredBean;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFException;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFManager;
+import com.dotcms.repackage.bsf.org.apache.bsf.util.BSFEngineImpl;
+import com.dotcms.repackage.bsf.org.apache.bsf.util.BSFFunctions;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

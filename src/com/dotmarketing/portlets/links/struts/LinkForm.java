@@ -3,10 +3,10 @@ package com.dotmarketing.portlets.links.struts;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.validator.ValidatorForm;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;
 
 import com.dotmarketing.portlets.links.model.Link.LinkType;
 import com.liferay.portal.util.Constants;

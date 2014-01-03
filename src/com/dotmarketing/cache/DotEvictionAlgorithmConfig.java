@@ -1,7 +1,7 @@
 package com.dotmarketing.cache;
 
 
-public class DotEvictionAlgorithmConfig extends org.jboss.cache.eviction.LFUAlgorithmConfig {
+public class DotEvictionAlgorithmConfig extends com.dotcms.repackage.jbosscache_core.org.jboss.cache.eviction.LFUAlgorithmConfig {
 
 
 

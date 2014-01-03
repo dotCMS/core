@@ -16,14 +16,14 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jboss.cache.Fqn;
-import org.jgroups.Address;
-import org.jgroups.ChannelClosedException;
-import org.jgroups.ChannelNotConnectedException;
-import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Fqn;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.Address;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.ChannelClosedException;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.ChannelNotConnectedException;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.JChannel;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.Message;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.ReceiverAdapter;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.View;
 
 import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -35,12 +35,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.Cache;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.CacheBuilder;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.RemovalListener;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.RemovalNotification;
 
-import edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
 
 /**
  * The Guava cache administrator uses Google's Guave code 

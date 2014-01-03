@@ -11,8 +11,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.chemistry.cmissql.CmisSqlParser.boolean_factor_return;
-import org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.chemistry_commons_0_5_snapshot.org.apache.chemistry.cmissql.CmisSqlParser.boolean_factor_return;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -40,7 +40,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
-import edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
 
 
 /**
