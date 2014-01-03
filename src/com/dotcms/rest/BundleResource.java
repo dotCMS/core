@@ -12,13 +12,13 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.CacheControl;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
 import java.util.List;
 
 

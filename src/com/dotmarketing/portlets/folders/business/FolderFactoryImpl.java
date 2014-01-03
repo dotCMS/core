@@ -16,10 +16,10 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.oro.text.regex.Pattern;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Pattern;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Compiler;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Matcher;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

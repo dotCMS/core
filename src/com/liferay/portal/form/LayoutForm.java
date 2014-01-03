@@ -24,7 +24,7 @@ package com.liferay.portal.form;
 
 import java.util.Properties;
 
-import org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 
 import com.liferay.util.NullSafeProperties;
 

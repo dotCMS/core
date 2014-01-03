@@ -20,7 +20,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import com.ibm.icu.text.SimpleDateFormat;
+import com.dotcms.repackage.icu4j_4_0_1.com.ibm.icu.text.SimpleDateFormat;
 import com.liferay.portal.model.User;
 
 /**

@@ -160,19 +160,19 @@
         </layout>
     </appender>
 
-    <logger name="org.directwebremoting">
+    <logger name="com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting">
 	  <level value="warn"/>
 	</logger>
 	<logger name="com.dotmarketing.portlets.contentlet.business.ReindexThread">
 		<level value="debug"/>
 	</logger>
-	<logger name="com.bradmcevoy.http">
+	<logger name="com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http">
 		<level value="info"/>
 	</logger>
 	<logger name="org.apache.tomcat.util.http.Parameters">
 		<level value="fatal"/>
 	</logger>
-	<logger name="org.directwebremoting.impl.DefaultConverterManager">
+	<logger name="com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.impl.DefaultConverterManager">
 		<level value="fatal"/>
 	</logger>
 	<logger name="com.liferay.portal.action.LoginAction" additivity="false">
@@ -200,7 +200,7 @@
 		<appender-ref ref="ASYNC-SITESEARCH" />
 	</logger>
 
-	<logger name="org.apache.hadoop" additivity="false">
+	<logger name="com.dotcms.repackage.hadoop_0_20_3_dev_core.org.apache.hadoop" additivity="false">
 		<level value="info"/>
 		<appender-ref ref="ASYNC-SITESEARCH" />
 	</logger>
@@ -246,7 +246,7 @@
 	</logger>
 
     <!-- make Jersey less noisy -->
-    <logger name="com.sun.jersey.spi.container.servlet.WebComponent" additivity="false">
+    <logger name="com.dotcms.repackage.jersey_1_12.com.sun.jersey.spi.container.servlet.WebComponent" additivity="false">
         <level value="error"/>
     </logger>
 

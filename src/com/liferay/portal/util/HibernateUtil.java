@@ -22,9 +22,9 @@
 
 package com.liferay.portal.util;
 
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.dialect.Dialect;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.Session;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.Dialect;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.util.InstancePool;

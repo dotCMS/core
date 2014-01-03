@@ -8,8 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.beanutils.BeanUtils;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectMapper;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Permission;

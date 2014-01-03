@@ -27,10 +27,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.portlet.PortletConfig;
-import javax.portlet.PortletException;
-import javax.portlet.PortletMode;
-import javax.portlet.UnavailableException;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.PortletException;
+import com.dotcms.repackage.portlet.javax.portlet.PortletMode;
+import com.dotcms.repackage.portlet.javax.portlet.UnavailableException;
 
 import com.liferay.portal.ejb.PortletPK;
 import com.liferay.portal.util.Constants;
@@ -712,14 +712,14 @@ public class Portlet extends PortletModel {
 	 * Initialize the portlet instance.
 	 */
 	public CachePortlet init(
-			PortletConfig portletConfig, javax.portlet.Portlet portletInstance)
+			PortletConfig portletConfig, com.dotcms.repackage.portlet.javax.portlet.Portlet portletInstance)
 		throws PortletException {
 
 		CachePortlet cachePortlet = null;
 
 		try {
 			if (portletInstance == null) {
-				portletInstance = (javax.portlet.Portlet)
+				portletInstance = (com.dotcms.repackage.portlet.javax.portlet.Portlet)
 					Class.forName(getPortletClass()).newInstance();
 			}
 

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;

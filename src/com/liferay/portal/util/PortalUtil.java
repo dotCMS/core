@@ -36,23 +36,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
-import javax.portlet.PortletContext;
-import javax.portlet.PortletException;
-import javax.portlet.PortletPreferences;
-import javax.portlet.PortletRequest;
-import javax.portlet.PreferencesValidator;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
-import javax.portlet.ValidatorException;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.PortletContext;
+import com.dotcms.repackage.portlet.javax.portlet.PortletException;
+import com.dotcms.repackage.portlet.javax.portlet.PortletPreferences;
+import com.dotcms.repackage.portlet.javax.portlet.PortletRequest;
+import com.dotcms.repackage.portlet.javax.portlet.PreferencesValidator;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.ValidatorException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -141,7 +141,7 @@ public class PortalUtil {
 		catch (IllegalStateException ise) {
 
 			// This should only happen if the developer called
-			// sendRedirect of javax.portlet.ActionResponse
+			// sendRedirect of com.dotcms.repackage.portlet.javax.portlet.ActionResponse
 
 		}
 	}
@@ -181,7 +181,7 @@ public class PortalUtil {
 	public static void destroyPortletInstance(Portlet portlet) {
 		String scpId =
 			PortalUtil.class.getName() + "." +
-			javax.portlet.Portlet.class.getName();
+			com.dotcms.repackage.portlet.javax.portlet.Portlet.class.getName();
 		if (!portlet.isWARFile()) {
 			scpId += "." + portlet.getCompanyId();
 		}
@@ -542,7 +542,7 @@ public class PortalUtil {
 
 		String scpId =
 			PortalUtil.class.getName() + "." +
-			javax.portlet.Portlet.class.getName();
+			com.dotcms.repackage.portlet.javax.portlet.Portlet.class.getName();
 		if (!portlet.isWARFile()) {
 			scpId += "." + portlet.getCompanyId();
 		}

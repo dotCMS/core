@@ -3,7 +3,7 @@ package com.tonicsystems.jarjar;
 import com.tonicsystems.jarjar.ext_util.EntryStruct;
 import com.tonicsystems.jarjar.resource.MatchableRule;
 import com.tonicsystems.jarjar.resource.ResourceRewriter;
-import org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.FileSet;

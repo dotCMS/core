@@ -11,21 +11,21 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.bradmcevoy.http.Auth;
-import com.bradmcevoy.http.CollectionResource;
-import com.bradmcevoy.http.FolderResource;
-import com.bradmcevoy.http.LockInfo;
-import com.bradmcevoy.http.LockResult;
-import com.bradmcevoy.http.LockTimeout;
-import com.bradmcevoy.http.LockToken;
-import com.bradmcevoy.http.LockableResource;
-import com.bradmcevoy.http.LockingCollectionResource;
-import com.bradmcevoy.http.MakeCollectionableResource;
-import com.bradmcevoy.http.Range;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Request.Method;
-import com.bradmcevoy.http.Resource;
-import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Auth;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.FolderResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockResult;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockTimeout;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockToken;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockableResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockingCollectionResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.MakeCollectionableResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Range;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Request;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Request.Method;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -64,7 +64,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.
+	 * com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.
 	 * lang.String)
 	 */
 	public CollectionResource createCollection(String newName)
@@ -75,7 +75,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.CollectionResource#child(java.lang.String)
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.CollectionResource#child(java.lang.String)
 	 */
 	public Resource child(String childName) {
 		if (!UtilMethods.isSet(childName)) {
@@ -95,7 +95,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.Resource#authenticate(java.lang.String,
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource#authenticate(java.lang.String,
 	 * java.lang.String)
 	 */
 	public Object authenticate(String username, String password) {
@@ -110,8 +110,8 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.Resource#authorise(com.bradmcevoy.http.Request,
-	 * com.bradmcevoy.http.Request.Method, com.bradmcevoy.http.Auth)
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource#authorise(com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Request,
+	 * com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Request.Method, com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Auth)
 	 */
 	public boolean authorise(Request req, Method method, Auth auth) {
 		try {
@@ -139,7 +139,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * com.bradmcevoy.http.Resource#checkRedirect(com.bradmcevoy.http.Request)
+	 * com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource#checkRedirect(com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Request)
 	 */
 	public String checkRedirect(Request req) {
 		return null;
@@ -148,7 +148,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.Resource#getContentLength()
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource#getContentLength()
 	 */
 	public Long getContentLength() {
 		return (long) 0;
@@ -157,7 +157,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.Resource#getContentType(java.lang.String)
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource#getContentType(java.lang.String)
 	 */
 	public String getContentType(String arg0) {
 		return "folder";
@@ -166,7 +166,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.Resource#getModifiedDate()
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource#getModifiedDate()
 	 */
 	public Date getModifiedDate() {
 		return new Date();
@@ -175,7 +175,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.Resource#getRealm()
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource#getRealm()
 	 */
 	public String getRealm() {
 		return CompanyUtils.getDefaultCompany().getName();
@@ -184,7 +184,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.Resource#getUniqueId()
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource#getUniqueId()
 	 */
 	public String getUniqueId() {
 		return path;
@@ -193,7 +193,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.PutableResource#createNew(java.lang.String,
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.PutableResource#createNew(java.lang.String,
 	 * java.io.InputStream, java.lang.Long, java.lang.String)
 	 */
 	public Resource createNew(String newName, InputStream in, Long length,
@@ -206,7 +206,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.CopyableResource#copyTo(com.bradmcevoy.http.
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.CopyableResource#copyTo(com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.
 	 * CollectionResource, java.lang.String)
 	 */
 	public void copyTo(CollectionResource collRes, String name) {
@@ -216,7 +216,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.DeletableResource#delete()
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.DeletableResource#delete()
 	 */
 	public void delete() throws DotRuntimeException {
 		throw new DotRuntimeException("Cannot delete template folder");
@@ -225,7 +225,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
 	 */
 	public Long getMaxAgeSeconds() {
 		return new Long(0);
@@ -235,8 +235,8 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * com.bradmcevoy.http.GetableResource#sendContent(java.io.OutputStream,
-	 * com.bradmcevoy.http.Range, java.util.Map)
+	 * com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.GetableResource#sendContent(java.io.OutputStream,
+	 * com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Range, java.util.Map)
 	 */
 	public void sendContent(OutputStream arg0, Range arg1,
 			Map<String, String> arg2, String arg3) throws IOException {
@@ -246,7 +246,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.MoveableResource#moveTo(com.bradmcevoy.http.
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.MoveableResource#moveTo(com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.
 	 * CollectionResource, java.lang.String)
 	 */
 	public void moveTo(CollectionResource collRes, String name)
@@ -257,7 +257,7 @@ public class TemplateFolderResourceImpl implements LockableResource,
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.bradmcevoy.http.PropFindableResource#getCreateDate()
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.PropFindableResource#getCreateDate()
 	 */
 	public Date getCreateDate() {
 		return host.getModDate();

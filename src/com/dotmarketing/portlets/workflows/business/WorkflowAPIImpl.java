@@ -63,8 +63,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 

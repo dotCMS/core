@@ -19,7 +19,7 @@ package com.dotmarketing.viewtools;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.struts.util.MessageResources;
+import com.dotcms.repackage.struts.org.apache.struts.util.MessageResources;
 import org.apache.velocity.tools.struts.MessageResourcesTool;
 
 /**

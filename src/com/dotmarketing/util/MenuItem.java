@@ -91,7 +91,7 @@ public class MenuItem implements Serializable{
         }
         
         public String toString() {
-            return org.apache.commons.lang.builder.ToStringBuilder.reflectionToString(this);
+            return com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder.reflectionToString(this);
         }
         
         public boolean equals(Object o) {

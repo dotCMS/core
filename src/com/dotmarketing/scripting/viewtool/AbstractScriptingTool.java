@@ -4,7 +4,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.bsf.BSFException;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFException;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;

@@ -37,12 +37,12 @@ import javax.swing.text.rtf.RTFEditorKit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.document.DateTools;
-import org.apache.lucene.document.Field;
-import org.apache.poi.hdf.extractor.WordDocument;
-import org.apache.pdfbox.pdfparser.PDFParser;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.util.PDFTextStripper;
+import com.dotcms.repackage.elasticsearch.org.apache.lucene.document.DateTools;
+import com.dotcms.repackage.elasticsearch.org.apache.lucene.document.Field;
+import com.dotcms.repackage.tika_app_1_3.org.apache.poi.hdf.extractor.WordDocument;
+import com.dotcms.repackage.tika_app_1_3.org.apache.pdfbox.pdfparser.PDFParser;
+import com.dotcms.repackage.tika_app_1_3.org.apache.pdfbox.pdmodel.PDDocument;
+import com.dotcms.repackage.tika_app_1_3.org.apache.pdfbox.util.PDFTextStripper;
 
 import com.liferay.util.poi.XLSTextStripper;
 

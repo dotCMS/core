@@ -16,12 +16,12 @@
 
 package org.apache.velocity.tools.view;
 
-import org.apache.commons.digester.Digester;
-import org.apache.commons.digester.Rule;
-import org.apache.commons.digester.RuleSetBase;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.Digester;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.Rule;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.RuleSetBase;
 import org.apache.velocity.tools.view.DataInfo;
 import org.apache.velocity.tools.view.ViewToolInfo;
-import org.xml.sax.Attributes;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
 
 /**
  * <p>The set of Digester rules required to parse a toolbox

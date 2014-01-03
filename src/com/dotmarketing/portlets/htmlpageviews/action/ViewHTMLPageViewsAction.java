@@ -4,20 +4,20 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -63,9 +63,9 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
 	protected HostWebAPI hostAPI = WebAPILocator.getHostWebAPI();
 
 	/*
-     * @see com.liferay.portal.struts.PortletAction#render(org.apache.struts.action.ActionMapping,
-     *      org.apache.struts.action.ActionForm, javax.portlet.PortletConfig,
-     *      javax.portlet.RenderRequest, javax.portlet.RenderResponse)
+     * @see com.liferay.portal.struts.PortletAction#render(com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping,
+     *      com.dotcms.repackage.struts.org.apache.struts.action.ActionForm, com.dotcms.repackage.portlet.javax.portlet.PortletConfig,
+     *      com.dotcms.repackage.portlet.javax.portlet.RenderRequest, com.dotcms.repackage.portlet.javax.portlet.RenderResponse)
      */
     public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req,
             RenderResponse res) throws Exception {

@@ -5,13 +5,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.liferay.util.FileUtil;
 
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemFactory;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemIterator;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemStream;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileUploadException;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
 import org.osgi.framework.BundleException;
 
 import javax.servlet.ServletException;

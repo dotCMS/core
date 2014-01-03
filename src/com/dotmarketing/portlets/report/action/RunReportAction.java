@@ -30,27 +30,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JRExporterParameter;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.export.JRHtmlExporter;
-import net.sf.jasperreports.engine.export.JRHtmlExporterParameter;
-import net.sf.jasperreports.engine.util.JRLoader;
-import net.sf.jasperreports.j2ee.servlets.BaseHttpServlet;
-import net.sf.jasperreports.j2ee.servlets.ImageServlet;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JRException;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JRExporterParameter;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperFillManager;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperPrint;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperReport;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.export.JRHtmlExporter;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.export.JRHtmlExporterParameter;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.util.JRLoader;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.BaseHttpServlet;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.ImageServlet;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
-import bsh.EvalError;
+import com.dotcms.repackage.bsh_2_0b4.bsh.EvalError;
 
 import com.dotmarketing.business.Role;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -120,7 +120,7 @@ public class RunReportAction extends DotPortletAction {
 	    params.put("struts_action", new String [] {"/ext/report/view_reports"} );
 	    //			params.put("pageNumber",new String[] { pageNumber + "" });
 	    
-	    referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(httpReq, javax.portlet.WindowState.MAXIMIZED.toString(), params);
+	    referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(httpReq, com.dotcms.repackage.portlet.javax.portlet.WindowState.MAXIMIZED.toString(), params);
 	}
 	Logger.debug(this, "Inside RunReportAction cmd=" + cmd);
 	File reportFile;
@@ -250,11 +250,11 @@ public class RunReportAction extends DotPortletAction {
 		
 	    }else if(ReportParamterBR.isStringParameter(par.getClassType())){
 		Logger.debug(this, "Getting string parameter " + par.getName());
-		parameters.put(par.getName(), new bsh.Interpreter().eval("new " + par.getClassType() + " (\"" + Parameter.getString(request.getParameter(String.valueOf(par.getName())) + "\")","")));
+		parameters.put(par.getName(), new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval("new " + par.getClassType() + " (\"" + Parameter.getString(request.getParameter(String.valueOf(par.getName())) + "\")","")));
 		submittedPars.put(String.valueOf(par.getName()), Parameter.getString(request.getParameter(String.valueOf(par.getName())),"0"));
 	    }else if(ReportParamterBR.isBooleanParameter(par.getClassType())){
 		Logger.debug(this, "Getting boolean parameter " + par.getName());
-		parameters.put(par.getName(), new bsh.Interpreter().eval("new " + par.getClassType() + " (" + Parameter.getString(request.getParameter(String.valueOf(par.getName())) + ")","false")));
+		parameters.put(par.getName(), new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval("new " + par.getClassType() + " (" + Parameter.getString(request.getParameter(String.valueOf(par.getName())) + ")","false")));
 		submittedPars.put(String.valueOf(par.getName()), Parameter.getString(request.getParameter(String.valueOf(par.getName())),"false"));
 	    }else if(ReportParamterBR.isObjectParameter(par.getClassType())){
 		Logger.debug(this, "Getting object parameter " + par.getName());
@@ -275,18 +275,18 @@ public class RunReportAction extends DotPortletAction {
 						params.append(", " + stringParam[i]);
 				}
 				
-				parameters.put(par.getName(), new bsh.Interpreter().eval("new String (\"" + Parameter.getString(params.toString() + "\")","")));
+				parameters.put(par.getName(), new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval("new String (\"" + Parameter.getString(params.toString() + "\")","")));
 			}
 		} else {
 			Object param = request.getParameter(String.valueOf(par.getName()));
 			if (param instanceof String) {
-				parameters.put(par.getName(), new bsh.Interpreter().eval("new String (\"" + Parameter.getString(request.getParameter(String.valueOf(par.getName())) + "\")","")));
+				parameters.put(par.getName(), new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval("new String (\"" + Parameter.getString(request.getParameter(String.valueOf(par.getName())) + "\")","")));
 				submittedPars.put(String.valueOf(par.getName()), Parameter.getString(request.getParameter(String.valueOf(par.getName())), "0"));
 			}
 		}
 	    }else{
 		Logger.debug(this, "Getting parameter " + par.getName());
-		parameters.put(par.getName(), new bsh.Interpreter().eval("new " + par.getClassType() + " (" + Parameter.getString(request.getParameter(String.valueOf(par.getName())) + ")","0")));
+		parameters.put(par.getName(), new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval("new " + par.getClassType() + " (" + Parameter.getString(request.getParameter(String.valueOf(par.getName())) + ")","0")));
 		submittedPars.put(String.valueOf(par.getName()), Parameter.getString(request.getParameter(String.valueOf(par.getName())),"0"));
 	    }
 	}

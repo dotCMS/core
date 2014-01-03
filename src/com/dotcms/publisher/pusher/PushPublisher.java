@@ -7,10 +7,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
 
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
@@ -49,14 +49,14 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.client.urlconnection.HTTPSProperties;
-import com.sun.jersey.multipart.FormDataMultiPart;
-import com.sun.jersey.multipart.file.FileDataBodyPart;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.ClientResponse;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.WebResource;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.config.ClientConfig;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.client.urlconnection.HTTPSProperties;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.FormDataMultiPart;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.file.FileDataBodyPart;
 
 public class PushPublisher extends Publisher {
 

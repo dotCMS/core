@@ -2,10 +2,10 @@ package com.dotmarketing.portlets.report.struts;
 
 import java.util.ArrayList;
 
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.validator.ValidatorForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessages;
+import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;
 
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.UtilMethods;
@@ -152,9 +152,9 @@ public class ReportForm extends ValidatorForm {
 	
 	/*
 	 * Validator for the Report Form
-	 * @see org.apache.struts.validator.ValidatorForm#validate(org.apache.struts.action.ActionMapping, javax.servlet.http.HttpServletRequest)
+	 * @see com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm#validate(com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping, javax.servlet.http.HttpServletRequest)
 	 */
-	public ActionErrors validate(org.apache.struts.action.ActionMapping mapping, javax.servlet.http.HttpServletRequest request,User user)throws Exception {
+	public ActionErrors validate(com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping mapping, javax.servlet.http.HttpServletRequest request,User user)throws Exception {
 		ActionErrors errors = new ActionErrors();
 		
 		if (!UtilMethods.isSet(reportName)) {

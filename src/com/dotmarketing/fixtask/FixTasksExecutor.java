@@ -25,7 +25,7 @@ import com.dotmarketing.util.TaskLocatorUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
-import edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
 
 public class FixTasksExecutor  implements StatefulJob {
 

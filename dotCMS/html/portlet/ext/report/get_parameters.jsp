@@ -20,7 +20,7 @@
 
 <%@page import="com.dotmarketing.portlets.report.action.RunReportAction"%>
 <%@page import="java.util.Calendar"%>
-<%@page import="bsh.Interpreter"%>
+<%@page import="com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.SelectParameter"%>
 <%@page import="java.util.Date"%>
@@ -93,7 +93,7 @@
 					if(ReportParamterBR.isNumberParameter(par.getClassType()) || ReportParamterBR.isStringParameter(par.getClassType())){
 						String defaultValue = par.getDefaultValue();
 						defaultValue = (UtilMethods.isSet(defaultValue) ? defaultValue : "");
-						defaultValue = (String) new bsh.Interpreter().eval(defaultValue);
+						defaultValue = (String) new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval(defaultValue);
 						defaultValue = (UtilMethods.isSet(defaultValue) ? defaultValue : "");
 				%>						
 						<td align="left"><input type="text" name="<%= par.getName() %>" id="<%= par.getName() %>" value="<%=defaultValue%>"></td>
@@ -119,7 +119,7 @@
 					
 						Calendar c = Calendar.getInstance();
 						if(par.getDefaultValue() != null && !par.getDefaultValue().equals("")){
-							 c.setTime((Date)new bsh.Interpreter().eval(par.getDefaultValue()));
+							 c.setTime((Date)new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval(par.getDefaultValue()));
 						}
 						date = String.valueOf((c.get(Calendar.MONTH) + 1) + "/" + c.get(Calendar.DATE) + "/" + c.get(Calendar.YEAR));
 						hour = String.valueOf(c.get(Calendar.HOUR) == 0 ? 12 : c.get(Calendar.HOUR));
@@ -155,15 +155,15 @@
 						}else if(ReportParamterBR.isBooleanParameter(par.getClassType())){
 					%>
 						<td>
-							<%= LanguageUtil.get(pageContext, "True") %> <input <% if(((Boolean)new bsh.Interpreter().eval(par.getDefaultValue())).booleanValue()){ %>checked="checked"<%} %> type="radio" id="<%= par.getName() %>" name="<%= par.getName() %>" value="true" >
-							<%= LanguageUtil.get(pageContext, "False") %> <input <% if(!((Boolean)new bsh.Interpreter().eval(par.getDefaultValue())).booleanValue()){ %>checked="checked"<%} %> type="radio" id="<%= par.getName() %>" name="<%= par.getName() %>" value="false" >
+							<%= LanguageUtil.get(pageContext, "True") %> <input <% if(((Boolean)new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval(par.getDefaultValue())).booleanValue()){ %>checked="checked"<%} %> type="radio" id="<%= par.getName() %>" name="<%= par.getName() %>" value="true" >
+							<%= LanguageUtil.get(pageContext, "False") %> <input <% if(!((Boolean)new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval(par.getDefaultValue())).booleanValue()){ %>checked="checked"<%} %> type="radio" id="<%= par.getName() %>" name="<%= par.getName() %>" value="false" >
 						</td>
 					<%	
 						}else if(ReportParamterBR.isObjectParameter(par.getClassType())){
 					%>
 						<td>
 							<%
-								java.lang.Object obj = new bsh.Interpreter().eval(par.getDefaultValue());
+								java.lang.Object obj = new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval(par.getDefaultValue());
 
 								if (obj instanceof com.dotmarketing.util.SelectParameter) {
 									SelectParameter sp = (SelectParameter) obj;

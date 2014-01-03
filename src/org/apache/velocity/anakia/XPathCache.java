@@ -19,7 +19,7 @@ package org.apache.velocity.anakia;
  * under the License.    
  */
 
-import com.werken.xpath.XPath;
+import com.dotcms.repackage.werken_xpath_0_9_4.com.werken.xpath.XPath;
 import java.util.Map;
 import java.util.WeakHashMap;
 

@@ -32,9 +32,9 @@ import javax.servlet.jsp.PageContext;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.struts.Globals;
-import org.apache.struts.taglib.TagUtils;
-import org.apache.struts.util.MessageResources;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.taglib.TagUtils;
+import com.dotcms.repackage.struts.org.apache.struts.util.MessageResources;
 
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;

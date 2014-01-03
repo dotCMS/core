@@ -21,7 +21,7 @@
 		List<CrumbTrailEntry> crumbTrailEntries = new ArrayList<CrumbTrailEntry>();
 		String hostId = request.getParameter("hostId");
 		if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_ACTIVITY_STREAM )){
-			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer));
+			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer));
 			if(UtilMethods.isSet(hostId)){
 				  Host currentHost = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),false);
 				  params.put("struts_action", new String[] {"/ext/dashboard/view_dashboard"});
@@ -31,18 +31,18 @@
 			}
 			 crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "work-stream"), null));
 		}else if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_BROWSER )){
-			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + "EXT_BROWSER"), crumbTrailReferer));
+			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + "EXT_BROWSER"), crumbTrailReferer));
 		}else if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_FILES )){	
-			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + "EXT_3"), crumbTrailReferer));
+			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + "EXT_3"), crumbTrailReferer));
 		}else if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_PAGES )){	
-			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + "EXT_15"), crumbTrailReferer));
+			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + "EXT_15"), crumbTrailReferer));
 		}else{
 		if(UtilMethods.isSet(hostId)){
-		  crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer));
+		  crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer));
 		  Host currentHost = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),false);
 		  crumbTrailEntries.add(new CrumbTrailEntry(currentHost.getHostname(), null));
 		}else{
-			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), null));
+			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), null));
 		}
 		}
 		

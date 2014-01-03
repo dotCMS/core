@@ -1,12 +1,12 @@
 package com.dotcms.content.elasticsearch.util;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import static com.dotcms.repackage.elasticsearch.org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
 import java.util.Iterator;
 
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.node.Node;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.common.settings.ImmutableSettings;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.node.Node;
 
 import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;

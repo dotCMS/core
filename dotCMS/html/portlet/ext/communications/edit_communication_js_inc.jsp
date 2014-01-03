@@ -234,7 +234,7 @@ dojo.require("dotcms.dijit.FileBrowserDialog");
 	}
 	</script>
 	
-<% if( !com.liferay.util.GetterUtil.get(com.liferay.util.SystemProperties.get(com.liferay.filters.compression.CompressionFilter.class.getName()), false) ) { %>
+<% if( !com.liferay.util.GetterUtil.get(com.liferay.util.SystemProperties.get(com.dotcms.repackage.compression_filter.com.liferay.filters.compression.CompressionFilter.class.getName()), false) ) { %>
 	<script language='javascript' type='text/javascript'>
 	<% com.liferay.portal.model.User usera= com.liferay.portal.util.PortalUtil.getUser(request); %>
 	tinyMCE_GZ.init({

@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.h2.tools.SimpleResultSet;
+import com.dotcms.repackage.h2_1_3_169.org.h2.tools.SimpleResultSet;
 
 public class H2Procedure {
     public static ResultSet loadRecordsToIndex(Connection conn, String serverId, int records) throws SQLException {

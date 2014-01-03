@@ -35,12 +35,12 @@ import com.liferay.portal.model.Portlet;
  */
 public interface PortletManager {
 	public java.util.Map getEARDisplay(java.lang.String xml)
-		throws org.dom4j.DocumentException, java.io.IOException, 
+		throws com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentException, java.io.IOException, 
 			java.rmi.RemoteException;
 
 	public java.util.Map getWARDisplay(java.lang.String servletContextName,
 		java.lang.String xml)
-		throws org.dom4j.DocumentException, java.io.IOException, 
+		throws com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentException, java.io.IOException, 
 			java.rmi.RemoteException;
 
 	public com.liferay.portal.model.Portlet getPortletById(

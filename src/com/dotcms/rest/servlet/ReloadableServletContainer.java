@@ -29,7 +29,7 @@
  * If you wish your version of this file to be governed by only the CDDL or
  * only the GPL Version 2, indicate your decision by adding "[Contributor]
  * elects to include this software in this distribution under the [CDDL or GPL
- * Version 2] license."  If you don't indicate a single choice of license, a
+ * Version 2] com.dotcms.repackage.tika_app_1_3.license."  If you don't indicate a single choice of license, a
  * recipient has the option to distribute your version of this file under
  * either the CDDL, the GPL Version 2 or to extend the choice of license to
  * its licensees as provided above.  However, if you add GPL Version 2 code
@@ -53,10 +53,10 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Application;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Application;
 
 import com.dotmarketing.business.DotStateException;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.spi.container.servlet.ServletContainer;
 
 
 

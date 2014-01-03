@@ -24,7 +24,7 @@ package com.liferay.util;
 
 import java.util.Map;
 
-import EDU.oswego.cs.dl.util.concurrent.ConcurrentReaderHashMap;
+import com.dotcms.repackage.concurrent.EDU.oswego.cs.dl.util.concurrent.ConcurrentReaderHashMap;
 
 /**
  * <a href="SimpleCachePool.java.html"><b><i>View Source</i></b></a>

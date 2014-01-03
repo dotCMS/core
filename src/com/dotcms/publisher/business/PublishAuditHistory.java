@@ -7,8 +7,8 @@ import java.util.Map;
 
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class PublishAuditHistory implements Serializable {
 	private static final long serialVersionUID = 1L;

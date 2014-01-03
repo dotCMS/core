@@ -18,20 +18,20 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.tika.Tika;
-import org.apache.tika.mime.MimeType;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jettison.json.JSONObject;
-import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.ListenableActionFuture;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.CollectionUtils;
+import com.dotcms.repackage.tika_app_1_3.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.tika_app_1_3.org.apache.tika.Tika;
+import com.dotcms.repackage.tika_app_1_3.org.apache.tika.mime.MimeType;
+import com.dotcms.repackage.jackson_core_asl_1_9_2.org.codehaus.jackson.JsonGenerationException;
+import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.JsonMappingException;
+import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.jettison_1_1.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.ListenableActionFuture;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -69,7 +69,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
-import com.google.gson.Gson;
+import com.dotcms.repackage.tika_app_1_3.com.google.gson.Gson;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 

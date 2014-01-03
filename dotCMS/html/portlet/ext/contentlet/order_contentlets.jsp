@@ -9,7 +9,7 @@
 %>
 <%@page import="com.dotmarketing.portlets.folders.business.FolderFactory"%>
 <%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.FieldFactory"%>
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>

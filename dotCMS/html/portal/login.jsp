@@ -50,7 +50,7 @@ if(UtilMethods.isSet(uId)){
 	UserAPI userAPI = APILocator.getUserAPI();
 	boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(request);
 	User loggedInUser = userAPI.loadUserById(uId, userAPI.getSystemUser(), respectFrontend);
-	session.setAttribute(org.apache.struts.Globals.LOCALE_KEY, loggedInUser.getLocale());
+	session.setAttribute(com.dotcms.repackage.struts.org.apache.struts.Globals.LOCALE_KEY, loggedInUser.getLocale());
 
 	if(UtilMethods.isSet(referer)){
 		session.removeAttribute(WebKeys.REFERER);

@@ -1,6 +1,6 @@
 package com.dotmarketing.servlets;
 
-import com.missiondata.fileupload.OutputStreamListener;
+import com.dotcms.repackage.fileupload_ext.com.missiondata.fileupload.OutputStreamListener;
 
 public class AjaxFileUploadListener implements OutputStreamListener
 {

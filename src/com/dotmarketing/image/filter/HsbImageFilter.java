@@ -8,7 +8,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.jhlabs.image.HSBAdjustFilter;
+import com.dotcms.repackage.com_dotmarketing_jhlabs_images_filters.com.dotmarketing.jhlabs.image.HSBAdjustFilter;
 
 public class HsbImageFilter extends ImageFilter {
 

@@ -26,9 +26,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.swabunga.spell.engine.Word;
-import com.swabunga.spell.event.SpellCheckEvent;
-import com.swabunga.spell.event.SpellCheckListener;
+import com.dotcms.repackage.jazzy_core.com.swabunga.spell.engine.Word;
+import com.dotcms.repackage.jazzy_core.com.swabunga.spell.event.SpellCheckEvent;
+import com.dotcms.repackage.jazzy_core.com.swabunga.spell.event.SpellCheckListener;
 
 /**
  * <a href="BasicSpellCheckListener.java.html"><b><i>View Source</i></b></a>

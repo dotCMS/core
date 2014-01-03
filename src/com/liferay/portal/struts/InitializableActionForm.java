@@ -25,7 +25,7 @@ package com.liferay.portal.struts;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="InitializableActionForm.java.html"><b><i>View Source</i></b></a>

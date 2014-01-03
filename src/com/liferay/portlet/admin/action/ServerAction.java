@@ -24,15 +24,15 @@ package com.liferay.portlet.admin.action;
 
 import java.util.Enumeration;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import javax.servlet.jsp.PageContext;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.struts.PortletAction;

@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.business.APILocator;

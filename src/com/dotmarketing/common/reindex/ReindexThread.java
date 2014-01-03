@@ -8,10 +8,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.ActionListener;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.bulk.BulkRequestBuilder;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.bulk.BulkResponse;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;

@@ -26,9 +26,9 @@ package org.tinymce.spellchecker;
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.dotcms.repackage.json.org.json.JSONArray;
+import com.dotcms.repackage.json.org.json.JSONException;
+import com.dotcms.repackage.json.org.json.JSONObject;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

@@ -5,11 +5,11 @@ import java.text.SimpleDateFormat;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.validator.ValidatorForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessages;
+import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;
 
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;

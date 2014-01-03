@@ -15,7 +15,7 @@
 	params.put("struts_action", new String [] {"/ext/report/view_reports"} );
 //	params.put("pageNumber",new String[] { pageNumber + "" });
 	
-	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
+	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, com.dotcms.repackage.portlet.javax.portlet.WindowState.MAXIMIZED.toString(), params);
 
 	ArrayList<PermissionAsset> permissionReports = (ArrayList<PermissionAsset>) request.getAttribute(com.dotmarketing.util.WebKeys.Report.ReportList);
 	

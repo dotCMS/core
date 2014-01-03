@@ -17,13 +17,13 @@ package com.dotmarketing.util.diff.helper;
 
 import java.io.IOException;
 
-import org.cyberneko.html.parsers.SAXParser;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
+import com.dotcms.repackage.daisydiff.org.cyberneko.html.parsers.SAXParser;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.ContentHandler;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.InputSource;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Locator;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Parses HTML files using the Neko HTML parser. Puts all elements and attribute

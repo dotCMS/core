@@ -3,7 +3,7 @@
  */
 package com.dotmarketing.viewtools.content;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.util.InodeUtils;

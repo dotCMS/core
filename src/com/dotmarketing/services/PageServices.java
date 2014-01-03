@@ -1,6 +1,6 @@
 package com.dotmarketing.services;
 
-import bsh.This;
+import com.dotcms.repackage.bsh_2_0b4.bsh.This;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

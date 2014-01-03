@@ -201,9 +201,9 @@ dojo.ready(function(){
     <div class="subNavCrumbTrail">
         <ul id="subNavCrumbUl">        
             <li>
-                <%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_BROKEN_LINKS")%>
+                <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_BROKEN_LINKS")%>
             </li>
-            <li class="lastCrumb"><span><%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_BROKEN_LINKS_VIEW")%></span></li>
+            <li class="lastCrumb"><span><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_BROKEN_LINKS_VIEW")%></span></li>
         </ul>
         <div class="clear"></div>
     </div>

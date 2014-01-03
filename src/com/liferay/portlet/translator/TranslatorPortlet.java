@@ -24,9 +24,9 @@ package com.liferay.portlet.translator;
 
 import java.io.IOException;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletException;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletException;
 
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.JSPPortlet;

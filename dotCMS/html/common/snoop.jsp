@@ -2,7 +2,7 @@
 	<%@ page import="javax.servlet.http.HttpUtils,java.util.Enumeration" %>
 
 
-<%@page import="javax.portlet.RenderRequest"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.RenderRequest"%>
 <H2>Context information</H2>
 <TABLE>
 <TR>
