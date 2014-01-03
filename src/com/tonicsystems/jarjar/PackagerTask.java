@@ -270,10 +270,12 @@ public class PackagerTask extends JarJarTask {
         //++++++++++++++++++++++++++++++++++++++++++++++++++++++
         long startJSPsChanges = System.currentTimeMillis();//Track the time
         File jspFolderFile = new File( getDotcmsHome() + File.separator + "dotCMS" );
+        File srcFolderFile = new File( getDotcmsHome() + File.separator + "src" );
+        String searchOn = jspFolderFile.getAbsolutePath() + " " + srcFolderFile.getAbsolutePath();
 
         log( "" );
         log( "-----------------------------------------" );
-        log( "Updating JSP's" );
+        log( "Updating JSP's and java source code" );
 
         /*
          The faster way to replacing content on the jsp files is for sure executing shell commands.
@@ -317,7 +319,7 @@ public class PackagerTask extends JarJarTask {
                  Executes the replacing command on all the jsp files under the given folder, also adds the this used command to
                  the string builder with the total of executed commands for a possible manual use.
                  */
-                executeCommand( jspFolderFile, searchPatters, replaceCommands );
+                sourcesReplacement( searchOn, searchPatters, replaceCommands );
                 i = 0;
                 searchPatters = new StringBuilder();
             }
@@ -328,7 +330,7 @@ public class PackagerTask extends JarJarTask {
              Executes the replacing command on all the jsp files under the given folder, also adds the this used command to
              the string builder with the total of executed commands for a possible manual use.
              */
-            executeCommand( jspFolderFile, searchPatters, replaceCommands );
+            sourcesReplacement( searchOn, searchPatters, replaceCommands );
         }
 
         //Log the time
@@ -439,19 +441,19 @@ public class PackagerTask extends JarJarTask {
     }
 
     /**
-     * Finds and replaces in a given jsp folder a list of packages using regex
+     * Finds and replaces in given folders a list of packages using regex
      *
-     * @param jspFolderFile
+     * @param folders
      * @param searchPatters
      */
-    private void executeCommand ( File jspFolderFile, StringBuilder searchPatters, StringBuilder commands ) {
+    private void sourcesReplacement ( String folders, StringBuilder searchPatters, StringBuilder commands ) {
 
         //find . -name '*.jsp' -exec perl -pi -e 's/((?<=")|(?<=\()|\s)org\.apache\.struts\.taglib\.tiles\./com\.dotcms\.repackage\.org\.apache\.struts\.taglib\.tiles\./' {} \;
 
         //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec sed -i 's/\"" + pattern + "/\"" + result + "/' {} \\;";
         //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e 's/((?<=\")|(?<=\\()|\\s)" + patternFinal + "/" + resultFinal + "/g' {} \\;";
         //String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e '" + searchPatters + "' {} \\;";
-        String command = "find " + jspFolderFile.getAbsolutePath() + " -name '*.jsp' -exec perl -pi -e '" + searchPatters.toString() + "' {} +";
+        String command = "find " + folders + " \\( -name '*.jsp' -o -name '*.java' \\) -exec perl -pi -e '" + searchPatters.toString() + "' {} +";
         log( command );
 
         String externalCommand = "find $folder \\( -name '*.jsp' -o -name '*.java' \\) -exec perl -pi -e '" + searchPatters.toString() + "' {} +";
@@ -468,7 +470,6 @@ public class PackagerTask extends JarJarTask {
                 process.waitFor();
             } catch ( Exception e ) {
                 log( "Error replacing JSP's Strings: " + searchPatters.toString() + ".", e, Project.MSG_ERR );
-                //throw new BuildException( "Error replacing JSP's Strings: " + pattern + ".", e );
             }
         }
     }
