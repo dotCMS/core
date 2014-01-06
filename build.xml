@@ -1059,8 +1059,7 @@
             </classpath>
         </taskdef>
 
-        <inspectorTask librarypath="${tomcat7.home}/webapps/ROOT/WEB-INF/lib"/>
-        <!--<inspectorTask librarypath="${lib.app}"/>-->
+        <inspectorTask librarypath="${lib.app}"/>
     </target>
 
     <target name="find-dependencies">
@@ -1109,28 +1108,6 @@
         <!-- Emit the property to the ant console -->
         <echo message="${app-classpath}"/>
     </target>
-
-    <target name="repackage-libraries">
-        <ant target="repackage" antfile="build.xml" dir="libs"/>
-    </target>
-
-    <!--<target name="repackage-libraries" depends="compile">
-
-        &lt;!&ndash;Clean the output folder&ndash;&gt;
-        <delete dir="${lib.app}/out"/>
-        <mkdir dir="${lib.app}/out"/>
-
-        <taskdef classname="com.dotcms.packager.AutoPackagerTask" name="packagerTask">
-            <classpath>
-                <path refid="files-classpath" />
-            </classpath>
-        </taskdef>
-
-        <packagerTask librarypath="${lib.app}"
-                      outputFolder="${lib.app}/out"
-                      dotcmsjar="${lib.app}/dotcms_${dotcms.release.version}.jar"
-                      excludesfile="${lib.app}/jarjar-1.4.jar"/>
-    </target>-->
 
     <!--<target name="war" depends="deploy-no-jsp,repackage-libraries,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">-->
     <target name="war" depends="deploy-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
