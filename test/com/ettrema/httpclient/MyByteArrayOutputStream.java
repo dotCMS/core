@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.output.ByteArrayOutputStream;
 
 /**
  *

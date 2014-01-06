@@ -1,10 +1,10 @@
 package com.ettrema.httpclient;
 
-import com.bradmcevoy.http.Range;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Range;
 import java.util.List;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpMethodBase;
+import com.dotcms.repackage.slf4j_api_1_6_0.org.slf4j.Logger;
+import com.dotcms.repackage.slf4j_api_1_6_0.org.slf4j.LoggerFactory;
 
 /**
  * Implements the HTTP GET method.

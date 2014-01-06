@@ -10,8 +10,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import com.dotcms.repackage.junit_4_8_1.org.junit.AfterClass;
+import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;

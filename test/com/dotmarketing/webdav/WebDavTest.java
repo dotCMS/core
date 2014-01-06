@@ -1,7 +1,7 @@
 package com.dotmarketing.webdav;
 
 
-import static org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,11 +11,11 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import junit.framework.Assert;
+import com.dotcms.repackage.junit_4_8_1.junit.framework.Assert;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Permission;
@@ -34,7 +34,7 @@ import com.ettrema.httpclient.File;
 import com.ettrema.httpclient.Folder;
 import com.ettrema.httpclient.Host;
 import com.ettrema.httpclient.Resource;
-import com.ibm.icu.util.Calendar;
+import com.dotcms.repackage.icu4j_4_0_1.com.ibm.icu.util.Calendar;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
 

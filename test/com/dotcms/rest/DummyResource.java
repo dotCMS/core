@@ -1,10 +1,10 @@
 package com.dotcms.rest;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.FormParam;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.POST;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
 
 @Path("/dummy")
 public class DummyResource extends WebResource {

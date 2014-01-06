@@ -1,22 +1,22 @@
 package com.dotcms.rest;
 
-import static org.junit.Assert.assertNotNull;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertNotNull;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MultivaluedMap;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MultivaluedMap;
 
-import org.codehaus.cargo.util.Base64;
-import org.junit.Before;
-import org.junit.Test;
+import com.dotcms.repackage.cargo_core_uberjar_0_9.org.codehaus.cargo.util.Base64;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Before;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotcms.rest.config.RestServiceUtil;
 import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.UniformInterfaceException;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.WebResource;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.core.util.MultivaluedMapImpl;
 
 public class WebResourceTest extends TestBase  {
 

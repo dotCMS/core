@@ -1,13 +1,13 @@
 package com.dotmarketing.portlets.containers.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.beanutils.BeanUtils;
-import org.junit.Test;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;

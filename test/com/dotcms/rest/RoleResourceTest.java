@@ -1,13 +1,13 @@
 package com.dotcms.rest;
 
-import static org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertTrue;
 
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.junit.Before;
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Before;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;
@@ -18,8 +18,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.WebResource;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.WebResource;
 
 public class RoleResourceTest extends TestBase  {
 
