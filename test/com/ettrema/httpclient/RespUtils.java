@@ -7,14 +7,14 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.commons.io.IOUtils;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.Namespace;
-import org.jdom.filter.ElementFilter;
-import org.jdom.input.SAXBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.JDOMException;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Namespace;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.filter.ElementFilter;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.input.SAXBuilder;
+import com.dotcms.repackage.slf4j_api_1_6_0.org.slf4j.Logger;
+import com.dotcms.repackage.slf4j_api_1_6_0.org.slf4j.LoggerFactory;
 
 
 
@@ -82,7 +82,7 @@ public class RespUtils {
         return list;
     }    
     
-    public static  org.jdom.Document getJDomDocument(InputStream in) throws JDOMException {
+    public static  com.dotcms.repackage.tika_app_1_3.org.jdom.Document getJDomDocument(InputStream in) throws JDOMException {
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		try {
 			IOUtils.copy(in, bout);

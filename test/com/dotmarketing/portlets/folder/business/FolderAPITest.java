@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.folder.business;
 
-import org.junit.Assert;
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Assert;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

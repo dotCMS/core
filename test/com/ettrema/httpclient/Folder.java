@@ -1,12 +1,12 @@
 package com.ettrema.httpclient;
 
-import com.bradmcevoy.common.Path;
-import com.bradmcevoy.http.exceptions.BadRequestException;
-import com.bradmcevoy.http.exceptions.ConflictException;
-import com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.bradmcevoy.http.exceptions.NotFoundException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.common.Path;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.BadRequestException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.ConflictException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotFoundException;
 import com.ettrema.cache.Cache;
-import com.ettrema.common.LogUtils;
+import com.dotcms.repackage.milton_1_8_1_4.com.ettrema.common.LogUtils;
 import com.ettrema.httpclient.PropFindMethod.Response;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,8 +16,8 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.dotcms.repackage.slf4j_api_1_6_0.org.slf4j.Logger;
+import com.dotcms.repackage.slf4j_api_1_6_0.org.slf4j.LoggerFactory;
 
 /**
  *
@@ -224,7 +224,7 @@ public class Folder extends Resource {
 
     public com.ettrema.httpclient.File upload(String name, InputStream content, Long contentLength, ProgressListener listener) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException {
         children(); // ensure children are loaded
-        String newUri = encodedUrl() + com.bradmcevoy.http.Utils.percentEncode(name);
+        String newUri = encodedUrl() + com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Utils.percentEncode(name);
         String contentType = URLConnection.guessContentTypeFromName(name);
         log.trace("upload: " + newUri);
         int result = host().doPut(newUri, content, contentLength, contentType, listener);
@@ -238,7 +238,7 @@ public class Folder extends Resource {
 
     public Folder createFolder(String name) throws IOException, HttpException , NotAuthorizedException, ConflictException, BadRequestException, NotFoundException {
         children(); // ensure children are loaded
-        String newUri = encodedUrl() + com.bradmcevoy.http.Utils.percentEncode(name);
+        String newUri = encodedUrl() + com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Utils.percentEncode(name);
         try {
             host().doMkCol(newUri);
             flush();
