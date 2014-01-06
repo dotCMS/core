@@ -99,12 +99,13 @@
 		}
 		.hideMe {
 			display:none;
+			position:absolute;
 		}
 		tr.active {
 			background-color: #eff3f8;
 		}
 		#actionPanel{
-			position: absolute;
+			position: fixed;
 			border:1px solid #D0D0D0;
 			background:#fff;
 			bottom: 0;
@@ -150,10 +151,9 @@
 				}
 				
 				dojo.addClass('row-' + row, "active");
-	
 				this.lastRow=row;
 				
-				
+				// Build the action Panel
 				var myCp = dijit.byId("actionPanelContainer");
 				var hanger = dojo.byId("actionPanel");
 				if(!hanger){
@@ -168,76 +168,86 @@
 					id : "actionPanelContainer"
 					}).placeAt("actionPanel");
 				
+
+				this.placeActionPanel();
 				
 				var r = Math.floor(Math.random() * 1000000000);
-	
+				
 				if(jspToShow.indexOf("?")<0){
 					jspToShow = jspToShow +"?";
 				}
 	
 				
-				var selectedRow = dojo.position('row-' + row, true);
-				var selectedRowY = (selectedRow.y + (selectedRow.h/2) - 19);
-				this.placeActionPanel();
 				dojo.removeClass("actionPanel", "hideMe");	
 				myCp.attr("href", jspToShow + "&rand=" + r);
 				//dojo.parser.parse("actionPanel");
 				
-				
+
 				
 
-				var actionPanel = dojo.position('actionPanel');
 
-				var actionPanelRight = actionPanel.x-179;
-
-				/*
-				var style="top:"+ selectedRowY +"px;right:266px;position:absolute;z-index:9999";
-				
-				console.log("style:" + style);
-				console.log("selectedRowY:" + selectedRowY);
-				console.log("actionPanelRight:" + actionPanelRight);
-				*/
-				
-				 dojo.style("arrow", "top", selectedRowY-85 + "px");
 				
 				
 			},
 			
 			
 			placeActionPanel:function(){
-				var tableHeader = dojo.position(dojo.byId("actionPanelTableHeader"), true);
-				var actionPanel = dojo.position(dojo.byId("actionPanel"), true);
-				var scroll = dojo.body().scrollTop;
-				var bottomOfTheHeader =tableHeader.y+tableHeader.h;
+				
+				if(this.lastRow == undefined){
+					
+					return;
+				}
 
-				if(bottomOfTheHeader - scroll < 0 ){
-					console.log("bottomOfTheHeader:" + bottomOfTheHeader);
-					console.log("scroll:" + scroll);
-					dojo.style("actionPanel", "top", "0px");
+				var selectedRow = dojo.position('row-' + this.lastRow, true);
+				
+				
+				var tableHeader = dojo.position("actionPanelTableHeader",true);
+				var actionPanel = dojo.position("actionPanel", true);
+				var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
+
+				var bottomOfTheHeader = tableHeader.h + tableHeader.y -scroll;
+
+
+				
+				/*
+				console.log("--------------------------");
+				console.log("tableHeader x:" + tableHeader.x);
+				console.log("tableHeader y:" + tableHeader.y);
+				console.log("tableHeader h:" + tableHeader.h);
+				console.log("tableHeader w:" + tableHeader.w);
+				console.log("selectedRow:" + this.lastRow);
+				console.log("bottomOfTheHeader x:" + bottomOfTheHeader);
+				console.log("selectedRow y:" + selectedRow.y);
+				console.log("selectedRow h:" + selectedRow.h);
+				console.log("actionPanel y:" + actionPanel.y);
+				console.log("actionPanel x:" + actionPanel.x);
+
+
+				console.log("Scroll:" +scroll);
+				*/
+				
+				if(bottomOfTheHeader < 0 ){
+
 					dojo.style("actionPanel", "position","fixed");
+					dojo.style("actionPanel", "top", "0px");
+					dojo.style("actionPanel", "left", tableHeader.x + "px");
+					var arrowY = 	selectedRow.y - scroll   ;
+					dojo.style("arrow", "top", arrowY + "px");
+
 					return;
 				}
 				else{
-					dojo.style("actionPanel", "position","absolute");
+
+					dojo.style("actionPanel", "top", bottomOfTheHeader + "px");
+					dojo.style("actionPanel", "left", tableHeader.x + "px");
+					var arrowY = 	selectedRow.y -  (Math.abs( bottomOfTheHeader) )  - scroll 
+
+					dojo.style("arrow", "top", arrowY + "px");
 				}
-				var topOfThePanel = (tableHeader.y+tableHeader.h)<0 ? scroll: tableHeader.y+tableHeader.h;
 
-				
-					console.log("zadsada w:" + dojo.position("zadsada").w);
-					console.log("tableHeader y:" + tableHeader.y);
-					console.log("tableHeader w:" + tableHeader.w);
-					console.log("actionPanel y:" + actionPanel.y);
-					console.log("actionPanel x:" + actionPanel.x);
-					console.log("topOfThePanel:" + topOfThePanel);
-					console.log("Scroll:" +scroll);
-				
-				
-
-				
-				//dojo.style("actionPanel", "top", topOfThePanel + "px");
-				//dojo.style("actionPanel", "width", tableHeader.w -1 + "px");
-				//dojo.style("actionPanel", "left", tableHeader.x  + "px");
-			}
+			},
+			fixed:false,
+			
 
 		};
 		
@@ -261,15 +271,19 @@
 		
 		<table class="listingTable">
 			<tr>
+				<!--  Add these up to 100% -->
 			    <th width="7%">&nbsp;</th>
 			    <th width="7%">&nbsp;</th>
 				<th width="35%">Name</th>
 				<th width="25%">IP Address</th>
 				<th width="20%">Contacted</th>
 				<th width="6%" style="text-align:center;">Status</th>
-				<th id="actionPanelTableHeader"><div id="zadsada" style="width:290px;">&nbsp;</div></th>
+				<!-- /Add these up to 100% -->
+				
+				
+				<th id="actionPanelTableHeader"><div style="width:290px;"></div></th>
 			</tr>
-			<%for(int i=0;i<10;i++){ %>
+			<%for(int i=0;i<100;i++){ %>
 				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle('<%=i%>','/html/style_guide/host-manager-action-pallete.jsp');">
 					<td align="center"><img src="images/icon-server.png"></td>
 					<td align="center" style="color:#8c9ca9;"><i class="fa fa-user fa-3x"></i></td>
