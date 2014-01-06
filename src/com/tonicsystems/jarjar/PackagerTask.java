@@ -271,7 +271,8 @@ public class PackagerTask extends JarJarTask {
         long startJSPsChanges = System.currentTimeMillis();//Track the time
         File jspFolderFile = new File( getDotcmsHome() + File.separator + "dotCMS" );
         File srcFolderFile = new File( getDotcmsHome() + File.separator + "src" );
-        String searchOn = jspFolderFile.getAbsolutePath() + " " + srcFolderFile.getAbsolutePath();
+        File srcTestFolderFile = new File( getDotcmsHome() + File.separator + "test" );
+        String searchOn = jspFolderFile.getAbsolutePath() + " " + srcFolderFile.getAbsolutePath()+ " " + srcTestFolderFile.getAbsolutePath();
 
         log( "" );
         log( "-----------------------------------------" );
