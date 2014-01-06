@@ -45,13 +45,12 @@ DOTCMS_HOME=`cd "$PRGDIR/../webapps/ROOT" ; pwd`
 ##add agentpath to be enable ability to profile application
 #JAVA_OPTS="-agentpath:/Applications/YourKit_Java_Profiler_9.0.5.app/bin/mac/libyjpagent.jnilib $JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xms1024M -Xmx1024M -XX:PermSize=128m "
 
-JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"
-
+#JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"
 JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xmx1G -XX:MaxPermSize=256m -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -javaagent:$DOTCMS_HOME/WEB-INF/lib/jamm-0.2.5.jar"
 
 if [ "$1" = "debug" ] ; then
    #debug
-   JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8765 $JAVA_OPTS"
+   JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 $JAVA_OPTS"
 fi
 
 
