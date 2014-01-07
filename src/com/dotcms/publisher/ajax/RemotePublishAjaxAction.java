@@ -323,7 +323,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 publishAuditAPI.updatePublishAuditStatus( config.getId(), status.getStatus(), auditHistory );
 
                 //Get the identifiers on this bundle
-                List<String> identifiers = new ArrayList<String>();
+                HashSet<String> identifiers = new HashSet<String>();
                 List<PublishQueueElement> assets = config.getAssets();
                 if ( config.getLuceneQueries() != null && !config.getLuceneQueries().isEmpty() ) {
                     identifiers.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
@@ -336,9 +336,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
                 //Now depending of the operation lets add it to the queue job
                 if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
-                    publisherAPI.addContentsToPublish( identifiers, bundleId, new Date(), getUser() );
+                    publisherAPI.addContentsToPublish( new ArrayList<String>( identifiers ), bundleId, new Date(), getUser() );
                 } else {
-                    publisherAPI.addContentsToUnpublish( identifiers, bundleId, new Date(), getUser() );
+                    publisherAPI.addContentsToUnpublish( new ArrayList<String>( identifiers ), bundleId, new Date(), getUser() );
                 }
 
                 //Success...
