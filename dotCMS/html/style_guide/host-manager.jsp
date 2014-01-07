@@ -48,6 +48,7 @@
 		dojo.require("dojo.parser");
 		dojo.require("dojo.fx");
 		dojo.require("dojox.layout.ContentPane");
+		dojo.require("dojo.window")
 	</script>
 
 </head>
@@ -112,7 +113,7 @@
 			top: 0;
 			right: 0;
 			z-index: 9999;
-			width:290px;
+
 		}
 		#actionPanelContainer{
 			background: #fff;
@@ -133,6 +134,7 @@
 	</style>
 	
 	<script>
+		var ff = (dojo.isMozilla) ? -1 : 0;
 		var actionPanelTable = {
 			lastRow:undefined,
 			
@@ -155,7 +157,7 @@
 				
 				// Build the action Panel
 				var myCp = dijit.byId("actionPanelContainer");
-				var hanger = dojo.byId("actionPanel");
+				var hanger = dojo.byId("actionPanelContent");
 				if(!hanger){
 					return;
 				}
@@ -166,10 +168,10 @@
 				
 				myCp = new dojox.layout.ContentPane({
 					id : "actionPanelContainer"
-					}).placeAt("actionPanel");
+					}).placeAt("actionPanelContent");
 				
 
-				this.placeActionPanel();
+				actionPanelTable.initPanel();
 				
 				var r = Math.floor(Math.random() * 1000000000);
 				
@@ -181,13 +183,8 @@
 				dojo.removeClass("actionPanel", "hideMe");	
 				myCp.attr("href", jspToShow + "&rand=" + r);
 				//dojo.parser.parse("actionPanel");
-				
+				dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +ff + "px");
 
-				
-
-
-				
-				
 			},
 			
 			
@@ -205,7 +202,7 @@
 				var actionPanel = dojo.position("actionPanel", true);
 				var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
 
-				var bottomOfTheHeader = tableHeader.h + tableHeader.y -scroll;
+				var bottomOfTheHeader = tableHeader.h + ff + tableHeader.y -scroll;
 
 
 				
@@ -221,17 +218,16 @@
 				console.log("selectedRow h:" + selectedRow.h);
 				console.log("actionPanel y:" + actionPanel.y);
 				console.log("actionPanel x:" + actionPanel.x);
-
-
 				console.log("Scroll:" +scroll);
 				*/
+
 				
 				if(bottomOfTheHeader < 0 ){
 
 					dojo.style("actionPanel", "position","fixed");
 					dojo.style("actionPanel", "top", "0px");
 					dojo.style("actionPanel", "left", tableHeader.x + "px");
-					var arrowY = 	selectedRow.y - scroll   ;
+					var arrowY = 	selectedRow.y - scroll +13  ;
 					dojo.style("arrow", "top", arrowY + "px");
 
 					return;
@@ -240,13 +236,40 @@
 
 					dojo.style("actionPanel", "top", bottomOfTheHeader + "px");
 					dojo.style("actionPanel", "left", tableHeader.x + "px");
-					var arrowY = 	selectedRow.y -  (Math.abs( bottomOfTheHeader) )  - scroll 
+					var arrowY = 	selectedRow.y -  (Math.abs( bottomOfTheHeader) )  - scroll + 13;
 
 					dojo.style("arrow", "top", arrowY + "px");
 				}
+				
 
+
+				//var vs = win.getBox();
+
+				
+				
+				
 			},
-			fixed:false,
+			
+			
+			
+			
+			initPanel : function(){
+				var tableHeader = dojo.position("actionPanelTableHeader",true);
+				var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
+				var bottomOfTheHeader = tableHeader.h + tableHeader.y -scroll;
+				
+				dojo.style("actionPanel", "width", tableHeader.w -1 + "px");
+				
+				require(["dojo/window"], function(win){
+					   var vs = win.getBox();
+						dojo.style("actionPanelContent", "height", vs.h -bottomOfTheHeader  + "px");
+					});
+				
+				actionPanelTable.placeActionPanel();
+				
+
+			}
+			
 			
 
 		};
@@ -260,10 +283,10 @@
 		
 		
 		dojo.connect(window, 'onresize', this, function(event) {
-			actionPanelTable.placeActionPanel();
-
+			actionPanelTable.initPanel();
 		});
 		
+
 
 	</script>
 	
@@ -281,7 +304,7 @@
 				<!-- /Add these up to 100% -->
 				
 				
-				<th id="actionPanelTableHeader"><div style="width:290px;"></div></th>
+				<th id="actionPanelTableHeader"><div style="width:400px;"></div></th>
 			</tr>
 			<%for(int i=0;i<100;i++){ %>
 				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle('<%=i%>','/html/style_guide/host-manager-action-pallete.jsp');">
@@ -299,6 +322,9 @@
 		
 		<div id="actionPanel" class="hideMe">
 			<div id="arrow"><img src='images/arrow.png'></div>
+			<div id="actionPanelContent" style="overflow:auto;">
+			
+			</div>
 		</div>
 			
 	</div>
