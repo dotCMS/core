@@ -1,3 +1,4 @@
+<div style="height:100%;overflow:auto;">
 <div style="margin:15px;padding:0 0 10px 0;border-bottom:1px solid #D0D0D0">
 	<b>Action Panel</b>
 </div>
@@ -31,6 +32,7 @@
 		</tr>
 	</table>
 </div>
+
 
 <div style="margin:15px;padding:0 0 20px 0;border-bottom:1px solid #D0D0D0; font-size: 88%;">
 	<table>
@@ -69,6 +71,7 @@
 
 
 
-<div style="margin:15px;padding:0 0 10px 0;border:1px solid #D0D0D0;height:30px;">
+<div style="margin:15px;padding:0 0 10px 0;border:1px solid #D0D0D0;height:300px;">
 	<b>Big Div</b>
+</div>
 </div>
