@@ -113,6 +113,17 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.container = this;
         dialog.cats = true;
         dialog.show();
+
+        var thes=this;
+        setTimeout(function() {
+            thes.environmentStore.fetch({
+                onComplete:function(items,request) {
+                    if(items.length==2) {
+                        thes.addToWhereToSend(items[1].id, items[1].name);
+                        thes.refreshWhereToSend();
+                    }
+                }
+            })},200);
     },
 
     togglePublishExpireDivs: function () {
