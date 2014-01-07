@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.struts.Globals;
 import org.jboss.cache.Fqn;
 import org.jgroups.Address;
 import org.jgroups.ChannelClosedException;
@@ -39,6 +40,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.liferay.portal.struts.MultiMessageResources;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -667,6 +669,9 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 		if (v.toString().equals("TESTINGCLUSTER")) {
 			Logger.info(this, "Received Message Ping " + new Date());
+		} else if(v.toString().equals("MultiMessageResources.reload")) {
+			MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
+            messages.reload();
 		} else {
 			invalidateCacheFromCluster(v.toString());
 		}
