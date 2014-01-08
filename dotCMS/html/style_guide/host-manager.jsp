@@ -138,10 +138,26 @@
 		/**
 			ActionPanel JS Object
 		**/
-		var actionPanelTable = {
+		dojo.declare("com.dotcms.ui.ActionPanel", null, {
 			lastRow:undefined,
 			jspToShow:undefined,
+			constructor: function(/* Object */args){
+
+				this.alwaysShow = args.alwaysShow;
+				this.jspToShow = args.jspToShow;
+				
+				if(this.alwaysShow){
+					dojo.ready(function(){
+						if( dojo.byId("row-0") != undefined){
+							actionPanelTable.toggle(0);
+						}
+					})
+				}
+			},
 			
+			
+			/** Setting this true will show the first row automatically **/
+			alwaysShow:false,
 
 			/**
 				hide/show action Panel
@@ -149,14 +165,13 @@
 			toggle:function(row){
 				if(this.jspToShow == undefined){
 					return;
-					
 				}
 	
 				dojo.addClass("actionPanel", "hideMe");
 				dojo.destroy("display-arrow");
 					
-				// deactivate last clicked row
-				if(this.lastRow != undefined){
+				// deactivate last clicked row,
+				if(this.lastRow != undefined && ! this.alwaysShow){
 					dojo.removeClass('row-' + this.lastRow, "active");
 					if(this.lastRow == row){
 						this.lastRow = null;
@@ -245,6 +260,9 @@
 					dojo.style("arrow", "top", arrowY + "px");
 				}
 			},
+			
+			
+			
 			initPanel : function(){
 				var tableHeader = dojo.position("actionPanelTableHeader",true);
 				var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
@@ -261,14 +279,16 @@
 				
 
 			}
-		};
+		});
+		
 		
 		
 		/**
 			Set the jsp to load up when the action panel is activated
 		**/
-		actionPanelTable.jspToShow="/html/style_guide/host-manager-action-pallete.jsp";
-		
+		var actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/style_guide/host-manager-action-pallete.jsp", alwaysShow:true});
+
+
 		
 		/**
 			Handle scolling and resize
