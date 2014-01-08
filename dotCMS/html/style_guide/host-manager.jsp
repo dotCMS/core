@@ -72,9 +72,6 @@
 		</div>
 	</div>
 	
-
-
-	
 	<style>
 		.listingTable {
 			margin: 0;
@@ -135,10 +132,25 @@
 	
 	<script>
 		var ff = (dojo.isMozilla) ? -1 : 0;
+		
+		
+		
+		/**
+			ActionPanel JS Object
+		**/
 		var actionPanelTable = {
 			lastRow:undefined,
+			jspToShow:undefined,
 			
-			toggle:function(row, jspToShow){
+
+			/**
+				hide/show action Panel
+			**/
+			toggle:function(row){
+				if(this.jspToShow == undefined){
+					return;
+					
+				}
 	
 				dojo.addClass("actionPanel", "hideMe");
 				dojo.destroy("display-arrow");
@@ -174,11 +186,10 @@
 				actionPanelTable.initPanel();
 				
 				var r = Math.floor(Math.random() * 1000000000);
-				
+				jspToShow  = this.jspToShow;
 				if(jspToShow.indexOf("?")<0){
 					jspToShow = jspToShow +"?";
 				}
-	
 				
 				dojo.removeClass("actionPanel", "hideMe");	
 				myCp.attr("href", jspToShow + "&rand=" + r);
@@ -186,26 +197,22 @@
 				dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +ff + "px");
 
 			},
-			
-			
+
+			/**
+				Move actionpanel/arrow around - does not hide/show
+			**/
 			placeActionPanel:function(){
 				
 				if(this.lastRow == undefined){
-					
 					return;
 				}
 
 				var selectedRow = dojo.position('row-' + this.lastRow, true);
-				
-				
 				var tableHeader = dojo.position("actionPanelTableHeader",true);
 				var actionPanel = dojo.position("actionPanel", true);
 				var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
-
 				var bottomOfTheHeader = tableHeader.h + ff + tableHeader.y -scroll;
 
-
-				
 				/*
 				console.log("--------------------------");
 				console.log("tableHeader x:" + tableHeader.x);
@@ -223,7 +230,6 @@
 
 				
 				if(bottomOfTheHeader < 0 ){
-
 					dojo.style("actionPanel", "position","fixed");
 					dojo.style("actionPanel", "top", "0px");
 					dojo.style("actionPanel", "left", tableHeader.x + "px");
@@ -233,26 +239,12 @@
 					return;
 				}
 				else{
-
 					dojo.style("actionPanel", "top", bottomOfTheHeader + "px");
 					dojo.style("actionPanel", "left", tableHeader.x + "px");
 					var arrowY = 	selectedRow.y -  (Math.abs( bottomOfTheHeader) )  - scroll + 13;
-
 					dojo.style("arrow", "top", arrowY + "px");
 				}
-				
-
-
-				//var vs = win.getBox();
-
-				
-				
-				
 			},
-			
-			
-			
-			
 			initPanel : function(){
 				var tableHeader = dojo.position("actionPanelTableHeader",true);
 				var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
@@ -269,19 +261,22 @@
 				
 
 			}
-			
-			
-
 		};
 		
 		
+		/**
+			Set the jsp to load up when the action panel is activated
+		**/
+		actionPanelTable.jspToShow="/html/style_guide/host-manager-action-pallete.jsp";
 		
+		
+		/**
+			Handle scolling and resize
+		**/
 		dojo.connect(window, 'onscroll', this, function(event) {
 			actionPanelTable.placeActionPanel();
 
 		});
-		
-		
 		dojo.connect(window, 'onresize', this, function(event) {
 			actionPanelTable.initPanel();
 		});
@@ -307,9 +302,9 @@
 				<th id="actionPanelTableHeader"><div style="width:400px;"></div></th>
 			</tr>
 			<%for(int i=0;i<100;i++){ %>
-				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle('<%=i%>','/html/style_guide/host-manager-action-pallete.jsp');">
+				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle(<%=i%>);">
 					<td align="center"><img src="images/icon-server.png"></td>
-					<td align="center" style="color:#8c9ca9;"><i class="fa fa-user fa-3x"></i></td>
+					<td align="center" style="color:#8c9ca9;"><%if(i==2){ %><i class="fa fa-user fa-3x"><%} %></i></td>
 					<td>My Dotcms Node <%=i+1 %></td>
 					<td>192.168.1.<%=5+i %></td>
 					<td>1 min ago</td>
