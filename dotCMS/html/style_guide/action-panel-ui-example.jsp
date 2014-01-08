@@ -192,11 +192,13 @@
 				dojo.destroy("display-arrow");
 					
 				// deactivate last clicked row,
-				if(this.lastRow != undefined && ! this.alwaysShow){
+				if(this.lastRow != undefined){
 					dojo.removeClass('row-' + this.lastRow, "active");
-					if(this.lastRow == row){
-						this.lastRow = null;
-						return;
+					if( ! this.alwaysShow){
+						if(this.lastRow == row){
+							this.lastRow = null;
+							return;
+						}
 					}
 				}
 				
