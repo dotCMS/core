@@ -155,6 +155,21 @@
 						}
 					})
 				}
+				
+				
+				/**
+					Handle scolling and resize
+				**/
+				dojo.connect(window, 'onscroll', this, function(event) {
+					this.placeActionPanel();
+	
+				});
+				dojo.connect(window, 'onresize', this, function(event) {
+					this.initPanel();
+				});
+				
+				
+				
 			},
 			
 			
@@ -301,16 +316,7 @@
 
 
 		
-		/**
-			Handle scolling and resize
-		**/
-		dojo.connect(window, 'onscroll', this, function(event) {
-			actionPanelTable.placeActionPanel();
 
-		});
-		dojo.connect(window, 'onresize', this, function(event) {
-			actionPanelTable.initPanel();
-		});
 		
 
 
@@ -330,7 +336,11 @@
 				<!-- /Add these up to 100% -->
 				
 				
+				<%-- the width of the inner div is the only thing you have to set to change the width --%>
 				<th id="actionPanelTableHeader"><div style="width:400px;"></div></th>
+				
+				
+				
 			</tr>
 			<%for(int i=0;i<100;i++){ %>
 				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle(<%=i%>);">
