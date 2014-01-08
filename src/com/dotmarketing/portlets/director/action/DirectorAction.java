@@ -490,7 +490,12 @@ public class DirectorAction extends DotPortletAction {
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to add content to page", e);
 				} finally {
-					HibernateUtil.commitTransaction();
+					try {
+                        HibernateUtil.commitTransaction();
+					}catch(Exception e){
+						session.setAttribute("duplicatedErrorMessage","Content already exists in the same container on the page");
+						//res.sendRedirect(referer);
+					}				
 				}
 				_sendToReferral(req, res, referer);
 				return;
