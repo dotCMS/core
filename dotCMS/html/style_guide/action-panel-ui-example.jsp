@@ -49,6 +49,8 @@
 		dojo.require("dojo.fx");
 		dojo.require("dojox.layout.ContentPane");
 		dojo.require("dojo.window")
+		dojo.require("dojo/request")
+		dojo.require("dojo/request/xhr")
 	</script>
 
 </head>
@@ -183,31 +185,40 @@
 				this.lastRow=row;
 				
 				// Build the action Panel
-				var myCp = dijit.byId("actionPanelContainer");
+				var panelDiv = dojo.byId("actionPanelContainer");
 				var hanger = dojo.byId("actionPanelContent");
 				if(!hanger){
 					return;
 				}
-				if (myCp) {
-					myCp.attr("content","");
-					myCp.destroyRecursive(true);
+				if (panelDiv) {
+					dojo.destroy("panelDiv")
 				}
 				
-				myCp = new dojox.layout.ContentPane({
+
+				panelDiv = dojo.create("div", {
 					id : "actionPanelContainer"
-					}).placeAt("actionPanelContent");
+					},"actionPanelContent");
+
+				
+		        // Execute a HTTP GET request
+		        dojo.xhr.get({
+		        	preventCache:true,
+		            url: this.jspToShow,
+		            load: function(result) {
+		            	dojo.byId("actionPanelContainer").innerHTML = result;
+		            }
+		        });
+				
+
 				
 
 				actionPanelTable.initPanel();
 				
-				var r = Math.floor(Math.random() * 1000000000);
-				jspToShow  = this.jspToShow;
-				if(jspToShow.indexOf("?")<0){
-					jspToShow = jspToShow +"?";
-				}
+
+
 				
 				dojo.removeClass("actionPanel", "hideMe");	
-				myCp.attr("href", jspToShow + "&rand=" + r);
+
 				//dojo.parser.parse("actionPanel");
 				dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +ff + "px");
 
