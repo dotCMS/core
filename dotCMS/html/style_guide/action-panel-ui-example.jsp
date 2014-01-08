@@ -286,7 +286,7 @@
 		/**
 			Set the jsp to load up when the action panel is activated
 		**/
-		var actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/style_guide/host-manager-action-pallete.jsp", alwaysShow:true});
+		var actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/style_guide/action-panel-ui-example-panel-content.jsp", alwaysShow:true});
 
 
 		
