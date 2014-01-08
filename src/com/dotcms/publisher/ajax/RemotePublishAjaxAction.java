@@ -323,17 +323,19 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 publishAuditAPI.updatePublishAuditStatus( config.getId(), status.getStatus(), auditHistory );
 
                 //Get the identifiers on this bundle
-                List<String> identifiers = new ArrayList<String>();
+                Set<String> identifiersSet = new HashSet<String>();
                 List<PublishQueueElement> assets = config.getAssets();
                 if ( config.getLuceneQueries() != null && !config.getLuceneQueries().isEmpty() ) {
-                    identifiers.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+                	identifiersSet.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
                 }
                 if ( assets != null && !assets.isEmpty() ) {
                     for ( PublishQueueElement asset : assets ) {
-                        identifiers.add( asset.getAsset() );
+                    	identifiersSet.add( asset.getAsset() );
                     }
                 }
 
+                List<String> identifiers = new ArrayList<String>();
+                identifiers.addAll(identifiersSet);
                 //Now depending of the operation lets add it to the queue job
                 if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
                     publisherAPI.addContentsToPublish( identifiers, bundleId, new Date(), getUser() );
@@ -505,7 +507,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      */
     @SuppressWarnings ("unchecked")
     private Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
-    	
+
         PushPublisherConfig pconf = new PushPublisherConfig();
         PublisherAPI pubAPI = PublisherAPI.getInstance();
 
@@ -592,7 +594,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			response.sendError(401);
 			return;
 		}
-    	
+
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload(factory);
         @SuppressWarnings("unchecked")
@@ -717,7 +719,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                         bundle=b;
                     }
                 }
-                
+
                 if(bundle==null) {
                     bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
                     APILocator.getBundleAPI().saveBundle( bundle );
@@ -800,7 +802,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             		envsToSendTo.add(e);
             	}
 			}
-            
+
             if(envsToSendTo.isEmpty()) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
