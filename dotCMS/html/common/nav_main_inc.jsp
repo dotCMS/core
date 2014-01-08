@@ -1,4 +1,3 @@
-<%@page import="com.dotcms.rest.BaseRestPortlet"%>
 <%@page import="com.liferay.portal.model.Portlet"%>
 <%@page import="com.dotcms.rest.WebResource"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
