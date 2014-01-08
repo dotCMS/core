@@ -133,7 +133,7 @@
 	</style>
 	
 	<script>
-		var ff = (dojo.isMozilla) ? -1 : 0;
+
 		
 		
 		
@@ -143,6 +143,7 @@
 		dojo.declare("com.dotcms.ui.ActionPanel", null, {
 			lastRow:undefined,
 			jspToShow:undefined,
+			ff : 0,
 			constructor: function(/* Object */args){
 
 				this.alwaysShow = args.alwaysShow;
@@ -156,6 +157,9 @@
 					})
 				}
 				
+				if(dojo.isMozilla) {
+					this.ff=-1;
+				}
 				
 				/**
 					Handle scolling and resize
@@ -235,7 +239,7 @@
 				dojo.removeClass("actionPanel", "hideMe");	
 
 				//dojo.parser.parse("actionPanel");
-				dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +ff + "px");
+				dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +this.ff + "px");
 
 			},
 
@@ -252,7 +256,7 @@
 				var tableHeader = dojo.position("actionPanelTableHeader",true);
 				var actionPanel = dojo.position("actionPanel", true);
 				var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
-				var bottomOfTheHeader = tableHeader.h + ff + tableHeader.y -scroll;
+				var bottomOfTheHeader = tableHeader.h + this.ff + tableHeader.y -scroll;
 
 				/*
 				console.log("--------------------------");
