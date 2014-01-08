@@ -596,17 +596,24 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			try{
 				String group1 = (String) o1.get("region");
 				String group2 = (String) o2.get("region");
-				if(group1.toLowerCase().startsWith("working")){
+
+				if(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && !(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return 1;
 				}
-				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX)){
+				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && !(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return 1;
 				}
-				if(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX)){
+				if(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && !(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return -1;
 				}
-				if(group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX)){
+				if(group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && !(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return -1;
+				}
+				if(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX)) {
+					return -1;
+				}
+				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX)) {
+					return 1;
 				}
 				else{
 					return group1.compareToIgnoreCase(group2);
