@@ -418,6 +418,7 @@
 		<tar destfile="${distribution.output}/../dotcms_${dotcms.release.version}.tar.gz" compression="gzip" longfile="gnu">
 			<tarfileset dir="${distribution.output}">
 		        <include name="**/**"/>
+				<exclude name="**/*.sh"/>
 		    </tarfileset>
 		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
 		        <include name="**/*.sh"/>
@@ -642,7 +643,7 @@
 			<equals arg1="${db.driver}" arg2="net.sourceforge.jtds.jdbc.Driver"/>
 			<then>
 				<sql driver="${db.driver}"
-	                url="${db.admin.url}"
+	                url="${db.url}"
 	                userid="${db.username}"
 	                password="${db.password}"
 	                autocommit="true"
@@ -700,7 +701,7 @@
             <equals arg1="${db.driver}" arg2="net.sourceforge.jtds.jdbc.Driver"/>
             <then>
                 <sql driver="${db.driver}"
-                    url="${db.admin.url}"
+                    url="${db.url}"
                     userid="${db.username}"
                     password="${db.password}"
                     autocommit="true" onerror="continue"

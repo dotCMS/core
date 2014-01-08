@@ -39,6 +39,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.struts.util.MessageResourcesFactory;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheAdministrator;
+import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
@@ -108,7 +111,7 @@ public class MultiMessageResources extends PropertyMessageResources {
 				keys = langAPI.getLanguageKeys(localeKey.split("_")[0], localeKey.split("_")[1]);
 			} else {
 				keys = langAPI.getLanguageKeys(localeKey.split("_")[0]);
-				
+
 			}
 
 			if (keys.size() < 1) {
@@ -117,7 +120,7 @@ public class MultiMessageResources extends PropertyMessageResources {
 
 			synchronized (messages) {
 				Iterator<LanguageKey> names = keys.iterator();
-	
+
 				while (names.hasNext()) {
 					LanguageKey langkey = (LanguageKey)names.next();
 					String key = langkey.getKey();
@@ -125,7 +128,7 @@ public class MultiMessageResources extends PropertyMessageResources {
 							langkey.getValue());
 				}
 			}
-			
+
 		} else {
 		Properties props = new Properties();
 
@@ -133,26 +136,26 @@ public class MultiMessageResources extends PropertyMessageResources {
 			URL url = null;
 
 				url = _servletContext.getResource("/WEB-INF/" + name);
-			
+
 			if (url != null) {
 				InputStream is = url.openStream();
 
 				BufferedReader buffy = new BufferedReader( new InputStreamReader(is));
 				String line = null;
-				
+
 
 					while ((line = buffy.readLine()) != null) {
-					if(UtilMethods.isSet(line) 
-							&& line.indexOf("=") > -1 
+					if(UtilMethods.isSet(line)
+							&& line.indexOf("=") > -1
 							&& ! line.startsWith("#")){
 						String[] arr = line.split("=", 2);
 						if(arr.length > 1){
 							String key = arr[0].trim();
 							String val = arr[1].trim();
 							if(val.indexOf("\\u") >-1){
-								
+
 								if(val.indexOf("\\u") >-1){
-									
+
 									StringBuffer buffer = new StringBuffer( val.length() );
 									boolean precedingBackslash = false;
 									for (int i = 0; i < val.length(); i++) {
@@ -177,14 +180,14 @@ public class MultiMessageResources extends PropertyMessageResources {
 							            }
 							        }
 									val= buffer.toString();}
-								
-								
+
+
 							}
 							props.put(key, val);
 						}
 
 					}
-					
+
 			    }
 				buffy.close();
 				is.close();
@@ -211,12 +214,17 @@ public class MultiMessageResources extends PropertyMessageResources {
 	}
 	}
 
-	public synchronized void reload() { 
+	public synchronized void reload() {
 	    locales.clear();
 	    messages.clear();
 	    formats.clear();
+
+	    DotGuavaCacheAdministratorImpl dotCache = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject());
+	    if(dotCache.isClusteringEnabled()) {
+	    	dotCache.send("MultiMessageResources.reload");
+	    }
 	 }
-	
+
 	private static final Log _log =
 		LogFactory.getLog(MultiMessageResources.class);
 
