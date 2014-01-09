@@ -139,7 +139,7 @@ var cmsfile=null;
 	    	
 	    	var swDiv = dojo.byId(x+'ThumbnailSliderWrapper');
 	       	if(swDiv != null && swDiv != undefined){
-	       	dojo.destroy(swDiv);
+	       	    dojo.destroy(swDiv);
 	       	}
 	    	
 	    	dojo.query(".thumbnailDiv" + x).forEach(function(node, index, arr){
