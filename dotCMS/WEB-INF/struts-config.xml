@@ -1049,7 +1049,7 @@
          <forward name="portlet.ext.calendar.view_calendar" path="portlet.ext.calendar.view_calendar" />
       </action>
 
-      <action path="/ext/calendar/edit_event" type="com.dotmarketing.portlets.calendar.action.EditEventAction" name="CalendarEventForm" input="portlet.ext.calendar.edit_event" validate="false">
+      <action path="/ext/calendar/edit_event" type="com.dotmarketing.portlets.calendar.action.EditEventAction" name="CalendarEventForm" input="portlet.ext.calendar.edit_event" validate="false" scope="request">
          <forward name="portlet.ext.contentlet.edit_contentlet" path="portlet.ext.calendar.edit_event"></forward>
       </action>
 
@@ -1077,7 +1077,7 @@
 	<action path="/ext/escalation/RunJobEsc" type="com.dotcms.escalation.business.ManualExpiryJobLaunchAction" name="EscalationForm">
 		<forward name="portlet.ext.plugins.expCont.struts" path="portlet.ext.plugins.expCont.struts" />
 	</action>
-	
+
 	<action path="/ext/brokenlinks/view_broken_links" type="com.dotmarketing.portlets.checkurl.util.DispatcherService">
 		<forward name="portlet.ext.plugins.it.eng.dotcms.checkURL.struts" path="portlet.ext.checkURL.struts" />
 	</action>

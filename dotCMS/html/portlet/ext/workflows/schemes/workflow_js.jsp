@@ -1,5 +1,5 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%response.setContentType("text/JavaScript");%>
+<%response.setContentType("text/html");%>
 dojo.require("dijit.form.Form");
 dojo.require("dijit.form.Button");
 dojo.require("dijit.form.ValidationTextBox");
@@ -112,8 +112,8 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 	refreshCrumbtrail : function (){
 		var crumbDiv = dojo.byId("subNavCrumbUl");
 		crumbDiv.innerHTML ="";
-		// dojo.create("li",
-		// {onClick:this.show(this.wfCrumbTrail[i].url)},crumbDiv )
+		<!-- dojo.create("li",
+		// {onClick:this.show(this.wfCrumbTrail[i].url)},crumbDiv ) -->
 
 
 
@@ -578,12 +578,12 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 						if (dojo.isString(dataOrError)) {
 							if (dataOrError.indexOf("FAILURE") == 0) {
 
-								// schemeAdmin.saveError(dataOrError);
+								<!--// schemeAdmin.saveError(dataOrError); -->
 							} else {
-								// schemeAdmin.saveSuccess(dataOrError);
+								<!--// schemeAdmin.saveSuccess(dataOrError); -->
 							}
 						} else {
-							//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
+							<!--//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>"); -->
 
 						}
 					}

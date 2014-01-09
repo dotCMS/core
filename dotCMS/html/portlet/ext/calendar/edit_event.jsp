@@ -27,8 +27,8 @@
 	//this file is a copy of the edit_contentlet.jsp that has
 	//some modifications to support events custom fields and actions
  %>
- 
-<script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script> 
+
+<script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
@@ -40,11 +40,11 @@
 
 	Date dateOfEnd = contentlet.getDateProperty("endDate");
 
-	EventForm contentletForm = (EventForm) session.getAttribute("CalendarEventForm");
+	EventForm contentletForm = (EventForm) request.getAttribute("CalendarEventForm");
 
 	//Content structure or user selected structure
 	Structure structure = contentletForm.getStructure();
-	if (!InodeUtils.isSet(structure.getInode())){
+	if (structure!=null && !InodeUtils.isSet(structure.getInode())){
 		structure = StructureFactory.getStructureByInode(request.getParameter("sibblingStructure"));
 	}
 	List<Field> fields = structure.getFields();
