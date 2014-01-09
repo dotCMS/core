@@ -3147,6 +3147,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         continue;
                     }
                 }
+                else if(o instanceof java.io.File){
+                    String s1 = ((java.io.File) o).getPath();
+                   	if(!UtilMethods.isSet(s1.trim())||s1.trim().contains("-removed-")) {
+                           cve.addRequiredField(field);
+                           hasError = true;
+                           continue;
+                    }
+                }
                 else if( field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) ) {
                     if( cats == null || cats.size() == 0 ) {
                         cve.addRequiredField(field);

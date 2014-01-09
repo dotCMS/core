@@ -8,6 +8,7 @@ import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.common.settings.ImmutableSettings;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.node.Node;
 
+import com.dotcms.elasticsearch.script.RelationshipSortOrderScriptFactory;
 import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;
 
@@ -40,6 +41,7 @@ public class ESClient {
 		_nodeInstance = nodeBuilder(). 
         settings(ImmutableSettings.settingsBuilder(). 
         put("name", node_id).
+        put("script.native.related.type", RelationshipSortOrderScriptFactory.class.getCanonicalName()).
         build()). 
         build(). 
         start();

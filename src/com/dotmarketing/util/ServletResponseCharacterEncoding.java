@@ -72,9 +72,10 @@ public class ServletResponseCharacterEncoding extends HttpServletResponseWrapper
 	throws IOException {
 		// Generate a temporary redirect to the specified location
 		try {
-			setStatus(301); 
 			setHeader( "Location", location ); 
 			setHeader( "Connection", "close" ); 
+			super.resetBuffer();
+			super.sendRedirect(location);
 		} catch (IllegalArgumentException e) {
 			setStatus(SC_NOT_FOUND);
 		}

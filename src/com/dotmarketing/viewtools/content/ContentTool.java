@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -88,12 +89,20 @@ public class ContentTool implements ViewTool {
 	 * @param inodeOrIdentifier Can be either an Inode or Indentifier of content.
 	 * @return NULL if not found
 	 */
-	public ContentMap find(String inodeOrIdentifier){
-		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE);
-		if(c== null || !InodeUtils.isSet(c.getInode())){
-			return null;
-		}
-		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
+	public ContentMap find(String inodeOrIdentifier) {
+	    try {
+    		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE);
+    		if(c== null || !InodeUtils.isSet(c.getInode())){
+    			return null;
+    		}
+    		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
+	    }
+	    catch(Throwable ex) {
+            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,"error in ContentTool.find. URL: "+req.getRequestURL().toString(),ex);
+            }
+            throw new RuntimeException(ex);
+        }
 	}
 	
 	/**
@@ -113,8 +122,8 @@ public class ContentTool implements ViewTool {
 	 * @return  Returns empty List if no results are found
 	 */
 	public List<ContentMap> pull(String query, String limit, String sort){
-			int l = new Integer(limit);
-			return pull(query, l, sort);
+        int l = new Integer(limit);
+        return pull(query, l, sort);
 	}
 	
 	/**
@@ -138,13 +147,21 @@ public class ContentTool implements ViewTool {
 	}
 	
 	public PaginatedArrayList<ContentMap> pull(String query, int offset,int limit, String sort){
-	    PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-	    
-	    PaginatedArrayList<Contentlet> cons = ContentUtils.pull(addDefaultsToQuery(query), offset, limit, sort, user, tmDate);
-	    for(Contentlet cc : cons) {
-	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+	    try {
+    	    PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
+    	    
+    	    PaginatedArrayList<Contentlet> cons = ContentUtils.pull(addDefaultsToQuery(query), offset, limit, sort, user, tmDate);
+    	    for(Contentlet cc : cons) {
+    	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+    	    }
+    		return ret;
 	    }
-		return ret;
+	    catch(Throwable ex) {
+            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,"error in ContentTool.pull. URL: "+req.getRequestURL().toString(),ex);
+            }
+            throw new RuntimeException(ex);
+        }
 	}
 	
 	/**
@@ -201,24 +218,31 @@ public class ContentTool implements ViewTool {
 	 */
 	public PaginatedContentList<ContentMap> pullPerPage(String query, int currentPage, int contentsPerPage, String sort){
 		PaginatedContentList<ContentMap> ret = new PaginatedContentList<ContentMap>();
-	    PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(addDefaultsToQuery(query), currentPage, contentsPerPage, sort, user, tmDate);
-	    for(Contentlet cc : cons) {
-	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
-	    }
-
-	    if(cons != null && cons.size() > 0){
-			long minIndex = (currentPage - 1) * contentsPerPage;
-	        long totalCount = cons.getTotalResults();
-	        long maxIndex = contentsPerPage * currentPage;
-	        if((minIndex + contentsPerPage) >= totalCount){
-	        	maxIndex = totalCount;
-	        }
-			ret.setTotalResults(cons.getTotalResults());
-			ret.setTotalPages((long)Math.ceil(((double)cons.getTotalResults())/((double)contentsPerPage)));
-			ret.setNextPage(maxIndex < totalCount);
-			ret.setPreviousPage(minIndex > 0);
-	    }
-	    
+		try {
+    	    PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(addDefaultsToQuery(query), currentPage, contentsPerPage, sort, user, tmDate);
+    	    for(Contentlet cc : cons) {
+    	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+    	    }
+    
+    	    if(cons != null && cons.size() > 0){
+    			long minIndex = (currentPage - 1) * contentsPerPage;
+    	        long totalCount = cons.getTotalResults();
+    	        long maxIndex = contentsPerPage * currentPage;
+    	        if((minIndex + contentsPerPage) >= totalCount){
+    	        	maxIndex = totalCount;
+    	        }
+    			ret.setTotalResults(cons.getTotalResults());
+    			ret.setTotalPages((long)Math.ceil(((double)cons.getTotalResults())/((double)contentsPerPage)));
+    			ret.setNextPage(maxIndex < totalCount);
+    			ret.setPreviousPage(minIndex > 0);
+    	    }
+		}
+		catch(Throwable ex) {
+		    if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+		        Logger.error(this,"error in ContentTool.pullPerpage. URL: "+req.getRequestURL().toString(),ex);
+		    }
+		    throw new RuntimeException(ex);
+		}
 		return ret;
 	}
 	
@@ -249,7 +273,15 @@ public class ContentTool implements ViewTool {
 	 * @return Returns empty List if no results are found
 	 */
 	public List<ContentletSearch> query(String query, int limit, String sort){
-		return ContentUtils.query(addDefaultsToQuery(query), limit, user, sort);
+	    try {
+	        return ContentUtils.query(addDefaultsToQuery(query), limit, user, sort);
+	    }
+	    catch(Throwable ex) {
+            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,"error in ContentTool.query. URL: "+req.getRequestURL().toString(),ex);
+            }
+            throw new RuntimeException(ex);
+        }
 	}
 	
 	/**
@@ -258,7 +290,15 @@ public class ContentTool implements ViewTool {
 	 * @return
 	 */
 	public long count(String query) {
-		return ContentUtils.count(query, user, tmDate);
+	    try {
+	        return ContentUtils.count(query, user, tmDate);
+	    }
+	    catch(Throwable ex) {
+            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,"error in ContentTool.count. URL: "+req.getRequestURL().toString(),ex);
+            }
+            throw new RuntimeException(ex);
+        }
 	}
 	
 	/**
@@ -334,14 +374,21 @@ public class ContentTool implements ViewTool {
 	 * @return Returns empty List if no results are found
 	 */
 	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort) {	
-		
-		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, addDefaultsToQuery(condition), pullParents, limit, sort, user, tmDate);
-
-		for(Contentlet cc : cons) {
-			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+		try {
+    		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
+    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, addDefaultsToQuery(condition), pullParents, limit, sort, user, tmDate);
+    
+    		for(Contentlet cc : cons) {
+    			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+    		}
+    		return ret;
 		}
-		return ret;
+		catch(Throwable ex) {
+            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,"error in ContentTool.pullRelated. URL: "+req.getRequestURL().toString(),ex);
+            }
+            throw new RuntimeException(ex);
+        }
 	}
 	
 	private String addDefaultsToQuery(String query){
@@ -385,6 +432,14 @@ public class ContentTool implements ViewTool {
      * @return
      */
 	public List<Map<String, String>> getMostViewedContent(String structureVariableName, String startDate, String endDate) {
-		return APILocator.getContentletAPI().getMostViewedContent(structureVariableName, startDate, endDate, user);
+	    try {
+	        return APILocator.getContentletAPI().getMostViewedContent(structureVariableName, startDate, endDate, user);
+	    }
+	    catch(Throwable ex) {
+            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,"error in ContentTool.getMostViewedContent. URL: "+req.getRequestURL().toString(),ex);
+            }
+            throw new RuntimeException(ex);
+        }
 	}
 }
