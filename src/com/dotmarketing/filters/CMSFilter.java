@@ -465,6 +465,12 @@ public class CMSFilter implements Filter {
                 	if(ident.getAssetType().equals("contentlet")){
                 		try{
                             ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageId );
+                            //If we did not find a version with for given language lets try with the default language
+                            if ( !UtilMethods.isSet( cinfo.getIdentifier() ) && !languageId.equals( APILocator.getLanguageAPI().getDefaultLanguage().getId() ) ) {
+                                languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                                cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageId );
+                            }
+
                             Contentlet proxy  = new Contentlet();
                 			if(UtilMethods.isSet(cinfo.getLiveInode()))
                 				proxy = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
