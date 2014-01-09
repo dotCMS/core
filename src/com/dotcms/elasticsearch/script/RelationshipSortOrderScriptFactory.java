@@ -2,6 +2,7 @@ package com.dotcms.elasticsearch.script;
 
 import java.util.Map;
 
+import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.script.AbstractLongSearchScript;
 import org.elasticsearch.script.ExecutableScript;
 import org.elasticsearch.script.NativeScriptFactory;
@@ -24,7 +25,7 @@ public class RelationshipSortOrderScriptFactory implements NativeScriptFactory {
         
         @Override
         public long runAsLong() {
-            String orderV=doc().field(orderField).getStringValue()+" ";
+            String orderV=((ScriptDocValues)doc().get(orderField)).getValues().get(0)+" ";
             int index=orderV.indexOf(orderPrefix); 
             long order=0;
             if(index!=-1) {
