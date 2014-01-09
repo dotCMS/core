@@ -10,8 +10,7 @@
 		@import "/html/common/css.jsp"; 
         @import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css";
 	</style>
-	<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
-	
+
 	<script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js" djConfig="parseOnLoad:true, isDebug:false"></script>
 	<script type="text/javascript" src="<%=dojoPath%>/dojo/dot-dojo.js"></script>
 	<script type="text/javascript">
@@ -59,7 +58,7 @@
 
 
 <div id="doc3">
-
+	
 	<div id="hd" style="background: #666;">
 		<div class="yui-g">
 			<div class="yui-u first"><img alt="dotCMS" src="//dotcms.com/application/themes/dotcms/img/logo.png" style="height:40px;"></div>
@@ -74,69 +73,8 @@
 		</div>
 	</div>
 	
-	<style>
-		.listingTable {
-			margin: 0;
-			width: 100%;
-		}
-		.listingTable td, .listingTable th{
-			border-style: none none solid none;
-		}
-		.listingTable td {
-			padding: 10px;
-		}
-		.listingTable tr:hover{
-			background-color: #eff3f8;
-			cursor: pointer;
-		}
-
-		#arrow{
-			width:23px;
-			height:36px;
-			z-index: 9999;
-			left:-23px;
-			position: absolute;
-		}
-		.hideMe {
-			display:none;
-			position:absolute;
-		}
-		tr.active {
-			background-color: #eff3f8;
-		}
-		#actionPanel{
-			position: fixed;
-			border:1px solid #D0D0D0;
-			background:#fff;
-			bottom: 0;
-			top: 0;
-			right: 0;
-			z-index: 9999;
-
-		}
-		#actionPanelContainer{
-			background: #fff;
-		}
-		#actionPanelTableHeader{
-			padding:0px;
-			margin:0px;
-		}
-		.green{
-			color:#8c9ca9;
-		}
-		.yellow{
-			color: #f6d57e;
-		}
-		.red{
-			color: #8c9ca9;
-		}
-	</style>
-	
 	<script>
 
-		
-		
-		
 		/**
 			ActionPanel JS Object
 		**/
@@ -321,16 +259,11 @@
 		var actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/style_guide/action-panel-ui-example-panel-content.jsp", alwaysShow:true});
 
 
-		
-
-		
-
-
 	</script>
 	
-	<div style="position: relative;">
+	<div class="actionPannelPage">
 		
-		<table class="listingTable">
+		<table class="listingTable actionTable">
 			<tr>
 				<!--  Add these up to 100% -->
 			    <th width="7%">&nbsp;</th>
@@ -350,7 +283,7 @@
 			</tr>
 			<%for(int i=0;i<100;i++){ %>
 				<tr id="row-<%=i%>" onclick="javascript:actionPanelTable.toggle(<%=i%>);">
-					<td align="center"><img src="images/icon-server.png"></td>
+					<td align="center"><img src="/html/images/skin/icon-server.png"></td>
 					<td align="center" style="color:#8c9ca9;"><%if(i==2){ %><i class="fa fa-user fa-3x"><%} %></i></td>
 					<td>My Dotcms Node <%=i+1 %></td>
 					<td>192.168.1.<%=5+i %></td>
@@ -363,7 +296,7 @@
 		
 		
 		<div id="actionPanel" class="hideMe">
-			<div id="arrow"><img src='images/arrow.png'></div>
+			<div id="arrow"><img src='/html/images/skin/arrow.png'></div>
 			<div id="actionPanelContent" style="overflow:auto;">
 			
 			</div>
