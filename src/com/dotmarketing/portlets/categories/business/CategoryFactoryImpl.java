@@ -247,7 +247,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		    DotConnect dc = new DotConnect();
 		    dc.setSQL("select inode,category_name,category_key,sort_order,active,keywords,category_velocity_var_name "+
 		              " from category join tree on (category.inode = tree.child) where tree.parent = ? "+
-		              " order by sort_order, category_name;");
+		              " order by sort_order, category_name");
 		    dc.addParam(parent.getCategoryId());
 		    children = readCatFromDotConnect(dc.loadObjectResults());
 			
