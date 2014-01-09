@@ -819,6 +819,13 @@
                 contentId = document.getElementById("Identifier").value;
                     fieldsValues[fieldsValues.length] = contentId;
             }
+
+                var allField = dijit.byId("allFieldTB").getValue();
+                if (allField != undefined && allField.length>0 ) {
+                    fieldsValues[fieldsValues.length] = "_all";
+                    fieldsValues[fieldsValues.length] = allField + "*";
+                }
+
                 var categoriesValues = new Array ();
                 var form = document.getElementById("search_form");
                 var categories = form.categories;
@@ -1500,7 +1507,10 @@
                 else
                         currentPage = page;
 
+
                 if (sortBy != null && sortBy != "undefined") {
+
+
                         if (sortBy == currentSortBy && sortBy.indexOf("desc")==-1)
                                 sortBy = sortBy + " desc";
                         currentSortBy = sortBy;
