@@ -4,13 +4,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 
-public class DeleteContentActionlet extends WorkFlowActionlet {
+public class DeleteContentActionlet extends ContentActionlet {
     
     private static final long serialVersionUID = -2314685590620626801L;
 
@@ -32,9 +33,12 @@ public class DeleteContentActionlet extends WorkFlowActionlet {
     @Override
     public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
         try {
-            if(!processor.getContentlet().isArchived())
-                APILocator.getContentletAPI().archive(processor.getContentlet(), processor.getUser(), false);
-            APILocator.getContentletAPI().delete(processor.getContentlet(), processor.getUser(), false);
+        	super.executeAction(processor, params);
+           	for(Contentlet c:contentletsToProcess){
+           		if(!processor.getContentlet().isArchived())
+           			APILocator.getContentletAPI().archive(c, processor.getUser(), false);
+           		APILocator.getContentletAPI().delete(c, processor.getUser(), false);
+           	}            	
             processor.setTask(null);
             processor.setContentlet(null);
         } catch (Exception e) {
