@@ -1,11 +1,11 @@
 package com.dotcms.elasticsearch.script;
 
-import java.util.Map;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.index.fielddata.ScriptDocValues;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.script.AbstractLongSearchScript;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.script.ExecutableScript;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.script.NativeScriptFactory;
 
-import org.elasticsearch.index.fielddata.ScriptDocValues;
-import org.elasticsearch.script.AbstractLongSearchScript;
-import org.elasticsearch.script.ExecutableScript;
-import org.elasticsearch.script.NativeScriptFactory;
+import java.util.Map;
 
 public class RelationshipSortOrderScriptFactory implements NativeScriptFactory {
     
