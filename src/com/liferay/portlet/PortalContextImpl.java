@@ -28,9 +28,9 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 
-import javax.portlet.PortalContext;
-import javax.portlet.PortletMode;
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.PortalContext;
+import com.dotcms.repackage.portlet.javax.portlet.PortletMode;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 
 import com.liferay.portal.util.ReleaseInfo;
 

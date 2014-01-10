@@ -7,8 +7,8 @@
 	<shortname>portlet</shortname>
 	<tag>
 		<name>actionURL</name>
-		<tagclass>com.liferay.portlet.taglib.ActionURLTag</tagclass>
-		<teiclass>com.liferay.portlet.taglib.ActionURLTei</teiclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.ActionURLTag</tagclass>
+		<teiclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.ActionURLTei</teiclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>windowState</name>
@@ -33,18 +33,18 @@
 	</tag>
 	<tag>
 		<name>defineObjects</name>
-		<tagclass>com.liferay.portlet.taglib.DefineObjectsTag</tagclass>
-		<teiclass>com.liferay.portlet.taglib.DefineObjectsTei</teiclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.DefineObjectsTag</tagclass>
+		<teiclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.DefineObjectsTei</teiclass>
 		<bodycontent>empty</bodycontent>
 	</tag>
 	<tag>
 		<name>namespace</name>
-		<tagclass>com.liferay.portlet.taglib.NamespaceTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.NamespaceTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 	</tag>
 	<tag>
 		<name>param</name>
-		<tagclass>com.liferay.taglib.ParamTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.ParamTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>name</name>
@@ -59,8 +59,8 @@
 	</tag>
 	<tag>
 		<name>renderURL</name>
-		<tagclass>com.liferay.portlet.taglib.RenderURLTag</tagclass>
-		<teiclass>com.liferay.portlet.taglib.RenderURLTei</teiclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.RenderURLTag</tagclass>
+		<teiclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.RenderURLTei</teiclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>windowState</name>

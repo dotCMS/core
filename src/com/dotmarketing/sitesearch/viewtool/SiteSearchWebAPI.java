@@ -13,11 +13,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import org.elasticsearch.search.facet.Facet;
-import org.elasticsearch.search.facet.datehistogram.DateHistogramFacet;
-import org.elasticsearch.search.facet.datehistogram.InternalCountDateHistogramFacet;
-import org.elasticsearch.search.facet.terms.TermsFacet;
-import org.elasticsearch.search.facet.terms.strings.InternalStringTermsFacet;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.facet.Facet;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.facet.datehistogram.DateHistogramFacet;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.facet.datehistogram.InternalCountDateHistogramFacet;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.facet.terms.TermsFacet;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.facet.terms.strings.InternalStringTermsFacet;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

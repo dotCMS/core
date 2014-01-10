@@ -21,8 +21,8 @@
 
 	<tag>
 		<name>actionURL</name>
-		<tagclass>com.liferay.portlet.taglib.ActionURLTag</tagclass>
-		<teiclass>com.liferay.portlet.taglib.ActionURLTei</teiclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.ActionURLTag</tagclass>
+		<teiclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.ActionURLTei</teiclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>windowState</name>
@@ -62,7 +62,7 @@
 	</tag>
 	<tag>
 		<name>bible</name>
-		<tagclass>com.liferay.taglib.BibleTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.BibleTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>className</name>
@@ -82,7 +82,7 @@
 	</tag>
 	<tag>
 		<name>box</name>
-		<tagclass>com.liferay.taglib.BoxTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.BoxTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>top</name>
@@ -97,12 +97,12 @@
 	</tag>
 	<tag>
 		<name>choose</name>
-		<tagclass>com.liferay.taglib.ChooseTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.ChooseTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 	</tag>
 	<tag>
 		<name>encrypt</name>
-		<tagclass>com.liferay.taglib.EncryptTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.EncryptTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>className</name>
@@ -132,7 +132,7 @@
 	</tag>
 	<tag>
 		<name>if</name>
-		<tagclass>com.liferay.taglib.IfTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.IfTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>test</name>
@@ -142,7 +142,7 @@
 	</tag>
 	<tag>
 		<name>include</name>
-		<tagclass>com.liferay.taglib.IncludeTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.IncludeTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>page</name>
@@ -157,7 +157,7 @@
 	</tag>
 	<tag>
 		<name>input-date</name>
-		<tagclass>com.liferay.taglib.InputDateTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.InputDateTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>formName</name>
@@ -237,7 +237,7 @@
 	</tag>
 	<tag>
 		<name>input-time</name>
-		<tagclass>com.liferay.taglib.InputTimeTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.InputTimeTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>hourParam</name>
@@ -292,7 +292,7 @@
 	</tag>
 	<tag>
 		<name>input-time-zone</name>
-		<tagclass>com.liferay.taglib.InputTimeZoneTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.InputTimeZoneTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>name</name>
@@ -317,12 +317,12 @@
 	</tag>
 	<tag>
 		<name>otherwise</name>
-		<tagclass>com.liferay.taglib.OtherwiseTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.OtherwiseTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 	</tag>
 	<tag>
 		<name>page-iterator</name>
-		<tagclass>com.liferay.taglib.PageIteratorTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.PageIteratorTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>className</name>
@@ -392,7 +392,7 @@
 	</tag>
 	<tag>
 		<name>param</name>
-		<tagclass>com.liferay.taglib.ParamTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.ParamTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>name</name>
@@ -421,8 +421,8 @@
 
 	<tag>
 		<name>renderURL</name>
-		<tagclass>com.liferay.portlet.taglib.RenderURLTag</tagclass>
-		<teiclass>com.liferay.portlet.taglib.RenderURLTei</teiclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.RenderURLTag</tagclass>
+		<teiclass>com.dotcms.repackage.util_taglib.com.liferay.portlet.taglib.RenderURLTei</teiclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>windowState</name>
@@ -462,12 +462,12 @@
 	</tag>
 	<tag>
 		<name>upload-progress</name>
-		<tagclass>com.liferay.taglib.UploadProgressTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.UploadProgressTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 	</tag>
 	<tag>
 		<name>when</name>
-		<tagclass>com.liferay.taglib.WhenTag</tagclass>
+		<tagclass>com.dotcms.repackage.util_taglib.com.liferay.taglib.WhenTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 		<attribute>
 			<name>test</name>

@@ -21,9 +21,9 @@ import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
-import net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
 
-import org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 import org.quartz.JobExecutionContext;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
@@ -83,9 +83,9 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
-import com.thoughtworks.xstream.mapper.Mapper;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.mapper.Mapper;
 
 public class CMSMaintenanceAjax {
 
@@ -350,7 +350,7 @@ public class CMSMaintenanceAjax {
 			}
 			FileUtil.copyDirectory(assetDir, backupTempFilePath + File.separator + "asset", new AssetFileNameFilter());
 
-			//do not ship the license.
+			//do not ship the com.dotcms.repackage.tika_app_1_3.license.
 			String f = backupTempFilePath + File.separator + "asset" + File.separator + "license";
 			FileUtil.deltree(f);
 
@@ -411,9 +411,9 @@ public class CMSMaintenanceAjax {
 
 					//http://jira.dotmarketing.net/browse/DOTCMS-6059
 					if(clazz.equals(DashboardSummary404.class) || clazz.equals(DashboardUserPreferences.class)){
-						_xstream.addDefaultImplementation(net.sf.hibernate.collection.Set.class, java.util.Set.class);
-						_xstream.addDefaultImplementation(net.sf.hibernate.collection.List.class, java.util.List.class);
-						_xstream.addDefaultImplementation(net.sf.hibernate.collection.Map.class, java.util.Map.class);
+						_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate2.net.sf.hibernate.collection.Set.class, java.util.Set.class);
+						_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate2.net.sf.hibernate.collection.List.class, java.util.List.class);
+						_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate2.net.sf.hibernate.collection.Map.class, java.util.Map.class);
 						Mapper mapper = _xstream.getMapper();
 						_xstream.registerConverter(new HibernateCollectionConverter(mapper));
 						_xstream.registerConverter(new HibernateMapConverter(mapper));

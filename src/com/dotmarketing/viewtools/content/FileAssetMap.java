@@ -1,6 +1,6 @@
 package com.dotmarketing.viewtools.content;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;

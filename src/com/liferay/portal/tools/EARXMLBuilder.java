@@ -26,10 +26,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentException;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.SAXReader;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.util.EntityResolver;

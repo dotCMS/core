@@ -1,6 +1,6 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.Config"%>
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
@@ -139,7 +139,7 @@ var cmsfile=null;
 	    	
 	    	var swDiv = dojo.byId(x+'ThumbnailSliderWrapper');
 	       	if(swDiv != null && swDiv != undefined){
-	       	dojo.destroy(swDiv);
+	       	    dojo.destroy(swDiv);
 	       	}
 	    	
 	    	dojo.query(".thumbnailDiv" + x).forEach(function(node, index, arr){

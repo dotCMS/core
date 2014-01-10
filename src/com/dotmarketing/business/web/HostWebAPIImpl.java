@@ -3,8 +3,8 @@
  */
 package com.dotmarketing.business.web;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 

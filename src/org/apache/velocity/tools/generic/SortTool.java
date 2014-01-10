@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils;
 
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.viewtools.content.ContentMap;

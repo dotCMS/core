@@ -30,8 +30,8 @@ import java.util.Map;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
-import javax.portlet.PortletConfig;
-import javax.portlet.PortletContext;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.PortletContext;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.PortletInfo;

@@ -3,11 +3,11 @@
  */
 package com.dotmarketing.webdav;
 
-import com.bradmcevoy.http.ApplicationConfig;
-import com.bradmcevoy.http.HttpManager;
-import com.bradmcevoy.http.Initable;
-import com.bradmcevoy.http.Resource;
-import com.bradmcevoy.http.ResourceFactory;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.ApplicationConfig;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.HttpManager;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Initable;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.ResourceFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -38,7 +38,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	}
 	
 	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.ResourceFactory#getResource(java.lang.String, java.lang.String)
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.ResourceFactory#getResource(java.lang.String, java.lang.String)
 	 */
 	public Resource getResource(String davHost, String url) {
 		Logger.debug(this, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
@@ -227,7 +227,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.ResourceFactory#getSupportedLevels()
+	 * @see com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.ResourceFactory#getSupportedLevels()
 	 */
 	public String getSupportedLevels() {
 		return "1,2";

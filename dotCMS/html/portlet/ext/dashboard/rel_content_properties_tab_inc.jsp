@@ -5,7 +5,7 @@
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
-<%@page import="org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="java.util.Calendar"%>
 <%@page import="java.util.Date"%>

@@ -26,7 +26,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterManagerUtil;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.UserTracker;

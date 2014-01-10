@@ -42,7 +42,7 @@
                                                         
                                                         portletURLImpl = new PortletURLImpl(request, portletIDs.get(i), layouts[l].getId(), false);                        
                                                         String linkHREF = portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
-                                                        String linkName = LanguageUtil.get(pageContext,"javax.portlet.title." + portletIDs.get(i)); 
+                                                        String linkName = LanguageUtil.get(pageContext,"com.dotcms.repackage.portlet.javax.portlet.title." + portletIDs.get(i)); 
                                                         
                                                         
                                                         if("EXT_LICENSE_MANAGER".equals(portletIDs.get(i))){

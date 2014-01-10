@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.business.RoleCache.UserRoleCacheHelper;
 import com.dotmarketing.common.db.DotConnect;

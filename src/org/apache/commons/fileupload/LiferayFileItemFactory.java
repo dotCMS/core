@@ -22,6 +22,9 @@
 
 package org.apache.commons.fileupload;
 
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.DefaultFileItemFactory;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItem;
+
 import java.io.File;
 
 /**

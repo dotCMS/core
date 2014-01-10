@@ -17,7 +17,7 @@ package com.dotmarketing.util.diff.output;
 
 import com.dotmarketing.util.diff.html.HtmlSaxDiffOutput;
 import com.dotmarketing.util.diff.html.dom.TagNode;
-import org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
 
 /**
  * Interface for classes that need to process the result from the tree-like

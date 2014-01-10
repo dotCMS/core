@@ -26,8 +26,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-import javax.portlet.Portlet;
-import javax.portlet.PreferencesValidator;
+import com.dotcms.repackage.portlet.javax.portlet.Portlet;
+import com.dotcms.repackage.portlet.javax.portlet.PreferencesValidator;
 import javax.servlet.ServletContext;
 
 import com.liferay.portal.job.Scheduler;

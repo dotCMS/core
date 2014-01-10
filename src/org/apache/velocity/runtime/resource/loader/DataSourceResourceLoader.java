@@ -29,7 +29,7 @@ import java.sql.Timestamp;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-import org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.resource.Resource;
@@ -138,7 +138,7 @@ public class DataSourceResourceLoader extends ResourceLoader
     private DataSource dataSource;
 
     /**
-     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
+     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties)
      */
     public void init(ExtendedProperties configuration)
     {
@@ -220,7 +220,7 @@ public class DataSourceResourceLoader extends ResourceLoader
     public synchronized InputStream getResourceStream(final String name)
         throws ResourceNotFoundException
     {
-        if (org.apache.commons.lang.StringUtils.isEmpty(name))
+        if (com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils.isEmpty(name))
         {
             throw new ResourceNotFoundException("DataSourceResourceLoader: Template name was empty or null");
         }

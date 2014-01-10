@@ -14,7 +14,7 @@
 <%@page import="com.dotmarketing.business.DotJBCacheAdministratorImpl"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@ page import="java.util.Calendar"%>
-<%@ page import="javax.portlet.WindowState"%>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@ page import="com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm"%>
 <%@ page import="java.util.List"%>

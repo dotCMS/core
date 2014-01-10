@@ -25,7 +25,7 @@ package com.liferay.util;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
 
-import org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils;
 
 import com.dotmarketing.util.Logger;
 

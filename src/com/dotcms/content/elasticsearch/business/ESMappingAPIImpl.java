@@ -1,34 +1,18 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.ListenableActionFuture;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.CollectionUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.ListenableActionFuture;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import com.dotcms.repackage.jackson_core_asl_1_9_2.org.codehaus.jackson.JsonGenerationException;
+import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.JsonMappingException;
+import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectMapper;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -48,18 +32,18 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
-import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.*;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
-import com.dotmarketing.portlets.structure.model.FieldVariable;
-import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static com.dotmarketing.business.PermissionAPI.*;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 

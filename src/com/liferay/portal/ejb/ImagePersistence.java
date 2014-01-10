@@ -26,9 +26,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.ObjectNotFoundException;
-import net.sf.hibernate.Session;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.Session;
 
 import com.liferay.portal.NoSuchImageException;
 import com.liferay.portal.SystemException;

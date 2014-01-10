@@ -13,7 +13,7 @@
 <%@page import="com.dotmarketing.tag.ajax.TagAjax"%>
 <%@page import="com.dotmarketing.tag.model.Tag"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.dotmarketing.util.WebKeys"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>
@@ -24,17 +24,17 @@
 
 
 
-<%@ page import="javax.portlet.ActionRequest"%>
-<%@ page import="javax.portlet.ActionResponse"%>
-<%@ page import="javax.portlet.PortletConfig"%>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.ActionRequest"%>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.ActionResponse"%>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.PortletConfig"%>
 <%@ page import="javax.servlet.http.HttpServletRequest"%>
 <%@ page import="javax.servlet.http.HttpServletResponse"%>
 <%@ page import="javax.servlet.http.HttpSession"%>
 
 <%@page import="java.lang.Exception"%>
 
-<%@ page import="org.apache.struts.action.ActionForm"%>
-<%@ page import="org.apache.struts.action.ActionMapping"%>
+<%@ page import="com.dotcms.repackage.struts.org.apache.struts.action.ActionForm"%>
+<%@ page import="com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping"%>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 

@@ -28,8 +28,8 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.connection.ConnectionProvider;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.connection.ConnectionProvider;
 
 import com.dotmarketing.db.DbConnectionFactory;
 

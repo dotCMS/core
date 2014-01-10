@@ -17,16 +17,16 @@ package com.dotmarketing.util.diff;
 
 import java.io.IOException;
 
-import javax.xml.transform.Templates;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.sax.SAXResult;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamSource;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.Templates;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.TransformerConfigurationException;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.TransformerFactory;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.TransformerFactoryConfigurationError;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.sax.SAXResult;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.sax.SAXTransformerFactory;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.sax.TransformerHandler;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.stream.StreamSource;
 
-import org.xml.sax.ContentHandler;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.ContentHandler;
 
 import com.dotmarketing.util.Logger;
 

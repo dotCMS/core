@@ -7,7 +7,7 @@ import java.util.Date;
 
 import javax.servlet.ServletRequest;
 
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.util.Logger;

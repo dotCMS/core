@@ -1,8 +1,8 @@
 package com.dotcms.autoupdater;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
+import com.dotcms.repackage.commons_cli_1_2.org.apache.commons.cli.CommandLine;
+import com.dotcms.repackage.commons_cli_1_2.org.apache.commons.cli.HelpFormatter;
+import com.dotcms.repackage.commons_cli_1_2.org.apache.commons.cli.Options;
 
 import java.io.*;
 import java.math.BigInteger;

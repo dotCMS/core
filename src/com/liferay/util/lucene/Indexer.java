@@ -22,9 +22,9 @@
 
 package com.liferay.util.lucene;
 
-import javax.portlet.PortletURL;
+import com.dotcms.repackage.portlet.javax.portlet.PortletURL;
 
-import org.apache.lucene.document.Document;
+import com.dotcms.repackage.elasticsearch.org.apache.lucene.document.Document;
 
 /**
  * <a href="Indexer.java.html"><b><i>View Source</i></b></a>

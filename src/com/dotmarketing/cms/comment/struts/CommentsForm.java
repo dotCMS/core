@@ -5,12 +5,12 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import nl.captcha.Captcha;
+import com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.Captcha;
 
-import org.apache.struts.action.ActionError;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.validator.ValidatorForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionError;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
@@ -24,7 +24,7 @@ import com.dotmarketing.util.CaptchaUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.octo.captcha.service.CaptchaServiceException;
+import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.CaptchaServiceException;
 
 /**
  * This class manage the comments beans

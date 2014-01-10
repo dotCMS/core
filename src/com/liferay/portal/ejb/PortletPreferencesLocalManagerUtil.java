@@ -58,7 +58,7 @@ public class PortletPreferencesLocalManagerUtil {
 		}
 	}
 
-	public static javax.portlet.PortletPreferences getDefaultPreferences(
+	public static com.dotcms.repackage.portlet.javax.portlet.PortletPreferences getDefaultPreferences(
 		java.lang.String companyId, java.lang.String portletId)
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException {
@@ -96,7 +96,7 @@ public class PortletPreferencesLocalManagerUtil {
 		}
 	}
 	
-	public static javax.portlet.PortletPreferences getPreferences(
+	public static com.dotcms.repackage.portlet.javax.portlet.PortletPreferences getPreferences(
 		java.lang.String companyId,
 		com.liferay.portal.ejb.PortletPreferencesPK pk)
 		throws com.liferay.portal.PortalException, 

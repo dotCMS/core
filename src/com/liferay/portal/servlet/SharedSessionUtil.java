@@ -27,7 +27,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.CollectionFactory;

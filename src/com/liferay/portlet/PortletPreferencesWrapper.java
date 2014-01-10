@@ -27,9 +27,9 @@ import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.Map;
 
-import javax.portlet.PortletPreferences;
-import javax.portlet.ReadOnlyException;
-import javax.portlet.ValidatorException;
+import com.dotcms.repackage.portlet.javax.portlet.PortletPreferences;
+import com.dotcms.repackage.portlet.javax.portlet.ReadOnlyException;
+import com.dotcms.repackage.portlet.javax.portlet.ValidatorException;
 
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;

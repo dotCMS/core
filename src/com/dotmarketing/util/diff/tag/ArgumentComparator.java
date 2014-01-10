@@ -18,7 +18,7 @@ package com.dotmarketing.util.diff.tag;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.compare.rangedifferencer.IRangeComparator;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.IRangeComparator;
 
 /**
  * Takes a String and generates tokens/atoms that can be used by LCS. This

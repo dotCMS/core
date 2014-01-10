@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 import com.dotcms.enterprise.cmis.QueryResult;

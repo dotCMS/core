@@ -1,13 +1,13 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertNotNull;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotcms.publisher.business.PublisherAPIImpl;

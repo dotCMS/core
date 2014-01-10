@@ -12,7 +12,7 @@
 <div class="greyBg"></div>
 <div class="wrapper">
 	<div class="content">
-		<h2><%=LanguageUtil.get(pageContext, "javax.portlet.title.TIMEMACHINE")%></h2>
+		<h2><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.TIMEMACHINE")%></h2>
 		<p><%= LanguageUtil.get(pageContext, "TIMEMACHINE-NOT-LICENSED") %></p>
 
 	</div>

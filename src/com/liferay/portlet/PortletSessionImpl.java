@@ -29,8 +29,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import javax.portlet.PortletContext;
-import javax.portlet.PortletSession;
+import com.dotcms.repackage.portlet.javax.portlet.PortletContext;
+import com.dotcms.repackage.portlet.javax.portlet.PortletSession;
 import javax.servlet.http.HttpSession;
 
 import com.liferay.util.StringPool;
@@ -44,7 +44,7 @@ import com.liferay.util.StringPool;
  */
 public class PortletSessionImpl implements PortletSession {
 
- 	public static final String PORTLET_SCOPE_NAMESPACE = "javax.portlet.p.";
+ 	public static final String PORTLET_SCOPE_NAMESPACE = "com.dotcms.repackage.portlet.javax.portlet.p.";
 
 	public static final String getPortletScopeName(
 		String portletName, String name) {

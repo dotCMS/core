@@ -10,10 +10,10 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionMessage;
-import org.directwebremoting.WebContext;
-import org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

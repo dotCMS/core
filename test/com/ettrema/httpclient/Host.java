@@ -1,15 +1,15 @@
 package com.ettrema.httpclient;
 
-import com.bradmcevoy.common.Path;
-import com.bradmcevoy.http.Range;
-import com.bradmcevoy.http.Response;
-import com.bradmcevoy.http.exceptions.BadRequestException;
-import com.bradmcevoy.http.exceptions.ConflictException;
-import com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.bradmcevoy.http.exceptions.NotFoundException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.common.Path;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Range;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Response;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.BadRequestException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.ConflictException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotFoundException;
 import com.ettrema.cache.Cache;
 import com.ettrema.cache.MemoryCache;
-import com.ettrema.common.LogUtils;
+import com.dotcms.repackage.milton_1_8_1_4.com.ettrema.common.LogUtils;
 import com.ettrema.httpclient.Utils.CancelledException;
 import com.ettrema.httpclient.zsyncclient.FileSyncer;
 import java.io.*;
@@ -20,17 +20,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
-import org.apache.commons.httpclient.methods.*;
-import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
-import org.apache.commons.httpclient.methods.multipart.Part;
-import org.apache.commons.httpclient.params.HttpMethodParams;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.*;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.auth.AuthScope;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.cookie.CookiePolicy;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.methods.*;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.methods.multipart.Part;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.params.HttpMethodParams;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.slf4j_api_1_6_0.org.slf4j.Logger;
+import com.dotcms.repackage.slf4j_api_1_6_0.org.slf4j.LoggerFactory;
 
 /**
  *
@@ -662,7 +662,7 @@ public class Host extends Folder {
 
     public static String urlEncodePath(String s) {
         try {
-            org.apache.commons.httpclient.URI uri = new URI(s, false);
+            com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.URI uri = new URI(s, false);
             s = uri.toString();
             s = s.replace("&", "%26");
             return s;
@@ -749,7 +749,7 @@ public class Host extends Folder {
             if (i > 0) {
                 url += "/";
             }
-            url += com.bradmcevoy.http.Utils.percentEncode(s);
+            url += com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Utils.percentEncode(s);
         }
         return url;
     }

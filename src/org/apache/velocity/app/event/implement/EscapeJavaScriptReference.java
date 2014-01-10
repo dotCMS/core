@@ -19,7 +19,7 @@ package org.apache.velocity.app.event.implement;
  * under the License.    
  */
 
-import org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * Escapes the characters in a String to be suitable for use in JavaScript.

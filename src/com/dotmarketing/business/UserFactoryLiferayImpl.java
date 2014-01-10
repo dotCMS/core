@@ -13,7 +13,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterManagerUtil;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.DuplicateUserIdException;
 import com.liferay.portal.PortalException;

@@ -93,7 +93,7 @@ public class VelocimacroManager
      * @param macroBody String representation of the macro body.
      * @param argArray Array of macro parameters, first parameter is the macro name.
      * @param namespace The namespace/template from which this macro has been loaded.
-     * @return Whether everything went okay.
+     * @return Whether everything went com.dotcms.repackage.jruby.okay.
      */
     public boolean addVM(final String vmName, final Node macroBody, final String argArray[],
                          final String namespace, boolean canReplaceGlobalMacro)

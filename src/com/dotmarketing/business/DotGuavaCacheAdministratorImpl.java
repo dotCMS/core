@@ -3,29 +3,14 @@
  */
 package com.dotmarketing.business;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.struts.Globals;
-import org.jboss.cache.Fqn;
-import org.jgroups.Address;
-import org.jgroups.ChannelClosedException;
-import org.jgroups.ChannelNotConnectedException;
-import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
-
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.Cache;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.CacheBuilder;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.RemovalListener;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.RemovalNotification;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Fqn;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.*;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -36,13 +21,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
 import com.liferay.portal.struts.MultiMessageResources;
 
-import edu.emory.mathcs.backport.java.util.Collections;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The Guava cache administrator uses Google's Guave code

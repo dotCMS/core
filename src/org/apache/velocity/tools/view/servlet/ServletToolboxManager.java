@@ -32,8 +32,8 @@ import java.util.ArrayList;
 import javax.servlet.http.HttpSession;
 import javax.servlet.ServletContext;
 
-import org.apache.commons.digester.Digester;
-import org.apache.commons.digester.RuleSet;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.Digester;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.RuleSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.DataInfo;

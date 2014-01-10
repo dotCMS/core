@@ -216,7 +216,7 @@ catch(Exception e){
 	java.util.Hashtable params1 = new java.util.Hashtable ();
 	params1.put("struts_action", new String [] {"/ext/mailinglists/view_mailinglists"} );
 	
-	String referrer1 = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params1);
+	String referrer1 = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, com.dotcms.repackage.portlet.javax.portlet.WindowState.MAXIMIZED.toString(), params1);
 	String redirect1 = java.net.URLEncoder.encode(referrer1);
 %>
 

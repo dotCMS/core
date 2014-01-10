@@ -1,15 +1,15 @@
-<%@ page import="org.apache.struts.action.ActionErrors" %>
+<%@ page import="com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors" %>
 <%@ page import="java.util.HashSet"%>
 <%@ page import="java.util.Set"%>
-<%@ page import="org.apache.struts.action.ActionErrors" %>
+<%@ page import="com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors" %>
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <%@ page import="java.util.List"%>
 <%@ page import="java.util.ArrayList"%>
-<%@ page import="org.apache.struts.action.ActionMessage"%>
+<%@ page import="com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage"%>
 <%@ page import="java.util.Iterator"%>
 <%@ page import="com.liferay.util.servlet.SessionMessages"%>
-<%@ page import="org.apache.struts.action.ActionMessages"%>
-<%@page import="org.apache.struts.Globals"%>
+<%@ page import="com.dotcms.repackage.struts.org.apache.struts.action.ActionMessages"%>
+<%@page import="com.dotcms.repackage.struts.org.apache.struts.Globals"%>
 <%
 if(request.getSession().getAttribute(ActionErrors.GLOBAL_ERROR) != null){
 	request.setAttribute(ActionErrors.GLOBAL_ERROR, request.getSession().getAttribute(ActionErrors.GLOBAL_ERROR));
@@ -89,8 +89,8 @@ if(SessionMessages.contains(request, "custommessage")){
 
 SessionMessages.clear(session);
 SessionMessages.clear(request);
-request.getSession().removeAttribute("org.apache.struts.action.MESSAGE");
-request.getSession().removeAttribute("org.apache.struts.action.ERROR");
+request.getSession().removeAttribute("com.dotcms.repackage.struts.org.apache.struts.action.MESSAGE");
+request.getSession().removeAttribute("com.dotcms.repackage.struts.org.apache.struts.action.ERROR");
 
 
 
