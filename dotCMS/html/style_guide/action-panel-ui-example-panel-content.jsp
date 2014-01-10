@@ -44,7 +44,7 @@
 	
 	<table>
 		<tr>
-			<td style="width:15px;"><i class="fa fa-circle yellow"></i></td>
+			<td style="width:15px;"><i class="fa fa-1x fa-circle red"></i></td>
 			<td style="width:100%;"><b>Index</b></td>
 			<td style="width:15px;">&nbsp;</td>
 		</tr>
@@ -58,11 +58,7 @@
 			<td>Nodes(s)</td>
 			<td align="right">4</td>
 		</tr>
-		<tr>
-			<td>&nbsp;</td>
-			<td>Status</td>
-			<td align="right"><i class="fa fa-circle red"></i> Red</td>
-		</tr>
+
 		<tr>
 			<td>&nbsp;</td>
 			<td>Active Shards</td>

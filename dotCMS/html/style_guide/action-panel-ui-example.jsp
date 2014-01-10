@@ -52,27 +52,6 @@
 		dojo.require("dojo/request/xhr")
 	</script>
 
-</head>
-
-<body class="dmundra">
-
-
-<div id="doc3">
-	
-	<div id="hd" style="background: #666;">
-		<div class="yui-g">
-			<div class="yui-u first"><img alt="dotCMS" src="//dotcms.com/application/themes/dotcms/img/logo.png" style="height:40px;"></div>
-			<div class="yui-u" style="text-align:right;padding: 10px 10px 0 0;">
-				<div style="font-size:85%;">
-					<b><a href="/html/style_guide/code_style_guide.jsp">Code Style Guide</a></b> |
-					<a href="http://demos.dojotoolkit.org/demos/" target="_blank">Dojo Demos</a> | 
-					<a href="http://archive.dojotoolkit.org/nightly/dojotoolkit/dijit/tests/form/test_Button.html" target="_blank">Dijit Button Test</a> | 
-					<a href="http://docs.dojocampus.org/" target="_blank">Dojo Campus</a>
-				</div>
-			</div>
-		</div>
-	</div>
-	
 	<script>
 
 		/**
@@ -260,6 +239,19 @@
 
 
 	</script>
+
+
+
+
+
+
+</head>
+
+<body class="dmundra">
+
+
+<div id="doc3">
+
 	
 	<div class="actionPannelPage">
 		
