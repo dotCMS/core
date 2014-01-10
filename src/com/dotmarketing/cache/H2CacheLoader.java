@@ -28,7 +28,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.map.LRUMap;
-import com.dotcms.repackage.h2_1_3_169.org.h2.jdbcx.JdbcConnectionPool;
+import org.h2.jdbcx.JdbcConnectionPool;
 import com.dotcms.repackage.jbosscache_core.org.jboss.cache.CacheException;
 import com.dotcms.repackage.jbosscache_core.org.jboss.cache.CacheSPI;
 import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Fqn;
@@ -271,7 +271,7 @@ public class H2CacheLoader implements CacheLoader{
 					Connection conn = createConnection(true,x,true);
 					try{
 						conn.createStatement().execute(Config.getBooleanProperty("H2_SHUTDOWN_IMEDIATELY",true) ? "SHUTDOWN IMMEDIATELY" : "SHUTDOWN");
-					}catch(com.dotcms.repackage.h2_1_3_169.org.h2.jdbc.JdbcSQLException ac){
+					}catch(org.h2.jdbc.JdbcSQLException ac){
 						if(ac.getMessage().contains("already closed")){
 							//ignore
 						}else{
