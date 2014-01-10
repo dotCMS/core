@@ -339,6 +339,30 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 #menu ul.dropdown li.dotCMS_EXT_BROKEN_LINKS a span, .linkCheckIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span, .sServerIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
+/* Action Panel */
+.actionPanelPage {position: relative;}
+.actionTable {margin: 0;width: 100%;}
+.actionTable td, .listingTable th{border-style: none none solid none;}
+.actionTable td {padding: 10px;}
+.actionTable tr:hover{background-color: #eff3f8;cursor: pointer;}
+.actionTable tr.active {background-color: #eff3f8;}
+
+#arrow{width:23px;height:36px;z-index: 9999;left:-23px;position: absolute;}
+.hideMe {display:none;position:absolute;}
+#actionPanel{position: fixed;border:1px solid #D0D0D0;background:#fff;bottom: 0;top: 0;right: 0;z-index: 9999;}
+#actionPanelContainer{background: #fff;}
+#actionPanelTableHeader{padding:0px;margin:0px;}
+
+.actionPanelContent{margin:15px 20px;padding:0 0 20px 0; font-size: 88%;}
+.actionPanelContent h2{font-size:14px;font-weight:bold;}
+.actionPanelContent table td{padding: 2px 5px;}
+.actionPanelContent hr{border-bottom:1px solid #D0D0D0;margin:15px 0;}
+.actionPanelContent .bigBtn {width:200px;padding:8px 0;}
+
+.green{color:#6BAF73;}
+.yellow{color: #f6d57e;}
+.red{color: #CB4437;}
+
 
 /* BUTTON ICONS 2.0 */
 .shimIcon{width:18px;height:18px;display:inline-block;}
