@@ -1,4 +1,3 @@
-<%@page import="com.dotcms.rest.BaseRestPortlet"%>
 <%@page import="com.liferay.portal.model.Portlet"%>
 <%@page import="com.dotcms.rest.WebResource"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -22,7 +21,7 @@
                 
                 
                 
-                        <li class="dotAjaxNav<%=l %> level1 <%=(isSelectedTab) ? "Active" : ""%>">
+                        <li class="level1 <%=(isSelectedTab) ? "Active" : ""%>">
                                 <a href="<%=tabHREF %>">
                                         <div class="tabLeft">
                                                 <div class="navMenu-title"><%=tabName %></div>
@@ -34,11 +33,6 @@
                                         <span class="tabRight"></span>
                                         <ul class="level2 dropdown">
                                                 <%for(int i=0;i< portletIDs.size() ;i++){
-                                                        Portlet p = (Portlet) APILocator.getPortletAPI().findPortlet(portletIDs.get(i));
-
-
-                                                        
-                                                        
                                                         
                                                         portletURLImpl = new PortletURLImpl(request, portletIDs.get(i), layouts[l].getId(), false);                        
                                                         String linkHREF = portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
@@ -48,10 +42,8 @@
                                                         if("EXT_LICENSE_MANAGER".equals(portletIDs.get(i))){
                                                                 request.setAttribute("licenseManagerPortletUrl", linkHREF);
                                                         }
-                                                        Object obj = Class.forName(p.getPortletClass()).newInstance();
-                                                        if(obj instanceof BaseRestPortlet){
-                                                                linkHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(i) + "/', '" + l + "');";
-                                                        }%>
+                                                        
+                                                        %>
                                                         
                                                         
                                                         
@@ -70,125 +62,6 @@
 
 
 <script>
-
-dojo.require("dojo.hash");
-        //
-        //
-        // -------------------- AJAX NAVIGATION --------------------
-        //
-        //
-        
-        dojo.declare("dotcms.dijit.dotAjaxNav", null, {
-                contentDiv : "dotAjaxMainDiv",
-                hangerDiv : "dotAjaxMainHangerDiv",
-                
-                wfCrumbTrail : new Array(),
-                
-                constructor : function() {},
-                
-                show : function(href, tabId) {
-
-                        var r = Math.floor(Math.random() * 1000000000);
-                        if (href.indexOf("?") > -1) {
-                                href = href + "&r=" + r;
-                        } else {
-                                href = href + "?r=" + r;
-                        }
-                        dojo.hash(encodeURIComponent(href));
-                        
-                        // if we need to update the tabs
-                        if(tabId && tabId != undefined){
-                                dojo.query(".level1 .Active").forEach(function(node){
-                                        dojo.removeClass(node, "Active");
-                                  });
-                                
-                                dojo.query(".dotAjaxNav" + tabId).forEach(function(node){
-                                        dojo.addClass(node, "Active");
-                                  });
-                        }
-                        
-                },
-        
-                
-                
-                reload : function(){
-                        if(dojo.hash()  ){
-                                var hashValue = decodeURIComponent(dojo.hash());
-                                console.log("reloading" + hashValue);
-                                dotAjaxNav.show(hashValue);
-                        }
-                },
-                
-                
-                refresh : function() {
-
-                        var hashValue = decodeURIComponent(dojo.hash());
-                        console.log("refreshing:" + hashValue);
-                        if(!hashValue || hashValue.length ==0){
-                                return;
-                        }
-
-                        var myCp = dijit.byId(this.contentDiv);
-                        var hanger = dojo.byId(this.hangerDiv);
-                        if(!hanger){
-                                return;
-                        }
-                        if (myCp) {
-                                myCp.destroyRecursive(true);
-                                myCp.attr("content","");
-                        }
-
-                        myCp = new dojox.layout.ContentPane({
-                                id : this.contentDiv
-                        }).placeAt(this.hangerDiv);
-
-
-
-                        console.log("navigating to:" + hashValue)
-                        myCp.attr("href", hashValue);
-                        
-                        dojo.parser.parse(this.hangerDiv);
-                },
-        
-        
-                addCrumbtrail : function (title, urlx){
-                        var entry = {title:title, url:urlx};
-                        this.wfCrumbTrail[this.wfCrumbTrail.length] = entry;
-                },
-                
-                
-                resetCrumbTrail : function(){
-                        this.wfCrumbTrail = new Array();
-                },
-        
-                refreshCrumbtrail : function (){
-                        var crumbDiv = dojo.byId("subNavCrumbUl");
-                        crumbDiv.innerHTML ="";
-                        // dojo.create("li",
-                        // {onClick:this.show(this.wfCrumbTrail[i].url)},crumbDiv )
-        
-                        dojo.create("li", {innerHTML:"<span class='hostStoppedIcon' style='float:left;margin-right:5px;'></span><%=LanguageUtil.get(pageContext, "Global-Page")%>", id:"selectHostDiv", onClick:"window.location='/c'"},crumbDiv );
-                        for( i =0;i< this.wfCrumbTrail.length;i++ ){
-                                var className="showPointer";
-                                if(i+1 ==this.wfCrumbTrail.length){
-                                        dojo.create("li", {innerHTML:"<b>" + dotAjaxNav.wfCrumbTrail[i].title + "</b>", className:"lastCrumb"},crumbDiv );
-                                }
-                                else{
-                                        dojo.create("li", {innerHTML:"<a href='javascript:dotAjaxNav.show(dotAjaxNav.wfCrumbTrail[" + i + "].url)'>" + dotAjaxNav.wfCrumbTrail[i].title + "</a>", className:className},crumbDiv );
-                                }
-        
-                        }
-        
-        
-                }
-        
-        });
-        
-        var dotAjaxNav = new dotcms.dijit.dotAjaxNav({});
-
-        dojo.subscribe("/dojo/hashchange", this, function(hash){dotAjaxNav.refresh();});
-
-
 
 
         var _myWindowWidth=0;
@@ -258,7 +131,6 @@ dojo.require("dojo.hash");
         
         }
         dojo.addOnLoad (smallifyMenu);
-        dojo.addOnLoad (dotAjaxNav.reload);
         dojo.connect(window, "onresize", this, "smallifyMenu");
         
 

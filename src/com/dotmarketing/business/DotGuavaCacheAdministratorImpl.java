@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.dotmarketing.business;
 
@@ -43,13 +43,13 @@ import com.google.common.cache.RemovalNotification;
 import edu.emory.mathcs.backport.java.util.Collections;
 
 /**
- * The Guava cache administrator uses Google's Guave code 
+ * The Guava cache administrator uses Google's Guave code
  * under the covers and gets it's startup params from the dotmarketing-config.properties
  * on a put where the non legacy one will not.
- * 
+ *
  * @author Jason Tesser
  * @version 1.6.5
- * 
+ *
  */
 public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements DotCacheAdministrator {
 
@@ -60,18 +60,18 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	private final ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<String, Boolean>();
 	private final HashSet<String> availableCaches = new HashSet<String>();
 	private H2CacheLoader diskCache = null;
-	
+
 	static final String LIVE_CACHE_PREFIX = "livecache";
 	static final String WORKING_CACHE_PREFIX = "workingcache";
 	static final String DEFAULT_CACHE = "default";
-	
+
 	private NullCallable nullCallable = new NullCallable();
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	private boolean isDiskCache(String group){
 		if(group ==null || diskCache==null){
 			return false;
@@ -92,7 +92,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			else if (group.startsWith("velocitymenucache")) {
 				ret = false;
 			}
-		
+
 			else if (group.startsWith("velocitycache")) {
 				 ret = false;
 			}
@@ -104,11 +104,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		}
 
 		return ret;
-		
+
 	}
-	
-	
-	
+
+
+
 	public DotGuavaCacheAdministratorImpl() {
 		journalAPI = APILocator.getDistributedJournalAPI();
 
@@ -116,10 +116,10 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
-		
+
 		boolean initDiskCache = false;
 		Iterator<String> it = Config.getKeys();
-		availableCaches.add(DEFAULT_CACHE);	
+		availableCaches.add(DEFAULT_CACHE);
 		while(it.hasNext()){
 			String key = it.next();
 			if(key ==null){
@@ -129,7 +129,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				String cacheName = key.split("\\.")[1];
 				if(key.endsWith(".size")){
 					int inMemory = Config.getIntProperty(key, 0);
-					availableCaches.add(cacheName.toLowerCase());	
+					availableCaches.add(cacheName.toLowerCase());
 					Logger.info(this.getClass(), "***\t Cache Config Memory : " +  cacheName + ": " + inMemory  );
 				}
 				if(key.endsWith(".disk")){
@@ -209,7 +209,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.dotmarketing.business.DotCacheAdministrator#flushAll()
 	 */
 	public void flushAll() {
@@ -232,21 +232,21 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.dotmarketing.business.DotCacheAdministrator#flushGroup(java.lang.
 	 * String)
 	 */
 
 	public void flushGroup(String group) {
-		
+
 		if(group ==null ){
 			return ;
 		}
 		group = group.toLowerCase();
-		
+
 		groups.remove(group);
-		
+
 		flushGroupLocalOnly(group);
 
 		try {
@@ -267,11 +267,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.dotmarketing.business.DotCacheAdministrator#flushAll()
 	 */
 	public void flushAlLocalOnlyl() {
-		
+
 		Set<String> myGroups = new HashSet<String>();
 
 		myGroups.addAll(groups.keySet());
@@ -291,19 +291,19 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			diskCache.resetCannotCacheCache();
 		}
 		cacheToDisk.clear();
-		
+
 	}
 
 	public void flushGroupLocalOnly(String group) {
-		
+
 		if(group ==null ){
 			return ;
 		}
 		group = group.toLowerCase();
-		
+
 		Cache cache = getCache(group);
-		
-		
+
+
 		if(isDiskCache(group)){
 			try {
 				diskCache.remove(new Fqn(group));
@@ -312,19 +312,19 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			}
 		}
 		cache.invalidateAll();
-		
+
 	}
 
-	
+
 	private class NullCallable implements Callable{
 
 		public Object call() throws Exception {
 			return null;
 		}
-		
-		
+
+
 	}
-	
+
 	public Object getMemory(String key, String group) throws DotCacheException {
 		if(key == null || group == null){
 			return null;
@@ -340,12 +340,12 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		}
 		return j;
 	}
-	
+
 	public Object getDisk(String key, String group) throws DotCacheException {
 		if(key == null || group == null){
 			return null;
 		}
-		
+
 		key = key.toLowerCase();
 		group = group.toLowerCase();
 		Object j = null;
@@ -364,7 +364,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			}
 		}
 		return j;
-	
+
 	}
 	/**
 	 * Gets from Memory, if not in memory, tries disk
@@ -386,7 +386,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.dotmarketing.business.DotCacheAdministrator#put(java.lang.String,
 	 * java.lang.Object, java.lang.String[])
@@ -397,12 +397,12 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		}
 		key = key.toLowerCase();
 		group = group.toLowerCase();
-		
-		
-		
+
+
+
 		Cache cache = getCache(group);
 		cache.put(key, content);
-		
+
 		if(isDiskCache(group)){
 			try {
 				diskCache.put(new Fqn(group, key), key, content);
@@ -414,7 +414,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.dotmarketing.business.DotCacheAdministrator#remove(java.lang.String)
 	 */
@@ -428,7 +428,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				String k = key.toLowerCase();
 				String g = group.toLowerCase();
 				removeLocalOnly(k, g);
-		
+
 				try {
 					if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
 						journalAPI.addCacheEntry(k, g);
@@ -492,15 +492,15 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			return null;
 		}
 		Set<String> keys=new HashSet<String>();
-		
+
 		group = group.toLowerCase();
 		Cache<String, Object> cache = getCache(group);
 		Map<String, Object> m = cache.asMap();
-		
+
 		if (m!=null) {
 			keys.addAll(m.keySet());
-		} 
-		
+		}
+
 		if(diskCache!=null && isDiskCache(group)) {
 		    try {
 		        keys.addAll(diskCache.getKeys(group));
@@ -509,9 +509,9 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		        Logger.error(this, "can't get h2 cache keys on group "+group,ex);
 		    }
 		}
-			
+
 		return keys;
-		
+
 
 	}
 
@@ -522,7 +522,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		Set<String> myGroups = new HashSet<String>();
 
 		myGroups.addAll(groups.keySet());
-		
+
 		if(diskCache != null){
 			try {
 				for(String s : H2CacheLoader.getGroups()){
@@ -532,7 +532,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
 			}
 		}
-		
+
 		Cache dCache = getCache(DEFAULT_CACHE);
 		for (String group : myGroups) {
 			Map<String, Object> m = new HashMap<String, Object>();
@@ -542,12 +542,12 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 			m.put("toDisk", new Boolean(isDiskCache(group)));
 			boolean isDefault = false;
-			
-			
+
+
 			try {
 				Cache n = getCache(group);
 				m.put("memory", n.size());
-				
+
 				m.put("CacheStats", n.stats());
 				isDefault = (!DEFAULT_CACHE.equals(group) && n.equals(dCache));
 
@@ -561,30 +561,30 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 					m.put("disk", H2CacheLoader.getGroupCount(group.toString()));
 				}
 			}
-			
-			
-			int configured = isDefault  
-				? Config.getIntProperty("cache."+DEFAULT_CACHE+".size" ) 
-    				: (Config.getIntProperty("cache." +region + ".size", -1 ) != -1) 
-    					? Config.getIntProperty("cache." +region + ".size" ) 
-    						: (region.startsWith(WORKING_CACHE_PREFIX) && Config.getIntProperty("cache."+WORKING_CACHE_PREFIX+".size", -1 ) != -1) 
+
+
+			int configured = isDefault
+				? Config.getIntProperty("cache."+DEFAULT_CACHE+".size" )
+    				: (Config.getIntProperty("cache." +region + ".size", -1 ) != -1)
+    					? Config.getIntProperty("cache." +region + ".size" )
+    						: (region.startsWith(WORKING_CACHE_PREFIX) && Config.getIntProperty("cache."+WORKING_CACHE_PREFIX+".size", -1 ) != -1)
     							? Config.getIntProperty("cache."+WORKING_CACHE_PREFIX+".size" )
-   									: (region.startsWith(LIVE_CACHE_PREFIX) && Config.getIntProperty("cache."+LIVE_CACHE_PREFIX+".size", -1 ) != -1) 
+   									: (region.startsWith(LIVE_CACHE_PREFIX) && Config.getIntProperty("cache."+LIVE_CACHE_PREFIX+".size", -1 ) != -1)
    										? Config.getIntProperty("cache."+LIVE_CACHE_PREFIX+".size" )
    												: Config.getIntProperty("cache."+DEFAULT_CACHE+".size" );
-			
-			
-			
+
+
+
    			m.put("configuredSize", configured);
-			
+
 			list.add(m);
-			
+
 		}
-		
-		
+
+
 		Collections.sort(list, new CacheComparator());
-		
-		
+
+
 		return list;
 	}
 
@@ -594,37 +594,44 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			try{
 				String group1 = (String) o1.get("region");
 				String group2 = (String) o2.get("region");
-				if(group1.toLowerCase().startsWith("working")){
+
+				if(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && !(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return 1;
 				}
-				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX)){
+				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && !(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return 1;
 				}
-				if(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX)){
+				if(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && !(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return -1;
 				}
-				if(group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX)){
+				if(group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && !(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return -1;
+				}
+				if(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX)) {
+					return -1;
+				}
+				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX)) {
+					return 1;
 				}
 				else{
 					return group1.compareToIgnoreCase(group2);
 				}
 			}
 			catch(Exception e){
-				
+
 			}
-			
+
 			return 0;
-			
+
 		}
-		
-		
+
+
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	public String getCacheStats() {
 
 		return null;
@@ -693,11 +700,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		if (i > 0) {
 			String key = k.substring(0, i);
 			String group = k.substring(i + 1, k.length());
-			
+
 			key = key.toLowerCase();
 			group = group.toLowerCase();
 			if (groups != null) {
-				
+
 				if (groups.containsKey(group)) {
 					Logger.debug(this, "Cluster Eviction of Key : " + key + " With Group : " + group + " from cache");
 				}
@@ -741,11 +748,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			synchronized (cacheName.intern()) {
 				cache = groups.get(cacheName);
 				if (cache == null) {
-					
+
 
 					boolean separateCache = (availableCaches.contains(cacheName) || DEFAULT_CACHE.equals(cacheName) ||cacheName.startsWith(LIVE_CACHE_PREFIX) || cacheName.startsWith(WORKING_CACHE_PREFIX) );
 
-						
+
 					if (separateCache) {
 						int size = -1;
 						boolean toDisk = false;
@@ -760,7 +767,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 							else{
 								toDisk = Config.getBooleanProperty("cache."+LIVE_CACHE_PREFIX+".disk", false);
 							}
-						} 
+						}
 						else if (cacheName.startsWith(WORKING_CACHE_PREFIX)) {
 							size = Config.getIntProperty("cache." + cacheName + ".size", -1);
 							if(size <0){
@@ -772,7 +779,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 							else{
 								toDisk = Config.getBooleanProperty("cache."+WORKING_CACHE_PREFIX+".disk", false);
 							}
-						} 
+						}
 						else {
 							size = Config.getIntProperty("cache." + cacheName + ".size", -1);
 							if(Config.containsProperty("cache." + cacheName + ".disk")){
@@ -782,7 +789,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 								toDisk = Config.getBooleanProperty("cache."+DEFAULT_CACHE+".disk", false);
 							}
 						}
-						
+
 						if (size == -1) {
 							size = Config.getIntProperty("cache."+DEFAULT_CACHE+".size", 100);
 						}
@@ -792,9 +799,9 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 								.newBuilder()
 								.maximumSize(size)
 								.concurrencyLevel(Config.getIntProperty("cache.concurrencylevel", 32));
-								
 
-						
+
+
 						cache = cb.build();
 						groups.put(cacheName, cache);
 

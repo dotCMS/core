@@ -227,7 +227,13 @@ public class CMSFilter implements Filter {
 			return;
 		}
 
-
+        //Verify if the request is for a specific language
+        Long languageId;
+        if ( !UtilMethods.isSet( req.getParameter( "language_id" ) ) ) {
+            languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        } else {
+            languageId = Long.parseLong( req.getParameter( "language_id" ) );
+        }
 
         /* if edit mode */
         if (PREVIEW_MODE || EDIT_MODE) {
@@ -257,8 +263,8 @@ public class CMSFilter implements Filter {
         } else {
 
 			try {
-				pointer = LiveCache.getPathFromCache(uri, host);
-			} catch (Exception e) {
+                pointer = LiveCache.getPathFromCache( uri, host, languageId );
+            } catch (Exception e) {
 				Logger.debug(this.getClass(), "Can't find pointer " + uri);
 				try {
 					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(request)){
@@ -457,17 +463,15 @@ public class CMSFilter implements Filter {
                 	 */
                 	boolean canRead = false;
                 	if(ident.getAssetType().equals("contentlet")){
-                		long langId;
-            			String langIdReq = req.getParameter("language_id");
-            			if(!UtilMethods.isSet(langIdReq)){
-            				langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            			}else{
-            				langId = Long.parseLong(langIdReq);
-            			}
-
                 		try{
-                			ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
-                			Contentlet proxy  = new Contentlet();
+                            ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageId );
+                            //If we did not find a version with for given language lets try with the default language
+                            if ( !UtilMethods.isSet( cinfo.getIdentifier() ) && !languageId.equals( APILocator.getLanguageAPI().getDefaultLanguage().getId() ) ) {
+                                languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                                cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageId );
+                            }
+
+                            Contentlet proxy  = new Contentlet();
                 			if(UtilMethods.isSet(cinfo.getLiveInode()))
                 				proxy = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
                 			else if(WebAPILocator.getUserWebAPI().isLoggedToBackend(request))
