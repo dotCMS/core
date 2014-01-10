@@ -39,7 +39,7 @@ public final class DotSQLGeneratorTask extends Task {
 			Class.forName("com.mysql.jdbc.Driver");
 			Class.forName("org.postgresql.Driver");
 			Class.forName("net.sourceforge.jtds.jdbc.Driver");	
-			Class.forName("com.dotcms.repackage.h2_1_3_169.org.h2.Driver");
+			Class.forName("org.h2.Driver");
 		}
 		catch(Exception e){
 			 Logger.info(this, "Driver not found dialect:" + e);
@@ -63,7 +63,7 @@ public final class DotSQLGeneratorTask extends Task {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");
 			}else if(dialect.equals("com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.HSQLDialect")) {
-			    cfg.setProperty("hibernate.connection.driver_class", "com.dotcms.repackage.h2_1_3_169.org.h2.Driver");
+			    cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
 			    cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
 			}
 
