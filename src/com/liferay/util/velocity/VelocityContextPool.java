@@ -26,7 +26,7 @@ import java.util.Map;
 
 import javax.servlet.ServletContext;
 
-import EDU.oswego.cs.dl.util.concurrent.ConcurrentReaderHashMap;
+import com.dotcms.repackage.concurrent.EDU.oswego.cs.dl.util.concurrent.ConcurrentReaderHashMap;
 
 /**
  * <a href="VelocityContextPool.java.html"><b><i>View Source</i></b></a>

@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.collections.map.LRUMap;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.map.LRUMap;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;

@@ -63,7 +63,7 @@
 	
                 <h1>Invalid License</h1>
 		
-                This server does not have valid dotCMS license.  
+                This server does not have valid dotCMS com.dotcms.repackage.tika_app_1_3.license.  
                 If you are the administrator for this site,  please contact 
                 <a href="http://dotcms.com/contact-us">dotCMS</a> for 
                 more information or request a trial license via the 

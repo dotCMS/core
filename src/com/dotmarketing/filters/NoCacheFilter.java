@@ -22,7 +22,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.time.FastDateFormat;
 
 import com.dotmarketing.util.Constants;
 

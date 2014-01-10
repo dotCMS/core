@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.folders.struts;
 
-import org.apache.struts.validator.ValidatorForm;
+import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;
 
 import com.dotmarketing.util.InodeUtils;
 

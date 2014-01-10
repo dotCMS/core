@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;

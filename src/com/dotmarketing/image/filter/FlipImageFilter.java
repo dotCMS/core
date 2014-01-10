@@ -8,8 +8,8 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.jhlabs.image.ExposureFilter;
-import com.dotmarketing.jhlabs.image.FlipFilter;
+import com.dotcms.repackage.com_dotmarketing_jhlabs_images_filters.com.dotmarketing.jhlabs.image.ExposureFilter;
+import com.dotcms.repackage.com_dotmarketing_jhlabs_images_filters.com.dotmarketing.jhlabs.image.FlipFilter;
 
 public class FlipImageFilter extends ImageFilter {
 

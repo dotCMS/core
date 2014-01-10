@@ -35,7 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import com.dotcms.enterprise.AuthPipeProxy;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
-import com.liferay.mail.ejb.MailManagerUtil;
+import com.dotcms.repackage.mail_ejb.com.liferay.mail.ejb.MailManagerUtil;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.RequiredUserException;

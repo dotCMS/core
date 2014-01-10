@@ -22,7 +22,7 @@
 
 package com.liferay.portal.pwd;
 
-import org.apache.oro.text.perl.Perl5Util;
+import com.dotcms.repackage.oro.org.apache.oro.text.perl.Perl5Util;
 
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.PwdGenerator;

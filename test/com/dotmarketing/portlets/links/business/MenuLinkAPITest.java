@@ -1,8 +1,8 @@
 package com.dotmarketing.portlets.links.business;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.AfterClass;
+import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
@@ -17,7 +17,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import static org.junit.Assert.*;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.*;
 
 public class MenuLinkAPITest extends TestBase {
     static PermissionAPI pAPI = APILocator.getPermissionAPI();

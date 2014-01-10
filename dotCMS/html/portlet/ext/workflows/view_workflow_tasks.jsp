@@ -8,7 +8,7 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.portlets.workflows.struts.*"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
@@ -20,8 +20,8 @@
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
-<%@page import="org.apache.commons.beanutils.BeanUtils"%>
-<%@page import="org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="java.util.Calendar"%>
 <%@page import="java.util.Date"%>
@@ -39,7 +39,7 @@
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.liferay.portal.NoSuchRoleException"%>
@@ -472,7 +472,7 @@ bottom="/html/common/box_bottom.jsp">
 
 
 <!-- START Button Row -->
-	<div class="buttonBoxLeft"><h3><%=LanguageUtil.get(pageContext, "javax.portlet.title.EXT_21")%></h3></div>
+	<div class="buttonBoxLeft"><h3><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_21")%></h3></div>
 
 <!-- END Button Row -->
 

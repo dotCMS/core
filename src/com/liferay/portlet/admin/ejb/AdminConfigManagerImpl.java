@@ -25,7 +25,7 @@ package com.liferay.portlet.admin.ejb;
 import java.util.List;
 import java.util.Map;
 
-import com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterManagerUtil;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.auth.PrincipalException;

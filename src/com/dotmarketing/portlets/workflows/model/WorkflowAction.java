@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.dotcms.repackage.jackson_core_asl_1_9_2.org.codehaus.jackson.annotate.JsonIgnore;
 
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;

@@ -23,10 +23,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHit;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHits;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
@@ -116,12 +116,12 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.google.gson.Gson;
+import com.dotcms.repackage.tika_app_1_3.com.google.gson.Gson;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
  * @author Jason Tesser

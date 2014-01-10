@@ -22,34 +22,20 @@
 
 package com.liferay.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
-
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.liferay.util.jna.JNALibrary;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.filefilter.TrueFileFilter;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -154,13 +140,23 @@ public class FileUtil {
 
 		if ( hardLinks ) {
 			// I think we need to be sure to unlink first
-			if(destination.exists()){
-				JNALibrary.unlink(destination.getAbsolutePath());
-			}
-			
-			try {
-				JNALibrary.link(source.getAbsolutePath(), destination.getAbsolutePath());
-				// setting this means we will try again if we cannot hard link
+            if ( destination.exists() ) {
+                Path destinationPath = Paths.get( destination.getAbsolutePath() );
+                try {
+                    //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
+                    Files.delete( destinationPath );
+                } catch ( IOException e ) {
+                    Logger.error( FileUtil.class, "Error removing hardLink: " + destination.getAbsolutePath(), e );
+                }
+            }
+
+            try {
+
+                Path newLink = Paths.get( destination.getAbsolutePath() );
+                Path existingFile = Paths.get( source.getAbsolutePath() );
+
+                Files.createLink( newLink, existingFile );
+                // setting this means we will try again if we cannot hard link
 				if( !destination.exists() ){
 					hardLinks = false;
 				}

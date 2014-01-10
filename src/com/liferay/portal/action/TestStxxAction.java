@@ -27,17 +27,17 @@ import java.util.Iterator;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.jdom.Document;
-import org.jdom.Element;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Document;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.CompanyLocalManagerUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-import com.oroad.stxx.action.Action;
+import com.dotcms.repackage.stxx.com.oroad.stxx.action.Action;
 
 /**
  * <a href="TestStxxAction.java.html"><b><i>View Source</i></b></a>

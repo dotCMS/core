@@ -7,7 +7,7 @@
 <%@ page import="com.dotmarketing.business.CacheLocator"%>
 <%@ page import="com.dotmarketing.util.Logger"%>
 <%@ page import="com.dotmarketing.db.DbConnectionFactory"%>
-<%@ page import="org.apache.commons.lang.StringEscapeUtils"%>
+<%@ page import="com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils"%>
 <%@ page import="com.liferay.portal.util.ImageKey" %>
 <%@ page import="com.liferay.portal.util.WebKeys" %>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>

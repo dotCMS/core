@@ -14,7 +14,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 

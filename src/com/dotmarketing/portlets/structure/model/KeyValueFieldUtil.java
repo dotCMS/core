@@ -3,10 +3,10 @@ package com.dotmarketing.portlets.structure.model;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.tika_app_1_3.com.google.gson.Gson;
+import com.dotcms.repackage.tika_app_1_3.com.google.gson.reflect.TypeToken;
+import com.dotcms.repackage.jackson_core_asl_1_9_2.org.codehaus.jackson.JsonFactory;
+import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectMapper;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

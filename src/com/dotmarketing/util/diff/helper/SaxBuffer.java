@@ -15,11 +15,11 @@
  */
 package com.dotmarketing.util.diff.helper;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.Locator;
-import org.xml.sax.Attributes;
-import org.xml.sax.ext.LexicalHandler;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.ContentHandler;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Locator;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.ext.LexicalHandler;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -381,7 +381,7 @@ public class SaxBuffer implements ContentHandler, LexicalHandler, Serializable {
             this.namespaceURI = namespaceURI;
             this.localName = localName;
             this.qName = qName;
-            this.attrs = new org.xml.sax.helpers.AttributesImpl(attrs);
+            this.attrs = new com.dotcms.repackage.tika_app_1_3.org.xml.sax.helpers.AttributesImpl(attrs);
         }
 
         public void send(ContentHandler contentHandler) throws SAXException {

@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.CollectionUtils;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

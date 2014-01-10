@@ -1,5 +1,12 @@
 package com.dotmarketing.osgi;
 
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.config.ActionConfig;
+import com.dotcms.repackage.struts.org.apache.struts.config.ForwardConfig;
+import com.dotcms.repackage.struts.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.urlrewritefilter_4_0_3.org.tuckey.web.filters.urlrewrite.NormalRule;
+import com.dotcms.repackage.urlrewritefilter_4_0_3.org.tuckey.web.filters.urlrewrite.Rule;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -22,11 +29,6 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
 import org.apache.felix.http.proxy.DispatcherTracker;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.config.ActionConfig;
-import org.apache.struts.config.ForwardConfig;
-import org.apache.struts.config.ModuleConfig;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
@@ -35,11 +37,13 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
-import org.tuckey.web.filters.urlrewrite.NormalRule;
-import org.tuckey.web.filters.urlrewrite.Rule;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.dotmarketing.osgi.ActivatorUtil.*;
 
 /**
@@ -733,7 +737,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 //PK
                 PortletPK id = portlet.getPrimaryKey();
                 //Cache key
-                String scpId = PortalUtil.class.getName() + "." + javax.portlet.Portlet.class.getName();
+                String scpId = PortalUtil.class.getName() + "." + com.dotcms.repackage.portlet.javax.portlet.Portlet.class.getName();
                 if ( !portlet.isWARFile() ) {
                     scpId += "." + company.getCompanyId();
                 }

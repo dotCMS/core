@@ -18,8 +18,8 @@ package com.dotmarketing.util.diff.tag;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.eclipse.compare.rangedifferencer.RangeDifference;
-import org.eclipse.compare.rangedifferencer.RangeDifferencer;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.RangeDifference;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.RangeDifferencer;
 import com.dotmarketing.util.diff.output.TextDiffOutput;
 import com.dotmarketing.util.diff.output.TextDiffer;
 

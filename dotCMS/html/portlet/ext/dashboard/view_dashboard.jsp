@@ -37,7 +37,7 @@
 <% 
 java.util.Map params = new java.util.HashMap();
 params.put("struts_action",new String[] {"/ext/dashboard/view_dashboard"});
-String referer = java.net.URLDecoder.decode(com.dotmarketing.util.PortletURLUtil.getRenderURL(request,javax.portlet.WindowState.MAXIMIZED.toString(),params));
+String referer = java.net.URLDecoder.decode(com.dotmarketing.util.PortletURLUtil.getRenderURL(request,com.dotcms.repackage.portlet.javax.portlet.WindowState.MAXIMIZED.toString(),params));
 Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
 Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
 

@@ -24,7 +24,7 @@ package com.liferay.portlet;
 
 import java.util.Locale;
 
-import javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 

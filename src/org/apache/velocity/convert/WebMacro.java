@@ -23,7 +23,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import org.apache.oro.text.perl.Perl5Util;
+import com.dotcms.repackage.oro.org.apache.oro.text.perl.Perl5Util;
 import org.apache.velocity.util.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
 

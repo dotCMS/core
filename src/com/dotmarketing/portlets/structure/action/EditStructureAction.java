@@ -10,19 +10,19 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

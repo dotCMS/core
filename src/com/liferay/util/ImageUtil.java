@@ -29,9 +29,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import net.jmge.gif.Gif89Encoder;
+import com.dotcms.repackage.gif89.net.jmge.gif.Gif89Encoder;
 
-import com.tjtieto.wap.wapix.WBMPMaster;
+import com.dotcms.repackage.wbmp.com.tjtieto.wap.wapix.WBMPMaster;
 
 /**
  * <a href="ImageUtil.java.html"><b><i>View Source</i></b></a>

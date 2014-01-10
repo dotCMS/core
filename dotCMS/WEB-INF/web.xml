@@ -73,7 +73,7 @@
 	</filter>
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
-		<filter-class>com.liferay.filters.secure.SecureFilter</filter-class>
+		<filter-class>com.dotcms.repackage.secure_filter.com.liferay.filters.secure.SecureFilter</filter-class>
 		<init-param>
 			<param-name>portal_property_prefix</param-name>
 			<param-value>main.servlet.</param-value>
@@ -81,7 +81,7 @@
 	</filter>
 	<filter>
 		<filter-name>Secure AxisServlet Filter</filter-name>
-		<filter-class>com.liferay.filters.secure.SecureFilter</filter-class>
+		<filter-class>com.dotcms.repackage.secure_filter.com.liferay.filters.secure.SecureFilter</filter-class>
 		<init-param>
 			<param-name>portal_property_prefix</param-name>
 			<param-value>axis.servlet.</param-value>
@@ -229,7 +229,7 @@
 	<!--
 	<filter>
   		<filter-name>Compression Filter</filter-name>
-  		<filter-class>com.liferay.filters.compression.CompressionFilter</filter-class>
+  		<filter-class>com.dotcms.repackage.compression_filter.com.liferay.filters.compression.CompressionFilter</filter-class>
  	</filter>
 	<filter-mapping>
 		<filter-name>Compression Filter</filter-name>
@@ -278,7 +278,7 @@
         <listener-class>org.apache.felix.http.proxy.ProxyListener</listener-class>
     </listener>
     <listener>
-		<listener-class>org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
+		<listener-class>com.dotcms.repackage.chemistry_opencmis_server_bindings_0_8_0.org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
 	</listener>
     <listener>
     	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
@@ -300,7 +300,7 @@
 	</servlet>
 	<servlet>
 		<servlet-name>PdfServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.PdfServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.PdfServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>HTMLPDFServlet</servlet-name>
@@ -308,19 +308,19 @@
 	</servlet>
 	<servlet>
 		<servlet-name>JRImageServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.ImageServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.ImageServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>XlsServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.XlsServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.XlsServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>JExcelApiServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.JExcelApiServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.JExcelApiServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>RtfServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.RtfServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.RtfServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>ResizeImageServlet</servlet-name>
@@ -417,7 +417,7 @@
 	</servlet>
 	<servlet>
 	  <servlet-name>dwr-invoker</servlet-name>
-	  <servlet-class>org.directwebremoting.servlet.DwrServlet</servlet-class>
+	  <servlet-class>com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.servlet.DwrServlet</servlet-class>
       <init-param>
 	      <param-name>debug</param-name>
     	  <param-value>false</param-value>
@@ -429,7 +429,7 @@
 	</servlet>
 	<servlet>
 		<servlet-name>Captcha</servlet-name>
-		<servlet-class>nl.captcha.servlet.SimpleCaptchaServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.servlet.SimpleCaptchaServlet</servlet-class>
 				<!--border around captcha. Legal values are yes or no. Defaults to yes Other values will be ignored-->
 		<init-param>
 			<param-name>cap.border</param-name>
@@ -549,7 +549,7 @@
 	</servlet>
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
-		<servlet-class>com.bradmcevoy.http.MiltonServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.MiltonServlet</servlet-class>
 		<init-param>
 				<param-name>resource.factory.class</param-name>
 				<param-value>com.dotmarketing.webdav.ResourceFactorytImpl</param-value>
@@ -557,10 +557,10 @@
 	</servlet>
 	<servlet>
 		<servlet-name>CMIS</servlet-name>
-		<servlet-class>org.apache.chemistry.opencmis.server.impl.atompub.CmisAtomPubServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.chemistry_opencmis_server_bindings_0_8_0.org.apache.chemistry.opencmis.server.impl.atompub.CmisAtomPubServlet</servlet-class>
 		<init-param>
 			<param-name>callContextHandler</param-name>
-			<param-value>org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
+			<param-value>com.dotcms.repackage.chemistry_opencmis_server_bindings_0_8_0.org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
 		</init-param>
 		<load-on-startup>2</load-on-startup>
 	</servlet>
@@ -612,7 +612,7 @@
 		  com.dotcms.rest.servlet.ReloadableServletContainer
 		</servlet-class>
 		<init-param>
-		  <param-name>javax.ws.rs.Application</param-name>
+		  <param-name>com.dotcms.repackage.jersey_1_12.javax.ws.rs.Application</param-name>
 		  <param-value>com.dotcms.rest.config.DotRestApplication</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
@@ -703,10 +703,6 @@
 		<url-pattern>/cmis/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>ScheduledJobs</servlet-name>
-		<url-pattern>/dotScheduledJobs</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
 		<servlet-name>JSONContentServlet</servlet-name>
 		<url-pattern>/JSONContent/*</url-pattern>
 	</servlet-mapping>
@@ -731,46 +727,6 @@
 	<servlet-mapping>
 		<servlet-name>HTMLPDFServlet</servlet-name>
 		<url-pattern>/servlets/htmlpdf</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>JRImageServlet</servlet-name>
-		<url-pattern>/servlets/jrimage</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>XlsServlet</servlet-name>
-		<url-pattern>/servlets/xls</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>JExcelApiServlet</servlet-name>
-		<url-pattern>/servlets/jxl</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>RtfServlet</servlet-name>
-		<url-pattern>/servlets/rtf</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-	    <servlet-name>ResizeImageServlet</servlet-name>
-	    <url-pattern>/resize_image</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>JRImageServlet</servlet-name>
-		<url-pattern>/servlets/jrimage</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>XlsServlet</servlet-name>
-		<url-pattern>/servlets/xls</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>JExcelApiServlet</servlet-name>
-		<url-pattern>/servlets/jxl</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>RtfServlet</servlet-name>
-		<url-pattern>/servlets/rtf</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-	    <servlet-name>ResizeImageServlet</servlet-name>
-	    <url-pattern>/resize_image</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>JRImageServlet</servlet-name>

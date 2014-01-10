@@ -22,16 +22,16 @@
 
 package com.liferay.portlet.myaccount.action;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
-import javax.portlet.PortletSession;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.PortletSession;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.util.WebKeys;

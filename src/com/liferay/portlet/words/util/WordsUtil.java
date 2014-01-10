@@ -34,10 +34,10 @@ import com.liferay.portlet.words.ScramblerException;
 import com.liferay.util.CollectionFactory;
 import com.liferay.util.StringUtil;
 import com.liferay.util.jazzy.BasicSpellCheckListener;
-import com.swabunga.spell.engine.SpellDictionaryHashMap;
-import com.swabunga.spell.event.DefaultWordFinder;
-import com.swabunga.spell.event.SpellChecker;
-import com.swabunga.spell.event.StringWordTokenizer;
+import com.dotcms.repackage.jazzy_core.com.swabunga.spell.engine.SpellDictionaryHashMap;
+import com.dotcms.repackage.jazzy_core.com.swabunga.spell.event.DefaultWordFinder;
+import com.dotcms.repackage.jazzy_core.com.swabunga.spell.event.SpellChecker;
+import com.dotcms.repackage.jazzy_core.com.swabunga.spell.event.StringWordTokenizer;
 
 /**
  * <a href="WordsUtil.java.html"><b><i>View Source</i></b></a>

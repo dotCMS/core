@@ -10,7 +10,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 

@@ -24,8 +24,8 @@ package com.liferay.portal.util;
 
 import java.io.InputStream;
 
-import net.sf.hibernate.cfg.Configuration;
-import net.sf.hibernate.mapping.Table;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.mapping.Table;
 
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.LowercaseNamingStrategy;
@@ -102,7 +102,7 @@ public class HibernateConfiguration extends SessionConfiguration {
 				liferayTable.setName("pollsquestion");
 				liferayTable  = cfg.getClassMapping(com.liferay.portlet.polls.ejb.PollsVoteHBM.class).getTable();
 				liferayTable.setName("pollsvote");
-				liferayTable  = cfg.getClassMapping(com.liferay.counter.ejb.CounterHBM.class).getTable();
+				liferayTable  = cfg.getClassMapping(com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterHBM.class).getTable();
 				liferayTable.setName("counter");
 			}
 

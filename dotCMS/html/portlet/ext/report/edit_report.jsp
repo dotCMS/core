@@ -23,7 +23,7 @@
 	}else {
 		params.put("reportId", new String[] {""});
 	}
-	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
+	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, com.dotcms.repackage.portlet.javax.portlet.WindowState.MAXIMIZED.toString(), params);
 	Report report = (Report)request.getAttribute(com.dotmarketing.util.WebKeys.REPORT_EDIT);
 	
 	List<DataSource> dataSources = (List<DataSource>) request.getAttribute("dataSources");

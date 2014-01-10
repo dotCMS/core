@@ -24,7 +24,7 @@ package com.liferay.portal.util;
 
 import java.io.InputStream;
 
-import net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.cfg.Configuration;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.util.dao.hibernate.SessionConfiguration;
@@ -83,7 +83,7 @@ public class HibernateConfiguration2 extends SessionConfiguration {
 
 			cfg.setProperty(
 				"hibernate.cache.provider_class",
-				"net.sf.hibernate.cache.EhCacheProvider");
+				"com.dotcms.repackage.hibernate2.net.sf.hibernate.cache.EhCacheProvider");
 
 			cfg.setProperty(
 				"hibernate.show_sql",

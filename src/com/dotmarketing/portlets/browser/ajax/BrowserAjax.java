@@ -46,8 +46,8 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
-import org.directwebremoting.WebContext;
-import org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;

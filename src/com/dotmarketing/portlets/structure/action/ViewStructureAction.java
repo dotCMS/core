@@ -2,16 +2,16 @@ package com.dotmarketing.portlets.structure.action;
 
 import java.util.List;
 
-import javax.portlet.PortletConfig;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;

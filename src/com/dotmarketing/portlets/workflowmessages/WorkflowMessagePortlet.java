@@ -3,9 +3,9 @@ package com.dotmarketing.portlets.workflowmessages;
 
 import java.io.IOException;
 
-import javax.portlet.PortletException;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletException;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
 
 import com.liferay.portal.struts.Action;
 import com.liferay.portal.struts.ActionException;

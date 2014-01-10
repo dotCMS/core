@@ -12,10 +12,10 @@ import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import org.elasticsearch.search.SearchHits;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHits;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;

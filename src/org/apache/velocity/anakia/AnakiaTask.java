@@ -30,7 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
@@ -41,11 +41,11 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.util.StringUtils;
 
-import org.jdom.Document;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.Format;
-import org.xml.sax.SAXParseException;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Document;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.JDOMException;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.input.SAXBuilder;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.output.Format;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXParseException;
 
 /**
  * The purpose of this Ant Task is to allow you to use

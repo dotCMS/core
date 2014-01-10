@@ -1,5 +1,17 @@
 package com.dotmarketing.osgi;
 
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FilenameUtils;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.struts.org.apache.struts.config.impl.ModuleConfigImpl;
+import com.dotmarketing.util.Config;
+import com.liferay.portal.util.Constants;
+import com.liferay.util.FileUtil;
+import org.apache.felix.http.api.ExtHttpService;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+
+import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -8,20 +20,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Enumeration;
-
-import javax.servlet.ServletContext;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.felix.http.api.ExtHttpService;
-import org.apache.struts.Globals;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.struts.config.impl.ModuleConfigImpl;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-
-import com.dotmarketing.util.Config;
-import com.liferay.portal.util.Constants;
-import com.liferay.util.FileUtil;
 
 class ActivatorUtil {
 

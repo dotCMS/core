@@ -16,7 +16,7 @@
 package com.dotmarketing.util.diff.output;
 
 import com.dotmarketing.util.diff.html.TextNodeComparator;
-import org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
 
 /**
  * Interface for classes that are interested in the tree-like result structure

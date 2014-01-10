@@ -1,6 +1,6 @@
 package com.dotmarketing.factories;
 
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 

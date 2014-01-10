@@ -18,7 +18,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;

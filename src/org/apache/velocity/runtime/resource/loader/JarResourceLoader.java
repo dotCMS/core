@@ -29,7 +29,7 @@ import java.util.HashMap;
 import org.apache.velocity.util.StringUtils;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
 
 import com.dotmarketing.util.Logger;
 
@@ -197,7 +197,7 @@ public class JarResourceLoader extends ResourceLoader
     {
         InputStream results = null;
 
-        if (org.apache.commons.lang.StringUtils.isEmpty(source))
+        if (com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils.isEmpty(source))
         {
             throw new ResourceNotFoundException("Need to have a resource!");
         }

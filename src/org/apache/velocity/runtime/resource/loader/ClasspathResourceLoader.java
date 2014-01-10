@@ -21,8 +21,8 @@ package org.apache.velocity.runtime.resource.loader;
 
 import java.io.InputStream;
 
-import org.apache.commons.collections.ExtendedProperties;
-import org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.util.ClassUtils;

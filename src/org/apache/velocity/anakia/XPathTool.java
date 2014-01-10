@@ -21,8 +21,8 @@ package org.apache.velocity.anakia;
 
 import java.util.List;
 
-import org.jdom.Document;
-import org.jdom.Element;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Document;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
 
 /**
  * This class adds an entrypoint into XPath functionality,
@@ -34,8 +34,8 @@ import org.jdom.Element;
  * The W3C XPath Specification (http://www.w3.org/TR/xpath) refers
  * to NodeSets repeatedly, but this implementation simply uses
  * java.util.List to hold all Nodes.  A 'Node' is any object in
- * a JDOM object tree, such as an org.jdom.Element, org.jdom.Document,
- * or org.jdom.Attribute.
+ * a JDOM object tree, such as an com.dotcms.repackage.tika_app_1_3.org.jdom.Element, com.dotcms.repackage.tika_app_1_3.org.jdom.Document,
+ * or com.dotcms.repackage.tika_app_1_3.org.jdom.Attribute.
  * <p>
  * To use it in Velocity, do this:
  * <p>

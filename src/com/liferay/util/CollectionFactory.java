@@ -22,9 +22,9 @@
 
 package com.liferay.util;
 
-import gnu.trove.THashMap;
-import gnu.trove.THashSet;
-import gnu.trove.TLinkedList;
+import com.dotcms.repackage.trove.gnu.trove.THashMap;
+import com.dotcms.repackage.trove.gnu.trove.THashSet;
+import com.dotcms.repackage.trove.gnu.trove.TLinkedList;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import EDU.oswego.cs.dl.util.concurrent.SyncMap;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.dotcms.repackage.concurrent.EDU.oswego.cs.dl.util.concurrent.SyncMap;
+import com.dotcms.repackage.concurrent.EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 
 /**
  * <a href="CollectionFactory.java.html"><b><i>View Source</i></b></a>

@@ -30,10 +30,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.portlet.PortletPreferences;
-import javax.portlet.PreferencesValidator;
-import javax.portlet.ReadOnlyException;
-import javax.portlet.ValidatorException;
+import com.dotcms.repackage.portlet.javax.portlet.PortletPreferences;
+import com.dotcms.repackage.portlet.javax.portlet.PreferencesValidator;
+import com.dotcms.repackage.portlet.javax.portlet.ReadOnlyException;
+import com.dotcms.repackage.portlet.javax.portlet.ValidatorException;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.PortalException;

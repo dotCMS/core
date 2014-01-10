@@ -31,8 +31,8 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.collections.ExtendedProperties;
-import org.apache.commons.lang.text.StrBuilder;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.event.EventCartridge;
 import org.apache.velocity.app.event.EventHandler;

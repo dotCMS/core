@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.structure.business;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -13,11 +13,11 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.junit_4_8_1.org.junit.After;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Assert;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Before;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotcms.publisher.business.PublisherAPIImpl;

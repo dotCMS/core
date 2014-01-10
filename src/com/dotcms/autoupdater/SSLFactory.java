@@ -17,11 +17,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
-import org.apache.commons.httpclient.ConnectTimeoutException;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.protocol.ControllerThreadSocketFactory;
-import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.ConnectTimeoutException;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.params.HttpConnectionParams;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.protocol.ControllerThreadSocketFactory;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.log4j.Logger;
 import com.dotcms.autoupdater.AuthSSLInitializationError;
 import com.dotcms.autoupdater.AuthSSLX509TrustManager;

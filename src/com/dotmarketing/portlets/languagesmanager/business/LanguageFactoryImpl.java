@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;

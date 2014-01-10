@@ -1,6 +1,6 @@
 package com.dotmarketing.plugin;
 
-import static org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.plugin.util.PluginFileMerger;

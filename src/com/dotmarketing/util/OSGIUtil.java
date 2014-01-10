@@ -21,7 +21,7 @@ import java.util.Properties;
 
 import javax.servlet.ServletContextEvent;
 
-import org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
 import org.apache.felix.framework.FrameworkFactory;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;

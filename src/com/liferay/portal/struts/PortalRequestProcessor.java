@@ -30,12 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.portlet.PortletConfig;
-import javax.portlet.PortletContext;
-import javax.portlet.PortletException;
-import javax.portlet.PortletMode;
-import javax.portlet.PortletPreferences;
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.PortletContext;
+import com.dotcms.repackage.portlet.javax.portlet.PortletException;
+import com.dotcms.repackage.portlet.javax.portlet.PortletMode;
+import com.dotcms.repackage.portlet.javax.portlet.PortletPreferences;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -43,8 +43,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.config.ForwardConfig;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.config.ForwardConfig;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -91,7 +91,7 @@ import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.UploadServletRequest;
-import com.oroad.stxx.plugin.StxxTilesRequestProcessor;
+import com.dotcms.repackage.stxx.com.oroad.stxx.plugin.StxxTilesRequestProcessor;
 
 /**
  * <a href="PortalRequestProcessor.java.html"><b><i>View Source</i></b></a>
@@ -180,7 +180,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 	protected HttpServletRequest processMultipart(HttpServletRequest req) {
 
 		// Bug in Struts makes it incompatible with
-		// com.oreilly.servlet.MultipartRequest
+		// com.dotcms.repackage.cos.com.oreilly.servlet.MultipartRequest
 
 		return req;
 	}

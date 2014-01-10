@@ -22,13 +22,13 @@
 
 package com.liferay.portlet.admin.action;
 
-import javax.portlet.PortletConfig;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;

@@ -15,8 +15,8 @@
  */
 package com.dotmarketing.util.diff.html.dom;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.helpers.AttributesImpl;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Represents an image in HTML. Even though images do not contain any text they

@@ -28,7 +28,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
-import org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
@@ -558,9 +558,9 @@ public class TexenTask
                             // them available in the context. So for
                             // a line like the following in a properties file:
                             //
-                            // license.file.contents = license.txt
+                            // com.dotcms.repackage.tika_app_1_3.license.file.contents = com.dotcms.repackage.tika_app_1_3.license.txt
                             //
-                            // We will pull in the contents of license.txt
+                            // We will pull in the contents of com.dotcms.repackage.tika_app_1_3.license.txt
                             // and make it available in the context as
                             // $license. This should make texen a little
                             // more flexible.

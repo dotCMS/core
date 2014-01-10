@@ -1,4 +1,4 @@
-<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
+<%@page import="com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.PermissionableProxy"%>

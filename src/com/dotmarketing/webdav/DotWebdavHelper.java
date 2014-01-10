@@ -20,18 +20,18 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.MalformedPatternException;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Compiler;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Matcher;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
-import com.bradmcevoy.http.CollectionResource;
-import com.bradmcevoy.http.LockInfo;
-import com.bradmcevoy.http.LockResult;
-import com.bradmcevoy.http.LockTimeout;
-import com.bradmcevoy.http.LockToken;
-import com.bradmcevoy.http.Resource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockResult;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockTimeout;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockToken;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -94,7 +94,7 @@ public class DotWebdavHelper {
 			return new Perl5Matcher();
 		}
 	};
-	private  org.apache.oro.text.regex.Pattern tempResourcePattern;
+	private  com.dotcms.repackage.oro.org.apache.oro.text.regex.Pattern tempResourcePattern;
 	private java.io.File tempHolderDir;
 	private String tempFolderPath = "dotwebdav";
 	
@@ -110,7 +110,7 @@ public class DotWebdavHelper {
 	private static MessageDigest md5Helper;
 
 
-	private Hashtable<String, com.bradmcevoy.http.LockInfo> resourceLocks = new Hashtable<String, com.bradmcevoy.http.LockInfo>();
+	private Hashtable<String, com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo> resourceLocks = new Hashtable<String, com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo>();
 	
 	public DotWebdavHelper() {
 		Perl5Compiler c = new Perl5Compiler();
@@ -158,7 +158,7 @@ public class DotWebdavHelper {
 		try {
 			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
 				Authenticator authenticator;
-				authenticator = (Authenticator) new bsh.Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
+				authenticator = (Authenticator) new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
 				if (useEmailAsLogin) {
 					authenticator.authenticateByEmailAddress(comp.getCompanyId(), username, passwd);
 				} else {
@@ -1342,15 +1342,15 @@ public class DotWebdavHelper {
 	    return locks.get(uid);
 	  }
 	
-//	public LockResult lock(com.bradmcevoy.http.LockInfo lock, User user, String uniqueId) {
+//	public LockResult lock(com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo lock, User user, String uniqueId) {
 //		LockToken lt = new LockToken();
-////		lock.depth = com.bradmcevoy.http.LockInfo.LockDepth.INFINITY;
+////		lock.depth = com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo.LockDepth.INFINITY;
 ////		if(authType.equals(Company.AUTH_TYPE_EA))
 ////			lock.owner = user.getEmailAddress();
 ////		else
 ////			lock.owner = user.getUserId();
-////		lock.scope = com.bradmcevoy.http.LockInfo.LockScope.NONE;
-////		lock.type = com.bradmcevoy.http.LockInfo.LockType.WRITE;
+////		lock.scope = com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo.LockScope.NONE;
+////		lock.type = com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo.LockType.WRITE;
 //
 //		// Generating lock id
 //		String lockTokenStr = lock.owner + "-" + uniqueId;
@@ -1365,7 +1365,7 @@ public class DotWebdavHelper {
 //	}
 //	
 //	public LockToken getLockToken(String lockId){
-//		com.bradmcevoy.http.LockInfo info = resourceLocks.get(lockId);
+//		com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo info = resourceLocks.get(lockId);
 //		if(info == null)
 //			return null;
 //		LockToken lt = new LockToken();
@@ -1376,7 +1376,7 @@ public class DotWebdavHelper {
 //	}
 //	
 //	public LockResult refreshLock(String lockId){
-//		com.bradmcevoy.http.LockInfo info = resourceLocks.get(lockId);
+//		com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo info = resourceLocks.get(lockId);
 //		if(info == null)
 //			return null;
 //		LockToken lt = new LockToken();

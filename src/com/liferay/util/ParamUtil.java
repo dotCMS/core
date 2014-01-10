@@ -26,7 +26,7 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.Enumeration;
 
-import javax.portlet.PortletRequest;
+import com.dotcms.repackage.portlet.javax.portlet.PortletRequest;
 import javax.servlet.ServletRequest;
 
 import com.dotmarketing.util.Logger;

@@ -2,14 +2,14 @@ package com.dotmarketing.portlets.categories.struts;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.validator.ValidatorForm;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.EqualsBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.HashCodeBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessages;
+import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;

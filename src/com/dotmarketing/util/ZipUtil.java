@@ -15,7 +15,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
 
 /**
  * @author Jason Tesser

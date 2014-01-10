@@ -92,7 +92,7 @@ function doPaste(){
 	<div style="min-height:400px;" id="borderContainer" class="shadowBox headerBox">							
 	 	<div style="padding:7px;">
 		 	<div>
-				<h3><%= LanguageUtil.get(pageContext, "javax.portlet.title.EXT_LICENSE_MANAGER") %></h3>
+				<h3><%= LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_LICENSE_MANAGER") %></h3>
 		  	</div>
 				<br clear="all">
 	  	</div>

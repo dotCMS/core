@@ -21,8 +21,8 @@ import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
  * Fix database inodes of type contentlet without a contentlet in the content table

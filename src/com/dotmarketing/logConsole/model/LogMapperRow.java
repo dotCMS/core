@@ -1,7 +1,7 @@
 package com.dotmarketing.logConsole.model;
 
 import com.dotmarketing.util.UtilMethods;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
 
 import java.io.Serializable;
 import java.util.HashMap;

@@ -1,11 +1,11 @@
 package com.dotcms.h2;
 
+import org.h2.tools.TriggerAdapter;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import org.h2.tools.TriggerAdapter;
 
 public class FolderRenameTrigger extends TriggerAdapter {
 

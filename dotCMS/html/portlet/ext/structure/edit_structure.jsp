@@ -1,6 +1,6 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@ page import="java.util.ArrayList"%>
-<%@ page import="javax.portlet.WindowState"%>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@ page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.util.Constants"%>
 <%@ page import="java.util.List"%>

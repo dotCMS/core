@@ -1,10 +1,10 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertFalse;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertNotNull;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertNotSame;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertTrue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -17,14 +17,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.time.FastDateFormat;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.junit.Ignore;
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Ignore;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
