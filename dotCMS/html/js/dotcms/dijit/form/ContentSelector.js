@@ -134,6 +134,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this._hideMatchingResults ();
 		this.nextDiv.style.display = "none";
 		this.previousDiv.style.display = "none";
+		this.langDropdown.style.display = "";
 		//this.counter_radio = 0;
 		this.counter_checkbox = 0;
 	},
@@ -175,7 +176,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "<dt>"+data[0].title+" </dt>";
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.contentletLanguageId+"'>";
+		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown'  id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.contentletLanguageId+"'>";
 
 		for (var i = 0; i < data.length; i++) {
 
