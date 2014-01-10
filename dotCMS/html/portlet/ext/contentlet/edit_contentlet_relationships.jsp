@@ -876,8 +876,7 @@
 
 		 		function <%= relationJsName %>unrelateContent(contentletInode,inodeToUnrelate,identifierToUnrelate){
 		 			<%= relationJsName %>RelatedCons.deleteSelectedNodes();
-		 			<%= relationJsName %>_removeContentFromRelationship (identifierToUnrelate);
-		 			ContentletAjax.unrelateContent(contentletInode,inodeToUnrelate,'<%=rel.getInode()%>',<%= relationJsName %>unrelateCallback);
+		 			<%= relationJsName %>_removeContentFromRelationship (identifierToUnrelate);		 			
 		 			renumberRecolorAndReorder<%= relationJsName %>();
 		 		}
 
