@@ -18,9 +18,9 @@ package com.dotmarketing.scripting.util.php;
 
 import java.util.List;
 
-import com.caucho.quercus.env.Value;
-import com.caucho.quercus.page.QuercusPage;
-import com.caucho.quercus.program.Function;
+import com.dotcms.repackage.quercus.com.caucho.quercus.env.Value;
+import com.dotcms.repackage.quercus.com.caucho.quercus.page.QuercusPage;
+import com.dotcms.repackage.quercus.com.caucho.quercus.program.Function;
 
 /**
  * The serves as the return Object for PHP within dotCMS. 

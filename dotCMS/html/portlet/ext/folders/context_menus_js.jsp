@@ -1,4 +1,4 @@
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@ include file="/html/portlet/ext/folders/init.jsp" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>

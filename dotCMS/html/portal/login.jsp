@@ -50,7 +50,7 @@ if(UtilMethods.isSet(uId)){
 	UserAPI userAPI = APILocator.getUserAPI();
 	boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(request);
 	User loggedInUser = userAPI.loadUserById(uId, userAPI.getSystemUser(), respectFrontend);
-	session.setAttribute(org.apache.struts.Globals.LOCALE_KEY, loggedInUser.getLocale());
+	session.setAttribute(com.dotcms.repackage.struts.org.apache.struts.Globals.LOCALE_KEY, loggedInUser.getLocale());
 
 	if(UtilMethods.isSet(referer)){
 		session.removeAttribute(WebKeys.REFERER);
@@ -331,10 +331,7 @@ function showLanguageSelector(){
 			<dd>
 				<c:if test="<%= company.isAutoLogin()%>">
 					<input id="rememberMe" tabindex="3" <%= rememberMe ? "checked" : "" %> type="checkbox"  dojoType="dijit.form.CheckBox"
-					onclick="
-					<c:if test="<%= company.isAutoLogin() && !request.isSecure() %>">
-						if (this.checked) {document.fm.my_account_r_m.value = 'on';}else {document.fm.my_account_r_m.value = 'off';}
-					</c:if>">
+					onclick="if (this.checked) {document.fm.my_account_r_m.value = 'on';}else {document.fm.my_account_r_m.value = 'off';}">
 				</c:if>
 			</dd>
 		</dl>

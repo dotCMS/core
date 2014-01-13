@@ -24,7 +24,7 @@ package com.liferay.util.lucene;
 
 import java.io.Serializable;
 
-import org.apache.lucene.document.Document;
+import com.dotcms.repackage.elasticsearch.org.apache.lucene.document.Document;
 
 /**
  * <a href="Hits.java.html"><b><i>View Source</i></b></a>

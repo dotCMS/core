@@ -19,8 +19,8 @@
 <%@page import="com.dotmarketing.portlets.templates.model.Template"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
-<%@page import="org.apache.commons.beanutils.BeanUtils"%>
-<%@page import="org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="java.util.Calendar"%>
 <%@page import="java.util.Date"%>
@@ -29,7 +29,7 @@
 <%@page import="java.util.Locale"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@ page import="com.dotmarketing.util.Config" %>
@@ -39,8 +39,8 @@
 
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
 	int langId = -1;
-	if(request.getParameter("langId")!= null)
-		langId = Integer.parseInt(request.getParameter("langId"));
+	if(request.getParameter("language")!= null)
+		langId = Integer.parseInt(request.getParameter("language"));
 	Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false, langId, APILocator.getUserAPI().getSystemUser(), true);
 	Structure structure = contentlet.getStructure();
 
@@ -66,6 +66,7 @@
 	params.put("struts_action",new String[] {"/ext/workflows/edit_workflow_task"});
 	params.put("cmd",new String[] {"view"});
 	params.put("taskId",new String[] {String.valueOf(task.getInode())});
+	params.put("langId",new String[] {String.valueOf(langId)});
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
 
 	List<User> users = APILocator.getUserAPI().findAllUsers();
@@ -338,7 +339,7 @@
 
 				<%for(WorkflowAction a : actions){ %>
 					<%if(a.requiresCheckout())continue; %>
-					
+
 					<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
 					<% boolean hasPushPublishActionlet = false; %>
 					<% for(WorkflowActionClass actionlet : actionlets){ %>
@@ -346,7 +347,7 @@
 							<% hasPushPublishActionlet = true; %>
 						<% } %>
 					<% } %>
-					
+
 					<div class="workflowActionLink" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable() || hasPushPublishActionlet%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>', <%=hasPushPublishActionlet%>)">
 
 							<span class="<%=a.getIcon()%>"></span>
@@ -552,7 +553,7 @@
 	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
 	<input name="wfContentletId" id="wfContentletId" type="hidden" value="<%=contentlet.getInode()%>">
-	
+
 	<!-- PUSH PUBLISHING ACTIONLET -->
 	<input name="wfPublishDate" id="wfPublishDate" type="hidden" value="">
 	<input name="wfPublishTime" id="wfPublishTime" type="hidden" value="">

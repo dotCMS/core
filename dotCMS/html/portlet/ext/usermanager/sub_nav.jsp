@@ -33,7 +33,7 @@
 	if (!UtilMethods.isSet(strutsAction) || strutsAction.equals(portlet1.getInitParams().get("view-action"))) {
 		List<CrumbTrailEntry> crumbTrailEntries = new ArrayList<CrumbTrailEntry>();
 		
-		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), null));
+		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), null));
 		
 		request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, crumbTrailEntries);
 	} else if (referer.contains("/ext/order_manager/view_users")) {
@@ -42,7 +42,7 @@
 		Map params = new HashMap();
 		params.put("struts_action", new String[] {"/ext/order_manager/view_orders"});
 		String crumbTrailReferer = PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), params);
-		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer));
+		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer));
 		
 		params = new HashMap();
 		params.put("struts_action", new String[] {"/ext/order_manager/view_products"});
@@ -66,7 +66,7 @@
 		Map params = new HashMap();
 		params.put("struts_action", new String[] {"/ext/order_manager/view_orders"});
 		String crumbTrailReferer = PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), params);
-		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer));
+		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer));
 		
 		params = new HashMap();
 		params.put("struts_action", new String[] {"/ext/order_manager/edit_order"});
@@ -84,7 +84,7 @@
 		Map params = new HashMap();
 		params.put("struts_action", new String[] {"/ext/mailinglists/view_mailinglists"});
 		String crumbTrailReferer = PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), params);
-		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer));
+		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer));
 		
 		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Load-Users"), null));
 		
@@ -95,7 +95,7 @@
 		Map params = new HashMap();
 		params.put("struts_action", new String[] {"/ext/mailinglists/view_mailinglists"});
 		String crumbTrailReferer = PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), params);
-		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer));
+		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer));
 		
 		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Edit-Mailing-List"), null));
 		

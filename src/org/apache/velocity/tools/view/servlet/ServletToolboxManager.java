@@ -32,8 +32,8 @@ import java.util.ArrayList;
 import javax.servlet.http.HttpSession;
 import javax.servlet.ServletContext;
 
-import org.apache.commons.digester.Digester;
-import org.apache.commons.digester.RuleSet;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.Digester;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.RuleSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.DataInfo;
@@ -46,6 +46,7 @@ import org.apache.velocity.tools.view.servlet.ServletToolboxRuleSet;
 import org.osgi.framework.BundleContext;
 
 import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.util.Config;
 
 
 /**
@@ -143,11 +144,12 @@ public class ServletToolboxManager extends XMLToolboxManager
     // -------------------------------------------- Public Methods ------------
 
     public void registerService () {
-
-        // Register main service
-        BundleContext context = HostActivator.instance().getBundleContext();
-        Hashtable<String, String> props = new Hashtable<String, String>();
-        context.registerService(PrimitiveToolboxManager.class.getName(), this, props);
+    	if(Config.getBooleanProperty("felix.osgi.enable", true)){
+	        // Register main service
+	        BundleContext context = HostActivator.instance().getBundleContext();
+	        Hashtable<String, String> props = new Hashtable<String, String>();
+	        context.registerService(PrimitiveToolboxManager.class.getName(), this, props);
+    	}
     }
 
     /**

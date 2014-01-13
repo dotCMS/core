@@ -26,7 +26,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;

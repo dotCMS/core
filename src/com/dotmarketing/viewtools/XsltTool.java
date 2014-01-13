@@ -7,12 +7,12 @@ import java.io.InputStreamReader;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.Source;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.Transformer;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.TransformerConfigurationException;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.TransformerFactory;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.stream.StreamResult;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.stream.StreamSource;
 
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;

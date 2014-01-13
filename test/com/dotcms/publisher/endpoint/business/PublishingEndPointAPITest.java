@@ -10,11 +10,11 @@ import com.dotmarketing.exception.*;
 import com.dotmarketing.business.*;
 import com.dotcms.TestBase;
 import com.dotcms.publisher.endpoint.bean.*;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import org.junit.BeforeClass;
-import org.junit.AfterClass;
-import org.junit.Test;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertFalse;
+import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
+import com.dotcms.repackage.junit_4_8_1.org.junit.AfterClass;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 /**
  * @author brent griffin

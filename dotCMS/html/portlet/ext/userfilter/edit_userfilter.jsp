@@ -18,7 +18,7 @@
 	params.put("struts_action", new String [] {"/ext/userfilter/view_userfilterlist"} );
 	params.put("pageNumber",new String[] { pageNumber + "" });
 	
-	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
+	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, com.dotcms.repackage.portlet.javax.portlet.WindowState.MAXIMIZED.toString(), params);
 	String adminPortletCode = "_9_";
 
 	String redirect = java.net.URLEncoder.encode(referrer + "&cmd=search&emailAddress=");

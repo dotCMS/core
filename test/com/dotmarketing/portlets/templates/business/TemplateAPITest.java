@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.templates.business;
 
-import static org.junit.Assert.*;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.ContainerStructure;

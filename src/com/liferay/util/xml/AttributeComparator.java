@@ -24,7 +24,7 @@ package com.liferay.util.xml;
 
 import java.util.Comparator;
 
-import org.dom4j.Attribute;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Attribute;
 
 /**
  * <a href="AttributeComparator.java.html"><b><i>View Source</i></b></a>

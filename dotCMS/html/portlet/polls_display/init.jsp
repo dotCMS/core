@@ -24,7 +24,7 @@
 
 <%@ include file="/html/common/init.jsp" %>
 
-<%@ page import="com.liferay.counter.ejb.CounterManagerUtil" %>
+<%@ page import="com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterManagerUtil" %>
 <%@ page import="com.liferay.portlet.polls.DuplicateVoteException" %>
 <%@ page import="com.liferay.portlet.polls.NoSuchChoiceException" %>
 <%@ page import="com.liferay.portlet.polls.NoSuchQuestionException" %>

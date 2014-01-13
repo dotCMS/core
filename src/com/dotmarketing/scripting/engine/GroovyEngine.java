@@ -15,10 +15,10 @@
  */
 package com.dotmarketing.scripting.engine;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
-import groovy.lang.GroovyShell;
+import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.Closure;
+import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.GroovyClassLoader;
+import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.GroovyObject;
+import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.GroovyShell;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -30,11 +30,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
-import org.apache.bsf.BSFDeclaredBean;
-import org.apache.bsf.BSFException;
-import org.apache.bsf.BSFManager;
-import org.apache.bsf.util.BSFEngineImpl;
-import org.apache.bsf.util.BSFFunctions;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFDeclaredBean;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFException;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFManager;
+import com.dotcms.repackage.bsf.org.apache.bsf.util.BSFEngineImpl;
+import com.dotcms.repackage.bsf.org.apache.bsf.util.BSFFunctions;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -48,6 +48,7 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * A BSF Engine for the <a href="http://groovy.codehaus.org/">Groovy</a>
@@ -215,7 +216,7 @@ public class GroovyEngine extends BSFEngineImpl {
 			
 			String uri = LiveCache.getPathFromCache(ident.getURI(), h);
 
-			String inode = UtilMethods.getFileName(new File(Config.CONTEXT.getRealPath(assetPath + uri)).getName());
+			String inode = UtilMethods.getFileName(new File(FileUtil.getRealPath(assetPath + uri)).getName());
 			com.dotmarketing.portlets.files.model.File file = fileAPI.find(inode,userAPI.getSystemUser(),false);
 
 			User mu = userAPI.loadUserById(file.getModUser(), userAPI.getSystemUser(), true);
@@ -229,7 +230,7 @@ public class GroovyEngine extends BSFEngineImpl {
 			InputStream is;
 			FileReader fr = null;
 			if(!UtilMethods.isSet(realPath)){
-				is = new BufferedInputStream(new FileInputStream(Config.CONTEXT.getRealPath(assetPath + uri)));
+				is = new BufferedInputStream(new FileInputStream(FileUtil.getRealPath(assetPath + uri)));
 			}else{
 				is = new BufferedInputStream(new FileInputStream(realPath + uri));
 			}
@@ -251,7 +252,7 @@ public class GroovyEngine extends BSFEngineImpl {
 	    	
 			String uri = LiveCache.getPathFromCache(ident.getURI(), h);
 
-			String inode = UtilMethods.getFileName(new File(Config.CONTEXT.getRealPath(assetPath + uri)).getName());
+			String inode = UtilMethods.getFileName(new File(FileUtil.getRealPath(assetPath + uri)).getName());
 			com.dotmarketing.portlets.files.model.File file = fileAPI.find(inode,userAPI.getSystemUser(),false);
 
 			if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
@@ -264,7 +265,7 @@ public class GroovyEngine extends BSFEngineImpl {
 
 			FileReader fr = null;
 			if(!UtilMethods.isSet(realPath)){
-				fr = new FileReader(Config.CONTEXT.getRealPath(assetPath + uri));
+				fr = new FileReader(FileUtil.getRealPath(assetPath + uri));
 			}else{
 				fr = new FileReader(realPath + uri);
 			}

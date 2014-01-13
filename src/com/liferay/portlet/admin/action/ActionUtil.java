@@ -22,8 +22,8 @@
 
 package com.liferay.portlet.admin.action;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.business.APILocator;

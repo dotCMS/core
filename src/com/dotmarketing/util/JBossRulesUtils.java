@@ -5,11 +5,11 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-import org.drools.RuleBase;
-import org.drools.RuleBaseFactory;
-import org.drools.WorkingMemory;
-import org.drools.compiler.PackageBuilder;
-import org.drools.rule.Package;
+import com.dotcms.repackage.drools_core_3_0_5.org.drools.RuleBase;
+import com.dotcms.repackage.drools_core_3_0_5.org.drools.RuleBaseFactory;
+import com.dotcms.repackage.drools_core_3_0_5.org.drools.WorkingMemory;
+import com.dotcms.repackage.drools_compiler_3_0_5.org.drools.compiler.PackageBuilder;
+import com.dotcms.repackage.drools_core_3_0_5.org.drools.rule.Package;
 
 public class JBossRulesUtils {
 	private static RuleBase XMLRuleBase;
@@ -27,7 +27,7 @@ public class JBossRulesUtils {
 		try {
 			String fileName = Config.getStringProperty("CONFIGURED_JBOSS_RULES_FILE_NAME");
 			if (UtilMethods.isSet(fileName)) {
-				String XMLFileName = com.dotmarketing.util.Config.CONTEXT.getRealPath(fileName);
+				String XMLFileName = com.liferay.util.FileUtil.getRealPath(fileName);
 				XMLRuleBase = readRulesFromXML(XMLFileName);
 				
 				XMLRuleBaseLastModified = new File(XMLFileName).lastModified();
@@ -69,7 +69,7 @@ public class JBossRulesUtils {
 		try {
 			String fileName = Config.getStringProperty("CONFIGURED_JBOSS_RULES_FILE_NAME");
 			if (UtilMethods.isSet(fileName)) {
-				String XMLFileName = com.dotmarketing.util.Config.CONTEXT.getRealPath(fileName);
+				String XMLFileName = com.liferay.util.FileUtil.getRealPath(fileName);
 				
 				if (XMLRuleBaseLastModified  < (new File(XMLFileName).lastModified()))
 					loadJBossRulesFiles();

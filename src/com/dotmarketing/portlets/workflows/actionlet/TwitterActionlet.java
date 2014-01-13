@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import twitter4j.Status;
-import twitter4j.Twitter;
-import twitter4j.TwitterFactory;
-import twitter4j.conf.ConfigurationBuilder;
+import com.dotcms.repackage.twitter4j_core_3_0_3.twitter4j.Status;
+import com.dotcms.repackage.twitter4j_core_3_0_3.twitter4j.Twitter;
+import com.dotcms.repackage.twitter4j_core_3_0_3.twitter4j.TwitterFactory;
+import com.dotcms.repackage.twitter4j_core_3_0_3.twitter4j.conf.ConfigurationBuilder;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotValidationException;

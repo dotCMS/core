@@ -1,14 +1,14 @@
 package com.dotmarketing.listeners;
 
-import org.dom4j.Document;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
-import org.dom4j.io.OutputFormat;
-import org.dom4j.io.XMLWriter;
-import org.junit.runner.Description;
-import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
-import org.junit.runner.notification.RunListener;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentHelper;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.OutputFormat;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.XMLWriter;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runner.Description;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runner.Result;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runner.notification.Failure;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runner.notification.RunListener;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -179,7 +179,7 @@ public class TestXmlRingingListener extends RunListener {
 
     /**
      * Called when a test will not be run, generally because a test method is annotated
-     * with {@link org.junit.Ignore}.
+     * with {@link com.dotcms.repackage.junit_4_8_1.org.junit.Ignore}.
      *
      * @param description describes the test that will not be run
      */

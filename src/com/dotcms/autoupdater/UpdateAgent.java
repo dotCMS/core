@@ -1,8 +1,8 @@
 package com.dotcms.autoupdater;
 
-import org.apache.commons.cli.*;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.PostMethod;
+import com.dotcms.repackage.commons_cli_1_2.org.apache.commons.cli.*;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.*;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.*;
 
 import java.io.*;

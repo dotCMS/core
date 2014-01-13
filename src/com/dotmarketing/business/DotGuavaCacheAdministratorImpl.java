@@ -3,7 +3,6 @@
  */
 package com.dotmarketing.business;
 
-import java.net.InetAddress;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -16,24 +15,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.jboss.cache.Fqn;
-import org.jgroups.Address;
-import org.jgroups.ChannelClosedException;
-import org.jgroups.ChannelException;
-import org.jgroups.ChannelNotConnectedException;
-import org.jgroups.Event;
-import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.jgroups.PhysicalAddress;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
-
-import com.dotcms.cluster.bean.ESProperty;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.Cache;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.CacheBuilder;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.RemovalListener;
+import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.RemovalNotification;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Fqn;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.*;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -44,13 +37,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
-
-import edu.emory.mathcs.backport.java.util.Collections;
-import static com.dotcms.cluster.bean.ESProperty.*;
+import com.liferay.portal.struts.MultiMessageResources;
 
 /**
  * The Guava cache administrator uses Google's Guave code
@@ -64,18 +51,17 @@ import static com.dotcms.cluster.bean.ESProperty.*;
 public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements DotCacheAdministrator {
 
 	private DistributedJournalAPI journalAPI;
-	private Map<String, Cache<String, Object>> groups = new HashMap<String, Cache<String, Object>>();
+	private final ConcurrentHashMap<String, Cache<String, Object>> groups = new ConcurrentHashMap<String, Cache<String, Object>>();
 	private JChannel channel;
 	private boolean useJgroups = false;
-	private ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<String, Boolean>();
-	private HashSet<String> availableCaches = new HashSet<String>();
+	private final ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<String, Boolean>();
+	private final HashSet<String> availableCaches = new HashSet<String>();
 	private H2CacheLoader diskCache = null;
 
 	static final String LIVE_CACHE_PREFIX = "livecache";
 	static final String WORKING_CACHE_PREFIX = "workingcache";
 	static final String DEFAULT_CACHE = "default";
 	public static final String TEST_MESSAGE = "HELLO CLUSTER!";
-
 	private NullCallable nullCallable = new NullCallable();
 
 	private boolean isDiskCache(String group){
@@ -114,7 +100,13 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	}
 
 	public DotGuavaCacheAdministratorImpl() {
-//		journalAPI = APILocator.getDistributedJournalAPI();
+		journalAPI = APILocator.getDistributedJournalAPI();
+
+
+
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+
 		boolean initDiskCache = false;
 		Iterator<String> it = Config.getKeys();
 		availableCaches.add(DEFAULT_CACHE);
@@ -352,7 +344,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		Set<String> myGroups = new HashSet<String>();
 
 		myGroups.addAll(groups.keySet());
-		groups = new HashMap<String, Cache<String,Object>>();
+		groups.clear();
 		if(diskCache != null){
 			try {
 				myGroups.addAll(H2CacheLoader.getGroups());
@@ -367,7 +359,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		if(diskCache != null){
 			diskCache.resetCannotCacheCache();
 		}
-		cacheToDisk = new ConcurrentHashMap<String, Boolean>();
+		cacheToDisk.clear();
 
 	}
 
@@ -671,17 +663,24 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			try{
 				String group1 = (String) o1.get("region");
 				String group2 = (String) o2.get("region");
-				if(group1.toLowerCase().startsWith("working")){
+
+				if(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && !(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return 1;
 				}
-				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX)){
+				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && !(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return 1;
 				}
-				if(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX)){
+				if(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && !(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return -1;
 				}
-				if(group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX)){
+				if(group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && !(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
 					return -1;
+				}
+				if(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX)) {
+					return -1;
+				}
+				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX)) {
+					return 1;
 				}
 				else{
 					return group1.compareToIgnoreCase(group2);
@@ -719,6 +718,19 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		return channel;
 	}
 
+	public boolean isClusteringEnabled() {
+		return useJgroups;
+	}
+
+	public void send(String msg) {
+		Message message = new Message(null, null, msg);
+		try {
+			channel.send(message);
+		} catch (Exception e) {
+			Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+		}
+	}
+
 	@Override
 	public void receive(Message msg) {
 		if (msg == null) {
@@ -741,6 +753,9 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 		} else if (v.toString().equals("ACK")) {
 			Logger.info(this, "ACK Received " + new Date());
+		} else if(v.toString().equals("MultiMessageResources.reload")) {
+			MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
+            messages.reload();
 		} else {
 			invalidateCacheFromCluster(v.toString());
 		}
@@ -835,7 +850,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 		// init cache if it does not exist
 		if (cache == null) {
-			synchronized (cacheName) {
+			synchronized (cacheName.intern()) {
 				cache = groups.get(cacheName);
 				if (cache == null) {
 

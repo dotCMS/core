@@ -1,4 +1,4 @@
-<%@ page import="javax.portlet.WindowState" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.WindowState" %>
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
 <script language="javascript">
 function addNewStructureSubNav()
@@ -53,19 +53,19 @@ function allRelationshipsSubNav()
 	String strutsAction = ParamUtil.get(request, "struts_action", null);
 	
 	if (!UtilMethods.isSet(strutsAction) || strutsAction.equals(portlet1.getInitParams().get("view-action"))) {
-		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), null));
+		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), null));
 	} else if (strutsAction.equals("/ext/structure/edit_structure") && portlet1.getPortletId().equals("EXT_STRUCTURE")) {
-		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), "javascript: cancel();"));
+		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), "javascript: cancel();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Add-Edit-Structure"), null));
 	} else if (strutsAction.equals("/ext/structure/edit_structure") && portlet1.getPortletId().equals("EXT_FORM_HANDLER")) {
-		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), "javascript: allStructureSubNav();"));
+		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), "javascript: allStructureSubNav();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Edit-Form"), null));
 	} else if (strutsAction.equals("/ext/structure/edit_field") && portlet1.getPortletId().equals("EXT_STRUCTURE")) {
-		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), "javascript: allStructureSubNav();"));
+		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), "javascript: allStructureSubNav();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Add-Edit-Structure"), "javascript: cancel();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Add-Edit-Field"), null));
 	} else if (strutsAction.equals("/ext/structure/edit_field") && portlet1.getPortletId().equals("EXT_FORM_HANDLER")) {
-		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), "javascript: allStructureSubNav();"));
+		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), "javascript: allStructureSubNav();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Edit-Form"), "javascript: cancel();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Add-Edit-Field"), null));
 	} else if(strutsAction.equals("/ext/structure/view_relationships") && portlet1.getPortletId().equals("EXT_STRUCTURE")) {

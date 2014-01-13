@@ -5,7 +5,7 @@
 <%@page import="com.dotmarketing.business.RoleAPI"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
 <%@page import="com.liferay.portal.model.User"%>
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
@@ -819,6 +819,13 @@
                 contentId = document.getElementById("Identifier").value;
                     fieldsValues[fieldsValues.length] = contentId;
             }
+
+                var allField = dijit.byId("allFieldTB").getValue();
+                if (allField != undefined && allField.length>0 ) {
+                    fieldsValues[fieldsValues.length] = "_all";
+                    fieldsValues[fieldsValues.length] = allField + "*";
+                }
+
                 var categoriesValues = new Array ();
                 var form = document.getElementById("search_form");
                 var categories = form.categories;
@@ -1902,8 +1909,8 @@
                                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                           }
                         }
-                        //if (deleted && (write == "1"))
-                                //popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"deleteIcon\" onClick=\"fullDeleteContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Delete-Contentlet") %></div>";
+                        if (deleted && (write == "1"))
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"deleteIcon\" onClick=\"fullDeleteContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Delete-Contentlet") %></div>";
                         popupMenus += "</div>";
                 }
 

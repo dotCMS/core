@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

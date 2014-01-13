@@ -20,18 +20,18 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.MalformedPatternException;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Compiler;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Matcher;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
-import com.bradmcevoy.http.CollectionResource;
-import com.bradmcevoy.http.LockInfo;
-import com.bradmcevoy.http.LockResult;
-import com.bradmcevoy.http.LockTimeout;
-import com.bradmcevoy.http.LockToken;
-import com.bradmcevoy.http.Resource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockResult;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockTimeout;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockToken;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -71,8 +71,10 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.auth.AuthException;
@@ -92,7 +94,7 @@ public class DotWebdavHelper {
 			return new Perl5Matcher();
 		}
 	};
-	private  org.apache.oro.text.regex.Pattern tempResourcePattern;
+	private  com.dotcms.repackage.oro.org.apache.oro.text.regex.Pattern tempResourcePattern;
 	private java.io.File tempHolderDir;
 	private String tempFolderPath = "dotwebdav";
 	
@@ -108,7 +110,7 @@ public class DotWebdavHelper {
 	private static MessageDigest md5Helper;
 
 
-	private Hashtable<String, com.bradmcevoy.http.LockInfo> resourceLocks = new Hashtable<String, com.bradmcevoy.http.LockInfo>();
+	private Hashtable<String, com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo> resourceLocks = new Hashtable<String, com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo>();
 	
 	public DotWebdavHelper() {
 		Perl5Compiler c = new Perl5Compiler();
@@ -156,7 +158,7 @@ public class DotWebdavHelper {
 		try {
 			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
 				Authenticator authenticator;
-				authenticator = (Authenticator) new bsh.Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
+				authenticator = (Authenticator) new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
 				if (useEmailAsLogin) {
 					authenticator.authenticateByEmailAddress(comp.getCompanyId(), username, passwd);
 				} else {
@@ -305,18 +307,23 @@ public class DotWebdavHelper {
 		}
 		
 		IFileAsset f =null;
-		Identifier id  = APILocator.getIdentifierAPI().find(host, url);
-		if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
-			Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-			if(cont!=null && InodeUtils.isSet(cont.getIdentifier())){
-				f = APILocator.getFileAssetAPI().fromContentlet(cont);
-			}
-		}else{
-
-			 f = fileAPI.getFileByURI(url, host, false, user, false);
+		try {
+    		Identifier id  = APILocator.getIdentifierAPI().find(host, url);
+    		if(id!=null && InodeUtils.isSet(id.getId())) { 
+    		    if(id.getAssetType().equals("contentlet")){
+    		        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+    	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier())){
+    	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
+    	            }
+    		    }
+    		    else {
+    	             f = fileAPI.getFileByURI(url, host, false, user, false);
+    	        }
+    		}
+		}catch (Exception ex) {
+		    f = null;
 		}
 		
-
 		return f;
 	}
 	
@@ -1074,17 +1081,42 @@ public class DotWebdavHelper {
 
 			try{
 				Identifier identifier  = APILocator.getIdentifierAPI().find(host, getPath(fromPath));
+				
+				Identifier identTo  = APILocator.getIdentifierAPI().find(host, getPath(toPath));
+				boolean destinationExists=identTo!=null && InodeUtils.isSet(identTo.getId());
+				
 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 					Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-					if (getFolderName(fromPath).equals(getFolderName(toPath))) {
-
-						String fileName = getFileName(toPath);
-						if(fileName.contains(".")){
-							fileName = fileName.substring(0, fileName.lastIndexOf("."));
-						}
-						APILocator.getFileAssetAPI().renameFile(fileAssetCont, fileName, user, false);
-					} else {
-						APILocator.getFileAssetAPI().moveFile(fileAssetCont, toParentFolder, user, false);
+					if(!destinationExists) {
+    					if (getFolderName(fromPath).equals(getFolderName(toPath))) {
+    						String fileName = getFileName(toPath);
+    						if(fileName.contains(".")){
+    							fileName = fileName.substring(0, fileName.lastIndexOf("."));
+    						}
+    						APILocator.getFileAssetAPI().renameFile(fileAssetCont, fileName, user, false);
+    					} else {
+    						APILocator.getFileAssetAPI().moveFile(fileAssetCont, toParentFolder, user, false);
+    					}
+					}
+					else {
+					    // if the destination exists lets just create a new version and delete the original file
+					    Contentlet origin = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+					    Contentlet toContentlet = APILocator.getContentletAPI().findContentletByIdentifier(identTo.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+					    Contentlet newversion = APILocator.getContentletAPI().checkout(toContentlet.getInode(), user, false);
+					    
+					    // get a copy in a tmp folder to avoid filename change
+					    java.io.File tmpDir=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+                                +java.io.File.separator+UUIDGenerator.generateUuid());
+					    java.io.File tmp=new java.io.File(tmpDir, toContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+					    FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
+					    
+					    newversion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
+					    newversion = APILocator.getContentletAPI().checkin(newversion, user, false);
+					    if(autoPublish) {
+					        APILocator.getContentletAPI().publish(newversion, user, false);
+					    }
+					    APILocator.getContentletAPI().delete(origin, user, false);
+					    while(APILocator.getContentletAPI().isInodeIndexed(origin.getInode(),1));
 					}
 				}else{
 					File f = fileAPI.getFileByURI(getPath(fromPath), host, false, user, false);
@@ -1310,15 +1342,15 @@ public class DotWebdavHelper {
 	    return locks.get(uid);
 	  }
 	
-//	public LockResult lock(com.bradmcevoy.http.LockInfo lock, User user, String uniqueId) {
+//	public LockResult lock(com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo lock, User user, String uniqueId) {
 //		LockToken lt = new LockToken();
-////		lock.depth = com.bradmcevoy.http.LockInfo.LockDepth.INFINITY;
+////		lock.depth = com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo.LockDepth.INFINITY;
 ////		if(authType.equals(Company.AUTH_TYPE_EA))
 ////			lock.owner = user.getEmailAddress();
 ////		else
 ////			lock.owner = user.getUserId();
-////		lock.scope = com.bradmcevoy.http.LockInfo.LockScope.NONE;
-////		lock.type = com.bradmcevoy.http.LockInfo.LockType.WRITE;
+////		lock.scope = com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo.LockScope.NONE;
+////		lock.type = com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo.LockType.WRITE;
 //
 //		// Generating lock id
 //		String lockTokenStr = lock.owner + "-" + uniqueId;
@@ -1333,7 +1365,7 @@ public class DotWebdavHelper {
 //	}
 //	
 //	public LockToken getLockToken(String lockId){
-//		com.bradmcevoy.http.LockInfo info = resourceLocks.get(lockId);
+//		com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo info = resourceLocks.get(lockId);
 //		if(info == null)
 //			return null;
 //		LockToken lt = new LockToken();
@@ -1344,7 +1376,7 @@ public class DotWebdavHelper {
 //	}
 //	
 //	public LockResult refreshLock(String lockId){
-//		com.bradmcevoy.http.LockInfo info = resourceLocks.get(lockId);
+//		com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo info = resourceLocks.get(lockId);
 //		if(info == null)
 //			return null;
 //		LockToken lt = new LockToken();

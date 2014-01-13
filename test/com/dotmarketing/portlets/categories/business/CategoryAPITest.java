@@ -19,14 +19,14 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba

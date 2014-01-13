@@ -71,7 +71,7 @@ function viewFormsList()
 	if (!UtilMethods.isSet(strutsAction) || strutsAction.equals(portlet1.getInitParams().get("view-action"))) {
 
 		
-		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), null));
+		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), null));
 		
 
 	} else if (strutsAction.equals("/ext/contentlet/import_contentlets")) {
@@ -79,12 +79,12 @@ function viewFormsList()
 		Map params = new HashMap();
 		params.put("struts_action", new String[] {"/ext/contentlet/view_contentlets"});
 		String crumbTrailReferer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), params);
-		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer));
+		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer));
 		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "import-contentlet"), null));
 
 	} else if (portlet1.getPortletId().equals("EXT_FORM_HANDLER")) {
 		
-		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), "javascript: viewFormsList();")); 
+		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), "javascript: viewFormsList();")); 
 
 		if(strutsAction.equals("/ext/contentlet/view_contentlets")){
 			
@@ -114,7 +114,7 @@ function viewFormsList()
 		}
 
 	} else {
-		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), "javascript: cancelEdit();"));
+		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), "javascript: cancelEdit();"));
 		
 		if (UtilMethods.isSet(request.getAttribute("ContentletForm"))) {
 			ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");

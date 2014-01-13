@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.MatchResult;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.MalformedPatternException;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.MatchResult;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Compiler;
+import com.dotcms.repackage.oro.org.apache.oro.text.regex.Perl5Matcher;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -62,8 +62,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 	};
 
-	private static org.apache.oro.text.regex.Pattern parseContainerPattern;
-	private static org.apache.oro.text.regex.Pattern oldContainerPattern;
+	private static com.dotcms.repackage.oro.org.apache.oro.text.regex.Pattern parseContainerPattern;
+	private static com.dotcms.repackage.oro.org.apache.oro.text.regex.Pattern oldContainerPattern;
 
 	static {
 		Perl5Compiler c = new Perl5Compiler();

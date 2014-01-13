@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.user.struts;
 
 import java.sql.Date;
 
-import org.apache.struts.validator.ValidatorForm;
+import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;
 
 import com.dotmarketing.util.InodeUtils;
 

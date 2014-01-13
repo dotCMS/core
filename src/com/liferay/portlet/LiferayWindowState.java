@@ -22,7 +22,7 @@
 
 package com.liferay.portlet;
 
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 
 /**
  * <a href="LiferayWindowState.java.html"><b><i>View Source</i></b></a>

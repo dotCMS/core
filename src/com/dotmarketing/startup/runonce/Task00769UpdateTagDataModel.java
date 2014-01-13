@@ -215,10 +215,10 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {
-		List<String> tables = new ArrayList<String>();
-		tables.add("tag");
-		tables.add("tag_inode");
-		return tables;
+		List<String> tablesList = new ArrayList<String>();
+		tablesList.add( "tag" );
+		tablesList.add( "tag_inode" );
+		return tablesList;
 	}
 
     @Override

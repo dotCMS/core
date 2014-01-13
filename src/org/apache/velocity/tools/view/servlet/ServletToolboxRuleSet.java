@@ -16,8 +16,8 @@
 
 package org.apache.velocity.tools.view.servlet;
 
-import org.apache.commons.digester.Digester;
-import org.apache.commons.digester.Rule;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.Digester;
+import com.dotcms.repackage.commons_digester.org.apache.commons.digester.Rule;
 import org.apache.velocity.tools.view.ToolboxRuleSet;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 import org.apache.velocity.tools.view.servlet.ServletToolInfo;

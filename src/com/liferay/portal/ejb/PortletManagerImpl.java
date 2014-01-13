@@ -36,16 +36,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.portlet.PreferencesValidator;
+import com.dotcms.repackage.portlet.javax.portlet.PreferencesValidator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.io.OutputFormat;
-import org.dom4j.io.SAXReader;
-import org.dom4j.io.XMLWriter;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentException;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.OutputFormat;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.SAXReader;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.XMLWriter;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.NoSuchPortletException;

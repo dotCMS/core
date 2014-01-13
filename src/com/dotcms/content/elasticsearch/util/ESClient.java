@@ -1,21 +1,12 @@
 package com.dotcms.content.elasticsearch.util;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import static com.dotcms.repackage.elasticsearch.org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import static com.dotcms.repackage.elasticsearch.org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
-import org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.node.Node;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
@@ -27,6 +18,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.common.settings.ImmutableSettings;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.node.Node;
+import com.dotcms.elasticsearch.script.RelationshipSortOrderScriptFactory;
+import com.liferay.util.FileUtil;
 
 public class ESClient {
 
@@ -50,13 +48,16 @@ public class ESClient {
 	}
 
 	private void initNode(){
-//		String node_id = "dotCMS_" + Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
-
 		shutDownNode();
 
 		String node_id = ConfigUtils.getServerId();
 		_nodeInstance = nodeBuilder().
-        settings(ImmutableSettings.settingsBuilder().put("name", node_id).build()).build().start();
+		        settings(ImmutableSettings.settingsBuilder().
+		        put("name", node_id).
+		        put("script.native.related.type", RelationshipSortOrderScriptFactory.class.getCanonicalName()).
+		        build()).
+		        build().
+		        start();
 
 		try {
 			UpdateSettingsResponse resp=_nodeInstance.client().admin().indices().updateSettings(
@@ -97,12 +98,12 @@ public class ESClient {
 				// if we already have a key, use it
 				if(System.getProperty(key) == null){
 					if(key.equalsIgnoreCase("es.path.data") || key.equalsIgnoreCase("es.path.work")){
-						String esPath = Config.getStringProperty(key);
-						if( new File(esPath).isAbsolute()){
-							System.setProperty(key,esPath);
-						}else
-							System.setProperty(key, Config.CONTEXT.getRealPath(esPath));
-					}
+                        String esPath = Config.getStringProperty(key);
+                      if( new File(esPath).isAbsolute()){
+                    	  System.setProperty(key,esPath);
+                      }else
+                        System.setProperty(key, FileUtil.getRealPath(esPath));
+                    }
 					else{
 						System.setProperty(key, Config.getStringProperty(key));
 					}

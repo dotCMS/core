@@ -30,10 +30,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.persister.AbstractEntityPersister;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.persister.AbstractEntityPersister;
 
-import org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
@@ -59,7 +59,7 @@ import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
 
 
 /**
@@ -917,7 +917,7 @@ public class ImportExportUtil {
     private void copyAssetDir(File fromAssetDir){
         File ad;
         if(!UtilMethods.isSet(assetRealPath)){
-            ad = new File(Config.CONTEXT.getRealPath(assetPath));
+            ad = new File(FileUtil.getRealPath(assetPath));
         }else{
             ad = new File(assetRealPath);
         }
@@ -928,7 +928,7 @@ public class ImportExportUtil {
             if(f.getName().equals(".svn")){
                 continue;
             }
-            if(f.getName().equals("license.dat")){
+            if(f.getName().equals("com.dotcms.repackage.tika_app_1_3.license.dat")){
                 continue;
             }
             if(f.isDirectory()){
@@ -1037,7 +1037,7 @@ public class ImportExportUtil {
         }
         File ad;
         if(!UtilMethods.isSet(assetRealPath)){
-            ad = new File(Config.CONTEXT.getRealPath(assetPath));
+            ad = new File(FileUtil.getRealPath(assetPath));
         }else{
             ad = new File(assetRealPath);
         }

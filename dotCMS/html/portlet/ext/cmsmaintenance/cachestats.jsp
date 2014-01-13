@@ -1,4 +1,4 @@
-<%@page import="org.jboss.cache.Cache"%>
+<%@page import="com.dotcms.repackage.jbosscache_core.org.jboss.cache.Cache"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotmarketing.business.DotJBCacheAdministratorImpl"%>

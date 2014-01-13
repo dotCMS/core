@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.jdom.Element;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
 
 /**
  * This class allows you to walk a tree of JDOM Element objects.

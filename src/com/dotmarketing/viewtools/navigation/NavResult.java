@@ -33,7 +33,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.User;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class NavResult implements Iterable<NavResult>, Permissionable, Serializable {
     private String title;

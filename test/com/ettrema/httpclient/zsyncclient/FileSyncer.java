@@ -1,10 +1,10 @@
 package com.ettrema.httpclient.zsyncclient;
 
-import com.bradmcevoy.common.Path;
-import com.bradmcevoy.http.exceptions.BadRequestException;
-import com.bradmcevoy.http.exceptions.ConflictException;
-import com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.bradmcevoy.http.exceptions.NotFoundException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.common.Path;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.BadRequestException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.ConflictException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotFoundException;
 import com.ettrema.httpclient.Host;
 import com.ettrema.httpclient.HttpException;
 import com.ettrema.httpclient.ProgressListener;

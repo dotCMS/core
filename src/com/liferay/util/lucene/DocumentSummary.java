@@ -22,7 +22,7 @@
 
 package com.liferay.util.lucene;
 
-import javax.portlet.PortletURL;
+import com.dotcms.repackage.portlet.javax.portlet.PortletURL;
 
 /**
  * <a href="DocumentSummary.java.html"><b><i>View Source</i></b></a>

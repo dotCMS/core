@@ -834,3 +834,26 @@ ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id)
 CREATE TABLE cluster_server_uptime(id varchar(36), server_id varchar(36) references cluster_server(server_id), startup timestamp without time zone null, heartbeat timestamp without time zone null, PRIMARY KEY (id));
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
+-- so the foreign keys needs an explicit index (!!) --
+create index idx_fileasset_vi_live on fileasset_version_info(live_inode);
+create index idx_fileasset_vi_working on fileasset_version_info(working_inode);
+create index idx_link_vi_live on link_version_info(live_inode);
+create index idx_link_vi_working on link_version_info(working_inode);
+create index idx_container_vi_live on container_version_info(live_inode);
+create index idx_container_vi_working on container_version_info(working_inode);
+create index idx_template_vi_live on template_version_info(live_inode);
+create index idx_template_vi_working on template_version_info(working_inode);
+create index idx_contentlet_vi_live on contentlet_version_info(live_inode);
+create index idx_contentlet_vi_working on contentlet_version_info(working_inode);
+create index idx_htmlpage_vi_live on htmlpage_version_info(live_inode);
+create index idx_htmlpage_vi_working on htmlpage_version_info(working_inode);
+create index folder_ident on folder (identifier);
+create index contentlet_ident on contentlet (identifier);
+create index links_ident on links (identifier);
+create index htmlpage_ident on htmlpage (identifier);
+create index containers_ident on containers (identifier);
+create index template_ident on template (identifier);
+create index contentlet_moduser on contentlet (mod_user);
+create index contentlet_lang on contentlet (language_id);
+-- end of fk indicies --
+

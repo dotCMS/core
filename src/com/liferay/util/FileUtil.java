@@ -22,33 +22,20 @@
 
 package com.liferay.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.filefilter.TrueFileFilter;
+
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
-
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.liferay.util.jna.JNALibrary;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -153,13 +140,23 @@ public class FileUtil {
 
 		if ( hardLinks ) {
 			// I think we need to be sure to unlink first
-			if(destination.exists()){
-				JNALibrary.unlink(destination.getAbsolutePath());
-			}
-			
-			try {
-				JNALibrary.link(source.getAbsolutePath(), destination.getAbsolutePath());
-				// setting this means we will try again if we cannot hard link
+            if ( destination.exists() ) {
+                Path destinationPath = Paths.get( destination.getAbsolutePath() );
+                try {
+                    //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
+                    Files.delete( destinationPath );
+                } catch ( IOException e ) {
+                    Logger.error( FileUtil.class, "Error removing hardLink: " + destination.getAbsolutePath(), e );
+                }
+            }
+
+            try {
+
+                Path newLink = Paths.get( destination.getAbsolutePath() );
+                Path existingFile = Paths.get( source.getAbsolutePath() );
+
+                Files.createLink( newLink, existingFile );
+                // setting this means we will try again if we cannot hard link
 				if( !destination.exists() ){
 					hardLinks = false;
 				}
@@ -271,6 +268,33 @@ public class FileUtil {
 		return out.toByteArray();
 	}
 
+	public static boolean isWindows(){
+		return File.separatorChar == '\\';
+		
+	}
+	
+	/*
+	 * This will return a path whether the file exists or not
+	 * (Websphere returns a null if the file does not exist, which throws a lot of NPEs)
+	 */
+	public static String getRealPath(String relativePath){
+		
+		if(Config.CONTEXT ==null){
+			Logger.fatal(FileUtil.class, "Config.CONTEXT not initialized with a servlet context, dying");
+			throw new DotStateException("Config.CONTEXT not initialized with a servlet context, dying");
+		}
+		String ret = Config.CONTEXT.getRealPath(relativePath);	
+		if(ret !=null) return ret;
+		String base = Config.CONTEXT.getRealPath("/");
+		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ?  base.substring(0, base.lastIndexOf(File.separatorChar)):base;
+		relativePath = relativePath.replace('/', File.separatorChar);
+		
+		return base + relativePath;
+
+	}
+	
+	
+	
 	public static String getPath(String fullFileName) {
 		int pos = fullFileName.lastIndexOf("/");
 
@@ -352,28 +376,35 @@ public class FileUtil {
 	}
 	
 	public static File[] listFileHandles(File dir, Boolean includeSubDirs) throws IOException {
+		
+	    if(!dir.exists() || ! dir.isDirectory()){
+	    	return new File[0];
+	    }
+		
+		
 		FileFilter fileFilter = new FileFilter() {
 	        public boolean accept(File file) {
 	            return file.isDirectory();
 	        }
 	    };
-	File[] subFolders = dir.listFiles(fileFilter);
 
-	List<File> files = new ArrayList<File>();
-
-	List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
-
-	for (File file : fileArray) {
-		if(file.isFile()) {
-			if(includeSubDirs && containsParentFolder(file, subFolders)) {
-				files.add(file);
-			} else {
-				files.add(file);
+		File[] subFolders = dir.listFiles(fileFilter);
+	
+		List<File> files = new ArrayList<File>();
+	
+		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
+	
+		for (File file : fileArray) {
+			if(file.isFile()) {
+				if(includeSubDirs && containsParentFolder(file, subFolders)) {
+					files.add(file);
+				} else {
+					files.add(file);
+				}
 			}
 		}
-	}
-
-	return (File[])files.toArray(new File[0]);
+	
+		return (File[])files.toArray(new File[0]);
 	}
 	
 	public static String[] listFiles(File dir, Boolean includeSubDirs) throws IOException {

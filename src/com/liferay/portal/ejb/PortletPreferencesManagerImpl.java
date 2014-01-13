@@ -44,7 +44,7 @@ public class PortletPreferencesManagerImpl
 //			Layout.GROUP + groupId);
 //	}
 
-	public javax.portlet.PortletPreferences getDefaultPreferences(
+	public com.dotcms.repackage.portlet.javax.portlet.PortletPreferences getDefaultPreferences(
 			String companyId, String portletId)
 		throws PortalException, SystemException {
 
@@ -52,7 +52,7 @@ public class PortletPreferencesManagerImpl
 			companyId, portletId);
 	}
 
-	public javax.portlet.PortletPreferences getPreferences(
+	public com.dotcms.repackage.portlet.javax.portlet.PortletPreferences getPreferences(
 			String companyId, PortletPreferencesPK pk)
 		throws PortalException, SystemException {
 

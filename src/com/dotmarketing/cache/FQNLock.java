@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.jboss.cache.Fqn;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Fqn;
 
 /**
  * 

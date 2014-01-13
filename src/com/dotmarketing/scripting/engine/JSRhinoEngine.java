@@ -19,21 +19,21 @@ package com.dotmarketing.scripting.engine;
 import java.util.Iterator;
 import java.util.Vector;
 
-import org.apache.bsf.BSFDeclaredBean;
-import org.apache.bsf.BSFException;
-import org.apache.bsf.BSFManager;
-import org.apache.bsf.util.BSFEngineImpl;
-import org.apache.bsf.util.BSFFunctions;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.EvaluatorException;
-import org.mozilla.javascript.Function;
-import org.mozilla.javascript.ImporterTopLevel;
-import org.mozilla.javascript.JavaScriptException;
-import org.mozilla.javascript.NativeJavaObject;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.WrapFactory;
-import org.mozilla.javascript.WrappedException;
-import org.mozilla.javascript.Wrapper;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFDeclaredBean;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFException;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFManager;
+import com.dotcms.repackage.bsf.org.apache.bsf.util.BSFEngineImpl;
+import com.dotcms.repackage.bsf.org.apache.bsf.util.BSFFunctions;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.Context;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.EvaluatorException;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.Function;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.ImporterTopLevel;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.JavaScriptException;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.NativeJavaObject;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.Scriptable;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.WrapFactory;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.WrappedException;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.Wrapper;
 
 /**
  * This File was adapted by Jason Tesser from BSF's implementation of the Rhino

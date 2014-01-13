@@ -23,11 +23,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.client.urlconnection.HTTPSProperties;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.WebResource;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.config.ClientConfig;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.client.urlconnection.HTTPSProperties;
 
 /**
  * This class read the publishing_queue table and send bundles to some environments

@@ -28,8 +28,8 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.Set;
 
-import javax.portlet.PortletContext;
-import javax.portlet.PortletRequestDispatcher;
+import com.dotcms.repackage.portlet.javax.portlet.PortletContext;
+import com.dotcms.repackage.portlet.javax.portlet.PortletRequestDispatcher;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 

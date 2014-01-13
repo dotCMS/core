@@ -1,6 +1,6 @@
 package com.ettrema.httpclient;
 
-import org.apache.commons.httpclient.HttpMethodBase;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpMethodBase;
 
 /**
  *

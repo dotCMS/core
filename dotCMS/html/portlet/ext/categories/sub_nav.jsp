@@ -17,13 +17,13 @@
 		PortletURLImpl portletURLImpl = new PortletURLImpl(request, portletId1, layouts[0].getId(), false);
 		String tabHREF = portletURLImpl.toString() + "&dm_rlout=1&_r=" + System.currentTimeMillis();
 		
-		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), tabHREF));
+		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), tabHREF));
 		
 		request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, crumbTrailEntries);
 	}  else	{
 		List<CrumbTrailEntry> crumbTrailEntries = new ArrayList<CrumbTrailEntry>();
 		
-		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), "javascript: cancel();"));
+		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), "javascript: cancel();"));
 		
 		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "edit-category"), null));
 		

@@ -7,16 +7,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 
-import org.dts.spell.utils.FileUtils;
+import com.dotcms.repackage.myspell.org.dts.spell.utils.FileUtils;
 
-import com.bradmcevoy.http.Auth;
-import com.bradmcevoy.http.FolderResource;
-import com.bradmcevoy.http.HttpManager;
-import com.bradmcevoy.http.Range;
-import com.bradmcevoy.http.Resource;
-import com.bradmcevoy.http.exceptions.BadRequestException;
-import com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.bradmcevoy.http.exceptions.NotFoundException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Auth;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.FolderResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.HttpManager;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Range;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.BadRequestException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;

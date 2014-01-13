@@ -25,7 +25,7 @@ package com.liferay.portal.ejb;
 import java.util.Date;
 import java.util.Iterator;
 
-import com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterManagerUtil;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.PasswordTracker;

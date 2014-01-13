@@ -8,24 +8,25 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.Map;
 
-import com.bradmcevoy.http.Auth;
-import com.bradmcevoy.http.CollectionResource;
-import com.bradmcevoy.http.FileItem;
-import com.bradmcevoy.http.FileResource;
-import com.bradmcevoy.http.LockInfo;
-import com.bradmcevoy.http.LockResult;
-import com.bradmcevoy.http.LockTimeout;
-import com.bradmcevoy.http.LockToken;
-import com.bradmcevoy.http.LockableResource;
-import com.bradmcevoy.http.Range;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Resource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Auth;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.FileItem;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.FileResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockInfo;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockResult;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockTimeout;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockToken;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.LockableResource;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Range;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Request;
+import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Resource;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * 
@@ -59,7 +60,7 @@ public class LanguageFileResourceImpl implements FileResource, LockableResource 
 			}
 		}
 		dotDavHelper = new DotWebdavHelper();
-		file = new File(Config.CONTEXT.getRealPath("/assets/messages") + File.separator + path);
+		file = new File(FileUtil.getRealPath("/assets/messages") + File.separator + path);
 
 	}
 

@@ -1,9 +1,9 @@
 package com.dotmarketing.listeners;
 
-import org.junit.runner.Description;
-import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
-import org.junit.runner.notification.RunListener;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runner.Description;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runner.Result;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runner.notification.Failure;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runner.notification.RunListener;
 
 import javax.servlet.http.HttpServletResponse;
 import java.text.NumberFormat;
@@ -64,7 +64,7 @@ public class TestTextRingingListener extends RunListener {
 
     /**
      * Called when a test will not be run, generally because a test method is annotated
-     * with {@link org.junit.Ignore}.
+     * with {@link com.dotcms.repackage.junit_4_8_1.org.junit.Ignore}.
      *
      * @param description describes the test that will not be run
      */

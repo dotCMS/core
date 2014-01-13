@@ -25,8 +25,8 @@ package com.liferay.util.servlet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletSession;
+import com.dotcms.repackage.portlet.javax.portlet.PortletRequest;
+import com.dotcms.repackage.portlet.javax.portlet.PortletSession;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
 
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
@@ -17,8 +17,8 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.sun.jersey.core.util.Base64;
-import com.sun.jersey.spi.container.ContainerRequest;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.core.util.Base64;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.spi.container.ContainerRequest;
 
 public class WebResource {
 

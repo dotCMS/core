@@ -1,3 +1,4 @@
+<%@page import="com.liferay.util.FileUtil"%>
 <%@page import="com.dotmarketing.util.Constants"%>
 <%@ page contentType="text/javascript;charset=UTF-8" language="java" session="false" %>
 <%@page import="java.util.Locale"%>
@@ -38,6 +39,7 @@
 	files.add("/html/css/base.css");
 	files.add("/html/css/dot_admin.css");
 	files.add("/html/js/calendar/calendar-blue.css");
+	files.add("/html/css/font-awesome.min.css");
 
 	/** 
 	* Looks for plugins backend css to add
@@ -108,7 +110,8 @@
 	}
 
 	for(String x : files){
-		File f = new File(Config.CONTEXT.getRealPath(x));
+		File f = new File(FileUtil.getRealPath(x));
+			
 		if (f.exists()) {
 			FileInputStream fis = new FileInputStream(f);
 			BufferedInputStream bis = new BufferedInputStream(fis);
@@ -123,7 +126,7 @@
 			fis.close();
 			bis.close();
 			dis.close();
-
+			
 		} else {
 			Logger.fatal(this.getClass(), "Cannot find " + f.getAbsolutePath());
 			response.sendError(500, "id10t ERROR " + f.getAbsolutePath() + " not found");

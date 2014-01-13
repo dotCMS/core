@@ -5,8 +5,8 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.search.facet.Facet;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.facet.Facet;
 import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;

@@ -14,7 +14,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

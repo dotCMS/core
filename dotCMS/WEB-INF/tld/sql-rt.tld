@@ -12,7 +12,7 @@
 
   <validator>
     <validator-class>
-        org.apache.taglibs.standard.tlv.JstlSqlTLV
+        com.dotcms.repackage.standard.org.apache.taglibs.standard.tlv.JstlSqlTLV
     </validator-class>
     <description>
         Provides core validation features for JSTL tags.
@@ -21,7 +21,7 @@
 
   <tag>
     <name>transaction</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.sql.TransactionTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.sql.TransactionTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Provides nested database action elements with a shared Connection,
@@ -41,7 +41,7 @@
 
   <tag>
     <name>query</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.sql.QueryTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.sql.QueryTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Executes the SQL query defined in its body or through the
@@ -81,7 +81,7 @@
 
   <tag>
     <name>update</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.sql.UpdateTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.sql.UpdateTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Executes the SQL update defined in its body or through the
@@ -111,7 +111,7 @@
 
   <tag>
     <name>param</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.sql.ParamTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.sql.ParamTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Sets a parameter in an SQL statement to the specified value.
@@ -125,7 +125,7 @@
 
   <tag>
     <name>dateParam</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.sql.DateParamTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.sql.DateParamTag</tag-class>
     <body-content>empty</body-content>
     <description>
         Sets a parameter in an SQL statement to the specified java.util.Date value.
@@ -144,7 +144,7 @@
 
   <tag>
     <name>setDataSource</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.sql.SetDataSourceTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.sql.SetDataSourceTag</tag-class>
     <body-content>empty</body-content>
     <description>
         Creates a simple DataSource suitable only for prototyping.

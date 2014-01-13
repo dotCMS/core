@@ -15,8 +15,8 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.directwebremoting.WebContext;
-import org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -264,8 +264,8 @@ public class CalendarAjax {
 		//Retrieving the current user
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
-
-		Event ev = eventAPI.find(identifier, false, user, respectFrontendRoles);
+		String baseIdent = RecurrenceUtil.getBaseEventIdentifier(identifier);		
+		Event ev = eventAPI.find(baseIdent, false, user, respectFrontendRoles);
 		try{
 			contAPI.publish(ev, user, respectFrontendRoles);
 		}catch(Exception e){Logger.error(this, e.getMessage());}

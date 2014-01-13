@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
 
-import org.apache.commons.io.IOUtils;
-import org.codehaus.jettison.json.JSONObject;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.jettison_1_1.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Assert;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Before;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
@@ -48,17 +48,17 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
-import com.ibm.icu.util.Calendar;
+import com.dotcms.repackage.icu4j_4_0_1.com.ibm.icu.util.Calendar;
 import com.liferay.portal.model.User;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.core.util.Base64;
-import com.sun.jersey.multipart.BodyPart;
-import com.sun.jersey.multipart.MultiPart;
-import com.sun.jersey.multipart.file.StreamDataBodyPart;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.ClientResponse;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.WebResource;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.core.util.Base64;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.BodyPart;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.MultiPart;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.file.StreamDataBodyPart;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ContentResourceTest extends TestBase {
     Client client;

@@ -31,15 +31,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -490,7 +490,12 @@ public class DirectorAction extends DotPortletAction {
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to add content to page", e);
 				} finally {
-					HibernateUtil.commitTransaction();
+					try {
+                        HibernateUtil.commitTransaction();
+					}catch(Exception e){
+						session.setAttribute("duplicatedErrorMessage","Content already exists in the same container on the page");
+						//res.sendRedirect(referer);
+					}				
 				}
 				_sendToReferral(req, res, referer);
 				return;

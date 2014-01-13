@@ -19,7 +19,7 @@ package org.apache.velocity.runtime.parser.node;
  * under the License.    
  */
 
-import org.apache.commons.lang.text.StrBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.runtime.parser.ParserConstants;

@@ -11,24 +11,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.ObjectNotFoundException;
 
-import org.apache.commons.io.FileUtils;
-import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.count.CountRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.internal.InternalSearchHits;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.count.CountRequestBuilder;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.search.SearchPhaseExecutionException;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.search.SearchRequestBuilder;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.index.query.FilterBuilders;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.index.query.QueryBuilder;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.index.query.QueryBuilders;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.index.query.QueryStringQueryBuilder;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHit;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHits;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.internal.InternalSearchHits;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.sort.SortBuilders;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.sort.SortOrder;
 import org.springframework.util.NumberUtils;
 
 import com.dotcms.content.business.DotMappingException;
@@ -1326,6 +1326,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if(UtilMethods.isSet(sortBy)) {
             	if(sortBy.equals("random")) {
             		srb.addSort(SortBuilders.scriptSort("Math.random()", "number"));
+            	}
+            	else if(sortBy.endsWith("-order")) {
+            	    // related content ordering
+            	    int ind0=sortBy.indexOf('-'); // relationships tipicaly have a format stname1-stname2
+            	    int ind1=ind0>0 ? sortBy.indexOf('-',ind0+1) : -1;
+            	    if(ind1>0) {
+            	        String relName=sortBy.substring(0, ind1);
+            	        if((ind1+1)<sortBy.length()) {
+                	        String identifier=sortBy.substring(ind1+1, sortBy.length()-6);
+                	        if(UtilMethods.isSet(identifier)) {
+                	            srb.addSort(SortBuilders.scriptSort("related", "number")
+                	                                    .lang("native")
+                	                                    .param("relName", relName)
+                	                                    .param("identifier", identifier)
+                	                                    .order(SortOrder.ASC));
+                	        }
+            	        }
+            	    }
             	}
             	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw")) {
             		String[] sortbyArr=sortBy.split(",");

@@ -19,22 +19,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipOutputStream;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
-import javax.portlet.WindowState;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
 
-import net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
@@ -92,9 +92,9 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
-import com.thoughtworks.xstream.mapper.Mapper;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.mapper.Mapper;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -347,7 +347,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 			String velocityRootPath =ConfigUtils.getDynamicVelocityPath();
 			if (velocityRootPath.startsWith("/WEB-INF")) {
-				velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+				velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 			}
 
 			if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES))
@@ -423,7 +423,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			Logger.debug(this, "Initializing Cache Values");
 			String velocityRootPath =ConfigUtils.getDynamicVelocityPath();
 			if (velocityRootPath.startsWith("/WEB-INF")) {
-				velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+				velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 			}
 			String livePath = velocityRootPath + File.separator + "live";
 			String workingPath = velocityRootPath + File.separator + "working";
@@ -516,13 +516,13 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		backupDir.mkdirs();
 		Logger.info(this, "Moving assets to back up directory: " + backupTempFilePath);
 		if(!UtilMethods.isSet(assetRealPath)){
-			assetDir = Config.CONTEXT.getRealPath(assetPath);
+			assetDir = FileUtil.getRealPath(assetPath);
 		}else{
 			assetDir = assetRealPath;
 		}
 		FileUtil.copyDirectory(assetDir, backupTempFilePath + File.separator + "asset", new AssetFileNameFilter());
 
-		//do not ship the license.
+		//do not ship the com.dotcms.repackage.tika_app_1_3.license.
 		String f = backupTempFilePath + File.separator + "asset" + File.separator + "license";
 		FileUtil.deltree(f);
 
@@ -575,9 +575,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 				//http://jira.dotmarketing.net/browse/DOTCMS-6059
 				if(clazz.equals(DashboardSummary404.class) || clazz.equals(DashboardUserPreferences.class)){
-					_xstream.addDefaultImplementation(net.sf.hibernate.collection.Set.class, java.util.Set.class);
-					_xstream.addDefaultImplementation(net.sf.hibernate.collection.List.class, java.util.List.class);
-					_xstream.addDefaultImplementation(net.sf.hibernate.collection.Map.class, java.util.Map.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate2.net.sf.hibernate.collection.Set.class, java.util.Set.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate2.net.sf.hibernate.collection.List.class, java.util.List.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate2.net.sf.hibernate.collection.Map.class, java.util.Map.class);
 					Mapper mapper = _xstream.getMapper();
 					_xstream.registerConverter(new HibernateCollectionConverter(mapper));
 					_xstream.registerConverter(new HibernateMapConverter(mapper));

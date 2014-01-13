@@ -27,15 +27,15 @@ import java.util.Set;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import org.apache.commons.collections.map.LRUMap;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.map.LRUMap;
 import org.h2.jdbcx.JdbcConnectionPool;
-import org.jboss.cache.CacheException;
-import org.jboss.cache.CacheSPI;
-import org.jboss.cache.Fqn;
-import org.jboss.cache.Modification;
-import org.jboss.cache.RegionManager;
-import org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
-import org.jboss.cache.loader.CacheLoader;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.CacheException;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.CacheSPI;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Fqn;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Modification;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.RegionManager;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
+import com.dotcms.repackage.jbosscache_core.org.jboss.cache.loader.CacheLoader;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
