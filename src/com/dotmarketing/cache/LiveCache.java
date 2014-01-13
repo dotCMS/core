@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -40,15 +41,31 @@ import com.liferay.portal.model.User;
  *
  */
 public class LiveCache {
-    
+
     /**
-     * This method adds the given asset uri to the cache using the 
+     * This method adds the given asset uri to the cache using the
      * host id + identifier uri as the key
      * This method also send a signal to the cluster to invalidate key cluster wide
+     *
+     * @param asset
+     * @return
      */
-    public static String addToLiveAssetToCache(Versionable asset){
-    	
-    	HostAPI hostAPI = APILocator.getHostAPI();
+    public static String addToLiveAssetToCache ( Versionable asset ) {
+        return addToLiveAssetToCache( asset, null );
+    }
+
+    /**
+     * This method adds the given asset uri to the cache using the
+     * host id + identifier uri as the key
+     * This method also send a signal to the cluster to invalidate key cluster wide
+     *
+     * @param asset
+     * @param languageId
+     * @return
+     */
+    public static String addToLiveAssetToCache ( Versionable asset, Long languageId ) {
+
+        HostAPI hostAPI = APILocator.getHostAPI();
     	
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         //The default value for velocity page extension
@@ -95,14 +112,16 @@ public class LiveCache {
     		    Logger.debug(LiveCache.class, "Mapping: " + uri + " to " + path);
     			cache.put(getPrimaryGroup() + hostId + ":" + uri,path, getPrimaryGroup() + "_" + hostId);
     			ret = path;
-    		} else if(asset instanceof Contentlet){
-    			String path = APILocator.getFileAssetAPI().getRelativeAssetPath(APILocator.getFileAssetAPI().fromContentlet((Contentlet)asset));
-    			//add the entry to the cache
-    		    Logger.debug(LiveCache.class, "Mapping: " + uri + " to " + path);
-    			cache.put(getPrimaryGroup() + hostId + ":" + uri,path, getPrimaryGroup() + "_" + hostId);
-    			ret = path;
-    		
-    		}else {
+            } else if ( asset instanceof Contentlet ) {
+                String path = APILocator.getFileAssetAPI().getRelativeAssetPath( APILocator.getFileAssetAPI().fromContentlet( (Contentlet) asset ) );
+                //add the entry to the cache
+                Logger.debug( LiveCache.class, "Mapping: " + uri + " to " + path );
+
+                //For contentlet lets use the language to build the key for the cache
+                cache.put( getPrimaryGroup() + hostId + ":" + uri, path, getPrimaryGroup() + "_" + hostId + "_" + languageId );
+                ret = path;
+
+            }else {
     			String path = APILocator.getFileAPI().getRelativeAssetPath((Inode)asset);
     			//add the entry to the cache
     		    Logger.debug(LiveCache.class, "Mapping: " + uri + " to " + path);
@@ -119,46 +138,87 @@ public class LiveCache {
 		}
 		return ret;
     }
-    
+
+    /**
+     * This method return the asset uri when the asset exists in the cache
+     *
+     * @param URI
+     * @param host
+     * @return null if the asset is not in the cache, the asset uri if the asset is in the cache
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws DotStateException
+     */
+    public static String getPathFromCache ( String URI, Host host ) throws DotStateException, DotDataException, DotSecurityException {
+        return getPathFromCache( URI, host, null );
+    }
+
+    /**
+     * This method return the asset uri when the asset exists in the cache
+     *
+     * @param URI
+     * @param host
+     * @param languageId
+     * @return null if the asset is not in the cache, the asset uri if the asset is in the cache
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws DotStateException
+     */
+    public static String getPathFromCache ( String URI, Host host, Long languageId ) throws DotStateException, DotDataException, DotSecurityException {
+        if ( URI.equals( "/" ) ) {
+            String pointer = (String) VirtualLinksCache.getPathFromCache( host.getHostname() + ":/cmsHomePage" );
+            if ( !UtilMethods.isSet( pointer ) ) {
+                pointer = (String) VirtualLinksCache.getPathFromCache( "/cmsHomePage" );
+            }
+            if ( UtilMethods.isSet( pointer ) )
+                URI = pointer;
+        }
+        return getPathFromCache( URI, host.getIdentifier(), languageId );
+    }
+
+    /**
+     * This method return the asset uri when the asset exists in the cache
+     *
+     * @param URI
+     * @param hostId
+     * @return null if the asset is not in the cache, the asset uri if the asset is in the cache
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws DotStateException
+     */
+    public static String getPathFromCache ( String URI, String hostId ) throws DotStateException, DotDataException, DotSecurityException {
+        return getPathFromCache( URI, hostId, null );
+    }
 
     /**
      * This method return the asset uri when the asset exists in the cache 
      * @param URI
-     * @param host
-     * @return null if the asset is not in the cache, the asset uri if the asset is in the cache
-     * @throws DotSecurityException 
-     * @throws DotDataException 
-     * @throws DotStateException 
-     */
-	public static String getPathFromCache(String URI, Host host) throws DotStateException, DotDataException, DotSecurityException{
-		if (URI.equals("/")) {
-			String pointer = (String) VirtualLinksCache.getPathFromCache(host.getHostname() + ":/cmsHomePage");
-			if (!UtilMethods.isSet(pointer)) {
-				pointer = (String) VirtualLinksCache.getPathFromCache("/cmsHomePage");
-			}
-			if (UtilMethods.isSet(pointer))
-				URI = pointer; 
-		}
-	    return getPathFromCache (URI, host.getIdentifier());
-	}
-	
-    /**
-     * This method return the asset uri when the asset exists in the cache 
-     * @param URI
      * @param hostId
+     * @param languageId
      * @return null if the asset is not in the cache, the asset uri if the asset is in the cache
      * @throws DotSecurityException 
      * @throws DotDataException 
      * @throws DotStateException 
      */
-	public static String getPathFromCache(String URI, String hostId) throws DotStateException, DotDataException, DotSecurityException{
+	public static String getPathFromCache(String URI, String hostId, Long languageId) throws DotStateException, DotDataException, DotSecurityException{
+
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+
+        if ( languageId == null ) {
+            languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        }
+
 		String _uri = null;
-		try{
-			_uri = (String) cache.get(getPrimaryGroup() + hostId + ":" + URI,getPrimaryGroup() + "_" + hostId);
-		}catch (DotCacheException e) {
-			Logger.debug(LiveCache.class,"Cache Entry not found", e);
-    	}
+        try {
+            //First lets search in cache for a specific language
+            _uri = (String) cache.get( getPrimaryGroup() + hostId + ":" + URI, getPrimaryGroup() + "_" + hostId + "_" + languageId );
+            //If nothing found try without a language
+            if ( _uri == null ) {
+                _uri = (String) cache.get( getPrimaryGroup() + hostId + ":" + URI, getPrimaryGroup() + "_" + hostId );
+            }
+        } catch ( DotCacheException e ) {
+            Logger.debug( LiveCache.class, "Cache Entry not found", e );
+        }
 
 		if(_uri != null)
 		{
@@ -207,11 +267,26 @@ public class LiveCache {
 			}
 		}
 
-		Versionable asset = null;
+		Versionable asset;
 		if(id.getAssetType().equals("contentlet")){
-			User systemUser = APILocator.getUserAPI().getSystemUser();
-			asset = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-		}else{
+
+            User systemUser = APILocator.getUserAPI().getSystemUser();
+            try {
+                asset = APILocator.getContentletAPI().findContentletByIdentifier( id.getId(), true, languageId, systemUser, false );
+            } catch ( DotContentletStateException e ) {
+
+                Logger.debug( LiveCache.class, e.getMessage() );
+
+                //If we did not find the asset with for given language lets try with the default language
+                if ( !languageId.equals( APILocator.getLanguageAPI().getDefaultLanguage().getId() ) ) {
+                    languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                    asset = APILocator.getContentletAPI().findContentletByIdentifier( id.getId(), true, languageId, systemUser, false );
+                } else {
+                    throw e;
+                }
+            }
+
+        } else {
 			asset =  APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(), false);
 		}
 		
@@ -220,8 +295,8 @@ public class LiveCache {
 		    Logger.debug(PublishFactory.class, "Lazy Mapping: " + id.getURI() + " to " + URI);
 		    //The cluster entry doesn't need to be invalidated when loading the entry lazily, 
 		    //if the entry gets invalidated from the cluster in this case causes an invalidation infinite loop
-		   return addToLiveAssetToCache(asset);
-		} else {
+            return addToLiveAssetToCache( asset, languageId );
+        } else {
 			//Identifier exists but the asset is not live
 			cache.put(getPrimaryGroup() + hostId + ":" + URI, WebKeys.Cache.CACHE_NOT_FOUND, getPrimaryGroup() + "_" + hostId);
 		    return null;

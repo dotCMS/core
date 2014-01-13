@@ -15,6 +15,7 @@ import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -28,17 +29,19 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.hadoop.mapred.lib.Arrays;
+
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItem;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemFactory;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileUploadException;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.hadoop_0_20_3_dev_core.org.apache.hadoop.mapred.lib.Arrays;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.*;
 import java.lang.reflect.Method;
 import java.text.ParseException;
@@ -320,7 +323,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 publishAuditAPI.updatePublishAuditStatus( config.getId(), status.getStatus(), auditHistory );
 
                 //Get the identifiers on this bundle
-                List<String> identifiers = new ArrayList<String>();
+                HashSet<String> identifiers = new HashSet<String>();
                 List<PublishQueueElement> assets = config.getAssets();
                 if ( config.getLuceneQueries() != null && !config.getLuceneQueries().isEmpty() ) {
                     identifiers.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
@@ -333,9 +336,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
                 //Now depending of the operation lets add it to the queue job
                 if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
-                    publisherAPI.addContentsToPublish( identifiers, bundleId, new Date(), getUser() );
+                    publisherAPI.addContentsToPublish( new ArrayList<String>( identifiers ), bundleId, new Date(), getUser() );
                 } else {
-                    publisherAPI.addContentsToUnpublish( identifiers, bundleId, new Date(), getUser() );
+                    publisherAPI.addContentsToUnpublish( new ArrayList<String>( identifiers ), bundleId, new Date(), getUser() );
                 }
 
                 //Success...
@@ -793,10 +796,15 @@ public class RemotePublishAjaxAction extends AjaxAction {
             for (String envId : whereToSend) {
             	Environment e = APILocator.getEnvironmentAPI().findEnvironmentById(envId);
 
-            	if(e!=null) {
+            	if(e!=null && APILocator.getPermissionAPI().doesUserHavePermission(e, PermissionAPI.PERMISSION_USE, getUser())) {
             		envsToSendTo.add(e);
             	}
 			}
+            
+            if(envsToSendTo.isEmpty()) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
 
             //Put the selected environments in session in order to have the list of the last selected environments
             request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS, envsToSendTo );

@@ -7,20 +7,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.chemistry.opencmis.commons.PropertyIds;
-import org.apache.chemistry.opencmis.commons.data.ObjectInFolderList;
-import org.apache.chemistry.opencmis.commons.data.ObjectList;
-import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
-import org.apache.chemistry.opencmis.commons.enums.IncludeRelationships;
-import org.apache.chemistry.opencmis.commons.enums.VersioningState;
-import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
-import org.apache.chemistry.opencmis.commons.impl.dataobjects.PropertiesImpl;
-import org.apache.chemistry.opencmis.commons.impl.dataobjects.PropertyIdImpl;
-import org.apache.chemistry.opencmis.commons.impl.dataobjects.PropertyStringImpl;
-import org.apache.chemistry.opencmis.commons.server.CallContext;
-import org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.PropertyIds;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.data.ObjectInFolderList;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.data.ObjectList;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.enums.IncludeRelationships;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.enums.VersioningState;
+import com.dotcms.repackage.chemistry_opencmis_commons_impl_0_8_0.org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
+import com.dotcms.repackage.chemistry_opencmis_commons_impl_0_8_0.org.apache.chemistry.opencmis.commons.impl.dataobjects.PropertiesImpl;
+import com.dotcms.repackage.chemistry_opencmis_commons_impl_0_8_0.org.apache.chemistry.opencmis.commons.impl.dataobjects.PropertyIdImpl;
+import com.dotcms.repackage.chemistry_opencmis_commons_impl_0_8_0.org.apache.chemistry.opencmis.commons.impl.dataobjects.PropertyStringImpl;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.server.CallContext;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
+import com.dotcms.repackage.junit_4_8_1.org.junit.AfterClass;
+import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
 
 import com.dotcms.TestBase;
 import com.dotcms.enterprise.cmis.server.CMISManager;
@@ -31,9 +31,9 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class CMISBaseTest extends TestBase {
 
@@ -92,7 +92,7 @@ public class CMISBaseTest extends TestBase {
                 "test_files" + java.io.File.separator;
         
         //Reading the file
-        String testFilePath = Config.CONTEXT.getRealPath( testFilesPath + fileName );
+        String testFilePath = FileUtil.getRealPath( testFilesPath + fileName );
         java.io.File tempTestFile = new java.io.File( testFilePath );
         if ( !tempTestFile.exists() ) {
             String message = "File does not exist: '" + testFilePath + "'";

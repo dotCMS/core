@@ -15,7 +15,7 @@
  */
 package com.dotmarketing.util.diff.tag;
 
-import org.eclipse.compare.rangedifferencer.IRangeComparator;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.IRangeComparator;
 
 /**
  * Extens the IRangeComparator interface with functionality to recreate parts of

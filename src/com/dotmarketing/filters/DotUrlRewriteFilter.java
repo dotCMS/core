@@ -1,9 +1,9 @@
 package com.dotmarketing.filters;
 
 import com.dotmarketing.util.Config;
-import org.tuckey.web.filters.urlrewrite.Conf;
-import org.tuckey.web.filters.urlrewrite.Rule;
-import org.tuckey.web.filters.urlrewrite.UrlRewriteFilter;
+import com.dotcms.repackage.urlrewritefilter_4_0_3.org.tuckey.web.filters.urlrewrite.Conf;
+import com.dotcms.repackage.urlrewritefilter_4_0_3.org.tuckey.web.filters.urlrewrite.Rule;
+import com.dotcms.repackage.urlrewritefilter_4_0_3.org.tuckey.web.filters.urlrewrite.UrlRewriteFilter;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;

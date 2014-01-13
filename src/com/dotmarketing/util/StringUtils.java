@@ -2,8 +2,8 @@ package com.dotmarketing.util;
 
 import java.util.regex.Pattern;
 
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.jettison_1_1.org.codehaus.jettison.json.JSONArray;
+import com.dotcms.repackage.jettison_1_1.org.codehaus.jettison.json.JSONObject;
 
 public class StringUtils {
 	public static String formatPhoneNumber(String phoneNumber) {

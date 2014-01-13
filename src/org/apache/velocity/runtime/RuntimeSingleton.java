@@ -22,7 +22,7 @@ package org.apache.velocity.runtime;
 import java.io.Reader;
 import java.util.Properties;
 
-import org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.event.EventCartridge;
 import org.apache.velocity.exception.ParseErrorException;

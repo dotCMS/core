@@ -27,8 +27,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest;
 import com.dotmarketing.plugin.PluginMergerTest;
 import com.dotmarketing.webdav.WebDavTest;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runner.RunWith;
+import com.dotcms.repackage.junit_4_8_1.org.junit.runners.Suite;
 
 /**
  * @author Jonathan Gamba.

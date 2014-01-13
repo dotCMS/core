@@ -72,7 +72,7 @@ if (isLocked) {
 <%
 SessionMessages.clear(session);
 SessionMessages.clear(request);
-request.getSession().removeAttribute("org.apache.struts.action.MESSAGE");
-request.getSession().removeAttribute("org.apache.struts.action.ERROR");
+request.getSession().removeAttribute("com.dotcms.repackage.struts.org.apache.struts.action.MESSAGE");
+request.getSession().removeAttribute("com.dotcms.repackage.struts.org.apache.struts.action.ERROR");
 %>
 

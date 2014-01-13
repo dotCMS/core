@@ -63,8 +63,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
@@ -103,11 +103,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     }
 
     public void registerBundleService () {
-
-        // Register main service
-        BundleContext context = HostActivator.instance().getBundleContext();
-        Hashtable<String, String> props = new Hashtable<String, String>();
-        context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+    	if(Config.getBooleanProperty("felix.osgi.enable", true)){
+	        // Register main service
+	        BundleContext context = HostActivator.instance().getBundleContext();
+	        Hashtable<String, String> props = new Hashtable<String, String>();
+	        context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+    	}
     }
 
     public WorkFlowActionlet newActionlet(String className) throws DotDataException {

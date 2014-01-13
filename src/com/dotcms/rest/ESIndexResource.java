@@ -7,20 +7,20 @@ import java.util.Date;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Consumes;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.DELETE;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PUT;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response.Status;
 
-import org.dts.spell.utils.FileUtils;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
+import com.dotcms.repackage.myspell.org.dts.spell.utils.FileUtils;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.status.IndexStatus;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
@@ -34,9 +34,9 @@ import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.gson.Gson;
-import com.sun.jersey.core.header.FormDataContentDisposition;
-import com.sun.jersey.multipart.FormDataParam;
+import com.dotcms.repackage.tika_app_1_3.com.google.gson.Gson;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.core.header.FormDataContentDisposition;
+import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.FormDataParam;
 
 @Path("/esindex")
 public class ESIndexResource extends WebResource {

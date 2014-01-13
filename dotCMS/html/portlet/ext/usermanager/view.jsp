@@ -3,7 +3,7 @@
 	java.util.Hashtable params = new java.util.Hashtable ();
 	params.put("struts_action", new String [] {"/ext/usermanager/view_usermanagerlist"} );
 	params.put("cmd", new String [] {com.liferay.portal.util.Constants.SEARCH.toString()} );
-	String referer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
+	String referer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, com.dotcms.repackage.portlet.javax.portlet.WindowState.MAXIMIZED.toString(), params);
 
 	UserManagerListSearchForm form = (UserManagerListSearchForm)request.getAttribute(com.dotmarketing.util.WebKeys.USERMANAGERLISTFORM);
 

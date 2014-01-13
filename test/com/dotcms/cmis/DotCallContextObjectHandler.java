@@ -5,9 +5,9 @@ package com.dotcms.cmis;
 
 import java.math.BigInteger;
 
-import org.apache.chemistry.opencmis.commons.server.CallContext;
-import org.apache.chemistry.opencmis.commons.server.ObjectInfo;
-import org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.server.CallContext;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.server.ObjectInfo;
+import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;

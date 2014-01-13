@@ -2,7 +2,7 @@ package com.dotmarketing.scripting.viewtool;
 
 import java.io.StringWriter;
 
-import org.apache.bsf.BSFException;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFException;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -108,7 +108,7 @@ public class PHPTool extends AbstractScriptingTool {
 			Logger.error(this, e.getMessage(), e);
 			
 			String err = XMLUtils.xmlEscape(e.toString());
-			err = err.replaceAll("org.apache.bsf.BSF", "");
+			err = err.replaceAll("com.dotcms.repackage.bsf.org.apache.bsf.BSF", "");
 
 			return err;
 		} catch (DotDataException e) {

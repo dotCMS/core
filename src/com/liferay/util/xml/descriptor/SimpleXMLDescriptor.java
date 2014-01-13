@@ -22,8 +22,8 @@
 
 package com.liferay.util.xml.descriptor;
 
-import org.dom4j.Document;
-import org.dom4j.Element;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
 
 import com.liferay.util.xml.ElementComparator;
 import com.liferay.util.xml.ElementIdentifier;

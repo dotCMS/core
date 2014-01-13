@@ -2,7 +2,7 @@ package com.dotmarketing.util;
 
 import com.dotcms.util.AsciiArt;
 import com.dotmarketing.db.DbConnectionFactory;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import com.dotcms.repackage.commons_configuration_1_0.org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.io.File;
 import java.io.FileInputStream;

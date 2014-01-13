@@ -196,7 +196,7 @@ public class DependencyManager {
 				workflows.add(asset.getAsset(),scheme.getModDate());
 			}
 		}
-		
+
 		setHostDependencies();
         setFolderDependencies();
         setHTMLPagesDependencies();
@@ -354,18 +354,20 @@ public class DependencyManager {
 		try {
 			List<Folder> folderList = new ArrayList<Folder>();
 
+			HashSet<String> parentFolders = new HashSet<String>();
+
 			for (String id : foldersSet) {
 				Folder f = APILocator.getFolderAPI().find(id, user, false);
 				// Parent folder
 				Folder parent = APILocator.getFolderAPI().findParentFolder(f, user, false);
 				if(UtilMethods.isSet(parent)) {
 					folders.addOrClean( parent.getInode(), parent.getModDate());
-					foldersSet.add(parent.getInode());
+					parentFolders.add(parent.getInode());
 				}
 
 				folderList.add(f);
 			}
-
+			foldersSet.addAll(parentFolders);
 			setFolderListDependencies(folderList);
 		} catch (DotSecurityException e) {
 
@@ -674,14 +676,14 @@ public class DependencyManager {
 		for (Relationship r : relations) {
 			relationships.addOrClean( r.getInode(), r.getModDate());
 
-			if(!structures.contains(r.getChildStructureInode())){
+			if(!structures.contains(r.getChildStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
 				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
 				structures.addOrClean( r.getChildStructureInode(), struct.getModDate());
                                 if(st!=null)
 				    structureDependencyHelper( r.getChildStructureInode() );
 			}
-			if(!structures.contains(r.getParentStructureInode())){
-				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
+			if(!structures.contains(r.getParentStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
+				Structure struct = StructureCache.getStructureByInode(r.getParentStructureInode());
 				structures.addOrClean( r.getParentStructureInode(), struct.getModDate());
                                 if(st!=null)
 				    structureDependencyHelper( r.getParentStructureInode() );

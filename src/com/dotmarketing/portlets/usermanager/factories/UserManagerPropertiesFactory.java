@@ -10,17 +10,17 @@ import java.nio.channels.NonWritableChannelException;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.PortletRequest;
+import com.dotcms.repackage.portlet.javax.portlet.PortletResponse;
+import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Config;
@@ -31,6 +31,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.RenderRequestImpl;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 public class UserManagerPropertiesFactory {
@@ -137,7 +138,7 @@ public class UserManagerPropertiesFactory {
 	private static String getUserManagerConfigPath() {
 		String userManagerConfigPath = Config.getStringProperty("GLOBAL_VARIABLES_PATH");
 		if (!UtilMethods.isSet(userManagerConfigPath)) {
-			userManagerConfigPath = Config.CONTEXT.getRealPath(File.separator + "WEB-INF" + File.separator + "classes" + File.separator);
+			userManagerConfigPath = FileUtil.getRealPath(File.separator + "WEB-INF" + File.separator + "classes" + File.separator);
 		}
 		if (!userManagerConfigPath.endsWith(File.separator))
 			userManagerConfigPath = userManagerConfigPath + File.separator;

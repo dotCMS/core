@@ -3,7 +3,7 @@ package com.dotmarketing.viewtools.content;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;

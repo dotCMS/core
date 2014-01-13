@@ -28,11 +28,11 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
 
-import org.exolab.castor.xml.CastorException;
-import org.exolab.castor.xml.MarshalException;
-import org.exolab.castor.xml.Marshaller;
-import org.exolab.castor.xml.Unmarshaller;
-import org.exolab.castor.xml.ValidationException;
+import com.dotcms.repackage.castor.org.exolab.castor.xml.CastorException;
+import com.dotcms.repackage.castor.org.exolab.castor.xml.MarshalException;
+import com.dotcms.repackage.castor.org.exolab.castor.xml.Marshaller;
+import com.dotcms.repackage.castor.org.exolab.castor.xml.Unmarshaller;
+import com.dotcms.repackage.castor.org.exolab.castor.xml.ValidationException;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.util.ListUtil;

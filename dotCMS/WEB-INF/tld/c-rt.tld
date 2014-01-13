@@ -12,7 +12,7 @@
 
   <validator>
     <validator-class>
-        org.apache.taglibs.standard.tlv.JstlCoreTLV
+        com.dotcms.repackage.standard.org.apache.taglibs.standard.tlv.JstlCoreTLV
     </validator-class>
     <description>
         Provides core validation features for JSTL tags.
@@ -21,7 +21,7 @@
 
   <tag>
     <name>catch</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.core.CatchTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.core.CatchTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Catches any Throwable that occurs in its body and optionally
@@ -36,7 +36,7 @@
 
   <tag>
     <name>choose</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.core.ChooseTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.core.ChooseTag</tag-class>
     <body-content>JSP</body-content>
     <description>
 	Simple conditional tag that establishes a context for
@@ -47,7 +47,7 @@
 
   <tag>
     <name>if</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.IfTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.IfTag</tag-class>
     <body-content>JSP</body-content>
     <description>
 	Simple conditional tag, which evalutes its body if the
@@ -74,8 +74,8 @@
 
   <tag>
     <name>import</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.ImportTag</tag-class>
-    <tei-class>org.apache.taglibs.standard.tei.ImportTEI</tei-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.ImportTag</tag-class>
+    <tei-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tei.ImportTEI</tei-class>
     <body-content>JSP</body-content>
     <description>
         Retrieves an absolute or relative URL and exposes its contents
@@ -115,8 +115,8 @@
 
   <tag>
     <name>forEach</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.ForEachTag</tag-class>
-    <tei-class>org.apache.taglibs.standard.tei.ForEachTEI</tei-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.ForEachTag</tag-class>
+    <tei-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tei.ForEachTEI</tei-class>
     <body-content>JSP</body-content>
     <description>
 	The basic iteration tag, accepting many different
@@ -161,7 +161,7 @@
 
   <tag>
     <name>forTokens</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.ForTokensTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.ForTokensTag</tag-class>
     <body-content>JSP</body-content>
     <description>
 	Iterates over tokens, separated by the supplied delimeters
@@ -210,7 +210,7 @@
 
   <tag>
     <name>out</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.OutTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.OutTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Like &lt;%= ... &gt;, but for expressions.
@@ -235,7 +235,7 @@
 
   <tag>
     <name>otherwise</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.core.OtherwiseTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.core.OtherwiseTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Subtag of &lt;choose&gt; that follows &lt;when&gt; tags
@@ -246,7 +246,7 @@
 
   <tag>
     <name>param</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.ParamTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.ParamTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Adds a parameter to a containing 'import' tag's URL.
@@ -265,7 +265,7 @@
 
   <tag>
     <name>redirect</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.RedirectTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.RedirectTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Redirects to a new URL.
@@ -294,7 +294,7 @@
 
   <tag>
     <name>remove</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.core.RemoveTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.core.RemoveTag</tag-class>
     <body-content>empty</body-content>
     <description>
         Removes a scoped variable (from a particular scope, if specified).
@@ -313,7 +313,7 @@
 
  <tag>
     <name>set</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.SetTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.SetTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Sets the result of an expression evaluation in a 'scope'
@@ -347,7 +347,7 @@
 
   <tag>
     <name>url</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.UrlTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.UrlTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Creates a URL with optional query parameters.
@@ -376,7 +376,7 @@
 
   <tag>
     <name>when</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.core.WhenTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.core.WhenTag</tag-class>
     <body-content>JSP</body-content>
     <description>
 	Subtag of &lt;choose&gt; that includes its body if its

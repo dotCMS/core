@@ -3,10 +3,10 @@ package com.ettrema.httpclient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Document;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.JDOMException;
 
 /**
  *

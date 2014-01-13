@@ -9,7 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;

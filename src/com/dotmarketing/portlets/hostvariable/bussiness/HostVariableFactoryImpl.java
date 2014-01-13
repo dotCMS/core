@@ -3,9 +3,9 @@ package com.dotmarketing.portlets.hostvariable.bussiness;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.ObjectNotFoundException;
 
-import org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;

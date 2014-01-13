@@ -19,7 +19,7 @@ package org.apache.velocity.tools.generic;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils;
 
 /**
  * <p>Tool for performing math in Velocity.</p>

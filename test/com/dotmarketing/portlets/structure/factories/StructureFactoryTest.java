@@ -10,13 +10,13 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
-import org.junit.Ignore;
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Ignore;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import java.io.Serializable;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba.

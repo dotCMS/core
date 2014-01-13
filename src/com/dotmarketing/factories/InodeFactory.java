@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.ObjectNotFoundException;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;

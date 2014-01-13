@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.js_14.org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotmarketing.beans.Identifier;

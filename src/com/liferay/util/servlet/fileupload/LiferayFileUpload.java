@@ -28,10 +28,10 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItem;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemFactory;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileUploadException;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.liferay.util.Validator;
 

@@ -24,7 +24,7 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import com.csvreader.CsvReader;
+import com.dotcms.repackage.javacsv.com.csvreader.CsvReader;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;

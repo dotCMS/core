@@ -12,7 +12,7 @@
 
   <validator>
     <validator-class>
-	org.apache.taglibs.standard.tlv.JstlXmlTLV
+	com.dotcms.repackage.standard.org.apache.taglibs.standard.tlv.JstlXmlTLV
     </validator-class>
     <description>
         Provides validation features for JSTL XML tags.
@@ -21,7 +21,7 @@
 
   <tag>
     <name>choose</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.core.ChooseTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.core.ChooseTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Simple conditional tag that establishes a context for
@@ -32,7 +32,7 @@
 
   <tag>
     <name>out</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.xml.ExprTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.xml.ExprTag</tag-class>
     <body-content>empty</body-content>
     <description>
 	Like &lt;%= ... &gt;, but for XPath expressions.
@@ -51,7 +51,7 @@
 
   <tag>
     <name>if</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.xml.IfTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.xml.IfTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         XML conditional tag, which evalutes its body if the
@@ -76,7 +76,7 @@
 
   <tag>
     <name>forEach</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.xml.ForEachTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.xml.ForEachTag</tag-class>
     <body-content>JSP</body-content>
     <description>
 	XML iteration tag.
@@ -95,7 +95,7 @@
 
   <tag>
     <name>otherwise</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.core.OtherwiseTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.core.OtherwiseTag</tag-class>
     <body-content>JSP</body-content>
     <description>
 	Subtag of &lt;choose&gt; that follows &lt;when&gt; tags
@@ -106,7 +106,7 @@
 
   <tag>
     <name>param</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.xml.ParamTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.xml.ParamTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Adds a parameter to a containing 'transform' tag's Transformer
@@ -125,8 +125,8 @@
 
   <tag>
     <name>parse</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.xml.ParseTag</tag-class>
-    <tei-class>org.apache.taglibs.standard.tei.XmlParseTEI</tei-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.xml.ParseTag</tag-class>
+    <tei-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tei.XmlParseTEI</tei-class>
     <body-content>JSP</body-content>
     <description>
 	Parses XML content from 'source' attribute or 'body'
@@ -170,7 +170,7 @@
 
   <tag>
     <name>set</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.xml.SetTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.xml.SetTag</tag-class>
     <body-content>empty</body-content>
     <description>
 	Saves the result of an XPath expression evaluation in a 'scope'
@@ -194,8 +194,8 @@
 
   <tag>
     <name>transform</name>
-    <tag-class>org.apache.taglibs.standard.tag.rt.xml.TransformTag</tag-class>
-    <tei-class>org.apache.taglibs.standard.tei.XmlTransformTEI</tei-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.rt.xml.TransformTag</tag-class>
+    <tei-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tei.XmlTransformTEI</tei-class>
     <body-content>JSP</body-content>
     <description>
 	Conducts a transformation given a source XML document
@@ -240,7 +240,7 @@
 
   <tag>
     <name>when</name>
-    <tag-class>org.apache.taglibs.standard.tag.common.xml.WhenTag</tag-class>
+    <tag-class>com.dotcms.repackage.standard.org.apache.taglibs.standard.tag.common.xml.WhenTag</tag-class>
     <body-content>JSP</body-content>
     <description>
         Subtag of &lt;choose&gt; that includes its body if its

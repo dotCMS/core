@@ -12,15 +12,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.IndicesAdminClient;
-import org.elasticsearch.index.query.QueryBuilders;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.status.IndexStatus;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.bulk.BulkRequestBuilder;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.index.IndexRequest;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.IndicesAdminClient;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.index.query.QueryBuilders;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
@@ -39,7 +39,7 @@ import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.gson.Gson;
+import com.dotcms.repackage.tika_app_1_3.com.google.gson.Gson;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 	private static final ESIndexAPI iapi  = new ESIndexAPI();

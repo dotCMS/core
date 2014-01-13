@@ -23,17 +23,17 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.struts.config.ForwardConfig;
-import org.apache.struts.config.ActionConfig;
-import org.apache.struts.util.MessageResources;
-import org.apache.struts.util.RequestUtils;
-import org.apache.struts.taglib.TagUtils;
-import org.apache.struts.util.ModuleUtils;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessages;
+import com.dotcms.repackage.struts.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.struts.org.apache.struts.config.ForwardConfig;
+import com.dotcms.repackage.struts.org.apache.struts.config.ActionConfig;
+import com.dotcms.repackage.struts.org.apache.struts.util.MessageResources;
+import com.dotcms.repackage.struts.org.apache.struts.util.RequestUtils;
+import com.dotcms.repackage.struts.org.apache.struts.taglib.TagUtils;
+import com.dotcms.repackage.struts.org.apache.struts.util.ModuleUtils;
 
 import com.dotmarketing.util.WebKeys;
 

@@ -28,20 +28,20 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.validator.Field;
-import org.apache.commons.validator.Form;
-import org.apache.commons.validator.ValidatorAction;
-import org.apache.commons.validator.ValidatorResources;
-import org.apache.commons.validator.util.ValidatorUtils;
-import org.apache.commons.validator.Var;
+import com.dotcms.repackage.commons_validator.org.apache.commons.validator.Field;
+import com.dotcms.repackage.commons_validator.org.apache.commons.validator.Form;
+import com.dotcms.repackage.commons_validator.org.apache.commons.validator.ValidatorAction;
+import com.dotcms.repackage.commons_validator.org.apache.commons.validator.ValidatorResources;
+import com.dotcms.repackage.commons_validator.org.apache.commons.validator.util.ValidatorUtils;
+import com.dotcms.repackage.commons_validator.org.apache.commons.validator.Var;
 
-import org.apache.struts.Globals;
-import org.apache.struts.config.ActionConfig;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.struts.util.MessageResources;
-import org.apache.struts.util.ModuleUtils;
-import org.apache.struts.validator.Resources;
-import org.apache.struts.validator.ValidatorPlugIn;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.struts.org.apache.struts.config.ActionConfig;
+import com.dotcms.repackage.struts.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.struts.org.apache.struts.util.MessageResources;
+import com.dotcms.repackage.struts.org.apache.struts.util.ModuleUtils;
+import com.dotcms.repackage.struts.org.apache.struts.validator.Resources;
+import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorPlugIn;
 
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;

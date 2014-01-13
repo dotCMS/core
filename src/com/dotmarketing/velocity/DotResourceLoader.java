@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
-import org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
@@ -42,6 +42,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 public class DotResourceLoader extends ResourceLoader {
 
@@ -70,7 +71,7 @@ public class DotResourceLoader extends ResourceLoader {
     private static DotResourceLoader instance;
 
     /* (non-Javadoc)
-     * @see org.apache.velocity.runtime.resource.loader.FileResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
+     * @see org.apache.velocity.runtime.resource.loader.FileResourceLoader#init(com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties)
      */
     @Override
     public void init(ExtendedProperties extProps) {
@@ -87,7 +88,7 @@ public class DotResourceLoader extends ResourceLoader {
 
         String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
         if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
         }
 
         VELOCITY_ROOT = velocityRootPath + File.separator;
@@ -114,7 +115,7 @@ public class DotResourceLoader extends ResourceLoader {
 
         try {
             if(UtilMethods.isSet(Config.getStringProperty("ASSET_PATH"))){
-                f = new File(Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")));
+                f = new File(FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH")));
                 if(f.exists()){
                     assetCanoncalPath = f.getCanonicalPath();
                 }

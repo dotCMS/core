@@ -3,7 +3,7 @@ package com.dotmarketing.comparators;
 import java.util.Comparator;
 import java.util.Date;
 
-import org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 

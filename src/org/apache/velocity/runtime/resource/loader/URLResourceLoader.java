@@ -25,8 +25,8 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
-import org.apache.commons.collections.ExtendedProperties;
-import org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
@@ -49,7 +49,7 @@ public class URLResourceLoader extends ResourceLoader
     private Method[] timeoutMethods;
 
     /**
-     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(org.apache.commons.collections.ExtendedProperties)
+     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#init(com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.ExtendedProperties)
      */
     public void init(ExtendedProperties configuration)
     {

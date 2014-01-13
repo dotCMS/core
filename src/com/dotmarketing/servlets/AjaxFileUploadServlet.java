@@ -14,15 +14,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItem;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemFactory;
+import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
-import com.missiondata.fileupload.MonitoredDiskFileItemFactory;
+import com.dotcms.repackage.fileupload_ext.com.missiondata.fileupload.MonitoredDiskFileItemFactory;
 
 public class AjaxFileUploadServlet extends HttpServlet {
 	

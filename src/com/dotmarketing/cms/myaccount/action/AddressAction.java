@@ -1,6 +1,6 @@
 package com.dotmarketing.cms.myaccount.action;
 
-import org.apache.struts.actions.DispatchAction;
+import com.dotcms.repackage.struts.org.apache.struts.actions.DispatchAction;
 
 
 public class AddressAction extends DispatchAction {

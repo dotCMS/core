@@ -22,9 +22,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Vector;
 
-import org.apache.bsf.BSFEngine;
-import org.apache.bsf.BSFException;
-import org.apache.bsf.BSFManager;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFEngine;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFException;
+import com.dotcms.repackage.bsf.org.apache.bsf.BSFManager;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -36,6 +36,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * This class provides methods that make it easier to
@@ -74,8 +75,8 @@ public class BSFUtil {
 	
 	private BSFManager initManager(){
 		// Register the JRuby engine with BSF.
-		BSFManager.registerScriptingEngine(LANGUAGE_RUBY, "org.jruby.javasupport.bsf.JRubyEngine", new String[] {"rb"});
-		BSFManager.registerScriptingEngine(LANGUAGE_PYTHON,"org.apache.bsf.engines.jython.JythonEngine", new String[] {"py"});
+		BSFManager.registerScriptingEngine(LANGUAGE_RUBY, "com.dotcms.repackage.jruby.org.jruby.javasupport.bsf.JRubyEngine", new String[] {"rb"});
+		BSFManager.registerScriptingEngine(LANGUAGE_PYTHON,"com.dotcms.repackage.bsf.org.apache.bsf.engines.jython.JythonEngine", new String[] {"py"});
 		BSFManager.registerScriptingEngine(LANGUAGE_JAVASCRIPT,"com.dotmarketing.scripting.engine.JSRhinoEngine", new String[] {"js"});
 		BSFManager.registerScriptingEngine(LANGUAGE_GROOVY,"com.dotmarketing.scripting.engine.GroovyEngine", new String[] {"groovy,gy"});
 		BSFManager.registerScriptingEngine(LANGUAGE_PHP,"com.dotmarketing.scripting.engine.PHPEngine", new String[] {"php"});
@@ -279,7 +280,7 @@ public class BSFUtil {
 		Identifier ident = APILocator.getIdentifierAPI().find(host, filePath);
 		String uri = LiveCache.getPathFromCache(ident.getURI(), host);
 
-		String inode = UtilMethods.getFileName(new File(Config.CONTEXT.getRealPath(assetPath + uri)).getName());
+		String inode = UtilMethods.getFileName(new File(FileUtil.getRealPath(assetPath + uri)).getName());
 		com.dotmarketing.portlets.files.model.File file = APILocator.getFileAPI().find(inode, APILocator.getUserAPI().getSystemUser(), false);
 
 		if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
@@ -292,7 +293,7 @@ public class BSFUtil {
 
 		FileReader fr = null;
 		if(!UtilMethods.isSet(realPath)){
-			fr = new FileReader(Config.CONTEXT.getRealPath(assetPath + uri));
+			fr = new FileReader(FileUtil.getRealPath(assetPath + uri));
 		}else{
 			fr = new FileReader(realPath + uri);
 		}

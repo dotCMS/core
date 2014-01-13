@@ -35,7 +35,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import javax.portlet.PreferencesValidator;
+import com.dotcms.repackage.portlet.javax.portlet.PreferencesValidator;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -108,8 +108,8 @@ public class PortletContextListener implements ServletContextListener {
 			while (itr1.hasNext()) {
 				Portlet portlet = (Portlet)itr1.next();
 
-				javax.portlet.Portlet portletInstance =
-					(javax.portlet.Portlet)contextClassLoader.loadClass(
+				com.dotcms.repackage.portlet.javax.portlet.Portlet portletInstance =
+					(com.dotcms.repackage.portlet.javax.portlet.Portlet)contextClassLoader.loadClass(
 						portlet.getPortletClass()).newInstance();
 
 				Indexer indexerInstance = null;

@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-import org.eclipse.compare.rangedifferencer.IRangeComparator;
+import com.dotcms.repackage.daisydiff.org.eclipse.compare.rangedifferencer.IRangeComparator;
 import com.dotmarketing.util.diff.html.ancestor.AncestorComparator;
 import com.dotmarketing.util.diff.html.ancestor.AncestorComparatorResult;
 import com.dotmarketing.util.diff.html.dom.BodyNode;

@@ -40,7 +40,7 @@
 	
 	if (!UtilMethods.isSet(strutsAction) || strutsAction.equals(portlet1.getInitParams().get("view-action"))) {
 
-		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), null));
+		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), null));
 		
 		request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, cTrail);
 	} else if (portletId1.equals("EXT_15")) {
@@ -62,7 +62,7 @@
 		params.put("cmd", new String[] {"unlock"});
 		params.put("inode", new String[] {String.valueOf(htmlpage.getInode())});
 		String crumbTrailReferer = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
-		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer + "&referer=" + portlet1Referer));
+		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer + "&referer=" + portlet1Referer));
 		
 		request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, cTrail);
 		
@@ -92,7 +92,7 @@
 		params.put("cmd", new String[] {"unlock"});
 		params.put("inode", new String[] {String.valueOf(htmlpage.getInode())});
 		String crumbTrailReferer = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
-		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), crumbTrailReferer + "&referer=" + portlet1Referer));
+		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), crumbTrailReferer + "&referer=" + portlet1Referer));
 		
 		if ((referer != null) && (referer.contains("/ext/htmlpages/preview_htmlpage"))) {
 			cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "modes.Preview"), "javascript: cancelEdit();"));

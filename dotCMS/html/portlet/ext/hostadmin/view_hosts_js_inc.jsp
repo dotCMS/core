@@ -6,7 +6,7 @@
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
 <%@page import="java.net.URLDecoder"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>

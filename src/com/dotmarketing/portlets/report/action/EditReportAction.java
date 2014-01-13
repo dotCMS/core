@@ -18,20 +18,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
+import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
+import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.jasperreports.engine.JRParameter;
-import net.sf.jasperreports.engine.JasperCompileManager;
-import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.util.JRLoader;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JRParameter;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperCompileManager;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperReport;
+import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.util.JRLoader;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
 import com.dotmarketing.business.Role;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -55,6 +55,7 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.ActionResponseImpl;
+import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
 
@@ -205,7 +206,7 @@ public class EditReportAction extends DotPortletAction {
 										+ File.separator
 										+ Config.getStringProperty("REPORT_PATH");
 						} else {
-							jrxmlPath = Config.CONTEXT
+							jrxmlPath = FileUtil
 									.getRealPath(File.separator
 											+ Config
 													.getStringProperty("ASSET_PATH")
@@ -214,7 +215,7 @@ public class EditReportAction extends DotPortletAction {
 													.getStringProperty("REPORT_PATH")
 											+ File.separator
 											+ report.getInode() + ".jrxml");
-							jasperPath = Config.CONTEXT
+							jasperPath = FileUtil
 									.getRealPath(File.separator
 											+ Config
 													.getStringProperty("ASSET_PATH")
@@ -223,7 +224,7 @@ public class EditReportAction extends DotPortletAction {
 													.getStringProperty("REPORT_PATH")
 											+ File.separator
 											+ report.getInode() + ".jasper");
-							reportPath = Config.CONTEXT
+							reportPath = FileUtil
 							              .getRealPath(File.separator
 									      + Config
 											.getStringProperty("ASSET_PATH")
@@ -311,7 +312,7 @@ public class EditReportAction extends DotPortletAction {
 					referrer = com.dotmarketing.util.PortletURLUtil
 							.getRenderURL(((ActionRequestImpl) req)
 									.getHttpServletRequest(),
-									javax.portlet.WindowState.MAXIMIZED
+									com.dotcms.repackage.portlet.javax.portlet.WindowState.MAXIMIZED
 											.toString(), params);
 					_sendToReferral(req, res, referrer);
 					return;
@@ -387,7 +388,7 @@ public class EditReportAction extends DotPortletAction {
 				rp.setDescription(jrPar.getDescription());
 				rp.setClassType(jrPar.getValueClassName());
 				try {
-					Object o = new bsh.Interpreter().eval(jrPar
+					Object o = new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval(jrPar
 							.getDefaultValueExpression().getText());
 					if (o instanceof Date) {
 						o = ((Date) o).getTime();

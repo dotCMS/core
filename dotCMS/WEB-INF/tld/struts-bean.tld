@@ -14,8 +14,8 @@
 <uri>http://struts.apache.org/tags-bean</uri>
 <tag>
 <name>cookie</name>
-<tagclass>org.apache.struts.taglib.bean.CookieTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.CookieTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.CookieTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.CookieTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>id</name>
@@ -40,8 +40,8 @@
 </tag>
 <tag>
 <name>define</name>
-<tagclass>org.apache.struts.taglib.bean.DefineTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.DefineTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.DefineTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.DefineTei</teiclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>id</name>
@@ -81,8 +81,8 @@
 </tag>
 <tag>
 <name>header</name>
-<tagclass>org.apache.struts.taglib.bean.HeaderTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.HeaderTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.HeaderTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.HeaderTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>id</name>
@@ -107,8 +107,8 @@
 </tag>
 <tag>
 <name>include</name>
-<tagclass>org.apache.struts.taglib.bean.IncludeTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.IncludeTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.IncludeTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.IncludeTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>anchor</name>
@@ -148,7 +148,7 @@
 </tag>
 <tag>
 <name>message</name>
-<tagclass>org.apache.struts.taglib.bean.MessageTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.MessageTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>arg0</name>
@@ -208,8 +208,8 @@
 </tag>
 <tag>
 <name>page</name>
-<tagclass>org.apache.struts.taglib.bean.PageTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.PageTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.PageTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.PageTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>id</name>
@@ -224,8 +224,8 @@
 </tag>
 <tag>
 <name>parameter</name>
-<tagclass>org.apache.struts.taglib.bean.ParameterTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.ParameterTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.ParameterTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.ParameterTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>id</name>
@@ -250,8 +250,8 @@
 </tag>
 <tag>
 <name>resource</name>
-<tagclass>org.apache.struts.taglib.bean.ResourceTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.ResourceTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.ResourceTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.ResourceTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>id</name>
@@ -271,8 +271,8 @@
 </tag>
 <tag>
 <name>size</name>
-<tagclass>org.apache.struts.taglib.bean.SizeTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.SizeTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.SizeTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.SizeTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>collection</name>
@@ -302,8 +302,8 @@
 </tag>
 <tag>
 <name>struts</name>
-<tagclass>org.apache.struts.taglib.bean.StrutsTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.StrutsTei</teiclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.StrutsTag</tagclass>
+<teiclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.StrutsTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>id</name>
@@ -328,7 +328,7 @@
 </tag>
 <tag>
 <name>write</name>
-<tagclass>org.apache.struts.taglib.bean.WriteTag</tagclass>
+<tagclass>com.dotcms.repackage.struts.org.apache.struts.taglib.bean.WriteTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>bundle</name>

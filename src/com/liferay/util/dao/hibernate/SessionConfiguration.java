@@ -22,11 +22,11 @@
 
 package com.liferay.util.dao.hibernate;
 
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.SessionFactory;
-import net.sf.hibernate.dialect.Dialect;
-import net.sf.hibernate.impl.SessionFactoryImpl;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.Session;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.SessionFactory;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.Dialect;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.impl.SessionFactoryImpl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

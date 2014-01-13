@@ -1,6 +1,6 @@
 package com.dotmarketing.services;
 
-import bsh.This;
+import com.dotcms.repackage.bsh_2_0b4.bsh.This;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -299,7 +299,7 @@ public class PageServices {
 	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
 	            String filePath = realFolderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
 	            if (velocityRootPath.startsWith("/WEB-INF")) {
-	                velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+	                velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
 	            }
 	            velocityRootPath += java.io.File.separator;
 			    
@@ -341,7 +341,7 @@ public class PageServices {
 		String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 		String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
 		if (velocityRootPath.startsWith("/WEB-INF")) {
-			velocityRootPath = Config.CONTEXT.getRealPath(velocityRootPath);
+			velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
 		}
 		String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
 		velocityRootPath += java.io.File.separator;

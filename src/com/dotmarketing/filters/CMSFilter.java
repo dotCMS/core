@@ -1,27 +1,7 @@
 package com.dotmarketing.filters;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.LogFactory;
-import org.apache.struts.Globals;
-
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -39,20 +19,29 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.JBossRulesUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
+import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class CMSFilter implements Filter {
 
@@ -225,17 +214,23 @@ public class CMSFilter implements Filter {
 			return;
 		}
 
-
+        //Verify if the request is for a specific language
+        Long languageId;
+        if ( !UtilMethods.isSet( req.getParameter( "language_id" ) ) ) {
+            languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        } else {
+            languageId = Long.parseLong( req.getParameter( "language_id" ) );
+        }
 
         /* if edit mode */
         if (PREVIEW_MODE || EDIT_MODE) {
 			try {				
 				if (uri.endsWith("/"))
 					uri = uri.substring(0, uri.length() - 1);
-				pointer = LiveCache.getPathFromCache(uri, host);
+				pointer = WorkingCache.getPathFromCache(uri, host);
 
 				if(!UtilMethods.isSet(pointer)){//DOTCMS-7062
-					pointer = WorkingCache.getPathFromCache(uri, host);
+					pointer = LiveCache.getPathFromCache(uri, host);
 				}
 
             if (!UtilMethods.isSet(pointer) && (uri.endsWith(dotExtension) || InodeUtils.isSet(APILocator.getFolderAPI().findFolderByPath(uri, host,APILocator.getUserAPI().getSystemUser(),false).getInode()))) {
@@ -255,9 +250,20 @@ public class CMSFilter implements Filter {
         } else {
 
 			try {
-				pointer = LiveCache.getPathFromCache(uri, host);
-			} catch (Exception e) {
+                pointer = LiveCache.getPathFromCache( uri, host, languageId );
+            } catch (Exception e) {
 				Logger.debug(this.getClass(), "Can't find pointer " + uri);
+				try {
+					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(request)){
+						response.setHeader( "Pragma", "no-cache" );
+						response.setHeader( "Cache-Control", "no-cache" );
+						response.setDateHeader( "Expires", 0 );
+						response.sendError(404);
+						return;
+					}
+				} catch (Exception e1) {
+					Logger.debug(this.getClass(), "Can't find pointer " + uri);
+				}
 			}
             // If the cache hits the db the connection needs to be manually
             // closed
@@ -347,15 +353,17 @@ public class CMSFilter implements Filter {
                 	String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
                 	if (!pointer.contains("." + ext + "?")) {
                 		boolean isDotPage = true;
-                		if(!pointer.contains("." + ext) && !pointer.endsWith("/")
-                				&& pointer.substring(pointer.lastIndexOf("/")).contains(".")){
-                			uri = pointer;
-                			try {
-								pointer = LiveCache.getPathFromCache(uri, host);
-							} catch (Exception e) {
-								Logger.debug(this.getClass(), "Can't find pointer " + uri);
-							}
-							isDotPage = false;
+                		if(!pointer.contains("." + ext) && !pointer.endsWith("/") && pointer.contains("/")){
+                			
+                			if(pointer.substring(pointer.lastIndexOf("/")).contains(".")){
+	                			uri = pointer;
+	                			try {
+									pointer = LiveCache.getPathFromCache(uri, host);
+								} catch (Exception e) {
+									Logger.debug(this.getClass(), "Can't find pointer " + uri);
+								}
+								isDotPage = false;
+                			}
                 		}
 
                 		if(isDotPage){
@@ -370,6 +378,9 @@ public class CMSFilter implements Filter {
                 				if(pointer.endsWith("/")){
                 					pointer = pointer.substring(0, pointer.lastIndexOf("/"));
                 				}
+                				if(!pointer.startsWith("/")){
+                					pointer = "/" + pointer;
+                				}     
                 				String endSlash = pointer.substring(pointer.lastIndexOf("/"));
                 				if (!pointer.endsWith("." + ext) && !endSlash.contains("#")) {
                 					if (!pointer.endsWith("/"))
@@ -439,17 +450,19 @@ public class CMSFilter implements Filter {
                 	 */
                 	boolean canRead = false;
                 	if(ident.getAssetType().equals("contentlet")){
-                		long langId;
-            			String langIdReq = req.getParameter("language_id");
-            			if(!UtilMethods.isSet(langIdReq)){
-            				langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            			}else{
-            				langId = Long.parseLong(langIdReq);
-            			}
-
                 		try{
-                			ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
-                			Contentlet proxy  = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
+                            ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageId );
+                            //If we did not find a version with for given language lets try with the default language
+                            if ( !UtilMethods.isSet( cinfo.getIdentifier() ) && !languageId.equals( APILocator.getLanguageAPI().getDefaultLanguage().getId() ) ) {
+                                languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                                cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageId );
+                            }
+
+                            Contentlet proxy  = new Contentlet();
+                			if(UtilMethods.isSet(cinfo.getLiveInode()))
+                				proxy = APILocator.getContentletAPI().find(cinfo.getLiveInode(), user, true);
+                			else if(WebAPILocator.getUserWebAPI().isLoggedToBackend(request))
+                				proxy = APILocator.getContentletAPI().find(cinfo.getWorkingInode(), user, true);
                 			canRead = UtilMethods.isSet(proxy.getInode());
                 		}catch(Exception e){
     						Logger.warn(this, "Unable to find file asset contentlet with identifier " + ident.getId(), e);
@@ -502,12 +515,12 @@ public class CMSFilter implements Filter {
 					Logger.error(CMSFilter.class,e.getMessage(),e);
 					throw new IOException(e.getMessage());
 				}
-                String mimeType = APILocator.getFileAPI().getMimeType(Config.CONTEXT.getRealPath(pointer));
+                String mimeType = APILocator.getFileAPI().getMimeType(FileUtil.getRealPath(pointer));
                 response.setContentType(mimeType);
             }
             LogFactory.getLog(this.getClass()).debug("CMS Filter going to redirect to pointer");
 
-            if((pointer.substring(pointer.lastIndexOf(".") + 1)).equals(dotExtension)){
+            if(pointer.endsWith(dotExtension)){
             	//Serving a page through the velocity servlet
                 request.getRequestDispatcher(pointer).forward(request, response);
             } else {
@@ -632,24 +645,34 @@ public class CMSFilter implements Filter {
     }
     
     public static boolean excludeURI(String uri) {
+
         if (uri.trim().equals("/c")
                 || uri.endsWith(".php")
         		|| uri.trim().startsWith("/c/")
-        		|| (uri.indexOf("/ajaxfileupload/upload") != -1)
-        		||  new File(Config.CONTEXT.getRealPath(uri)).exists()
-        		&& !"/".equals(uri)) {
+        		|| (uri.indexOf("/ajaxfileupload/upload") != -1))
+        	 {
         	return true;
         }
-        
+
         if(excludeList==null) buildExcludeList();
 
         if(excludeList.contains(uri)) return true;
-
+        
         for ( String exclusion : excludeList ) {
             if ( RegEX.contains( uri, exclusion ) ) {
                 return true;
             }
         }
+        
+        // finally, if we have the file, serve it
+        if(!"/".equals(uri)){
+			File f = new File(FileUtil.getRealPath(uri));
+			if( f.exists()){
+				return true;
+    			
+    		}
+        }
+
         return false;
    }
 

@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.time.FastDateFormat;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

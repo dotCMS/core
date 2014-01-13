@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.workflows.model;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotmarketing.business.APILocator;
 

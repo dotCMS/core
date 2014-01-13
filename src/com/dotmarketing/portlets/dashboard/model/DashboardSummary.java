@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.dashboard.model;
 import java.io.Serializable;
 import java.util.Date;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.dotmarketing.beans.Host;
 

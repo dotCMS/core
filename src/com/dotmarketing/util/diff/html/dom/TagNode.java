@@ -23,8 +23,8 @@ import java.util.Set;
 
 import com.dotmarketing.util.diff.html.ancestor.TextOnlyComparator;
 import com.dotmarketing.util.diff.html.dom.helper.AttributesMap;
-import org.xml.sax.Attributes;
-import org.xml.sax.helpers.AttributesImpl;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Node that can contain other nodes. Represents an HTML tag.

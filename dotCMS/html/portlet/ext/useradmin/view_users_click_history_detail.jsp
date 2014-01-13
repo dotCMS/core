@@ -16,7 +16,7 @@
 <%@page import="java.util.Map"%>
 <%@page import="java.util.HashMap"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.beans.Identifier"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 

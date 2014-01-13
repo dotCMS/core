@@ -1,5 +1,5 @@
 <%@ page import="java.util.*" %>
-<%@ page import="javax.portlet.WindowState" %>
+<%@ page import="com.dotcms.repackage.portlet.javax.portlet.WindowState" %>
 <%@ page import="com.dotmarketing.portlets.structure.factories.StructureFactory" %>
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure" %>
 <%@ page import="com.dotmarketing.business.APILocator" %>

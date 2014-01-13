@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.lucene.document.Document;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
+import com.dotcms.repackage.elasticsearch.org.apache.lucene.document.Document;
+import com.dotcms.repackage.elasticsearch.org.apache.lucene.search.IndexSearcher;
+import com.dotcms.repackage.elasticsearch.org.apache.lucene.search.ScoreDoc;
+import com.dotcms.repackage.elasticsearch.org.apache.lucene.search.TopDocs;
 
 import com.liferay.util.Time;
 

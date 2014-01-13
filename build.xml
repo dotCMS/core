@@ -53,6 +53,7 @@
 	<property name="war.name" value="dotcms"/>
 	<property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
 	<property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
+	<property name="build.packager" value="${build.dir}/packager" />
 	<property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
 	<property name="agent.version" value="30"/>
 
@@ -62,19 +63,30 @@
 	<property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
 	<property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
 
+    <property name="tomcat7.home" value="${tomcat7.install.location}"/>
 
-	<path id="build-classpath">
+    <path id="build-classpath">
 		<pathelement path="${build.classes}" />
 	</path>
 
 	<path id="files-classpath">
 		<pathelement location="${java.home}/../lib/tools.jar"/>
-		<fileset dir="tomcat/bin">
-			<include name="**/*.jar" />
-		</fileset>
-		<fileset dir="tomcat/lib">
-			<include name="**/*.jar" />
-		</fileset>
+
+        <fileset dir="libs/buildlibs">
+            <include name="*.jar" />
+        </fileset>
+
+        <!--We should be able to remove it soon-->
+        <fileset dir="libs/buildlibs/jsp">
+            <include name="jasper.jar" />
+            <include name="jasper-el.jar" />
+            <include name="el-api.jar" />
+            <include name="tomcat-util.jar" />
+            <include name="tomcat-juli.jar" />
+            <include name="tomcat-api.jar" />
+        </fileset>
+        <!--We should be able to remove it soon-->
+
 		<fileset dir="${lib.app}">
 			<include name="**/*.jar" />
 			<exclude name="**/dotcms*.jar" />
@@ -85,13 +97,14 @@
 	<!-- classpath only used for plugins no other task should use becuase it locks the jar files -->
 	<path id="ant-files-classpath">
 		<pathelement location="${java.home}/../lib/tools.jar"/>
-		<fileset dir="tomcat/lib">
-			<include name="**/*.jar" />
-		</fileset>
+		<fileset dir="libs/buildlibs">
+            <include name="**/*.jar" />
+        </fileset>
 		<fileset dir="${lib.app}">
 			<include name="log4j.jar" />
 			<include name="ant-tooling.jar" />
 			<include name="commons-lang-2.4.jar" />
+			<include name="tika-app-1.3.jar" />
 		</fileset>
 	</path>
 
@@ -152,24 +165,11 @@
         </copy>
 	</target>
 
-	<target name="compile-log4jappends" depends="prepare" description="Compiles source code need for our async appender.">
-		<mkdir dir="${build.log4j}" />
-		<javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.log4j}"
-			source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
-			memoryinitialsize="256m" memorymaximumsize="512m" >
-			<classpath refid="files-classpath" />
-			<include name="org/apache/log4j/appender/**"/>
-
-		</javac>
-	</target>
-
 	<target name="checkWindows">
 		<condition property="isWindows">
 			<os family="windows" />
 		</condition>
 	</target>
-
-
 
 
 	<target name="jar" depends="compile" description="Generates dotcms.jar in the 'lib' directory.">
@@ -180,10 +180,7 @@
 		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
 		<copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" >
-			<exclude name="com/dotmarketing/plugin/ant/**"/>
-			<exclude name="com/dotmarketing/plugin/util/**"/>
-		</jar>
+		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" />
 	</target>
 
     <target name="jar-with-tests" depends="compile, compile-tests" description="Generates dotcms.jar in the 'lib' directory includind tests classes.">
@@ -194,14 +191,7 @@
 		<copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
 		<copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" >
-			<exclude name="com/dotmarketing/plugin/ant/**"/>
-			<exclude name="com/dotmarketing/plugin/util/**"/>
-		</jar>
-	</target>
-
-	<target name="jar-log4jtasks" depends="compile-log4jappends" description="Generates dotcms-log4j.jar in the 'tomcat/lib' directory.">
-		<jar jarfile="${build.lib}/dotcms_log4j.jar" basedir="${build.log4j}"/>
+		<jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" />
 	</target>
 
 	<!-- Configure the directory into which the web application is built -->
@@ -240,6 +230,15 @@
         <!-- Freetts -->
 		<delete dir="${build.classes}" />
 	</target>
+
+    <target name="deploy-core-with-tests-no-jsp" depends="jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+        <delete>
+            <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
+        </delete>
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <!-- Freetts -->
+        <delete dir="${build.classes}" />
+    </target>
 
 	<target name="build-core" depends="jsp,jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
 
@@ -292,7 +291,7 @@
              outputDir="${src.jsp}/">
 
 		</jasper2>
-		<javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8" 
+		<javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8"
 		fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.6"
 		target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
 		memoryinitialsize="256m" memorymaximumsize="512m">
@@ -321,8 +320,8 @@
 			</classpath>
 		</taskdef>
 
-		<buildSQLTask dialect="net.sf.hibernate.dialect.PostgreSQLDialect" />
-		<buildSQLTask dialect="net.sf.hibernate.dialect.OracleDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.PostgreSQLDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.OracleDialect" />
 		
 		<concat destfile="${build.dir}/sql/postgres.sql" fixlastline="yes">
 			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.postgres}" />
@@ -356,9 +355,9 @@
 			</classpath>
 		</taskdef>
 
-		<buildSQLTask dialect="net.sf.hibernate.dialect.MySQLDialect" />
-		<buildSQLTask dialect="net.sf.hibernate.dialect.SybaseDialect" />
-		<buildSQLTask dialect="net.sf.hibernate.dialect.HSQLDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.MySQLDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.SybaseDialect" />
+		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.HSQLDialect" />
 				
 
 		<concat destfile="${build.dir}/sql/mssql.sql" fixlastline="yes">
@@ -441,8 +440,12 @@
 		<tar destfile="${distribution.output}/../dotcms_${dotcms.release.version}.tar.gz" compression="gzip" longfile="gnu">
 			<tarfileset dir="${distribution.output}">
 		        <include name="**/**"/>
+				<exclude name="**/*.sh"/>
 		    </tarfileset>
 		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
+		        <include name="**/*.sh"/>
+		    </tarfileset>
+			<tarfileset dir="${distribution.output}/dotserver/tomcat/bin" prefix="/dotserver/tomcat/bin" filemode="755">
 		        <include name="**/*.sh"/>
 		    </tarfileset>
 		</tar>
@@ -519,30 +522,6 @@
 
 </target>
 
-
-<target name="war-file" description="builds dotCMS as a war">
-
-	<mkdir dir="${build.war}"/>
-
-	 <copy todir="${build.war}/${war.name}.war">
-		<fileset dir="dotCMS/">
-			<exclude name="assets/"/>
-			<exclude name="WEB-INF/backup/"/>
-			<exclude name="WEB-INF/dotlucene/"/>
-			<exclude name="dot_secure/"/>
-			<exclude name="dotsecure/"/>
-		</fileset>
-	</copy>
-	
-</target>
-
-
-
-<target name="war" depends="deploy-no-jsp,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">
-	<antcall target="war-file"/>
-</target>
-
-
 <!-- Unit testing and code coverage -->
 
 <path id="emma.lib" >
@@ -580,6 +559,7 @@
     <pathelement location="${lib.app}/lib/commons-httpclient-3.1.jar"/>
     <pathelement location="${lib.app}/lib/commons-logging-1.1.1.jar"/>
     <pathelement location="${lib.app}/lib/aspectjrt-1.5.3.jar"/>
+    <pathelement location="${lib.app}/tika-app-1.3.jar"/>
   </classpath>
 </taskdef>
 
@@ -591,7 +571,8 @@
 		    testurl="http://localhost:${server.port}"
 		    starttarget="tomcat-start"
 		    stoptarget="tomcat-stop"
-		    testtarget="test-all-junits"/>
+		    testtarget="test-all-junits"
+			timeout="600000"/>
 		<antcall target="restore-files"/>
 		<!--<antcall target="drop-db"/>-->
 	</target>
@@ -919,9 +900,13 @@
 
 <target name="build" depends="build-core,build-plugins" description="build the dotCMS core and plugins" />
 
+<target name="build-no-jsp" depends="build-core-no-jsp,build-plugins" description="build the dotCMS core and plugins" />
+
 <target name="deploy" depends="build, deploy-core, deploy-plugins" description="builds and deploys core and plugins" />
 
 <target name="deploy-tests" depends="uncomment-test-servlet, build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
+
+<target name="deploy-tests-no-jsp" depends="uncomment-test-servlet, build-no-jsp, deploy-core-with-tests-no-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
 <target name="deploy-dev" depends="deploy-plugins"/>
 
@@ -1064,5 +1049,223 @@
 		</jar>
 </target>
 
+    <!--++++++++++++++++++++++++++++++++++++++++++-->
+    <!--++++++++++++++++++++++++++++++++++++++++++-->
+
+    <target name="find-duplicated-classes">
+
+        <taskdef classname="com.tonicsystems.jarjar.InspectorTask" name="inspectorTask">
+            <classpath>
+                <path refid="files-classpath" />
+            </classpath>
+        </taskdef>
+
+        <inspectorTask librarypath="${lib.app}"/>
+    </target>
+
+    <target name="find-dependencies">
+
+        <property name="lib.classpath" refid="files-classpath"/>
+
+        <java jar="${lib.app}/jarjar-1.4.jar" fork="true">
+            <arg value="find"/>
+            <arg value="jar"/>
+            <arg value="${lib.classpath}"/>
+        </java>
+    </target>
+
+    <!--Dependencies that have the given jar-->
+    <target name="find-dependencies-for-jar">
+
+        <property name="lib.classpath" refid="files-classpath"/>
+
+        <java jar="${lib.app}/jarjar-1.4.jar" fork="true">
+            <arg value="find"/>
+            <arg value="jar"/>
+
+            <arg value="${lib.app}/dotcms_2.6.jar"/>
+            <arg value="${lib.classpath}"/>
+        </java>
+    </target>
+
+    <!--Who depend on a given jar-->
+    <target name="find-dependencies-on-jar">
+
+        <property name="lib.classpath" refid="files-classpath"/>
+
+        <java jar="${lib.app}/jarjar-1.4.jar" fork="true">
+            <arg value="find"/>
+            <arg value="jar"/>
+            <!--<arg value="class"/>-->
+
+            <arg value="${lib.classpath}"/>
+            <arg value="${lib.app}/dotcms_2.6.jar"/>
+        </java>
+    </target>
+
+    <target name="print-classpath" description="Print the application classpath">
+        <!-- Capture the path as a delimited property using the refid attribute -->
+        <property name="app-classpath" refid="files-classpath"/>
+        <!-- Emit the property to the ant console -->
+        <echo message="${app-classpath}"/>
+    </target>
+
+    <!--<target name="war" depends="deploy-no-jsp,repackage-libraries,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">-->
+    <target name="war" depends="deploy-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
+        <antcall target="war-file"/>
+    </target>
+    <target name="war-tests" depends="deploy-tests-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
+        <antcall target="war-file"/>
+    </target>
+
+    <target name="war-file" description="builds dotCMS as a war">
+
+        <!--Clean-up-->
+        <delete dir="${build.war}"/>
+        <mkdir dir="${build.war}"/>
+
+        <!--Prepare the content of the war-->
+        <copy todir="${build.war}/${war.name}.war">
+            <fileset dir="dotCMS/">
+                <exclude name="assets/"/>
+                <exclude name="WEB-INF/backup/"/>
+                <exclude name="WEB-INF/dotlucene/"/>
+                <exclude name="dot_secure/"/>
+                <exclude name="dotsecure/"/>
+            </fileset>
+        </copy>
+        <copy todir="${build.war}/${war.name}.war/WEB-INF/classes" overwrite="true">
+            <fileset dir="${src.conf.dir}">
+                <exclude name="**/.svn" />
+            </fileset>
+        </copy>
+        <mkdir dir="${build.war}/${war.name}.war/META-INF"/>
+        <copy file="tomcat/conf/Catalina/localhost/ROOT.xml" tofile="${build.war}/${war.name}.war/META-INF/context.xml"/>
+
+        <!--Create the war-->
+        <war destfile="${build.war}/dotcms_${dotcms.release.version}.war" webxml="dotCMS/WEB-INF/web.xml">
+            <fileset dir="${build.war}/${war.name}.war">
+                <exclude name="WEB-INF/web.xml"/>
+            </fileset>
+            <!--<metainf dir="${build.war}/${war.name}/META-INF"/>-->
+        </war>
+    </target>
+
+    <target name="undeploy-war-tomcat7">
+        <delete dir="${tomcat7.home}/webapps/ROOT"/>
+    </target>
+
+    <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war">
+        <antcall target="move-war-tomcat7"/>
+    </target>
+    <target name="deploy-war-tomcat7-tests" depends="clone-pull-tomcat7, war-tests">
+        <antcall target="move-war-tomcat7"/>
+    </target>
+
+    <target name="move-war-tomcat7" depends="undeploy-war-tomcat7">
+        <copy todir="${tomcat7.home}/lib/">
+            <fileset dir="libs/buildlibs/">
+                <include name="log4j-1.2.16.jar"/>
+                <include name="log4j-appenders-1.0.jar"/>
+                <include name="log4j.xml"/>
+
+                <include name="mysql-connector-java-5.1.23-bin.jar"/>
+                <include name="postgresql-9.0-801.jdbc3.jar"/>
+                <include name="ojdbc5.jar"/>
+                <include name="jtds-1.2.2.jar"/>
+                <include name="h2-1.3.169.jar"/>
+            </fileset>
+        </copy>
+
+        <!--<copy todir="${tomcat7.home}/bin/">
+            <fileset dir="./extra/tomcat-7/conf/"/>
+        </copy>-->
+
+        <copy todir="${tomcat7.home}/webapps/ROOT">
+            <fileset dir="${build.war}/${war.name}.war"/>
+        </copy>
+    </target>
+
+    <target name="clone-pull-tomcat7">
+        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat7.home}"/>
+    </target>
+
+    <!--++++++++++++++++++++++++++++++++++++++++++-->
+    <!--GIT COMMANDS-->
+    <macrodef name="git">
+        <attribute name="command"/>
+        <attribute name="dir" default=""/>
+        <attribute default="false" name="failonerror"/>
+        <element name="args" optional="true"/>
+        <sequential>
+            <echo message="git @{command}"/>
+            <exec executable="git" dir="@{dir}" >
+                <arg value="@{command}"/>
+                <args/>
+            </exec>
+        </sequential>
+    </macrodef>
+    <macrodef name="git-clone-pull">
+        <attribute name="repository"/>
+        <attribute name="version"/>
+        <attribute name="dest"/>
+        <attribute default="false" name="failonerror"/>
+        <sequential>
+            <git command="clone">
+                <args>
+                    <arg value="-b"/>
+                    <arg value="@{version}"/>
+                    <arg value="@{repository}"/>
+                    <arg value="@{dest}"/>
+                </args>
+            </git>
+            <git command="pull" dir="@{dest}"/>
+        </sequential>
+    </macrodef>
+    <!--<target name="clone-tomcat">
+        <git command="clone">
+            <args>
+                <arg value="https://github.com/dotCMS/tomcat7.git"/>
+                <arg value="../app-servers/tomcat"/>
+            </args>
+        </git>
+    </target>-->
+    <!--GIT COMMANDS-->
+    <!--++++++++++++++++++++++++++++++++++++++++++-->
+
+    <!--++++++++++++++++++++++++++++++++++++++++++-->
+    <!--PACKAGER-->
+    <path id="packager-classpath">
+        <fileset dir="${lib.app}">
+            <include name="**/*.jar" />
+        </fileset>
+    </path>
+
+    <target name="build-packager-classpath">
+        <manifestclasspath property="packager-jar-cp" jarfile="${lib.app}/packager-taks.jar">
+            <classpath refid="packager-classpath" />
+        </manifestclasspath>
+    </target>
+
+    <target name="clean-packager">
+        <delete file="${lib.app}/packager-taks.jar" failonerror="false" />
+        <delete dir="${build.packager}" failonerror="false"/>
+    </target>
+
+    <target name="compile-packager" depends="clean-packager, prepare" description="Compiles packager source.">
+        <mkdir dir="${build.packager}" />
+        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.packager}"
+               source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
+               memoryinitialsize="256m" memorymaximumsize="512m" >
+            <classpath refid="files-classpath" />
+            <include name="com/tonicsystems/jarjar/**"/>
+        </javac>
+    </target>
+
+    <target name="jar-packager" depends="compile-packager,build-packager-classpath" description="Generates packager-taks.jar in the 'build/packager' directory.">
+        <jar jarfile="${lib.app}/packager-taks.jar" basedir="${build.packager}"/>
+    </target>
+    <!--PACKAGER-->
+    <!--++++++++++++++++++++++++++++++++++++++++++-->
 
 </project>

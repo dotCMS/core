@@ -19,9 +19,9 @@ package org.apache.velocity.anakia;
  * under the License.    
  */
 
-import org.jdom.Element;
-import org.jdom.Namespace;
-import org.jdom.DefaultJDOMFactory;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.Namespace;
+import com.dotcms.repackage.tika_app_1_3.org.jdom.DefaultJDOMFactory;
 
 /**
  * A customized JDOMFactory for Anakia that produces {@link AnakiaElement}
@@ -40,7 +40,7 @@ public class AnakiaJDOMFactory extends DefaultJDOMFactory
     }
 
     /**
-     * @see org.jdom.DefaultJDOMFactory#element(java.lang.String, org.jdom.Namespace)
+     * @see com.dotcms.repackage.tika_app_1_3.org.jdom.DefaultJDOMFactory#element(java.lang.String, com.dotcms.repackage.tika_app_1_3.org.jdom.Namespace)
      */
     public Element element(String name, Namespace namespace)
     {
@@ -48,7 +48,7 @@ public class AnakiaJDOMFactory extends DefaultJDOMFactory
     }
 
     /**
-     * @see org.jdom.DefaultJDOMFactory#element(java.lang.String)
+     * @see com.dotcms.repackage.tika_app_1_3.org.jdom.DefaultJDOMFactory#element(java.lang.String)
      */
     public Element element(String name)
     {
@@ -56,7 +56,7 @@ public class AnakiaJDOMFactory extends DefaultJDOMFactory
     }
 
     /**
-     * @see org.jdom.DefaultJDOMFactory#element(java.lang.String, java.lang.String)
+     * @see com.dotcms.repackage.tika_app_1_3.org.jdom.DefaultJDOMFactory#element(java.lang.String, java.lang.String)
      */
     public Element element(String name, String uri)
     {
@@ -64,7 +64,7 @@ public class AnakiaJDOMFactory extends DefaultJDOMFactory
     }
 
     /**
-     * @see org.jdom.DefaultJDOMFactory#element(java.lang.String, java.lang.String, java.lang.String)
+     * @see com.dotcms.repackage.tika_app_1_3.org.jdom.DefaultJDOMFactory#element(java.lang.String, java.lang.String, java.lang.String)
      */
     public Element element(String name, String prefix, String uri)
     {

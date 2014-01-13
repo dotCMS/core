@@ -26,9 +26,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import net.sf.hibernate.Hibernate;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.UserType;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.Hibernate;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.UserType;
 
 /**
  * <a href="IntegerType.java.html"><b><i>View Source</i></b></a>

@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.CacheControl;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
 
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
@@ -26,7 +28,7 @@ import com.liferay.portal.model.User;
 public class EnvironmentResource extends WebResource {
 
 	/**
-	 * <p>Returns a JSON representation of the environments that the Role with the given roleid can push to
+	 * <p>Returns a JSON representation of the environments (with servers) that the Role with the given roleid can push to
 	 * <br>Each Environment node contains: id, name.
 	 *
 	 * Usage: /loadenvironments/{roleid}
@@ -61,7 +63,7 @@ public class EnvironmentResource extends WebResource {
 		List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(),true);
 		Set<Environment> environments = new HashSet<Environment>();
 		if(isAdmin){
-			List<Environment> app = APILocator.getEnvironmentAPI().findAllEnvironments();
+			List<Environment> app = APILocator.getEnvironmentAPI().findEnvironmentsWithServers();
 			for(Environment e:app)
 				environments.add(e);
 		}
@@ -83,8 +85,10 @@ public class EnvironmentResource extends WebResource {
 
 		json.append("]");
 
+		CacheControl cc = new CacheControl();
+		cc.setNoCache(true);
+		return Response.ok(json.toString(), MediaType.APPLICATION_JSON_TYPE).cacheControl(cc).build();
 
-		return responseResource.response( json.toString() );
 	}
 
 }

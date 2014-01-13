@@ -1,19 +1,16 @@
 package com.dotcms.publishing;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.sun.jna.Platform;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Arrays;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 public abstract class Publisher implements IPublisher {
 
@@ -78,9 +75,8 @@ public abstract class Publisher implements IPublisher {
 				throw new DotPublishingException("no bundle file found");
 			}
 
-			String separator = Platform.isWindows()?File.separator+"\\":File.separator;
-			List<String> path = Arrays.asList(file.getAbsolutePath().split(separator));
-			String host = path.get(path.indexOf(config.getId())+2);
+            List<String> path = Arrays.asList( file.getAbsolutePath().split( File.separator ) );
+            String host = path.get(path.indexOf(config.getId())+2);
 
 			return APILocator.getHostAPI().resolveHostName(host, APILocator.getUserAPI().getSystemUser(), true);
 		}
@@ -97,11 +93,9 @@ public abstract class Publisher implements IPublisher {
 				throw new DotPublishingException("no bundle file found");
 			}
 
-
 			String absolutePath = file.getAbsolutePath();
-			String separator = Platform.isWindows()?File.separator+"\\":File.separator;
-			List<String> path = Arrays.asList(absolutePath.split(separator));
-			path = path.subList(path.indexOf(config.getId())+4, path.size());
+            List<String> path = Arrays.asList( absolutePath.split( File.separator ) );
+            path = path.subList(path.indexOf(config.getId())+4, path.size());
 			StringBuilder bob = new StringBuilder();
 			for(String x:path){
 				bob.append("/" + x);

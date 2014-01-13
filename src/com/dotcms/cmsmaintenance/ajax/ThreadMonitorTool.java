@@ -10,7 +10,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;

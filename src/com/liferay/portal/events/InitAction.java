@@ -35,9 +35,9 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.helpers.NullEnumeration;
 import org.apache.log4j.xml.DOMConfigurator;
-import org.dom4j.Document;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
+import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.SAXReader;
 
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.struts.SimpleAction;

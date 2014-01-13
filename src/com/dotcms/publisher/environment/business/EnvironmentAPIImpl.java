@@ -52,6 +52,11 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 	}
 
 	@Override
+	public List<Environment> findEnvironmentsWithServers() throws DotDataException {
+		return environmentFactory.getEnvironmentsWithServers();
+	}
+
+	@Override
 	public void deleteEnvironment(String id) throws DotDataException {
 
 		if(!UtilMethods.isSet(id))

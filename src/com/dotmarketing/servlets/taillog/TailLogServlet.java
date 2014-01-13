@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.io.input.TailerListenerAdapter;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.input.TailerListenerAdapter;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.AdminLogger;

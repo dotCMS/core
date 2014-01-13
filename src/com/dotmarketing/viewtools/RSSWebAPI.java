@@ -13,13 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilder;
+import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilderFactory;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Document;
+import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Element;
+import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Node;
+import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.NodeList;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
@@ -95,7 +95,7 @@ public class RSSWebAPI {
 	 * public static ArrayList<HashMap<String, String>> RSSIngester(String
 	 * uri) { ArrayList<HashMap<String, String>> returnValue = new ArrayList<HashMap<String,String>>();
 	 * try { DocumentBuilderFactory builderFactory =
-	 * org.apache.xerces.jaxp.DocumentBuilderFactoryImpl.newInstance();
+	 * com.dotcms.repackage.tika_app_1_3.org.apache.xerces.jaxp.DocumentBuilderFactoryImpl.newInstance();
 	 * DocumentBuilder builder = builderFactory.newDocumentBuilder(); Document
 	 * doc = builder.parse(uri); NodeList items =
 	 * doc.getElementsByTagName("item"); for(int i = 0; i <

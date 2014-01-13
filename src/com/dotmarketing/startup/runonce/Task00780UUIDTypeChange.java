@@ -975,59 +975,59 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {
-		List<String> tables = new ArrayList<String>();
+		List<String> tablesList = new ArrayList<String>();
 		if(DbConnectionFactory.isOracle()
 				||DbConnectionFactory.isMsSql()){
 			dropIndexes();
-			tables.add("template");
-			tables.add("htmlpage");
-			tables.add("links");
-			tables.add("file_asset");
-			tables.add("containers");
-			tables.add("contentlet");
-			tables.add("field");
-			tables.add("relationship");
-			tables.add("structure");
-			tables.add("folder");
-			tables.add("identifier");
-			tables.add("category");
-			tables.add("workflow_task");
-			tables.add("workflow_comment");
-			tables.add("workflow_history");
-			tables.add("mailing_list");
-			tables.add("campaign");
-			tables.add("click");
-			tables.add("recipient");
-			tables.add("communication");
-			tables.add("user_proxy");
-			tables.add("virtual_link");
-			tables.add("user_comments");
-			tables.add("user_filter");
-			tables.add("report_asset");
-			tables.add("report_parameter");
-			tables.add("cms_role");
-			tables.add("users_cms_roles");
-			tables.add("cms_layout");
-			tables.add("layouts_cms_roles");
-			tables.add("cms_layouts_portlets");
-			tables.add("host_variable");
-			tables.add("fixes_audit");
-			tables.add("permission");
-			tables.add("permission_reference");
-			tables.add("content_rating");
-			tables.add("tag_inode");
-			tables.add("web_form");
-			tables.add("calendar_reminder");
-			tables.add("trackback");
-			tables.add("dist_reindex_journal");
-			tables.add("tree");
-			tables.add("multi_tree");
-			tables.add("analytic_summary");
-			tables.add("inode");
+			tablesList.add("template");
+			tablesList.add("htmlpage");
+			tablesList.add("links");
+			tablesList.add("file_asset");
+			tablesList.add("containers");
+			tablesList.add("contentlet");
+			tablesList.add("field");
+			tablesList.add("relationship");
+			tablesList.add("structure");
+			tablesList.add("folder");
+			tablesList.add("identifier");
+			tablesList.add("category");
+			tablesList.add("workflow_task");
+			tablesList.add("workflow_comment");
+			tablesList.add("workflow_history");
+			tablesList.add("mailing_list");
+			tablesList.add("campaign");
+			tablesList.add("click");
+			tablesList.add("recipient");
+			tablesList.add("communication");
+			tablesList.add("user_proxy");
+			tablesList.add("virtual_link");
+			tablesList.add("user_comments");
+			tablesList.add("user_filter");
+			tablesList.add("report_asset");
+			tablesList.add("report_parameter");
+			tablesList.add("cms_role");
+			tablesList.add("users_cms_roles");
+			tablesList.add("cms_layout");
+			tablesList.add("layouts_cms_roles");
+			tablesList.add("cms_layouts_portlets");
+			tablesList.add("host_variable");
+			tablesList.add("fixes_audit");
+			tablesList.add("permission");
+			tablesList.add("permission_reference");
+			tablesList.add("content_rating");
+			tablesList.add("tag_inode");
+			tablesList.add("web_form");
+			tablesList.add("calendar_reminder");
+			tablesList.add("trackback");
+			tablesList.add("dist_reindex_journal");
+			tablesList.add("tree");
+			tablesList.add("multi_tree");
+			tablesList.add("analytic_summary");
+			tablesList.add("inode");
 		}
 		if(DbConnectionFactory.isMySql())
-		    tables.add("permission");
-		return tables;
+		    tablesList.add("permission");
+		return tablesList;
 	}
 	
 	private void dropIndexes(){

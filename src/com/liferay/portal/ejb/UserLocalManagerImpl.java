@@ -29,8 +29,8 @@ import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
-import com.liferay.counter.ejb.CounterManagerUtil;
-import com.liferay.mail.ejb.MailManagerUtil;
+import com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotcms.repackage.mail_ejb.com.liferay.mail.ejb.MailManagerUtil;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.DuplicateUserIdException;
 import com.liferay.portal.NoSuchUserException;

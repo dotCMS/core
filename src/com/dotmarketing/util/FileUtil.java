@@ -37,7 +37,7 @@ public class FileUtil {
 		if (extensions.size() == 0) {
 			synchronized (FileUtil.class) {
 				if (extensions.size() == 0) {
-					String path = Config.CONTEXT.getRealPath("/html/images/icons");
+					String path = com.liferay.util.FileUtil.getRealPath("/html/images/icons");
 
 					String[] files = new File(path).list(new PNGFileNameFilter());
 					for (String name : files) {
@@ -86,7 +86,7 @@ public class FileUtil {
 		if (UtilMethods.isSet(realPath)) {
 			return realPath + path;
 		} else {
-			return Config.CONTEXT.getRealPath(assetPath + path);
+			return com.liferay.util.FileUtil.getRealPath(assetPath + path);
 		}
 
 	}
@@ -153,7 +153,7 @@ public class FileUtil {
 		if(RegEX.contains(path, "^[a-zA-Z]:|^/|^\\\\")){
 			return path;
 		}else{
-			return com.dotmarketing.util.Config.CONTEXT.getRealPath(path);
+			return com.liferay.util.FileUtil.getRealPath(path);
 		}
 	}
 }

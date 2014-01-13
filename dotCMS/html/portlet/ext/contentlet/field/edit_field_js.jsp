@@ -1,6 +1,6 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.Config"%>
-<%@page import="javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
@@ -14,9 +14,6 @@
 <script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 <style type="text/css">
-    #aceEditor { 
-        position: relative;	  	
-    }
     #aceTextArea { 
         position: relative;	  	
     }
@@ -139,6 +136,11 @@ var cmsfile=null;
 	    	if(pDiv != null && pDiv != undefined){
 	    		dojo.destroy(pDiv);
 	    	}
+	    	
+	    	var swDiv = dojo.byId(x+'ThumbnailSliderWrapper');
+	       	if(swDiv != null && swDiv != undefined){
+	       	    dojo.destroy(swDiv);
+	       	}
 	    	
 	    	dojo.query(".thumbnailDiv" + x).forEach(function(node, index, arr){
 	    		dojo.destroy(node);
@@ -484,8 +486,8 @@ var cmsfile=null;
 			tinymce.EditorManager.get(glossaryTermId).load();
 		} else if (enabledCodeAreas[glossaryTermId]) {
 			if(glossaryTermId==aceTextId){
-				textEditor.setValue(dojo.byId(glossaryTermId).value);
-				textEditor.clearSelection();				
+				textEditor[glossaryTermId].setValue(dojo.byId(glossaryTermId).value);
+				textEditor[glossaryTermId].clearSelection();				
 			} else {
 				editor.setValue(dojo.byId(glossaryTermId).value);
 				editor.clearSelection();
@@ -694,36 +696,35 @@ var cmsfile=null;
 		editTextManager.editText(inode);
 	}
 	
-	var tog = true;
-	var textEditor;
+	var textEditor = new Array();
 	var aceTextId;
 	function aceText(textarea,keyValue) {
-		if(tog){
-			textEditor = ace.edit('aceTextArea');
-			textEditor.setTheme("ace/theme/textmate");
-			textEditor.getSession().setMode("ace/mode/"+keyValue);
-			textEditor.getSession().setUseWrapMode(true);
-			tog = false;
+		if(document.getElementById('aceTextArea_'+textarea).style.position != 'relative'){
+			document.getElementById('aceTextArea_'+textarea).style.position='relative';
+			textEditor[textarea] = ace.edit('aceTextArea_'+textarea);
+			textEditor[textarea].setTheme("ace/theme/textmate");
+			textEditor[textarea].getSession().setMode("ace/mode/"+keyValue);
+			textEditor[textarea].getSession().setUseWrapMode(true);
 			aceTextId = textarea;
 		}
-    	dijit.byId("toggleEditor").disabled=true;
-		var acetId = document.getElementById('aceTextArea');
+    	dijit.byId("toggleEditor_"+textarea).disabled=true;
+		var acetId = document.getElementById('aceTextArea_'+textarea);
 		var aceClass = acetId.className;
-		if (dijit.byId("toggleEditor").checked) {
+		if (dijit.byId("toggleEditor_"+textarea).checked) {
 			document.getElementById(textarea).style.display = "none";
 			acetId.className = aceClass.replace('classAce', 'aceText');
-			textEditor.setValue(document.getElementById(textarea).value);
-			textEditor.clearSelection();
+			textEditor[textarea].setValue(document.getElementById(textarea).value);
+			textEditor[textarea].clearSelection();
 			enabledCodeAreas[textarea]=true;
 		} else {
-			var editorText = textEditor.getValue();
+			var editorText = textEditor[textarea].getValue();
 			acetId.className = aceClass.replace('aceText', 'classAce');
 			document.getElementById(textarea).style.display = "inline";
 			document.getElementById(textarea).value = editorText;
-			textEditor.setValue("");
+			textEditor[textarea].setValue("");
 			enabledCodeAreas[textarea]=false;
 		}
-		dijit.byId("toggleEditor").disabled=false;
+		dijit.byId("toggleEditor_"+textarea).disabled=false;
 	}
 </script>
 

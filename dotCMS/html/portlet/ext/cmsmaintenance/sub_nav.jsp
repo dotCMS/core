@@ -13,7 +13,7 @@
 	if (!UtilMethods.isSet(strutsAction) || strutsAction.equals(portlet1.getInitParams().get("view-action"))) {
 		List<CrumbTrailEntry> crumbTrailEntries = new ArrayList<CrumbTrailEntry>();
 		
-		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "javax.portlet.title." + portletId1), null));
+		crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title." + portletId1), null));
 		
 		request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, crumbTrailEntries);
 	}

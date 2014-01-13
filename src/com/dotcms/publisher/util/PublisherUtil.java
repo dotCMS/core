@@ -14,12 +14,12 @@ import java.util.Set;
 
 import javax.activation.MimetypesFileTypeMap;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
+import com.dotcms.repackage.tika_app_1_3.org.apache.tika.metadata.Metadata;
+import com.dotcms.repackage.tika_app_1_3.org.apache.tika.parser.AutoDetectParser;
+import com.dotcms.repackage.tika_app_1_3.org.apache.tika.parser.ParseContext;
+import com.dotcms.repackage.tika_app_1_3.org.apache.tika.parser.Parser;
+import com.dotcms.repackage.tika_app_1_3.org.apache.tika.sax.BodyContentHandler;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.ContentHandler;
 
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -40,7 +40,7 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Arrays;
 /**
  * This class manage all the operation we can do over a from/to a PublishQueue index (search, add and delete)
  * @author Oswaldo
@@ -106,7 +106,7 @@ public class PublisherUtil {
 		b.setId(row.get("id").toString());
 		b.setName(row.get("name").toString());
 		b.setPublishDate((Date)row.get("publish_date"));
-		b.setPublishDate((Date)row.get("expire_date"));
+		b.setExpireDate((Date)row.get("expire_date"));
 		b.setOwner(row.get("owner").toString());
 		b.setForcePush(row.get("force_push") == null ? false :DbConnectionFactory.isDBTrue(row.get("force_push").toString()));
 		return b;

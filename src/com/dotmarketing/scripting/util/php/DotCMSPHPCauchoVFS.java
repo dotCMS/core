@@ -42,15 +42,15 @@ import java.io.RandomAccessFile;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import com.caucho.util.CharBuffer;
-import com.caucho.vfs.FileRandomAccessStream;
-import com.caucho.vfs.FileReadStream;
-import com.caucho.vfs.FileWriteStream;
-import com.caucho.vfs.FilesystemPath;
-import com.caucho.vfs.Path;
-import com.caucho.vfs.RandomAccessStream;
-import com.caucho.vfs.StreamImpl;
-import com.caucho.vfs.VfsStream;
+import com.dotcms.repackage.resin_util.com.caucho.util.CharBuffer;
+import com.dotcms.repackage.resin_util.com.caucho.vfs.FileRandomAccessStream;
+import com.dotcms.repackage.resin_util.com.caucho.vfs.FileReadStream;
+import com.dotcms.repackage.resin_util.com.caucho.vfs.FileWriteStream;
+import com.dotcms.repackage.resin_util.com.caucho.vfs.FilesystemPath;
+import com.dotcms.repackage.resin_util.com.caucho.vfs.Path;
+import com.dotcms.repackage.resin_util.com.caucho.vfs.RandomAccessStream;
+import com.dotcms.repackage.resin_util.com.caucho.vfs.StreamImpl;
+import com.dotcms.repackage.resin_util.com.caucho.vfs.VfsStream;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -67,6 +67,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * DotCMS VFS for use within the dotCMS Scripting Plugin.
@@ -678,7 +679,7 @@ public class DotCMSPHPCauchoVFS extends FilesystemPath {
 		if(!UtilMethods.isSet(uri)){
 			return null;
 		}
-		String inode = UtilMethods.getFileName(new File(Config.CONTEXT.getRealPath(assetPath + uri)).getName());
+		String inode = UtilMethods.getFileName(new File(FileUtil.getRealPath(assetPath + uri)).getName());
 		User mu = null; 
 
 		try{
@@ -710,7 +711,7 @@ public class DotCMSPHPCauchoVFS extends FilesystemPath {
 		}
 
 		if(!UtilMethods.isSet(realPath)){
-			_file = new File(Config.CONTEXT.getRealPath(assetPath + uri));
+			_file = new File(FileUtil.getRealPath(assetPath + uri));
 		}else{
 			_file = new File(realPath + uri);
 		}

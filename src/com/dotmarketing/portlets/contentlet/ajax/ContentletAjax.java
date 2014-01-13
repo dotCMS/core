@@ -18,7 +18,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
@@ -1100,7 +1100,7 @@ public class ContentletAjax {
 	private String getGlobalVariablesPath() {
 		String globalVarsPath = Config.getStringProperty("GLOBAL_VARIABLES_PATH");
 		if (!UtilMethods.isSet(globalVarsPath)) {
-			globalVarsPath = Config.CONTEXT.getRealPath(File.separator + ".." + File.separator + "common"
+			globalVarsPath = FileUtil.getRealPath(File.separator + ".." + File.separator + "common"
 					+ File.separator + "ext-ejb" + File.separator + "content" + File.separator);
 		}
 		if (!globalVarsPath.endsWith(File.separator))
@@ -1310,7 +1310,7 @@ public class ContentletAjax {
 						}
 					}
 				}else{
-					elementValue = null;
+					elementValue = new File(binaryFileValue);
 				}
 			}
 			contentletFormData.put(elementName, elementValue);

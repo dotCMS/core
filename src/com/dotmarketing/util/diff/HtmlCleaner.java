@@ -19,9 +19,9 @@ package com.dotmarketing.util.diff;
 import java.io.IOException;
 
 import com.dotmarketing.util.diff.helper.NekoHtmlParser;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.ContentHandler;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.InputSource;
+import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
 
 public class HtmlCleaner {
 
