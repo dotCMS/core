@@ -1,52 +1,52 @@
 package com.dotcms.rest;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.apache.commons.io.IOUtils;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
-import org.elasticsearch.client.AdminClient;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.jgroups.Address;
-import org.jgroups.Event;
-import org.jgroups.JChannel;
-import org.jgroups.PhysicalAddress;
-import org.jgroups.View;
-import org.jgroups.stack.IpAddress;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.ActionFuture;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.AdminClient;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.cluster.node.DiscoveryNode;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Consumes;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.POST;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.Address;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.Event;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.JChannel;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.PhysicalAddress;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.View;
+import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.stack.IpAddress;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -193,7 +193,7 @@ public class ClusterResource extends WebResource {
     		}
 
     		jsonNode.put("esStatus", esStatus.toString());
-
+    		jsonNode.put("status", esStatus&&cacheStatus?"green":"red");
 
     		jsonNode.put("myself", myServerId.equals(server.getServerId()));
     		jsonNode.put("cachePort", server.getCachePort());
@@ -255,6 +255,141 @@ public class ClusterResource extends WebResource {
 		jsonNode.put("status", clusterStatus);
 
         return responseResource.response( jsonNode.toString() );
+
+    }
+
+    /**
+     * Returns a Map with the info of the Node with the given Id
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/getNodeStatus/{params:.*}")
+    @Produces ("application/json")
+    public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+
+        InitDataObject initData = init( params, true, request, false );
+
+        Map<String, String> paramsMap = initData.getParamsMap();
+		String serverId = paramsMap.get("id");
+
+		if(!UtilMethods.isSet(serverId)) return null;
+
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        ServerAPI serverAPI = APILocator.getServerAPI();
+
+        Server server = serverAPI.getServer(serverId);
+
+        if(server==null) return null;
+
+        JSONObject jsonNodeStatusObject = new JSONObject();
+
+        // JGroups Cache
+        View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
+        JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
+
+        if(view!=null) {
+        	List<Address> members = view.getMembers();
+
+        	// general cache stats
+        	jsonNodeStatusObject.put( "cacheClusterName", channel.getClusterName());
+        	jsonNodeStatusObject.put( "cacheOpen", Boolean.toString(channel.isOpen()));
+        	jsonNodeStatusObject.put( "cacheNumberOfNodes", Integer.toString(members.size()));
+        	jsonNodeStatusObject.put( "cacheAddress", channel.getAddressAsString());
+        	jsonNodeStatusObject.put( "cacheReceivedBytes", Long.toString(channel.getReceivedBytes()) + "/" + Long.toString(channel.getSentBytes()));
+        	jsonNodeStatusObject.put( "cacheReceivedMessages", Long.toString(channel.getReceivedMessages()));
+        	jsonNodeStatusObject.put( "cacheSentBytes", Long.toString(channel.getSentBytes()));
+        	jsonNodeStatusObject.put( "cacheSentMessages", Long.toString(channel.getSentMessages()));
+
+        	// cache status for the given node
+
+        	Boolean cacheStatus = false;
+    		String nodeCacheWholeAddr = server.getIpAddress() + ":" + server.getCachePort();
+
+    		for ( Address member : members ) {
+    			PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, member));
+    			IpAddress ipAddr = (IpAddress)physicalAddr;
+    			String[] addrParts = physicalAddr.toString().split(":");
+    			String cacheLivePort = addrParts[addrParts.length-1];
+
+    			if(nodeCacheWholeAddr.equals(ipAddr.toString())
+    					|| ( server.getCachePort()!=null && cacheLivePort.equals(server.getCachePort().toString()) &&
+    							(ipAddr.toString().contains("localhost") || ipAddr.toString().contains("127.0.0.1"))
+    						)
+    			   ) {
+    				cacheStatus = true;
+    				break;
+    			}
+
+    		}
+
+    		jsonNodeStatusObject.put( "cacheStatus", cacheStatus?"green":"red");
+        }
+
+
+        Boolean esStatus = false;
+        AdminClient esClient = null;
+        try {
+        	esClient = new ESClient().getClient().admin();
+        }  catch (Exception e) {
+        	Logger.error(ClusterResource.class, "Error getting ES Client", e);
+        }
+
+        ClusterHealthRequest clusterReq = new ClusterHealthRequest();
+		ActionFuture<ClusterHealthResponse> afClusterRes = esClient.cluster().health(clusterReq);
+		ClusterHealthResponse clusterRes = afClusterRes.actionGet();
+
+		// ES general stats
+
+		jsonNodeStatusObject.put("esClusterName", clusterRes.getClusterName());
+		jsonNodeStatusObject.put("esNumberOfNodes", clusterRes.getNumberOfNodes());
+		jsonNodeStatusObject.put("esActiveShards", clusterRes.getActiveShards());
+		jsonNodeStatusObject.put("esActivePrimaryShards", clusterRes.getActivePrimaryShards());
+		jsonNodeStatusObject.put("esUnasignedPrimaryShards", clusterRes.getUnassignedShards());
+
+		 // ES status for the given node
+
+
+        if(esClient!=null) {
+        	NodesInfoRequest nodesReq = new NodesInfoRequest();
+        	ActionFuture<NodesInfoResponse> afNodesRes = esClient.cluster().nodesInfo(nodesReq);
+        	NodesInfoResponse nodesRes = afNodesRes.actionGet();
+        	NodeInfo[] esNodes = nodesRes.getNodes();
+
+        	for (NodeInfo nodeInfo : esNodes) {
+        		DiscoveryNode node = nodeInfo.getNode();
+
+        		if(node.getName().equals(server.getServerId())) {
+        			esStatus = true;
+        			break;
+        		}
+        	}
+
+        	jsonNodeStatusObject.put( "esStatus", esStatus?"green":"red");
+        }
+
+        jsonNodeStatusObject.put("cachePort", server.getCachePort());
+        jsonNodeStatusObject.put("esPort", server.getEsTransportTcpPort());
+
+
+        // asset folder
+
+        String serverFilePath = Config.getStringProperty("ASSET_REAL_PATH", Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")));
+        File assetPath = new File(serverFilePath);
+
+        jsonNodeStatusObject.put("assetsCanRead", Boolean.toString(assetPath.canRead()));
+        jsonNodeStatusObject.put("assetsCanWrite", Boolean.toString(assetPath.canWrite()));
+        jsonNodeStatusObject.put("assetsPath", serverFilePath);
+        jsonNodeStatusObject.put("assetsStatus", assetPath.canRead()&&assetPath.canWrite()?"green":"red");
+
+
+        return responseResource.response( jsonNodeStatusObject.toString() );
 
     }
 
