@@ -903,37 +903,11 @@
 	   <location>/portal/503.jsp</location>
 	</error-page>
 	<jsp-config>
-		<taglib>
-			<taglib-uri>http://java.sun.com/jstl/core</taglib-uri>
-			<taglib-location>/WEB-INF/tld/c-rt.tld</taglib-location>
-		</taglib>
-		<taglib>
-			<taglib-uri>http://java.sun.com/jstl/fmt</taglib-uri>
-			<taglib-location>/WEB-INF/tld/fmt-rt.tld</taglib-location>
-		</taglib>
-		<taglib>
-			<taglib-uri>http://java.sun.com/jstl/sql</taglib-uri>
-			<taglib-location>/WEB-INF/tld/sql-rt.tld</taglib-location>
-		</taglib>
-		<taglib>
-			<taglib-uri>http://java.sun.com/jstl/xml</taglib-uri>
-			<taglib-location>/WEB-INF/tld/x-rt.tld</taglib-location>
-		</taglib>
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>
 			<el-ignored>true</el-ignored>
 		</jsp-property-group>
 	</jsp-config>
-	<resource-ref>
-		<res-ref-name>jdbc/dotCMSPool</res-ref-name>
-		<res-type>javax.sql.DataSource</res-type>
-		<res-auth>Container</res-auth>
-	</resource-ref>
-	<resource-ref>
-		<res-ref-name>mail/MailSession</res-ref-name>
-		<res-type>javax.mail.Session</res-type>
-		<res-auth>Container</res-auth>
-	</resource-ref>
 	 <!-- Prevent access to /dot_secure area.  Here we place files that are too numerous to be stored in WEB-INF, since Tomcat will scan all files in WEB-INF at startup -->
 	<security-constraint>
 		<display-name>Secure area</display-name>

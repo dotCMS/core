@@ -329,10 +329,10 @@ function showLanguageSelector(){
 
 			<dt style="width:180px"><label for="rememberMe"><%= LanguageUtil.get(pageContext, "remember-me") %> &nbsp;</label></dt>
 			<dd>
-				<c:if test="<%= company.isAutoLogin()%>">
+				<% if (company.isAutoLogin() ) {%>
 					<input id="rememberMe" tabindex="3" <%= rememberMe ? "checked" : "" %> type="checkbox"  dojoType="dijit.form.CheckBox"
 					onclick="if (this.checked) {document.fm.my_account_r_m.value = 'on';}else {document.fm.my_account_r_m.value = 'off';}">
-				</c:if>
+				<%}%>
 			</dd>
 		</dl>
 

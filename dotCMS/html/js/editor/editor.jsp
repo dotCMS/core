@@ -22,8 +22,6 @@
  */
 %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jstl/core" %>
-
 <%@ page import="com.liferay.util.BrowserSniffer" %>
 <%@ page import="com.liferay.util.ParamUtil" %>
 <%@ page import="com.liferay.util.StringUtil" %>
@@ -460,159 +458,93 @@ boolean pasteText = ParamUtil.get(request, "paste_text", false);
 					String curCol = cols[j];
 				%>
 
-					<c:choose>
-						<c:when test='<%= curCol.equalsIgnoreCase("separator") %>'>
-							<td><img border="0" height="1" hspace="0" src="images/spacer.gif" vspace="0" width="2"><span class="separator"></span><img border="0" height="1" hspace="0" src="images/spacer.gif" vspace="0" width="2"></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("cut") %>'>
-							<td><div class="button" onClick="exec('cut');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Cut" border="0" height="18" hspace="0" src="images/cut.gif" title="Cut" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("copy") %>'>
-							<td><div class="button" onClick="exec('copy');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Copy" border="0" height="18" hspace="0" src="images/copy.gif" title="Copy" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("paste") %>'>
-							<td><div class="button" onClick="exec('paste');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Paste" border="0" height="18" hspace="0" src="images/paste.gif" title="Paste" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("undo") %>'>
-							<td><div class="button" onClick="exec('undo');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Undo" border="0" height="18" hspace="0" src="images/undo.gif" title="Undo" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("redo") %>'>
-							<td><div class="button" onClick="exec('redo');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Redo" border="0" height="18" hspace="0" src="images/redo.gif" title="Redo" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("bold") %>'>
-							<td><div class="button" onClick="exec('bold');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Bold" border="0" height="18" hspace="0" src="images/bold.gif" title="Bold" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("italic") %>'>
-							<td><div class="button" onClick="exec('italic');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Italic" border="0" height="18" hspace="0" src="images/italic.gif" title="Italic" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("underline") %>'>
-							<td><div class="button" onClick="exec('underline');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Underline" border="0" height="18" hspace="0" src="images/underline.gif" title="Underline" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("strikethrough") %>'>
-							<td><div class="button" onClick="exec('strikethrough');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Strike" border="0" height="18" hspace="0" src="images/strike.gif" title="Strike" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("subscript") %>'>
-							<td><div class="button" onClick="exec('subscript');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Subscript" border="0" height="18" hspace="0" src="images/subscript.gif" title="Subscript" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("superscript") %>'>
-							<td><div class="button" onClick="exec('superscript');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Superscript" border="0" height="18" hspace="0" src="images/superscript.gif" title="Superscript" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("outdent") %>'>
-							<td><div class="button" onClick="exec('outdent');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Decrease Indent" border="0" height="18" hspace="0" src="images/decrease_indent.gif" title="Decrease Indent" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("indent") %>'>
-							<td><div class="button" onClick="exec('indent');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Increase Indent" border="0" height="18" hspace="0" src="images/increase_indent.gif" title="Increase Indent" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("justifyleft") %>'>
-							<td><div class="button" onClick="exec('justifyleft');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Align Left" border="0" height="18" hspace="0" src="images/justify_left.gif" title="Align Left" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("justifycenter") %>'>
-							<td><div class="button" onClick="exec('justifycenter');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Center" border="0" height="18" hspace="0" src="images/justify_center.gif" title="Center" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("justifyright") %>'>
-							<td><div class="button" onClick="exec('justifyright');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Align Right" border="0" height="18" hspace="0" src="images/justify_right.gif" title="Align Right" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("insertorderedlist") %>'>
-							<td><div class="button" onClick="exec('insertorderedlist');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Numbering" border="0" height="18" hspace="0" src="images/insert_ordered_list.gif" title="Numbering" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("insertunorderedlist") %>'>
-							<td><div class="button" onClick="exec('insertunorderedlist');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Bullets" border="0" height="18" hspace="0" src="images/insert_unordered_list.gif" title="Bullets" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("spellcheck") %>'>
-							<td><div class="button" onClick="openSpellCheck();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Bullets" border="0" height="18" hspace="0" src="images/spell_check.gif" title="Spell Check" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("fontname") %>'>
-							<td>
-								<select onChange="exec('fontname', this[this.selectedIndex].value);">
-									<option value="Arial">Arial</option>
-									<option value="Comic Sans MS">Comic Sans MS</option>
-									<option value="Courier New">Courier New</option>
-									<option value="Tahoma">Tahoma</option>
-									<option selected value="Times New Roman">Times New Roman</option>
-									<option value="Verdana">Verdana</option>
-									<option value="Wingdings">Wingdings</option>
-								</select>
-							</td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("fontsize") %>'>
-							<td>
-								<select onChange="exec('fontsize', this[this.selectedIndex].value);">
-									<option value="1">1</option>
-									<option value="2">2</option>
-									<option selected value="3">3</option>
-									<option value="4">4</option>
-									<option value="5">5</option>
-									<option value="6">6</option>
-									<option value="7">7</option>
-								</select>
-							</td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("forecolor") %>'>
-							<td><div class="button" onClick="openForeColor();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Foreground Color" border="0" height="18" hspace="0" src="images/fg_color.gif" title="Foreground Color" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("backcolor") %>'>
-							<td><div class="button" onClick="openBackColor();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Background Color" border="0" height="18" hspace="0" src="images/bg_color.gif" title="Background Color" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("link") %>'>
-							<td><div class="button" onClick="exec('createLink');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Hyperlink" border="0" height="18" hspace="0" src="images/hyperlink.gif" title="Hyperlink" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("picture") %>'>
-							<td><div class="button" onClick="openPicture();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Image" border="0" height="18" hspace="0" src="images/picture.gif" title="Image" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("horizontalrule") %>'>
-							<td><div class="button" onClick="exec('insertHorizontalRule');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Horizontal Rule" border="0" height="18" hspace="0" src="images/hr.gif" title="Horizontal Rule" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("table") %>'>
-							<td><div class="button" onClick="openTable();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Table" border="0" height="18" hspace="0" src="images/table.gif" title="Table" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("emotion") %>'>
-							<td><div class="button" onClick="openEmotion();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Emotion" border="0" height="18" hspace="0" src="images/emotion.gif" title="Emotion" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("charactermap") %>'>
-							<td><div class="button" onClick="openCharacterMap();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Character Map" border="0" height="18" hspace="0" src="images/character_map.gif" title="Character Map" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("selectall") %>'>
-							<td><div class="button" onClick="exec('selectAll');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Select All" border="0" height="18" hspace="0" src="images/select_all.gif" title="Select All" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("removeformat") %>'>
-							<td><div class="button" onClick="exec('removeFormat');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Remove Formatting" border="0" height="18" hspace="0" src="images/remove_formatting.gif" title="Remove Formatting" vspace="0" width="18"></div></td>
-						</c:when>
-
-						<c:when test='<%= curCol.equalsIgnoreCase("source") %>'>
-							<td valign="top"><font face="MS Sans Serif" size="1">Source </font><input type="checkbox" onClick="switchMode();"></td>
-						</c:when>
-					</c:choose>
+                    <%if (curCol.equalsIgnoreCase("separator")) {%>
+                        <td><img border="0" height="1" hspace="0" src="images/spacer.gif" vspace="0" width="2"><span class="separator"></span><img border="0" height="1" hspace="0" src="images/spacer.gif" vspace="0" width="2"></td>
+                    <%} else if (curCol.equalsIgnoreCase("cut")) {%>
+                        <td><div class="button" onClick="exec('cut');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Cut" border="0" height="18" hspace="0" src="images/cut.gif" title="Cut" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("copy")) {%>
+                        <td><div class="button" onClick="exec('copy');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Copy" border="0" height="18" hspace="0" src="images/copy.gif" title="Copy" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("paste")) {%>
+                        <td><div class="button" onClick="exec('paste');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Paste" border="0" height="18" hspace="0" src="images/paste.gif" title="Paste" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("undo")) {%>
+                        <td><div class="button" onClick="exec('undo');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Undo" border="0" height="18" hspace="0" src="images/undo.gif" title="Undo" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("redo")) {%>
+                        <td><div class="button" onClick="exec('redo');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Redo" border="0" height="18" hspace="0" src="images/redo.gif" title="Redo" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("bold")) {%>
+                        <td><div class="button" onClick="exec('bold');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Bold" border="0" height="18" hspace="0" src="images/bold.gif" title="Bold" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("italic")) {%>
+                        <td><div class="button" onClick="exec('italic');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Italic" border="0" height="18" hspace="0" src="images/italic.gif" title="Italic" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("underline")) {%>
+                        <td><div class="button" onClick="exec('underline');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Underline" border="0" height="18" hspace="0" src="images/underline.gif" title="Underline" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("strikethrough")) {%>
+                        <td><div class="button" onClick="exec('strikethrough');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Strike" border="0" height="18" hspace="0" src="images/strike.gif" title="Strike" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("subscript")) {%>
+                        <td><div class="button" onClick="exec('subscript');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Subscript" border="0" height="18" hspace="0" src="images/subscript.gif" title="Subscript" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("superscript")) {%>
+                        <td><div class="button" onClick="exec('superscript');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Superscript" border="0" height="18" hspace="0" src="images/superscript.gif" title="Superscript" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("outdent")) {%>
+                        <td><div class="button" onClick="exec('outdent');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Decrease Indent" border="0" height="18" hspace="0" src="images/decrease_indent.gif" title="Decrease Indent" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("indent")) {%>
+                        <td><div class="button" onClick="exec('indent');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Increase Indent" border="0" height="18" hspace="0" src="images/increase_indent.gif" title="Increase Indent" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("justifyleft")) {%>
+                        <td><div class="button" onClick="exec('justifyleft');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Align Left" border="0" height="18" hspace="0" src="images/justify_left.gif" title="Align Left" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("justifycenter")) {%>
+                        <td><div class="button" onClick="exec('justifycenter');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Center" border="0" height="18" hspace="0" src="images/justify_center.gif" title="Center" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("justifyright")) {%>
+                        <td><div class="button" onClick="exec('justifyright');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Align Right" border="0" height="18" hspace="0" src="images/justify_right.gif" title="Align Right" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("insertorderedlist")) {%>
+                        <td><div class="button" onClick="exec('insertorderedlist');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Numbering" border="0" height="18" hspace="0" src="images/insert_ordered_list.gif" title="Numbering" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("insertunorderedlist")) {%>
+                        <td><div class="button" onClick="exec('insertunorderedlist');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Bullets" border="0" height="18" hspace="0" src="images/insert_unordered_list.gif" title="Bullets" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("spellcheck")) {%>
+                        <td><div class="button" onClick="openSpellCheck();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Bullets" border="0" height="18" hspace="0" src="images/spell_check.gif" title="Spell Check" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("fontname")) {%>
+                        <td>
+                            <select onChange="exec('fontname', this[this.selectedIndex].value);">
+                                <option value="Arial">Arial</option>
+                                <option value="Comic Sans MS">Comic Sans MS</option>
+                                <option value="Courier New">Courier New</option>
+                                <option value="Tahoma">Tahoma</option>
+                                <option selected value="Times New Roman">Times New Roman</option>
+                                <option value="Verdana">Verdana</option>
+                                <option value="Wingdings">Wingdings</option>
+                            </select>
+                        </td>
+                    <%} else if (curCol.equalsIgnoreCase("fontsize")) {%>
+                        <td>
+                            <select onChange="exec('fontsize', this[this.selectedIndex].value);">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option selected value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                            </select>
+                        </td>
+                    <%} else if (curCol.equalsIgnoreCase("forecolor")) {%>
+                        <td><div class="button" onClick="openForeColor();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Foreground Color" border="0" height="18" hspace="0" src="images/fg_color.gif" title="Foreground Color" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("backcolor")) {%>
+                        <td><div class="button" onClick="openBackColor();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Background Color" border="0" height="18" hspace="0" src="images/bg_color.gif" title="Background Color" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("link")) {%>
+                        <td><div class="button" onClick="exec('createLink');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Hyperlink" border="0" height="18" hspace="0" src="images/hyperlink.gif" title="Hyperlink" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("picture")) {%>
+                        <td><div class="button" onClick="openPicture();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Image" border="0" height="18" hspace="0" src="images/picture.gif" title="Image" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("horizontalrule")) {%>
+                        <td><div class="button" onClick="exec('insertHorizontalRule');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Horizontal Rule" border="0" height="18" hspace="0" src="images/hr.gif" title="Horizontal Rule" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("table")) {%>
+                        <td><div class="button" onClick="openTable();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Table" border="0" height="18" hspace="0" src="images/table.gif" title="Table" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("emotion")) {%>
+                        <td><div class="button" onClick="openEmotion();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Emotion" border="0" height="18" hspace="0" src="images/emotion.gif" title="Emotion" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("charactermap")) {%>
+                        <td><div class="button" onClick="openCharacterMap();" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Character Map" border="0" height="18" hspace="0" src="images/character_map.gif" title="Character Map" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("selectall")) {%>
+                        <td><div class="button" onClick="exec('selectAll');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Select All" border="0" height="18" hspace="0" src="images/select_all.gif" title="Select All" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("removeformat")) {%>
+                        <td><div class="button" onClick="exec('removeFormat');" onMouseDown="buttonDown(this);" onMouseOut="buttonOut(this);" onMouseOver="buttonOver(this);"><img align="absmiddle" alt="Remove Formatting" border="0" height="18" hspace="0" src="images/remove_formatting.gif" title="Remove Formatting" vspace="0" width="18"></div></td>
+                    <%} else if (curCol.equalsIgnoreCase("source")) {%>
+                        <td valign="top"><font face="MS Sans Serif" size="1">Source </font><input type="checkbox" onClick="switchMode();"></td>
+                    <%}%>
 
 				<%
 				}

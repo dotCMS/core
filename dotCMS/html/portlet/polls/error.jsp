@@ -32,13 +32,13 @@
 		<td>
 			<font class="bg" size="2"><span class="bg-neg-alert">
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, NoSuchQuestionException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, NoSuchQuestionException.class.getName()) ) {%>
 				<%= LanguageUtil.get(pageContext, "the-question-could-not-be-found") %>
-			</c:if>
+			<%}%>
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, PrincipalException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, PrincipalException.class.getName()) ) {%>
 				<%= LanguageUtil.get(pageContext, "you-do-not-have-the-required-permissions") %>
-			</c:if>
+			<%}%>
 
 			</span></font>
 		</td>

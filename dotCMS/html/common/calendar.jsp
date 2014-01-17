@@ -89,7 +89,7 @@ Set calendarData = (Set)request.getAttribute(WebKeys.CALENDAR_DATA);
 	<td>
 		<table border="0" cellpadding="0" cellspacing="0" width="100%">
 
-		<c:if test="<%= Validator.isNotNull(showTopPattern) %>">
+		<% if ( Validator.isNotNull(showTopPattern) ) {%>
 
 			<%
 			SimpleDateFormat sdf = new SimpleDateFormat(showTopPattern, locale);
@@ -108,7 +108,7 @@ Set calendarData = (Set)request.getAttribute(WebKeys.CALENDAR_DATA);
 				</td>
 				<td class="beta"><img border="0" height="1" hspace="0" src="<%= COMMON_IMG %>/spacer.gif" vspace="0" width="1"></td>
 			</tr>
-		</c:if>
+		<%}%>
 
 		<tr class="beta">
 			<td><img border="0" height="22" hspace="0" src="<%= COMMON_IMG %>/spacer.gif" vspace="0" width="1"></td>
@@ -194,11 +194,11 @@ Set calendarData = (Set)request.getAttribute(WebKeys.CALENDAR_DATA);
 					</td>
 				</tr>
 
-				<c:if test="<%= hasData %>">
+				<% if ( hasData ) { %>
 					<tr>
 						<td class="alpha"><img border="0" height="3" hspace="0" src="<%= COMMON_IMG %>/spacer.gif" vspace="0" width="1"></td>
 					</tr>
-				</c:if>
+                <%}%>
 
 				</table>
 			</td>
@@ -225,7 +225,7 @@ Set calendarData = (Set)request.getAttribute(WebKeys.CALENDAR_DATA);
 	</td>
 </tr>
 
-<c:if test="<%= showMonthSel %>">
+<% if (showMonthSel) { %>
 	<tr>
 		<td>
 			<table border="0" cellpadding="0" cellspacing="0">
@@ -266,6 +266,6 @@ Set calendarData = (Set)request.getAttribute(WebKeys.CALENDAR_DATA);
 			</table>
 		</td>
 	</tr>
-</c:if>
+<%}%>
 
 </table>

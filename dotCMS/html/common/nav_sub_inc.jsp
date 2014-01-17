@@ -236,8 +236,7 @@ dojo.require("dojo.cookie");
         });
 
         <%if (request.getSession().getAttribute("portal_login_as_error") != null) {%>
-                dojo.byId('portal_loginas_errors').innerHTML = '<bean:message key='<%=(String) request.getSession().getAttribute(
-                            "portal_login_as_error")%>'/>';
+                dojo.byId('portal_loginas_errors').innerHTML = '<%= LanguageUtil.get(pageContext, (String) request.getSession().getAttribute("portal_login_as_error")) %>';
                 portal_showLoginAs();
 
         <%request.getSession().removeAttribute(
@@ -523,7 +522,7 @@ dojo.require("dojo.cookie");
 		<% if (request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) == null) { %>
 			<a href="#" id="account-trigger" onclick="toggleAccount();" class="trigger-off"><%=user.getFullName()%></a>
 	    <% } else { %>
-	        <a href="<%=CTX_PATH%>/portal<%=PortalUtil.getAuthorizedPath(request)%>/logout_as?referer=<%=CTX_PATH%>"><span class="plusIcon"></span><bean:message key="logout-as" /> <%=user.getFullName()%></a>
+	        <a href="<%=CTX_PATH%>/portal<%=PortalUtil.getAuthorizedPath(request)%>/logout_as?referer=<%=CTX_PATH%>"><span class="plusIcon"></span><%= LanguageUtil.get(pageContext, "logout-as") %> <%=user.getFullName()%></a>
 	    <% } %>
 	</div>
 <% } %>
@@ -552,16 +551,16 @@ dojo.require("dojo.cookie");
 					<td>
 						<a  href="<%=CTX_PATH%>/portal<%=PortalUtil.getAuthorizedPath(request)%>/logout?referer=<%=CTX_PATH%>"><%=LanguageUtil.get(pageContext, "Logout")%></a>
 					</td>
-					<c:if test="<%= APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadRoleByKey(Role.LOGIN_AS)) && request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) == null %>">
-						<td style="border-left:1px solid #d0d0d0;width:50%;"><a href="javascript: portal_showLoginAs();toggleAccount();"><bean:message key="login-as" /></a></td>
-				    </c:if>
+					<% if (APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadRoleByKey(Role.LOGIN_AS)) && request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) == null ) {%>
+						<td style="border-left:1px solid #d0d0d0;width:50%;"><a href="javascript: portal_showLoginAs();toggleAccount();"><%= LanguageUtil.get(pageContext, "login-as") %></a></td>
+				    <%}%>
 				</tr>
 			</tbody>
 		</table>
 	</div>
 	
     <% if (!hasRolesPortlet && APILocator.getUserAPI().isCMSAdmin(user) ) { %>
-        <a class="rolePortletLink" href="<%=portletLinkHREF%>"><bean:message key="warning-roles-portlet" /></a>
+        <a class="rolePortletLink" href="<%=portletLinkHREF%>"><%= LanguageUtil.get(pageContext, "warning-roles-portlet" )%></a>
     <% } %>
 </div>
 
@@ -581,7 +580,7 @@ dojo.require("dojo.cookie");
             <form id="portal_login_as_users_form" action="<%=CTX_PATH%>/portal<%=PortalUtil.getAuthorizedPath(request)%>/login_as?referer=<%=CTX_PATH%>" method="post">
                 <div id="portal_login_as_users_select" class="formRow" style="text-align:center;">
                     <div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></div>
-                    <bean:message key="Select-User" /> : &nbsp;
+                    <%= LanguageUtil.get(pageContext, "Select-User" ) %> : &nbsp;
                         <select id="portal_login_as_user" name="portal_login_as_user" dojoType="dijit.form.FilteringSelect" onchange="clearErrorMsg()"
                         store="usersStore" searchDelay="300" pageSize="30" labelAttr="name"
                         invalidMessage="<%=LanguageUtil.get(pageContext,
@@ -589,11 +588,11 @@ dojo.require("dojo.cookie");
                         ></select>
                 </div><br/>
                 <div class="formRow" id="portal_login_as_password_wrapper" style="text-align:center; display: none;">
-                    <bean:message key="enter-your-password" /> <input type="password" name="portal_login_as_password" id="portal_login_as_password"/><br/>
+                    <%= LanguageUtil.get(pageContext, "enter-your-password" ) %> <input type="password" name="portal_login_as_password" id="portal_login_as_password"/><br/>
                 </div>
                 <div class="formRow"  style="text-align:center">
-                    <button dojoType="dijit.form.Button" id="portal_loginasbutton" iconClass="loginAsIcon"><bean:message key="login-as" /></button>
-                    <button dojoType="dijit.form.Button" iconClass="cancelIcon" onclick="portal_cancelLoginAs()"><bean:message key="cancel" /></button>
+                    <button dojoType="dijit.form.Button" id="portal_loginasbutton" iconClass="loginAsIcon"><%= LanguageUtil.get(pageContext, "login-as" ) %></button>
+                    <button dojoType="dijit.form.Button" iconClass="cancelIcon" onclick="portal_cancelLoginAs()"><%= LanguageUtil.get(pageContext, "cancel" ) %></button>
                 </div>
             </form>
         </div>
