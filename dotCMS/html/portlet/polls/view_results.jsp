@@ -53,7 +53,7 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 			<tr>
 				<td>
 					<font class="gamma" size="2">
-					<b><%= question.getTitle() %></b> <c:if test="<%= PollsQuestionManagerUtil.hasAdmin(question.getQuestionId()) %>">&nbsp;<font class="gamma" size="1">[<a class="gamma" href="<portlet:actionURL><portlet:param name="struts_action" value="/polls/edit_question" /><portlet:param name="question_id" value="<%= question.getQuestionId() %>" /></portlet:actionURL>"><%= LanguageUtil.get(pageContext, "edit") %></a>]</font></c:if><br>
+					<b><%= question.getTitle() %></b> <% if (PollsQuestionManagerUtil.hasAdmin(question.getQuestionId()) ) {%>&nbsp;<font class="gamma" size="1">[<a class="gamma" href="<portlet:actionURL><portlet:param name="struts_action" value="/polls/edit_question" /><portlet:param name="question_id" value="<%= question.getQuestionId() %>" /></portlet:actionURL>"><%= LanguageUtil.get(pageContext, "edit") %></a>]</font><%}%><br>
 					<%= question.getDescription() %><br>
 					</font>
 				</td>
@@ -62,7 +62,7 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 
 			<br>
 
-			<c:if test="<%= SessionMessages.contains(renderRequest, \"vote_added\") %>">
+			<% if (SessionMessages.contains(renderRequest, "vote_added") ) {%>
 				<table border="0" cellpadding="0" cellspacing="0">
 				<tr>
 					<td>
@@ -72,7 +72,7 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 				</table>
 
 				<br>
-			</c:if>
+			<%}%>
 
 			<table border="0" cellpadding="4" cellspacing="0" width="100%">
 			<tr>
@@ -131,7 +131,7 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 								</font>
 							</td>
 
-							<c:if test="<%= votesPercentWidth > 0 %>">
+							<% if (votesPercentWidth > 0 ) {%>
 								<td width="10">&nbsp;
 									
 								</td>
@@ -143,7 +143,7 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 									</tr>
 									</table>
 								</td>
-							</c:if>
+							<%}%>
 
 							<td width="10">&nbsp;
 								
@@ -194,7 +194,7 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 			boolean hasVoted = PollsQuestionManagerUtil.hasVoted(question.getQuestionId());
 			%>
 
-			<c:if test="<%= !hasVoted %>">
+			<% if (!hasVoted ) {%>
 				<br>
 
 				<table border="0" cellpadding="0" cellspacing="0">
@@ -206,7 +206,7 @@ NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
 					</td>
 				</tr>
 				</table>
-			</c:if>
+			<%}%>
 		</td>
 	</tr>
 	</table>

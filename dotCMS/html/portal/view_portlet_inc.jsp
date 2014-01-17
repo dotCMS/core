@@ -1,4 +1,4 @@
-<%@ taglib prefix="tiles" uri="/WEB-INF/tld/struts-tiles.tld" %><%
+<%
 boolean access = APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portlet.getPortletId(),user);
 String licenseManagerOverrideTicket = (String)request.getParameter("licenseManagerOverrideTicket");
 String roleAdminOverrideTicket = (String)request.getParameter("roleAdminOverrideTicket");

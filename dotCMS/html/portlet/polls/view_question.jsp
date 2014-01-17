@@ -55,7 +55,7 @@ List choices = (List)request.getAttribute(WebKeys.POLLS_CHOICES);
 			<tr>
 				<td>
 					<font class="bg" size="2">
-					<b><%= question.getTitle() %></b> <c:if test="<%= PollsQuestionManagerUtil.hasAdmin(question.getQuestionId()) %>">&nbsp;<font class="bg" size="1">[<a class="bg" href="<portlet:actionURL><portlet:param name="struts_action" value="/polls/edit_question" /><portlet:param name="question_id" value="<%= question.getQuestionId() %>" /></portlet:actionURL>"><%= LanguageUtil.get(pageContext, "edit") %></a>]</font></c:if><br>
+					<b><%= question.getTitle() %></b> <% if (PollsQuestionManagerUtil.hasAdmin(question.getQuestionId()) ) {%>&nbsp;<font class="bg" size="1">[<a class="bg" href="<portlet:actionURL><portlet:param name="struts_action" value="/polls/edit_question" /><portlet:param name="question_id" value="<%= question.getQuestionId() %>" /></portlet:actionURL>"><%= LanguageUtil.get(pageContext, "edit") %></a>]</font><%}%><br>
 					<%= question.getDescription() %><br>
 					</font>
 				</td>
@@ -64,7 +64,7 @@ List choices = (List)request.getAttribute(WebKeys.POLLS_CHOICES);
 
 			<br>
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, NoSuchChoiceException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, NoSuchChoiceException.class.getName()) ) {%>
 				<table border="0" cellpadding="0" cellspacing="0">
 				<tr>
 					<td>
@@ -74,9 +74,9 @@ List choices = (List)request.getAttribute(WebKeys.POLLS_CHOICES);
 				</table>
 
 				<br>
-			</c:if>
+			<%}%>
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, DuplicateVoteException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, DuplicateVoteException.class.getName()) ) {%>
 				<table border="0" cellpadding="0" cellspacing="0">
 				<tr>
 					<td>
@@ -86,7 +86,7 @@ List choices = (List)request.getAttribute(WebKeys.POLLS_CHOICES);
 				</table>
 
 				<br>
-			</c:if>
+			<%}%>
 
 			<table border="0" cellpadding="0" cellspacing="0">
 

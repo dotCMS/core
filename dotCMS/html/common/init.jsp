@@ -205,13 +205,9 @@
 
 	String SKIN_COMMON_IMG =null;
 	String SKIN_IMG =null;
-%><%@ taglib prefix="c" uri="http://java.sun.com/jstl/core"%><%@ taglib
-	prefix="bean" uri="/WEB-INF/tld/struts-bean.tld"
 %><%@ taglib prefix="html" uri="/WEB-INF/tld/struts-html.tld"%><%@ taglib
 	prefix="portlet" uri="/WEB-INF/tld/liferay-portlet.tld"
-%><%@ taglib prefix="liferay" uri="/WEB-INF/tld/liferay-util.tld"%><%@ taglib
-	prefix="tiles" uri="/WEB-INF/tld/struts-tiles.tld"
-%>
+%><%@ taglib prefix="liferay" uri="/WEB-INF/tld/liferay-util.tld"%>
 
 <%
 	try {
