@@ -664,33 +664,42 @@ var cmsfile=null;
 
 	function recolorTable(fieldId){
 		var table = document.getElementById(fieldId+'_kvtable');
-		var rowCount = table.rows.length;
-		for(var i=0; i<rowCount; i++) {
-			 var node = dojo.byId(table.rows[i].id);
-			 dojo.removeClass(node, 'alternate_1');
-             dojo.removeClass(node, 'alternate_2');
-			 if( (i % 2) != 0 ){
-	             dojo.addClass(node, 'alternate_2');
-	         }else{
-	             dojo.addClass(node, 'alternate_1');
-	         }
+		if(table){
+			var rowCount = table.rows.length;
+			for(var i=0; i<rowCount; i++) {
+				 var node = dojo.byId(table.rows[i].id);
+				 dojo.removeClass(node, 'alternate_1');
+	             dojo.removeClass(node, 'alternate_2');
+				 if( (i % 2) != 0 ){
+		             dojo.addClass(node, 'alternate_2');
+		         }else{
+		             dojo.addClass(node, 'alternate_1');
+		         }
+			 }
+		}
+	}
+	
+	function setKVValue(fieldId, fieldValueId){   
+		var rowCount;
+		var jsonStr="";
+		var table = document.getElementById(fieldId+'_kvtable');
+		 if(table){
+			 jsonStr = "{";
+			 rowCount= table.rows.length;
+			 for(var i=0; i<rowCount; i++) {
+					var rowId = table.rows[i].id;
+					var key = document.getElementById(rowId+'_k').value;
+					var value = document.getElementById(rowId+'_v').value;
+					jsonStr+= '"' + key + '"' + ":" + '"' + value + '"' + (i!=rowCount-1?",":"");
+				}
+			 jsonStr+="}";
+		 } 
+		 var keyfieldId = document.getElementsByClassName(fieldValueId);
+		 for (var i = 0; i < keyfieldId.length; ++i) {
+		     keyfieldId[i].value= jsonStr;
 		 }
 	}
-	function setKVValue(fieldId, fieldValueId){
-		var fieldValue = document.getElementById(fieldValueId);
-		var table = document.getElementById(fieldId+'_kvtable');
-		var rowCount = table.rows.length;
-		var jsonStr = "{";
-		for(var i=0; i<rowCount; i++) {
-			var rowId = table.rows[i].id;
-			var key = document.getElementById(rowId+'_k').value;
-			var value = document.getElementById(rowId+'_v').value;
-			jsonStr+= '"' + key + '"' + ":" + '"' + value + '"' + (i!=rowCount-1?",":"");
-		}
-        jsonStr+="}";
-        fieldValue.value=jsonStr;
 
-	}
 
 	function editText(inode) {
 		editTextManager.editText(inode);
