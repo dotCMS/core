@@ -1150,7 +1150,7 @@
             </fileset>
         </copy>
         <mkdir dir="${build.war}/${war.name}.war/META-INF"/>
-        <copy file="tomcat/conf/Catalina/localhost/ROOT.xml" tofile="${build.war}/${war.name}.war/META-INF/context.xml"/>
+        <copy file="extra/tomcat-7/context.xml" tofile="${build.war}/${war.name}.war/META-INF/context.xml"/>
 
         <!--Create the war-->
         <war destfile="${build.war}/dotcms_${dotcms.release.version}.war" webxml="dotCMS/WEB-INF/web.xml">
