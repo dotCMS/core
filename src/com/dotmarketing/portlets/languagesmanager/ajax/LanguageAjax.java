@@ -46,7 +46,7 @@ public class LanguageAjax {
 	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode,int page) {
 		return getPaginatedLanguageKeys(languageCode, null,page,"");
 	}
-	
+
 	private List<LanguageKey> filterList(List<LanguageKey> list, String filter) {
 	    List<LanguageKey> filtered=new ArrayList<LanguageKey>();
 	    for(LanguageKey lk : list) {
@@ -67,35 +67,39 @@ public class LanguageAjax {
 	    //Normalizing lists for display
 	    List<LanguageKey> lkeys = langAPI.getLanguageKeys(languageCode);
 	    List<LanguageKey> skeys = langAPI.getLanguageKeys(languageCode, countryCode);
+
+	    List<LanguageKey> filteredLKeys = lkeys;
+	    List<LanguageKey> filteredSKeys = skeys;
+
 	    if(UtilMethods.isSet(filter)) {
-	        lkeys=filterList(lkeys, filter);
-	        skeys=filterList(skeys, filter);
+	    	filteredLKeys=filterList(lkeys, filter);
+	    	filteredSKeys=filterList(skeys, filter);
 	    }
-	    
+
 	    TreeSet<String> allKeys=new TreeSet<String>();
-	    for (LanguageKey lk : lkeys) {
+	    for (LanguageKey lk : filteredLKeys) {
             allKeys.add(lk.getKey());
         }
-	    for (LanguageKey lk : skeys) {
+	    for (LanguageKey lk : filteredSKeys) {
             allKeys.add(lk.getKey());
         }
-	    
+
 	    final int beginIdx=Math.max((page-1) * keysPerPage, 0);
 	    final int endIdx=Math.min(page*keysPerPage, allKeys.size());
-	    
+
 	    String[] keys=allKeys.toArray(new String[allKeys.size()]);
-	    
+
 	    for(int i = beginIdx ; i < endIdx ; i++ ) {
 	        String key=keys[i];
-	        
+
 	        LanguageKey fake=new LanguageKey("", "", key, "");
 	        int lpos=Collections.binarySearch(lkeys, fake);
 	        int spos=Collections.binarySearch(skeys, fake);
-	        
+
 	        String gValue="", sValue="";
 	        if(lpos>=0) gValue=lkeys.get(lpos).getValue();
 	        if(spos>=0) sValue=skeys.get(spos).getValue();
-	        
+
 	        Map<String,Object> keyMap = new HashMap<String, Object>();
             keyMap.put("key", key);
             keyMap.put("generalValue", UtilMethods.webifyString(UtilMethods.escapeHTMLSpecialChars(gValue)));
@@ -103,14 +107,14 @@ public class LanguageAjax {
             keyMap.put("idx", Integer.toString(keysToShow.size()));
             keysToShow.add(keyMap);
 	    }
-	    
+
 		//Adding the result counters as the first row of the results
 		Map<String, Object> counters = new HashMap<String, Object>();
 		result.add(counters);
 
 		long total = allKeys.size();
 		counters.put("total", total);
-		
+
 		counters.put("hasPrevious", page>1);
 
 		if (page == 0)
@@ -122,7 +126,7 @@ public class LanguageAjax {
 		if (page != 0)
 			totalPages = (int) Math.ceil((float) total / (float) keysPerPage);
 
-		counters.put("begin", beginIdx);
+		counters.put("begin", beginIdx+1);
 		counters.put("end", endIdx);
 		counters.put("totalPages", totalPages);
 
