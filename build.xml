@@ -64,6 +64,7 @@
 	<property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
 
     <property name="tomcat7.home" value="${tomcat7.install.location}"/>
+    <property name="jboss7.home" value="${jboss7.install.location}"/>
 
     <path id="build-classpath">
 		<pathelement path="${build.classes}" />
@@ -1200,12 +1201,19 @@
     <target name="undeploy-war-tomcat7">
         <delete dir="${tomcat7.home}/webapps/ROOT"/>
     </target>
+    <target name="undeploy-war-jboss7">
+        <delete file="${jboss7.home}/standalone/deployments/${war.name}.war.dodeploy"/>
+        <delete dir="${jboss7.home}/standalone/deployments/${war.name}.war"/>
+    </target>
 
-    <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war">
+    <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war-tomcat">
         <antcall target="move-war-tomcat7"/>
     </target>
     <target name="deploy-war-tomcat7-tests" depends="clone-pull-tomcat7, war-tests">
         <antcall target="move-war-tomcat7"/>
+    </target>
+    <target name="deploy-war-jboss7" depends="clone-pull-jboss7, war-jboss">
+        <antcall target="move-war-jboss7"/>
     </target>
 
     <target name="move-war-tomcat7" depends="undeploy-war-tomcat7">
@@ -1232,8 +1240,20 @@
         </copy>
     </target>
 
+    <target name="move-war-jboss7" depends="undeploy-war-jboss7">
+
+        <touch file="${jboss7.home}/standalone/deployments/${war.name}.war.dodeploy"/>
+
+        <copy todir="${jboss7.home}/standalone/deployments/${war.name}.war">
+            <fileset dir="${build.war}/jboss/${war.name}.war"/>
+        </copy>
+    </target>
+
     <target name="clone-pull-tomcat7">
         <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat7.home}"/>
+    </target>
+    <target name="clone-pull-jboss7">
+        <git-clone-pull repository="git@github.com:dotCMS/jboss7.git" version="7.1.1" dest="${jboss7.home}"/>
     </target>
 
     <!--++++++++++++++++++++++++++++++++++++++++++-->
