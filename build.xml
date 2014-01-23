@@ -590,12 +590,12 @@
 
 	<target name="tomcat-start" >
 		<java classname="org.apache.catalina.startup.Bootstrap" fork="yes">
-	        <jvmarg value="-Dcatalina.home=tomcat"/>
+	        <jvmarg value="-Dcatalina.home=${tomcat7.home}"/>
 			<jvmarg value="-Xms1G"/>
 			<jvmarg value="-XX:MaxPermSize=512m"/>
 			<arg value="start"/>
 			<classpath>
-	          <fileset dir="tomcat">
+	          <fileset dir="${tomcat7.home}">
 	              <include name="bin/bootstrap.jar"/>
 	          	  <include name="bin/tomcat-juli.jar"/>
 	          </fileset>
@@ -605,10 +605,10 @@
 
 	<target name="tomcat-stop">
 		 <java classname="org.apache.catalina.startup.Bootstrap" fork="yes">
-	        <jvmarg value="-Dcatalina.home=tomcat"/>
+	        <jvmarg value="-Dcatalina.home=${tomcat7.home}"/>
 		 	<arg value="stop"/>
 		 	<classpath>
-	          <fileset dir="tomcat">
+	          <fileset dir="${tomcat7.home}">
 	              <include name="bin/bootstrap.jar"/>
 	          	  <include name="bin/tomcat-juli.jar"/>
 	          </fileset>
@@ -764,10 +764,10 @@
 
 	<copy file="tomcat/conf/server.xml" tofile="tomcat/conf/server-orig.xml" overwrite="true"/>
 	<copy file="tomcat/conf/server-tests.xml" tofile="tomcat/conf/server.xml" overwrite="true"/>
-	<exec osfamily="unix" executable="${basedir}/tomcat/bin/catalina.sh">
+	<exec osfamily="unix" executable="${tomcat7.home}/bin/catalina.sh">
 		<arg value="tests"/>
 	</exec>
-	<exec osfamily="windows" executable="${basedir}/tomcat/bin/catalina.bat">
+	<exec osfamily="windows" executable="${tomcat7.home}/bin/catalina.bat">
 		<arg value="start"/>
 	</exec>
 	<echo message="server starting">
@@ -777,10 +777,10 @@
 
 <target name="shutdown-server-for-tests">
 
-	<exec osfamily="unix" executable="${basedir}/tomcat/bin/catalina.sh">
+	<exec osfamily="unix" executable="${tomcat7.home}/bin/catalina.sh">
 		<arg value="stop"/>
 	</exec>
-	<exec osfamily="windows" executable="${basedir}/tomcat/bin/catalina.bat">
+	<exec osfamily="windows" executable="${tomcat7.home}/bin/catalina.bat">
 		<arg value="stop"/>
 	</exec>
 
@@ -1115,20 +1115,13 @@
 
 
     <target name="war" depends="deploy-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
-        <antcall target="war-file-tomcat"/>
-        <antcall target="war-file-jboss"/>
-    </target>
-    <target name="war-tomcat" depends="deploy-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
-        <antcall target="war-file-tomcat"/>
-    </target>
-    <target name="war-jboss" depends="deploy-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
-        <antcall target="war-file-jboss"/>
+        <antcall target="war-file"/><!--This depends on depends="war-file"-->
     </target>
     <target name="war-tests" depends="deploy-tests-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
-        <antcall target="war-file-tomcat"/>
+        <antcall target="war-file"/>
     </target>
 
-    <target name="war-file-tomcat" description="builds dotCMS as a war">
+    <target name="war-file" description="builds dotCMS as a war">
 
         <!--Clean-up-->
         <delete dir="${build.war}"/>
@@ -1149,50 +1142,10 @@
                 <exclude name="**/.svn" />
             </fileset>
         </copy>
-        <mkdir dir="${build.war}/${war.name}.war/META-INF"/>
-        <copy file="extra/tomcat-7/context.xml" tofile="${build.war}/${war.name}.war/META-INF/context.xml"/>
 
         <!--Create the war-->
         <war destfile="${build.war}/dotcms_${dotcms.release.version}.war" webxml="dotCMS/WEB-INF/web.xml">
             <fileset dir="${build.war}/${war.name}.war">
-                <exclude name="WEB-INF/web.xml"/>
-            </fileset>
-            <!--<metainf dir="${build.war}/${war.name}/META-INF"/>-->
-        </war>
-    </target>
-
-    <target name="war-file-jboss" description="builds dotCMS as a war for jboss">
-
-        <!--Clean-up-->
-        <mkdir dir="${build.war}"/>
-        <delete dir="${build.war}/jboss"/>
-        <mkdir dir="${build.war}/jboss"/>
-
-        <!--Prepare the content of the war-->
-        <copy todir="${build.war}/jboss/${war.name}.war">
-            <fileset dir="dotCMS/">
-                <exclude name="assets/"/>
-                <exclude name="WEB-INF/backup/"/>
-                <exclude name="WEB-INF/dotlucene/"/>
-                <exclude name="dot_secure/"/>
-                <exclude name="dotsecure/"/>
-            </fileset>
-        </copy>
-        <copy todir="${build.war}/jboss/${war.name}.war/WEB-INF/classes" overwrite="true">
-            <fileset dir="${src.conf.dir}">
-                <exclude name="**/.svn" />
-            </fileset>
-        </copy>
-        <copy todir="${build.war}/jboss/${war.name}.war/WEB-INF/lib" overwrite="true">
-            <fileset dir="libs/buildlibs">
-                <include name="h2-1.3.169.jar" />
-            </fileset>
-        </copy>
-        <delete dir="${build.war}/jboss/${war.name}.war/META-INF"/>
-
-        <!--Create the war-->
-        <war destfile="${build.war}/jboss/dotcms_${dotcms.release.version}.war" webxml="dotCMS/WEB-INF/web.xml">
-            <fileset dir="${build.war}/jboss/${war.name}.war">
                 <exclude name="WEB-INF/web.xml"/>
             </fileset>
         </war>
@@ -1206,13 +1159,13 @@
         <delete dir="${jboss7.home}/standalone/deployments/${war.name}.war"/>
     </target>
 
-    <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war-tomcat">
+    <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war">
         <antcall target="move-war-tomcat7"/>
     </target>
     <target name="deploy-war-tomcat7-tests" depends="clone-pull-tomcat7, war-tests">
         <antcall target="move-war-tomcat7"/>
     </target>
-    <target name="deploy-war-jboss7" depends="clone-pull-jboss7, war-jboss">
+    <target name="deploy-war-jboss7" depends="clone-pull-jboss7, war">
         <antcall target="move-war-jboss7"/>
     </target>
 
@@ -1223,21 +1176,21 @@
                 <include name="log4j-appenders-1.0.jar"/>
                 <include name="log4j.xml"/>
 
+                <include name="mail.jar"/>
+
                 <include name="mysql-connector-java-5.1.23-bin.jar"/>
                 <include name="postgresql-9.0-801.jdbc3.jar"/>
                 <include name="ojdbc5.jar"/>
                 <include name="jtds-1.2.2.jar"/>
-                <include name="h2-1.3.169.jar"/>
             </fileset>
         </copy>
-
-        <!--<copy todir="${tomcat7.home}/bin/">
-            <fileset dir="./extra/tomcat-7/conf/"/>
-        </copy>-->
 
         <copy todir="${tomcat7.home}/webapps/ROOT">
             <fileset dir="${build.war}/${war.name}.war"/>
         </copy>
+
+        <mkdir dir="${tomcat7.home}/webapps/ROOT/META-INF"/>
+        <copy file="extra/tomcat-7/context.xml" tofile="${tomcat7.home}/webapps/ROOT/META-INF/context.xml"/>
     </target>
 
     <target name="move-war-jboss7" depends="undeploy-war-jboss7">
@@ -1245,7 +1198,7 @@
         <touch file="${jboss7.home}/standalone/deployments/${war.name}.war.dodeploy"/>
 
         <copy todir="${jboss7.home}/standalone/deployments/${war.name}.war">
-            <fileset dir="${build.war}/jboss/${war.name}.war"/>
+            <fileset dir="${build.war}/${war.name}.war"/>
         </copy>
     </target>
 
@@ -1253,7 +1206,7 @@
         <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat7.home}"/>
     </target>
     <target name="clone-pull-jboss7">
-        <git-clone-pull repository="git@github.com:dotCMS/jboss7.git" version="7.1.1" dest="${jboss7.home}"/>
+        <git-clone-pull repository="https://github.com/dotCMS/jboss7.git" version="7.1.1" dest="${jboss7.home}"/>
     </target>
 
     <!--++++++++++++++++++++++++++++++++++++++++++-->
