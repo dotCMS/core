@@ -605,6 +605,10 @@
        <servlet-name>springmvc</servlet-name>
        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
     </servlet>
+    <servlet>
+    	<servlet-name>CSSPreProcessServlet</servlet-name>
+    	<servlet-class>com.dotcms.csspreproc.CSSPreProcessServlet</servlet-class>
+    </servlet>
     <!-- REST -->
     <servlet>
 		<servlet-name>RESTAPI</servlet-name>
@@ -657,6 +661,14 @@
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
       <url-pattern>/spring/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+      <servlet-name>CSSPreProcessServlet</servlet-name>
+      <url-pattern>/DOTLESS/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+      <servlet-name>CSSPreProcessServlet</servlet-name>
+      <url-pattern>/DOTSASS/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>AjaxDirector</servlet-name>
