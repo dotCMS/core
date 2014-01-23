@@ -17,7 +17,7 @@ package com.dotmarketing.util.diff.helper;
 
 import java.io.IOException;
 
-import com.dotcms.repackage.daisydiff.org.cyberneko.html.parsers.SAXParser;
+import com.dotcms.repackage.tika_app_1_3.org.apache.xerces.parsers.SAXParser;
 import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
 import com.dotcms.repackage.tika_app_1_3.org.xml.sax.ContentHandler;
 import com.dotcms.repackage.tika_app_1_3.org.xml.sax.InputSource;
