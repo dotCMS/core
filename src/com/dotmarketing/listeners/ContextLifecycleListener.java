@@ -5,8 +5,8 @@ import java.io.File;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.xml.DOMConfigurator;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.BasicConfigurator;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.xml.DOMConfigurator;
 
 import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotcms.util.AsciiArt;
