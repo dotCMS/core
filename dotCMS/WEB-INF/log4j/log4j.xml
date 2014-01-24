@@ -18,49 +18,42 @@
         <param name="BufferSize" value="500" />
         <param name="FailToSync" value="false" />
         <appender-ref ref="TEST" />
-        <appender-ref ref="CONSOLE" />
     </appender>
 
     <appender name="ASYNC-SECURITY" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
 		<appender-ref ref="SECURITY"/>
-		<appender-ref ref="CONSOLE" />
     </appender>
 
     <appender name="ASYNC-SITESEARCH" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
 		<appender-ref ref="SITESEARCH"/>
-		<appender-ref ref="CONSOLE" />
     </appender>
 
     <appender name="ASYNC-ADMINAUDIT" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
        	<appender-ref ref="ADMINAUDIT"/>
-       	<appender-ref ref="CONSOLE" />
     </appender>
 
     <appender name="ASYNC-USERACTIVITY" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
        	<appender-ref ref="USERS_ACTIVITY"/>
-       	<appender-ref ref="CONSOLE" />
     </appender>
 
      <appender name="ASYNC-VELOCITY" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
 		<appender-ref ref="VELOCITY" />
-		<appender-ref ref="CONSOLE" />
     </appender>
 
      <appender name="ASYNC-PUSHPUBLISH" class="org.apache.log4j.appender.ActiveAsynchronousAppender">
        	<param name="BufferSize" value="500" />
 		<param name="FailToSync" value="false" />
 		<appender-ref ref="PUSHPUBLISH" />
-		<appender-ref ref="CONSOLE" />
     </appender>
 
 <!--
@@ -81,7 +74,7 @@
     </appender>
 -->
     <appender name="FILE" class="org.apache.log4j.RollingFileAppender">
-            <param name="File" value="${catalina.home}/logs/dotcms.log"/>
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
             <layout class="org.apache.log4j.PatternLayout">
@@ -91,7 +84,7 @@
     </appender>
 
     <appender name="TEST" class="org.apache.log4j.RollingFileAppender">
-        <param name="File" value="${catalina.home}/logs/dotcms-testing.log"/>
+        <param name="File" value="/Users/jasontesser/dev/git/dotcms/tomcat/logs/dotcms-testing.log"/>
         <param name="MaxFileSize" value="20MB"/>
         <param name="MaxBackupIndex" value="10"/>
         <layout class="org.apache.log4j.PatternLayout">

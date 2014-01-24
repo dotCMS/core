@@ -1,13 +1,24 @@
 package com.dotmarketing.listeners;
 
+import java.io.File;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.xml.DOMConfigurator;
+
 import com.dotcms.enterprise.ClusterThreadProxy;
+import com.dotcms.util.AsciiArt;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.servlets.Log4JInitializationServlet;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * 
@@ -16,6 +27,12 @@ import com.dotmarketing.util.Logger;
  */
 public class ContextLifecycleListener implements ServletContextListener {
 
+	public ContextLifecycleListener() {
+//		Config.initializeConfig();
+//		System.setProperty("DOTCMS_LOGGING_HOME", ConfigUtils.getDynamicContentPath() + File.separator + "logs");
+	
+	}
+	
 	public void contextDestroyed(ServletContextEvent arg0) {
 		Logger.info(this, "Shutdown event received, executing a clean shutdown.");
 		try {
@@ -49,8 +66,19 @@ public class ContextLifecycleListener implements ServletContextListener {
 	}
 
 	public void contextInitialized(ServletContextEvent arg0) {
-		
-		
+		Config.setMyApp(arg0.getServletContext());
+		System.setProperty("DOTCMS_LOGGING_HOME", ConfigUtils.getDynamicContentPath() + File.separator + "logs");
+	    String path = null;
+		try {
+			path = Config.CONTEXT_PATH + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j.xml";
+		} catch (Exception e) {
+			Logger.error(Log4JInitializationServlet.class,e.getMessage(),e);
+		}
+	    
+    	BasicConfigurator.resetConfiguration();
+    	DOMConfigurator.configure(path);
+    	Logger.clearLoggers();
+    	AsciiArt.doArt();
 	}
 
 }
