@@ -6,7 +6,6 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.dotcms.enterprise.ClusterThreadProxy;
@@ -14,11 +13,9 @@ import com.dotcms.util.AsciiArt;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.servlets.Log4JInitializationServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 /**
  * 
@@ -72,7 +69,7 @@ public class ContextLifecycleListener implements ServletContextListener {
 		try {
 			path = Config.CONTEXT_PATH + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j.xml";
 		} catch (Exception e) {
-			Logger.error(Log4JInitializationServlet.class,e.getMessage(),e);
+			Logger.error(this,e.getMessage(),e);
 		}
 	    
     	BasicConfigurator.resetConfiguration();
