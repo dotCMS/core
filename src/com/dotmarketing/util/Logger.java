@@ -11,7 +11,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.log4j.Level;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Level;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -25,7 +25,7 @@ import com.dotmarketing.velocity.VelocityServlet;
  */
 public class Logger{
 
-	private static Map<Class, org.apache.log4j.Logger> map = new HashMap<Class, org.apache.log4j.Logger>();
+	private static Map<Class, com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger> map = new HashMap<Class, com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger>();
 
 	public static void clearLoggers(){
 		map.clear();
@@ -37,9 +37,9 @@ public class Logger{
 	 * @param cl
 	 * @return
 	 */
-	private synchronized static org.apache.log4j.Logger loadLogger(Class cl){
+	private synchronized static com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger loadLogger(Class cl){
 		if(map.get(cl) == null){
-			org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(cl);
+			com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger.getLogger(cl);
 			map.put(cl, logger);
 		}
 		return map.get(cl);
@@ -47,7 +47,7 @@ public class Logger{
 
     public static void info(Object ob, String message) {
         Class cl = ob.getClass();
-        org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -55,7 +55,7 @@ public class Logger{
     }
 
     public static void info(Class cl, String message) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -64,7 +64,7 @@ public class Logger{
 
     public static void debug(Object ob, String message) {
         Class cl = ob.getClass();
-        org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -73,7 +73,7 @@ public class Logger{
 
     public static void debug(Object ob, String message, Throwable ex) {
         Class cl = ob.getClass();
-        org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -81,7 +81,7 @@ public class Logger{
     }
 
     public static void debug(Class cl, String message) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -89,7 +89,7 @@ public class Logger{
     }
 
     public static void debug(Class cl, String message, Throwable ex) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -98,7 +98,7 @@ public class Logger{
 
     public static void error(Object ob, String message) {
         Class cl = ob.getClass();
-        org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -108,7 +108,7 @@ public class Logger{
 
     public static void error(Object ob, String message, Throwable ex) {
         Class cl = ob.getClass();
-        org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -117,7 +117,7 @@ public class Logger{
     }
 
     public static void error(Class cl, String message) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -126,7 +126,7 @@ public class Logger{
     }
 
     public static void error(Class cl, String message, Throwable ex) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -136,7 +136,7 @@ public class Logger{
 
     public static void fatal(Object ob, String message) {
         Class cl = ob.getClass();
-        org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -146,7 +146,7 @@ public class Logger{
 
     public static void fatal(Object ob, String message, Throwable ex) {
         Class cl = ob.getClass();
-        org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -154,7 +154,7 @@ public class Logger{
     }
 
     public static void fatal(Class cl, String message) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -162,7 +162,7 @@ public class Logger{
     }
 
     public static void fatal(Class cl, String message, Throwable ex) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -171,7 +171,7 @@ public class Logger{
 
     public static void warn(Object ob, String message) {
         Class cl = ob.getClass();
-        org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -180,7 +180,7 @@ public class Logger{
 
     public static void warn(Object ob, String message, Throwable ex) {
         Class cl = ob.getClass();
-        org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -188,7 +188,7 @@ public class Logger{
     }
 
     public static void warn(Class cl, String message) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -196,14 +196,14 @@ public class Logger{
     }
 
     public static void warn(Class cl, String message, Throwable ex) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
         logger.warn(message, ex);
     }
     public static boolean isDebugEnabled(Class cl) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -212,7 +212,7 @@ public class Logger{
     }
 
     public static boolean isInfoEnabled(Class cl) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -220,7 +220,7 @@ public class Logger{
 //    	return false;
     }
     public static boolean isWarnEnabled(Class cl) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -228,7 +228,7 @@ public class Logger{
 //    	return false;
     }
     public static boolean isErrorEnabled(Class cl) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -236,8 +236,8 @@ public class Logger{
 //    	return false;
     }
     
-    public static org.apache.log4j.Logger getLogger(Class cl) {
-    	org.apache.log4j.Logger logger = map.get(cl);
+    public static com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger getLogger(Class cl) {
+    	com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -250,7 +250,7 @@ public class Logger{
     	if(velocityCtx.get() != null){
     		Context ctx =  velocityCtx.get();
     		InternalContextAdapter ica =  new InternalContextAdapterImpl(ctx);
-    		org.apache.log4j.Logger logger = map.get(VelocityServlet.class);
+    		com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger = map.get(VelocityServlet.class);
     		logger.error("#--------------------------------------------------------------------------------------");
     		logger.error("#");
     		if(ica.getCurrentMacroName() != null){

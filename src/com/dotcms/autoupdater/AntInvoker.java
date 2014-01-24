@@ -8,8 +8,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Level;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
 import com.dotcms.autoupdater.ActivityIndicator;
 import com.dotcms.autoupdater.Messages;
 import com.dotcms.autoupdater.UpdateAgent;

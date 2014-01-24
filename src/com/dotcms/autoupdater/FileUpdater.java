@@ -1,7 +1,7 @@
 package com.dotcms.autoupdater;
 
 import com.liferay.util.FileUtil;
-import org.apache.log4j.Logger;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
