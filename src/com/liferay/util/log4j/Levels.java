@@ -22,7 +22,7 @@
 
 package com.liferay.util.log4j;
 
-import org.apache.log4j.Level;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Level;
 
 /**
  * <a href="Levels.java.html"><b><i>View Source</i></b></a>
