@@ -27,6 +27,10 @@ public class Logger{
 
 	private static Map<Class, org.apache.log4j.Logger> map = new HashMap<Class, org.apache.log4j.Logger>();
 
+	public static void clearLoggers(){
+		map.clear();
+	}
+	
 	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
 	/**
 	 * This class is syncrozned.  It shouldn't be called. It is exposed so that 
