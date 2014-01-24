@@ -84,7 +84,7 @@
     </appender>
 
     <appender name="TEST" class="org.apache.log4j.RollingFileAppender">
-        <param name="File" value="/Users/jasontesser/dev/git/dotcms/tomcat/logs/dotcms-testing.log"/>
+        <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms-testing.log"/>
         <param name="MaxFileSize" value="20MB"/>
         <param name="MaxBackupIndex" value="10"/>
         <layout class="org.apache.log4j.PatternLayout">
@@ -94,7 +94,7 @@
     </appender>
 
     <appender name="SECURITY" class="org.apache.log4j.RollingFileAppender">
-            <param name="File" value="${catalina.home}/logs/dotcms-security.log"/>
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-security.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
             <layout class="org.apache.log4j.PatternLayout">
@@ -104,7 +104,7 @@
     </appender>
 
     <appender name="SITESEARCH" class="org.apache.log4j.RollingFileAppender">
-            <param name="File" value="${catalina.home}/logs/dotcms-sitesearch.log"/>
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-sitesearch.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
             <layout class="org.apache.log4j.PatternLayout">
@@ -114,7 +114,7 @@
     </appender>
 
     <appender name="ADMINAUDIT" class="org.apache.log4j.RollingFileAppender">
-            <param name="File" value="${catalina.home}/logs/dotcms-adminaudit.log"/>
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-adminaudit.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
             <layout class="org.apache.log4j.PatternLayout">
@@ -124,7 +124,7 @@
     </appender>
 
     <appender name="USERS_ACTIVITY" class="org.apache.log4j.appender.RollingNewFileAppender">
-            <param name="File" value="${catalina.home}/logs/dotcms-userActivity.log"/>
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-userActivity.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
             <layout class="org.apache.log4j.PatternLayout">
@@ -134,7 +134,7 @@
     </appender>
 
     <appender name="VELOCITY" class="org.apache.log4j.RollingFileAppender">
-        <param name="File" value="${catalina.home}/logs/dotcms-velocity.log"/>
+        <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-velocity.log"/>
         <param name="MaxFileSize" value="20MB"/>
         <param name="MaxBackupIndex" value="10"/>
         <layout class="org.apache.log4j.PatternLayout">
@@ -144,7 +144,7 @@
     </appender>
 
     <appender name="PUSHPUBLISH" class="org.apache.log4j.RollingFileAppender">
-        <param name="File" value="${catalina.home}/logs/dotcms-pushpublish.log"/>
+        <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-pushpublish.log"/>
         <param name="MaxFileSize" value="20MB"/>
         <param name="MaxBackupIndex" value="10"/>
         <layout class="org.apache.log4j.PatternLayout">
