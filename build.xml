@@ -101,7 +101,6 @@
             <include name="**/*.jar" />
         </fileset>
 		<fileset dir="${lib.app}">
-			<include name="log4j.jar" />
 			<include name="ant-tooling.jar" />
 			<include name="commons-lang-2.4.jar" />
 			<include name="tika-app-1.3.jar" />
@@ -1165,10 +1164,6 @@
     <target name="move-war-tomcat7" depends="undeploy-war-tomcat7">
         <copy todir="${tomcat7.home}/lib/">
             <fileset dir="libs/buildlibs/">
-                <include name="log4j-1.2.16.jar"/>
-                <include name="log4j-appenders-1.0.jar"/>
-                <include name="log4j.xml"/>
-
                 <include name="mysql-connector-java-5.1.23-bin.jar"/>
                 <include name="postgresql-9.0-801.jdbc3.jar"/>
                 <include name="ojdbc5.jar"/>

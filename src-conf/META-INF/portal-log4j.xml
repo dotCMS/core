@@ -2,8 +2,8 @@
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
 
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-		<layout class="org.apache.log4j.PatternLayout">
+	<appender name="CONSOLE" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.ConsoleAppender">
+		<layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="%d{ABSOLUTE} %-5p [%c] %m%n" />
 		</layout>
 	</appender>

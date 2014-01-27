@@ -2,9 +2,7 @@ package com.dotmarketing.init;
 
 import java.lang.management.ManagementFactory;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -22,13 +20,10 @@ import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
 import com.dotcms.enterprise.DashboardProxy;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotmarketing.business.cluster.mbeans.Cluster;
-import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CalendarReminderThread;
 import com.dotmarketing.quartz.job.CleanBlockCacheScheduledTask;
@@ -702,6 +697,45 @@ public class DotInitScheduler {
                 }
             }
 
+			if(Config.getBooleanProperty("org.dotcms.XMLSitemap.ENABLE",false)) {
+                try {
+
+                    isNew = false;
+
+                    try {
+                        if ((job = sched.getJobDetail("XMLSitemap", "dotcms_jobs")) == null) {
+                            job = new JobDetail("XMLSitemap","dotcms_jobs", com.dotcms.xmlsitemap.XMLSitemapJob.class);
+                            isNew = true;
+                        }
+                    } catch (SchedulerException se) {
+                        sched.deleteJob("XMLSitemap","dotcms_jobs");
+                        job = new JobDetail("XMLSitemap","dotcms_jobs", com.dotcms.xmlsitemap.XMLSitemapJob.class);
+                        isNew = true;
+                    }
+                    calendar = GregorianCalendar.getInstance();
+                    trigger = new CronTrigger("trigger21", "group21", "XMLSitemap","dotcms_jobs", calendar.getTime(),
+                                  null,Config.getStringProperty("org.dotcms.XMLSitemap.CRON_EXPRESSION","1 1 1 * * ?"));
+                    trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+                    sched.addJob(job, true);
+
+                    if (isNew)
+                        sched.scheduleJob(trigger);
+                    else {
+                        CronTrigger existing=(CronTrigger)sched.getTrigger("trigger21", "group21");
+                        if(!existing.getCronExpression().equals(trigger.getCronExpression())) {
+                            sched.rescheduleJob("trigger21", "group21", trigger);
+                        }
+                    }
+                } catch (Exception e) {
+                    Logger.error(DotInitScheduler.class, e.getMessage(),e);
+                }
+            } else {
+                Logger.info(DotInitScheduler.class, "XMLSitemapJob Cron Job schedule disabled on this server");
+                if ((job = sched.getJobDetail("XMLSitemap", "dotcms_jobs")) != null) {
+                    sched.deleteJob("XMLSitemap", "dotcms_jobs");
+                }
+            }
+
 			//SCHEDULE SERVER HEARTBEAT JOB
 			String serverId = ConfigUtils.getServerId();
 			if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
@@ -719,14 +753,14 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-				    trigger = new CronTrigger("trigger21_" + serverId, "group21_" + serverId, "ServerHeartbeatJob_" + serverId, "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("HEARTBEAT_CRON_EXPRESSION"));
+				    trigger = new CronTrigger("trigger22_" + serverId, "group22_" + serverId, "ServerHeartbeatJob_" + serverId, "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("HEARTBEAT_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
 
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
-						sched.rescheduleJob("trigger21_" + serverId, "group21_" + serverId, trigger);
+						sched.rescheduleJob("trigger22_" + serverId, "group22_" + serverId, trigger);
 				} catch (Exception e) {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
@@ -735,7 +769,6 @@ public class DotInitScheduler {
 					sched.deleteJob("ServerHeartbeatJob_" + serverId, "dotcms_jobs");
 				}
 			}
-
 
 	        QuartzUtils.startSchedulers();
 

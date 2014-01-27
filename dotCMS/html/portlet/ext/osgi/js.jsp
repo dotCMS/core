@@ -16,6 +16,7 @@ dojo.subscribe("/dojo/hashchange", this, function(hash){mainAdmin.refresh();});
 dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
 
 	baseDiv : "osgiBundles",
+	url: "",
 	constructor : function() {
 	},
 	show : function(href) {
@@ -29,22 +30,9 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
 
 		href = href + "?donothing";
 
-		dojo.hash(encodeURIComponent(href));
+		this.url = href;
+		var myCp = dijit.byId("osgiMainBundles");
 
-	},
-
-	refresh : function() {
-		var hashValue = decodeURIComponent(dojo.hash());
-
-		if(!hashValue || hashValue.length ==0){
-			return;
-		}
-		var hanger = dojo.byId("osgiMain");
-		if(!hanger){
-            return;
-		}
-
-        var myCp = dijit.byId("osgiMainBundles");
         if (myCp) {
             myCp.destroyRecursive(false);
 		}
@@ -54,7 +42,30 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
             preventCache: true
         }).placeAt("osgiMain");
 
+        myCp.attr("href", this.url);
+        myCp.refresh();
+	},
+
+	refresh : function() {
+		var hanger = dojo.byId("osgiMain");
+		if(!hanger){
+            return;
+		}
+        var myCp = dijit.byId("osgiMainBundles");
+        if (myCp) {
+            myCp.destroyRecursive(false);
+		}
+
+        myCp = new dojox.layout.ContentPane({
+            id: "osgiMainBundles",
+            preventCache: true
+        }).placeAt("osgiMain");
+<<<<<<< HEAD
+
         myCp.attr("href", hashValue );
+=======
+        myCp.attr("href", this.url);
+>>>>>>> origin
         myCp.refresh();
 	}
 });
@@ -291,12 +302,7 @@ var availBundles = new dojo.data.ItemFileReadStore({data:
 
 
 dojo.ready(function() {
-	var myHash = decodeURIComponent(dojo.hash());
-	if(myHash && myHash.length > 0){
-		bundles.show(myHash);
-	}else{
-		bundles.show();
-	}
+	bundles.show();
     if(dojox.embed.Flash.available){
       dojo.require("dojox.form.uploader.plugins.Flash");
     }else{
