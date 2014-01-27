@@ -12,11 +12,11 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.repackage.portlet.javax.portlet.WindowState;
+
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -619,11 +619,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				contentlet.setStringProperty("recurrenceOccurs",Event.Occurrency.WEEKLY.toString());
 			}else if (contentletFormData.get("recurrenceOccurs").toString().equals("monthly")){
 
-				   if(UtilMethods.isSet((String) contentletFormData.get("recurrenceDayOfMonth"))){
+				   if(Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString())
+						   && UtilMethods.isSet((String) contentletFormData.get("recurrenceDayOfMonth"))){
 					   try {
 							contentlet.setProperty("recurrenceDayOfMonth",Long.valueOf(contentletFormData.get("recurrenceDayOfMonth").toString()));
 						} catch (Exception e) {}
 
+				   } else {
+					   contentlet.setProperty("recurrenceDayOfMonth","0");
 				   }
 
 				contentlet.setProperty("recurrenceInterval",Long.valueOf(contentletFormData.get("recurrenceIntervalMonthly").toString()));
