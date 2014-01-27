@@ -29,8 +29,8 @@ import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
 import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import javax.servlet.jsp.PageContext;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Level;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
