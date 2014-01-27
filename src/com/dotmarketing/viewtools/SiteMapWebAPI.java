@@ -13,6 +13,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -82,7 +83,7 @@ public class SiteMapWebAPI implements ViewTool {
 
         while (itemsChildrenListIter.hasNext()) {
 
-            Inode childItem = (Inode) itemsChildrenListIter.next();
+            Permissionable childItem = (Permissionable) itemsChildrenListIter.next();
 
             if (childItem instanceof Folder) {
                 if ((level == 0) && (totalCount != 0) && (totalCount % numberToBreak) == 0) {

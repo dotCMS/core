@@ -881,7 +881,7 @@
 	  }
  %>
  <div style="display:<%=field.isReadOnly()?"none":"block"%>">
-	  <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value='<%=UtilMethods.escapeHTMLSpecialChars(JSONValue)%>' />
+	  <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="" />
 	  <input type="text" name="<%=field.getFieldContentlet()%>_key" id="<%=field.getVelocityVarName()%>_key" dojoType='dijit.form.TextBox' style='width:200px' value="" <%=field.isReadOnly()?"disabled":""%> />
 	  <%=LanguageUtil.get(pageContext, "Value")%>: <input type="text" name="<%=field.getFieldContentlet()%>_value" id="<%=field.getVelocityVarName()%>_value" dojoType='dijit.form.TextBox' style='width:300px' value="" <%=field.isReadOnly()?"disabled":""%> />
 	  <button dojoType="dijit.form.Button" id="<%=field.getFieldContentlet()%>_addbutton" onClick="addKVPair('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');" iconClass="plusIcon" <%=field.isReadOnly()?"disabled":""%> type="button"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add")) %></button>
@@ -920,7 +920,7 @@
 	        <tr id="<%=field.getFieldContentlet()+"_"+key%>" <%=str_style %>>
 			    <td style="width:20px">
 			    <%if(!field.isReadOnly()){ %>
-			       	<a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=key%>');"><span class="deleteIcon"></span></a>
+			       <a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=UtilMethods.escapeSingleQuotes(key)%>');"><span class="deleteIcon"></span></a>
 			     <%} %>
 			    </td>
 				<td><span><%= key %></span></td>
@@ -933,17 +933,14 @@
     <a class="goEnterpriseLink" href="<%=licenseURL%>"><span class="keyIcon"></span><%=licenseMessage%></a>
    <%} %>
    </div>
-   <%if(!field.isReadOnly()){ %>
-	  <script>
-	  var source<%=field.getFieldContentlet()%> = new dojo.dnd.Source(dojo.byId('<%=field.getFieldContentlet()%>_kvtable'));
-	  dojo.connect(source<%=field.getFieldContentlet()%>, "insertNodes", function(){
-	     setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
-	     recolorTable('<%=field.getFieldContentlet()%>');
-	  });
-	  </script>
-  <%}%>
 <%}%>
 
 </div>
 	<div class="clear"></div>
 </div>
+ <script>
+ dojo.ready(function() {
+	 setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
+     recolorTable('<%=field.getFieldContentlet()%>');
+	});
+</script>

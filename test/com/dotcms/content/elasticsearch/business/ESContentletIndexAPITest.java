@@ -742,7 +742,7 @@ public class ESContentletIndexAPITest extends TestBase {
         return found;
     }
 
-    private SearchHits indexSearch ( String query, String sortBy ) {
+    private SearchHits indexSearch ( String query, String sortBy ) throws Exception {
 
         String qq = ESContentFactoryImpl.translateQuery( query, sortBy ).getQuery();
 
@@ -756,6 +756,12 @@ public class ESContentletIndexAPITest extends TestBase {
             return null;
         }
         indexToHit = info.site_search;
+        String indexName = indexToHit;
+        if ( indexName == null ) {
+            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format( new Date() );
+            APILocator.getSiteSearchAPI().createSiteSearchIndex( indexName, null, 1 );
+            APILocator.getSiteSearchAPI().activateIndex( indexName );
+        }
 
         Client client = new ESClient().getClient();
         SearchResponse resp;
@@ -764,7 +770,7 @@ public class ESContentletIndexAPITest extends TestBase {
             SearchRequestBuilder srb = client.prepareSearch();
             srb.setQuery( qb );
 
-            srb.setIndices( indexToHit );
+            srb.setIndices( indexName );
             srb.addFields( "id" );
 
             try {

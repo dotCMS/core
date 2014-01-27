@@ -317,8 +317,11 @@
 	   <%}%>
 
 		var assignedTo = dijit.byId("assignedTo");
-		assignedTo.displayedValue="";
-		assignedTo.setValue("<%=myRole.getId()%>");
+
+		if(assignedTo) {
+			assignedTo.displayedValue="";
+			assignedTo.setValue("<%=myRole.getId()%>");
+		}
 
 		dijit.byId("keywords").setValue("");
 
