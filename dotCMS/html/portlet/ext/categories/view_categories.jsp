@@ -285,7 +285,7 @@ td {font-size: 100%;}
 	// search handling
 	function doSearch(reorder, importing) {
 		var params = dojo.byId("catFilter").value;
-		params = "?inode="+currentInodeOrIdentifier+"&q="+params;
+		params = "?donothing&inode="+currentInodeOrIdentifier+"&q="+params;
 		if(reorder) {
 			params = params + "&reorder=true";
 		}
