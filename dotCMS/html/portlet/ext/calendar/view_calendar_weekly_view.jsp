@@ -128,7 +128,8 @@
 
 			for(var i = 0; i < events.length; i++) {
 				var event = events[i];
-				eventsList[event.identifier] = event;
+				var evRef = (event.recurr)?event.identifier:event.inode; 
+				eventsList[evRef] = event;	
 			    if(isDateInRange(currentDate, event.startDate, event.endDate)) {
 					if(isAllDayEvent(event)) {
 						alldayEvents.push(event);
@@ -156,11 +157,12 @@
 					var img = getStatusImage(event);
 					//Breaking titles with too long words
 					var eventTitle = event.title.replace(/([^\s]{15})/g,"$1-<br/> ");
-					htmlBuffer += '<span class="' + img + '"></span><a href="javascript: ;" id="eventRef' + event.identifier + '-' + currentDate.format('j') + 'Weekly">' + event.title + '</a>';
+					var evRef = (event.recurr)?event.identifier:event.inode; 
+					htmlBuffer += '<span class="' + img + '"></span><a href="javascript: ;" id="eventRef' + evRef + '-' + currentDate.format('j') + 'Weekly">' + event.title + '</a>';
 					htmlBuffer += 
 						'\<script\>' +
-						'	eventRef = Ext.get("eventRef' + event.identifier + '-' + currentDate.format('j') + 'Weekly");' +
-						'	eventRef.on("click", function(jsevent) { showEventDetail(jsevent, eventsList[\'' + event.identifier + '\']); }, this, { stopPropagation: true });' +
+						'	eventRef = Ext.get("eventRef' + evRef + '-' + currentDate.format('j') + 'Weekly");' +
+						'	eventRef.on("click", function(jsevent) { showEventDetail(jsevent, eventsList[\'' + evRef + '\']); }, this, { stopPropagation: true });' +
 						'\</script\>';
 				}
 			
@@ -178,13 +180,14 @@
 				var eventTime = event.startDate.format('ga');
 				//Breaking titles with too long words
 				var eventTitle = event.title.replace(/([^\s]{15})/g,"$1-<br/> ");
+				var evRef = (event.recurr)?event.identifier:event.inode; 
 				htmlBuffer += '	<p><span class="' + img + '"></span>' +
 					(eventTime != lastEventTime?'<span style="font-size:77%;"><b>' + eventTime + '</b></span>':'') +
-					'	<a href="javascript: ;" id="eventRef' + event.identifier + '-' + currentDate.format('j') + 'Weekly">' + eventTitle + '</a>';
+					'	<a href="javascript: ;" id="eventRef' + evRef + '-' + currentDate.format('j') + 'Weekly">' + eventTitle + '</a>';
 				htmlBuffer += 
 					'\<script\>' +
-					'	eventRef = Ext.get("eventRef' + event.identifier + '-' + currentDate.format('j') + 'Weekly");' +
-					'	eventRef.on("click", function(jsevent) { showEventDetail(jsevent, eventsList[\'' + event.identifier + '\']); }, this, { stopPropagation: true });' +
+					'	eventRef = Ext.get("eventRef' + evRef + '-' + currentDate.format('j') + 'Weekly");' +
+					'	eventRef.on("click", function(jsevent) { showEventDetail(jsevent, eventsList[\'' + evRef + '\']); }, this, { stopPropagation: true });' +
 					'\</script\>';
 				lastEventTime = eventTime;
 			}
