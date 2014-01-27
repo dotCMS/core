@@ -63,7 +63,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.StartupTasksExecutor;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DotConfig;
+//import com.dotmarketing.util.DotConfig;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.repackage.httpbridge.com.httpbridge.webproxy.http.TaskController;
@@ -111,7 +111,6 @@ public class MainServlet extends ActionServlet {
 		synchronized (MainServlet.class) {
 			super.init(config);
 			Config.initializeConfig();
-			DotConfig.initializeConfig(config.getServletContext());
 			com.dotmarketing.util.Config.setMyApp(config.getServletContext());
 			// Need the plugin root dir before Hibernate comes up
 			try {

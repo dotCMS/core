@@ -930,6 +930,7 @@ dojo.require("dojox.layout.ContentPane");
 		}).placeAt("contentletActionsHanger");
 
 		myCp.attr("href",  "/html/portlet/ext/contentlet/contentlet_actions_wrapper.jsp?contentletInode=" + inode);
+		myCp.refresh();
 
   }
 

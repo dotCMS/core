@@ -26,10 +26,13 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
 		} else {
 			href = href + "?r=" + r;
 		}
+
+		href = href + "?donothing";
+
 		dojo.hash(encodeURIComponent(href));
 
 	},
-	
+
 	refresh : function() {
 		var hashValue = decodeURIComponent(dojo.hash());
 
@@ -52,6 +55,7 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
         }).placeAt("osgiMain");
 
         myCp.attr("href", hashValue );
+        myCp.refresh();
 	}
 });
 
@@ -61,7 +65,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
 	baseJsp : "/html/portlet/ext/osgi/bundles.jsp",
 	constructor : function() {
-		
+
 	},
 
 	show : function() {
@@ -95,7 +99,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		if(availBundles.getValue() == undefined || availBundles.getValue()==""){
 			return;
 		}
-		
+
 		var jarName = availBundles.value;
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=deploy&jar=" + jarName,

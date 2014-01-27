@@ -8,20 +8,20 @@
         <ul class="level1 horizontal" id="root">
 
         <%for(int l=0;l< layouts.length ;l++){
-                String tabName =LanguageUtil.get(pageContext, LanguageUtil.get(pageContext, layouts[l].getName())); 
+                String tabName =LanguageUtil.get(pageContext, LanguageUtil.get(pageContext, layouts[l].getName()));
                 String tabDescription = (!UtilMethods.isSet(layouts[l].getDescription())) ? "&nbsp;" :layouts[l].getDescription() ;
                 if(!tabDescription.equals("&nbsp;")){
                          tabDescription = LanguageUtil.get(pageContext,tabDescription) ;
                  }
-                
-                
+
+
                 List<String> portletIDs = layouts[l].getPortletIds();
                 boolean isSelectedTab = (layout != null && layouts !=null && layout.getId().equals(layouts[l].getId()));
                 PortletURLImpl portletURLImpl = new PortletURLImpl(request, portletIDs.get(0), layouts[l].getId(), false);
                 String tabHREF = portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();%>
-                
-                
-                
+
+
+
                         <li class="dotAjaxNav<%=l %> level1 <%=(isSelectedTab) ? "Active" : ""%>">
                                 <a href="<%=tabHREF %>">
                                         <div class="tabLeft">
@@ -37,14 +37,14 @@
                                                         Portlet p = (Portlet) APILocator.getPortletAPI().findPortlet(portletIDs.get(i));
 
 
-                                                        
-                                                        
-                                                        
-                                                        portletURLImpl = new PortletURLImpl(request, portletIDs.get(i), layouts[l].getId(), false);                        
+
+
+
+                                                        portletURLImpl = new PortletURLImpl(request, portletIDs.get(i), layouts[l].getId(), false);
                                                         String linkHREF = portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
-                                                        String linkName = LanguageUtil.get(pageContext,"com.dotcms.repackage.portlet.javax.portlet.title." + portletIDs.get(i)); 
-                                                        
-                                                        
+                                                        String linkName = LanguageUtil.get(pageContext,"com.dotcms.repackage.portlet.javax.portlet.title." + portletIDs.get(i));
+
+
                                                         if("EXT_LICENSE_MANAGER".equals(portletIDs.get(i))){
                                                                 request.setAttribute("licenseManagerPortletUrl", linkHREF);
                                                         }
@@ -52,9 +52,9 @@
                                                         if(obj instanceof BaseRestPortlet){
                                                                 linkHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(i) + "/', '" + l + "');";
                                                         }%>
-                                                        
-                                                        
-                                                        
+
+
+
                                                         <li class="level2 dotCMS_<%=portletIDs.get(i)%>"><a href="<%=linkHREF %>"><span></span><%=linkName %></a></li>
                                                 <%} %>
                                         </ul>
@@ -77,15 +77,15 @@ dojo.require("dojo.hash");
         // -------------------- AJAX NAVIGATION --------------------
         //
         //
-        
+
         dojo.declare("dotcms.dijit.dotAjaxNav", null, {
                 contentDiv : "dotAjaxMainDiv",
                 hangerDiv : "dotAjaxMainHangerDiv",
-                
+
                 wfCrumbTrail : new Array(),
-                
+
                 constructor : function() {},
-                
+
                 show : function(href, tabId) {
 
                         var r = Math.floor(Math.random() * 1000000000);
@@ -95,22 +95,22 @@ dojo.require("dojo.hash");
                                 href = href + "?r=" + r;
                         }
                         dojo.hash(encodeURIComponent(href));
-                        
+
                         // if we need to update the tabs
                         if(tabId && tabId != undefined){
                                 dojo.query(".level1 .Active").forEach(function(node){
                                         dojo.removeClass(node, "Active");
                                   });
-                                
+
                                 dojo.query(".dotAjaxNav" + tabId).forEach(function(node){
                                         dojo.addClass(node, "Active");
                                   });
                         }
-                        
+
                 },
-        
-                
-                
+
+
+
                 reload : function(){
                         if(dojo.hash()  ){
                                 var hashValue = decodeURIComponent(dojo.hash());
@@ -118,11 +118,16 @@ dojo.require("dojo.hash");
                                 dotAjaxNav.show(hashValue);
                         }
                 },
-                
-                
+
+
                 refresh : function() {
 
                         var hashValue = decodeURIComponent(dojo.hash());
+
+                        if(hashValue.indexOf("donothing")>0) {
+                        	return;
+                        }
+
                         console.log("refreshing:" + hashValue);
                         if(!hashValue || hashValue.length ==0){
                                 return;
@@ -146,27 +151,28 @@ dojo.require("dojo.hash");
 
                         console.log("navigating to:" + hashValue)
                         myCp.attr("href", hashValue);
-                        
+                        myCp.refresh();
+
                         dojo.parser.parse(this.hangerDiv);
                 },
-        
-        
+
+
                 addCrumbtrail : function (title, urlx){
                         var entry = {title:title, url:urlx};
                         this.wfCrumbTrail[this.wfCrumbTrail.length] = entry;
                 },
-                
-                
+
+
                 resetCrumbTrail : function(){
                         this.wfCrumbTrail = new Array();
                 },
-        
+
                 refreshCrumbtrail : function (){
                         var crumbDiv = dojo.byId("subNavCrumbUl");
                         crumbDiv.innerHTML ="";
                         // dojo.create("li",
                         // {onClick:this.show(this.wfCrumbTrail[i].url)},crumbDiv )
-        
+
                         dojo.create("li", {innerHTML:"<span class='hostStoppedIcon' style='float:left;margin-right:5px;'></span><%=LanguageUtil.get(pageContext, "Global-Page")%>", id:"selectHostDiv", onClick:"window.location='/c'"},crumbDiv );
                         for( i =0;i< this.wfCrumbTrail.length;i++ ){
                                 var className="showPointer";
@@ -176,14 +182,14 @@ dojo.require("dojo.hash");
                                 else{
                                         dojo.create("li", {innerHTML:"<a href='javascript:dotAjaxNav.show(dotAjaxNav.wfCrumbTrail[" + i + "].url)'>" + dotAjaxNav.wfCrumbTrail[i].title + "</a>", className:className},crumbDiv );
                                 }
-        
+
                         }
-        
-        
+
+
                 }
-        
+
         });
-        
+
         var dotAjaxNav = new dotcms.dijit.dotAjaxNav({});
 
         dojo.subscribe("/dojo/hashchange", this, function(hash){dotAjaxNav.refresh();});
@@ -192,12 +198,12 @@ dojo.require("dojo.hash");
 
 
         var _myWindowWidth=0;
-        
+
         function smallifyMenu(){
-                
+
                 // move our menu out of sight for rendering....
                 var m = dojo.byId("menu");
-        
+
                 var viewport = dijit.getViewport();
                 var  screenWidth= (viewport.w -40);
                 //alert(screenWidth);
@@ -229,21 +235,21 @@ dojo.require("dojo.hash");
                         for(i = tabs.length;i>0;i--){
                                 lastTop = (dojo.coords(tabs[(tabs.length-1)])).t;
                                 var x = tabs[i-1];
-        
+
                                 var width = (dojo.coords(x)).w;
                                 tabW = tabW-width;
                                 var classes = dojo.attr(x, "class");
-        
+
         <%--
-                                alert("tab:\t" + (i-1) + 
-                                        "\ntabW:\t" + tabW + 
-                                        "\nscreenWidth:\t" + screenWidth + 
-                                        "\nfirstTop:\t" + firstTop + 
-                                        "\nlastTop:\t" + lastTop + 
-        
+                                alert("tab:\t" + (i-1) +
+                                        "\ntabW:\t" + tabW +
+                                        "\nscreenWidth:\t" + screenWidth +
+                                        "\nfirstTop:\t" + firstTop +
+                                        "\nlastTop:\t" + lastTop +
+
                                         "\nwidth:\t" + width);
         --%>
-                                
+
                                 if(tabW > screenWidth || lastTop > firstTop){
                                         classes = classes + " smallify";
                                         dojo.attr(x, "class", classes);
@@ -254,13 +260,13 @@ dojo.require("dojo.hash");
                                 }
                         }
                 }
-        
-        
+
+
         }
         dojo.addOnLoad (smallifyMenu);
         dojo.addOnLoad (dotAjaxNav.reload);
         dojo.connect(window, "onresize", this, "smallifyMenu");
-        
+
 
 
 </script>
