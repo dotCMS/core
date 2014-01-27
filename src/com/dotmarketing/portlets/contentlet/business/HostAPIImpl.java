@@ -93,7 +93,7 @@ public class HostAPIImpl implements HostAPI {
 	    	}
 	    	if(list == null || list.size() ==0)
 	    		return createDefaultHost();
-				
+
 			else if (list.size() >1){
 				Logger.fatal(this, "More of one host is marked as default!!");
 			}
@@ -104,11 +104,11 @@ public class HostAPIImpl implements HostAPI {
 			}
 			throw new DotSecurityException("User : " + user.getUserId()+ " does not have permission to a host");
 		} catch (Exception e) {
-			
+
 			if(user!=null && !user.equals(APILocator.getUserAPI().getDefaultUser())){
 				Logger.error(HostAPIImpl.class, e.getMessage(), e);
 			}
-			
+
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 
@@ -381,7 +381,7 @@ public class HostAPIImpl implements HostAPI {
 				}
 			}
 		}
-		
+
 		hostCache.clearAliasCache();
 		return savedHost;
 
@@ -488,9 +488,9 @@ public class HostAPIImpl implements HostAPI {
 	public void delete(final Host host, final User user, final boolean respectFrontendRoles) {
 	    delete(host,user,respectFrontendRoles,false);
 	}
-	
+
 	public void delete(final Host host, final User user, final boolean respectFrontendRoles, boolean runAsSepareThread) {
-		
+
 
 		class DeleteHostThread extends Thread {
 
@@ -535,10 +535,10 @@ public class HostAPIImpl implements HostAPI {
 
 				// Remove Contentlet
 				ContentletAPI contentAPI = APILocator.getContentletAPI();
-				dc.setSQL("select distinct id from identifier join contentlet on contentlet.identifier=identifier.id where identifier.host_inode=?");
+				dc.setSQL("select distinct id, language_id from identifier join contentlet on contentlet.identifier=identifier.id where identifier.host_inode=?");
 				dc.addParam(host.getIdentifier());
 				for (Map<String,Object> rr : dc.loadObjectResults()) {
-				    Contentlet contentlet = contentAPI.findContentletByIdentifier((String)rr.get("id"), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+				    Contentlet contentlet = contentAPI.findContentletByIdentifier((String)rr.get("id"), false, (Long)rr.get("language_id"), user, false);
 					contentAPI.delete(contentlet, user, respectFrontendRoles);
 				}
 
@@ -585,12 +585,12 @@ public class HostAPIImpl implements HostAPI {
 					}
 					StructureFactory.deleteStructure(structure);
 				}
-				
+
 				// wipe bad old containers
                 dc.setSQL("delete from container_structures where exists (select * from identifier where host_inode=? and container_structures.container_id=id)");
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
-         
+
 				String[] assets = {"containers","template","htmlpage","links"};
 				for(String asset : assets) {
 				    dc.setSQL("select inode from "+asset+" where exists (select * from identifier where host_inode=? and id="+asset+".identifier)");
@@ -601,7 +601,7 @@ public class HostAPIImpl implements HostAPI {
 	                    dc.loadResult();
 	                }
 				}
-				
+
                 // kill bad identifiers pointing to the host
                 dc.setSQL("delete from identifier where host_inode=?");
                 dc.addParam(host.getIdentifier());
@@ -615,7 +615,7 @@ public class HostAPIImpl implements HostAPI {
 
 			}
 		}
-		
+
 		DeleteHostThread thread = new DeleteHostThread();
 
 		if(runAsSepareThread) {
