@@ -9,30 +9,30 @@
 
 	Date recurrenceStarts = contentletForm.getRecurrenceStartsDate();
 	Date recurrenceEnds = contentletForm.getRecurrenceEndsDate();
-	
+
 	int[] monthIds = CalendarUtil.getMonthIds();
 	String[] months = CalendarUtil.getMonths(locale);
-	
+
 	GregorianCalendar cal = new GregorianCalendar();
 	cal.setTime((Date) recurrenceEnds);
 	int dayOfMonth = cal.get(GregorianCalendar.DAY_OF_MONTH);
 	int month = cal.get(GregorianCalendar.MONTH);
 	int year = cal.get(GregorianCalendar.YEAR);
-	
+
 	SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 	if (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek())) {
 		java.util.Arrays.sort(contentletForm.getRecurrenceDaysOfWeek());
 	}
-%>	
-<html:hidden property="disconnectedFrom" styleId="disconnectedFrom" /> 
-<html:hidden property="originalStartDate" styleId="originalStartDate" /> 
-<html:hidden property="originalEndDate" styleId="originalEndDate" /> 
+%>
+<html:hidden property="disconnectedFrom" styleId="disconnectedFrom" />
+<html:hidden property="originalStartDate" styleId="originalStartDate" />
+<html:hidden property="originalEndDate" styleId="originalEndDate" />
 <html:hidden property="recurrenceChanged" styleId="recurrenceChanged" />
 <html:hidden property="recurrenceWeekOfMonth" styleId="recurrenceWeekOfMonth" />
 <html:hidden property="recurrenceDayOfWeek" styleId="recurrenceDayOfWeek"  />
 <html:hidden property="recurrenceMonthOfYear" styleId="recurrenceMonthOfYear"  />
 <input type="hidden" id="isSpecificDate" name="isSpecificDate" value="<%= contentletForm.isSpecificDate() %>"/>
-	<div class="fieldWrapper">	
+	<div class="fieldWrapper">
 		<div class="fieldName"><%= LanguageUtil.get(pageContext, "Repeats") %>:</div>
 		<div class="fieldValue">
 			<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursNever" value="never" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("never")) ? "checked" : "" %> /><label for="recursNever"><%= LanguageUtil.get(pageContext, "never") %></label>&nbsp;&nbsp;
@@ -42,33 +42,33 @@
 			<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursAnnually" value="annually" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("annually")) ? "checked" : "" %> /><label for="recursAnnually"><%= LanguageUtil.get(pageContext, "annually") %></label>&nbsp;
 			<br/>
 			<div id="recurence" class="recurenceWrapper roundBox" style="display: none;width:600px;padding:10px">
-				<html:hidden property="recurrenceInterval" styleId="recurrenceInterval" /> 
-				
-				
-				
-				
-				
-				
+				<html:hidden property="recurrenceInterval" styleId="recurrenceInterval" />
+
+
+
+
+
+
 				<%--       DAILY RECURRANCE        --%>
 				<div id="dailyRecurrence" class="eventRecurrence">
-					<%= LanguageUtil.get(pageContext, "Every") %>: 
-						<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalDaily" id="recurrenceIntervalDaily" onchange="setRecurrenceInterval('recurrenceIntervalDaily');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" /> 
-						<%= LanguageUtil.get(pageContext, "day-s-") %>&nbsp; 
-				</div> 
-				
-				
-				
-				
-				
-				
-				
+					<%= LanguageUtil.get(pageContext, "Every") %>:
+						<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalDaily" id="recurrenceIntervalDaily" onchange="setRecurrenceInterval('recurrenceIntervalDaily');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" />
+						<%= LanguageUtil.get(pageContext, "day-s-") %>&nbsp;
+				</div>
+
+
+
+
+
+
+
 				<%--       WEEKLY RECURRANCE        --%>
 				<div id="weeklyRecurrence"  style="border:0px solid red;padding:3px;white-space:nowrap">
-					<%= LanguageUtil.get(pageContext, "Every") %>:  
-					<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalWeekly" id="recurrenceIntervalWeekly" onchange="setRecurrenceInterval('recurrenceIntervalWeekly');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" /> 
+					<%= LanguageUtil.get(pageContext, "Every") %>:
+					<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalWeekly" id="recurrenceIntervalWeekly" onchange="setRecurrenceInterval('recurrenceIntervalWeekly');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" />
 					<%= LanguageUtil.get(pageContext, "week-s-on") %>&nbsp;: &nbsp;
 
-				
+
 				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Sunday" value="<%= String.valueOf(Calendar.SUNDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.SUNDAY)))) ? "checked" : "" %> />
 					<label for="Sunday"><%= LanguageUtil.get(pageContext, "Sunday").charAt(0) %></label>
 					&nbsp;
@@ -89,15 +89,15 @@
 					&nbsp;
 				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Saturday" value="<%= String.valueOf(Calendar.SATURDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.SATURDAY)))) ? "checked" : "" %> />
 					<label for="Saturday"><%= LanguageUtil.get(pageContext, "Saturday").charAt(0) %></label>
-					
+
 					<div style="clear: both;"></div>
-				</div> 
-				
-				
-				
-				
-				
-				
+				</div>
+
+
+
+
+
+
 				<%--       MONTHLY RECURRANCE        --%>
 				<div id="monthlyRecurrence">
 					<style>
@@ -122,7 +122,7 @@
 						        <input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('monthly', false)" name="isSpecificDateMonth" id="noSpecificDateMonth" value="false" <%= (!contentletForm.isSpecificDate()) ? "checked" : "" %> />
 						        <label for="noSpecificDateMonth"><%= LanguageUtil.get(pageContext, "On-The") %>:</label>
 						    </td>
-							
+
 							<td>
 							    <select id="recurrenceWeekOfMonthM" name="recurrenceWeekOfMonthM" dojoType="dijit.form.FilteringSelect" style="width: 90px;" onchange="setRecurrenceWeekOfMonth('month');" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
 								  <option value="1" <%=contentletForm.getRecurrenceWeekOfMonth()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "1st") %></option>
@@ -140,9 +140,9 @@
 								  <option value="5" <%=contentletForm.getRecurrenceDayOfWeek()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Thursday") %></option>
 								  <option value="6" <%=contentletForm.getRecurrenceDayOfWeek()==6?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Friday") %></option>
 								  <option value="7" <%=contentletForm.getRecurrenceDayOfWeek()==7?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Saturday") %></option>
-								</select>	
-								
-								
+								</select>
+
+
 								<%= LanguageUtil.get(pageContext, "of-the-month") %>
 							</td>
 						</tr>
@@ -158,24 +158,24 @@
 						     <label for="specificDateMonth"><%= LanguageUtil.get(pageContext, "Specific-Day") %>:</label>
 							</td>
 							<td>
-						        <input type="text" dojoType="dijit.form.TextBox" name="recurrenceDayOfMonth"  id="recurrenceDayOfMonthM" style="width: 30px;" 
-						           value="<%= UtilMethods.isSet((String)contentletForm.getRecurrenceDayOfMonth()) ? (String)contentletForm.getRecurrenceDayOfMonth() : "" %>" 
+						        <input type="text" dojoType="dijit.form.TextBox" name="recurrenceDayOfMonth"  id="recurrenceDayOfMonthM" style="width: 30px;"
+						           value="<%= UtilMethods.isSet((String)contentletForm.getRecurrenceDayOfMonth()) ? (String)contentletForm.getRecurrenceDayOfMonth() : "" %>"
 						           <%= (contentletForm.isSpecificDate()) ? "" : "disabled" %>
-						           /> 
+						           />
 							</td>
 						</tr>
 					</table>
 
-					
-				</div> 
-				
-				
-				
-				
-				
+
+				</div>
+
+
+
+
+
 				<%--       YEARLY RECURRANCE        --%>
 				<div id="annualRecurrence">
-				
+
 					<table id="yearRecurrTable">
 						<tr>
 							<td><%= LanguageUtil.get(pageContext, "Every") %>:</td>
@@ -223,10 +223,10 @@
 								  <option value="11" <%=contentletForm.getRecurrenceMonthOfYear()==11?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "November") %></option>
 								  <option value="12" <%=contentletForm.getRecurrenceMonthOfYear()==12?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "December") %></option>
 								</select>
-								
-								
+
+
 							</td>
-							
+
 						</tr>
 						<tr>
 							<td><%= LanguageUtil.get(pageContext, "or") %></td>
@@ -234,19 +234,19 @@
 								&nbsp;
 							</td>
 						</tr>
-						
-						<tr>					
+
+						<tr>
 							<td>
 							  <input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('annually', true)" name="isSpecificDateYear" id="specificDateYear" value="true" <%= (contentletForm.isSpecificDate()) ? "checked" : "" %> />
 						      <label for="specificDateYear"><%= LanguageUtil.get(pageContext, "Specific-Day") %>:</label>
 							<td>
-							
+
 							  <select id="specificDayOfMonthRecY" name="specificDayOfMonthRecY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" <%= (contentletForm.isSpecificDate()) ? "" : "disabled" %>>
 							   <%for(int i =1; i<32; i++){ %>
 							      <option value="<%=i %>" <%=contentletForm.getSpecificDayOfMonthRecY().equals(String.valueOf(i))?"selected=\"selected\"":"" %>><%= i %></option>
 							   <%} %>
 							   </select>
-							   	
+
 							   <%= LanguageUtil.get(pageContext, "of") %>
 								&nbsp;
 								<select id="specificMonthOfYearRecY" name="specificMonthOfYearRecY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" <%= (contentletForm.isSpecificDate()) ? "" : "disabled" %>>
@@ -267,46 +267,46 @@
 							</td>
 						</tr>
 
-						
-					  </table>
-						
-						
 
-						
-			
-						
-				</div> 
+					  </table>
+
+
+
+
+
+
+				</div>
 				<div>
-				    <br/>		
+				    <br/>
 				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="noEndDate" id="noEndDate" value="<%= contentletForm.isNoEndDate() %>" <%= contentletForm.isNoEndDate()?"checked" : "" %> onclick="toggleEndDate();"/>
 					<label for="noEndDate"><%= LanguageUtil.get(pageContext, "No End Date") %></label>
-				</div>	
+				</div>
 				<div id="recurrenceEndDate" class="recurrenceEndDate">
 					<br/>
-					<input type="hidden" id="startRecurrenceDate" name="recurrenceStarts" value="<%= df.format(recurrenceStarts) %>" /> 
-					<input type="hidden" id="endRecurrenceDate" name="recurrenceEnds" value="<%= df.format(recurrenceEnds) %>" /> 
-					<%= LanguageUtil.get(pageContext, "Ends") %>: 
+					<input type="hidden" id="startRecurrenceDate" name="recurrenceStarts" value="<%= df.format(recurrenceStarts) %>" />
+					<input type="hidden" id="endRecurrenceDate" name="recurrenceEnds" value="<%= df.format(recurrenceEnds) %>" />
+					<%= LanguageUtil.get(pageContext, "Ends") %>:
 					<%SimpleDateFormat df2 = new SimpleDateFormat("yyyy-MM-dd");%>
-					
-						<input type="text" value="<%=df2.format(recurrenceEnds) %>" onChange="updateRecurrenceEndDate('endRecurrenceDate');" 
-					 	       dojoType="dijit.form.DateTextBox"  name="endRecurrenceDateDate"  id="endRecurrenceDateDate" style="width:100px;">
-					
-				</div>				
+
+						<input type="text" value="<%=df2.format(recurrenceEnds) %>" onChange="updateRecurrenceEndDate('endRecurrenceDate');"
+					 	       dojoType="dijit.form.DateTextBox"  name="endRecurrenceDateDate"  id="endRecurrenceDateDate" style="width:120px;">
+
+				</div>
 			</div>
-			
+
 		</div>
 		<div class="clear"></div>
 	</div>
-	
+
 		<div id="recurrenceEndDate_calendarDialog" dojoType="dijit.Dialog" title="" style="width: 200px; height: 230px;">
 			<div id="recurrenceEndDate_calendar" dojoType="dojox.widget.Calendar">
 				<script type="dojo/connect" event="onValueSelected" args="date">
 					dijit.byId('endRecurrenceDateMonth').attr('value',date.getMonth());
 					dijit.byId('endRecurrenceDateYear').attr('value',date.getFullYear());
 	    			dijit.byId('endRecurrenceDateDay').attr('value',date.getDate());
- 					dijit.byId('recurrenceEndDate_calendarDialog').hide(); 	
+ 					dijit.byId('recurrenceEndDate_calendarDialog').hide();
 	  			</script>
-			</div>        
+			</div>
 		</div>
 		<style type="text/css">
 			#recurrenceEndDate_calendarDialog_underlay { background-color:transparent; }
@@ -343,7 +343,7 @@
 		  var recurrenceMonthOfYear = document.getElementById('recurrenceMonthOfYear');
 		  recurrenceMonthOfYear.value = dijit.byId('recurrenceMonthOfYear').value;
 	  }
-	  
+
 
 
 	    function toggleEndDate(){
@@ -355,9 +355,9 @@
             	$('noEndDate').value='true';
             }
 
-		    
+
 	    }
-		
+
 	    function updateStartRecurrenceDate(varName) {
 			var field = $('startRecurrenceDate');
 			var dateValue ="";
@@ -379,14 +379,14 @@
 				if(hour < 10) hour = "0" + hour;
 				var min = time.getMinutes();
 				if(min < 10) min = "0" + min;
-				dateValue += hour + ":" + min; 
+				dateValue += hour + ":" + min;
 			} else {
 				dateValue += "00:00";
 			}
-			
+
 			field.value = dateValue;
 		}
-		
+
 		function recurrenceHasChanged() {
 			$('dailyRecurrence').hide();
 			$('weeklyRecurrence').hide();
@@ -407,8 +407,8 @@
 				$('annualRecurrence').show();
 				$('recurence').show();
 			}
-			
-			
+
+
 			 if(!$('recursNever').checked){
 				var startDate 	= dojo.byId('<%=startDateField.getVelocityVarName()%>');
 				var endDate 	= dojo.byId('<%=endDateField.getVelocityVarName()%>');
@@ -424,42 +424,42 @@
 				endDateDate.setValue(startDateD);
 				updateDate('<%=endDateField.getVelocityVarName()%>');
 				endDateDate.readOnly=true;
-				
+
 			}
 			else{
 				var endDateDate 	= dijit.byId('<%=endDateField.getVelocityVarName()%>Date');
 				endDateDate.readOnly=false;
 			}
-			
+
 			$('recurrenceChanged').value = "true";
 		}
-		
+
 		function getEndRecurrenceDate() {
-			var date = new Date(dijit.byId('endRecurrenceDateYear').attr('value'), 
+			var date = new Date(dijit.byId('endRecurrenceDateYear').attr('value'),
 				dijit.byId('endRecurrenceDateMonth').attr('value'),
 				dijit.byId('endRecurrenceDateDay').attr('value'));
 			return date;
 		}
-		
+
 		function <portlet:namespace />setCalendarDate_endRecurrenceDate(year, month, day) {
 			var dateStr = "" + year + '-' + month + '-' + day;
 			dijit.byId('endRecurrenceDateYear').attr('value', year);
 			dijit.byId('endRecurrenceDateMonth').attr('value', (parseInt(month) - 1));
 			dijit.byId('endRecurrenceDateDay').attr('value', day);
-			
+
 			$('endRecurrenceDate').value = dateStr;
 		}
-		
+
 		function setRecurrenceInterval(recurrence){
 		   $('recurrenceInterval').value = $(recurrence).value;
 		}
 		dojo.addOnLoad( function(){
 			recurrenceHasChanged();
 		});
-		
-        function <portlet:namespace />dojoCalendarOnClick_endRecurrenceDate(date){            
+
+        function <portlet:namespace />dojoCalendarOnClick_endRecurrenceDate(date){
         	dijit.byId('recurrenceEndDate_calendarDialog').show();
-        	dijit.byId('recurrenceEndDate_calendar').attr('value',date);            	
+        	dijit.byId('recurrenceEndDate_calendar').attr('value',date);
         }
 
 		<% if(contentletForm.isNoEndDate()){%>
@@ -487,7 +487,7 @@
 				if(hour < 10) hour = "0" + hour;
 				var min = time.getMinutes();
 				if(min < 10) min = "0" + min;
-				dateValue += hour + ":" + min; 
+				dateValue += hour + ":" + min;
 			} else {
 				dateValue += "00:00";
 			}
@@ -537,6 +537,6 @@
 			}
 
 		}
-		
-		
+
+
 	</script>
