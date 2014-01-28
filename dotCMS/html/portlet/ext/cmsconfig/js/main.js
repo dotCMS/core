@@ -173,3 +173,23 @@ var loadRemotePublishingTab = function () {
     content.attr("href", url);
     content.refresh();
 };
+
+/**
+ * Loads the CMS CLuster Config tab
+ */
+var loadClusterTab = function () {
+
+    var url = "/html/portlet/ext/cmsconfig/cluster_config.jsp";
+    var content = dijit.byId("clusterTabContent");
+
+    if (content) {
+        content.destroyRecursive(false);
+    }
+    content = new dojox.layout.ContentPane({
+        id: "clusterTabContent",
+        preventCache: true
+    }).placeAt("clusterTabContentDiv");
+
+    content.attr("href", url);
+    content.refresh();
+};

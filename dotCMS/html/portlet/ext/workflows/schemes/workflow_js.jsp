@@ -26,7 +26,7 @@ dojo.declare(
     [dijit.form.ValidationTextBox,dijit.form.SimpleTextarea],
     {
         invalidMessage: "This field is required",
-        regExp: "(.|\\s)*" 
+        regExp: "(.|\\s)*"
     }
 );
 
@@ -58,6 +58,9 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 		} else {
 			href = href + "?r=" + r;
 		}
+
+		href = href + "?donothing";
+
 		dojo.hash(encodeURIComponent(href));
 
 	},
@@ -84,6 +87,7 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 		var r = Math.floor(Math.random() * 1000000000);
 		hashValue = hashValue + "&rand=" + r;
 		myCp.attr("href", hashValue);
+		myCp.refresh();
 		dojo.parser.parse("hangWorkflowMainHere");
 
 
@@ -362,7 +366,7 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=delete&stepId=" + stepId,
 			handle : function(dataOrError, ioArgs) {
 				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {					
+					if (dataOrError.indexOf("FAILURE") == 0) {
 							dataOrError = '<div class="warningText">' + dataOrError + '</div>';
 							var thisdialog = new dijit.Dialog({ title: "Delete Step", content: dataOrError });
 							dojo.body().appendChild(thisdialog.domNode);

@@ -8,9 +8,8 @@
 <config xmlns="urn:org:jgroups"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/JGroups-2.12.xsd">
-    <UDP bind_addr="${jgroups.bind_addr:127.0.0.1}"
+    <UDP
     	 mcast_port="${jgroups.udp.mcast_port:45588}"
-         mcast_addr="${jgroups.udp.mcast_addr:228.10.10.10}"
          tos="8"
          loopback="true"
          discard_incompatible_packets="true"
@@ -48,7 +47,7 @@
     <MERGE2 max_interval="30000"
             min_interval="10000"/>
     <FD_SOCK/>
-    <FD_ALL/>
+    <FD_ALL interval="3000" timeout="10000"/>
     <VERIFY_SUSPECT timeout="1500"  />
     <BARRIER />
     <pbcast.NAKACK use_stats_for_retransmission="false"
@@ -67,6 +66,6 @@
          min_threshold="0.4"/>
     <FRAG2 frag_size="60K"  />
     <pbcast.STREAMING_STATE_TRANSFER />
-    <!-- pbcast.STATE_TRANSFER  / -->
+<!--     <pbcast.STATE_TRANSFER  /> -->
     <pbcast.FLUSH  />
 </config>

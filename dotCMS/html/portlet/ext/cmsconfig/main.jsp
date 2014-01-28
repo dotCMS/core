@@ -18,6 +18,10 @@
             <div id="remotePublishingTabContentDiv"></div>
         </div>
 
+        <div id="clusterTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "configuration_cluster_status") %>" >
+            <div id="clusterTabContentDiv"></div>
+        </div>
+
     </div>
 
 </div>
@@ -34,6 +38,8 @@
                 loadCompanyTab();
             } else if (selectedTab.id == "remotePublishingTab") {
                 loadRemotePublishingTab();
+            } else if (selectedTab.id == "clusterTab") {
+                loadClusterTab();
             }
         });
 
