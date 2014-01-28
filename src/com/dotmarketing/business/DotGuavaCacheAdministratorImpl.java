@@ -533,6 +533,9 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			}
 		}
 
+		List<String> myList = new ArrayList<String>(myGroups);
+		Collections.sort(myList, new CacheComparator());
+
 		Cache dCache = getCache(DEFAULT_CACHE);
 		for (String group : myGroups) {
 			Map<String, Object> m = new HashMap<String, Object>();
@@ -584,45 +587,39 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 		Collections.sort(list, new CacheComparator());
 
-
 		return list;
 	}
 
-	private class CacheComparator implements Comparator<Map<String, Object>>{
+	private class CacheComparator implements Comparator<Map<String,Object>>{
 
-		public int compare(Map o1, Map o2) {
-			try{
-				String group1 = (String) o1.get("region");
-				String group2 = (String) o2.get("region");
+		public int compare(Map<String,Object> o1, Map<String,Object> o2) {
 
-				if(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && !(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
-					return 1;
-				}
-				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && !(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
-					return 1;
-				}
-				if(group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && !(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
-					return -1;
-				}
-				if(group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && !(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) || group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX))){
-					return -1;
-				}
-				if(group1.toLowerCase().startsWith(WORKING_CACHE_PREFIX) && group2.toLowerCase().startsWith(LIVE_CACHE_PREFIX)) {
-					return -1;
-				}
-				if(group1.toLowerCase().startsWith(LIVE_CACHE_PREFIX) && group2.toLowerCase().startsWith(WORKING_CACHE_PREFIX)) {
-					return 1;
-				}
-				else{
-					return group1.compareToIgnoreCase(group2);
-				}
+			if(o1==null && o2!=null) return 1;
+			if(o1!=null && o2==null) return -1;
+			if(o1==null && o2==null) return 0;
+
+			String group1 = (String) o1.get("region");
+			String group2 = (String) o2.get("region");
+
+			if(!UtilMethods.isSet(group1) && !UtilMethods.isSet(group2)) {
+				return 0;
+			} else if(UtilMethods.isSet(group1) && !UtilMethods.isSet(group2)) {
+				return -1;
+			} else if(!UtilMethods.isSet(group1) && UtilMethods.isSet(group2)) {
+				return 1;
+			} else if(group1.equals(group2)) {
+				return 0;
+			} else if(group1.startsWith(WORKING_CACHE_PREFIX) && group2.startsWith(LIVE_CACHE_PREFIX)) {
+				return 1;
+			} else if(group1.startsWith(LIVE_CACHE_PREFIX) && group2.startsWith(WORKING_CACHE_PREFIX)) {
+				return -1;
+			} else if(!group1.startsWith(LIVE_CACHE_PREFIX) && !group1.startsWith(WORKING_CACHE_PREFIX) && (group2.startsWith(LIVE_CACHE_PREFIX) || group2.startsWith(WORKING_CACHE_PREFIX)) ) {
+				return -1;
+			} else if((group1.startsWith(LIVE_CACHE_PREFIX) || group1.startsWith(WORKING_CACHE_PREFIX)) && !group2.startsWith(LIVE_CACHE_PREFIX) && !group2.startsWith(WORKING_CACHE_PREFIX) ) {
+				return 1;
+			} else { // neither group1 nor group2 are live or working
+				return group1.compareToIgnoreCase(group2);
 			}
-			catch(Exception e){
-
-			}
-
-			return 0;
-
 		}
 
 
