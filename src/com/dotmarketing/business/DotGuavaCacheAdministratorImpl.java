@@ -533,9 +533,6 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			}
 		}
 
-		List<String> myList = new ArrayList<String>(myGroups);
-		Collections.sort(myList, new CacheComparator());
-
 		Cache dCache = getCache(DEFAULT_CACHE);
 		for (String group : myGroups) {
 			Map<String, Object> m = new HashMap<String, Object>();
