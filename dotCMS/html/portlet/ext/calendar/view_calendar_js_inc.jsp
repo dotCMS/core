@@ -18,7 +18,7 @@
 	var categories = new Array();
 	var categoriesLabels = new Array();
 	var live = false;
-	var archived = false;
+	var archived = true;
 	var offset = 0;
 	var perPage = 50;
 	var selectedView = 'list';
