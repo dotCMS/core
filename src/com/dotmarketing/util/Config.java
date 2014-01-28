@@ -14,12 +14,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class Config {
-    
+
 	//Generated File Indicator
 	public static final String GENERATED_FILE ="dotGenerated_";
 	public static final String RENDITION_FILE ="dotRendition_";
 	public static int DB_VERSION=0;
-	
+
     //Object Config properties
 	public static javax.servlet.ServletContext CONTEXT = null;
 	public static String CONTEXT_PATH = null;
@@ -28,7 +28,7 @@ public class Config {
 	public static final int PERMISSION_READ = 1;
 	public static final int PERMISSION_WRITE = 2;
 	public static final int PERMISSION_PUBLISH = 4;
-    
+
 	//Config internal properties
 	private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
 	private static Date lastRefreshTime = new Date ();
@@ -36,22 +36,22 @@ public class Config {
 	private static PropertiesConfiguration props = null;
 	private static ClassLoader classLoader = null;
 	private static URL url = null;
-	
-	//Config internal methods 
+
+	//Config internal methods
 	public static void initializeConfig () {
 	    classLoader = Thread.currentThread().getContextClassLoader();
 	    _loadProperties();
 	}
-	
+
 	private static void _loadProperties () {
-		
+
 	    if (classLoader == null) {
             classLoader = Thread.currentThread().getContextClassLoader();
 		    Logger.info(Config.class, "Initializing properties reader.");
 	    }
 	    if (url == null)
 	        url = classLoader.getResource("dotmarketing-config.properties");
-		
+
 		if (url != null) {
 		    File f = new File(url.getPath());
 		    Date lastModified = new Date(f.lastModified());
@@ -66,7 +66,7 @@ public class Config {
 		                int interval = props.getInt("config.refreshinterval");
 		                refreshInterval = interval;
 		                Logger.info(Config.class, "Assigned custom refresh interval: " + interval + " minutes.");
-		            } catch (NoSuchElementException e) {    
+		            } catch (NoSuchElementException e) {
 		                Logger.info(Config.class, "Assigned default refresh interval: " + refreshInterval + " minutes.");
 		            }
 	                Logger.info(Config.class, "dotCMS Properties Loaded");
@@ -112,7 +112,7 @@ public class Config {
 	    }
 	    return property;
 	}
-	
+
 	/**
 	 * @deprecated  Use getStringProperty(String name, String default) and
 	 * set an intelligent default
@@ -131,7 +131,7 @@ public class Config {
         }
         return property;
     }
-	
+
 	public static String[] getStringArrayProperty (String name) {
 	    _refreshProperties ();
 	    return props.getStringArray(name);
@@ -188,16 +188,22 @@ public class Config {
         return props.getBoolean(name, defaultVal);
 	}
 
+	public static void setProperty(String key, Object value) {
+		if(props!=null) {
+			props.setProperty(key, value);
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	public static Iterator<String> getKeys () {
 	    _refreshProperties ();
 	    return props.getKeys();
 	}
-	
+
 	public static boolean containsProperty(String key) {
 		return props.containsKey(key);
 	}
-	
+
 	// Spindle Config
 	public static void setMyApp(javax.servlet.ServletContext myApp) {
 		CONTEXT = myApp;
@@ -206,7 +212,7 @@ public class Config {
 
 	public static String getLimitOffsetQuery(int limit, int offset) {
 		String db = DbConnectionFactory.getDBType();
-		
+
 	    if (db.equals("PostgreSQL")){
 			return " limit " + limit + " offset " + offset;
 		}
@@ -215,12 +221,12 @@ public class Config {
 		}
 		return "";
 	}
-	
-	
+
+
 	public static void forceRefresh(){
 		lastRefreshTime = new Date(0);
-		
+
 	}
-	
-	
+
+
 }

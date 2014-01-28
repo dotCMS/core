@@ -32,10 +32,7 @@ import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backpo
 
 public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactory<T> {
 
-    private String[] serversIds = ClusterThreadProxy.getClusteredServerIds();
-    private String serverId ;
-
-    private boolean indexationEnabled = Config.getBooleanProperty("DIST_INDEXATION_ENABLED");
+//    private String serverId ;
 
     private String TIMESTAMPSQL = "NOW()";
     private String REINDEXENTRIESSELECTSQL = "SELECT * FROM load_records_to_index(?, ?)";
@@ -44,14 +41,6 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
     public ESDistributedJournalFactoryImpl(T newIndexValue) {
         super(newIndexValue);
-
-        Logger.info(this, "Server IDs configured: " + Arrays.toString(serversIds));
-
-        serverId = ConfigUtils.getServerId();
-
-        if (serversIds.length < 1) {
-            serversIds = new String[] { serverId };
-        }
 
         if (DbConnectionFactory.isMsSql()) {
             TIMESTAMPSQL = "GETDATE()";
@@ -85,8 +74,10 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     protected void addCacheEntry(String key, String group)
             throws DotDataException {
         Connection con = null;
+        String[] serversIds = APILocator.getServerAPI().getAliveServersIds();
+        String serverId = ConfigUtils.getServerId();
         try {
-            if (indexationEnabled) {
+            if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {
                 con = DbConnectionFactory.getConnection();
                 con.setAutoCommit(false);
                 java.sql.Timestamp timestamp = new java.sql.Timestamp(new java.util.Date().getTime());
@@ -151,6 +142,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     @Override
     protected boolean areRecordsLeftToIndex() throws DotDataException {
         DotConnect dc = new DotConnect();
+        String serverId = ConfigUtils.getServerId();
         long count = 0;
         try {
             dc.setSQL("select count(*) as count from dist_reindex_journal");
@@ -204,6 +196,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     @Override
     protected void deleteLikeJournalRecords(IndexJournal<T> ijournal) throws DotDataException {
         String deleteLikeReindexRecords = "DELETE FROM dist_reindex_journal where serverid = ? AND ident_to_index = ? AND id <> ? ";
+        String serverId = ConfigUtils.getServerId();
         DotConnect dc = new DotConnect();
         dc.setSQL(deleteLikeReindexRecords);
         dc.addParam(serverId);
@@ -278,6 +271,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         reindexJournalCleanupSql.append(" AND serverid = ?");
 
         DotConnect dc = new DotConnect();
+        String serverId = ConfigUtils.getServerId();
         dc.setSQL(reindexJournalCleanupSql.toString());
         dc.addParam(serverId);
         dc.loadResult();
@@ -302,6 +296,8 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         DotConnect dc = new DotConnect();
         List<String> x = new ArrayList<String>();
         Connection con = null;
+        String serverId = ConfigUtils.getServerId();
+
         try {
             con = DbConnectionFactory.getConnection();
             con.setAutoCommit(false);
@@ -342,6 +338,8 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         List<IndexJournal<T>> x = new ArrayList<IndexJournal<T>>();
         List<Map<String, Object>> results;
         Connection con = null;
+        String serverId = ConfigUtils.getServerId();
+
         try {
             con = DbConnectionFactory.getConnection();
             con.setAutoCommit(false);
@@ -414,12 +412,12 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
     @Override
     protected String getServerId() {
-        return serverId;
+        return ConfigUtils.getServerId();
     }
 
     @Override
     protected boolean isIndexationEnabled() {
-        return indexationEnabled;
+        return Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false);
     }
 
     @Override
@@ -531,7 +529,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
     @Override
     protected void setIndexationEnabled(boolean indexationEnabled) {
-        this.indexationEnabled = indexationEnabled;
+    	Config.setProperty("DIST_INDEXATION_ENABLED", Boolean.FALSE);
     }
 
     @Override
@@ -591,7 +589,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                 Statement s = conn1.createStatement();
                 s.execute(pgLock);
             }
-            
+
             if (DbConnectionFactory.isH2()) {
                 conn1.setAutoCommit(false);
                 Statement s = conn1.createStatement();

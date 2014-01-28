@@ -17,6 +17,7 @@ import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
@@ -34,12 +35,14 @@ import com.dotmarketing.quartz.job.DeliverCampaignThread;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread2;
 import com.dotmarketing.quartz.job.PopBouncedMailThread;
+import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.TrashCleanupJob;
 import com.dotmarketing.quartz.job.UpdateRatingThread;
 import com.dotmarketing.quartz.job.UsersToDeleteThread;
 import com.dotmarketing.quartz.job.WebDavCleanupJob;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -617,7 +620,7 @@ public class DotInitScheduler {
 					Logger.info(DotInitScheduler.class, e.toString());
 				}
 			}
-			
+
 			//SCHEDULE PUBLISH QUEUE JOB
 			if(Config.getBooleanProperty("ENABLE_PUBLISHER_QUEUE_THREAD")) {
 				try {
@@ -634,7 +637,7 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-				    trigger = new CronTrigger("trigger19", "group19", "PublishQueueJob", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("PUBLISHER_QUEUE_THREAD_CRON_EXPRESSION"));
+				    trigger = new CronTrigger("trigger19", "group19", "PublishQueueJob", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("HEARTBEAT_CRON_EXPRESSION", "0 * * * * ?"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
 
@@ -652,8 +655,8 @@ public class DotInitScheduler {
 					sched.deleteJob("PublishQueueJob", "dotcms_jobs");
 				}
 			}
-			
-			
+
+
 			final String lc="linkchecker";
             final String lg="dotcms_jobs";
 			if(Config.getBooleanProperty("linkchecker.enablejob",true)) {
@@ -671,7 +674,7 @@ public class DotInitScheduler {
                         isNew = true;
                     }
                     calendar = GregorianCalendar.getInstance();
-                    trigger = new CronTrigger("trigger20", "group20", lc,lg, calendar.getTime(), 
+                    trigger = new CronTrigger("trigger20", "group20", lc,lg, calendar.getTime(),
                                   null,Config.getStringProperty("linkchecker.cronexp","0 0 0/2 * * ?"));
                     trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
                     sched.addJob(job, true);
@@ -696,7 +699,7 @@ public class DotInitScheduler {
 
 			if(Config.getBooleanProperty("org.dotcms.XMLSitemap.ENABLE",false)) {
                 try {
-                	
+
                     isNew = false;
 
                     try {
@@ -710,7 +713,7 @@ public class DotInitScheduler {
                         isNew = true;
                     }
                     calendar = GregorianCalendar.getInstance();
-                    trigger = new CronTrigger("trigger21", "group21", "XMLSitemap","dotcms_jobs", calendar.getTime(), 
+                    trigger = new CronTrigger("trigger21", "group21", "XMLSitemap","dotcms_jobs", calendar.getTime(),
                                   null,Config.getStringProperty("org.dotcms.XMLSitemap.CRON_EXPRESSION","1 1 1 * * ?"));
                     trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
                     sched.addJob(job, true);
@@ -732,6 +735,40 @@ public class DotInitScheduler {
                     sched.deleteJob("XMLSitemap", "dotcms_jobs");
                 }
             }
+
+			//SCHEDULE SERVER HEARTBEAT JOB
+			String serverId = ConfigUtils.getServerId();
+			if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
+				try {
+					isNew = false;
+
+					try {
+						if ((job = sched.getJobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs")) == null) {
+							job = new JobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs", ServerHeartbeatJob.class);
+							isNew = true;
+						}
+					} catch (SchedulerException se) {
+						sched.deleteJob("ServerHeartBeatJob_" + serverId, "dotcms_jobs");
+						job = new JobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs", ServerHeartbeatJob.class);
+						isNew = true;
+					}
+					calendar = GregorianCalendar.getInstance();
+				    trigger = new CronTrigger("trigger22_" + serverId, "group22_" + serverId, "ServerHeartbeatJob_" + serverId, "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("HEARTBEAT_CRON_EXPRESSION"));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					sched.addJob(job, true);
+
+					if (isNew)
+						sched.scheduleJob(trigger);
+					else
+						sched.rescheduleJob("trigger22_" + serverId, "group22_" + serverId, trigger);
+				} catch (Exception e) {
+					Logger.error(DotInitScheduler.class, e.getMessage(),e);
+				}
+			} else {
+				if ((job = sched.getJobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs")) != null) {
+					sched.deleteJob("ServerHeartbeatJob_" + serverId, "dotcms_jobs");
+				}
+			}
 
 	        QuartzUtils.startSchedulers();
 
