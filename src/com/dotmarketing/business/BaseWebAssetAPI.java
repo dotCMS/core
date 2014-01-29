@@ -326,12 +326,14 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		            Logger.debug(BaseWebAssetAPI.class, "getVersionInfo query: "+dh.getQuery());
 		            auxVersionInfo=(VersionInfo)dh.load();
 
-		            clazz = InodeUtils.getClassByDBType("file_asset");
-		            dh = new HibernateUtil(clazz);
-		    		dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='file_asset' order by mod_date desc");
-		    		dh.setParam(currWebAsset.getIdentifier());
-		    		Logger.debug(BaseWebAssetAPI.class, "findAllVersions query: " + dh.getQuery());
-		    		webAssetList.addAll( (List<Versionable>) dh.list() );
+		            if(UtilMethods.isSet(auxVersionInfo) && UtilMethods.isSet(auxVersionInfo.getIdentifier())) {
+			            clazz = InodeUtils.getClassByDBType("file_asset");
+			            dh = new HibernateUtil(clazz);
+			    		dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='file_asset' order by mod_date desc");
+			    		dh.setParam(currWebAsset.getIdentifier());
+			    		Logger.debug(BaseWebAssetAPI.class, "findAllVersions query: " + dh.getQuery());
+			    		webAssetList.addAll( (List<Versionable>) dh.list() );
+		            }
 				}
 
 				APILocator.getFileAPI().invalidateCache((File)currWebAsset);
@@ -342,7 +344,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 				}
 			}
 
-			if(auxVersionInfo==null) { // null auxVersionInfo  indicates everything goes fine
+			if(auxVersionInfo==null || !UtilMethods.isSet(auxVersionInfo.getIdentifier())) { // null auxVersionInfo  indicates everything goes fine
 				APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
 			} else {	// not null auxVersionInfo indicates VersionInfo is incorrect (bad asset_type, etc) so we had to get it providing the asset_type, instead of using identifier's asset_type
 				String ident = auxVersionInfo.getIdentifier();
