@@ -346,7 +346,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 			if(auxVersionInfo==null) { // null auxVersionInfo  indicates everything goes fine
 				APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
-			} else {	// not null auxVersionInfo indicates VersionInfo is incorrect (bad asset_type, etc) so we had to get it straight from db
+			} else {	// not null auxVersionInfo indicates VersionInfo is incorrect (bad asset_type, etc) so we had to get it providing the asset_type, instead of using identifier's asset_type
 				String ident = auxVersionInfo.getIdentifier();
 				HibernateUtil.delete(auxVersionInfo);
 				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident);
