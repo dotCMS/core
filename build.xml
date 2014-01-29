@@ -7,6 +7,7 @@
 	<!-- Load version props -->
 	<property file="src/com/liferay/portal/util/build.properties"/>
 	<property file="test/build.properties" />
+	<property file="bin/build.conf" />
 
 	<!-- vars -->
 	<property name="src.dir" value="src" />
@@ -60,8 +61,10 @@
 	<property name="plugin.root.dir.default" value="${basedir}/dotCMS"/>
 	<property name="plugin.jar.deploy.dir.default" value="${basedir}/../../dotCMS/WEB-INF/lib" />
 
+	<property name="distribution.bin.output" value="${distribution.output}/bin" />
 	<property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
 	<property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
+	<property name="distribution.plugins.output" value="${distribution.output}/plugins" />
 
     <property name="tomcat7.home" value="${tomcat7.install.location}"/>
     <property name="jboss7.home" value="${jboss7.install.location}"/>
@@ -95,18 +98,27 @@
 		<pathelement path="${build.classes}" />
 	</path>
 
-	<!-- classpath only used for plugins no other task should use becuase it locks the jar files -->
-	<path id="ant-files-classpath">
+	<!-- classpath only used for plugins no other task should use it because it locks the jar files -->
+	<path id="ant-files-classpath-custom">
+
 		<pathelement location="${java.home}/../lib/tools.jar"/>
-		<fileset dir="libs/buildlibs">
-            <include name="**/*.jar" />
-        </fileset>
-		<fileset dir="${lib.app}">
+
+        <fileset dir="${target.root}/WEB-INF/lib">
 			<include name="dotcms-ant-tooling.jar" />
 			<include name="dotcms-commons-lang-2.4.jar" />
 			<include name="dotcms-tika-app-1.3.jar" />
 		</fileset>
 	</path>
+    <path id="ant-files-classpath">
+
+        <pathelement location="${java.home}/../lib/tools.jar"/>
+
+        <fileset dir="${lib.app}">
+            <include name="dotcms-ant-tooling.jar" />
+            <include name="dotcms-commons-lang-2.4.jar" />
+            <include name="dotcms-tika-app-1.3.jar" />
+        </fileset>
+    </path>
 
 	<!-- include ant-contrib -->
 	<taskdef resource="net/sf/antcontrib/antlib.xml"/>
@@ -213,7 +225,7 @@
 	</target>
 
 
-	<target name="deploy-core" depends="jsp,jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+	<target name="deploy-core-jsp" depends="jsp,jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -222,7 +234,7 @@
 		<delete dir="${build.classes}" />
 	</target>
 
-    <target name="deploy-core-with-tests" depends="jsp,jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+    <target name="deploy-core-with-tests-jsp" depends="jsp,jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -231,7 +243,7 @@
 		<delete dir="${build.classes}" />
 	</target>
 
-    <target name="deploy-core-with-tests-no-jsp" depends="jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+    <target name="deploy-core" depends="jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
@@ -240,11 +252,20 @@
         <delete dir="${build.classes}" />
     </target>
 
-	<target name="build-core" depends="jsp,jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
+    <target name="deploy-core-with-tests" depends="jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+        <delete>
+            <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
+        </delete>
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <!-- Freetts -->
+        <delete dir="${build.classes}" />
+    </target>
 
-	<target name="build-core-no-jsp" depends="jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
+	<target name="build-core-jsp" depends="jsp,jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
 
-	<target name="deploy-no-jsp" depends="jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+	<target name="build-core" depends="jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
+
+	<target name="deploy" depends="jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -400,38 +421,85 @@
 
 	<target name="create-dist" description="creates a zip file for dbs that autoincrement like MSSQL and MySQL distribution">
 
+        <var name="tomcat7.home" value="${distribution.dotserver.output}/tomcat-7.0.42"/>
+
 		<antcall target="clean" />
 
-		<antcall target="deploy-core" />
+        <!--Clone tomcat-->
+        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat7.home}"/>
+
+        <!--Generate the war-->
+		<antcall target="war" />
+
+        <!--Move the war to the ./dotserver/tomcat-tomcat-7.0.42/webapps folder-->
+        <antcall target="move-war-tomcat7" />
 
         <!--dotserver code (./dotserver)-->
-        <copy todir="${distribution.dotserver.output}">
+        <!--<copy todir="${distribution.dotserver.output}">
 			<fileset dir=".">
 				<exclude name="**/.git" />
 				<exclude name=".git" />
 				<exclude name=".git/**" />
-				<exclude name="tomcat/logs/**" />
 				<exclude name="dotCMS/WEB-INF/dotlucene/**" />
 				<exclude name="dotCMS/assets/**" />
 				<exclude name="dotCMS/dotsecure/**" />
                 <exclude name="bin/autoupdater/**" />
                 <exclude name="dotCMS/html/js/dojo/src/**" />
-				<exclude name="tomcat/temp/**" />
 				<exclude name="build/**" />
-				<exclude name="tomcat/work/**" />
 				<exclude name="src/**" />
 				<exclude name="test/**" />
 				<exclude name=".*" />
 				<exclude name=".settings/**" />
 			</fileset>
-		</copy>
-		<mkdir dir="${distribution.dotserver.output}/tomcat/logs" />
-	  	<mkdir dir="${distribution.dotserver.output}/tomcat/temp" />
+		</copy>-->
+
+        <!--bin folder (./bin)-->
+        <copy todir="${distribution.bin.output}">
+            <fileset dir="bin/autoupdater">
+                <include name="autoUpdater.sh"/>
+                <include name="autoUpdater.bat"/>
+            </fileset>
+            <fileset dir="bin">
+                <exclude name="autoupdater/**"/>
+            </fileset>
+        </copy>
 
         <!--autoupdater code (./autoupdater)-->
         <copy todir="${distribution.autoupdater.output}">
-            <fileset dir="bin/autoupdater"/>
+            <fileset dir="bin/autoupdater">
+                <exclude name="autoUpdater.sh"/>
+                <exclude name="autoUpdater.bat"/>
+            </fileset>
         </copy>
+
+        <!--plugins folder (./plugins) -->
+        <copy todir="${distribution.plugins.output}">
+            <fileset dir="plugins">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+        <!--Set some startup variables-->
+        <replace file="${distribution.bin.output}/build.conf"><!--Unix-->
+            <replacefilter token="#SERVER_FOLDER" value="SERVER_FOLDER"/>
+            <replacefilter token="{server.folder}" value="dotserver/tomcat-7.0.42"/>
+
+            <replacefilter token="#HOME_FOLDER" value="HOME_FOLDER"/>
+            <replacefilter token="{home.folder}" value="$SERVER_FOLDER/webapps/ROOT"/>
+
+            <replacefilter token="#target.root" value="target.root"/>
+            <replacefilter token="{dotcms.home}" value="dotserver/tomcat-7.0.42/webapps/ROOT"/>
+        </replace>
+        <replace file="${distribution.bin.output}/build.conf.bat"><!--For windows-->
+            <replacefilter token="rem set" value="set"/>
+
+            <replacefilter token="{server.folder}" value="dotserver/tomcat-7.0.42"/>
+            <replacefilter token="{home.folder}" value="dotserver/tomcat-7.0.42/webapps/ROOT"/>
+            <replacefilter token="{dotcms.home}" value="dotserver/tomcat-7.0.42/webapps/ROOT"/>
+        </replace>
+
+        <copy file="build.xml" todir="${distribution.output}"/>
 
 		<antcall target="javadoc" />
 
@@ -442,10 +510,10 @@
 		        <include name="**/**"/>
 				<exclude name="**/*.sh"/>
 		    </tarfileset>
-		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
+		    <tarfileset dir="${distribution.output}/bin" prefix="/bin" filemode="755">
 		        <include name="**/*.sh"/>
 		    </tarfileset>
-			<tarfileset dir="${distribution.output}/dotserver/tomcat/bin" prefix="/dotserver/tomcat/bin" filemode="755">
+			<tarfileset dir="${distribution.output}/dotserver/tomcat-7.0.42/bin" prefix="/dotserver/tomcat-7.0.42/bin" filemode="755">
 		        <include name="**/*.sh"/>
 		    </tarfileset>
 		</tar>
@@ -551,15 +619,15 @@
 
 <taskdef resource="cactus.tasks">
   <classpath>
-    <pathelement location="${lib.app}/cactus.core.framework.uberjar.javaEE.14-1.8.0.jar"/>
-    <pathelement location="${lib.app}/cactus.integration.shared.api-1.8.0.jar"/>
-    <pathelement location="${lib.app}/cactus.integration.ant-1.8.0.jar"/>
-    <pathelement location="${lib.app}/cargo-ant-0.9.jar"/>
-    <pathelement location="${lib.app}/cargo-core-uberjar-0.9.jar"/>
-    <pathelement location="${lib.app}/lib/commons-httpclient-3.1.jar"/>
-    <pathelement location="${lib.app}/lib/commons-logging-1.1.1.jar"/>
-    <pathelement location="${lib.app}/lib/aspectjrt-1.5.3.jar"/>
-    <pathelement location="${lib.app}/tika-app-1.3.jar"/>
+    <!--<pathelement location="${lib.app}/cactus.core.framework.uberjar.javaEE.14-1.8.0.jar"/>-->
+    <!--<pathelement location="${lib.app}/cactus.integration.shared.api-1.8.0.jar"/>-->
+    <pathelement location="${lib.app}/dotcms-cactus.integration.ant-1.8.0.jar"/>
+    <pathelement location="${lib.app}/dotcms-cargo-ant-0.9.jar"/>
+    <pathelement location="${lib.app}/dotcms-cargo-core-uberjar-0.9.jar"/>
+    <pathelement location="${lib.app}/dotcms-commons-httpclient-3.1.jar"/>
+    <!--<pathelement location="${lib.app}/lib/commons-logging-1.1.1.jar"/>-->
+    <!--<pathelement location="${lib.app}/lib/aspectjrt-1.5.3.jar"/>-->
+    <pathelement location="${lib.app}/dotcms-tika-app-1.3.jar"/>
   </classpath>
 </taskdef>
 
@@ -898,15 +966,15 @@
 
     <!--Plugin tasks-->
 
+<target name="build-jsp" depends="build-core-jsp,build-plugins" description="build the dotCMS core and plugins" />
+
 <target name="build" depends="build-core,build-plugins" description="build the dotCMS core and plugins" />
 
-<target name="build-no-jsp" depends="build-core-no-jsp,build-plugins" description="build the dotCMS core and plugins" />
-
-<target name="deploy" depends="build, deploy-core, deploy-plugins" description="builds and deploys core and plugins" />
+<target name="deploy-jsp" depends="build-jsp, deploy-core-jsp, deploy-plugins" description="builds and deploys core and plugins" />
 
 <target name="deploy-tests" depends="uncomment-test-servlet, build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
-<target name="deploy-tests-no-jsp" depends="uncomment-test-servlet, build-no-jsp, deploy-core-with-tests-no-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
+<target name="deploy-tests-jsp" depends="uncomment-test-servlet, build-jsp, deploy-core-with-tests-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
 <target name="deploy-dev" depends="deploy-plugins"/>
 
@@ -921,7 +989,11 @@
 	</sequential>
 </macrodef>
 
-<target name="build-plugins" description="builds plugins but does not deploy">
+<target name="build-plugins" depends="setup-deploy-location" description="builds plugins but does not deploy">
+
+    <!--<var name="lib.app" value="${plugin.root.dir}/WEB-INF/lib" unset="true"/>-->
+    <property name="lib.app" value="${plugin.root.dir}/WEB-INF/lib"/>
+
 	<iterate target="build"/>
 </target>
 
@@ -952,21 +1024,29 @@
 	<echo>Deploying plugins to: ${plugin.root.dir} | ${plugin.jar.deploy.dir}</echo>
 </target>
 
-<target name="deploy-plugins" depends="build-plugins,setup-deploy-location" description="builds and deploys plugins">
+<target name="deploy-plugins" depends="build-plugins" description="builds and deploys plugins">
 	<echo>Copying plugins to: ${plugin.root.dir}</echo>
 	<copy todir="${plugin.root.dir}/WEB-INF/classes" file="plugins/plugins.xml" />
 	<subant target="deploy-plugin" genericantfile="${basedir}/build.xml">
 		<dirset dir="plugins" includes="*"/>
 		<property name="plugin.root.dir" value="${plugin.root.dir}"/>
 		<property name="plugin.jar.deploy.dir" value="${plugin.jar.deploy.dir}"/>
-
 	</subant>
-	<taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
-		<classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath">
-		</classpath>
-	</taskdef>
-	<echo>Deploying plugins from: ${plugin.root.dir}</echo>
 
+    <if>
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+            <taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
+                <classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath"/>
+            </taskdef>
+        </then>
+        <else>
+            <taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
+                <classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath-custom"/>
+            </taskdef>
+        </else>
+    </if>
+	<echo>Deploying plugins from: ${plugin.root.dir}</echo>
 
 	<plugin-deploy-task root="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
 </target>
@@ -1113,10 +1193,10 @@
     <!--<target name="war" depends="deploy-no-jsp,repackage-libraries,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">-->
 
 
-    <target name="war" depends="deploy-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
+    <target name="war" depends="deploy" description="builds dotCMS as a war without the jsps precompiled">
         <antcall target="war-file"/><!--This depends on depends="war-file"-->
     </target>
-    <target name="war-tests" depends="deploy-tests-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
+    <target name="war-tests" depends="deploy-tests" description="builds dotCMS as a war without the jsps precompiled">
         <antcall target="war-file"/>
     </target>
 
@@ -1181,7 +1261,11 @@
         </copy>
 
         <copy todir="${tomcat7.home}/webapps/ROOT">
-            <fileset dir="${build.war}/${war.name}.war"/>
+            <fileset dir="${build.war}/${war.name}.war">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
         </copy>
 
         <mkdir dir="${tomcat7.home}/webapps/ROOT/META-INF"/>

@@ -4,38 +4,6 @@
 # Start Script for the dotCMS Server
 # -----------------------------------------------------------------------------
 
-## Script CONFIGURATION Options
-
-
-# JAVA_OPTS: Below are the recommended minimum settings for the Java VM.
-# These may (and should) be customized to suit your needs. Please check with 
-# Sun Microsystems and the Apache Tomcat websites for the latest information 
-# http://java.sun.com
-# http://tomcat.apache.org
-
-#Uncomment the following line to enable the JMX interface
-#Please be aware that this configuration doesn't provide any authentication, so it could pose a security risk.
-#More info at http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html
-
-#JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote.port=7788 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false "
-
-##add agentpath to be enable ability to profile application
-#JAVA_OPTS="-agentpath:/Applications/YourKit_Java_Profiler_9.0.5.app/bin/mac/libyjpagent.jnilib $JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xms1024M -Xmx1024M -XX:PermSize=128m "
-
-JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"
-
-JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xmx1G -XX:MaxPermSize=256m -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -javaagent:dotCMS/WEB-INF/lib/jamm-0.2.5.jar"
-
-if [ "$1" = "debug" ] ; then
-   #debug
-   JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8765 $JAVA_OPTS"
-fi
-
-
-
-
-## END Script CONFIGURATION Options
-
 # Better OS/400 detection
 os400=false
 case "`uname`" in
@@ -54,10 +22,51 @@ while [ -h "$PRG" ] ; do
     PRG=`dirname "$PRG"`/"$link"
   fi
 done
- 
+
 PRGDIR=`dirname "$PRG"`
 EXECUTABLE=catalina.sh
-DOTCMS_HOME=`cd "$PRGDIR/.." ; pwd`
+
+# Read an optional running configuration file
+if [ "x$RUN_CONF" = "x" ]; then
+    RUN_CONF="$PRGDIR/build.conf"
+fi
+if [ -r "$RUN_CONF" ]; then
+    . "$RUN_CONF"
+fi
+
+TOMCAT_HOME=`cd "$PRGDIR/../$SERVER_FOLDER" ; pwd`
+DOTCMS_HOME=`cd "$PRGDIR/../$HOME_FOLDER" ; pwd`
+
+## Script CONFIGURATION Options
+
+
+# JAVA_OPTS: Below are the recommended minimum settings for the Java VM.
+# These may (and should) be customized to suit your needs. Please check with 
+# Sun Microsystems and the Apache Tomcat websites for the latest information 
+# http://java.sun.com
+# http://tomcat.apache.org
+
+#Uncomment the following line to enable the JMX interface
+#Please be aware that this configuration doesn't provide any authentication, so it could pose a security risk.
+#More info at http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html
+
+#JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote.port=7788 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false "
+
+##add agentpath to be enable ability to profile application
+#JAVA_OPTS="-agentpath:/Applications/YourKit_Java_Profiler_9.0.5.app/bin/mac/libyjpagent.jnilib $JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xms1024M -Xmx1024M -XX:PermSize=128m "
+
+#JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"
+JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xmx1G -XX:MaxPermSize=256m -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -javaagent:$DOTCMS_HOME/WEB-INF/lib/jamm-0.2.5.jar"
+
+if [ "$1" = "debug" ] ; then
+   #debug
+   JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 $JAVA_OPTS"
+fi
+
+
+
+
+## END Script CONFIGURATION Options
 
 # Check that target executable exists
 if $os400; then
@@ -67,8 +76,8 @@ if $os400; then
   # this will not work if the user belongs in secondary groups
   eval
 else
-  if [ ! -x "$PRGDIR"/../tomcat/bin/"$EXECUTABLE" ]; then
-    echo "Cannot find $PRGDIR/../tomcat/bin/$EXECUTABLE"
+  if [ ! -x "$TOMCAT_HOME"/bin/"$EXECUTABLE" ]; then
+    echo "Cannot find $TOMCAT_HOME/bin/$EXECUTABLE"
     echo "This file is needed to run this program"
     exit 1
   fi
@@ -120,7 +129,7 @@ if [ $cmd = "-usage" -o $cmd = "usage" ]; then
   echo "  run          Start dotCMS redirecting the output to the console"
   exit 1;
 elif [ $cmd = "run" ]; then
-	exec "$PRGDIR"/../tomcat/bin/"$EXECUTABLE" run "$@"
+	exec "$TOMCAT_HOME"/bin/"$EXECUTABLE" run "$@"
 else
-    exec "$PRGDIR"/../tomcat/bin/"$EXECUTABLE" start "$@"
+    exec "$TOMCAT_HOME"/bin/"$EXECUTABLE" start "$@"
 fi

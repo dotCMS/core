@@ -28,7 +28,17 @@ done
  
 PRGDIR=`dirname "$PRG"`
 EXECUTABLE=catalina.sh
-DOTCMS_HOME=`cd "$PRGDIR/.." ; pwd`
+
+# Read an optional running configuration file
+if [ "x$RUN_CONF" = "x" ]; then
+    RUN_CONF="$PRGDIR/build.conf"
+fi
+if [ -r "$RUN_CONF" ]; then
+    . "$RUN_CONF"
+fi
+
+TOMCAT_HOME=`cd "$PRGDIR/../$SERVER_FOLDER" ; pwd`
+DOTCMS_HOME=`cd "$PRGDIR/../$HOME_FOLDER" ; pwd`
 
 # Check that target executable exists
 if $os400; then
@@ -38,8 +48,8 @@ if $os400; then
   # this will not work if the user belongs in secondary groups
   eval
 else
-  if [ ! -x "$PRGDIR"/../tomcat/bin/"$EXECUTABLE" ]; then
-    echo "Cannot find $PRGDIR/../tomcat/bin/$EXECUTABLE"
+  if [ ! -x "$TOMCAT_HOME"/bin/"$EXECUTABLE" ]; then
+    echo "Cannot find $TOMCAT_HOME/bin/$EXECUTABLE"
     echo "This file is needed to run this program"
     exit 1
   fi
@@ -105,5 +115,5 @@ if [ "$1" = "-usage" -o "$1" = "usage" ]; then
   echo "  n            Stop dotCMS, waiting up to n seconds for the process to end if not then it forces it (-KILL) to stop"
   exit 1
 else
-    exec "$PRGDIR"/../tomcat/bin/"$EXECUTABLE" $CMD -force
+    exec "$TOMCAT_HOME"/bin/"$EXECUTABLE" $CMD -force
 fi
