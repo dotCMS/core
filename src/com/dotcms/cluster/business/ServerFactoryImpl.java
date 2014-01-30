@@ -89,11 +89,12 @@ public class ServerFactoryImpl extends ServerFactory {
 
 		if (DbConnectionFactory.isMsSql()) {
 			dc.setSQL("SELECT TOP 1 id FROM cluster_server_uptime where server_id = ? ORDER BY startup DESC");
-		} else if (DbConnectionFactory.isMySql()
-				|| DbConnectionFactory.isPostgres()) {
-			dc.setSQL("select id from cluster_server_uptime where server_id = ? order by startup desc limit 1");
 		} else if (DbConnectionFactory.isOracle()) {
 			dc.setSQL("select id from (select id from cluster_server_uptime where server_id = order by startup desc ) where rownum = 1");
+		}
+		else{
+			dc.setSQL("select id from cluster_server_uptime where server_id = ? order by startup desc limit 1");
+			
 		}
 
 		dc.addParam(serverId);
