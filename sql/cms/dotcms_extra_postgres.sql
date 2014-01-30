@@ -857,3 +857,6 @@ create index contentlet_moduser on contentlet (mod_user);
 create index contentlet_lang on contentlet (language_id);
 -- end of fk indicies --
 
+-- Notifications Table
+create table notification(id varchar(36) NOT NULL,message varchar(255) NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar(255) NOT NULL, time_sent TIMESTAMP NOT NULL, was_read bool, PRIMARY KEY (id) ));
+create index idx_not_user ON notification (user_id);

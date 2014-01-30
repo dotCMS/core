@@ -447,6 +447,8 @@ CREATE TRIGGER link_versions_check_trigger AFTER DELETE ON links FOR EACH ROW CA
 CREATE TRIGGER structure_host_folder_trigger BEFORE INSERT, UPDATE ON structure FOR EACH ROW CALL "com.dotcms.h2.StructureHostFolderCheckTrigger";
 CREATE TRIGGER structure_fix_trigger AFTER INSERT, UPDATE ON structure FOR EACH ROW CALL "com.dotcms.h2.StructureHostFolderFixer";
 
-
+-- Notifications Table
+create table notification(id varchar(36) NOT NULL,message varchar(255) NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar(255) NOT NULL, time_sent TIMESTAMP NOT NULL, was_read bit, PRIMARY KEY (id));
+create index idx_not_user ON notification (user_id);
 
 
