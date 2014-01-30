@@ -515,9 +515,6 @@ public class HostAPIImpl implements HostAPI {
 				}
 
 				DotConnect dc = new DotConnect();
-				dc.setSQL("delete from identifier where host_inode = ? and asset_type = 'file_asset'");
-				dc.addParam(host.getIdentifier());
-				dc.loadResult();
 
 				// Remove HTML Pages
 				HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
