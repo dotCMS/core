@@ -1,10 +1,10 @@
 <project name="Plugin Builder" default="build">
 
+    <property file="${basedir}/../../bin/build.conf" />
+
 	<basename file="${basedir}" property="plugin.name" />
-	<property name="lib.app" value="${basedir}/../../dotCMS/WEB-INF/lib" />
-	<property name="lib.server" value="${basedir}/../../tomcat/lib" />
-	<property name="bin.server" value="${basedir}/../../tomcat/bin" />
-	<property name="classes.app" value="${basedir}/../../build/classes" />
+	<property name="home.dir" value="${basedir}/../../dotCMS" />
+
 	<property name="src.dir" value="src" />
 	<property name="conf.dir" value="conf" />
 	<property name="build.dir" value="build" />
@@ -20,16 +20,17 @@
 
 	<property name="jar.file" value="${build.dir}/jar/plugin-${plugin.name}.jar" />
 
+    <condition property="target.root.dir" value="${target.root}" else="${home.dir}">
+        <isset property="target.root"/>
+    </condition>
+
 	<path id="files-classpath">
-		<fileset dir="${lib.app}">
+		<fileset dir="${basedir}/../../${target.root.dir}/WEB-INF/lib">
 			<include name="**/*.jar" />
 		</fileset>
 		<fileset dir="lib">
 			<include name="**/*.jar" />
 		</fileset>
-		<fileset dir="${lib.server}">
-                        <include name="**/*.jar" />
-                </fileset>
 		<pathelement path="${build.classes}" />
 		<pathelement path="../../build/classes" />
 	</path>
@@ -95,7 +96,7 @@
 	    </condition>
 	</target>
 	<target name="if_target" if="p">
-	    <jar destfile="${lib.app}/plugin-${plugin.name}-classpath.jar" basedir="${classpath.dir}"/>
+	    <jar destfile="${basedir}/../../${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar" basedir="${classpath.dir}"/>
 	</target>
 
 	<target name="clean">
