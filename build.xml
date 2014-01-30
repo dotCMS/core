@@ -991,7 +991,7 @@
 
 <target name="build-plugins" depends="setup-deploy-location" description="builds plugins but does not deploy">
 
-    <!--<var name="lib.app" value="${plugin.root.dir}/WEB-INF/lib" unset="true"/>-->
+    <var name="lib.app" unset="true"/>
     <property name="lib.app" value="${plugin.root.dir}/WEB-INF/lib"/>
 
 	<iterate target="build"/>
@@ -1030,31 +1030,56 @@
 	<subant target="deploy-plugin" genericantfile="${basedir}/build.xml">
 		<dirset dir="plugins" includes="*"/>
 		<property name="plugin.root.dir" value="${plugin.root.dir}"/>
+		<property name="target.root" value="${target.root}"/>
 		<property name="plugin.jar.deploy.dir" value="${plugin.jar.deploy.dir}"/>
 	</subant>
 
     <if>
+        <!--
+        Verify if there is specified a custom location for the dotcms installation.
+        When the war structure is used the "target.root" property will be set in order to
+        specify where the war folder is located, if not present the normal dotcms git structure is assumed.
+        -->
         <contains string="${target.root}" substring="target.root"/>
         <then>
             <taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
                 <classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath"/>
             </taskdef>
+
+            <echo>Deploying plugins from: ${plugin.root.dir}</echo>
+            <plugin-deploy-task root="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
         </then>
         <else>
             <taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
                 <classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath-custom"/>
             </taskdef>
+
+            <echo>Deploying plugins from: ${plugin.root.dir}</echo>
+            <plugin-deploy-task root="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib" forWar="true"/>
         </else>
     </if>
-	<echo>Deploying plugins from: ${plugin.root.dir}</echo>
-
-	<plugin-deploy-task root="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
 </target>
 
 <target name="deploy-plugin">
-	<copy  todir="${plugin.jar.deploy.dir}">
-		<fileset dir="build/jar/" />
-	</copy>
+
+    <if>
+        <!--
+        Verify if there is specified a custom location for the dotcms installation.
+        When the war structure is used the "target.root" property will be set in order to
+        specify where the war folder is located, if not present the normal dotcms git structure is assumed.
+        -->
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+            <copy todir="${plugin.jar.deploy.dir}">
+                <fileset dir="build/jar/" />
+            </copy>
+        </then>
+        <else>
+            <copy todir="../../${plugin.jar.deploy.dir}">
+                <fileset dir="build/jar/" />
+            </copy>
+        </else>
+    </if>
 
 </target>
 
