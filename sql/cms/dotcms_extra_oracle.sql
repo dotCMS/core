@@ -904,3 +904,7 @@ CREATE TABLE cluster_server(server_id varchar2(36) NOT NULL, cluster_id varchar2
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id varchar2(36) NOT NULL,server_id varchar2(36) NOT NULL, startup TIMESTAMP, heartbeat TIMESTAMP, PRIMARY KEY (id));
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
+
+-- Notifications Table
+create table notification(id varchar2(36) NOT NULL,message varchar2(255) NOT NULL, notification_type varchar2(100), notification_level varchar2(100), user_id varchar2(255) NOT NULL, time_sent TIMESTAMP NOT NULL, was_read number(1,0), PRIMARY KEY (id));
+create index idx_not_user ON notification (user_id);

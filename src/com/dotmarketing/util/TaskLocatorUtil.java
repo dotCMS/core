@@ -81,6 +81,7 @@ import com.dotmarketing.startup.runonce.Task01306CreateModDateForFieldIfNeeded;
 import com.dotmarketing.startup.runonce.Task01310AddContentletIdentifierIndex;
 import com.dotmarketing.startup.runonce.Task01311CreateClusterConfigModel;
 import com.dotmarketing.startup.runonce.Task01320PostgresqlIndiciesFK;
+import com.dotmarketing.startup.runonce.Task01325CreateFoundationForNotificationSystem;
 
 public class TaskLocatorUtil {
 
@@ -164,6 +165,7 @@ public class TaskLocatorUtil {
         ret.add(Task01310AddContentletIdentifierIndex.class);
         ret.add(Task01311CreateClusterConfigModel.class);
         ret.add(Task01320PostgresqlIndiciesFK.class);
+        ret.add(Task01325CreateFoundationForNotificationSystem.class);
         return ret;
     }
 

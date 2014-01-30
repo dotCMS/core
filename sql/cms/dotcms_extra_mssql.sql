@@ -795,3 +795,6 @@ ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id)
 CREATE TABLE cluster_server_uptime(id varchar(36) NOT NULL, server_id varchar(36) NOT NULL, startup datetime null, heartbeat datetime null, PRIMARY KEY (id) );
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
+-- Notifications Table
+create table notification(id varchar(36) NOT NULL,message varchar(255) NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar2(255) NOT NULL, time_sent DATETIME NOT NULL, was_read tinyint, PRIMARY KEY (id));
+create index idx_not_user ON notification (user_id);
