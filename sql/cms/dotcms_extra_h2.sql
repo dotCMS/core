@@ -430,14 +430,14 @@ alter table publishing_bundle add force_push bool ;
 
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
+
 -- Cluster Tables
 
 CREATE TABLE dot_cluster(cluster_id varchar(36), PRIMARY KEY (cluster_id) );
-CREATE TABLE cluster_server(server_id varchar(36), cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, PRIMARY KEY (server_id));
+CREATE TABLE cluster_server(server_id varchar(36) primary key, cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(36), cache_port int, es_transport_tcp_port int, es_network_port int, es_http_port int);
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
-CREATE TABLE cluster_server_uptime(id varchar(36), server_id varchar(36) references cluster_server(server_id), startup timestamp without time zone null, heartbeat timestamp without time zone null, PRIMARY KEY (id));
+CREATE TABLE cluster_server_uptime(id varchar(36) primary key, server_id varchar(36) references cluster_server(server_id), startup TIMESTAMP, heartbeat TIMESTAMP);
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
-
 
 
 
