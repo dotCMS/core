@@ -94,7 +94,7 @@ public class ServerFactoryImpl extends ServerFactory {
 		}
 		else{
 			dc.setSQL("select id from cluster_server_uptime where server_id = ? order by startup desc limit 1");
-			
+
 		}
 
 		dc.addParam(serverId);
@@ -146,7 +146,7 @@ public class ServerFactoryImpl extends ServerFactory {
 		if (DbConnectionFactory.isMsSql()) {
 			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
 					+ "where DATEDIFF(SECOND, heartbeat, GETDATE()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT_DEFAULT_VALUE));
-		} else if (DbConnectionFactory.isMySql()) {
+		} else if (DbConnectionFactory.isMySql() || DbConnectionFactory.isH2()) {
 			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
 					+ "where TIMESTAMPDIFF(SECOND, heartbeat, now()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT_DEFAULT_VALUE));
 		} else if(DbConnectionFactory.isPostgres()) {
