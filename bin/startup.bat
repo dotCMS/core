@@ -4,46 +4,51 @@ rem ----------------------------------------------------------------------------
 rem Start Script for the dotCMS Server
 rem -----------------------------------------------------------------------------
 
-set "CURRENT_DIR=%cd%"
+@if not "%ECHO%" == ""  echo %ECHO%
+@if "%OS%" == "Windows_NT" setlocal
+
+if "%OS%" == "Windows_NT" (
+  set "CURRENT_DIR=%~dp0%"
+) else (
+  set CURRENT_DIR=.\
+)
 
 rem Read an optional configuration file.
 if "x%RUN_CONF%" == "x" (
-   set "RUN_CONF=%CURRENT_DIR%\build.conf.bat"
+   set "RUN_CONF=%CURRENT_DIR%build.conf.bat"
 )
 if exist "%RUN_CONF%" (
    echo Calling "%RUN_CONF%"
    call "%RUN_CONF%" %*
 ) else (
-   echo Config file not found "%RUN_CONF%"
+    echo Config file not found "%RUN_CONF%"
 )
 
 rem Guess DOTCMS_HOME if not defined
-
-if "%OS%" == "Windows_NT" setlocal
-
-rem Guess CATALINA_HOME if not defined
-if not "%CATALINA_HOME%" == "" goto gotHome
-set "CATALINA_HOME=%CURRENT_DIR%\..\%SERVER_FOLDER%"
-if exist "%CATALINA_HOME%\bin\catalina.bat" goto okHome
-cd ..
-set "CATALINA_HOME=%cd%"
-cd "%CURRENT_DIR%"
-:gotHome
-if exist "%CATALINA_HOME%\bin\catalina.bat" goto okHome
-echo The CATALINA_HOME environment variable is not defined correctly
-echo This environment variable is needed to run this program
-goto end
-:okHome
-
 if not "%DOTCMS_HOME%" == "" goto gotDotcmsHome
-set "DOTCMS_HOME=%CURRENT_DIR%\..\%HOME_FOLDER%"
+set "DOTCMS_HOME=%CURRENT_DIR%..\%HOME_FOLDER%"
 if exist "%DOTCMS_HOME%" goto okDotcmsHome
+set "DOTCMS_HOME=%CURRENT_DIR%\%HOME_FOLDER%"
+cd "%CURRENT_DIR%"
 :gotDotcmsHome
 if exist "%DOTCMS_HOME%" goto okDotcmsHome
-echo The DOTCMS_HOME environment variable is not defined correctly
+echo The DOTCMS_HOME environment variable is not defined correctly: %DOTCMS_HOME%
 echo This environment variable is needed to run this program
 goto end
 :okDotcmsHome
+
+rem Guess CATALINA_HOME if not defined
+if not "%CATALINA_HOME%" == "" goto gotHome
+set "CATALINA_HOME=%CURRENT_DIR%..\%SERVER_FOLDER%"
+if exist "%CATALINA_HOME%\bin\catalina.bat" goto okHome
+set "CATALINA_HOME=%CURRENT_DIR%\%SERVER_FOLDER%"
+cd "%CURRENT_DIR%"
+:gotHome
+if exist "%CATALINA_HOME%\bin\catalina.bat" goto okHome
+echo The CATALINA_HOME environment variable is not defined correctly: %CATALINA_HOME%
+echo This environment variable is needed to run this program
+goto end
+:okHome
 
 rem Java VM configuration options
 
