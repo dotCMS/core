@@ -251,7 +251,7 @@ dojo.require("dojo.cookie");
     	 <%request.getSession().removeAttribute("portal_login_as_error");%>
          dojo.byId('portal_loginas_errors').innerHTML = '';
     }
-    
+
     function portal_loginAs_checkAdminRole(isAdmin) {
         var wrapper = dojo.byId('portal_login_as_password_wrapper');
         if(isAdmin) {
@@ -489,7 +489,7 @@ dojo.require("dojo.cookie");
        dijit.byId("dotBackEndDialogCP").setHref("/html/portal/disclaimer.jsp");
        myDialog.show();
 	}
-	
+
 	 function toggleAccount() {
 		if(document.getElementById("account-menu").style.display=="none") {
 			document.getElementById("account-menu").style.display="";
@@ -500,7 +500,7 @@ dojo.require("dojo.cookie");
 			document.getElementById("closeTab").style.display="none";
 			document.getElementById("account-trigger").setAttribute("class", "trigger-off");
 		}
-	}	
+	}
 
 </script>
 
@@ -517,7 +517,7 @@ dojo.require("dojo.cookie");
         <% } %>
 
    		<a id="autoUpdaterLink" style="display:none;" class="goEnterpriseLink"  href="javascript: showAutoUpdaterPopUp();"><span class="exclamation-red"></span><%= LanguageUtil.get(pageContext, "Update-available") %></a>
-		
+
 		<!-- User Actions -->
 		<% if (request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) == null) { %>
 			<a href="#" id="account-trigger" onclick="toggleAccount();" class="trigger-off"><%=user.getFullName()%></a>
@@ -526,7 +526,7 @@ dojo.require("dojo.cookie");
 	    <% } %>
 	</div>
 <% } %>
-    
+
 <!-- End Site Tools -->
 
 
@@ -558,7 +558,7 @@ dojo.require("dojo.cookie");
 			</tbody>
 		</table>
 	</div>
-	
+
     <% if (!hasRolesPortlet && APILocator.getUserAPI().isCMSAdmin(user) ) { %>
         <a class="rolePortletLink" href="<%=portletLinkHREF%>"><%= LanguageUtil.get(pageContext, "warning-roles-portlet" )%></a>
     <% } %>
@@ -675,11 +675,12 @@ dojo.require("dojo.cookie");
         </div>
         <%}%>
     <!-- END Auto Updater pop up -->
-	
+
 	<!-- About pop up -->
 	<div id="dotBackEndDialog" dojoType="dijit.Dialog" style="display:none" title="<%= LanguageUtil.get(pageContext, "about") %> dotCMS">
 		<!-- Server Info -->
-			<%String serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");%>
+<%-- 			<%String serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");%> --%>
+			<%String serverId = APILocator.getServerAPI().readServerId();%>
 			<% if (UtilMethods.isSet(serverId)){ %>
 				<div class="serverID"><strong>Server:</strong> <%=serverId%></div><br />
 			<% } %>
@@ -711,7 +712,7 @@ dojo.require("dojo.cookie");
 				</div>
 			</td>
 		</tr></table>
-	</div>		
+	</div>
 
 
 
