@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+    <appender name="CONSOLE" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.ConsoleAppender">
+            <layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
+                 <param name="ConversionPattern" value="%d %-5p %c - %m%n" />
+            </layout>
+    </appender>
+
+	<appender name="ASYNC" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.ActiveAsynchronousAppender">
+       	<param name="BufferSize" value="500" />
+		<param name="FailToSync" value="false" />
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+    </appender>
+
+    <appender name="ASYNC-TEST" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.ActiveAsynchronousAppender">
+        <param name="BufferSize" value="500" />
+        <param name="FailToSync" value="false" />
+        <appender-ref ref="TEST" />
+    </appender>
+
+    <appender name="ASYNC-SECURITY" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.ActiveAsynchronousAppender">
+       	<param name="BufferSize" value="500" />
+		<param name="FailToSync" value="false" />
+		<appender-ref ref="SECURITY"/>
+    </appender>
+
+    <appender name="ASYNC-SITESEARCH" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.ActiveAsynchronousAppender">
+       	<param name="BufferSize" value="500" />
+		<param name="FailToSync" value="false" />
+		<appender-ref ref="SITESEARCH"/>
+    </appender>
+
+    <appender name="ASYNC-ADMINAUDIT" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.ActiveAsynchronousAppender">
+       	<param name="BufferSize" value="500" />
+		<param name="FailToSync" value="false" />
+       	<appender-ref ref="ADMINAUDIT"/>
+    </appender>
+
+    <appender name="ASYNC-USERACTIVITY" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.ActiveAsynchronousAppender">
+       	<param name="BufferSize" value="500" />
+		<param name="FailToSync" value="false" />
+       	<appender-ref ref="USERS_ACTIVITY"/>
+    </appender>
+
+     <appender name="ASYNC-VELOCITY" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.ActiveAsynchronousAppender">
+       	<param name="BufferSize" value="500" />
+		<param name="FailToSync" value="false" />
+		<appender-ref ref="VELOCITY" />
+    </appender>
+
+     <appender name="ASYNC-PUSHPUBLISH" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.ActiveAsynchronousAppender">
+       	<param name="BufferSize" value="500" />
+		<param name="FailToSync" value="false" />
+		<appender-ref ref="PUSHPUBLISH" />
+    </appender>
+
+<!--
+    <appender name="ASYNC" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.AsyncAppender">
+       	<appender-ref ref="FILE"/>
+    </appender>
+
+    <appender name="ASYNC-SECURITY" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.AsyncAppender">
+       	<appender-ref ref="SECURITY"/>
+    </appender>
+
+    <appender name="ASYNC-SITESEARCH" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.AsyncAppender">
+       	<appender-ref ref="SITESEARCH"/>
+    </appender>
+
+    <appender name="ASYNC-ADMINAUDIT" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.AsyncAppender">
+       	<appender-ref ref="ADMINAUDIT"/>
+    </appender>
+-->
+    <appender name="FILE" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.RollingFileAppender">
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms.log"/>
+            <param name="MaxFileSize" value="20MB"/>
+            <param name="MaxBackupIndex" value="10"/>
+            <layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
+                 <param name="ConversionPattern"
+                            value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+            </layout>
+    </appender>
+
+    <appender name="TEST" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms-testing.log"/>
+        <param name="MaxFileSize" value="20MB"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+        </layout>
+    </appender>
+
+    <appender name="SECURITY" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.RollingFileAppender">
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-security.log"/>
+            <param name="MaxFileSize" value="20MB"/>
+            <param name="MaxBackupIndex" value="10"/>
+            <layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
+                 <param name="ConversionPattern"
+                            value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+            </layout>
+    </appender>
+
+    <appender name="SITESEARCH" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.RollingFileAppender">
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-sitesearch.log"/>
+            <param name="MaxFileSize" value="20MB"/>
+            <param name="MaxBackupIndex" value="10"/>
+            <layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
+                 <param name="ConversionPattern"
+                            value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+            </layout>
+    </appender>
+
+    <appender name="ADMINAUDIT" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.RollingFileAppender">
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-adminaudit.log"/>
+            <param name="MaxFileSize" value="20MB"/>
+            <param name="MaxBackupIndex" value="10"/>
+            <layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
+                 <param name="ConversionPattern"
+                            value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+            </layout>
+    </appender>
+
+    <appender name="USERS_ACTIVITY" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.RollingNewFileAppender">
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-userActivity.log"/>
+            <param name="MaxFileSize" value="20MB"/>
+            <param name="MaxBackupIndex" value="10"/>
+            <layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
+                 <param name="ConversionPattern"
+                            value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+            </layout>
+    </appender>
+
+    <appender name="VELOCITY" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-velocity.log"/>
+        <param name="MaxFileSize" value="20MB"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+        </layout>
+    </appender>
+
+    <appender name="PUSHPUBLISH" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-pushpublish.log"/>
+        <param name="MaxFileSize" value="20MB"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <layout class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n" />
+        </layout>
+    </appender>
+
+    <logger name="org.directwebremoting">
+	  <level value="warn"/>
+	</logger>
+	<logger name="com.dotmarketing.portlets.contentlet.business.ReindexThread">
+		<level value="debug"/>
+	</logger>
+	<logger name="com.bradmcevoy.http">
+		<level value="info"/>
+	</logger>
+	<logger name="org.apache.tomcat.util.http.Parameters">
+		<level value="fatal"/>
+	</logger>
+	<logger name="org.directwebremoting.impl.DefaultConverterManager">
+		<level value="fatal"/>
+	</logger>
+	<logger name="com.liferay.portal.action.LoginAction" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-SECURITY" />
+	</logger>
+
+	<logger name="com.liferay.portal.action.LogoutAction" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-SECURITY" />
+	</logger>
+
+	<logger name="com.liferay.portal.action.LoginAsAction" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-SECURITY" />
+	</logger>
+
+	<logger name="com.liferay.portal.action.LogoutAsAction" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-SECURITY" />
+	</logger>
+
+    <logger name="org.apache.nutch" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-SITESEARCH" />
+	</logger>
+
+	<logger name="org.apache.hadoop" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-SITESEARCH" />
+	</logger>
+
+	<logger name="com.dotmarketing.util.SecurityLogger" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-SECURITY" />
+	</logger>
+
+	<logger name="com.dotmarketing.util.AdminLogger	" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-ADMINAUDIT" />
+	</logger>
+
+	<logger name="com.dotmarketing.util.ActivityLogger" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-USERACTIVITY" />
+	</logger>
+
+	<logger name="com.dotmarketing.util.PushPublishLogger" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-PUSHPUBLISH" />
+	</logger>
+
+    <logger name="com.dotmarketing.servlets.test.ServletTestRunner" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="ASYNC-TEST" />
+    </logger>
+
+    <logger name="com.dotmarketing.velocity.VelocityServlet" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-VELOCITY" />
+	</logger>
+
+	<logger name="com.dotmarketing.viewtools" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="ASYNC-VELOCITY" />
+	</logger>
+
+	<logger name="org.apache.velocity" additivity="false">
+	  <level value="warn"/>
+	  <appender-ref ref="ASYNC-VELOCITY" />
+	</logger>
+
+    <!-- make Jersey less noisy -->
+    <logger name="com.sun.jersey.spi.container.servlet.WebComponent" additivity="false">
+        <level value="error"/>
+    </logger>
+
+    <root>
+            <priority value="info"/>
+            <appender-ref ref="ASYNC"/>
+    </root>
+
+</log4j:configuration>

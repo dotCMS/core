@@ -25,6 +25,8 @@ package com.liferay.portal.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -48,7 +50,12 @@ import com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentException;
 import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
 import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.SAXReader;
 
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.business.ClusterFactory;
+import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.enterprise.ClusterThreadProxy;
+import com.dotcms.rest.ClusterResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
@@ -56,9 +63,10 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.StartupTasksExecutor;
 import com.dotmarketing.util.Config;
+//import com.dotmarketing.util.DotConfig;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotcms.repackage.httpbridge.com.httpbridge.webproxy.http.TaskController;
-import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyLocalManagerUtil;
 import com.liferay.portal.ejb.PortletManagerUtil;
@@ -83,7 +91,6 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.util.CookieUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Http;
-import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.PwdGenerator;
 import com.liferay.util.StringUtil;
@@ -92,11 +99,11 @@ import com.liferay.util.servlet.UploadServletRequest;
 
 /**
  * <a href="MainServlet.java.html"><b><i>View Source</i></b></a>
- * 
+ *
  * @author Brian Wing Shun Chan
  * @author Jorge Ferrer
  * @version $Revision: 1.41 $
- * 
+ *
  */
 public class MainServlet extends ActionServlet {
 
@@ -121,14 +128,75 @@ public class MainServlet extends ActionServlet {
 				throw new ServletException(e1);
 			}
 
+			// Clustering
+			try {
+				ClusterFactory.generateClusterId();
+			} catch (DotDataException e) {
+				Logger.error(getClass(), "Unable to generate Cluster ID", e);
+			}
+
+			try {
+
+				ServerAPI serverAPI = APILocator.getServerAPI();
+				String serverId = serverAPI.readServerId();
+				Server server = serverAPI.getServer(serverId);
+
+				if(!UtilMethods.isSet(serverId) || server==null)  {
+
+			        server = new Server();
+			        if(UtilMethods.isSet(serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID"))) {
+			        	server.setServerId(serverId);
+			        }
+			        server.setIpAddress("");
+
+			        String hostName = "";
+		    		try {
+		    			hostName = InetAddress.getLocalHost().getHostName();
+
+					} catch (UnknownHostException e) {
+						Logger.error(ClusterResource.class, "Error trying to get the host name. ", e);
+					}
+
+		    		server.setName(hostName);
+		    		serverAPI.saveServer(server);
+
+			        try {
+			        	serverAPI.writeServerIdToDisk(server.getServerId());
+			        	serverAPI.writeHeartBeatToDisk(server.getServerId());
+					} catch (IOException e) {
+						Logger.error(ServerAPIImpl.class, "Could not write Server ID to file system" , e);
+					}
+
+			        serverId = server.getServerId();
+				}
+
+		        serverAPI.createServerUptime(serverId);
+
+
+		        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)) {
+		        	try {
+						ClusterFactory.addNodeToCluster(serverId);
+					} catch (Exception e) {
+						Logger.error(MainServlet.class, "Error trying to wire node to the Cluster", e);
+					}
+		        }
+
+		        serverAPI.updateHeartbeat();
+
+			}  catch (DotDataException e) {
+				Logger.error(getClass(), "Could not save Server to DB", e);
+			}
+
+			// END Clustering
+
 			// Starting the reindexation threads
 			ClusterThreadProxy.createThread();
-			if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED")) {
+			if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {
 				ClusterThreadProxy.startThread(Config.getIntProperty("DIST_INDEXATION_SLEEP", 500), Config.getIntProperty("DIST_INDEXATION_INIT_DELAY", 5000));
 			}
 
 			ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
-			
+
 			try {
 				EventsProcessor.process(new String[] { StartupAction.class.getName() }, true);
 			} catch (Exception e) {
@@ -470,7 +538,7 @@ public class MainServlet extends ActionServlet {
 		String userId = PortalUtil.getUserId(req);
 
 		if ((userId != null)) {
-			PrincipalThreadLocal.setName(userId);			
+			PrincipalThreadLocal.setName(userId);
 		}
 
 		if (userId == null) {

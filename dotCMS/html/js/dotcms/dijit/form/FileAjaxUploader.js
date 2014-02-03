@@ -137,22 +137,24 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 				}
 			}
 		}
-		this.onUploadStart(this.fileName, this);
-		if(dojo.isIE || dojo.isChrome || dojo.isSafari){//DOTCMS-5046
-			var ieFileName = this.fileInputField.value;
-			if(ieFileName.indexOf("\\") >= 0){
-				this.fileNameDisplayField.innerHTML = this.fileNameField.value = ieFileName.substring(ieFileName.lastIndexOf("\\")+1);
+		if(this.fileInputField.value != ""){
+			this.onUploadStart(this.fileName, this);
+			if(dojo.isIE || dojo.isChrome || dojo.isSafari || this.fileInputField.value.indexOf("\\") >= 0){//DOTCMS-5046
+				var ieFileName = this.fileInputField.value;
+				if(ieFileName.indexOf("\\") >= 0){
+					this.fileNameDisplayField.innerHTML = this.fileNameField.value = ieFileName.substring(ieFileName.lastIndexOf("\\")+1);
+				}else{
+					this.fileNameDisplayField.innerHTML = this.fileNameField.value = ieFileName;
+				}
 			}else{
-				this.fileNameDisplayField.innerHTML = this.fileNameField.value = ieFileName;
+				this.fileNameDisplayField.innerHTML = this.fileNameField.value = this.fileInputField.value;
 			}
-		}else{
-			this.fileNameDisplayField.innerHTML = this.fileNameField.value = this.fileInputField.value;
+			this.uploading = true;
+			this.form.submit();
+			dojo.style(this.fileUploadStatus, { display: '' });
+			this.progressBar.update({ progress: 0 });
+			this._checkStatus();
 		}
-		this.uploading = true;
-		this.form.submit();
-		dojo.style(this.fileUploadStatus, { display: '' });
-		this.progressBar.update({ progress: 0 });
-		this._checkStatus();
 	},
 
 	_remove: function () {

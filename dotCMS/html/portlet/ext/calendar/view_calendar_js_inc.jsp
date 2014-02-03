@@ -18,7 +18,7 @@
 	var categories = new Array();
 	var categoriesLabels = new Array();
 	var live = false;
-	var archived = false;
+	var archived = true;
 	var offset = 0;
 	var perPage = 50;
 	var selectedView = 'list';
@@ -577,26 +577,26 @@
 			}
 		}
 		if(event.live && event.publishPermission) {		
-		    eventDetailActions += '<a class="fakeDojoButton" href="javascript: publishEvent(\'' + event.identifier + '\');">' +
+		    eventDetailActions += '<a class="fakeDojoButton" href="javascript: publishEvent(\'' + event.inode + '\');">' +
 					'<span class="republishIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "republish")) %></a>'; 	
 		  if(event.recurs){
 			eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'unpublish\');">' + 
 			       '<span class="unpublishIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish")) %></a>';
 		  }else{
-			  eventDetailActions += '<a class="fakeDojoButton" href="javascript: unpublishEvent(\'' + event.identifier + '\',\'false\');">' + 
+			  eventDetailActions += '<a class="fakeDojoButton" href="javascript: unpublishEvent(\'' + event.inode + '\',\'false\');">' + 
 				'<span class="unpublishIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish")) %></a>';    	
 		  }
 		} 
 		if(!event.live && !event.archived && event.publishPermission){
-		     eventDetailActions += '<a class="fakeDojoButton" href="javascript: publishEvent(\'' + event.identifier + '\');">' +
+		     eventDetailActions += '<a class="fakeDojoButton" href="javascript: publishEvent(\'' + event.inode + '\');">' +
 				'<span class="publishIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish")) %></a>'; 
 		}
 		if(!event.archived && !event.live && event.publishPermission){
-		    	eventDetailActions += '<a class="fakeDojoButton" href="javascript: archiveEvent(\'' + event.identifier + '\');">' +
+		    	eventDetailActions += '<a class="fakeDojoButton" href="javascript: archiveEvent(\'' + event.inode + '\');">' +
 				'<span class="archiveIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "archive")) %></a>'; 		
 		}
 		if(event.archived && event.publishPermission) {
-			eventDetailActions += '<a class="fakeDojoButton" href="javascript: unarchiveEvent(\'' + event.identifier + '\');">' +
+			eventDetailActions += '<a class="fakeDojoButton" href="javascript: unarchiveEvent(\'' + event.inode + '\');">' +
 				'<span class="unarchiveIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unarchive")) %></a>'; 
 		}
 
@@ -631,9 +631,9 @@
 				actions += '<a class="fakeDojoButton" href="javascript: editEvent(\'' + inode + '\',\'<%= referer %>\');">' +
 					'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>'; 
 		}else if(action=="unpublish"){
-			 actions += '<a class="fakeDojoButton" href="javascript: unpublishRecurrentEvent(\'' + inode + '\',\'' + identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'<%= referer %>\');">' +
+			 actions += '<a class="fakeDojoButton" href="javascript: unpublishRecurrentEvent(\'' + inode + '\',\'' + startDate + '\',\'' + endDate + '\',\'<%= referer %>\');">' +
 				'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Only-this-instance")) %></a>'; 
-			  actions += '<a class="fakeDojoButton" href="javascript: unpublishEvent(\'' + identifier + '\',\'true\');">' +
+			  actions += '<a class="fakeDojoButton" href="javascript: unpublishEvent(\'' + inode + '\',\'true\');">' +
 					'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>'; 
 		}else if(action=="delete"){
 			 actions += '<a class="fakeDojoButton" href="javascript: deleteRecurrentEvent(\'' + inode + '\',\'' + identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'<%= referer %>\');">' +
@@ -706,16 +706,16 @@
 		});        
     }
 
-	function publishEvent(identifier) {
+	function publishEvent(inode) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-publish-this-event")) %>')) {
-			CalendarAjax.publishEvent(identifier, eventActionCallback);
+			CalendarAjax.publishEvent(inode, eventActionCallback);
 			hideEventDetail();
 		}
 	}	
 
-	function unpublishEvent(identifier, isRecurrent) {
+	function unpublishEvent(inode, isRecurrent) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-un-publish-this-event")) %>')) {
-			CalendarAjax.unpublishEvent(identifier, unpublishEventCallback);
+			CalendarAjax.unpublishEvent(inode, unpublishEventCallback);
 			if(isRecurrent=='false'){
 				hideEventDetail();
 			}else{
@@ -727,13 +727,13 @@
 		}
 	}
 
-	function unpublishRecurrentEvent(inode, identifier, startDate, endDate, referer){
+	function unpublishRecurrentEvent(inode, startDate, endDate, referer){
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-un-publish-this-event")) %>')) {
 		   CalendarAjax.disconnectEvent(inode, startDate, endDate, function(event){
 			 if(event["disconnectEventErrors"] != null ){	// To show DotContentletValidationExceptions.		
 				handleError(event);
 			}else{	
-			  CalendarAjax.unpublishEvent(event.identifier, unpublishEventCallback);
+			  CalendarAjax.unpublishEvent(event.inode, unpublishEventCallback);
 			  hideRecEventDetail();
 			   dojo.hitch(this, setTimeout(function(){
 				   hideEventDetail();
@@ -760,25 +760,25 @@
 		}		
 	}
 
-	function archiveEvent(identifier) {
+	function archiveEvent(inode) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-archive-this-event")) %>')) {
-			CalendarAjax.archiveEvent(identifier, eventActionCallback);
+			CalendarAjax.archiveEvent(inode, eventActionCallback);
 			hideEventDetail();
 		}
 	}	
 
 
-	function archiveDisconnectedEvent(identifier, putBack){
+	function archiveDisconnectedEvent(inode, putBack){
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-archive-this-event")) %>')) {
-			CalendarAjax.archiveDisconnectedEvent(identifier, putBack, eventActionCallback);
+			CalendarAjax.archiveDisconnectedEvent(inode, putBack, eventActionCallback);
 			hideEventDetail();
 		}
 
 	}	
 
-	function unarchiveEvent(identifier) {
+	function unarchiveEvent(inode) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-un-archive-this-event")) %>')) {
-			CalendarAjax.unarchiveEvent(identifier, eventActionCallback);
+			CalendarAjax.unarchiveEvent(inode, eventActionCallback);
 			hideEventDetail ();
 		}
 	}	

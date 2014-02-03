@@ -16,7 +16,7 @@ public class DotLoggerTool implements ViewTool {
 
 	private InternalContextAdapterImpl ica;
 	
-	private org.apache.log4j.Logger logger;
+	private com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger logger;
 	
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;

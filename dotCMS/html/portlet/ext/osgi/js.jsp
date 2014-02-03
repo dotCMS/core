@@ -27,8 +27,12 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
 		} else {
 			href = href + "?r=" + r;
 		}
+
+		href = href + "?donothing";
+
 		this.url = href;
-		 var myCp = dijit.byId("osgiMainBundles");
+		var myCp = dijit.byId("osgiMainBundles");
+
         if (myCp) {
             myCp.destroyRecursive(false);
 		}
@@ -41,7 +45,7 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
         myCp.attr("href", this.url);
         myCp.refresh();
 	},
-	
+
 	refresh : function() {
 		var hanger = dojo.byId("osgiMain");
 		if(!hanger){
@@ -56,6 +60,7 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
             id: "osgiMainBundles",
             preventCache: true
         }).placeAt("osgiMain");
+
         myCp.attr("href", this.url);
         myCp.refresh();
 	}
@@ -67,7 +72,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
 	baseJsp : "/html/portlet/ext/osgi/bundles.jsp",
 	constructor : function() {
-		
+
 	},
 
 	show : function() {
@@ -101,7 +106,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		if(availBundles.getValue() == undefined || availBundles.getValue()==""){
 			return;
 		}
-		
+
 		var jarName = availBundles.value;
 		var xhrArgs = {
 			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=deploy&jar=" + jarName,

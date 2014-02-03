@@ -144,7 +144,8 @@
 			for(var i = 0; i < events.length; i++) {
 				
 				var event = events[i];
-				eventsList[event.identifier] = event;				
+				var evRef = (event.recurr)?event.identifier:event.inode; 
+				eventsList[evRef] = event;				
 	 			
 			    if(isDateInRange(nowDate, event.startDate, event.endDate)) {
 					if(isAllDayEvent(event)) {
@@ -173,14 +174,15 @@
 				var event = alldayEvents[i];
 				var img = getStatusImage(event);
 				var eventTitle = event.title.replace(/([^\s]{15})/g,"$1-<br/> ");
+				var evRef = (event.recurr)?event.identifier:event.inode; 
 				if(i > 0)
 					htmlBuffer += '';
 				htmlBuffer += 
-					'<div><span class="' + img + '"></span><a href="javascript: ;" id="eventRef' + event.identifier + '-' + day + '">' + eventTitle + '</a><div>';
+					'<div><span class="' + img + '"></span><a href="javascript: ;" id="eventRef' + evRef + '-' + day + '">' + eventTitle + '</a><div>';
 				htmlBuffer += 
 					'\<script\>' +
-					'	eventRef = Ext.get("eventRef' + event.identifier + '-' + day + '");' +
-					'	eventRef.on("click", function(jsevent) { showEventDetail(jsevent, eventsList[\'' + event.identifier + '\']); }, this, { stopPropagation: true });' +
+					'	eventRef = Ext.get("eventRef' + evRef + '-' + day + '");' +
+					'	eventRef.on("click", function(jsevent) { showEventDetail(jsevent, eventsList[\'' + evRef + '\']); }, this, { stopPropagation: true });' +
 					'\</script\>';
 			}
 			
@@ -194,12 +196,13 @@
 				var img = getStatusImage(event);
 				var eventTitle = event.title.replace(/([^\s]{15})/g,"$1-<br/> ");
 				var eventTime = event.startDate.format('g') + event.startDate.format('a').substring(0,1);
+				var evRef = (event.recurr)?event.identifier:event.inode; 
 				htmlBuffer += '<div class="dayEventsSection"><span class="'+img+'"></span><span>' + eventTime + '</span> ' + 
-					'<a href="javascript: ;" id="eventRef' + event.identifier + '-' + day + '">' + eventTitle + '</a>';
+					'<a href="javascript: ;" id="eventRef' + evRef + '-' + day + '">' + eventTitle + '</a>';
 				htmlBuffer += 
 					'\<script\>' +
-					'	eventRef = Ext.get("eventRef' + event.identifier + '-' + day + '");' +
-					'	eventRef.on("click", function(jsevent) { showEventDetail(jsevent, eventsList[\'' + event.identifier + '\']); }, this, { stopPropagation: true });' +
+					'	eventRef = Ext.get("eventRef' + evRef + '-' + day + '");' +
+					'	eventRef.on("click", function(jsevent) { showEventDetail(jsevent, eventsList[\'' + evRef + '\']); }, this, { stopPropagation: true });' +
 					'\</script\>';
 			}
 				

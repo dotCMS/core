@@ -13,29 +13,6 @@
 	<property name="src.conf.dir" value="src-conf" />
 	<property name="src.tests.dir" value="test" />
 	<property name="src.jsp" value="build/jsp" />
-	<property name="sql.dotcms.dir" value="sql/cms" />
-	<property name="sql.liferay.dir" value="sql/portal" />
-	<property name="sql.quartz.dir" value="sql/quartz" />
-	<property name="sql.dotcms.oracle" value="dotcms_oracle.sql" />
-	<property name="sql.liferay.oracle" value="portal-oracle.sql" />
-	<property name="sql.quartz.oracle" value="tables_oracle.sql" />
-	<property name="sql.dotcms.postgres" value="dotcms_postgresql.sql" />
-	<property name="sql.dotcms.extra.postgres" value="dotcms_extra_postgres.sql" />
-	<property name="sql.dotcms.extra.oracle" value="dotcms_extra_oracle.sql" />
-	<property name="sql.dotcms.extra.mssql" value="dotcms_extra_mssql.sql" />
-	<property name="sql.dotcms.extra.mysql" value="dotcms_extra_mysql.sql" />
-	<property name="sql.liferay.postgres" value="portal-postgresql.sql" />
-	<property name="sql.quartz.postgres" value="tables_postgres.sql" />
-	<property name="sql.dotcms.mssql" value="dotcms_mssql-sybase.sql" />
-	<property name="sql.liferay.mssql" value="portal-sql-server.sql" />
-	<property name="sql.quartz.mssql" value="tables_mssql.sql" />
-	<property name="sql.dotcms.mysql" value="dotcms_mysql.sql" />
-	<property name="sql.liferay.mysql" value="portal-mysql.sql" />
-	<property name="sql.quartz.mysql" value="tables_mysql.sql" />
-	<property name="sql.dotcms.h2" value="dotcms_h2.sql" />
-	<property name="sql.liferay.h2" value="portal-hypersonic.sql" />
-	<property name="sql.quartz.h2" value="tables_h2.sql" />
-	<property name="sql.dotcms.extra.h2" value="dotcms_extra_h2.sql" />
 	<property name="build.dir" value="build" />
 	<property name="build.classes" value="${build.dir}/classes" />
 	<property name="build.ant" value="${build.dir}/ant" />
@@ -101,7 +78,6 @@
             <include name="**/*.jar" />
         </fileset>
 		<fileset dir="${lib.app}">
-			<include name="log4j.jar" />
 			<include name="ant-tooling.jar" />
 			<include name="commons-lang-2.4.jar" />
 			<include name="tika-app-1.3.jar" />
@@ -213,7 +189,7 @@
 	</target>
 
 
-	<target name="deploy-core" depends="jsp,jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+	<target name="deploy-core" depends="jsp,jar,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -222,7 +198,7 @@
 		<delete dir="${build.classes}" />
 	</target>
 
-    <target name="deploy-core-with-tests" depends="jsp,jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+    <target name="deploy-core-with-tests" depends="jsp,jar-with-tests,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -231,7 +207,7 @@
 		<delete dir="${build.classes}" />
 	</target>
 
-    <target name="deploy-core-with-tests-no-jsp" depends="jar-with-tests,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+    <target name="deploy-core-with-tests-no-jsp" depends="jar-with-tests,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
@@ -240,11 +216,11 @@
         <delete dir="${build.classes}" />
     </target>
 
-	<target name="build-core" depends="jsp,jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
+	<target name="build-core" depends="jsp,jar" description="will compile, and update the about page of the site" />
 
-	<target name="build-core-no-jsp" depends="jar,buildseqsql,buildmXsql" description="will compile, build sql scripts and update the about page of the site" />
+	<target name="build-core-no-jsp" depends="jar" description="will compile, and update the about page of the site" />
 
-	<target name="deploy-no-jsp" depends="jar,buildseqsql,buildmXsql,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+	<target name="deploy-no-jsp" depends="jar,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -309,96 +285,7 @@
 		</replaceregexp>
 	</target>
 
-	<target name="buildsql" depends="buildseqsql, buildmXsql">
-	</target>
-
-	<target name="buildseqsql" depends="compile" description="builds the oracle and postgresql sql schema for dotcms. also leaves Inode.hbm.xml in a state for sequence databases">
-
-		<taskdef name="buildSQLTask" classname="com.dotmarketing.db.DotSQLGeneratorTask" >
-			<classpath>
-				<path refid="files-classpath" />
-			</classpath>
-		</taskdef>
-
-		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.PostgreSQLDialect" />
-		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.OracleDialect" />
-		
-		<concat destfile="${build.dir}/sql/postgres.sql" fixlastline="yes">
-			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.postgres}" />
-			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.postgres}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.postgres}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.postgres}" />
-		</concat>
-
-		<concat destfile="${build.dir}/sql/oracle.sql" fixlastline="yes">
-			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.oracle}" />
-			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.oracle}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.oracle}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.oracle}" />
-		</concat>
-		
-		<replaceregexp byline="true" file="${build.dir}/sql/oracle.sql">
-			<regexp pattern="nclob_description" />
-			<substitution expression="long_description" />
-		</replaceregexp>
-		
-		<copy file="${build.dir}/sql/oracle.sql" todir="${classes.app}"/>
-		<copy file="${build.dir}/sql/postgres.sql" todir="${classes.app}"/>
-		
-	</target>
-
-	<target name="buildmXsql" depends="compile" description="builds the mssql and mysql sql schema for dotcms. Leaves Inode.hbm.xml in a state for mssql/mysql">
-
-		<taskdef name="buildSQLTask" classname="com.dotmarketing.db.DotSQLGeneratorTask">
-			<classpath>
-				<path refid="files-classpath" />
-			</classpath>
-		</taskdef>
-
-		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.MySQLDialect" />
-		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.SybaseDialect" />
-		<buildSQLTask dialect="com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.HSQLDialect" />
-				
-
-		<concat destfile="${build.dir}/sql/mssql.sql" fixlastline="yes">
-			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.mssql}" />
-			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.mssql}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.mssql}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.mssql}" />
-		</concat>
-
-		<concat destfile="${build.dir}/sql/mysql.sql" fixlastline="yes">
-			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.mysql}" />
-			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.mysql}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.mysql}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.mysql}" />
-		</concat>
-		
-		<concat destfile="${build.dir}/sql/h2.sql" fixlastline="yes">
-			<fileset dir="${sql.liferay.dir}" includes="${sql.liferay.h2}" />
-			<fileset dir="${sql.quartz.dir}" includes="${sql.quartz.h2}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.h2}" />
-			<fileset dir="${sql.dotcms.dir}" includes="${sql.dotcms.extra.h2}" />
-		</concat>
-		
-		<replace file="${build.dir}/sql/mysql.sql">
-			<replacetoken>VARCHAR(1)</replacetoken>
-			<replacevalue>tinyint(1)</replacevalue>
-		</replace>
-
-		<replace file="${build.dir}/sql/mysql.sql">
-			<replacetoken>varchar(1)</replacetoken>
-			<replacevalue>tinyint(1)</replacevalue>
-		</replace>
-		
-		<mkdir dir="dotCMS/WEB-INF/classes"/>
-		
-		<copy file="${build.dir}/sql/mysql.sql" todir="${classes.app}"/>
-		<copy file="${build.dir}/sql/mssql.sql" todir="${classes.app}"/>
-		<copy file="${build.dir}/sql/h2.sql" todir="${classes.app}"/>
-	</target>
-
-	<target name="create-dist" description="creates a zip file for dbs that autoincrement like MSSQL and MySQL distribution">
+	<target name="create-dist" description="creates a zip file for dbs">
 
 		<antcall target="clean" />
 
@@ -453,7 +340,7 @@
 		<delete dir="${distribution.output}" />
 	</target>
 
-	<target name="create-update-dist" description="creates a zip file for dbs that autoincrement like MSSQL and MySQL distribution">
+	<target name="create-update-dist" description="creates an update zip file for dbs">
 
 			<antcall target="clean" />
 
@@ -819,7 +706,7 @@
 </target>
 
 
-<target name="tests" depends="compile, buildsql, buildmXsql, compile-tests, instrument-classes, start-server-for-tests" description="runs unit tests">
+<target name="tests" depends="compile, compile-tests, instrument-classes, start-server-for-tests" description="runs unit tests">
 
 
 	<mkdir dir="${tests.dir}" />
@@ -1165,10 +1052,6 @@
     <target name="move-war-tomcat7" depends="undeploy-war-tomcat7">
         <copy todir="${tomcat7.home}/lib/">
             <fileset dir="libs/buildlibs/">
-                <include name="log4j-1.2.16.jar"/>
-                <include name="log4j-appenders-1.0.jar"/>
-                <include name="log4j.xml"/>
-
                 <include name="mysql-connector-java-5.1.23-bin.jar"/>
                 <include name="postgresql-9.0-801.jdbc3.jar"/>
                 <include name="ojdbc5.jar"/>

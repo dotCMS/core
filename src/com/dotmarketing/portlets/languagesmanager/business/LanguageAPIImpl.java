@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 public class LanguageAPIImpl implements LanguageAPI {
-	
+
 	private HttpServletRequest request;
 	Context ctx;
 
@@ -29,11 +29,11 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	private LanguageFactory factory;
-	
+
 	public LanguageAPIImpl() {
 		factory = FactoryLocator.getLanguageFactory();
 	}
-	
+
 	public void deleteLanguage(Language language) {
 		factory.deleteLanguage(language);
 	}
@@ -99,14 +99,14 @@ public class LanguageAPIImpl implements LanguageAPI {
 		Collections.sort(list, new LanguageKeyComparator());
 		return list;
 	}
-	
+
 	public List<LanguageKey> getLanguageKeys(Language lang) {
 		String langCode = lang.getLanguageCode();
 		String countryCode = lang.getCountryCode();
 		List<LanguageKey> list = new ArrayList<LanguageKey>();
 		list.addAll(factory.getLanguageKeys(langCode));
 		Collections.sort(list, new LanguageKeyComparator());
-		
+
 		List<LanguageKey> keys = factory.getLanguageKeys(langCode, countryCode);
 		for(LanguageKey key : keys) {
 			int index = -1;
@@ -115,7 +115,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 			}
 			list.add(key);
 		}
-		
+
 		Collections.sort(list, new LanguageKeyComparator());
 		return list;
 	}
@@ -129,7 +129,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	public void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException {
 		List<LanguageKey> existingGeneralKeys = getLanguageKeys(lang.getLanguageCode());
 		List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
-		
+
 		for(LanguageKey key:existingGeneralKeys){
 			if(generalKeys.containsKey(key.getKey())){
 				key.setValue(generalKeys.get(key.getKey()));
@@ -141,16 +141,16 @@ public class LanguageAPIImpl implements LanguageAPI {
 				key.setValue(specificKeys.get(key.getKey()));
 				specificKeys.remove(key.getKey());
 			}
-		}		
-		
+		}
+
 		for(LanguageKey key:existingGeneralKeys){
-			generalKeys.put(key.getKey(), key.getValue());			
+			generalKeys.put(key.getKey(), key.getValue());
 		}
 		for(LanguageKey key:existingSpecificKeys){
-			specificKeys.put(key.getKey(), key.getValue());			
+			specificKeys.put(key.getKey(), key.getValue());
 		}
 		factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
-		
+
 	}
 
     /**
@@ -179,7 +179,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 
         String value = null;
         try {
-            value = LanguageUtil.get( new Locale( lang.getLanguageCode() ), key );
+            value = LanguageUtil.get( new Locale( lang.getLanguageCode(), lang.getCountryCode() ), key );
         } catch ( LanguageException e ) {
             Logger.error( this, e.getMessage(), e );
         }
