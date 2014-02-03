@@ -211,6 +211,8 @@ public class CalendarAjax {
 			eventMap.put("archived", ev.isArchived());
 			eventMap.put("deleted", ev.isArchived());
 			eventMap.put("locked", ev.isLocked());
+			eventMap.put("inode", ev.getInode());
+			eventMap.put("recurr", ev.isRecurrent());
 			ev.setIdentifier(origIdent);
 			
 			eventMap.put("categories", categoryMaps);
@@ -256,7 +258,7 @@ public class CalendarAjax {
 		return retList;
 	}
 	
-	public void publishEvent (String identifier) throws PortalException, SystemException, DotDataException, DotSecurityException {
+	public void publishEvent (String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		HibernateUtil.startTransaction();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -264,8 +266,8 @@ public class CalendarAjax {
 		//Retrieving the current user
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
-		String baseIdent = RecurrenceUtil.getBaseEventIdentifier(identifier);		
-		Event ev = eventAPI.find(baseIdent, false, user, respectFrontendRoles);
+
+		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
 		try{
 			contAPI.publish(ev, user, respectFrontendRoles);
 		}catch(Exception e){Logger.error(this, e.getMessage());}
@@ -276,7 +278,7 @@ public class CalendarAjax {
 		}
 	}
 
-	public Map<String,Object> unpublishEvent (String identifier) throws PortalException, SystemException, DotDataException, DotSecurityException {
+	public Map<String,Object> unpublishEvent (String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		Map<String,Object> callbackData = new HashMap<String,Object>();//DOTCMS-5199
 		List<String> eventUnpublishErrors = new ArrayList<String>();
 		HibernateUtil.startTransaction();
@@ -287,7 +289,7 @@ public class CalendarAjax {
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
 
-		Event ev = eventAPI.find(identifier, false, user, respectFrontendRoles);
+		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
 
 		try {	
 			contAPI.unpublish(ev, user, respectFrontendRoles);  
@@ -310,7 +312,7 @@ public class CalendarAjax {
 		return callbackData;
 	}
 
-	public void archiveEvent (String identifier) throws PortalException, SystemException, DotDataException, DotSecurityException {
+	public void archiveEvent (String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		HibernateUtil.startTransaction();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -319,7 +321,7 @@ public class CalendarAjax {
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
 
-		Event ev = eventAPI.find(identifier, false, user, respectFrontendRoles); 
+		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
 		try{
 			contAPI.archive(ev, user, respectFrontendRoles);
 		}catch(Exception e){Logger.error(this, e.getMessage());}
@@ -330,7 +332,7 @@ public class CalendarAjax {
 		}
 	}
 	
-	public void archiveDisconnectedEvent (String identifier, boolean putBack) throws PortalException, SystemException, DotDataException, DotSecurityException {
+	public void archiveDisconnectedEvent (String inode, boolean putBack) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		HibernateUtil.startTransaction();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -339,7 +341,7 @@ public class CalendarAjax {
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
 
-		Event ev = eventAPI.find(identifier, false, user, respectFrontendRoles);
+		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
 		if(putBack){
 			Event baseEvent = null;
 			try{
@@ -370,7 +372,7 @@ public class CalendarAjax {
 	
 	
 
-	public void unarchiveEvent (String identifier) throws PortalException, SystemException, DotDataException, DotSecurityException {
+	public void unarchiveEvent (String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		HibernateUtil.startTransaction();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -379,7 +381,7 @@ public class CalendarAjax {
 		User user = userAPI.getLoggedInUser(request);
 		boolean respectFrontendRoles = true;
 
-		Event ev = eventAPI.find(identifier, false, user, respectFrontendRoles);
+		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
 		try{
 			
 			if(UtilMethods.isSet(ev.getDisconnectedFrom())){

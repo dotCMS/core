@@ -289,11 +289,15 @@
 	</listener>
 	<!-- END DOTMARKETING LISTENERS -->
 	<!-- DOTMARKETING SERVLETS -->
-	<servlet>
+	<!-- <servlet>
 		<servlet-name>log4j-init</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.Log4JInitializationServlet</servlet-class>
+		<init-param>
+			<param-name>log4j-init-file</param-name>
+			<param-value>true</param-value>
+		</init-param>
 	    <load-on-startup>0</load-on-startup>
-	</servlet>
+	</servlet> -->
 	<servlet>
 		<servlet-name>JSONContentServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONContentServlet</servlet-class>
