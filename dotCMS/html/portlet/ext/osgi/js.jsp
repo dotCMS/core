@@ -60,12 +60,8 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
             id: "osgiMainBundles",
             preventCache: true
         }).placeAt("osgiMain");
-<<<<<<< HEAD
 
-        myCp.attr("href", hashValue );
-=======
         myCp.attr("href", this.url);
->>>>>>> origin
         myCp.refresh();
 	}
 });
