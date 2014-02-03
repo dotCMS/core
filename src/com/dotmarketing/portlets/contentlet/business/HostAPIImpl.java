@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -46,6 +48,8 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 /**
@@ -498,6 +502,19 @@ public class HostAPIImpl implements HostAPI {
 				try {
 					deleteHost();
 				} catch (Exception e) {
+					// send notification
+					try {
+						String errorMessage = LanguageUtil.format(user.getLocale(), "notifications_host_deletion_error",new String[]{host.getHostname()},false);
+						errorMessage += e.getMessage();
+						Notification n = new Notification(errorMessage, NotificationLevel.ERROR, user.getUserId());
+						APILocator.getNotificationAPI().saveNotification(n);
+
+					} catch (LanguageException e1) {
+						Logger.error(HostAPIImpl.class, "error formating notification", e);
+					} catch (DotDataException e1) {
+						Logger.error(HostAPIImpl.class, "error saving Notification", e);
+					}
+
 					Logger.error(HostAPIImpl.class, e.getMessage(), e);
 					throw new DotRuntimeException(e.getMessage(), e);
 				}

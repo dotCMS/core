@@ -906,5 +906,6 @@ CREATE TABLE cluster_server_uptime(id varchar2(36) NOT NULL,server_id varchar2(3
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 -- Notifications Table
-create table notification(id varchar2(36) NOT NULL,message varchar2(255) NOT NULL, notification_type varchar2(100), notification_level varchar2(100), user_id varchar2(255) NOT NULL, time_sent TIMESTAMP NOT NULL, was_read number(1,0), PRIMARY KEY (id));
+create table notification(id varchar2(36) NOT NULL,message nclob NOT NULL, notification_type varchar2(100), notification_level varchar2(100), user_id varchar2(255) NOT NULL, time_sent TIMESTAMP NOT NULL, was_read number(1,0) default 0, PRIMARY KEY (id));
 create index idx_not_user ON notification (user_id);
+create index idx_not_read ON notification (was_read);
