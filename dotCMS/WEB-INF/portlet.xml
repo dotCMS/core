@@ -2572,8 +2572,8 @@
 			<role-name>CMS User</role-name>
 		</security-role-ref>
 	</portlet>
-	
-	<!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->	
+
+	<!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->
 	<portlet>
 		<portlet-name>EXT_CONTENT_PUBLISHING_TOOL</portlet-name>
 		<display-name>Content Publishing Tools</display-name>
@@ -2594,7 +2594,7 @@
 		<security-role-ref>
 			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
-	</portlet>	
+	</portlet>
 	<!-- END: PORTLET CONTENT PUBLISHING FRAMEWORK -->
 
 	<portlet>
@@ -3485,7 +3485,7 @@
         <security-role-ref>
             <role-name>CMS Administrator</role-name>
         </security-role-ref>
-    </portlet> 
+    </portlet>
 
 	<portlet>
 		<portlet-name>EXT_BROKEN_LINKS</portlet-name>
@@ -3501,15 +3501,21 @@
 		</supports>
 		<security-role-ref>
 			<role-name>CMS Administrator</role-name>
-		</security-role-ref>	
+		</security-role-ref>
 	</portlet>
-	
+
 	<portlet>
 		<portlet-name>REST_EXAMPLE_PORTLET</portlet-name>
 		<display-name>Broken Links</display-name>
 		<portlet-class>com.dotcms.rest.RestExamplePortlet</portlet-class>
 	</portlet>
-	
+
+	<portlet>
+		<portlet-name>NetworkPortlet</portlet-name>
+		<display-name>Network Portlet</display-name>
+		<portlet-class>com.dotcms.rest.NetworkPortlet</portlet-class>
+	</portlet>
+
 	<custom-window-state>
 		<window-state>exclusive</window-state>
 	</custom-window-state>

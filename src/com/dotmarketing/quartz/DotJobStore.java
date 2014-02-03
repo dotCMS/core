@@ -22,6 +22,7 @@ import org.quartz.utils.ConnectionProvider;
 import org.quartz.utils.DBConnectionManager;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -34,25 +35,26 @@ public class DotJobStore extends JobStoreCMT {
 	}
 
 	public static final String TX_DATA_SOURCE_PREFIX = "TxDataSource.";
-	
+
 	public static final String NON_TX_DATA_SOURCE_PREFIX = "NonTxDataSource.";
-	
+
 	private DataSource dataSource;
-	
+
 	public void initialize(ClassLoadHelper loadHelper, SchedulerSignaler signaler)
 	    throws SchedulerConfigException {
-		
+
 		this.dataSource = DbConnectionFactory.getDataSource();
-		
+
 		setDataSource(TX_DATA_SOURCE_PREFIX + getInstanceName());
 		setDontSetAutoCommitFalse(true);
-		
-		String serverName = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
+
+//		String serverName = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
+		String serverName = APILocator.getServerAPI().readServerId();
 		if(!UtilMethods.isSet(serverName)){
 			serverName = "dotCMSServer";
 		}
 		setInstanceId(serverName);
-		
+
 		DBConnectionManager.getInstance().addConnectionProvider(
 				TX_DATA_SOURCE_PREFIX + getInstanceName(),
 				new ConnectionProvider() {
@@ -64,11 +66,11 @@ public class DotJobStore extends JobStoreCMT {
 					}
 				}
 		);
-		
+
 		final DataSource nonTxDataSourceToUse = this.dataSource;
-		
+
 		setNonManagedTXDataSource(NON_TX_DATA_SOURCE_PREFIX + getInstanceName());
-		
+
 		DBConnectionManager.getInstance().addConnectionProvider(
 				NON_TX_DATA_SOURCE_PREFIX + getInstanceName(),
 				new ConnectionProvider() {
@@ -82,8 +84,8 @@ public class DotJobStore extends JobStoreCMT {
 					}
 				}
 		);
-		
-		
+
+
 		//This is done because http://jira.opensymphony.com/browse/QUARTZ-497
 		UpdateLockRowSemaphore sem = new UpdateLockRowSemaphore();
 		if (DbConnectionFactory.isMySql()) {
@@ -92,7 +94,7 @@ public class DotJobStore extends JobStoreCMT {
 		  sem.setUpdateLockRowSQL("UPDATE {0}LOCKS SET LOCK_NAME = LOCK_NAME WHERE LOCK_NAME = ?");
 		  sem.setTablePrefix(tablePrefix);
 		}
-		
+
 		//http://jira.dotmarketing.net/browse/DOTCMS-6699
 		String driverClass = Config.getStringProperty("QUARTZ_DRIVER_CLASS", "");
 		if(UtilMethods.isSet(driverClass) && driverClass.trim().length()>1){
@@ -137,16 +139,16 @@ public class DotJobStore extends JobStoreCMT {
                 Logger.info(this, e.getMessage());
             }
 		}
-		
+
 		super.initialize(loadHelper, signaler);
 	}
-	
+
 	protected void closeConnection(Connection con) {
 		DataSourceUtils.releaseConnection(con, this.dataSource);
 	}
-	
-	
-	
+
+
+
 
 
 }

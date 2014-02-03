@@ -400,7 +400,8 @@ public class ESIndexAPI {
 	 */
 	public  void moveIndexToLocalNode(String index) throws IOException {
         Client client=new ESClient().getClient();
-        String nodeName="dotCMS_" + Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
+//        String nodeName="dotCMS_" + Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
+        String nodeName="dotCMS_" + APILocator.getServerAPI().readServerId();;
         UpdateSettingsResponse resp=client.admin().indices().updateSettings(
           new UpdateSettingsRequest(index).settings(
                 jsonBuilder().startObject()
