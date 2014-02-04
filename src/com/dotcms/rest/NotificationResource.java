@@ -18,6 +18,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
@@ -94,7 +95,7 @@ public class NotificationResource extends WebResource {
         	notificationJSON.put("message", n.getMessage());
         	notificationJSON.put("type", n.getType().name());
         	notificationJSON.put("level", n.getLevel().name());
-        	notificationJSON.put("time_sent", n.getTimeSent());
+        	notificationJSON.put("time_sent", DateUtil.prettyDateSince(n.getTimeSent()));
         	notificationsJSON.add(notificationJSON);
 		}
 
