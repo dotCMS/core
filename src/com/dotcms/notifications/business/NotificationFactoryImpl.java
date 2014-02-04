@@ -43,15 +43,38 @@ public class NotificationFactoryImpl extends NotificationFactory {
 		CacheLocator.getNewNotificationCache().remove(notification.getUserId());
 	}
 
-	public List<Notification> getAllNotificationsForUser(String userId) throws DotDataException {
-		return getNotificationsForUser(userId, -1, -1);
+	public List<Notification> getNotifications(long offset, long limit) throws DotDataException {
+		return getNotifications(null, offset, limit);
 	}
 
-	public List<Notification> getNotificationsForUser(String userId, long offset, long limit) throws DotDataException {
+	public List<Notification> getAllNotifications(String userId) throws DotDataException {
+		return getNotifications(userId, -1, -1);
+	}
 
+	public Long getNotificationsCount(String userId) throws DotDataException {
+		String userWhere = UtilMethods.isSet(userId)?" user_id = ? ":" 1=1 ";
+		dc.setSQL("select count(*) as count from notification where " + userWhere);
 
-		dc.setSQL(SQLUtil.addLimits("select * from notification where user_id = ?", offset, limit));
-		dc.addParam(userId);
+		if(UtilMethods.isSet(userId)) {
+			dc.addParam(userId);
+		}
+
+		List<Map<String, Object>> results = dc.loadObjectResults();
+		Long count = (Long) results.get(0).get("count");
+		return count;
+	}
+
+	public List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException {
+
+		String userWhere = UtilMethods.isSet(userId)?" user_id = ? ":" 1=1 ";
+		String sql = "select * from notification where " + userWhere + " order by time_sent desc";
+		dc.setSQL( (UtilMethods.isSet(offset)&&offset>-1 && UtilMethods.isSet(limit) && limit>0)
+				? SQLUtil.addLimits(sql, offset, limit)
+						: sql);
+
+		if(UtilMethods.isSet(userId)) {
+			dc.addParam(userId);
+		}
 
 		List<Map<String, Object>> results = dc.loadObjectResults();
 		List<Notification> notifications = new ArrayList<Notification>();
@@ -72,8 +95,13 @@ public class NotificationFactoryImpl extends NotificationFactory {
 	}
 
 	public Long getNewNotificationsCount(String userId)  throws DotDataException {
-		dc.setSQL("select count(*) as count from notification where user_id = ? and was_read = " + DbConnectionFactory.getDBFalse());
-		dc.addParam(userId);
+		String userWhere = UtilMethods.isSet(userId)?" user_id = ? ":" 1=1 ";
+		dc.setSQL("select count(*) as count from notification where " + userWhere + " and was_read = " + DbConnectionFactory.getDBFalse());
+
+		if(UtilMethods.isSet(userId)) {
+			dc.addParam(userId);
+		}
+
 		List<Map<String, Object>> results = dc.loadObjectResults();
 		Long count = (Long) results.get(0).get("count");
 		return count;

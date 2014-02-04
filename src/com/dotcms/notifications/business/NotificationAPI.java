@@ -9,9 +9,15 @@ public interface NotificationAPI {
 
 	void saveNotification(Notification notification) throws DotDataException;
 
-	List<Notification> getAllNotificationsForUser(String userId) throws DotDataException;
+	List<Notification> getNotifications(long offset, long limit) throws DotDataException;
 
-	List<Notification> getNotificationsForUser(String userId, long offset, long limit) throws DotDataException;
+	Long getNotificationsCount(String userId) throws DotDataException;
+
+	Long getNotificationsCount() throws DotDataException;
+
+	List<Notification> getAllNotifications(String userId) throws DotDataException;
+
+	List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException;
 
 	Long getNewNotificationsCount(String userId)  throws DotDataException;
 

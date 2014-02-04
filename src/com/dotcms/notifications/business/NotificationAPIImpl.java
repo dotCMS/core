@@ -20,12 +20,24 @@ public class NotificationAPIImpl implements NotificationAPI {
 		notificationFactory.saveNotification(notification);
 	}
 
-	public List<Notification> getAllNotificationsForUser(String userId) throws DotDataException {
-		return notificationFactory.getAllNotificationsForUser(userId);
+	public List<Notification> getNotifications(long offset, long limit) throws DotDataException {
+		return notificationFactory.getNotifications(offset, limit);
 	}
 
-	public List<Notification> getNotificationsForUser(String userId, long offset, long limit) throws DotDataException {
-		return notificationFactory.getNotificationsForUser(userId, offset, limit);
+	public Long getNotificationsCount() throws DotDataException {
+		return notificationFactory.getNotificationsCount(null);
+	}
+
+	public Long getNotificationsCount(String userId) throws DotDataException {
+		return notificationFactory.getNotificationsCount(userId);
+	}
+
+	public List<Notification> getAllNotifications(String userId) throws DotDataException {
+		return notificationFactory.getAllNotifications(userId);
+	}
+
+	public List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException {
+		return notificationFactory.getNotifications(userId, offset, limit);
 	}
 
 	public Long getNewNotificationsCount(String userId)  throws DotDataException {
