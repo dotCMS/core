@@ -3,10 +3,12 @@ package com.dotcms.rest;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.HeaderParam;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
@@ -40,14 +42,14 @@ public class NotificationResource extends WebResource {
     @GET
     @Path ("/getNotifications/{params:.*}")
     @Produces ("application/json")
-    public Response getNotifications ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+    public Response getNotifications ( @Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam ("params") String params, @HeaderParam("Range") String range ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = init( params, true, request, true );
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
         User user = initData.getUser();
         String limitStr = initData.getParamsMap().get(RESTParams.LIMIT.getValue());
         String offsetStr = initData.getParamsMap().get(RESTParams.OFFSET.getValue());
+        boolean allUsers = initData.getParamsMap().get("allusers")!=null?Boolean.parseBoolean(initData.getParamsMap().get("allusers")):false;
 
         /* Limit and Offset Parameters Handling, if not passed, using default */
 
@@ -70,14 +72,21 @@ public class NotificationResource extends WebResource {
         	// we DON'T want to do anything here, just use default offset
         }
 
+        offset = UtilMethods.isSet(range)?Long.parseLong(range.split("=")[1].split("-")[0]):offset;
+        limit = UtilMethods.isSet(range)?Long.parseLong(range.split("=")[1].split("-")[1]):limit;
+        limit += 1;
+
         JSONArray notificationsJSON = new JSONArray();
 
         NotificationAPI notificationAPI = APILocator.getNotificationAPI();
 
+        // Let's get the total count
+        Long total = notificationAPI.getNotificationsCount();
+
         // Let's mark the new notifications as read
         notificationAPI.markNotificationsAsRead(user.getUserId());
 
-        List<Notification> notifications = notificationAPI.getNotificationsForUser(user.getUserId(), offset, limit);
+        List<Notification> notifications = allUsers?notificationAPI.getNotifications(offset, limit):notificationAPI.getNotifications(user.getUserId(), offset, limit);
 
         for (Notification n : notifications) {
         	JSONObject notificationJSON = new JSONObject();
@@ -89,7 +98,7 @@ public class NotificationResource extends WebResource {
         	notificationsJSON.add(notificationJSON);
 		}
 
-        return responseResource.response( notificationsJSON.toString() );
+        return Response.ok( notificationsJSON.toString()).header("Content-Range", "items " + offset + "-" + limit + "/" + total).build() ;
 
     }
 
