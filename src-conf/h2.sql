@@ -2466,6 +2466,16 @@ create table inode (
    type varchar(64),
    primary key (inode)
 );
+
+create table dist_reindex_lock (dummy int);
+create table dist_lock (dummy int);
+
+
+
+
+
+
+
 alter table analytic_summary_pages add constraint fka1ad33b9ed30e054 foreign key (summary_id) references analytic_summary;
 create index idx_user_comments_1 on user_comments (user_id);
 alter table user_comments add constraint fkdf1b37e85fb51eb foreign key (inode) references inode;
