@@ -142,7 +142,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	_fillStructures: function() {
 		this.structures_select.innerHTML = "";
 		var htmlstr = "<dl>";
-		htmlstr += "<dt>Content Type:</dt>";
+		htmlstr += "<dt><b>Content Type:</b></dt>";
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
 		htmlstr += "<select dojoType='dijit.form.FilteringSelect' onChange='displayStructure(this.value)'  id='structuresSelect+"+this.dialogCounter+"' required='false' name='structuresSelect+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.structureInode+"'>";
@@ -170,10 +170,14 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_fillLanguages: function(data) {
+		if(dijit.byId('langcombo+'+this.dialogCounter)){
+			console.log("destroying:langcombo+" + this.dialogCounter)
+			dijit.destroy(dijit.byId('langcombo+'+this.dialogCounter));
+		}
 		this.availableLanguages = data;
 		this.search_languages_table.innerHTML = "";
 		var htmlstr = "<dl>";
-		htmlstr += "<dt>"+data[0].title+" </dt>";
+		htmlstr += "<dt><b>"+data[0].title+"</b></dt>";
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
 		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown'  id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.contentletLanguageId+"'>";
