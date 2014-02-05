@@ -3,12 +3,6 @@
 <%@page import="com.dotcms.rest.config.RestServiceUtil"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 
-<%-- <%if(request.getAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS)==null){%> --%>
-<!--     <div class="portlet-wrapper"> -->
-<%--         <jsp:include page="/html/portlet/admin/sub_nav.jsp"></jsp:include> --%>
-<!--     </div> -->
-<%-- <%}%> --%>
-
 <script type="text/javascript" >
 dojo.require("dijit.layout.TabContainer");
 dojo.require("dijit.layout.ContentPane");
