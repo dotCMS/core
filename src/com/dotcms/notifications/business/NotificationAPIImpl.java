@@ -20,6 +20,18 @@ public class NotificationAPIImpl implements NotificationAPI {
 		notificationFactory.saveNotification(notification);
 	}
 
+	public Notification findNotification(String notificationId) throws DotDataException {
+		return notificationFactory.findNotification(notificationId);
+	}
+
+	public void deleteNotification(String notificationId) throws DotDataException {
+		notificationFactory.deleteNotification(notificationId);
+	}
+
+	public void deleteNotifications(String userId) throws DotDataException {
+		notificationFactory.deleteNotifications(userId);
+	}
+
 	public List<Notification> getNotifications(long offset, long limit) throws DotDataException {
 		return notificationFactory.getNotifications(offset, limit);
 	}
