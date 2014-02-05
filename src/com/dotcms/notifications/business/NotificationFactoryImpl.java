@@ -34,13 +34,56 @@ public class NotificationFactoryImpl extends NotificationFactory {
 	public void saveNotification(Notification notification) throws DotDataException {
 		dc.setSQL("insert into notification values(?,?,?,?,?,"+TIMESTAMPSQL+")");
 
-		dc.addParam(UUID.randomUUID().toString());
+		if(!UtilMethods.isSet(notification.getId())) {
+			notification.setId(UUID.randomUUID().toString());
+		}
+
+		dc.addParam(notification.getId());
 		dc.addParam(notification.getMessage());
 		dc.addParam(UtilMethods.isSet(notification.getType())?notification.getType().name():NotificationType.GENERIC.name());
 		dc.addParam(notification.getLevel().name());
 		dc.addParam(notification.getUserId());
 		dc.loadResult();
 		CacheLocator.getNewNotificationCache().remove(notification.getUserId());
+	}
+
+	public Notification findNotification(String notificationId) throws DotDataException {
+		dc.setSQL("select * from notification where id = ?");
+		dc.addParam(notificationId);
+
+		Notification n = null;
+		List<Map<String, Object>> results = dc.loadObjectResults();
+
+		if(results!=null && !results.isEmpty()) {
+			Map<String, Object> row = results.get(0);
+			n = new Notification();
+			n.setId((String)row.get("id"));
+			n.setMessage((String)row.get("message"));
+			n.setType(NotificationType.valueOf((String)row.get("notification_type")));
+			n.setLevel(NotificationLevel.valueOf((String)row.get("notification_level")));
+			n.setUserId((String)row.get("user_id"));
+			n.setTimeSent((Date)row.get("time_sent"));
+			n.setWasRead((DbConnectionFactory.isDBTrue(row.get("was_read").toString())));
+		}
+
+		return n;
+	}
+
+	public void deleteNotification(String notificationId) throws DotDataException {
+		dc.setSQL("delete from notification where id = ?");
+		dc.addParam(notificationId);
+		dc.loadObjectResults();
+	}
+
+	public void deleteNotifications(String userId) throws DotDataException {
+		String userWhere = UtilMethods.isSet(userId)?" user_id = ? ":" 1=1 ";
+		dc.setSQL("delete from notification where " + userWhere);
+
+		if(UtilMethods.isSet(userId)) {
+			dc.addParam(userId);
+		}
+
+		dc.loadObjectResults();
 	}
 
 	public List<Notification> getNotifications(long offset, long limit) throws DotDataException {
@@ -108,6 +151,8 @@ public class NotificationFactoryImpl extends NotificationFactory {
 	}
 
 	public void markNotificationsAsRead(String userId) throws DotDataException {
+		if(!UtilMethods.isSet(userId)) return;
+
 		dc.setSQL("update notification set was_read = "+ DbConnectionFactory.getDBTrue()
 				+ " where was_read = "+ DbConnectionFactory.getDBFalse()+" and user_id = ?");
 		dc.addParam(userId);
