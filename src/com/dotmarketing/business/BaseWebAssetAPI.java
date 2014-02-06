@@ -311,6 +311,12 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			}
 			else if(currWebAsset instanceof Link)
 			{
+				VersionInfo vi = APILocator.getVersionableAPI().getVersionInfo(currWebAsset.getIdentifier());
+
+				if(!UtilMethods.isSet(vi)) {
+					auxVersionInfo = getVersionInfo(currWebAsset, identifier,
+							webAssetList, "links");
+				}
 
 				VirtualLinksCache.removePathFromCache(((Link)currWebAsset).getUrl());
 			}
@@ -318,22 +324,10 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			{
 
 				VersionInfo vi = APILocator.getVersionableAPI().getVersionInfo(currWebAsset.getIdentifier());
-				if(!UtilMethods.isSet(vi)) {
-					Class clazz = UtilMethods.getVersionInfoType("file_asset");
-					HibernateUtil dh = new HibernateUtil(FileAssetVersionInfo.class);
-		            dh.setQuery("from "+clazz.getName()+" where identifier=?");
-		            dh.setParam(identifier);
-		            Logger.debug(BaseWebAssetAPI.class, "getVersionInfo query: "+dh.getQuery());
-		            auxVersionInfo=(VersionInfo)dh.load();
 
-		            if(UtilMethods.isSet(auxVersionInfo) && UtilMethods.isSet(auxVersionInfo.getIdentifier())) {
-			            clazz = InodeUtils.getClassByDBType("file_asset");
-			            dh = new HibernateUtil(clazz);
-			    		dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='file_asset' order by mod_date desc");
-			    		dh.setParam(currWebAsset.getIdentifier());
-			    		Logger.debug(BaseWebAssetAPI.class, "findAllVersions query: " + dh.getQuery());
-			    		webAssetList.addAll( (List<Versionable>) dh.list() );
-		            }
+				if(!UtilMethods.isSet(vi)) {
+					auxVersionInfo = getVersionInfo(currWebAsset, identifier,
+							webAssetList, "file_asset");
 				}
 
 				APILocator.getFileAPI().invalidateCache((File)currWebAsset);
@@ -407,6 +401,28 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			throw ex;
 		}
 		return returnValue;
+	}
+
+	private static VersionInfo getVersionInfo(WebAsset currWebAsset,
+			Identifier identifier, List<Versionable> webAssetList, String type)
+			throws DotHibernateException {
+		VersionInfo auxVersionInfo;
+		Class clazz = UtilMethods.getVersionInfoType(type);
+		HibernateUtil dh = new HibernateUtil(clazz);
+		dh.setQuery("from "+clazz.getName()+" where identifier=?");
+		dh.setParam(identifier);
+		Logger.debug(BaseWebAssetAPI.class, "getVersionInfo query: "+dh.getQuery());
+		auxVersionInfo=(VersionInfo)dh.load();
+
+		if(UtilMethods.isSet(auxVersionInfo) && UtilMethods.isSet(auxVersionInfo.getIdentifier())) {
+		    clazz = InodeUtils.getClassByDBType(type);
+		    dh = new HibernateUtil(clazz);
+			dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='"+type+"' order by mod_date desc");
+			dh.setParam(currWebAsset.getIdentifier());
+			Logger.debug(BaseWebAssetAPI.class, "findAllVersions query: " + dh.getQuery());
+			webAssetList.addAll( (List<Versionable>) dh.list() );
+		}
+		return auxVersionInfo;
 	}
 
 	@SuppressWarnings("unchecked")
