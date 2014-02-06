@@ -3283,7 +3283,7 @@ create index contentlet_lang on contentlet (language_id);
 -- end of fk indicies --
 
 -- Notifications Table
-create table notification(id varchar(36) NOT NULL,message text NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar(255) NOT NULL, time_sent TIMESTAMP NOT NULL, was_read bool default false, PRIMARY KEY (id) ));
+create table notification(id varchar(36) NOT NULL,message text NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar(255) NOT NULL, time_sent TIMESTAMP NOT NULL, was_read bool default false, PRIMARY KEY (id) );
 create index idx_not_user ON notification (user_id);
 create index idx_not_read ON notification (was_read);
 
