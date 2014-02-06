@@ -23,10 +23,22 @@ while [ -h "$PRG" ]; do
   fi
 done
 
-# Get directory where we need to run from
 PRGDIR=`dirname "$PRG"`
 
-if [ ! -e $PRGDIR/$JARFILE ] 
+# Read an optional running configuration file
+if [ "x$RUN_CONF" = "x" ]; then
+    RUN_CONF="$PRGDIR/build.conf"
+fi
+if [ -r "$RUN_CONF" ]; then
+    . "$RUN_CONF"
+fi
+
+# Get directory where we need to run from
+AUTO_UPDATER_HOME=`cd "$PRGDIR/../autoupdater" ; pwd`
+TOMCAT_HOME=`cd "$PRGDIR/../$SERVER_FOLDER" ; pwd`
+DOTCMS_HOME=`cd "$PRGDIR/../$HOME_FOLDER" ; pwd`
+
+if [ ! -e $AUTO_UPDATER_HOME/$JARFILE ]
 then  
   echo "Couldn't find $JARFILE. Aborting."
   exit 1
@@ -36,8 +48,8 @@ fi
 CMD_LINE_ARGS=""
 while [ "$1" != "" ]
 do
-        CMD_LINE_ARGS="$CMD_LINE_ARGS $1"
-        shift
+    CMD_LINE_ARGS="$CMD_LINE_ARGS $1"
+    shift
 done
 
 
@@ -46,10 +58,16 @@ if echo "$CMD_LINE_ARGS" | grep -q -- "$SOURCE"; then
   echo "home parameter not found setting default";
 else
   DIRECTORY=$(cd `dirname $0` && pwd)
-  cd $DIRECTORY/..
-  DIRECTORY2=$(cd `dirname $0` && pwd)
-  cd $DIRECTORY
-  CMD_LINE_ARGS="$CMD_LINE_ARGS -home $DIRECTORY2"
+  BASE_FOLDER=`cd "$DIRECTORY/.." ; pwd`
+  CMD_LINE_ARGS="$CMD_LINE_ARGS -home $BASE_FOLDER"
+fi
+
+SOURCE="-dotcms_home"
+if echo "$CMD_LINE_ARGS" | grep -q -- "$SOURCE"; then
+  echo "dotcms_home parameter not found setting default";
+else
+  #CMD_LINE_ARGS="$CMD_LINE_ARGS -dotcms_home $DOTCMS_HOME"
+  CMD_LINE_ARGS="$CMD_LINE_ARGS -dotcms_home $HOME_FOLDER"
 fi
 
 SOURCE="-url"
@@ -63,24 +81,24 @@ fi
 echo "Running from $PRGDIR"
 
 #Make sure we're clear to start
-if [ -e $PRGDIR/$NEWFILE ]
+if [ -e $AUTO_UPDATER_HOME/$NEWFILE ]
 then
   echo "$NEWFILE exists, it was most likely left by a failed attempt.  Please remove before starting again. Aborting."
   exit 1
 fi
 
-$JAVA_HOME/bin/java -jar $PRGDIR/autoUpdater.jar $CMD_LINE_ARGS
+$JAVA_HOME/bin/java -jar $AUTO_UPDATER_HOME/autoUpdater.jar $CMD_LINE_ARGS
 
 
-if [ -e $PRGDIR/$NEWFILE ]
+if [ -e $AUTO_UPDATER_HOME/$NEWFILE ]
 then
   # Make sure file is not zero length
-  if [ -s $PRGDIR/$NEWFILE ]
+  if [ -s $AUTO_UPDATER_HOME/$NEWFILE ]
   then
     echo "$NEWFILE exists, updating agent."
-    mv $PRGDIR/$JARFILE $PRGDIR/$OLDFILE
-    mv $PRGDIR/$NEWFILE $PRGDIR/$JARFILE
+    mv $AUTO_UPDATER_HOME/$JARFILE $PRGDIR/$OLDFILE
+    mv $AUTO_UPDATER_HOME/$NEWFILE $PRGDIR/$JARFILE
     echo "autoUpdater upgraded, restarting process."
-    $JAVA_HOME/bin/java -jar $PRGDIR/autoUpdater.jar $CMD_LINE_ARGS
+    $JAVA_HOME/bin/java -jar $AUTO_UPDATER_HOME/autoUpdater.jar $CMD_LINE_ARGS
   fi
 fi
