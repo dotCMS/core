@@ -79,7 +79,7 @@ function showNotifications(all, refreshOnly) {
 					    id: 'notificationGrid',
 					    store: notificationStore,
 					    structure: notificationlayout,
-					    noDataMessage:"No data!!",
+					    noDataMessage:'<%= LanguageUtil.get(pageContext, "notifications_no_notifications") %>',
 					    rowsPerPage: 25,
 					    height: "400px",
 					    style: "max-height: 400px; font-size:10px;",
