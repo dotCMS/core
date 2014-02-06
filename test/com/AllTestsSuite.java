@@ -3,6 +3,7 @@ package com;
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
+import com.dotcms.notification.business.NotificationAPITest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
 import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
@@ -26,7 +27,6 @@ import com.dotmarketing.portlets.templates.business.TemplateAPITest;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest;
 import com.dotmarketing.plugin.PluginMergerTest;
 import com.dotmarketing.webdav.WebDavTest;
-
 import com.dotcms.repackage.junit_4_8_1.org.junit.runner.RunWith;
 import com.dotcms.repackage.junit_4_8_1.org.junit.runners.Suite;
 
@@ -61,7 +61,8 @@ import com.dotcms.repackage.junit_4_8_1.org.junit.runners.Suite;
     RoleAPITest.class,
     FolderAPITest.class,
     HostAPITest.class,
-    WorkflowSearcherTest.class
+    WorkflowSearcherTest.class,
+    NotificationAPITest.class
 })
 public class AllTestsSuite {
 

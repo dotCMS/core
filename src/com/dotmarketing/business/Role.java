@@ -60,7 +60,7 @@ public class Role implements Serializable,Comparable<Role> {
 		this.name = name;
 	}
 	public String getDescription() {
-		return description;
+		return description!=null?description:"";
 	}
 	public void setDescription(String descriptin) {
 		this.description = descriptin;

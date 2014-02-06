@@ -1048,7 +1048,7 @@ public class ContentletAjax {
 			.replaceAll("\\+working:[a-zA-Z]*","").trim();
 		String luceneQueryToShow= luceneQuery.toString();
 		counters.put("luceneQueryRaw", luceneQueryToShow);
-		counters.put("luceneQueryFrontend", luceneQueryToShow2);
+		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","${esc.quote}"));
 		counters.put("sortByUF", orderBy);
 		counters.put("expiredInodes", expiredInodes);
 

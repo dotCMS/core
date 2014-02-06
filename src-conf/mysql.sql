@@ -3125,6 +3125,11 @@ CREATE TABLE cluster_server_uptime(id varchar(36),server_id varchar(36) NOT NULL
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 
+-- Notifications Table
+create table notification(id varchar(36) NOT NULL,message text NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar(255) NOT NULL, time_sent DATETIME NOT NULL, was_read bit default 0, PRIMARY KEY (id));
+create index idx_not_user ON notification (user_id);
+create index idx_not_read ON notification (was_read);
+
 -- indices for version_info tables on version_ts
 create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts);
 create index idx_container_vi_version_ts on container_version_info(version_ts);
@@ -3132,3 +3137,5 @@ create index idx_template_vi_version_ts on template_version_info(version_ts);
 create index idx_htmlpage_vi_version_ts on htmlpage_version_info(version_ts);
 create index idx_fileasset_vi_version_ts on fileasset_version_info(version_ts);
 create index idx_link_vi_version_ts on link_version_info(version_ts);
+
+
