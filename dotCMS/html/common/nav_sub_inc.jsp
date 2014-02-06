@@ -545,7 +545,7 @@ dojo.require("dojo.cookie");
 
 <!-- Start Notifications Area -->
 
-<%@ include file="/html/common/notifications.jsp" %>
+<%@ include file="/html/common/notifications_inc.jsp" %>
 
 <!-- End Notifications Area -->
 
