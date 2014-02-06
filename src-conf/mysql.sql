@@ -1085,7 +1085,7 @@ CREATE TABLE QRTZ_CALENDARS
 
 CREATE TABLE QRTZ_PAUSED_TRIGGER_GRPS
   (
-    TRIGGER_GROUP  VARCHAR(80) NOT NULL, 
+    TRIGGER_GROUP  VARCHAR(80) NOT NULL,
     PRIMARY KEY (TRIGGER_GROUP)
 );
 
@@ -1116,7 +1116,7 @@ CREATE TABLE QRTZ_SCHEDULER_STATE
 
 CREATE TABLE QRTZ_LOCKS
   (
-    LOCK_NAME  VARCHAR(40) NOT NULL, 
+    LOCK_NAME  VARCHAR(40) NOT NULL,
     PRIMARY KEY (LOCK_NAME)
 );
 
@@ -1229,7 +1229,7 @@ CREATE TABLE QRTZ_EXCL_CALENDARS
 
 CREATE TABLE QRTZ_EXCL_PAUSED_TRIGGER_GRPS
   (
-    TRIGGER_GROUP  VARCHAR(80) NOT NULL, 
+    TRIGGER_GROUP  VARCHAR(80) NOT NULL,
     PRIMARY KEY (TRIGGER_GROUP)
 );
 
@@ -1260,7 +1260,7 @@ CREATE TABLE QRTZ_EXCL_SCHEDULER_STATE
 
 CREATE TABLE QRTZ_EXCL_LOCKS
   (
-    LOCK_NAME  VARCHAR(40) NOT NULL, 
+    LOCK_NAME  VARCHAR(40) NOT NULL,
     PRIMARY KEY (LOCK_NAME)
 );
 
@@ -3123,3 +3123,9 @@ CREATE TABLE cluster_server(server_id varchar(36), cluster_id varchar(36) NOT NU
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id varchar(36),server_id varchar(36) NOT NULL, startup datetime, heartbeat datetime, PRIMARY KEY (id)) ;
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
+
+
+-- Notifications Table
+create table notification(id varchar(36) NOT NULL,message text NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar(255) NOT NULL, time_sent DATETIME NOT NULL, was_read bit default 0, PRIMARY KEY (id));
+create index idx_not_user ON notification (user_id);
+create index idx_not_read ON notification (was_read);
