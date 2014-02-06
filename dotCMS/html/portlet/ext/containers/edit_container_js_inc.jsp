@@ -648,6 +648,11 @@
 			alert('Must Select a Content Type');
 			return;
 		}
+		
+		if(aceMultiEditor[structureInode] != null){
+			alert('Content type already added');
+			return;
+		}
 
 		var tc = dijit.byId("tabContainer");
 		var cp1 = new dijit.layout.ContentPane({
