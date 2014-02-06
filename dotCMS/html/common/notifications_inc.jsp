@@ -1,3 +1,6 @@
+<%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.liferay.portal.model.User"%>
+
 <style>
 .notification-flyout{position:absolute;right:30px;top:34px;width:425px;font-size: 85%;border:1px solid #d0d0d0;border-top:0;background:#fff;z-index:9998;-moz-box-shadow:0px 2px 10px rgba(0, 0, 0, 0.2);-webkit-box-shadow:0px 2px 10px rgba(0, 0, 0, 0.2);box-shadow:0px 2px 10px rgba(0, 0, 0, 0.2);}
 
@@ -76,6 +79,7 @@ function showNotifications(all, refreshOnly) {
 					    id: 'notificationGrid',
 					    store: notificationStore,
 					    structure: notificationlayout,
+					    noDataMessage:"No data!!",
 					    rowsPerPage: 25,
 					    height: "400px",
 					    style: "max-height: 400px; font-size:10px;",
@@ -121,7 +125,9 @@ function hideNotifications() {
 
 <div id="notificationsDiv" class="notification-flyout" style="display:none;">
 	<div class="notification-header">
-	 	<% if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) { %>
+	 	<%
+
+	 	if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) { %>
 			<div class="rfloat" id="userFilter">
 				<a href="#" id="onlyMe" onclick="showNotifications(false,true)" class="" ><%= LanguageUtil.get(pageContext, "notifications_show_only_me") %></a>
 				&nbsp;
