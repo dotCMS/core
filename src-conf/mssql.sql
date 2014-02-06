@@ -995,7 +995,7 @@ CREATE TABLE [dbo].[QRTZ_CRON_TRIGGERS] (
   [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
   [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
   [CRON_EXPRESSION] [VARCHAR] (80)  NOT NULL ,
-  [TIME_ZONE_ID] [VARCHAR] (80) 
+  [TIME_ZONE_ID] [VARCHAR] (80)
 ) ON [PRIMARY]
 GO
 
@@ -1011,12 +1011,12 @@ CREATE TABLE [dbo].[QRTZ_FIRED_TRIGGERS] (
   [JOB_NAME] [VARCHAR] (80)  NULL ,
   [JOB_GROUP] [VARCHAR] (80)  NULL ,
   [IS_STATEFUL] [VARCHAR] (1)  NULL ,
-  [REQUESTS_RECOVERY] [VARCHAR] (1)  NULL 
+  [REQUESTS_RECOVERY] [VARCHAR] (1)  NULL
 ) ON [PRIMARY]
 GO
 
 CREATE TABLE [dbo].[QRTZ_PAUSED_TRIGGER_GRPS] (
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL 
+  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL
 ) ON [PRIMARY]
 GO
 
@@ -1028,7 +1028,7 @@ CREATE TABLE [dbo].[QRTZ_SCHEDULER_STATE] (
 GO
 
 CREATE TABLE [dbo].[QRTZ_LOCKS] (
-  [LOCK_NAME] [VARCHAR] (40)  NOT NULL 
+  [LOCK_NAME] [VARCHAR] (40)  NOT NULL
 ) ON [PRIMARY]
 GO
 
@@ -1251,7 +1251,7 @@ CREATE TABLE [dbo].[QRTZ_EXCL_CRON_TRIGGERS] (
   [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
   [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
   [CRON_EXPRESSION] [VARCHAR] (80)  NOT NULL ,
-  [TIME_ZONE_ID] [VARCHAR] (80) 
+  [TIME_ZONE_ID] [VARCHAR] (80)
 ) ON [PRIMARY]
 GO
 
@@ -1267,12 +1267,12 @@ CREATE TABLE [dbo].[QRTZ_EXCL_FIRED_TRIGGERS] (
   [JOB_NAME] [VARCHAR] (80)  NULL ,
   [JOB_GROUP] [VARCHAR] (80)  NULL ,
   [IS_STATEFUL] [VARCHAR] (1)  NULL ,
-  [REQUESTS_RECOVERY] [VARCHAR] (1)  NULL 
+  [REQUESTS_RECOVERY] [VARCHAR] (1)  NULL
 ) ON [PRIMARY]
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_PAUSED_TRIGGER_GRPS] (
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL 
+  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL
 ) ON [PRIMARY]
 GO
 
@@ -1284,7 +1284,7 @@ CREATE TABLE [dbo].[QRTZ_EXCL_SCHEDULER_STATE] (
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_LOCKS] (
-  [LOCK_NAME] [VARCHAR] (40)  NOT NULL 
+  [LOCK_NAME] [VARCHAR] (40)  NOT NULL
 ) ON [PRIMARY]
 GO
 
@@ -3429,3 +3429,10 @@ ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id)
 CREATE TABLE cluster_server_uptime(id varchar(36) NOT NULL, server_id varchar(36) NOT NULL, startup datetime null, heartbeat datetime null, PRIMARY KEY (id) );
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
+-- indices for version_info tables on version_ts
+create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts);
+create index idx_container_vi_version_ts on container_version_info(version_ts);
+create index idx_template_vi_version_ts on template_version_info(version_ts);
+create index idx_htmlpage_vi_version_ts on htmlpage_version_info(version_ts);
+create index idx_fileasset_vi_version_ts on fileasset_version_info(version_ts);
+create index idx_link_vi_version_ts on link_version_info(version_ts);
