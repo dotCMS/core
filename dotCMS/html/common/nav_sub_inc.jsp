@@ -211,12 +211,15 @@
 
 
 <script type="text/javascript" src="/dwr/interface/UserAjax.js"></script>
-
+<style type="text/css">
+@import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getVersion() %>";
+</style>
 <script type="text/javascript">
 
 dojo.require("dojo.cookie");
 
     dojo.addOnLoad (function () {
+
         dojo.connect(dijit.byId('portal_login_as_user'), 'onChange',
             function (val) {
                 if(val != '') {
@@ -245,7 +248,16 @@ dojo.require("dojo.cookie");
                 }%>
 
 
+         // check for new notifications now and every N seconds
+        checkNotifications();
+
+         window.setInterval(function(){
+			checkNotifications();
+		}, 5000);
+
     });
+
+
 
     function clearErrorMsg()
     {
@@ -518,7 +530,8 @@ dojo.require("dojo.cookie");
         <% } %>
 
    		<a id="autoUpdaterLink" style="display:none;" class="goEnterpriseLink"  href="javascript: showAutoUpdaterPopUp();"><span class="exclamation-red"></span><%= LanguageUtil.get(pageContext, "Update-available") %></a>
-
+		<!-- User Notifications -->
+			<a href="#" id="hasNotifications" onclick="showNotifications();" ><span id="notificationsIcon" class="hostStoppedIcon"></a>
 		<!-- User Actions -->
 		<% if (request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) == null) { %>
 			<a href="#" id="account-trigger" onclick="toggleAccount();" class="trigger-off"><%=user.getFullName()%></a>
@@ -530,6 +543,11 @@ dojo.require("dojo.cookie");
 
 <!-- End Site Tools -->
 
+<!-- Start Notifications Area -->
+
+<%@ include file="/html/common/notifications.jsp" %>
+
+<!-- End Notifications Area -->
 
 <!-- User Info Drop Down -->
 
