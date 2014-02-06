@@ -8,6 +8,8 @@ import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
+import com.dotcms.notifications.business.NotificationFactory;
+import com.dotcms.notifications.business.NotificationFactoryImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
 import com.dotcms.publisher.assets.business.PushedAssetsFactoryImpl;
 import com.dotcms.publisher.bundle.business.BundleFactory;
@@ -202,6 +204,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (ServerFactory) getInstance(FactoryIndex.SERVER_FACTORY);
     }
 
+    public static NotificationFactory getNotificationFactory(){
+        return (NotificationFactory) getInstance(FactoryIndex.NOTIFICATION_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -267,7 +273,8 @@ enum FactoryIndex
 	ENVIRONMENT_FACTORY,
 	BUNDLE_FACTORY,
 	PUSHED_ASSETS_FACTORY,
-	SERVER_FACTORY;
+	SERVER_FACTORY,
+	NOTIFICATION_FACTORY;
 
 
 	Object create() {
@@ -304,6 +311,7 @@ enum FactoryIndex
             case BUNDLE_FACTORY: return new BundleFactoryImpl();
             case PUSHED_ASSETS_FACTORY: return new PushedAssetsFactoryImpl();
             case SERVER_FACTORY: return new ServerFactoryImpl();
+            case NOTIFICATION_FACTORY: return new NotificationFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}
