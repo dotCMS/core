@@ -66,7 +66,6 @@ SOURCE="-dotcms_home"
 if echo "$CMD_LINE_ARGS" | grep -q -- "$SOURCE"; then
   echo "dotcms_home parameter not found setting default";
 else
-  #CMD_LINE_ARGS="$CMD_LINE_ARGS -dotcms_home $DOTCMS_HOME"
   CMD_LINE_ARGS="$CMD_LINE_ARGS -dotcms_home $HOME_FOLDER"
 fi
 
@@ -89,6 +88,8 @@ fi
 
 $JAVA_HOME/bin/java -jar $AUTO_UPDATER_HOME/autoUpdater.jar $CMD_LINE_ARGS
 
+#echo "************************"
+#echo "$AUTO_UPDATER_HOME/$NEWFILE"
 
 if [ -e $AUTO_UPDATER_HOME/$NEWFILE ]
 then
@@ -96,8 +97,8 @@ then
   if [ -s $AUTO_UPDATER_HOME/$NEWFILE ]
   then
     echo "$NEWFILE exists, updating agent."
-    mv $AUTO_UPDATER_HOME/$JARFILE $PRGDIR/$OLDFILE
-    mv $AUTO_UPDATER_HOME/$NEWFILE $PRGDIR/$JARFILE
+    mv $AUTO_UPDATER_HOME/$JARFILE $AUTO_UPDATER_HOME/$OLDFILE
+    mv $AUTO_UPDATER_HOME/$NEWFILE $AUTO_UPDATER_HOME/$JARFILE
     echo "autoUpdater upgraded, restarting process."
     $JAVA_HOME/bin/java -jar $AUTO_UPDATER_HOME/autoUpdater.jar $CMD_LINE_ARGS
   fi
