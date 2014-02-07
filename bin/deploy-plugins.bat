@@ -24,6 +24,5 @@ echo Using DOTCMS_HOME:   %DOTCMS_HOME%
 echo Using JAVA_HOME:       %JAVA_HOME%
 
 cd "%DOTCMS_HOME%"
-%JAVA_HOME%/bin/java -jar "%DOTCMS_HOME%\bin\ant\ant-launcher.jar" deploy-plugins
+%JAVA_HOME%/bin/java -jar "%DOTCMS_HOME%\bin\ant\ant-launcher.jar" -buildfile %DOTCMS_HOME%\bin\ant\build.xml deploy-plugins
 cd "%CURRENT_DIR%"
-

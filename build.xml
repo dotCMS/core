@@ -1084,7 +1084,7 @@
 	<copy file="${src.dir}/com/dotcms/autoupdater/messages.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/messages.properties" />
 </target>
 
-<target name="jar-autoupdater" depends="compile-autoupdater,build-autoupdater-classpath" description="Generates autoUpdater.jar in the 'autoupdater/dist' directory.">
+<target name="jar-autoupdater" depends="clean-autoupdater,compile-autoupdater,build-autoupdater-classpath" description="Generates autoUpdater.jar in the 'autoupdater/dist' directory.">
 		<jar jarfile="${dist.autoupdater}/autoUpdater.jar" basedir="${build.autoupdater}">
 			<manifest>
 				<attribute name="Main-Class" value="com.dotcms.autoupdater.UpdateAgent"/>
@@ -1203,12 +1203,12 @@
     <target name="custom-dist-war" depends="setup-deploy-location" description="builds dotCMS as a war">
 
         <!--Clean-up-->
-        <delete dir="WAR"/>
-        <mkdir dir="WAR"/>
+        <delete dir="../../WAR"/>
+        <mkdir dir="../../WAR"/>
 
         <!--Create the war-->
-        <war destfile="WAR/dotcms.war" webxml="${target.root}/WEB-INF/web.xml">
-            <fileset dir="${target.root}">
+        <war destfile="../../WAR/dotcms.war" webxml="${basedir}/../../${target.root}/WEB-INF/web.xml">
+            <fileset dir="${basedir}/../../${target.root}">
                 <exclude name="WEB-INF/web.xml"/>
                 <exclude name="META-INF/**"/>
                 <exclude name="**/*.db"/>
