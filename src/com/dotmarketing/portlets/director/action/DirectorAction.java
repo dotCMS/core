@@ -461,6 +461,7 @@ public class DirectorAction extends DotPortletAction {
 						hasPermissionOnContainer = true;
 					
 					boolean hasPermissionsOnPage = perAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, user, false);
+					boolean duplicateContentCheck  = false;
 					
 					if(!hasPermissionOnContainer || !hasPermissionsOnPage) {
 						throw new DotSecurityException("User has no permission to add content on container = " + req.getParameter("container") + " on page = " + req.getParameter("htmlPage"));
@@ -473,12 +474,22 @@ public class DirectorAction extends DotPortletAction {
 	
 	                if (InodeUtils.isSet(identifier.getInode()) && InodeUtils.isSet(htmlPageIdentifier.getInode()) && InodeUtils.isSet(containerIdentifier.getInode())) {
 	                    MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(),containerIdentifier.getInode(),identifier.getInode());
-	                    MultiTreeFactory.saveMultiTree(mTree);
+	                    java.util.List<MultiTree> treeList=  MultiTreeFactory.getMultiTree(htmlPage, container);
+	                    for (int i = 0; i < treeList.size(); i++) {
+	                    	if(treeList.get(i).getChild().equals(identifier.getInode())){
+	                    	duplicateContentCheck = true;
+	                    	session.setAttribute("duplicatedErrorMessage","Content already exists in the same container on the page");
+	                    	}
+	                    	
+	                    }
+	                    if(!duplicateContentCheck){
+	                    	MultiTreeFactory.saveMultiTree(mTree);
 	                    
-	    				//Updating the last mod user and last mod date of the page
-	                    htmlPage.setModDate(new Date());
-	                    htmlPage.setModUser(user.getUserId());
-	    				HibernateUtil.saveOrUpdate(htmlPage);
+	                    	//Updating the last mod user and last mod date of the page
+	                    	htmlPage.setModDate(new Date());
+	                    	htmlPage.setModUser(user.getUserId());
+	                    	HibernateUtil.saveOrUpdate(htmlPage);
+	                    }
 	
 	                } else {
 	                    Logger.error(this, "Error found trying to associate the contentlet inode: " + contentlet.getInode() + "(iden: " + identifier.getInode() + ") " +

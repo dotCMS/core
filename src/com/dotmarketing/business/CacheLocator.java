@@ -5,9 +5,10 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.JChannel;
-
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.notifications.business.NewNotificationCache;
+import com.dotcms.notifications.business.NewNotificationCacheImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
@@ -241,6 +242,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (PushedAssetsCache)getInstance(CacheIndex.PushedAssets);
 	}
 
+	public static NewNotificationCache getNewNotificationCache() {
+		return (NewNotificationCache)getInstance(CacheIndex.NewNotification);
+	}
+
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -322,7 +327,8 @@ enum CacheIndex
 	Indicies("Indicies"),
 	NavTool("Navigation Tool"),
 	PublishingEndPoint("PublishingEndPoint Cache"),
-	PushedAssets("PushedAssets Cache");
+	PushedAssets("PushedAssets Cache"),
+	NewNotification("NewNotification Cache");
 
 	Cachable create() {
 		switch(this) {
@@ -357,6 +363,7 @@ enum CacheIndex
       	case NavTool: return new NavToolCacheImpl();
       	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
       	case PushedAssets: return new PushedAssetsCacheImpl();
+      	case NewNotification: return new NewNotificationCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
