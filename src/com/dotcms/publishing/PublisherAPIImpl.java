@@ -60,26 +60,21 @@ public class PublisherAPIImpl implements PublisherAPI {
 				}
 			}
 
-            //Before to build the bundle lets make sure it wasn't already created
-            File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + config.getId() + ".tar.gz" );
-            if ( !compressedBundle.exists() ) {
+            // Run bundlers
+            File bundleRoot = BundlerUtil.getBundleRoot( config );
 
-                // Run bundlers
-                File bundleRoot = BundlerUtil.getBundleRoot( config );
+            BundlerUtil.writeBundleXML( config );
+            for ( Class<IBundler> c : bundlers ) {
 
-                BundlerUtil.writeBundleXML( config );
-                for ( Class<IBundler> c : bundlers ) {
-
-                    IBundler bundler = c.newInstance();
-                    confBundlers.add( bundler );
-                    bundler.setConfig( config );
-                    BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
-                    status.addToBs( bs );
-                    //Generate the bundler
-                    bundler.generate( bundleRoot, bs );
-                }
-                config.setBundlers( confBundlers );
+            	IBundler bundler = c.newInstance();
+            	confBundlers.add( bundler );
+            	bundler.setConfig( config );
+            	BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
+            	status.addToBs( bs );
+            	//Generate the bundler
+            	bundler.generate( bundleRoot, bs );
             }
+            config.setBundlers( confBundlers );
 
 			// run publishers
 			for (Publisher p : pubs) {
