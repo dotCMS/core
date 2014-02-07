@@ -402,8 +402,21 @@
 
      <!--  display -->
         <% if(UtilMethods.isSet(value)){
-            java.io.File fileValue = (java.io.File)value;
+        	try{
+            	java.io.File fileValue = (java.io.File)value;
                 fileName = fileValue.getName();
+        	}
+        	
+        	catch(Exception e){
+        		Logger.error(this.getClass(), "-----------------------------------");
+        		Logger.error(this.getClass(), e.getMessage());
+        		if(e.getCause() !=null){
+        			Logger.error(this.getClass(), e.getCause().getMessage(), e);
+        		}
+        		Logger.error(this.getClass(), "crappy value=" + value);
+        		Logger.error(this.getClass(), "-----------------------------------");
+        		fileName = value.toString();
+        	}
                 %>
 
 
