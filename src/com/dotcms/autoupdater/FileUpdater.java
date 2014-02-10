@@ -105,27 +105,27 @@ public class FileUpdater {
 
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //Now copy back the assets contents
-            logger.debug( "Copying back backed assets folder..." );
             String assets = "assets";
-            File assetsFolder = new File( backUpPath + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER + File.separator + assets );
-            File destFolder = new File( dotserverPath + File.separator + assets );
+            File assetsFolder = new File( backUpPath + File.separator + dotcmsHome + File.separator + assets );
+            File destFolder = new File( distributionHome + File.separator + dotcmsHome + File.separator + assets );
+            logger.debug( "Copying back backed assets folder: " + assetsFolder.getAbsolutePath() + " to: " + destFolder.getAbsolutePath() );
             //Copying using hardlinks
             FileUtil.copyDirectory( assetsFolder, destFolder );
 
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //Now copy back the dotsecure contents
-            logger.debug( "Copying back backed dotsecure folder..." );
             String dotsecure = "dotsecure";
-            File dotsecureFolder = new File( backUpPath + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER + File.separator + dotsecure );
-            destFolder = new File( dotserverPath + File.separator + dotsecure );
+            File dotsecureFolder = new File( backUpPath + File.separator + dotcmsHome + File.separator + dotsecure );
+            destFolder = new File( distributionHome + File.separator + dotcmsHome + File.separator + dotsecure );
+            logger.debug( "Copying back backed dotsecure folder: " + dotsecureFolder.getAbsolutePath() + " to: " + destFolder.getAbsolutePath() );
             //Copying using hardlinks
             FileUtil.copyDirectory( dotsecureFolder, destFolder );
 
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //Now copy back the plugins
-            logger.debug( "Copying back backed plugins..." );
             File pluginsFolder = new File( backUpPath + File.separator + UpdateAgent.FOLDER_HOME_PLUGINS );
             destFolder = new File( pluginsPath );
+            logger.debug( "Copying back backed plugins folder: " + pluginsFolder.getAbsolutePath() + " to: " + destFolder.getAbsolutePath() );
             /*
              Copying using hardlinks, basically it will put back to the plugins folder the backed plugins.
              The copyDirectory method will NOT override any file, so updated files will be keep it.
