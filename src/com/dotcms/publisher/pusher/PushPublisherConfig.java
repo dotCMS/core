@@ -21,7 +21,8 @@ public class PushPublisherConfig extends PublisherConfig {
 		LINKS,
 		RELATIONSHIPS,
 		CATEGORIES,
-		WORKFLOWS
+		WORKFLOWS,
+		LANGUAGES
 	}
 
 	private Operation operation;
@@ -156,6 +157,29 @@ public class PushPublisherConfig extends PublisherConfig {
 		return (Set<String>) get(AssetTypes.LINKS.name());
 
 	}
+
+	@SuppressWarnings("unchecked")
+	public Set<String> getWorkflows() {
+		if(get(AssetTypes.WORKFLOWS.name()) == null){
+			Set<String> workflowsToBuild =   new HashSet<String>();
+			put(AssetTypes.WORKFLOWS.name(), workflowsToBuild);
+		}
+
+		return (Set<String>) get(AssetTypes.WORKFLOWS.name());
+
+	}
+
+	@SuppressWarnings("unchecked")
+	public Set<String> getLanguages() {
+		if(get(AssetTypes.LANGUAGES.name()) == null){
+			Set<String> languagesToBuild =   new HashSet<String>();
+			put(AssetTypes.LANGUAGES.name(), languagesToBuild);
+		}
+
+		return (Set<String>) get(AssetTypes.LANGUAGES.name());
+
+	}
+
 //	@SuppressWarnings("unchecked")
 //	public Set<String> getCategories() {
 //		if(get(AssetTypes.CATEGORIES.name()) == null){
@@ -211,6 +235,10 @@ public class PushPublisherConfig extends PublisherConfig {
 	
 	public void setWorkflows(Set<String> workflows) {
 		put(AssetTypes.WORKFLOWS.name(), workflows);
+	}
+
+	public void setLanguages(Set<String> languages) {
+		put(AssetTypes.LANGUAGES.name(), languages);
 	}
 //	public void setCategories(Set<String> categories){
 //		put(AssetTypes.CATEGORIES.name(),categories);
