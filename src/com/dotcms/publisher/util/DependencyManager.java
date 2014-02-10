@@ -1,6 +1,7 @@
 package com.dotcms.publisher.util;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ public class DependencyManager {
 	private DependencySet links;
 	private DependencySet relationships;
 	private DependencySet workflows;
+	private DependencySet languages;
 
 	private Set<String> hostsSet;
 	private Set<String> foldersSet;
@@ -90,6 +92,7 @@ public class DependencyManager {
 		relationships = new DependencySet(config.getId(), "relationship", config.isDownloading(), isPublish);
 		links = new DependencySet(config.getId(),"links",config.isDownloading(), isPublish);
 		workflows = new DependencySet(config.getId(),"workflows",config.isDownloading(), isPublish);
+		languages = new DependencySet(config.getId(),"languages",config.isDownloading(), isPublish);
 
 		// these ones are for being iterated over to solve the asset's dependencies
 		hostsSet = new HashSet<String>();
@@ -221,6 +224,7 @@ public class DependencyManager {
 		config.setLinks(links);
 		config.setRelationships(relationships);
 		config.setWorkflows(workflows);
+		config.setLanguages(languages);
 	}
 
 	/**
@@ -758,6 +762,8 @@ public class DependencyManager {
         	contents.addOrClean( con.getIdentifier(), con.getModDate()); // adding the content (including related)
 			Folder f = APILocator.getFolderAPI().find(con.getFolder(), user, false);
         	folders.addOrClean( con.getFolder(), f.getModDate()); // adding content folder
+
+        	languages.addOrClean(Long.toString(con.getLanguageId()), new Date()); // will be included only when hasn't been sent ever
 
 			try {
 				if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES",false)) {
