@@ -21,6 +21,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HTMLPageBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.LanguageVariablesBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.LinkBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
@@ -299,8 +300,9 @@ public class PushPublisher extends Publisher {
                  */
                 list.add( RelationshipBundler.class );
             }
-            list.add( LanguageBundler.class );
+            list.add( LanguageVariablesBundler.class );
             list.add( WorkflowBundler.class );
+            list.add( LanguageBundler.class );
         }
 
         return list;

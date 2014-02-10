@@ -69,6 +69,7 @@ public class BundlePublisher extends Publisher {
         handlers.add( new HTMLPageHandler( config ) );
 
         handlers.add( new LanguageHandler( config ) );
+        handlers.add( new LanguageVariablesHandler( config ) );
         handlers.add( new ContentHandler( config ) );
         handlers.add( new ContentWorkflowHandler( config ) );
         handlers.add( new OSGIHandler( config ) );
