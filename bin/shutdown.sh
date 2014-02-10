@@ -34,7 +34,7 @@ if [ "x$RUN_CONF" = "x" ]; then
     RUN_CONF="$PRGDIR/build.conf"
 fi
 if [ -r "$RUN_CONF" ]; then
-    . "$RUN_CONF"
+    . "$RUN_CONF" 2>/dev/null
 fi
 
 TOMCAT_HOME=`cd "$PRGDIR/../$SERVER_FOLDER" ; pwd`
