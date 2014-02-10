@@ -1,11 +1,17 @@
 @echo off
 
-if "%OS%" == "Windows_NT" setlocal
+@if not "%ECHO%" == ""  echo %ECHO%
+@if "%OS%" == "Windows_NT" setlocal
+
+if "%OS%" == "Windows_NT" (
+  set "CURRENT_DIR=%~dp0%"
+) else (
+  set CURRENT_DIR=.\
+)
 
 rem Guess DOTCMS_HOME if not defined
-set CURRENT_DIR=%cd%
 if not "%DOTCMS_HOME%" == "" goto gotHome
-set DOTCMS_HOME=%CURRENT_DIR%
+set DOTCMS_HOME=%CURRENT_DIR%..
 if exist "%DOTCMS_HOME%\bin\startup.bat" goto okHome
 cd ..
 set DOTCMS_HOME=%cd%
@@ -24,5 +30,5 @@ echo Using DOTCMS_HOME:   %DOTCMS_HOME%
 echo Using JAVA_HOME:       %JAVA_HOME%
 
 cd "%DOTCMS_HOME%"
-%JAVA_HOME%/bin/java -jar "%DOTCMS_HOME%\bin\ant\ant-launcher.jar" -buildfile %DOTCMS_HOME%\bin\ant\build.xml undeploy-plugins
+"%JAVA_HOME%/bin/java" -jar "%DOTCMS_HOME%\bin\ant\ant-launcher.jar" -buildfile "%DOTCMS_HOME%\bin\ant\build.xml" undeploy-plugins
 cd "%CURRENT_DIR%"

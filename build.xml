@@ -364,9 +364,9 @@
         <replace file="${distribution.bin.output}/build.conf.bat"><!--For windows-->
             <replacefilter token="rem set" value="set"/>
 
-            <replacefilter token="{server.folder}" value="dotserver/tomcat-7.0.42"/>
-            <replacefilter token="{home.folder}" value="dotserver/tomcat-7.0.42/webapps/ROOT"/>
-            <replacefilter token="{dotcms.home}" value="dotserver/tomcat-7.0.42/webapps/ROOT"/>
+            <replacefilter token="{server.folder}" value="dotserver\tomcat-7.0.42"/>
+            <replacefilter token="{home.folder}" value="dotserver\tomcat-7.0.42\webapps\ROOT"/>
+            <replacefilter token="{dotcms.home}" value="dotserver\tomcat-7.0.42\webapps\ROOT"/>
         </replace>
 
         <copy file="build.xml" todir="${distribution.bin.output}/ant"/>

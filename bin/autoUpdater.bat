@@ -71,19 +71,18 @@ echo %CMD_LINE_ARGS%|findstr /i "home" >nul:
 if %errorlevel%==1 goto :home_not_found
 :home_not_found
 :: Set the location of this batch file as the current folder
-cd /d %~dp0
-SET CurrDir=%CD%
-CD..
-SET InstPath=%CD%
-SET RootPath=%CD%
-CD %CurrDir%
-set CMD_LINE_ARGS= ""%CMD_LINE_ARGS% -home %RootPath%""
+cd "%CURRENT_DIR%"
+SET HOME_PATH=%CURRENT_DIR%..
+cd "%HOME_PATH%"
+SET HOME_PATH=%CD%
+cd "%CURRENT_DIR%"
+set CMD_LINE_ARGS= ""%CMD_LINE_ARGS% -home %HOME_PATH%""
 
 
 echo %CMD_LINE_ARGS%|findstr /i "dotcms_home" >nul:
 if %errorlevel%==1 goto :dotcms_home_not_found
 :dotcms_home_not_found
-set CMD_LINE_ARGS= ""%CMD_LINE_ARGS% -dotcms_home %DOTCMS_HOME%""
+set CMD_LINE_ARGS= ""%CMD_LINE_ARGS% -dotcms_home %HOME_FOLDER%""
 
 IF NOT EXIST "%JAVA_HOME%\bin\java.exe" GOTO nojava
 
@@ -110,7 +109,7 @@ GOTO run
 :run
 REM RUN
 "%JAVA_HOME%\bin\java" -jar "%AUTO_UPDATER_HOME%\%JARFILE%" %CMD_LINE_ARGS%
-IF EXIST "%AUTO_UPDATER_HOME%\%NEWFILE%" GOTO updatejar
+IF EXIST %AUTO_UPDATER_HOME%\%NEWFILE% GOTO updatejar
 GOTO end
 
 :updatejar
