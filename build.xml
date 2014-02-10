@@ -338,6 +338,7 @@
             <fileset dir="bin/autoupdater">
                 <exclude name="autoUpdater.sh"/>
                 <exclude name="autoUpdater.bat"/>
+                <exclude name="build/**"/>
             </fileset>
         </copy>
 
