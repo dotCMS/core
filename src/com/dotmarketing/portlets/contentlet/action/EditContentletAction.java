@@ -142,20 +142,20 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		
 		User user = _getUser(req);
 		
-		//GIT-2816
-		if ((cmd != null) && (cmd.equals(Constants.EDIT) 
-				|| cmd.equals(com.dotmarketing.util.Constants.NEW) 
-				|| cmd.equals(com.dotmarketing.util.Constants.NEW_EDIT))) {
-			
-			List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-			
-			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
-				for(String inode : tempBinaryImageInodes){
-					conAPI.delete(conAPI.find(inode, user, false), user, false, true);
-				}
-				tempBinaryImageInodes.clear();
-			}
-		}
+//		//GIT-2816, this is an edge case, commented to resolve issue with Chrome
+//		if ((cmd != null) && (cmd.equals(Constants.EDIT) 
+//				|| cmd.equals(com.dotmarketing.util.Constants.NEW) 
+//				|| cmd.equals(com.dotmarketing.util.Constants.NEW_EDIT))) {
+//			
+//			List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+//			
+//			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
+//				for(String inode : tempBinaryImageInodes){
+//					conAPI.delete(conAPI.find(inode, user, false), user, false, true);
+//				}
+//				tempBinaryImageInodes.clear();
+//			}
+//		}
 
 		HibernateUtil.startTransaction();
 
