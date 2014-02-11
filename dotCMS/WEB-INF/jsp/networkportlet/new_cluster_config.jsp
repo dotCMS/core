@@ -139,7 +139,8 @@
 
 
 				panelDiv = dojo.create("div", {
-					id : "actionPanelContainer"
+					id : "actionPanelContainer",
+					height: '500px'
 					},"actionPanelContent");
 
 
@@ -217,6 +218,7 @@
 
 				//dojo.parser.parse("actionPanel");
 				dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +this.ff + "px");
+				dojo.style("actionPanel", "height", "500px");
 
 			},
 
@@ -526,12 +528,12 @@
 <body class="dmundra">
 
 
-<div id="doc3">
+<div id="doc3" style="height: 200px">
 
 
-	<div class="actionPannelPage" id="container" style="min-height: 400px">
+	<div class="actionPannelPage" id="container" style="height: 200px">
 
-		<div id="actionPanel" class="hideMe" >
+		<div id="actionPanel" class="hideMe" style="height: 200px">
 			<div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
 			<div id="actionPanelContent" style="overflow:auto;">
 

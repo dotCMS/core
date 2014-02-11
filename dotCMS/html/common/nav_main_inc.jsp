@@ -139,14 +139,13 @@ dojo.require("dojo.hash");
                                 return;
                         }
                         if (myCp) {
-                                myCp.destroyRecursive(true);
+                                myCp.destroyRecursive();
                                 myCp.attr("content","");
                         }
 
                         myCp = new dojox.layout.ContentPane({
                                 id : this.contentDiv
                         }).placeAt(this.hangerDiv);
-
 
 
                         console.log("navigating to:" + hashValue)
