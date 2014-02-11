@@ -23,7 +23,8 @@
 				});
 
 				if(structuresAdded.length==0) {
-					alert('Must Add at Least one Content Type when Max Contentlets is greater than zero')
+					showDotCMSSystemMessage('<%= LanguageUtil.get(pageContext, "message.containers.add.one.content.type") %>');
+					return;
 				}
 
 				for(var i=0; i < structuresAdded.length; i++) {
@@ -118,7 +119,7 @@
 
 			myField = dojo.byId("codeMaskMulti"+structureInode);
 			var acetId = document.getElementById('aceMaskMulti'+structureInode);
-			
+
         	if(acetId.className.indexOf("show") == 0) {
         		var pos= aceMultiEditor[structureInode].getCursorPosition();
 				aceMultiEditor[structureInode].getSession().insert(pos, myValue);
@@ -410,7 +411,7 @@
 				fieldTitle = "Code"
 			}
 			if (currentfield == "postLoopMask") {
-				alert("Spelling check finished.");
+				showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.alert.spellingcheck")) %>');
 				w.focus ();
 			} else {
 				if (confirm(fieldTitle + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.confirm.spellcheck.confirm")) %>')) {
@@ -426,7 +427,7 @@
 				}
 			}
 		} else {
-			alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.alert.spellingcheck")) %>');
+			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.alert.spellingcheck")) %>');
 			w.focus ();
 		}
 	}
@@ -645,7 +646,12 @@
 		var label = dijit.byId("structureSelect").attr('displayedValue');
 
 		if(structureInode=='') {
-			alert('Must Select a Content Type');
+			showDotCMSSystemMessage('<%= LanguageUtil.get(pageContext, "message.containers.select.content.type") %>');
+			return;
+		}
+
+		if(aceMultiEditor[structureInode] != null){
+			showDotCMSSystemMessage('<%= LanguageUtil.get(pageContext, "message.containers.content.type.already.added") %>');
 			return;
 		}
 
@@ -671,7 +677,7 @@
 		    value: "",
 		    style: "width:99%; height:300px"
 		  });
-		  
+
 		var div = dojo.create("div",{
 		    id: "aceMaskMulti"+structureInode,
 		    class: "show",

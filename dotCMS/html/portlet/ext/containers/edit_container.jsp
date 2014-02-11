@@ -133,7 +133,6 @@
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 <script type='text/javascript' src='/dwr/engine.js'></script>
 <script type='text/javascript' src='/dwr/util.js'></script>
-<script type="text/javascript" src="/html/js/edit_area/edit_area_full.js"></script>
 <script language="JavaScript" src="/html/js/cms_ui_utils.js"></script>
 <script type="text/javascript">
 	<%@ include file="/html/portlet/ext/containers/edit_container_js_inc.jsp" %>
@@ -271,8 +270,8 @@
 								</div>
 								<script>
 									addStructureToList('<%=st.getInode()%>');
-
-									var tab = dijit.byId('tab_<%=st.getInode()%>');
+									
+									var tab = dojo.byId('tab_<%=st.getInode()%>');
 									require(["dojo/on"], function(on){
 										  on(tab, "close", function(e){
 										    removeStructure(structureInode);
