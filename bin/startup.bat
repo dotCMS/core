@@ -58,6 +58,10 @@ rem Uncomment the next line if you want to enable JMX
 rem set JAVA_OPTS=%JAVA_OPTS% -Dcom.sun.management.jmxremote.port=7788 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.endorsed.dirs=$DOTCMS_HOME/WEB-INF/endorsed_libs
 :noDefaultJavaOpts
 
+if not ""%1"" == ""debug"" goto noDebug
+set JAVA_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 %JAVA_OPTS%
+:noDebug
+
 set "EXECUTABLE=%CATALINA_HOME%\bin\catalina.bat"
 
 rem Check that target executable exists

@@ -330,6 +330,7 @@
             </fileset>
             <fileset dir="bin">
                 <exclude name="autoupdater/**"/>
+                <exclude name="**/*.class"/>
             </fileset>
         </copy>
 
@@ -1181,6 +1182,7 @@
                 <exclude name="WEB-INF/dotlucene/"/>
                 <exclude name="dot_secure/"/>
                 <exclude name="dotsecure/"/>
+                <exclude name="**/*.class"/>
             </fileset>
         </copy>
         <copy todir="${build.war}/${war.name}.war/WEB-INF/classes" overwrite="true">
@@ -1235,6 +1237,47 @@
     </target>
     <target name="deploy-war-jboss7" depends="clone-pull-jboss7, war">
         <antcall target="move-war-jboss7"/>
+    </target>
+    <target name="deploy-jsp-tomcat7">
+        <var name="exploded.war.location" value="${tomcat7.home}/webapps/ROOT"/>
+        <antcall target="deploy-jsp-app-server"/>
+    </target>
+    <target name="deploy-jsp-jboss7">
+        <var name="exploded.war.location" value="${jboss7.home}/standalone/deployments/${war.name}.war"/>
+        <antcall target="deploy-jsp-app-server"/>
+    </target>
+    <target name="deploy-jsp-app-server">
+        <copy todir="${exploded.war.location}/elasticsearch/" overwrite="true">
+            <fileset dir="dotCMS/elasticsearch/">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+
+        <copy todir="${exploded.war.location}/html/" overwrite="true">
+            <fileset dir="dotCMS/html/">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+
+        <copy todir="${exploded.war.location}/portal/" overwrite="true">
+            <fileset dir="dotCMS/portal/">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+
+        <copy todir="${exploded.war.location}/WEB-INF/jsp/" overwrite="true">
+            <fileset dir="dotCMS/WEB-INF/jsp/">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
     </target>
 
     <target name="move-war-tomcat7" depends="undeploy-war-tomcat7">
