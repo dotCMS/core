@@ -149,10 +149,10 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(ver) || !InodeUtils.isSet(ver.getVersionId()))
         	return false;
         Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
-        
+
         if(!UtilMethods.isSet(ident.getId()))
         	return false;
-        
+
         if(ident.getAssetType().equals("contentlet")) {
             Contentlet cont=(Contentlet)ver;
             ContentletVersionInfo cinfo=vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
@@ -439,16 +439,16 @@ public class VersionableAPIImpl implements VersionableAPI {
 	public ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
 	    return vfac.getContentletVersionInfo(identifier, lang);
 	}
-	
+
 	@Override
 	public void saveVersionInfo(VersionInfo vInfo) throws DotDataException, DotStateException {
 		vfac.saveVersionInfo(vInfo);
 	}
-	
+
 	@Override
 	public void saveContentletVersionInfo( ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
 		ContentletVersionInfo info = vfac.findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
-		if(info == null){
+		if(info == null || !UtilMethods.isSet(info.getIdentifier())){
 			vfac.saveContentletVersionInfo(cvInfo);
 		}else{
 			info.setDeleted(cvInfo.isDeleted());
@@ -478,7 +478,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 			return (vi != null && UtilMethods.isSet(vi.getLiveInode()));
 		}
 	}
-	
+
 	@Override
 	public void removeContentletVersionInfoFromCache(String identifier, long lang) {
 		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(identifier, lang);
@@ -488,5 +488,5 @@ public class VersionableAPIImpl implements VersionableAPI {
 	public void removeVersionInfoFromCache(String identifier) {
 		CacheLocator.getIdentifierCache().removeVersionInfoFromCache(identifier);
 	}
-	
+
 }
