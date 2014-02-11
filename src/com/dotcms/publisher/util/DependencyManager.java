@@ -205,11 +205,8 @@ public class DependencyManager {
         setStructureDependencies();
         setLinkDependencies();
 
-        if ( config.getOperation().equals( Operation.PUBLISH ) ) {
-            setContentDependencies( config.getLuceneQueries() );
-        } else {
-            contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
-        }
+    	contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+        setContentDependencies( config.getLuceneQueries() );
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
