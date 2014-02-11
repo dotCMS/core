@@ -448,7 +448,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 	@Override
 	public void saveContentletVersionInfo( ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
 		ContentletVersionInfo info = vfac.findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
-		if(info == null || !UtilMethods.isSet(info.getIdentifier())){
+		if(info == null){
 			vfac.saveContentletVersionInfo(cvInfo);
 		}else{
 			info.setDeleted(cvInfo.isDeleted());
