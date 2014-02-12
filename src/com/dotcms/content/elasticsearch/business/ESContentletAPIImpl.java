@@ -3141,7 +3141,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (field.isRequired()) {
                 if(o instanceof String){
                     String s1 = (String)o;
-                    if(!UtilMethods.isSet(s1.trim())) {
+                    if(!UtilMethods.isSet(s1.trim()) || (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) && s1.equals("{}")) {
                         cve.addRequiredField(field);
                         hasError = true;
                         continue;
@@ -3718,11 +3718,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	String newIdentifier = "";
     	List<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
     	List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
-    	
+
     	versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), user, respectFrontendRoles));
-    	
+
     	for(Contentlet contentlet : versionsToCopy){
-        	
+
         	boolean isContentletLive = false;
         	boolean isContentletWorking = false;
 
@@ -3823,7 +3823,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(contentletToCopy.getHost().equals(destinationHostId)){
 	            ContentletRelationships cr = getAllRelationships(contentlet);
-	            List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();	            
+	            List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();
 	            for (ContentletRelationshipRecords crr : rr) {
 	                rels.put(crr.getRelationship(), crr.getRecords());
 	            }
@@ -3837,19 +3837,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(isContentletLive)
             	APILocator.getVersionableAPI().setLive(newContentlet);
- 
+
             if(isContentletWorking)
             	versionsToMarkWorking.add(newContentlet);
-            
+
 
             if(contentlet.getInode().equals(contentletToCopy.getInode()))
             	resultContentlet = newContentlet;
     	}
-    	
+
     	for(Contentlet con : versionsToMarkWorking){
     		APILocator.getVersionableAPI().setWorking(con);
     	}
-    	
+
     	return resultContentlet;
     }
 
