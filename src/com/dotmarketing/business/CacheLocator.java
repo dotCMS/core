@@ -9,6 +9,8 @@ import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.csspreproc.CSSCache;
 import com.dotcms.csspreproc.CSSCacheImpl;
+import com.dotcms.notifications.business.NewNotificationCache;
+import com.dotcms.notifications.business.NewNotificationCacheImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
@@ -246,6 +248,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 	    return (CSSCache)getInstance(CacheIndex.CSSCache);
 	}
 
+	public static NewNotificationCache getNewNotificationCache() {
+		return (NewNotificationCache)getInstance(CacheIndex.NewNotification);
+	}
+
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -328,7 +334,8 @@ enum CacheIndex
 	NavTool("Navigation Tool"),
 	PublishingEndPoint("PublishingEndPoint Cache"),
 	PushedAssets("PushedAssets Cache"),
-	CSSCache("Processed CSS Cache");
+	CSSCache("Processed CSS Cache"),
+	NewNotification("NewNotification Cache");
 
 	Cachable create() {
 		switch(this) {
@@ -364,6 +371,7 @@ enum CacheIndex
       	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
       	case PushedAssets: return new PushedAssetsCacheImpl();
       	case CSSCache: return new CSSCacheImpl();
+      	case NewNotification: return new NewNotificationCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

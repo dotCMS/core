@@ -349,7 +349,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 
 #arrow{width:23px;height:36px;z-index: 9999;left:-23px;position: absolute;}
 .hideMe {display:none;position:absolute;}
-#actionPanel{position: fixed;border:1px solid #D0D0D0;background:#fff;bottom: 0;top: 0;right: 0;z-index: 9999;}
+#actionPanel{position: fixed;border:1px solid #D0D0D0;background:#fff;bottom: 0;top: 0;right: 0;z-index: 0;}
 #actionPanelContainer{background: #fff;}
 #actionPanelTableHeader{padding:0px;margin:0px;}
 
