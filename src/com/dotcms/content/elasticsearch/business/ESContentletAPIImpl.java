@@ -2447,6 +2447,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				}
 
 				if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
+				    Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
+				    
 				    //Parse file META-DATA
 				    java.io.File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
 				    if(binFile!=null){
@@ -2456,8 +2458,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				            contentlet.setProperty(FileAssetAPI.DESCRIPTION, desc);
 				        }
 				        Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
-				        if(metaMap!=null){
-				            Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
+				        if(metaMap!=null) {
 				            Gson gson = new Gson();
 				            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
 				            contentlet = conFac.save(contentlet);
@@ -2475,6 +2476,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				            }
 				        }
 				    }
+				    
+				    // clear possible CSS cache
+				    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
+				    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
 
 				}
 				if (contentlet.isLive()) {
