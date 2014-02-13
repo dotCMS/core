@@ -11,6 +11,8 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
+import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
 import com.dotcms.publisher.assets.business.PushedAssetsAPIImpl;
 import com.dotcms.publisher.bundle.business.BundleAPI;
@@ -312,7 +314,11 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	public static ServerAPI getServerAPI() {
-	    return (ServerAPI)getInstance(APIIndex.SERVER_API);
+		return (ServerAPI)getInstance(APIIndex.SERVER_API);
+	}
+
+	public static NotificationAPI getNotificationAPI() {
+	    return (NotificationAPI)getInstance(APIIndex.NOTIFICATION_API);
 	}
 
 	private static Object getInstance(APIIndex index) {
@@ -398,7 +404,8 @@ enum APIIndex
 	ENVIRONMENT_API,
 	BUNDLE_API,
 	SERVER_API,
-	PUSHED_ASSETS_API;
+	PUSHED_ASSETS_API,
+	NOTIFICATION_API;
 
 	Object create() {
 		switch(this) {
@@ -451,6 +458,7 @@ enum APIIndex
 		case BUNDLE_API: return new BundleAPIImpl();
 		case PUSHED_ASSETS_API: return new PushedAssetsAPIImpl();
 		case SERVER_API: return new ServerAPIImpl();
+		case NOTIFICATION_API: return new NotificationAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

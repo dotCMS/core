@@ -47,4 +47,5 @@ dotCMS/WEB-INF/lib/dotcms_?.*.jar
 dotCMS/WEB-INF/lib/plugin-*.jar
 /bin
 .ant-targets-build.xml
-
+.gradle/
+gradle/

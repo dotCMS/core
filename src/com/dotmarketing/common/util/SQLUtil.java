@@ -38,10 +38,10 @@ public class SQLUtil {
 			IQueryTokenizerPreferenceBean prefs = new BaseQueryTokenizerPreferenceBean();
 			prefs.setProcedureSeparator("#");
 			tokenizer=new MysqlQueryTokenizer(prefs);
-			
+
 		}
 		tokenizer.setScriptToTokenize(schema.toString());
-		
+
 		 while (tokenizer.hasQuery() )
             {
                String querySql = tokenizer.nextQuery();
@@ -53,27 +53,27 @@ public class SQLUtil {
             			   while (extraTokenizer.hasQuery()) {
             				   String innerSql = extraTokenizer.nextQuery();
             				   if (innerSql!=null) {
-            					   
+
             					   ret.add(innerSql);
             				   }
             		   		}
             		   } else {
-            			   
+
 	            		  ret.add(querySql);
             		   }
             	   } else {
-            		   
+
             		   ret.add(querySql);
             	   }
                }
             }
 		}
 		 return ret;
-		
+
 	}
 
 	/**
-	 * Will take the passed in columns and concat them for you probably for primary dotCMS DB. 
+	 * Will take the passed in columns and concat them for you probably for primary dotCMS DB.
 	 * For SQLServer the all fields will be cast as a varchar(512)
 	 * @param dbColumns The name of the columns to use in the DB concat
 	 * @return
@@ -117,16 +117,16 @@ public class SQLUtil {
 		if(query!=null){
 		  count = StringUtil.count(query.toLowerCase(), "select");
 		}
-		if(!UtilMethods.isSet(query)|| !query.toLowerCase().trim().contains("select")|| query.contains("?")||count>1){
-			return query;			
-		}else{	
+		if(!UtilMethods.isSet(query)|| !query.toLowerCase().trim().contains("select")|| count>1){
+			return query;
+		}else{
 		     if(DbConnectionFactory.isPostgres()||
 				DbConnectionFactory.isMySql() || DbConnectionFactory.isH2()){
 			   query = query +" LIMIT "+limit+" OFFSET " +offSet;
 			   queryString.append(query);
-			
+
 	         }else if(DbConnectionFactory.isMsSql()){
-	        	 String str = "";	 
+	        	 String str = "";
 		    	   if(query.toLowerCase().startsWith("select")){
 					  query = query.substring(6);
 				   }
@@ -134,9 +134,9 @@ public class SQLUtil {
 		  			  str = query.substring(query.indexOf("order by"), query.length());
 		  			  query = query.replace(str,"").trim();
 		  		   }
-		    	   query = " SELECT TOP "+limit+" * FROM (SELECT ROW_NUMBER() " 
-		    		  	 + " OVER ("+str+") AS RowNumber,"+query+") temp " 
-		    		  	 + " WHERE RowNumber >"+offSet;	
+		    	   query = " SELECT TOP "+limit+" * FROM (SELECT ROW_NUMBER() "
+		    		  	 + " OVER ("+str+") AS RowNumber,"+query+") temp "
+		    		  	 + " WHERE RowNumber >"+offSet;
 		    	   queryString.append(query);
 	        }else if(DbConnectionFactory.isOracle()){
 	        	limit = limit + offSet;
@@ -144,7 +144,7 @@ public class SQLUtil {
 	    	             query+" ) temp where ROWNUM <= "+limit+" ) where rnum > "+offSet;
 	        	queryString.append(query);
 	        }
-		} 
+		}
   	  return queryString.toString();
-	}	
+	}
 }

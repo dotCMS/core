@@ -228,7 +228,8 @@ public class ContainerAjax {
 			if(result.length()>0){
 				StringBuilder dialogMessage=new StringBuilder();
 				dialogMessage.append(LanguageUtil.get(user,"container-used-templates")).append("<br> <br>");
-				dialogMessage.append("Container-Name :").append(cont.getTitle()).append("<br>").append(result);
+				dialogMessage.append(LanguageUtil.get(user,"Container") + " : ").append(cont.getTitle()).append("<br>");
+				dialogMessage.append(LanguageUtil.get(user,"templates") + " : ").append(result);
 				return dialogMessage.length()>0?dialogMessage.toString():null;
 			}
 				
@@ -245,7 +246,7 @@ public class ContainerAjax {
 		for (Template template : templates) {
 			List<Container> containers = templateAPI.getContainersInTemplate(template, user, respectFrontendRoles);
 			if(containers.contains(cont)) {
-				names.append(template.getFriendlyName()).append(", ");
+				names.append(template.getTitle()).append("</br> ");
 			}
 		}
 		result = names.toString();

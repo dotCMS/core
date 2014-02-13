@@ -32,6 +32,7 @@ public class DotRestApplication extends com.dotcms.repackage.jersey_1_12.javax.w
 					REST_CLASSES.add(EnvironmentResource.class);
 					REST_CLASSES.add(RestExamplePortlet.class);
 					REST_CLASSES.add(NetworkPortlet.class);
+					REST_CLASSES.add(com.dotcms.rest.NotificationResource.class);
 				}
 			}
 		}
