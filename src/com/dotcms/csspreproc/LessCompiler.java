@@ -7,10 +7,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 
-import org.lesscss.LessSource;
-import org.lesscss.Resource;
-
 import com.dotcms.repackage.guava_11_0_1.com.google.common.base.Joiner;
+import com.dotcms.repackage.lesscss_1_5_1_snapshot.org.lesscss.LessSource;
+import com.dotcms.repackage.lesscss_1_5_1_snapshot.org.lesscss.Resource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -30,7 +29,7 @@ public class LessCompiler extends CSSCompiler {
 
     @Override
     public void compile() throws DotSecurityException, DotStateException, DotDataException, IOException {
-        org.lesscss.LessCompiler compiler = new org.lesscss.LessCompiler();
+        com.dotcms.repackage.lesscss_1_5_1_snapshot.org.lesscss.LessCompiler compiler = new com.dotcms.repackage.lesscss_1_5_1_snapshot.org.lesscss.LessCompiler();
         compiler.setCompress(inputLive);
         try {
             // replace the extension .css with .scss
