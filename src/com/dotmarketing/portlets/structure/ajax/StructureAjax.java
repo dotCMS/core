@@ -1,28 +1,13 @@
 package com.dotmarketing.portlets.structure.ajax;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
 import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
-
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -32,13 +17,11 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.action.EditFieldAction;
-import com.dotmarketing.portlets.structure.action.EditStructureAction;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.InodeUtils;
@@ -51,7 +34,9 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.util.servlet.SessionMessages;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 /**
  * @author David
@@ -438,7 +423,7 @@ public class StructureAjax {
 	@SuppressWarnings("deprecation")
 	public String reorderfields(String structureInode, String inodeList){
 
-		Structure st = StructureFactory.getStructureByInode(structureInode);
+		Structure structure = StructureFactory.getStructureByInode(structureInode);
 		Company d = PublicCompanyFactory.getDefaultCompany();
 		try
 		{
@@ -456,7 +441,13 @@ public class StructureAjax {
 				FieldFactory.saveField(field);
 			}
 
-			FieldsCache.clearCache();
+            //Cleaning cache
+            FieldsCache.removeFields( structure );
+            StructureCache.removeStructure( structure );
+
+            //Save the structure in order to update the modDate
+            StructureFactory.saveStructure( structure );
+
 			//VirtualLinksCache.clearCache();
 			//String message = "message.structure.reorderfield";
 			//SessionMessages.add(request, "message",message);
