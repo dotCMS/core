@@ -107,7 +107,7 @@ public class CSSPreProcessServlet extends HttpServlet {
                             ContentletVersionInfo impInfo = APILocator.getVersionableAPI().getContentletVersionInfo(ii.getId(), defLang);
                             asset.modDate = impInfo.getVersionTs();
                             newcache.imported.add(asset);
-                            Logger.info(this, host.getHostname()+":"+actualUri+" imports-> "+importUri);
+                            Logger.debug(this, host.getHostname()+":"+actualUri+" imports-> "+importUri);
                             
                             // actual cache entry for the imported asset. If needed
                             synchronized(ii.getId().intern()) {
