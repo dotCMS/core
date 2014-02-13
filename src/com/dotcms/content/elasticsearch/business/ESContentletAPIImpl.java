@@ -27,7 +27,6 @@ import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHit;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHits;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -117,6 +116,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotcms.repackage.tika_app_1_3.com.google.gson.Gson;
+import com.dotcms.repackage.tika_app_1_3.com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -2458,7 +2458,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
 				        if(metaMap!=null){
 				            Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
-				            Gson gson = new Gson();
+				            Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 				            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
 				            contentlet = conFac.save(contentlet);
 				            if(!isNewContent){
@@ -3718,11 +3718,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	String newIdentifier = "";
     	List<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
     	List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
-    	
+
     	versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), user, respectFrontendRoles));
-    	
+
     	for(Contentlet contentlet : versionsToCopy){
-        	
+
         	boolean isContentletLive = false;
         	boolean isContentletWorking = false;
 
@@ -3823,7 +3823,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(contentletToCopy.getHost().equals(destinationHostId)){
 	            ContentletRelationships cr = getAllRelationships(contentlet);
-	            List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();	            
+	            List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();
 	            for (ContentletRelationshipRecords crr : rr) {
 	                rels.put(crr.getRelationship(), crr.getRecords());
 	            }
@@ -3837,19 +3837,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(isContentletLive)
             	APILocator.getVersionableAPI().setLive(newContentlet);
- 
+
             if(isContentletWorking)
             	versionsToMarkWorking.add(newContentlet);
-            
+
 
             if(contentlet.getInode().equals(contentletToCopy.getInode()))
             	resultContentlet = newContentlet;
     	}
-    	
+
     	for(Contentlet con : versionsToMarkWorking){
     		APILocator.getVersionableAPI().setWorking(con);
     	}
-    	
+
     	return resultContentlet;
     }
 
