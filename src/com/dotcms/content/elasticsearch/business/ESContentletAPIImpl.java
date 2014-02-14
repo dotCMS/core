@@ -379,20 +379,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     //Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
                     Identifier id = APILocator.getIdentifierAPI().find(value);
                     if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
-                    	Contentlet fileAssetCont = null;
-                    	try {
-                    		fileAssetCont = findContentletByIdentifier(id.getId(), true, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false);
-                        } catch(DotContentletStateException se) {
-                        	fileAssetCont = findContentletByIdentifier(id.getId(), false, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false);
+
+                        //Find the contentlet and try to publish it only if it does not have a live version
+                        Contentlet fileAssetCont;
+                        try {
+                            findContentletByIdentifier( id.getId(), true, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false );
+                        } catch ( DotContentletStateException se ) {
+                            fileAssetCont = findContentletByIdentifier( id.getId(), false, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false );
+                            publish( fileAssetCont, APILocator.getUserAPI().getSystemUser(), false );
                         }
-                        publish(fileAssetCont, APILocator.getUserAPI().getSystemUser(), false);
                     }else if(InodeUtils.isSet(id.getInode())){
                         File file  = (File) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
                         PublishFactory.publishAsset(file, user, false, isNewVersion);
                     }
-                } catch (Exception ex) {
-                    Logger.debug(this, ex.toString());
-                    throw new DotStateException("Problem occured while publishing file",ex);
+                } catch ( Exception ex ) {
+                    Logger.debug( this, ex.getMessage(), ex );
+                    throw new DotStateException( "Problem occurred while publishing file", ex );
                 }
             }
         }
