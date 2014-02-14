@@ -11,6 +11,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.csspreproc.CSSCompiler;
+import com.dotcms.enterprise.csspreproc.LessCompiler;
+import com.dotcms.enterprise.csspreproc.SassCompiler;
 import com.dotcms.util.DownloadUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -21,10 +25,8 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -34,6 +36,11 @@ public class CSSPreProcessServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if(LicenseUtil.getLevel()<200) {
+            Logger.warn(this, "An Enterprise License is required to enable css compilation. URI: "+req.getRequestURI());
+            return;
+        }
+        
         try {
             Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req);
             boolean live = !WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
@@ -93,13 +100,13 @@ public class CSSPreProcessServlet extends HttpServlet {
                         // build cache object
                         ContentletVersionInfo vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defLang);
                         CachedCSS newcache = new CachedCSS();
-                        newcache.data = compiler.output;
+                        newcache.data = compiler.getOutput();
                         newcache.hostId = host.getIdentifier();
                         newcache.uri = actualUri;
                         newcache.live = live;
                         newcache.modDate = vinfo.getVersionTs();
                         newcache.imported = new ArrayList<ImportedAsset>();
-                        for(String importUri : compiler.allImportedURI) {
+                        for(String importUri : compiler.getAllImportedURI()) {
                             // newcache entry for the imported asset
                             ImportedAsset asset = new ImportedAsset();
                             asset.uri = importUri;
@@ -126,7 +133,7 @@ public class CSSPreProcessServlet extends HttpServlet {
                         CacheLocator.getCSSCache().add(newcache);
                         cacheMaxDate = newcache.getMaxDate();
                         cacheObject = newcache;
-                        responseData = compiler.output;
+                        responseData = compiler.getOutput();
                     }
                 }
             }
