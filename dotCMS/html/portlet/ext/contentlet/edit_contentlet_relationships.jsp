@@ -626,15 +626,15 @@
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += 		"<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-					referer += 		"<portlet:param name='cmd' value='edit' />";
-					referer += 		"<portlet:param name='inode' value='<%=contentletInode%>' />";
+					referer += 		"<portlet:param name='cmd' value='edit' />";					
 					referer += "</portlet:actionURL>";
+					referer += "&inode="+'<%=contentletInode%>';
 					referer += "&lang=" + '<%= contentlet.getLanguageId() %>';
-					referer += "&relend=true";
-					referer += "&referer=" + '<%=java.net.URLDecoder.decode(referer, "UTF-8")%>';
+					referer += "&relend=true";					
 					<%if( request.getAttribute("isRelationsihpAField") != null && !(Boolean)request.getAttribute("isRelationsihpAField")){ //DOTCMS-6893 %>
 						referer += "&is_rel_tab=true";
 					<%}%>
+					referer += "&referer=" + '<%=java.net.URLDecoder.decode(referer, "UTF-8")%>';
 
 
 					var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
@@ -836,10 +836,10 @@
 					referer += "&inode="+'<%=contentletInode%>';
 					referer += "&lang=" + '<%= contentlet.getLanguageId() %>';
 					referer += "&relend=true";
-					referer += "&referer=" + '<%=java.net.URLDecoder.decode(referer, "UTF-8")%>';
 					<%if( request.getAttribute("isRelationsihpAField") != null && !(Boolean)request.getAttribute("isRelationsihpAField")){ //DOTCMS-6893 %>
 						referer += "&is_rel_tab=true";
 					<%}%>
+					referer += "&referer=" + '<%=java.net.URLDecoder.decode(referer, "UTF-8")%>';
 
 					var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";

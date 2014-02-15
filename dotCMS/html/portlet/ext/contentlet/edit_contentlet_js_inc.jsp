@@ -78,7 +78,15 @@ dojo.require("dojox.layout.ContentPane");
 		<%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
 			callbackData=callbackData+"&structure_id=<%=structure.getInode()%>";
 		<%}%>
-		self.location = callbackData;
+
+		if(callbackData.indexOf("referer") != -1){
+			var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
+			sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
+			callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
+			self.location = callbackData+"&referer="+escape(sourceReferer);
+		}else{
+			self.location = callbackData;
+		}
 	}
 
 
@@ -552,7 +560,11 @@ dojo.require("dojox.layout.ContentPane");
 			<%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
 				self.location = data["referer"]+"&structure_id=<%=structure.getInode()%>&content_inode=" + data["contentletInode"];
 			<%}else{%>
-				self.location = data["referer"] + "&content_inode=" + data["contentletInode"];
+					if(data["sourceReferer"]){
+						self.location = data["referer"] + "&content_inode=" + data["contentletInode"]+"&referer=" + escape(data["sourceReferer"]);
+					}else{
+						self.location = data["referer"] + "&content_inode=" + data["contentletInode"];
+					}
 			<%}%>
 			return;
 		}
