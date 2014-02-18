@@ -106,6 +106,7 @@ td {font-size: 100%;}
 	var tagSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-saved")) %>';
 	var tagRemovedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-removed")) %>';
 	var confirmRemoveTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "confirm-remove-tag")) %>';
+	var confirmRemoveTagsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "confirm-remove-tags")) %>';
 	var exportTagsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-tags-message")) %>';
 	var tagNameAlreadyExistForSelectedHost = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-for-host-already-exists")) %>';
 	var noResultsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-no-search-results")) %>';
@@ -406,26 +407,26 @@ td {font-size: 100%;}
 				showDotCMSSystemMessage(batchDeleteErrorMsg);
 			}
 			else {
-				dojo.forEach(items, function(selectedItem, index) {
-			        if (selectedItem !== null) {
-						TagAjax.deleteTag(selectedItem.i.tagId);
-			        }
-			    });
-				showDotCMSSystemMessage(batchDeleteMsg);
 
-				var t = new dojox.timing.Timer();
-				t.setInterval(1000);
-				t.onTick = function() {
-					t.stop();
-					doSearch();
-					tagsGrid.selection.clear();
-		        }
-		        t.start();
+                if (confirm(confirmRemoveTagsMsg)) {
 
+                    dojo.forEach(items, function (selectedItem, index) {
+                        if (selectedItem !== null) {
+                            TagAjax.deleteTag(selectedItem.i.tagId);
+                        }
+                    });
+                    showDotCMSSystemMessage(batchDeleteMsg);
 
+                    var t = new dojox.timing.Timer();
+                    t.setInterval(1000);
+                    t.onTick = function () {
+                        t.stop();
+                        doSearch();
+                        tagsGrid.selection.clear();
+                    };
+                    t.start();
+                }
 			}
-
-
 		}
 
 		function downloadCSVSampleFile(){
