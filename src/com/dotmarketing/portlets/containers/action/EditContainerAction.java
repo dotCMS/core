@@ -82,9 +82,7 @@ public class EditContainerAction extends DotPortletAction implements
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		if ((referer != null) && (referer.length() != 0)) {
-			while(referer.startsWith("%")){
-				referer = URLDecoder.decode(referer, "UTF-8");
-			}
+			referer = URLDecoder.decode(referer, "UTF-8");
 		}
 
 		Logger.debug(this, "EditContainerAction cmd=" + cmd);
