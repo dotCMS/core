@@ -2,7 +2,10 @@ configurations { antLibs }
 
 repositories { mavenCentral() }
 
-dependencies { antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3' }
+dependencies { 
+	antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3' 
+	antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3' 
+}
 
 ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
 configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
