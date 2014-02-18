@@ -145,7 +145,7 @@ public class DependencyManager {
 				try {
 					Template t = APILocator.getTemplateAPI().findLiveTemplate(asset.getAsset(), user, false);
 
-					if(t==null) {
+					if(t==null || !UtilMethods.isSet(t.getIdentifier())) {
 						t = APILocator.getTemplateAPI().findWorkingTemplate(asset.getAsset(), user, false);
 					}
 
