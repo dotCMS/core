@@ -321,7 +321,6 @@
 
 <script src="/html/js/cms_ui_utils.js" type="text/javascript"></script>
 <script src="/html/js/template/utility-add-head-code.js" type="text/javascript"></script>
-<script src="/html/js/codemirror/js/codemirror.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 	dojo.addOnLoad(function() {
@@ -743,7 +742,7 @@
 				<dd>
 	    			<html:textarea style="display: none" property="drawedBody" styleId="drawedBodyField"></html:textarea>
 				</dd>
-		</dl>		
+		</dl>
 	</div>
 
     <div id="previewThemeTab"
