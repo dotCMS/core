@@ -1564,13 +1564,14 @@ public class ContentletAjax {
             String errorString = LanguageUtil.get( user, pe.getMessage() );
             saveContentErrors.add( errorString );
         }
-        catch (Exception e) {
-			saveContentErrors.add(e.toString());
-			callbackData.put("saveContentErrors", saveContentErrors);
-			callbackData.put("referer", referer);
-			return callbackData;
-		}
-		catch (Throwable t) {
+        catch ( Exception e ) {
+            Logger.error( this, e.getMessage(), e );
+            saveContentErrors.add( e.getMessage() );
+            callbackData.put( "saveContentErrors", saveContentErrors );
+            callbackData.put( "referer", referer );
+            return callbackData;
+        }
+        catch (Throwable t) {
 			Logger.error(this, t.toString());
 			saveContentErrors.add(t.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);
