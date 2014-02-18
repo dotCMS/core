@@ -693,7 +693,7 @@ public class DependencyManager {
 	}
 
 
-	private void processList(List<Contentlet> cons) throws DotDataException, DotSecurityException {
+	private void processList(Set<Contentlet> cons) throws DotDataException, DotSecurityException {
 		Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
 		Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
 
@@ -825,14 +825,18 @@ public class DependencyManager {
 		try {
 		    // we need to process contents already taken as dependency
 			Set<String> cons = new HashSet<String>(contentsSet);
-            for(String id : cons){
-                processList(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
+
+			Set<Contentlet> allContents = new HashSet<Contentlet>(); // we will put here those already added and the ones from lucene queries
+
+			for(String id : cons){
+            	allContents.addAll(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
             }
 
 			for(String luceneQuery: luceneQueries) {
-				List<Contentlet> cs = APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false);
-				processList(cs);
+				allContents.addAll(APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false));
 			}
+
+			processList(allContents);
 
 		} catch (Exception e) {
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
