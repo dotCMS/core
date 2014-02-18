@@ -399,7 +399,7 @@
                   #set($first=true)
                   #foreach($lang in $languages)
                       #set($imageURL="/html/images/languages/${lang.languageCode}_${lang.countryCode}.gif")
-                      #set($display="${lang.language} - ${lang.country}")
+                      #set($display="${lang.language} (${lang.countryCode})")
                       #if($first)
                         #set($first=false)
                       #else
