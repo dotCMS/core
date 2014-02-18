@@ -1,7 +1,7 @@
 package com.dotcms.autoupdater;
 
-import com.liferay.util.FileUtil;
 import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
+import com.liferay.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,13 +18,15 @@ public class FileUpdater {
     public static Logger logger;
 
     private File updateFile;
-    private String home;
+    private String distributionHome;
+    private String dotcmsHome;
     private Boolean dryrun;
 
-    public FileUpdater ( File updateFile, String home, String backupFile, Boolean dryrun ) {
+    public FileUpdater ( File updateFile, String distributionHome, String dotcmsHome, String backupFile, Boolean dryrun ) {
 
         this.updateFile = updateFile;
-        this.home = home;
+        this.distributionHome = distributionHome;
+        this.dotcmsHome = dotcmsHome;
         this.dryrun = dryrun;
 
         logger = UpdateAgent.logger;
@@ -46,38 +48,21 @@ public class FileUpdater {
         //This is the name of the folder where we are going to store the back-up
         String currentBackUpFolderName = folderDateFormat.format( new Date() );
         //Complete back-up path
-        String backUpPath = home + File.separator + UpdateAgent.FOLDER_HOME_BACK_UP + File.separator + currentBackUpFolderName;
+        String backUpPath = distributionHome + File.separator + UpdateAgent.FOLDER_HOME_BACK_UP + File.separator + currentBackUpFolderName;
         //.dotserver folder path
-        String dotserverPath = home + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER;
-        //.autoUpdater folder path
-        //String autoUpdaterPath = home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER;
+        String dotserverPath = distributionHome + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER;
+        //.bin folder path
+        String binPath = distributionHome + File.separator + UpdateAgent.FOLDER_HOME_BIN;
+        //.plugins folder path
+        String pluginsPath = distributionHome + File.separator + UpdateAgent.FOLDER_HOME_PLUGINS;
 
         try {
 
-            /**
-             * Now we need to be sure we have the commons-configuration jar, it should be there, but be we better check.
-             * This will be need it just for old versions of the autoupdater, after 2.3.1 won't be necessary
-             */
-            /*File updaterCommonsConfiguration = new File( autoUpdaterPath + File.separator + "libs" + File.separator + "commons-configuration-1.0.jar" );
-            if ( !updaterCommonsConfiguration.exists() ) {//First verify it we already have it
-
-                //Copy the one on dotCMS to the autoupdater libs folder
-                File commonsConfiguration = new File( dotserverPath + File.separator +
-                        "dotCMS" + File.separator + "WEB-INF" + File.separator + "lib" + File.separator + "commons-configuration-1.0.jar" );
-                if ( commonsConfiguration.exists() ) {
-                    FileUtil.copyFile( commonsConfiguration, updaterCommonsConfiguration, false );
-                }
-            }*/
-
             //First we need to create the back up for the current project, for this we need to user hard links, this back up could be huge
-            FileUtil.copyDirectory( dotserverPath, backUpPath, true );
+            FileUtil.copyDirectory( dotserverPath, backUpPath + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER, true );
+            FileUtil.copyDirectory( pluginsPath, backUpPath + File.separator + UpdateAgent.FOLDER_HOME_PLUGINS, true );
+            FileUtil.copyDirectory( binPath, backUpPath + File.separator + UpdateAgent.FOLDER_HOME_BIN, true );
 
-            /*//First if we don't have the ant jars, we extract them.  This is a pretty ugly hack, but there's no way to guarantee the user already has them
-            File antLauncher = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" + File.separator + "ant" + File.separator + "ant-launcher.jar" );
-            if ( !antLauncher.exists() ) {
-                logger.debug( Messages.getString( "UpdateAgent.debug.extracting.ant" ) );
-                UpdateUtil.unzipDirectory( updateFile, "bin/ant", home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER, false );
-            }*/
         } catch ( Exception e ) {
             String error = Messages.getString( "UpdateAgent.error.ant.prepare.back-up" );
             if ( !UpdateAgent.isDebug ) {
@@ -86,28 +71,6 @@ public class FileUpdater {
             logger.error( error, e );
             throw new UpdateException( error, UpdateException.ERROR );
         }
-
-        /*// Find if we have a build.xml in the update. If we do, we use that one.
-        // Otherwise we use the current one
-        File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
-        boolean updateBuild = UpdateUtil.unzipFile( updateFile, "autoupdater/build.xml", buildFile );
-
-        // Create the back up folder using ant tasks
-        AntInvoker invoker = new AntInvoker( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER );
-        boolean ret;
-        if ( updateBuild ) {
-            ret = invoker.runTask( "prepare.back-up", "build_new.xml" );
-        } else {
-            ret = invoker.runTask( "prepare.back-up", null );
-        }
-
-        if ( !ret ) {
-            String error = Messages.getString( "UpdateAgent.error.ant.prepare.back-up" );
-            if ( !UpdateAgent.isDebug ) {
-                error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
-            }
-            throw new UpdateException( error, UpdateException.ERROR );
-        }*/
     }
 
     /**
@@ -125,120 +88,109 @@ public class FileUpdater {
         //This is the name of the folder where we stored the back-up
         String currentBackUpFolderName = folderDateFormat.format( new Date() );
         //Complete back-up path
-        String backUpPath = home + File.separator + UpdateAgent.FOLDER_HOME_BACK_UP + File.separator + currentBackUpFolderName;
+        String backUpPath = distributionHome + File.separator + UpdateAgent.FOLDER_HOME_BACK_UP + File.separator + currentBackUpFolderName;
+
         //.dotserver folder path
-        String dotserverPath = home + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER;
+        String dotserverPath = distributionHome + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER;
+        //.plugins folder path
+        String pluginsPath = distributionHome + File.separator + UpdateAgent.FOLDER_HOME_PLUGINS;
 
         if ( !dryrun ) {
 
-            //First lets remove the "old" code in order to unzip the update on that folder .dotserver/
-            File dotserverFolder = new File( dotserverPath );
-            Boolean success = UpdateUtil.deleteDirectory( dotserverFolder );
-            if ( success ) {
-                logger.debug( "Removed outdated folder: " + dotserverFolder.getAbsolutePath() );
-            } else {
-                logger.error( "Error removing outdated folder: " + dotserverFolder.getAbsolutePath() );
-            }
+            //Apply the update on the distribution folders
+            applyUpdateFor( UpdateAgent.FOLDER_HOME_DOTSERVER, null );//.dotserver
+            applyUpdateFor( UpdateAgent.FOLDER_HOME_PLUGINS, null );//.plugins
+            //The bin folder is a special case as it have files we can delete or even update, like the autoUpdater.sh or the build.conf
+            applyUpdateFor( UpdateAgent.FOLDER_HOME_BIN, new String[]{"build.conf", "build.conf.bat", "autoUpdater.sh", "autoUpdater.bat"} );//.bin
 
-            //Now we need to unzip the content of the update file into the .dotserver folder, we just removed it, so lets create it again....
-            if ( !dotserverFolder.exists() ) {
-                success = dotserverFolder.mkdirs();
-                if ( success ) {
-                    logger.debug( "Created folder: " + dotserverFolder.getAbsolutePath() );
-                } else {
-                    logger.error( "Error creating folder: " + dotserverFolder.getAbsolutePath() );
-                }
-            }
-            success = UpdateUtil.unzipDirectory( updateFile, UpdateAgent.FOLDER_HOME_DOTSERVER, dotserverPath, dryrun );
+            //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //Now copy back the assets contents
+            String assets = "assets";
+            File assetsFolder = new File( backUpPath + File.separator + dotcmsHome + File.separator + assets );
+            File destFolder = new File( distributionHome + File.separator + dotcmsHome + File.separator + assets );
+            logger.debug( "Copying back backed assets folder: " + assetsFolder.getAbsolutePath() + " to: " + destFolder.getAbsolutePath() );
+            //Copying using hardlinks
+            FileUtil.copyDirectory( assetsFolder, destFolder );
 
-            if ( success ) {
-                //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                //Now lets copy the assets contents
+            //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //Now copy back the dotsecure contents
+            String dotsecure = "dotsecure";
+            File dotsecureFolder = new File( backUpPath + File.separator + dotcmsHome + File.separator + dotsecure );
+            destFolder = new File( distributionHome + File.separator + dotcmsHome + File.separator + dotsecure );
+            logger.debug( "Copying back backed dotsecure folder: " + dotsecureFolder.getAbsolutePath() + " to: " + destFolder.getAbsolutePath() );
+            //Copying using hardlinks
+            FileUtil.copyDirectory( dotsecureFolder, destFolder );
 
-                //Assets folder
-                logger.debug( "Copying assets folder..." );
-                String assets = "dotCMS" + File.separator + "assets";
-                File assetsFolder = new File( backUpPath + File.separator + assets );
-                File destFolder = new File( dotserverFolder + File.separator + assets );
-                //Copying using hardlinks
-                FileUtil.copyDirectory( assetsFolder, destFolder );
-                //copyFolder( assetsFolder, destFolder );
-
-                //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                //Now lets copy the esdata contents
-
-                //esdata folder
-                logger.debug( "Copying esdata folder..." );
-                String esdata = "dotCMS" + File.separator + "dotsecure" + File.separator + "esdata";
-                File esdataFolder = new File( backUpPath + File.separator + esdata );
-                destFolder = new File( dotserverFolder + File.separator + esdata );
-                //Copying using hardlinks
-                FileUtil.copyDirectory( esdataFolder, destFolder );
-                //copyFolder( esdataFolder, destFolder );
-
-                //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                //Now lets copy the plugins contents
-
-                //plugins folder
-                logger.debug( "Copying plugins folder..." );
-                String plugins = "plugins";
-                String pluginsTemp = "plugins_temp";
-
-                destFolder = new File( dotserverFolder + File.separator + plugins );
-                File tempDestFolder = new File( dotserverFolder + File.separator + pluginsTemp );
-
-                //First we need to move this folder to a temporal one in order to extract some files later
-                if ( destFolder.exists() ) {
-                    success = destFolder.renameTo( tempDestFolder );
-
-                    if ( !success ) {
-                        String error = "Error updating plugins...";
-                        if ( !UpdateAgent.isDebug ) {
-                            error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
-                        }
-                        throw new UpdateException( error, UpdateException.ERROR );
-                    }
-                }
-
-                //Now we need to copy the back up plugins folder
-                File pluginsFolder = new File( backUpPath + File.separator + plugins );
-                //Copying using hardlinks
-                FileUtil.copyDirectory( pluginsFolder, destFolder, true );
-                //copyFolder( pluginsFolder, destFolder );
-
-                //Now we need to remove the common.xml and plugins.xml
-                File commonXML = new File( dotserverFolder + File.separator + plugins + File.separator + "common.xml" );
-                File pluginsXML = new File( dotserverFolder + File.separator + plugins + File.separator + "plugins.xml" );
-                if ( commonXML.exists() ) {
-                    commonXML.delete();
-                }
-                if ( pluginsXML.exists() ) {
-                    pluginsXML.delete();
-                }
-                //And copying them from the temporal plugins folder
-                File origCommonXML = new File( dotserverFolder + File.separator + pluginsTemp + File.separator + "common.xml" );
-                File origPluginsXML = new File( dotserverFolder + File.separator + pluginsTemp + File.separator + "plugins.xml" );
-                if ( origCommonXML.exists() ) {
-                    origCommonXML.renameTo( commonXML );
-                }
-                if ( origPluginsXML.exists() ) {
-                    origPluginsXML.renameTo( pluginsXML );
-                }
-
-                //And finally lets remove the temporal updated plugins folder
-                UpdateUtil.deleteDirectory( tempDestFolder );
-
-            } else {
-                String error = "Error unzipping update file on: " + dotserverPath;
-                if ( !UpdateAgent.isDebug ) {
-                    error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
-                }
-
-                throw new UpdateException( error, UpdateException.ERROR );
-            }
+            //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //Now copy back the plugins
+            File pluginsFolder = new File( backUpPath + File.separator + UpdateAgent.FOLDER_HOME_PLUGINS );
+            destFolder = new File( pluginsPath );
+            logger.debug( "Copying back backed plugins folder: " + pluginsFolder.getAbsolutePath() + " to: " + destFolder.getAbsolutePath() );
+            /*
+             Copying using hardlinks, basically it will put back to the plugins folder the backed plugins.
+             The copyDirectory method will NOT override any file, so updated files will be keep it.
+             */
+            FileUtil.copyDirectory( pluginsFolder, destFolder );
         }
 
         return true;
+    }
+
+    /**
+     * Updates a given folder with the content of the update file
+     *
+     * @param forPath
+     * @param exclusions list of files we don't want to remove from the given folder
+     * @return
+     * @throws IOException
+     */
+    private void applyUpdateFor ( String forPath, String[] exclusions ) throws UpdateException {
+
+        Boolean success;
+        try {
+            //First lets remove the "old" code in order to unzip the update on that folder
+            File updatedFolder = new File( distributionHome + File.separator + forPath );
+            if ( exclusions != null ) {
+                success = UpdateUtil.deleteDirectory( updatedFolder, exclusions );
+            } else {
+                success = UpdateUtil.deleteDirectory( updatedFolder );
+            }
+            if ( success ) {
+                logger.debug( "Removed outdated folder: " + updatedFolder.getAbsolutePath() );
+            } else {
+                if ( exclusions == null ) {
+                    logger.error( "Error removing outdated folder: " + updatedFolder.getAbsolutePath() );
+                } else {
+                    //If we have exclusions is normal to have a false success because the folder could not be removed as it have excluded files on it
+                    logger.debug( "Removed outdated files in folder: " + updatedFolder.getAbsolutePath() );
+                }
+            }
+
+            //Now we need to unzip the content of the update file into the given folder, we just removed it, so lets create it again....
+            if ( !updatedFolder.exists() ) {
+                success = updatedFolder.mkdirs();
+                if ( success ) {
+                    logger.debug( "Created folder: " + updatedFolder.getAbsolutePath() );
+                } else {
+                    logger.error( "Error creating folder: " + updatedFolder.getAbsolutePath() );
+                }
+            }
+            success = UpdateUtil.unzipDirectory( updateFile, distributionHome, forPath, dryrun );
+        } catch ( IOException e ) {
+            String error = "Error unzipping update file on: " + forPath;
+            if ( !UpdateAgent.isDebug ) {
+                error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+            }
+            throw new UpdateException( error, UpdateException.ERROR );
+        }
+
+        if ( !success ) {
+            String error = "Error unzipping update file on: " + forPath;
+            if ( !UpdateAgent.isDebug ) {
+                error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
+            }
+            throw new UpdateException( error, UpdateException.ERROR );
+        }
     }
 
     /**
@@ -252,42 +204,27 @@ public class FileUpdater {
 
         logger.info( Messages.getString( "UpdateAgent.debug.start.post.process" ) );
 
-        PostProcess pp = new PostProcess();
-        pp.setHome( home + File.separator + UpdateAgent.FOLDER_HOME_DOTSERVER );
+        PostProcess postProcess = new PostProcess( distributionHome, dotcmsHome );
 
         if ( !dryrun ) {
 
             logger.info( Messages.getString( "UpdateAgent.debug.start.validation" ) );
 
-            if ( pp.postProcess( true ) ) {
+            if ( postProcess.postProcess( true ) ) {
 
                 logger.info( Messages.getString( "UpdateAgent.debug.end.validation" ) );
 
-                // At this point we should try to use the build file we got from the update zip
-                //File buildFile = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "build_new.xml" );
-
-                Boolean success = true;
-
-                //Deleting if exist the extracted build file
-                /*if ( buildFile.exists() ) {
-                    success = buildFile.delete();
-                }*/
-
-                /*//Deleting manually the bin folder on the autoupdater directory
-                File binFolder = new File( home + File.separator + UpdateAgent.FOLDER_HOME_UPDATER + File.separator + "bin" );
-                if (binFolder.exists()) {
-                    success = UpdateUtil.deleteDirectory( binFolder );
-                }*/
+                //Boolean success = true;
 
                 logger.debug( "Finished to clean update process traces." );
 
-                if ( !success ) {
+                /*if ( !success ) {
                     String error = Messages.getString( "UpdateAgent.error.ant.clean" );
                     if ( !UpdateAgent.isDebug ) {
                         error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
                     }
                     throw new UpdateException( error, UpdateException.ERROR );
-                }
+                }*/
             } else {
                 String error = Messages.getString( "UpdateAgent.error.plugin.incompatible" );
                 if ( !UpdateAgent.isDebug ) {
@@ -300,38 +237,6 @@ public class FileUpdater {
 
         logger.info( Messages.getString( "UpdateAgent.debug.end.post.process" ) );
         return true;
-    }
-
-    /**
-     * Copy the contents of a given folder into another
-     *
-     * @param srcFolder
-     * @param destFolder
-     * @throws UpdateException
-     * @throws IOException
-     */
-    private void copyFolder ( File srcFolder, File destFolder ) throws UpdateException, IOException {
-
-        if ( srcFolder.exists() ) {//It may not exists, if don't exist is ok.....
-
-            //Where we are going to copy the assets contents
-            if ( !destFolder.exists() ) {
-                Boolean success = destFolder.mkdirs();
-                if ( success ) {
-                    logger.debug( "Created folder: " + destFolder );
-                } else {
-                    String error = "Error creating folder: " + destFolder;
-                    if ( !UpdateAgent.isDebug ) {
-                        error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
-                    }
-
-                    throw new UpdateException( error, UpdateException.ERROR );
-                }
-            }
-
-            //And finally copy the contents
-            UpdateUtil.copyFolder( srcFolder, destFolder );
-        }
     }
 
 }

@@ -73,7 +73,7 @@
 					nf.setMinimumIntegerDigits(2);
 					%>
 
-					<b><%= LanguageUtil.get(pageContext, "uptime") %>:</b> <c:if test="<%= days > 0 %>"><%= days %> <%= LanguageUtil.get(pageContext, ((days > 1) ? "days" : "day")) %>,</c:if> <%= nf.format(hours) %>:<%= nf.format(minutes) %>:<%= nf.format(seconds) %><br><br>
+					<b><%= LanguageUtil.get(pageContext, "uptime") %>:</b> <% if (days > 0 ) {%><%= days %> <%= LanguageUtil.get(pageContext, ((days > 1) ? "days" : "day")) %>,<%}%> <%= nf.format(hours) %>:<%= nf.format(minutes) %>:<%= nf.format(seconds) %><br><br>
 
 					<%
 					nf = NumberFormat.getInstance(locale);
@@ -256,7 +256,7 @@
 						Logger logger = (Logger)entry.getValue();
 					%>
 
-						<c:if test="<%= logger.getLevel() != null %>">
+						<% if (logger.getLevel() != null ) {%>
 
 							<%
 							String className = "gamma";
@@ -287,7 +287,7 @@
 									</select>
 								</td>
 							</tr>
-						</c:if>
+						<%}%>
 
 					<%
 					}

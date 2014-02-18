@@ -7,6 +7,7 @@
 	<!-- Load version props -->
 	<property file="src/com/liferay/portal/util/build.properties"/>
 	<property file="test/build.properties" />
+	<property file="../build.conf" />
 
 	<!-- vars -->
 	<property name="src.dir" value="src" />
@@ -32,15 +33,19 @@
 	<property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
 	<property name="build.packager" value="${build.dir}/packager" />
 	<property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
+    <property name="dist.update" value="false"/>
 	<property name="agent.version" value="30"/>
 
 	<property name="plugin.root.dir.default" value="${basedir}/dotCMS"/>
 	<property name="plugin.jar.deploy.dir.default" value="${basedir}/../../dotCMS/WEB-INF/lib" />
 
+	<property name="distribution.bin.output" value="${distribution.output}/bin" />
 	<property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
 	<property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
+	<property name="distribution.plugins.output" value="${distribution.output}/plugins" />
 
     <property name="tomcat7.home" value="${tomcat7.install.location}"/>
+    <property name="jboss7.home" value="${jboss7.install.location}"/>
 
     <path id="build-classpath">
 		<pathelement path="${build.classes}" />
@@ -66,23 +71,32 @@
 
 		<fileset dir="${lib.app}">
 			<include name="**/*.jar" />
-			<exclude name="**/dotcms*.jar" />
+			<exclude name="**/dotcms_*.jar" />
 		</fileset>
 		<pathelement path="${build.classes}" />
 	</path>
 
-	<!-- classpath only used for plugins no other task should use becuase it locks the jar files -->
-	<path id="ant-files-classpath">
+	<!-- classpath only used for plugins no other task should use it because it locks the jar files -->
+	<path id="ant-files-classpath-custom">
+
 		<pathelement location="${java.home}/../lib/tools.jar"/>
-		<fileset dir="libs/buildlibs">
-            <include name="**/*.jar" />
-        </fileset>
-		<fileset dir="${lib.app}">
-			<include name="ant-tooling.jar" />
-			<include name="commons-lang-2.4.jar" />
-			<include name="tika-app-1.3.jar" />
+
+        <fileset dir="../../${target.root}/WEB-INF/lib">
+			<include name="dotcms-ant-tooling.jar" />
+			<include name="dotcms-commons-lang-2.4.jar" />
+			<include name="dotcms-tika-app-1.3.jar" />
 		</fileset>
 	</path>
+    <path id="ant-files-classpath">
+
+        <pathelement location="${java.home}/../lib/tools.jar"/>
+
+        <fileset dir="${lib.app}">
+            <include name="dotcms-ant-tooling.jar" />
+            <include name="dotcms-commons-lang-2.4.jar" />
+            <include name="dotcms-tika-app-1.3.jar" />
+        </fileset>
+    </path>
 
 	<!-- include ant-contrib -->
 	<taskdef resource="net/sf/antcontrib/antlib.xml"/>
@@ -188,8 +202,7 @@
 		</copy>
 	</target>
 
-
-	<target name="deploy-core" depends="jsp,jar,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+	<target name="deploy-core-jsp" depends="jsp,jar,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -198,7 +211,7 @@
 		<delete dir="${build.classes}" />
 	</target>
 
-    <target name="deploy-core-with-tests" depends="jsp,jar-with-tests,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+    <target name="deploy-core-with-tests-jsp" depends="jsp,jar-with-tests,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
 		<delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
@@ -207,7 +220,7 @@
 		<delete dir="${build.classes}" />
 	</target>
 
-    <target name="deploy-core-with-tests-no-jsp" depends="jar-with-tests,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+    <target name="deploy-core" depends="jar,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
@@ -216,12 +229,21 @@
         <delete dir="${build.classes}" />
     </target>
 
-	<target name="build-core" depends="jsp,jar" description="will compile, and update the about page of the site" />
+    <target name="deploy-core-with-tests" depends="jar-with-tests,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+        <delete>
+            <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
+        </delete>
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <!-- Freetts -->
+        <delete dir="${build.classes}" />
+    </target>
 
-	<target name="build-core-no-jsp" depends="jar" description="will compile, and update the about page of the site" />
+    <target name="build-core-jsp" depends="jsp,jar" description="will compile, build sql scripts and update the about page of the site" />
 
-	<target name="deploy-no-jsp" depends="jar,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
-		<delete>
+	<target name="build-core" depends="jar" description="will compile, build sql scripts and update the about page of the site" />
+
+	<target name="deploy" depends="jar,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+        <delete>
 			<fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
 		</delete>
 		<copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
@@ -287,100 +309,108 @@
 
 	<target name="create-dist" description="creates a zip file for dbs">
 
+        <var name="tomcat7.home" value="${distribution.dotserver.output}/tomcat-7.0.42"/>
+
 		<antcall target="clean" />
 
-		<antcall target="deploy-core" />
+        <!--Clone tomcat-->
+        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat7.home}"/>
 
-        <!--dotserver code (./dotserver)-->
-        <copy todir="${distribution.dotserver.output}">
-			<fileset dir=".">
-				<exclude name="**/.git" />
-				<exclude name=".git" />
-				<exclude name=".git/**" />
-				<exclude name="tomcat/logs/**" />
-				<exclude name="dotCMS/WEB-INF/dotlucene/**" />
-				<exclude name="dotCMS/assets/**" />
-				<exclude name="dotCMS/dotsecure/**" />
-                <exclude name="bin/autoupdater/**" />
-                <exclude name="dotCMS/html/js/dojo/src/**" />
-				<exclude name="tomcat/temp/**" />
-				<exclude name="build/**" />
-				<exclude name="tomcat/work/**" />
-				<exclude name="src/**" />
-				<exclude name="test/**" />
-				<exclude name=".*" />
-				<exclude name=".settings/**" />
-			</fileset>
-		</copy>
-		<mkdir dir="${distribution.dotserver.output}/tomcat/logs" />
-	  	<mkdir dir="${distribution.dotserver.output}/tomcat/temp" />
+        <!--Generate the war-->
+		<antcall target="war" />
+
+        <!--Move the war to the ./dotserver/tomcat-tomcat-7.0.42/webapps folder-->
+        <antcall target="move-war-tomcat7" />
+
+        <!--bin folder (./bin)-->
+        <copy todir="${distribution.bin.output}">
+            <fileset dir="bin/autoupdater">
+                <include name="autoUpdater.sh"/>
+                <include name="autoUpdater.bat"/>
+            </fileset>
+            <fileset dir="bin">
+                <exclude name="autoupdater/**"/>
+                <exclude name="**/*.class"/>
+            </fileset>
+        </copy>
 
         <!--autoupdater code (./autoupdater)-->
         <copy todir="${distribution.autoupdater.output}">
-            <fileset dir="bin/autoupdater"/>
+            <fileset dir="bin/autoupdater">
+                <exclude name="autoUpdater.sh"/>
+                <exclude name="autoUpdater.bat"/>
+                <exclude name="build/**"/>
+            </fileset>
         </copy>
+
+        <!--plugins folder (./plugins) -->
+        <copy todir="${distribution.plugins.output}">
+            <fileset dir="plugins">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+        <!--Set some startup variables-->
+        <replace file="${distribution.bin.output}/build.conf"><!--Unix-->
+            <replacefilter token="#SERVER_FOLDER" value="SERVER_FOLDER"/>
+            <replacefilter token="{server.folder}" value="dotserver/tomcat-7.0.42"/>
+
+            <replacefilter token="#HOME_FOLDER" value="HOME_FOLDER"/>
+            <replacefilter token="{home.folder}" value="$SERVER_FOLDER/webapps/ROOT"/>
+
+            <replacefilter token="#target.root" value="target.root"/>
+            <replacefilter token="{dotcms.home}" value="dotserver/tomcat-7.0.42/webapps/ROOT"/>
+        </replace>
+        <replace file="${distribution.bin.output}/build.conf.bat"><!--For windows-->
+            <replacefilter token="rem set" value="set"/>
+
+            <replacefilter token="{server.folder}" value="dotserver\tomcat-7.0.42"/>
+            <replacefilter token="{home.folder}" value="dotserver\tomcat-7.0.42\webapps\ROOT"/>
+            <replacefilter token="{dotcms.home}" value="dotserver\tomcat-7.0.42\webapps\ROOT"/>
+        </replace>
+
+        <copy file="build.xml" todir="${distribution.bin.output}/ant"/>
 
 		<antcall target="javadoc" />
 
-		<zip destfile="${distribution.output}/../dotcms_${dotcms.release.version}.zip" basedir="${distribution.output}" />
-		
-		<tar destfile="${distribution.output}/../dotcms_${dotcms.release.version}.tar.gz" compression="gzip" longfile="gnu">
-			<tarfileset dir="${distribution.output}">
-		        <include name="**/**"/>
-				<exclude name="**/*.sh"/>
-		    </tarfileset>
-		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
-		        <include name="**/*.sh"/>
-		    </tarfileset>
-			<tarfileset dir="${distribution.output}/dotserver/tomcat/bin" prefix="/dotserver/tomcat/bin" filemode="755">
-		        <include name="**/*.sh"/>
-		    </tarfileset>
-		</tar>
+        <if>
+            <equals arg1="${dist.update}" arg2="true"/>
+            <then>
+                <delete file="${distribution.dotserver.output}/tomcat-7.0.42/webapps/ROOT/starter.zip"/>
+            </then>
+        </if>
+
+        <zip destfile="${distribution.output}/../dotcms_${dotcms.release.version}.zip" basedir="${distribution.output}"/>
+
+        <if>
+            <equals arg1="${dist.update}" arg2="false"/>
+            <then>
+                <tar destfile="${distribution.output}/../dotcms_${dotcms.release.version}.tar.gz" compression="gzip" longfile="gnu">
+                    <tarfileset dir="${distribution.output}">
+                        <include name="**/**"/>
+                        <exclude name="**/*.sh"/>
+                    </tarfileset>
+                    <tarfileset dir="${distribution.output}/bin" prefix="/bin" filemode="755">
+                        <include name="**/*.sh"/>
+                    </tarfileset>
+                    <tarfileset dir="${distribution.output}/dotserver/tomcat-7.0.42/bin" prefix="/dotserver/tomcat-7.0.42/bin" filemode="755">
+                        <include name="**/*.sh"/>
+                    </tarfileset>
+                </tar>
+            </then>
+        </if>
 		
 		<delete dir="${distribution.output}" />
 	</target>
 
 	<target name="create-update-dist" description="creates an update zip file for dbs">
 
-			<antcall target="clean" />
+        <var name="dist.update" unset="true"/>
+        <property name="dist.update" value="true"/>
 
-			<antcall target="deploy-core" />
-
-			<!--dotserver code (./dotserver)-->
-		 	<copy todir="${distribution.dotserver.output}">
-				<fileset dir=".">
-					<exclude name="**/.git" />
-					<exclude name=".git" />
-					<exclude name=".git/**" />
-					<exclude name="tomcat/logs/**" />
-					<exclude name="dotCMS/WEB-INF/dotlucene/**" />
-					<exclude name="dotCMS/assets/**" />
-					<exclude name="dotCMS/dotsecure/**" />
-                    <exclude name="bin/autoupdater/**" />
-                    <exclude name="dotCMS/html/js/dojo/src/**" />
-					<exclude name="tomcat/temp/**" />
-					<exclude name="build/**" />
-					<exclude name="tomcat/work/**" />
-					<exclude name="src/**" />
-					<exclude name="test/**" />
-					<exclude name=".*" />
-					<exclude name=".settings/**" />
-					<exclude name="dotCMS/starter.zip" />
-				</fileset>
-			</copy>
-			<mkdir dir="${distribution.dotserver.output}/tomcat/logs" />
-		  	<mkdir dir="${distribution.dotserver.output}/tomcat/temp" />
-
-			<!--autoupdater code (./autoupdater)-->
-	        <copy todir="${distribution.autoupdater.output}">
-	            <fileset dir="bin/autoupdater"/>
-	        </copy>
-
-			<antcall target="javadoc" />
-
-			<zip destfile="${distribution.output}/../dotcms_${dotcms.release.version}.zip" basedir="${distribution.output}" />
-			<delete dir="${distribution.output}" />
-		</target>
+        <antcall target="create-dist"/>
+	</target>
 
 
 	<target name="javadoc" description="creates javadoc for dotCMS">
@@ -438,15 +468,15 @@
 
 <taskdef resource="cactus.tasks">
   <classpath>
-    <pathelement location="${lib.app}/cactus.core.framework.uberjar.javaEE.14-1.8.0.jar"/>
-    <pathelement location="${lib.app}/cactus.integration.shared.api-1.8.0.jar"/>
-    <pathelement location="${lib.app}/cactus.integration.ant-1.8.0.jar"/>
-    <pathelement location="${lib.app}/cargo-ant-0.9.jar"/>
-    <pathelement location="${lib.app}/cargo-core-uberjar-0.9.jar"/>
-    <pathelement location="${lib.app}/lib/commons-httpclient-3.1.jar"/>
-    <pathelement location="${lib.app}/lib/commons-logging-1.1.1.jar"/>
-    <pathelement location="${lib.app}/lib/aspectjrt-1.5.3.jar"/>
-    <pathelement location="${lib.app}/tika-app-1.3.jar"/>
+    <!--<pathelement location="${lib.app}/cactus.core.framework.uberjar.javaEE.14-1.8.0.jar"/>-->
+    <!--<pathelement location="${lib.app}/cactus.integration.shared.api-1.8.0.jar"/>-->
+    <pathelement location="${lib.app}/dotcms-cactus.integration.ant-1.8.0.jar"/>
+    <pathelement location="${lib.app}/dotcms-cargo-ant-0.9.jar"/>
+    <pathelement location="${lib.app}/dotcms-cargo-core-uberjar-0.9.jar"/>
+    <pathelement location="${lib.app}/dotcms-commons-httpclient-3.1.jar"/>
+    <!--<pathelement location="${lib.app}/lib/commons-logging-1.1.1.jar"/>-->
+    <!--<pathelement location="${lib.app}/lib/aspectjrt-1.5.3.jar"/>-->
+    <pathelement location="${lib.app}/dotcms-tika-app-1.3.jar"/>
   </classpath>
 </taskdef>
 
@@ -476,12 +506,12 @@
 
 	<target name="tomcat-start" >
 		<java classname="org.apache.catalina.startup.Bootstrap" fork="yes">
-	        <jvmarg value="-Dcatalina.home=tomcat"/>
+	        <jvmarg value="-Dcatalina.home=${tomcat7.home}"/>
 			<jvmarg value="-Xms1G"/>
 			<jvmarg value="-XX:MaxPermSize=512m"/>
 			<arg value="start"/>
 			<classpath>
-	          <fileset dir="tomcat">
+	          <fileset dir="${tomcat7.home}">
 	              <include name="bin/bootstrap.jar"/>
 	          	  <include name="bin/tomcat-juli.jar"/>
 	          </fileset>
@@ -491,10 +521,10 @@
 
 	<target name="tomcat-stop">
 		 <java classname="org.apache.catalina.startup.Bootstrap" fork="yes">
-	        <jvmarg value="-Dcatalina.home=tomcat"/>
+	        <jvmarg value="-Dcatalina.home=${tomcat7.home}"/>
 		 	<arg value="stop"/>
 		 	<classpath>
-	          <fileset dir="tomcat">
+	          <fileset dir="${tomcat7.home}">
 	              <include name="bin/bootstrap.jar"/>
 	          	  <include name="bin/tomcat-juli.jar"/>
 	          </fileset>
@@ -650,10 +680,10 @@
 
 	<copy file="tomcat/conf/server.xml" tofile="tomcat/conf/server-orig.xml" overwrite="true"/>
 	<copy file="tomcat/conf/server-tests.xml" tofile="tomcat/conf/server.xml" overwrite="true"/>
-	<exec osfamily="unix" executable="${basedir}/tomcat/bin/catalina.sh">
+	<exec osfamily="unix" executable="${tomcat7.home}/bin/catalina.sh">
 		<arg value="tests"/>
 	</exec>
-	<exec osfamily="windows" executable="${basedir}/tomcat/bin/catalina.bat">
+	<exec osfamily="windows" executable="${tomcat7.home}/bin/catalina.bat">
 		<arg value="start"/>
 	</exec>
 	<echo message="server starting">
@@ -663,10 +693,10 @@
 
 <target name="shutdown-server-for-tests">
 
-	<exec osfamily="unix" executable="${basedir}/tomcat/bin/catalina.sh">
+	<exec osfamily="unix" executable="${tomcat7.home}/bin/catalina.sh">
 		<arg value="stop"/>
 	</exec>
-	<exec osfamily="windows" executable="${basedir}/tomcat/bin/catalina.bat">
+	<exec osfamily="windows" executable="${tomcat7.home}/bin/catalina.bat">
 		<arg value="stop"/>
 	</exec>
 
@@ -785,15 +815,15 @@
 
     <!--Plugin tasks-->
 
+<target name="build-jsp" depends="build-core-jsp,build-plugins" description="build the dotCMS core and plugins" />
+
 <target name="build" depends="build-core,build-plugins" description="build the dotCMS core and plugins" />
 
-<target name="build-no-jsp" depends="build-core-no-jsp,build-plugins" description="build the dotCMS core and plugins" />
-
-<target name="deploy" depends="build, deploy-core, deploy-plugins" description="builds and deploys core and plugins" />
+<target name="deploy-jsp" depends="build-jsp, deploy-core-jsp, deploy-plugins" description="builds and deploys core and plugins" />
 
 <target name="deploy-tests" depends="uncomment-test-servlet, build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
-<target name="deploy-tests-no-jsp" depends="uncomment-test-servlet, build-no-jsp, deploy-core-with-tests-no-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
+<target name="deploy-tests-jsp" depends="uncomment-test-servlet, build-jsp, deploy-core-with-tests-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
 <target name="deploy-dev" depends="deploy-plugins"/>
 
@@ -807,17 +837,69 @@
 		</subant>
 	</sequential>
 </macrodef>
+<macrodef name="iterate-dist">
+    <attribute name="target"/>
+    <sequential>
+        <subant target="@{target}">
+            <fileset dir="../../plugins" includes="*/build.xml"/>
+        </subant>
+    </sequential>
+</macrodef>
 
-<target name="build-plugins" description="builds plugins but does not deploy">
-	<iterate target="build"/>
+<target name="build-plugins" depends="setup-deploy-location" description="builds plugins but does not deploy">
+
+    <var name="lib.app" unset="true"/>
+    <property name="lib.app" value="${plugin.root.dir}/WEB-INF/lib"/>
+
+    <if>
+        <!--
+        Verify if there is specified a custom location for the dotcms installation.
+        When the war structure is used the "target.root" property will be set in order to
+        specify where the war folder is located, if not present the normal dotcms git structure is assumed.
+        -->
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+            <iterate target="build"/>
+        </then>
+        <else>
+            <iterate-dist target="build"/>
+        </else>
+    </if>
+
 </target>
 
 <target name="clean-plugins" description="undeploys and cleans plugins" depends="undeploy-plugins">
-	<iterate target="clean"/>
+    <if>
+        <!--
+        Verify if there is specified a custom location for the dotcms installation.
+        When the war structure is used the "target.root" property will be set in order to
+        specify where the war folder is located, if not present the normal dotcms git structure is assumed.
+        -->
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+	        <iterate target="clean"/>
+        </then>
+        <else>
+            <iterate-dist target="clean"/>
+        </else>
+    </if>
 </target>
 
 <target name="unbuild-plugins" description="cleans plugins">
-	<iterate target="clean"/>
+    <if>
+        <!--
+        Verify if there is specified a custom location for the dotcms installation.
+        When the war structure is used the "target.root" property will be set in order to
+        specify where the war folder is located, if not present the normal dotcms git structure is assumed.
+        -->
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+	        <iterate target="clean"/>
+        </then>
+        <else>
+            <iterate-dist target="clean"/>
+        </else>
+    </if>
 </target>
 
 <target name="-check-use-file">
@@ -830,54 +912,133 @@
 
 
 <target name="setup-deploy-location" depends="use-file" description="sets up the locations where to deploy">
-	<condition property="plugin.root.dir"  value="${target.root}" else="${plugin.root.dir.default}">
+	<condition property="plugin.root.dir" value="${basedir}/../../${target.root}" else="${plugin.root.dir.default}">
 		<isset property="target.root"/>
 	</condition>
-	<condition property="plugin.jar.deploy.dir"  value="${target.root}/WEB-INF/lib" else="${plugin.root.dir.default}/WEB-INF/lib">
+	<condition property="plugin.jar.deploy.dir" value="${target.root}/WEB-INF/lib" else="${plugin.root.dir.default}/WEB-INF/lib">
 		<isset property="target.root"/>
 	</condition>
 	<echo>Deploying plugins to: ${plugin.root.dir} | ${plugin.jar.deploy.dir}</echo>
 </target>
 
-<target name="deploy-plugins" depends="build-plugins,setup-deploy-location" description="builds and deploys plugins">
-	<echo>Copying plugins to: ${plugin.root.dir}</echo>
-	<copy todir="${plugin.root.dir}/WEB-INF/classes" file="plugins/plugins.xml" />
-	<subant target="deploy-plugin" genericantfile="${basedir}/build.xml">
-		<dirset dir="plugins" includes="*"/>
-		<property name="plugin.root.dir" value="${plugin.root.dir}"/>
-		<property name="plugin.jar.deploy.dir" value="${plugin.jar.deploy.dir}"/>
+<target name="deploy-plugins" depends="build-plugins" description="builds and deploys plugins">
 
-	</subant>
-	<taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
-		<classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath">
-		</classpath>
-	</taskdef>
-	<echo>Deploying plugins from: ${plugin.root.dir}</echo>
+    <echo>Copying plugins to: ${plugin.root.dir}</echo>
 
+    <if>
+        <!--
+        Verify if there is specified a custom location for the dotcms installation.
+        When the war structure is used the "target.root" property will be set in order to
+        specify where the war folder is located, if not present the normal dotcms git structure is assumed.
+        -->
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+            <var name="distributionPath" value="${basedir}"/>
+            <var name="pluginsPath" value="plugins"/>
+        </then>
+        <else>
+            <var name="distributionPath" value="${basedir}/../.."/>
+            <var name="pluginsPath" value="../../plugins"/>
+        </else>
+    </if>
 
-	<plugin-deploy-task root="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
+    <copy todir="${plugin.root.dir}/WEB-INF/classes" file="${pluginsPath}/plugins.xml" />
+    <subant target="deploy-plugin" genericantfile="${basedir}/build.xml">
+        <dirset dir="${pluginsPath}" includes="*"/>
+        <property name="plugin.root.dir" value="${plugin.root.dir}"/>
+        <property name="target.root" value="${target.root}"/>
+        <property name="plugin.jar.deploy.dir" value="${plugin.jar.deploy.dir}"/>
+    </subant>
+
+    <if>
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+            <taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
+                <classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath"/>
+            </taskdef>
+        </then>
+        <else>
+            <taskdef classname="com.dotmarketing.plugin.ant.DeployTask" name="plugin-deploy-task">
+                <classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath-custom"/>
+            </taskdef>
+        </else>
+    </if>
+
+    <echo>Deploying plugins from: ${plugin.root.dir}</echo>
+    <plugin-deploy-task distributionPath="${distributionPath}" dotcmsHome="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
 </target>
 
 <target name="deploy-plugin">
-	<copy  todir="${plugin.jar.deploy.dir}">
-		<fileset dir="build/jar/" />
-	</copy>
+
+    <if>
+        <!--
+        Verify if there is specified a custom location for the dotcms installation.
+        When the war structure is used the "target.root" property will be set in order to
+        specify where the war folder is located, if not present the normal dotcms git structure is assumed.
+        -->
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+            <copy todir="${plugin.jar.deploy.dir}">
+                <fileset dir="build/jar/" />
+            </copy>
+        </then>
+        <else>
+            <copy todir="../../${plugin.jar.deploy.dir}">
+                <fileset dir="build/jar/" />
+            </copy>
+        </else>
+    </if>
 
 </target>
 
 <target name="undeploy-plugins" depends="setup-deploy-location" description="undeploys all plugins, returns overridden files to default state">
-	<taskdef classname="com.dotmarketing.plugin.ant.UndeployTask" name="plugin-undeploy-task">
-		<classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath">
-		</classpath>
-	</taskdef>
-	<plugin-undeploy-task root="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
+
+    <var name="lib.app" unset="true"/>
+    <property name="lib.app" value="${plugin.root.dir}/WEB-INF/lib"/>
+
+    <if>
+        <!--
+        Verify if there is specified a custom location for the dotcms installation.
+        When the war structure is used the "target.root" property will be set in order to
+        specify where the war folder is located, if not present the normal dotcms git structure is assumed.
+        -->
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+
+            <var name="distributionPath" value="${basedir}"/>
+
+            <taskdef classname="com.dotmarketing.plugin.ant.UndeployTask" name="plugin-undeploy-task">
+                <classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath">
+                </classpath>
+            </taskdef>
+        </then>
+        <else>
+
+            <var name="distributionPath" value="${basedir}/../.."/>
+
+            <taskdef classname="com.dotmarketing.plugin.ant.UndeployTask" name="plugin-undeploy-task">
+                <classpath id="plugin-deploy-task.classpath" refid="ant-files-classpath-custom">
+                </classpath>
+            </taskdef>
+        </else>
+    </if>
+
+    <echo>Undeploying plugins from: ${plugin.root.dir}</echo>
+    <plugin-undeploy-task distributionPath="${distributionPath}" dotcmsHome="${plugin.root.dir}" plugins="${plugin.root.dir}/WEB-INF/lib"/>
+
 	<delete>
 		<fileset dir="${plugin.root.dir}/WEB-INF/lib" includes="**/plugin-*.jar"/>
 		<fileset dir="${plugin.root.dir}/WEB-INF/lib" includes="**/pluginlib-*.jar"/>
 	</delete>
 	<delete file="${plugin.root.dir}/WEB-INF/classes/plugins.xml" />
 	<delete dir="${plugin.root.dir}/html/plugins" failonerror="false" />
-	<antcall target="deploy-config" />
+
+    <if>
+        <contains string="${target.root}" substring="target.root"/>
+        <then>
+            <antcall target="deploy-config" />
+        </then>
+    </if>
 </target>
 
 <target name="clean-plugins-libs" depends="setup-deploy-location">
@@ -925,7 +1086,7 @@
 	<copy file="${src.dir}/com/dotcms/autoupdater/messages.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/messages.properties" />
 </target>
 
-<target name="jar-autoupdater" depends="compile-autoupdater,build-autoupdater-classpath" description="Generates autoUpdater.jar in the 'autoupdater/dist' directory.">
+<target name="jar-autoupdater" depends="clean-autoupdater,compile-autoupdater,build-autoupdater-classpath" description="Generates autoUpdater.jar in the 'autoupdater/dist' directory.">
 		<jar jarfile="${dist.autoupdater}/autoUpdater.jar" basedir="${build.autoupdater}">
 			<manifest>
 				<attribute name="Main-Class" value="com.dotcms.autoupdater.UpdateAgent"/>
@@ -998,10 +1159,12 @@
     </target>
 
     <!--<target name="war" depends="deploy-no-jsp,repackage-libraries,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">-->
-    <target name="war" depends="deploy-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
-        <antcall target="war-file"/>
+
+
+    <target name="war" depends="deploy" description="builds dotCMS as a war without the jsps precompiled">
+        <antcall target="war-file"/><!--This depends on depends="war-file"-->
     </target>
-    <target name="war-tests" depends="deploy-tests-no-jsp" description="builds dotCMS as a war without the jsps precompiled">
+    <target name="war-tests" depends="deploy-tests" description="builds dotCMS as a war without the jsps precompiled">
         <antcall target="war-file"/>
     </target>
 
@@ -1019,6 +1182,7 @@
                 <exclude name="WEB-INF/dotlucene/"/>
                 <exclude name="dot_secure/"/>
                 <exclude name="dotsecure/"/>
+                <exclude name="**/*.class"/>
             </fileset>
         </copy>
         <copy todir="${build.war}/${war.name}.war/WEB-INF/classes" overwrite="true">
@@ -1026,20 +1190,43 @@
                 <exclude name="**/.svn" />
             </fileset>
         </copy>
-        <mkdir dir="${build.war}/${war.name}.war/META-INF"/>
-        <copy file="tomcat/conf/Catalina/localhost/ROOT.xml" tofile="${build.war}/${war.name}.war/META-INF/context.xml"/>
 
         <!--Create the war-->
         <war destfile="${build.war}/dotcms_${dotcms.release.version}.war" webxml="dotCMS/WEB-INF/web.xml">
             <fileset dir="${build.war}/${war.name}.war">
                 <exclude name="WEB-INF/web.xml"/>
             </fileset>
-            <!--<metainf dir="${build.war}/${war.name}/META-INF"/>-->
+        </war>
+    </target>
+
+    <!--
+    Task mean to be use from a distribution structure using the buildwar.sh script.
+    This task will just use the already deployed folder inside the app server and compressed to a war file.
+    -->
+    <target name="custom-dist-war" depends="setup-deploy-location" description="builds dotCMS as a war">
+
+        <!--Clean-up-->
+        <delete dir="../../WAR"/>
+        <mkdir dir="../../WAR"/>
+
+        <!--Create the war-->
+        <war destfile="../../WAR/dotcms.war" webxml="${basedir}/../../${target.root}/WEB-INF/web.xml">
+            <fileset dir="${basedir}/../../${target.root}">
+                <exclude name="WEB-INF/web.xml"/>
+                <exclude name="META-INF/**"/>
+                <exclude name="**/*.db"/>
+                <exclude name="assets/**"/>
+                <exclude name="dotsecure/**"/>
+            </fileset>
         </war>
     </target>
 
     <target name="undeploy-war-tomcat7">
         <delete dir="${tomcat7.home}/webapps/ROOT"/>
+    </target>
+    <target name="undeploy-war-jboss7">
+        <delete file="${jboss7.home}/standalone/deployments/${war.name}.war.dodeploy"/>
+        <delete dir="${jboss7.home}/standalone/deployments/${war.name}.war"/>
     </target>
 
     <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war">
@@ -1048,29 +1235,89 @@
     <target name="deploy-war-tomcat7-tests" depends="clone-pull-tomcat7, war-tests">
         <antcall target="move-war-tomcat7"/>
     </target>
+    <target name="deploy-war-jboss7" depends="clone-pull-jboss7, war">
+        <antcall target="move-war-jboss7"/>
+    </target>
+    <target name="deploy-jsp-tomcat7">
+        <var name="exploded.war.location" value="${tomcat7.home}/webapps/ROOT"/>
+        <antcall target="deploy-jsp-app-server"/>
+    </target>
+    <target name="deploy-jsp-jboss7">
+        <var name="exploded.war.location" value="${jboss7.home}/standalone/deployments/${war.name}.war"/>
+        <antcall target="deploy-jsp-app-server"/>
+    </target>
+    <target name="deploy-jsp-app-server">
+        <copy todir="${exploded.war.location}/elasticsearch/" overwrite="true">
+            <fileset dir="dotCMS/elasticsearch/">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+
+        <copy todir="${exploded.war.location}/html/" overwrite="true">
+            <fileset dir="dotCMS/html/">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+
+        <copy todir="${exploded.war.location}/portal/" overwrite="true">
+            <fileset dir="dotCMS/portal/">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+
+        <copy todir="${exploded.war.location}/WEB-INF/jsp/" overwrite="true">
+            <fileset dir="dotCMS/WEB-INF/jsp/">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+    </target>
 
     <target name="move-war-tomcat7" depends="undeploy-war-tomcat7">
         <copy todir="${tomcat7.home}/lib/">
             <fileset dir="libs/buildlibs/">
+                <include name="mail.jar"/>
+
                 <include name="mysql-connector-java-5.1.23-bin.jar"/>
                 <include name="postgresql-9.0-801.jdbc3.jar"/>
                 <include name="ojdbc5.jar"/>
                 <include name="jtds-1.2.2.jar"/>
-                <include name="h2-1.3.169.jar"/>
             </fileset>
         </copy>
 
-        <!--<copy todir="${tomcat7.home}/bin/">
-            <fileset dir="./extra/tomcat-7/conf/"/>
-        </copy>-->
-
         <copy todir="${tomcat7.home}/webapps/ROOT">
+            <fileset dir="${build.war}/${war.name}.war">
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
+            </fileset>
+        </copy>
+
+        <mkdir dir="${tomcat7.home}/webapps/ROOT/META-INF"/>
+        <copy file="extra/tomcat-7/context.xml" tofile="${tomcat7.home}/webapps/ROOT/META-INF/context.xml"/>
+    </target>
+
+    <target name="move-war-jboss7" depends="undeploy-war-jboss7">
+
+        <touch file="${jboss7.home}/standalone/deployments/${war.name}.war.dodeploy"/>
+
+        <copy todir="${jboss7.home}/standalone/deployments/${war.name}.war">
             <fileset dir="${build.war}/${war.name}.war"/>
         </copy>
     </target>
 
     <target name="clone-pull-tomcat7">
         <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat7.home}"/>
+    </target>
+    <target name="clone-pull-jboss7">
+        <git-clone-pull repository="https://github.com/dotCMS/jboss7.git" version="7.1.1" dest="${jboss7.home}"/>
     </target>
 
     <!--++++++++++++++++++++++++++++++++++++++++++-->

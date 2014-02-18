@@ -67,7 +67,6 @@ if [ -z "$DOTCMS_HOME" ] ; then
   DOTCMS_HOME="$DOTCMS_HOME"
 fi
 
-
 # Bugzilla 37848: When no TTY is available, don't output to console
 have_tty=0
 if [ "`tty`" != "not a tty" ]; then
@@ -96,6 +95,4 @@ cd $DOTCMS_HOME
 
 echo Un-deploying plugins
 
-$JAVA_HOME/bin/java -jar "$DOTCMS_HOME/bin/ant/ant-launcher.jar" undeploy-plugins
-
-
+$JAVA_HOME/bin/java -jar "$DOTCMS_HOME/bin/ant/ant-launcher.jar" -buildfile "$DOTCMS_HOME/bin/ant"/build.xml undeploy-plugins

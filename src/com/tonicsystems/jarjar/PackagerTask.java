@@ -23,6 +23,7 @@ public class PackagerTask extends JarJarTask {
     private String dotcmsHome;
     private String outputFolder;
     private String outputFile;
+    private String prefix;
     private String dotcmsJar;
     private String dotVersion;
     private String onlyJar;
@@ -164,7 +165,12 @@ public class PackagerTask extends JarJarTask {
                     Collection<File> transform = new ArrayList<File>();
                     transform.add( jar );
 
-                    File outJar = new File( getOutputFolder() + File.separator + jar.getName() );
+                    //Creating the output file
+                    String jarName = jar.getName();
+                    if (getPrefix() != null && !getPrefix().isEmpty()) {
+                        jarName = getPrefix() + jarName;
+                    }
+                    File outJar = new File( getOutputFolder() + File.separator + jarName );
                     generate( outJar, rulesToApply.values(), transform );
                 }
 
@@ -217,7 +223,12 @@ public class PackagerTask extends JarJarTask {
                         Collection<File> transform = new ArrayList<File>();
                         transform.add( jar );
 
-                        File outJar = new File( getOutputFolder() + File.separator + jar.getName() );
+                        //Creating the output file
+                        String jarName = jar.getName();
+                        if (getPrefix() != null && !getPrefix().isEmpty()) {
+                            jarName = getPrefix() + jarName;
+                        }
+                        File outJar = new File( getOutputFolder() + File.separator + jarName );
                         generate( outJar, rulesToApply.values(), transform, dependency.isRenameServices() );
 
                     } else {
@@ -598,7 +609,12 @@ public class PackagerTask extends JarJarTask {
             jarFile.delete();
         }
 
-        File finalJar = new File( tempJar.getParent() + File.separator + jarFile.getName() );
+        //Creating the output file
+        String finalJarName = jarFile.getName();
+        if (getPrefix() != null && !getPrefix().isEmpty()) {
+            finalJarName = getPrefix() + finalJarName;
+        }
+        File finalJar = new File( tempJar.getParent() + File.separator + finalJarName );
         tempJar.renameTo( finalJar );
     }
 
@@ -843,6 +859,14 @@ public class PackagerTask extends JarJarTask {
 
     public void setOutputFile ( String outputFile ) {
         this.outputFile = outputFile;
+    }
+
+    public String getPrefix () {
+        return prefix;
+    }
+
+    public void setPrefix ( String prefix ) {
+        this.prefix = prefix;
     }
 
     public String getDotcmsJar () {

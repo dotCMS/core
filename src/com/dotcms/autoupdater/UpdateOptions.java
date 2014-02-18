@@ -23,6 +23,7 @@ public class UpdateOptions {
     public static String QUIET = "quiet";
     public static String VERBOSE = "verbose";
     public static String HOME = "home";
+    public static String DOTCMS_HOME = "dotcms_home";
     public static String PROXY = "proxy";
     public static String PROXY_USER = "proxyuser";
     public static String PROXY_PASS = "proxypass";
@@ -68,6 +69,7 @@ public class UpdateOptions {
         Option quietOption = new Option( UpdateOptions.QUIET, false, Messages.getString( "UpdateOptions.text.quiet" ) );
         Option verboseOption = new Option( UpdateOptions.VERBOSE, false, Messages.getString( "UpdateOptions.text.verbose" ) );
         Option homeOption = new Option( UpdateOptions.HOME, true, Messages.getString( "UpdateOptions.text.home", System.getProperty( "user.dir" ) ) );
+        Option dotcmsHomeOption = new Option( UpdateOptions.DOTCMS_HOME, true, Messages.getString( "UpdateOptions.text.dotcms.home", System.getProperty( "user.dir" ) ) );
         Option logOption = new Option( UpdateOptions.LOG, true, "Name of the log file to be created. Defaults to: update_{timestamp}.log" );
         Option proxy = new Option( UpdateOptions.PROXY, true, Messages.getString( "UpdateOptions.text.proxy" ) );
         Option proxyUser = new Option( UpdateOptions.PROXY_USER, true, Messages.getString( "UpdateOptions.text.proxy.user" ) );
@@ -96,6 +98,7 @@ public class UpdateOptions {
         options.addOption( dryrunOption );
         options.addOption( helpOption );
         options.addOption( homeOption );
+        options.addOption( dotcmsHomeOption );
         //options.addOption( backupOption );
         options.addOption( proxy );
         options.addOption( proxyUser );
@@ -113,6 +116,10 @@ public class UpdateOptions {
 
     public void setHomeFolder ( String homeFolder ) {
         options.getOption( UpdateOptions.HOME ).setDescription( Messages.getString( "UpdateOptions.text.home", homeFolder ) );
+    }
+
+    public void setDotcmsHomeFolder ( String folder ) {
+        options.getOption( UpdateOptions.DOTCMS_HOME ).setDescription( Messages.getString( "UpdateOptions.text.dotcms.home", folder ) );
     }
 
     public void setUpdateFilesFolder (String updateFilesFolder) {
