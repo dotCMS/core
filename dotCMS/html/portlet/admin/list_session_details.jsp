@@ -44,7 +44,7 @@ df.setTimeZone(timeZone);
 			UserTracker userTracker = (UserTracker)currentUsers.get(sessionId);
 			%>
 
-			<c:if test="<%=  userTracker == null %>">
+			<% if ( userTracker == null ) {%>
 				<table border="0" cellpadding="0" cellspacing="0">
 				<tr>
 					<td>
@@ -54,9 +54,9 @@ df.setTimeZone(timeZone);
 					</td>
 				</tr>
 				</table>
-			</c:if>
+			<%}%>
 
-			<c:if test="<%=  userTracker != null %>">
+			<% if ( userTracker != null ) {%>
 
 				<%
 				User selUser = APILocator.getUserAPI().loadUserById(userTracker.getUserId(),APILocator.getUserAPI().getSystemUser(),false);
@@ -130,15 +130,15 @@ df.setTimeZone(timeZone);
 					<td nowrap>
 						<font class="bg" size="2">
 
-						<c:if test="<%= selUser != null %>">
+						<% if (selUser != null ) {%>
 							<a class="bg" href="<portlet:actionURL><portlet:param name="struts_action" value="/admin/edit_user_profile" /><portlet:param name="p_u_e_a" value="<%= selUser.getEmailAddress() %>" /></portlet:actionURL>">
 							<%= selUser.getFullName() %>
 							</a>
-						</c:if>
+						<%}%>
 
-						<c:if test="<%= selUser == null %>">
+						<% if (selUser == null ) {%>
 							<%= LanguageUtil.get(pageContext, "not-available") %>
-						</c:if>
+						<%}%>
 
 						</font>
 					</td>
@@ -148,13 +148,13 @@ df.setTimeZone(timeZone);
 					<td nowrap>
 						<font class="bg" size="2">
 
-						<c:if test="<%= selUser != null %>">
+						<% if (selUser != null ) {%>
 							<%= selUser.getEmailAddress() %>
-						</c:if>
+						<%}%>
 
-						<c:if test="<%= selUser == null %>">
+						<% if (selUser == null ) {%>
 							<%= LanguageUtil.get(pageContext, "not-available") %>
-						</c:if>
+						<%}%>
 
 						</font>
 					</td>
@@ -369,7 +369,7 @@ df.setTimeZone(timeZone);
 				</tr>
 				</table>
 
-				<c:if test="<%= (userSessionAlive && !session.getId().equalsIgnoreCase(sessionId)) %>">
+				<% if ((userSessionAlive && !session.getId().equalsIgnoreCase(sessionId)) ) {%>
 					<br>
 
 					<%
@@ -382,8 +382,8 @@ df.setTimeZone(timeZone);
                         <%= LanguageUtil.get(pageContext, "kill-session") %>
                     </button>
 
-				</c:if>
-			</c:if>
+				<%}%>
+			<%}%>
 		</td>
 	</tr>
 	</table>

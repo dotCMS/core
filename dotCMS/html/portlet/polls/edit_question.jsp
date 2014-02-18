@@ -180,22 +180,22 @@ if (choiceId > 0) {
 		  	</div>
 				<br clear="all">
 	  	</div>
-	<c:if test="<%= !SessionErrors.isEmpty(renderRequest) %>">
+	<% if (!SessionErrors.isEmpty(renderRequest) ) {%>
 		<div class="noResultsMessage fieldAlert"><%= LanguageUtil.get(pageContext, "you-have-entered-invalid-data") %></div>
-	</c:if>
+	<%}%>
 
 	<dl style="padding-top:10px;">
 		<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
 		<dd><input class="form-text" name="<portlet:namespace />question_title" type="title" style="width:375px;" size="70" value="<%= title %>"></dd>
-		<c:if test="<%= SessionErrors.contains(renderRequest, QuestionTitleException.class.getName()) %>">
+		<% if (SessionErrors.contains(renderRequest, QuestionTitleException.class.getName()) ) {%>
 			<dd class="inputCaption fieldAlert"><%= LanguageUtil.get(pageContext, "please-enter-a-valid-question") %></dd>
-		</c:if>
+		<%}%>
 		
 		<dt><%= LanguageUtil.get(pageContext, "question") %>:</dt>
 		<dd><textarea class="form-text" cols="70" name="<portlet:namespace />question_desc" rows="5" style="width:375px;" wrap="soft"><%= GetterUtil.getString(description) %></textarea></dd>
-		<c:if test="<%= SessionErrors.contains(renderRequest, QuestionDescriptionException.class.getName()) %>">
+		<% if (SessionErrors.contains(renderRequest, QuestionDescriptionException.class.getName()) ) {%>
 			<dd class="inputCaption fieldAlert"><%= LanguageUtil.get(pageContext, "please-enter-a-valid-question-description") %></dd>
-		</c:if>
+		<%}%>
 	
 		<dt><%= LanguageUtil.get(pageContext, "expiration-date") %>:</dt>
 		<dd>
@@ -231,9 +231,9 @@ if (choiceId > 0) {
 			
 			<%= LanguageUtil.get(pageContext, "never-expires") %> 
 		</dd>
-		<c:if test="<%= SessionErrors.contains(renderRequest, QuestionExpirationDateException.class.getName()) %>">
+		<% if (SessionErrors.contains(renderRequest, QuestionExpirationDateException.class.getName()) ) {%>
 			<dd class="inputCaption fieldAlert"><%= LanguageUtil.get(pageContext, "please-enter-a-valid-expiration-date") %></dd>
-		</c:if>
+		<%}%>
 		
 		<dt><%= LanguageUtil.get(pageContext, "choices") %>:</dt>
 		<%
@@ -268,17 +268,17 @@ if (choiceId > 0) {
 				<%= c %>.
 				<input name="<portlet:namespace />choice_id_<%= c %>" type="hidden" value="<%= c %>">
 				<input class="form-text" name="<portlet:namespace />choice_desc_<%= c %>" size="50" style="width:250px;" type="text" value="<%= GetterUtil.getString(choiceDesc) %>">
-				<c:if test="<%= numberOfChoices > 2 %>">
+				<% if (numberOfChoices > 2 ) {%>
 					<button dojoType="dijit.form.Button" iconClass="minusIcon" onClick="document.<portlet:namespace />fm.<portlet:namespace />choice_id.value = '<%= i %>'; submitForm(document.<portlet:namespace />fm);">
 						<%= LanguageUtil.get(pageContext, "remove") %>
 					</button>
-				</c:if>
+				<%}%>
 			</dd>
 		<% } %>
 	
-		<c:if test="<%= SessionErrors.contains(renderRequest, QuestionChoiceException.class.getName()) %>">
+		<% if (SessionErrors.contains(renderRequest, QuestionChoiceException.class.getName()) ) {%>
 			<dd class="inputCaption fieldAlert"><%= LanguageUtil.get(pageContext, "please-enter-valid-choices") %></dd>
-		</c:if>
+		<%}%>
 	
 	
 		<dt>&nbsp;</dt>
@@ -293,15 +293,15 @@ if (choiceId > 0) {
 </div>
 
 <div class="buttonRow">
-	<c:if test="<%= question == null %>">
+	<% if (question == null ) {%>
 		<button dojoType="dijit.form.Button" iconClass="saveIcon" onClick="<portlet:namespace />saveQuestion();"><%= LanguageUtil.get(pageContext, "save") %></button>
 		
 		<button dojoType="dijit.form.Button" iconClass="saveIcon" onClick="document.<portlet:namespace />fm.<portlet:namespace /><%= Constants.CMD %>.value = '<%= Constants.ADD %>'; document.<portlet:namespace />fm.<portlet:namespace />redirect.value = '<portlet:actionURL><portlet:param name="struts_action" value="/polls/edit_question" /></portlet:actionURL>'; document.<portlet:namespace />fm.<portlet:namespace />n_of_choices.value = '<%= numberOfChoices %>'; submitForm(document.<portlet:namespace />fm);">
 			<%= LanguageUtil.get(pageContext, "save-and-add-another") %>
 		</button>
-	</c:if>
+	<%}%>
 	
-	<c:if test="<%= question != null %>">
+	<% if (question != null ) {%>
 		<button dojoType="dijit.form.Button" iconClass="saveIcon" onClick="<portlet:namespace />saveQuestion();">
 			<%= LanguageUtil.get(pageContext, "update") %>
 		</button>
@@ -309,7 +309,7 @@ if (choiceId > 0) {
 		<button dojoType="dijit.form.Button" iconClass="deleteIcon" onClick="document.<portlet:namespace />fm.<portlet:namespace /><%= Constants.CMD %>.value = '<%= Constants.DELETE %>'; document.<portlet:namespace />fm.<portlet:namespace />redirect.value = '<portlet:renderURL><portlet:param name="struts_action" value="/polls/view_questions" /></portlet:renderURL>'; submitForm(document.<portlet:namespace />fm);">
 			<%= LanguageUtil.get(pageContext, "delete") %>
 		</button>
-	</c:if>
+	<%}%>
 	
 	<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="self.location = '<portlet:renderURL><portlet:param name="struts_action" value="/polls/view_questions" /></portlet:renderURL>';">
 		<%= LanguageUtil.get(pageContext, "cancel") %>

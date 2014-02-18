@@ -44,11 +44,11 @@
 	%>
 
 <%-- 
-	<c:if test="<%= !inFrame %>">
+	<% if (!inFrame ) {%>
 		if (window != top) {
 			top.location.href = location.href;
 		}
-	</c:if>
+	<%}%>
 --%>
 
 

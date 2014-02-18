@@ -25,8 +25,11 @@ public class UpdateAgent {
     public static String logFile;
 
     private String url;
-    private String homeProjectPath;
+    private String distributionPath;
+    private String dotcmsHomePath;
     public static String FOLDER_HOME_DOTSERVER = "dotserver";
+    public static String FOLDER_HOME_BIN = "bin";
+    public static String FOLDER_HOME_PLUGINS = "plugins";
     public static String FOLDER_HOME_UPDATER = "autoupdater";
     public static String FOLDER_HOME_BACK_UP = "backup";
     //private String backupFile;
@@ -70,18 +73,21 @@ public class UpdateAgent {
 
         try {
 
-            //Initializing properties
-            configureLogger( line );
-
             //Command line parameters
             allowTestingBuilds = Boolean.parseBoolean( line.getOptionValue( UpdateOptions.ALLOW_TESTING_BUILDS ) );
             proxy = line.getOptionValue( UpdateOptions.PROXY );
             proxyUser = line.getOptionValue( UpdateOptions.PROXY_USER );
             proxyPass = line.getOptionValue( UpdateOptions.PROXY_PASS );
             url = line.getOptionValue( UpdateOptions.URL, updateOptions.getDefault( "update.url", "" ) );
-            homeProjectPath = line.getOptionValue( UpdateOptions.HOME, System.getProperty( "user.dir" ) );
-            updateOptions.setHomeFolder( homeProjectPath );
-            updateOptions.setUpdateFilesFolder( homeProjectPath + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" );
+            distributionPath = line.getOptionValue( UpdateOptions.HOME, System.getProperty( "user.dir" ) );
+            dotcmsHomePath = line.getOptionValue( UpdateOptions.DOTCMS_HOME, System.getProperty( "user.dir" ) );
+
+            //Initializing properties
+            configureLogger( line );
+
+            updateOptions.setHomeFolder( distributionPath );
+            updateOptions.setUpdateFilesFolder( distributionPath + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" );
+            updateOptions.setDotcmsHomeFolder( dotcmsHomePath );
 
             //Verify if we need to print the help documentation
             if ( line.hasOption( UpdateOptions.HELP ) || args.length == 0 ) {
@@ -89,11 +95,12 @@ public class UpdateAgent {
                 return;
             }
 
-            logger.info( Messages.getString( "UpdateAgent.text.dotcms.home" ) + getHomeProjectPath() );
+            logger.info( Messages.getString( "UpdateAgent.text.distribution.home" ) + getDistributionPath() );
+            logger.info( Messages.getString( "UpdateAgent.text.dotcms.home" ) + getDistributionPath() + File.separator + getDotcmsHomePath() );
 
             //Some validations...
-            checkHome( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
-            checkRequisites( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER );
+            checkHome( getDistributionPath() + File.separator + getDotcmsHomePath() );
+            checkRequisites( getDistributionPath() );
 
             newMinor = "";
             newVersion = "";
@@ -154,14 +161,14 @@ public class UpdateAgent {
                 }
 
                 // Use user provided file
-                updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + line.getOptionValue( UpdateOptions.FILE ) );
+                updateFile = new File( getDistributionPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + line.getOptionValue( UpdateOptions.FILE ) );
                 if ( !updateFile.exists() ) {
                     throw new UpdateException( Messages.getString( "UpdateAgent.error.file.not.found" ), UpdateException.ERROR );
                 }
 
                 // Get the version locally
-                String fileMajor = UpdateUtil.getFileMayorVersion( updateFile );
-                String fileMinor = UpdateUtil.getFileMinorVersion( updateFile );
+                String fileMajor = UpdateUtil.getFileMayorVersion( updateFile, getDotcmsHomePath() );
+                String fileMinor = UpdateUtil.getFileMinorVersion( updateFile, getDotcmsHomePath() );
 
                 if ( fileMinor != null ) {
                     logger.info( Messages.getString( "UpdateAgent.text.file.version" ) + fileMajor + " / " + fileMinor );
@@ -201,7 +208,7 @@ public class UpdateAgent {
             //Ok, now we have an update file to use...
             if ( updateFile != null && updateFile.exists() ) {
 
-                FileUpdater fileUpdater = new FileUpdater( updateFile, getHomeProjectPath(), null, line.hasOption( UpdateOptions.DRY_RUN ) );
+                FileUpdater fileUpdater = new FileUpdater( updateFile, getDistributionPath(), getDotcmsHomePath(), null, line.hasOption( UpdateOptions.DRY_RUN ) );
 
                 // Pre-process the update, prepare everything and make back-ups
                 fileUpdater.preUpdate();
@@ -287,7 +294,7 @@ public class UpdateAgent {
             }
 
             String fileName = "update_" + newVersion + ".zip";
-            File updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
+            File updateFile = new File( getDistributionPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" + File.separator + fileName );
             if ( updateFile.exists() ) {
                 //check md5 of file
                 String MD5 = null;
@@ -355,7 +362,7 @@ public class UpdateAgent {
         FileAppender logApp;
         try {
             SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
-            logFile = "update_" + sdf.format( new Date() ) + ".log";
+            logFile = getDistributionPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "update_" + sdf.format( new Date() ) + ".log";
             if ( line.hasOption( UpdateOptions.LOG ) ) {
                 logFile = line.getOptionValue( UpdateOptions.LOG );
             }
@@ -392,11 +399,11 @@ public class UpdateAgent {
 
         String[] libDirs = new String[]{
                 File.separator + "common" + File.separator + "lib",
-                File.separator + "dotCMS" + File.separator + "WEB-INF" + File.separator + "lib"
+                File.separator + "WEB-INF" + File.separator + "lib"
         };
         File libDir = null;
         for ( String libDirName : libDirs ) {
-            File f = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_DOTSERVER + File.separator + libDirName );
+            File f = new File( getDistributionPath() + File.separator + getDotcmsHomePath() + File.separator + libDirName );
             if ( f.exists() && f.isDirectory() ) {
                 libDir = f;
                 break;
@@ -459,9 +466,7 @@ public class UpdateAgent {
      */
     private boolean checkRequisites ( String home ) throws UpdateException {
 
-        PostProcess postProcess = new PostProcess();
-        postProcess.setHome( home );
-
+        PostProcess postProcess = new PostProcess( getDistributionPath(), getDotcmsHomePath() );
         return postProcess.checkRequisites();
     }
 
@@ -475,7 +480,7 @@ public class UpdateAgent {
      */
     private boolean checkHome ( String home ) throws UpdateException {
 
-        String[] homeCheckElements = {"build.xml", "dotCMS/WEB-INF/web.xml"};
+        String[] homeCheckElements = {"WEB-INF/web.xml"};
 
         File homeFolder;
         for ( String check : homeCheckElements ) {
@@ -495,7 +500,7 @@ public class UpdateAgent {
      */
     private File downloadAgent ( String version ) {
 
-        File updateFile = new File( getHomeProjectPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "autoUpdater.new" );
+        File updateFile = new File( getDistributionPath() + File.separator + FOLDER_HOME_UPDATER + File.separator + "autoUpdater.new" );
 
         try {
 
@@ -816,8 +821,12 @@ public class UpdateAgent {
         return statusCode;
     }
 
-    public String getHomeProjectPath () {
-        return homeProjectPath;
+    public String getDistributionPath () {
+        return distributionPath;
+    }
+
+    public String getDotcmsHomePath () {
+        return dotcmsHomePath;
     }
 
 }

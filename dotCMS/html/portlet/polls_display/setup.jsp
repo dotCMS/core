@@ -24,11 +24,11 @@
 
 <%@ include file="/html/portlet/polls_display/init.jsp" %>
 
-<c:if test="<%= !pollsDisplayAdmin %>">
+<% if (!pollsDisplayAdmin ) {%>
 	<liferay:include page="/html/portal/portlet_not_setup.jsp" />
-</c:if>
+<%}%>
 
-<c:if test="<%= pollsDisplayAdmin %>">
+<% if (pollsDisplayAdmin ) {%>
 
 	<%
 	PollsDisplay pollsDisplay = (PollsDisplay)request.getAttribute(WebKeys.POLLS_DISPLAY);
@@ -43,7 +43,7 @@
 		<td align="center">
 			<table border="0" cellpadding="0" cellspacing="0">
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, NoSuchQuestionException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, NoSuchQuestionException.class.getName()) ) {%>
 				<tr>
 					<td>
 						<font class="bg" size="1"><span class="bg-neg-alert"><%= LanguageUtil.get(pageContext, "the-question-could-not-be-found") %></span></font>
@@ -52,7 +52,7 @@
 				<tr>
 					<td><img border="0" height="8" hspace="0" src="<%= COMMON_IMG %>/spacer.gif" vspace="0" width="1"></td>
 				</tr>
-			</c:if>
+			<%}%>
 
 			<tr>
 				<td>
@@ -94,11 +94,11 @@
 			</tr>
 			<tr>
 				<td align="center">
-                    <button dojoType="dijit.form.Button" type="submit" id="submitButton"><bean:message key="update" /></button>
+                    <button dojoType="dijit.form.Button" type="submit" id="submitButton"><%= LanguageUtil.get(pageContext, "update") %></button>
                     
                     <button dojoType="dijit.form.Button" 
                     onClick="self.location = '<portlet:renderURL><portlet:param name="struts_action" value="/polls_display/view" /></portlet:renderURL>';">
-                       <bean:message key="cancel" />
+                        <%= LanguageUtil.get(pageContext, "cancel" ) %>
                     </button>
 				</td>
 			</tr>
@@ -109,4 +109,4 @@
 	</form>
 
 	</table>
-</c:if>
+<%}%>

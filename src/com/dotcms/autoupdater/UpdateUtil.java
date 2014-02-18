@@ -46,7 +46,7 @@ public class UpdateUtil {
         }
         FileOutputStream fos = new FileOutputStream( destFile );
         BufferedOutputStream dest = new BufferedOutputStream( fos, BUFFER );
-        while ( ( count = is.read( data, 0, BUFFER ) ) != -1 ) {
+        while ( (count = is.read( data, 0, BUFFER )) != -1 ) {
             dest.write( data, 0, count );
         }
         dest.flush();
@@ -59,13 +59,16 @@ public class UpdateUtil {
      * This method will unzip a given zip file into a given direcoty
      *
      * @param zipFile
-     * @param directoryName
-     * @param home
+     * @param distributionHome
+     * @param forPath
      * @param dryrun
      * @return
      * @throws IOException
      */
-    public static boolean unzipDirectory ( File zipFile, String directoryName, String home, boolean dryrun ) throws IOException {
+    public static boolean unzipDirectory ( File zipFile, String distributionHome, String forPath, boolean dryrun ) throws IOException {
+
+        // ZIP ENTRY FILES MUST HAVE '/' AS SEPARATOR ON ANY PLATFORM *
+        forPath = forPath.replace( "\\", "/" );
 
         ActivityIndicator.startIndicator();
         FileInputStream fis = new FileInputStream( zipFile );
@@ -74,9 +77,9 @@ public class UpdateUtil {
         ZipEntry entry;
         BufferedOutputStream dest;
         int BUFFER = 1024;
-        while ( ( entry = zis.getNextEntry() ) != null ) {
+        while ( (entry = zis.getNextEntry()) != null ) {
             if ( !entry.isDirectory() ) {
-                if ( directoryName == null || entry.getName().contains( directoryName ) ) {
+                if ( forPath == null || entry.getName().startsWith( forPath ) ) {
 
                     UpdateAgent.logger.debug( Messages.getString( "FileUpdater.debug.extract.file" ) + entry );
 
@@ -89,8 +92,8 @@ public class UpdateUtil {
                          * ZIP ENTRY FILES MUST HAVE '/' AS SEPARATOR ON ANY PLATFORM *
                          ***************************************************************/
 
-                        String entryName = entry.getName().replace( UpdateAgent.FOLDER_HOME_DOTSERVER + '/', "" );
-                        File destFile = new File( home + File.separator + entryName );
+                        //String entryName = entry.getName().replace( dotcmsHome + '/', "" );
+                        File destFile = new File( distributionHome + File.separator + entry.getName() );
                         UpdateAgent.logger.debug( destFile.getAbsoluteFile() );
 
                         File parentFile = destFile.getParentFile();
@@ -100,7 +103,7 @@ public class UpdateUtil {
 
                         FileOutputStream fos = new FileOutputStream( destFile );
                         dest = new BufferedOutputStream( fos, BUFFER );
-                        while ( ( count = zis.read( data, 0, BUFFER ) ) != -1 ) {
+                        while ( (count = zis.read( data, 0, BUFFER )) != -1 ) {
                             dest.write( data, 0, count );
                         }
                         dest.flush();
@@ -111,12 +114,12 @@ public class UpdateUtil {
             } else {
 
                 //This code is to be certain that empty files are going to be create them as well....
-                if ( directoryName == null || entry.getName().contains( directoryName ) ) {
+                if ( forPath == null || entry.getName().startsWith( forPath ) ) {
 
-                    String entryName = entry.getName().replace( UpdateAgent.FOLDER_HOME_DOTSERVER + '/', "" );
-                    File destFile = new File( home + File.separator + entryName );
+                    //String entryName = entry.getName().replace( dotcmsHome + '/', "" );
+                    File destFile = new File( distributionHome + File.separator + entry.getName() );
 
-                    if (!destFile.exists()) {
+                    if ( !destFile.exists() ) {
 
                         destFile.mkdirs();
                         UpdateAgent.logger.debug( destFile.getAbsoluteFile() );
@@ -130,7 +133,7 @@ public class UpdateUtil {
         return true;
     }
 
-    public static Properties getInnerFileProps ( File zipFile ) throws IOException, UpdateException {
+    public static Properties getInnerFileProps ( File zipFile, String dotcmsPath ) throws IOException, UpdateException {
 
         // Lets look for the dotCMS jar inside the zip file
         FileInputStream fis = new FileInputStream( zipFile );
@@ -140,15 +143,16 @@ public class UpdateUtil {
         /***************************************************************
          * ZIP ENTRY FILES MUST HAVE '/' AS SEPARATOR ON ANY PLATFORM *
          ***************************************************************/
+        dotcmsPath = dotcmsPath.replace( "\\", "/" );
 
-        while ( ( entry = zis.getNextEntry() ) != null ) {
+        while ( (entry = zis.getNextEntry()) != null ) {
             String entryName1 = entry.getName();
-            if ( entryName1.startsWith( "dotserver/dotCMS/WEB-INF/lib/dotcms_" ) && !entryName1.startsWith( "dotserver/dotCMS/WEB-INF/lib/dotcms_ant" ) ) {
+            if ( entryName1.startsWith( dotcmsPath + "/WEB-INF/lib/dotcms_" ) && !entryName1.startsWith( dotcmsPath + "/WEB-INF/lib/dotcms-ant-" ) ) {
 
                 // We found it
                 ZipInputStream zis2 = new ZipInputStream( new BufferedInputStream( zis ) );
                 ZipEntry entry2;
-                while ( ( entry2 = zis2.getNextEntry() ) != null ) {
+                while ( (entry2 = zis2.getNextEntry()) != null ) {
                     String entryName2 = entry2.getName();
                     // Let's look inside to see if we find it
                     if ( entryName2.equals( "com/liferay/portal/util/build.properties" ) ) {
@@ -163,9 +167,9 @@ public class UpdateUtil {
         throw new UpdateException( Messages.getString( "UpdateUtil.error.no.version" ), UpdateException.ERROR );
     }
 
-    public static String getFileMinorVersion ( File zipFile ) throws IOException, UpdateException {
+    public static String getFileMinorVersion ( File zipFile, String dotcmsPath ) throws IOException, UpdateException {
 
-        Properties props = getInnerFileProps( zipFile );
+        Properties props = getInnerFileProps( zipFile, dotcmsPath );
         return getBuildVersion( props );
     }
 
@@ -180,9 +184,9 @@ public class UpdateUtil {
         return minor;
     }
 
-    public static String getFileMayorVersion ( File zipFile ) throws IOException, UpdateException {
+    public static String getFileMayorVersion ( File zipFile, String dotcmsPath ) throws IOException, UpdateException {
 
-        Properties props = getInnerFileProps( zipFile );
+        Properties props = getInnerFileProps( zipFile, dotcmsPath );
         return props.getProperty( "dotcms.release.version" );
     }
 
@@ -194,7 +198,7 @@ public class UpdateUtil {
             InputStream is = new FileInputStream( f );
             byte[] buffer = new byte[8192];
             int read;
-            while ( ( read = is.read( buffer ) ) > 0 ) {
+            while ( (read = is.read( buffer )) > 0 ) {
                 digest.update( buffer, 0, read );
             }
 
@@ -316,6 +320,41 @@ public class UpdateUtil {
     }
 
     /**
+     * This method will delete a given folder, it will make it recursively removing from the children to the parent
+     * with the exception of a list of files we don't want to remove on the given folder.
+     *
+     * @param dir
+     * @param exclusions List of files to keep on the given folder
+     * @return
+     */
+    public static boolean deleteDirectory ( File dir, String[] exclusions ) {
+
+        if ( dir.isDirectory() ) {
+            String[] children = dir.list();
+            for ( String child : children ) {
+                boolean success = deleteDirectory( new File( dir, child ), exclusions );
+                if ( !success ) {
+                    return false;
+                }
+            }
+        }
+
+        Boolean delete = true;
+        for ( String fileName : exclusions ) {
+            if ( dir.getName().equals( fileName ) ) {
+                delete = false;
+            }
+        }
+
+        //The directory is now empty so delete it
+        if ( delete ) {
+            return dir.delete();
+        } else {
+            return true;
+        }
+    }
+
+    /**
      * Copy the contents of a given folder into another
      *
      * @param src
@@ -355,7 +394,7 @@ public class UpdateUtil {
 
             int length;
             //copy the file content in bytes
-            while ( ( length = in.read( buffer ) ) > 0 ) {
+            while ( (length = in.read( buffer )) > 0 ) {
                 out.write( buffer, 0, length );
             }
 

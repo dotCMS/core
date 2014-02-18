@@ -40,9 +40,9 @@ int incomplete = 100 * factor - complete - 10;
 
 <liferay:include page="/html/common/top.jsp">
 	<liferay:param name="html_title" value="<%= LanguageUtil.get(pageContext, \"file-upload\") %>" />
-	<c:if test="<%= uploadPercent < 100 %>">
+	<% if (uploadPercent < 100 ) {%>
 		<liferay:param name="refresh_rate" value="1" />
-	</c:if>
+	<%}%>
 	<liferay:param name="cache_control" value="0" />
 	<liferay:param name="show_top" value="false" />
 </liferay:include>
@@ -64,32 +64,28 @@ int incomplete = 100 * factor - complete - 10;
 		<table border="0" cellpadding="0" cellspacing="0">
 		<tr>
 			<c:choose>
-				<c:when test="<%= uploadPercent == 0 %>">
+				<% if ( uploadPercent == 0 ) { %>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_incomplete_left.gif" vspace="0" width="5"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_incomplete_middle.gif" vspace="0" width="<%= 100 * factor - 10 %>"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_incomplete_right.gif" vspace="0" width="5"></td>
-				</c:when>
-				<c:when test="<%= complete <= 0 %>">
+				<%} else if ( complete <= 0 ) { %>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_complete_left.gif" vspace="0" width="5"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_incomplete_middle.gif" vspace="0" width="<%= 100 * factor - 10 %>"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_incomplete_right.gif" vspace="0" width="5"></td>
-				</c:when>
-				<c:when test="<%= complete < (100 * factor - 10) %>">
+				<%} else if ( complete < (100 * factor - 10) ) { %>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_complete_left.gif" vspace="0" width="5"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_complete_middle.gif" vspace="0" width="<%= complete %>"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_incomplete_middle.gif" vspace="0" width="<%= incomplete %>"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_incomplete_right.gif" vspace="0" width="5"></td>
-				</c:when>
-				<c:when test="<%= (complete >= (100 * factor - 10)) && (uploadPercent != 100) %>">
+				<%} else if ( (complete >= (100 * factor - 10)) && (uploadPercent != 100) ) { %>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_complete_left.gif" vspace="0" width="5"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_complete_middle.gif" vspace="0" width="<%= 100 * factor - 10 %>"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_incomplete_right.gif" vspace="0" width="5"></td>
-				</c:when>
-				<c:when test="<%= uploadPercent == 100 %>">
+				<%} else if ( uploadPercent == 100 ) { %>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_complete_left.gif" vspace="0" width="5"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_complete_middle.gif" vspace="0" width="<%= complete %>"></td>
 					<td><img height="23" hspace="0" src="<%= COMMON_IMG %>/portal/progress_bar_complete_right.gif" vspace="0" width="5"></td>
-				</c:when>
+				<%}%>
 			</c:choose>
 		</tr>
 		</table>
@@ -99,13 +95,13 @@ int incomplete = 100 * factor - complete - 10;
 	<td align="center">
 		<font class="bg" size="2">
 
-		<c:if test="<%= uploadPercent < 100 %>">
-		<%= LanguageUtil.get(pageContext, "uploading") %>:
-		</c:if>
+        <% if ( uploadPercent < 100 ) { %>
+		    <%= LanguageUtil.get(pageContext, "uploading") %>:
+        <%}%>
 
-		<c:if test="<%= uploadPercent == 100 %>">
-		<%= LanguageUtil.get(pageContext, "upload-completed") %>:
-		</c:if>
+        <% if ( uploadPercent == 100 ) { %>
+		    <%= LanguageUtil.get(pageContext, "upload-completed") %>:
+        <%}%>
 
 		</font>
 	</td>
@@ -119,11 +115,11 @@ int incomplete = 100 * factor - complete - 10;
 </tr>
 </table>
 
-<c:if test="<%= uploadPercent == 100 %>">
+<% if ( uploadPercent == 100 ) { %>
 	<script language="JavaScript">
 		setTimeout("window.close()", 3000);
 	</script>
-</c:if>
+<%}%>
 
 </body>
 

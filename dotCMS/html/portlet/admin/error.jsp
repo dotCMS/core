@@ -32,30 +32,30 @@
 		<td>
 			<font class="bg" size="2"><span class="bg-neg-alert">
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, NoSuchPortletException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, NoSuchPortletException.class.getName()) ) {%>
 				<%= LanguageUtil.get(pageContext, "the-portlet-could-not-be-found") %>
-			</c:if>
+			<%}%>
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, NoSuchRoleException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, NoSuchRoleException.class.getName()) ) {%>
 				<%= LanguageUtil.get(pageContext, "the-role-could-not-be-found") %>
-			</c:if>
+			<%}%>
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, NoSuchUserException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, NoSuchUserException.class.getName()) ) {%>
 				<%= LanguageUtil.get(pageContext, "the-user-could-not-be-found") %>
-			</c:if>
+			<%}%>
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, PrincipalException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, PrincipalException.class.getName()) ) {%>
 				<%= LanguageUtil.get(pageContext, "you-do-not-have-the-required-permissions") %>
-			</c:if>
+			<%}%>
 
 		
-			<c:if test="<%= SessionErrors.contains(renderRequest, RequiredRoleException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, RequiredRoleException.class.getName()) ) {%>
 				<%= LanguageUtil.get(pageContext, "the-selected-role-cannot-be-deleted-because-it-is-a-required-system-role") %>
-			</c:if>
+			<%}%>
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, RequiredUserException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, RequiredUserException.class.getName()) ) {%>
 				<%= LanguageUtil.get(pageContext, "you-cannot-delete-or-deactivate-yourself") %>
-			</c:if>
+			<%}%>
 
 			</span></font>
 		</td>

@@ -635,7 +635,7 @@ public class DotConnect {
 		                    	
 		                    	if(rs.getObject(x) instanceof java.sql.Clob){
 		                    		objvars.put(x, rs.getString(x));
-		                    	}else if(rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
+		                    	}else if( hasOracleDriver () && rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
 		                    		objvars.put(x,new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timeValue().getTime()));
 		                    	}
 		                    	else{
@@ -647,7 +647,7 @@ public class DotConnect {
 		                        
 		                    	if(rs.getObject(x) instanceof java.sql.Clob){
 		                    		objvars.put(x, rs.getString(x));
-		                    	}else if(rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
+		                    	}else if( hasOracleDriver () && rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
 		                    		objvars.put(x,new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timestampValue().getTime()));
 		                    	}
 		                    	else{
@@ -884,4 +884,20 @@ public class DotConnect {
         }
         return (objectResults != null) ? objectResults : new ArrayList <Map<String, Object>>();
     }
+
+    /**
+     * Verify if there is present the Oracle driver
+     *
+     * @return True if present
+     */
+    private Boolean hasOracleDriver () {
+
+        try {
+            Class.forName( "oracle.sql.TIMESTAMP" );
+            return true;
+        } catch ( ClassNotFoundException e ) {
+            return false;
+        }
+    }
+
 }

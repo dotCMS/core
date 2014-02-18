@@ -175,11 +175,11 @@ function randomPassword(){
 
 
 
-	<c:if test="<%= company.getAuthType().equals(Company.AUTH_TYPE_EA) %>">
+	<% if (company.getAuthType().equals(Company.AUTH_TYPE_EA) ) {%>
 		<input type="hidden" name="userID" value="<%= myAccountForm.getUserID() %>">
-	</c:if>
+	<%}%>
 	<input type="hidden" name="userProxyInode" value="<%= myAccountForm.getUserProxyInode() %>">
-	<c:if test="<%= company.getAuthType().equals(Company.AUTH_TYPE_ID) %>">
+	<% if (company.getAuthType().equals(Company.AUTH_TYPE_ID) ) { %>
 		<tr>
 			<td><span class="required"></span> </td>
 			<td>
@@ -191,7 +191,7 @@ function randomPassword(){
 				<input type="text" name="userID" tabindex="1" id="userID" value="<%= myAccountForm.getUserID()==null ? "": myAccountForm.getUserID()%>"  class="form-text" />
 			</td>
 		</tr>
-	</c:if>
+	<%}%>
 	<tr>
 		<td><span class="required"></span> </td>
 		<td>
@@ -518,7 +518,7 @@ List challengeQuestions = com.dotmarketing.util.UserUtils.getChallengeQuestionLi
 		<% 
 			String country = myAccountForm.getCountry();
 			if(com.dotmarketing.util.UtilMethods.isSet(country)){
-				country = "\"<bean:write property='country' name='myAccountForm'/>\"";
+				country = "\"" + country + "\"";
 			}
 			else {
 				country = "\"United States of America\"";
