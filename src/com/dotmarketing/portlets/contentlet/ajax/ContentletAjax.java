@@ -1608,6 +1608,13 @@ public class ContentletAjax {
 		if(!isAutoSave
 				&&(saveContentErrors == null
 						|| saveContentErrors.size() == 0)){
+			
+			if(referer.contains("referer")){
+				String ref = "referer=";
+                String sourceReferer = referer.substring(referer.indexOf(ref)+ref.length(),referer.length());
+                referer = referer.substring(0,referer.indexOf(ref));
+                callbackData.put("sourceReferer", sourceReferer);
+			 }
 
 			Logger.debug(this, "AFTER PUBLISH LANGUAGE=" + language);
 
