@@ -204,26 +204,24 @@
 
 
 	<%if(isAdministrator){%>
-		var assignedTo = new dijit.form.FilteringSelect({
-		    id: "assignedTo",
-		    name: "assignedTo",
-		    store: assignedToStore,
-		    searchDelay:300,
-		    pageSize:20,
-		    required:false,
-		    value:"<%=assignedTo.getId()%>",
-		    onClick:function(){
-		    	if(show4All==false){
-		    		dijit.byId("assignedTo").set("displayedValue","");
-		        	dijit.byId("assignedTo").loadDropDown();
-		    	}
-		    },
-		    onChange:doFilter
-
-
-		},
-		"assignedTo");
-		doFilter();
+        var assignedTo = new dijit.form.FilteringSelect({
+            id: "assignedTo",
+            name: "assignedTo",
+            store: assignedToStore,
+            searchDelay: 300,
+            pageSize: 20,
+            required: false,
+            value: "<%=assignedTo.getId()%>",
+            onClick: function () {
+                if (show4All == false) {
+                    dijit.byId("assignedTo").set("displayedValue", "");
+                    dijit.byId("assignedTo").loadDropDown();
+                }
+            },
+            onChange: doFilter
+        },
+        "assignedTo");
+        doFilter();
 	<%}%>
 
 		var stepId = new dijit.form.FilteringSelect({
@@ -277,8 +275,14 @@
 
 		var assignedTo = dijit.byId("assignedTo");
 		assignedTo.displayedValue="";
-		assignedTo.setValue("<%=myRole.getId()%>");
-		doFilter();
+
+        var currentAssignedTo = assignedTo.getValue();
+        assignedTo.setValue("<%=myRole.getId()%>");
+
+        //If the values are equals the onchange event of the FilteringSelect won't be fired, and we need it.
+        if (currentAssignedTo == "<%=myRole.getId()%>") {
+            doFilter();
+        }
 	}
 	<%if(isAdministrator){%>
 	    var show4All=false;
