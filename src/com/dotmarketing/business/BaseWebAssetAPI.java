@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.dotmarketing.business;
 
@@ -15,6 +15,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.VirtualLinksCache;
@@ -31,6 +32,7 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -47,26 +49,26 @@ import com.liferay.portal.model.User;
  * @author jtesser
  * All methods in the BaseWebAssetAPI should be protected or private. The BaseWebAssetAPI is intended to be extended by other APIs for WebAsset Objects.
  * This api will eventually fade out when all web assets move to content
- *  
+ *
  */
 public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 
 	/**
 	 * Save the asset.
-	 * 
+	 *
 	 * @param currWebAsset
 	 * @throws DotDataException
-	 * @throws DotSecurityException 
-	 * @throws DotStateException 
+	 * @throws DotSecurityException
+	 * @throws DotStateException
 	 */
-	protected abstract void save(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException; 
-	
+	protected abstract void save(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException;
+
 	protected void unLockAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
-		// unlocks current working asseted 
+		// unlocks current working asseted
 		APILocator.getVersionableAPI().setLocked(currWebAsset, false, null);
 	}
-	
+
 	protected void createAsset(WebAsset webasset, String userId) throws DotDataException, DotSecurityException {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
@@ -79,27 +81,27 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		id.setOwner(userId);
 		//HibernateUtil.saveOrUpdate(id);
 		APILocator.getIdentifierAPI().save(id);
-		
+
 		webasset.setIdentifier(id.getId());
 		save(webasset);
 		APILocator.getVersionableAPI().setWorking(webasset);
 	}
-	
+
 	protected void createAsset(WebAsset webasset, String userId, Inode parent) throws DotDataException, DotSecurityException {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
-		
+
 		// persists the webasset
 		if(!UtilMethods.isSet(webasset.getInode()))
             HibernateUtil.save(webasset);
-		
+
 		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Folder) parent);
 		id.setOwner(userId);
 		// set the identifier on the inode for future reference.
 		// and for when we get rid of identifiers all together
 		//HibernateUtil.saveOrUpdate(id);
 		APILocator.getIdentifierAPI().save(id);
-		
+
 		webasset.setIdentifier(id.getId());
 		// persists the webasset
 		save(webasset);
@@ -111,7 +113,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		// create new identifier, with the URI
 		APILocator.getVersionableAPI().setWorking(webasset);
 	}
-	
+
 	protected void createAsset(WebAsset webasset, String userId, Identifier identifier, boolean working) throws DotDataException, DotStateException, DotSecurityException {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
@@ -140,38 +142,38 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	 * @throws DotDataException
 	 *             The method throw an exception when the new asset identifier
 	 *             or the working folder cannot be found.
-	 * @throws DotSecurityException 
-	 * @throws DotStateException 
+	 * @throws DotSecurityException
+	 * @throws DotStateException
 	 */
 	protected WebAsset saveAsset(WebAsset newWebAsset, Identifier id, User user, boolean respectAnonPermissions) throws DotDataException, DotStateException, DotSecurityException {
-		
+
 		if (!InodeUtils.isSet(id.getInode())) {
 			throw new DotDataException("Identifier not found!");
 		}
 		/*WebAsset oldWebAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(id, user, respectAnonPermissions);
-		
+
 		if (!InodeUtils.isSet(oldWebAsset.getInode())) {
 			throw new DotDataException("Working copy of id: " + id.getAssetType() + ":" + id.getInode() + " not found!");
 		}*/
 		//oldWebAsset.setWorking(false);
 		//newWebAsset.setWorking(true);
-		
+
 		//save(oldWebAsset);
 		newWebAsset.setIdentifier(id.getId());
-		
+
 		save(newWebAsset);
-		
+
 		APILocator.getVersionableAPI().setWorking(newWebAsset);
 
 		return newWebAsset;
 	}
-	
+
 	protected void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier, boolean working) throws DotDataException, DotStateException, DotSecurityException {
 		if(!UtilMethods.isSet(webasset.getInode()))
 		    webasset.setInode(UUID.randomUUID().toString());
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
-		
+
 		// adds the webasset as child of the folder or parent inode
 		if(!parent.getType().equalsIgnoreCase("folder"))
 		   parent.addChild(webasset);
@@ -182,11 +184,11 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		webasset.setIdentifier(identifier.getInode());
 
 		save(webasset);
-		
+
 		if(working)
 		    APILocator.getVersionableAPI().setWorking(webasset);
 	}
-	
+
 	/**
 	 * This method save the new asset as the new working version and change the
 	 * current working as an old version.
@@ -200,23 +202,23 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	 *             The method throw an exception when the new asset identifier
 	 *             or the working folder cannot be found.
 	 */
-	
+
 	/*
 	protected WebAsset saveAsset(WebAsset newWebAsset, Identifier id) throws DotDataException {
 		if (!InodeUtils.isSet(id.getInode())) {
 			throw new DotDataException("Web asset Identifier not found!");
 		}
 		WebAsset currWebAsset = null;
-		
+
 		// gets the current working asset
 		currWebAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(id, newWebAsset.getClass());
-		
+
 		if (!InodeUtils.isSet(currWebAsset.getInode())) {
 			throw new DotDataException("Working copy not found!");
 		}
-		
+
 		WebAsset workingAsset = null;
-		
+
 		try {
 			workingAsset = swapAssets(currWebAsset, newWebAsset);
 		} catch (Exception e) {
@@ -249,7 +251,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			return true;
 		return false;
 	}
-	
+
 	/**
 	 * This method totally removes an asset from the cms
 	 * @param currWebAsset
@@ -266,9 +268,9 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			{
 				return returnValue;
 			}
-			
+
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-			
+
 			//### Delete the IDENTIFIER entry from cache ###
 			LiveCache.removeAssetFromCache(currWebAsset);
 			WorkingCache.removeAssetFromCache(currWebAsset);
@@ -279,6 +281,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 			//Get the identifier of the webAsset
 			Identifier identifier = APILocator.getIdentifierAPI().find(currWebAsset);
+
+			VersionInfo auxVersionInfo = null;
 
 			//### Get and delete the webAsset ###
 			List<Versionable> webAssetList = new ArrayList<Versionable>();
@@ -296,7 +300,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
 					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 				}
-				
+
 				CacheLocator.getHTMLPageCache().remove((HTMLPage)currWebAsset);
 			}
 			else if(currWebAsset instanceof Template)
@@ -313,14 +317,41 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			else if(currWebAsset instanceof File)
 			{
 
+				VersionInfo vi = APILocator.getVersionableAPI().getVersionInfo(currWebAsset.getIdentifier());
+				if(!UtilMethods.isSet(vi)) {
+					Class clazz = UtilMethods.getVersionInfoType("file_asset");
+					HibernateUtil dh = new HibernateUtil(FileAssetVersionInfo.class);
+		            dh.setQuery("from "+clazz.getName()+" where identifier=?");
+		            dh.setParam(identifier);
+		            Logger.debug(BaseWebAssetAPI.class, "getVersionInfo query: "+dh.getQuery());
+		            auxVersionInfo=(VersionInfo)dh.load();
+
+		            clazz = InodeUtils.getClassByDBType("file_asset");
+		            dh = new HibernateUtil(clazz);
+		    		dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='file_asset' order by mod_date desc");
+		    		dh.setParam(currWebAsset.getIdentifier());
+		    		Logger.debug(BaseWebAssetAPI.class, "findAllVersions query: " + dh.getQuery());
+		    		webAssetList.addAll( (List<Versionable>) dh.list() );
+				}
+
+
 				APILocator.getFileAPI().invalidateCache((File)currWebAsset);
+
 				if(RefreshMenus.shouldRefreshMenus((File)currWebAsset)){
 					RefreshMenus.deleteMenu(currWebAsset);
 					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
 					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 				}
 			}
-			APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
+
+			if(auxVersionInfo==null) { // null auxVersionInfo  indicates everything goes fine
+				APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
+			} else {	// not null auxVersionInfo indicates VersionInfo is incorrect (bad asset_type, etc) so we had to get it providing the asset_type, instead of using identifier's asset_type
+				String ident = auxVersionInfo.getIdentifier();
+				HibernateUtil.delete(auxVersionInfo);
+				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident);
+			}
+
 			for(Versionable webAsset : webAssetList)
 			{
 				//Delete the permission of each version of the asset
@@ -359,7 +390,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			//### Delete the Identifier ###
 			if(identifier!=null && UtilMethods.isSet(identifier.getId()))
 			    APILocator.getIdentifierAPI().delete(identifier);
-			
+
 			//### Delete the Identifier ###
 			returnValue = true;
 		}
@@ -377,27 +408,27 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		}
 		return returnValue;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public int getCountAssetsAndPermissionsPerRoleAndConditionWithParent(String condition, Class assetsClass, String parentId, boolean showDeleted, User user) {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermissionWithParent(condition, assetsClass, 100000, 0, parentId, showDeleted, user);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public int getCountAssetsPerConditionWithPermission(String condition, Class c, User user) {
 		return getCountAssetsPerConditionWithPermission(condition, c, null, user);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public int getCountAssetsPerConditionWithPermission(String condition, Class c, String parent, User user) {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermission(condition, c, -1, 0, parent, user);
 	}
-	
+
 	@SuppressWarnings("unchecked")
-	public int getCountAssetsAndPermissionsPerRoleAndConditionWithParent(String hostId, String condition, Class assetsClass, String parentId, boolean showDeleted, User user) {		
+	public int getCountAssetsAndPermissionsPerRoleAndConditionWithParent(String hostId, String condition, Class assetsClass, String parentId, boolean showDeleted, User user) {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermissionWithParent(hostId, condition, assetsClass, 100000, 0, parentId, showDeleted, user);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public int getCountAssetsPerConditionWithPermission(Host host, String condition, Class c, User user) {
 		return getCountAssetsPerConditionWithPermission(host.getIdentifier(), condition, c, user);
@@ -412,12 +443,12 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	public int getCountAssetsPerConditionWithPermission(Host host, String condition, Class c, String parent, User user) {
 		return getCountAssetsPerConditionWithPermission(host.getIdentifier(), condition, c, parent, user);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public int getCountAssetsPerConditionWithPermission(String hostId, String condition, Class c, String parent, User user) {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermission(hostId, condition, c, -1, 0, parent, user);
 	}
-	
+
 	public int deleteOldVersions(Date olderThan, String assetType) throws DotDataException, DotHibernateException {
 	    Calendar calendar = Calendar.getInstance();
         calendar.setTime(olderThan);
@@ -433,37 +464,37 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
         List<Map<String, String>> result = dc.loadResults();
         int before = Integer.parseInt(result.get(0).get("count"));
         String versionInfoTable = UtilMethods.getVersionInfoTableName(assetType);
-        
+
         String condition = " mod_date < ? and not exists (select * from "+versionInfoTable+
                 " where working_inode="+assetType+".inode or live_inode="+assetType+".inode)";
-        
+
         String inodesToDelete = "select inode from "+assetType+" where "+condition;
-        
+
         String treeChildDelete = "delete from tree where child in ("+inodesToDelete+")";
         dc.setSQL(treeChildDelete);
         dc.addParam(date);
         dc.loadResult();
-        
+
         String treeParentDelete = "delete from tree where parent in ("+inodesToDelete+")";
         dc.setSQL(treeParentDelete);
         dc.addParam(date);
         dc.loadResult();
-        
+
         String deleteContentletSQL = "delete from "+assetType+" where  "+condition;
         dc.setSQL(deleteContentletSQL);
         dc.addParam(date);
         dc.loadResult();
-       
+
         String deleteInodesSQL = "delete from inode where type=? and idate < ? and inode not in (select inode from "+assetType+")";
         dc.setSQL(deleteInodesSQL);
         dc.addParam(assetType);
         dc.addParam(date);
         dc.loadResult();
-        
+
         dc.setSQL(countSQL);
         result = dc.loadResults();
         int after = Integer.parseInt(result.get(0).get("count"));
-        
+
 	    return before-after;
 	}
 }
