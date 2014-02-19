@@ -38,6 +38,7 @@
     <property name="plugin.jar.deploy.dir.default" value="${basedir}/../../dotCMS/WEB-INF/lib" />
 
     <property name="dist.update" value="false"/>
+    <property name="dist.test" value="false"/>
     <property name="distribution.output" value="../dist" />
     <property name="distribution.file.output" value="${distribution.output}/.." />
     <property name="distribution.bin.output" value="${distribution.output}/bin" />
@@ -318,7 +319,15 @@
         <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat7.home}"/>
 
         <!--Generate the war-->
-        <antcall target="war" />
+        <if>
+            <equals arg1="${dist.test}" arg2="true"/>
+            <then>
+                <antcall target="war-tests" />
+            </then>
+            <else>
+                <antcall target="war" />
+            </else>
+        </if>
 
         <!--Move the war to the ./dotserver/tomcat-tomcat-7.0.42/webapps folder-->
         <antcall target="move-war-tomcat7" />
@@ -505,6 +514,10 @@
                 <!--Do something if exist...?-->
             </then>
             <else>
+
+                <var name="dist.test" unset="true"/>
+                <property name="dist.test" value="true"/>
+
                 <delete dir="${distribution.file.output}"/>
                 <mkdir dir="${distribution.file.output}"/>
 
@@ -539,7 +552,7 @@
     </target>
 
     <!-- Main test target, this tasks will run all the unit tests of the application -->
-    <target name="test-dotcms" depends="deploy-tests-no-plugins, drop-create-db-test, test-prepare-dist">
+    <target name="test-dotcms" depends="drop-create-db-test, test-prepare-dist">
 
         <echo message="Catalina Home: ${distribution.catalina.home}"/>
 
@@ -905,7 +918,6 @@
     <target name="deploy-jsp" depends="build-jsp, deploy-core-jsp, deploy-plugins" description="builds and deploys core and plugins" />
 
     <target name="deploy-tests" depends="uncomment-test-servlet, build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
-    <target name="deploy-tests-no-plugins" depends="uncomment-test-servlet, build, deploy-core-with-tests" description="builds and deploys core, and unit tests" />
 
     <target name="deploy-tests-jsp" depends="uncomment-test-servlet, build-jsp, deploy-core-with-tests-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
