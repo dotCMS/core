@@ -32,6 +32,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
@@ -252,7 +253,15 @@ public class ThumbnailImage extends HttpServlet {
             	    id = APILocator.getIdentifierAPI().find(identifier);
             	String contAssetPath = "";
             	if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
-            		Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(identifier, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+
+                    Contentlet cont;
+                    try {
+                        //We should try first to get a live version of this contentlet, if it does not exist we will try the working copy
+                        cont = APILocator.getContentletAPI().findContentletByIdentifier( identifier, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false );
+                    } catch ( DotContentletStateException se ) {
+                        cont = APILocator.getContentletAPI().findContentletByIdentifier( identifier, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false );
+                    }
+
             		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
             		isSet = InodeUtils.isSet(cont.getInode());
             		fileName = fa.getFileName();

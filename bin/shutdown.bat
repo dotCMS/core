@@ -6,22 +6,53 @@ rem ----------------------------------------------------------------------------
 
 if "%OS%" == "Windows_NT" setlocal
 
+@if not "%ECHO%" == ""  echo %ECHO%
+@if "%OS%" == "Windows_NT" setlocal
+
+if "%OS%" == "Windows_NT" (
+  set "CURRENT_DIR=%~dp0%"
+) else (
+  set CURRENT_DIR=.\
+)
+
+rem Read an optional configuration file.
+if "x%RUN_CONF%" == "x" (
+   set "RUN_CONF=%CURRENT_DIR%build.conf.bat"
+)
+if exist "%RUN_CONF%" (
+   echo Calling "%RUN_CONF%"
+   call "%RUN_CONF%" %*
+) else (
+    echo Config file not found "%RUN_CONF%"
+)
+
 rem Guess DOTCMS_HOME if not defined
-set "CURRENT_DIR=%cd%"
-if not "%DOTCMS_HOME%" == "" goto gotHome
-set "DOTCMS_HOME=%CURRENT_DIR%"
-if exist "%DOTCMS_HOME%\bin\startup.bat" goto okHome
-cd ..
-set "DOTCMS_HOME=%cd%"
+if not "%DOTCMS_HOME%" == "" goto gotDotcmsHome
+set "DOTCMS_HOME=%CURRENT_DIR%..\%HOME_FOLDER%"
+if exist "%DOTCMS_HOME%" goto okDotcmsHome
+set "DOTCMS_HOME=%CURRENT_DIR%\%HOME_FOLDER%"
+cd "%CURRENT_DIR%"
+:gotDotcmsHome
+if exist "%DOTCMS_HOME%" goto okDotcmsHome
+echo The DOTCMS_HOME environment variable is not defined correctly: %DOTCMS_HOME%
+echo This environment variable is needed to run this program
+goto end
+:okDotcmsHome
+
+rem Guess CATALINA_HOME if not defined
+if not "%CATALINA_HOME%" == "" goto gotHome
+set "CATALINA_HOME=%CURRENT_DIR%..\%SERVER_FOLDER%"
+if exist "%CATALINA_HOME%\bin\catalina.bat" goto okHome
+set "CATALINA_HOME=%CURRENT_DIR%\%SERVER_FOLDER%"
 cd "%CURRENT_DIR%"
 :gotHome
-if exist "%DOTCMS_HOME%\bin\startup.bat" goto okHome
-echo The DOTCMS_HOME environment variable is not defined correctly
+if exist "%CATALINA_HOME%\bin\catalina.bat" goto okHome
+echo The CATALINA_HOME environment variable is not defined correctly: %CATALINA_HOME%
 echo This environment variable is needed to run this program
 goto end
 :okHome
 
-set "EXECUTABLE=%DOTCMS_HOME%\tomcat\bin\catalina.bat"
+set "EXECUTABLE=%CATALINA_HOME%\bin\catalina.bat"
 
 rem Check that target executable exists
 if exist "%EXECUTABLE%" goto okExec
@@ -39,7 +70,7 @@ shift
 goto setArgs
 :doneSetArgs
 
-cd %DOTCMS_HOME%\tomcat\bin
+cd %CATALINA_HOME%\bin
 call "%EXECUTABLE%" stop %CMD_LINE_ARGS%
 cd "%CURRENT_DIR%"
 

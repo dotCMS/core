@@ -1,3 +1,4 @@
+<%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ include file="/html/common/init.jsp" %>
 <tiles:useAttribute id="tilesContent" name="content" classname="java.lang.String" />
 <tiles:useAttribute id="tilesPortletSubNav" name="portlet_sub_nav" classname="java.lang.String" />
@@ -10,11 +11,11 @@
 %>
 
 <%if(inPortal ) {%>
-        <c:if test="<%= Validator.isNotNull(tilesPortletSubNav) %>">
+        <% if (Validator.isNotNull(tilesPortletSubNav) ) {%>
                 <div class="portlet-wrapper" >
                         <liferay:include page="<%= Constants.TEXT_HTML_DIR + tilesPortletSubNav %>" flush="true" />
                 </div>
-        </c:if>
+        <%}%>
         <div class="portlet-wrapper" >
                 <jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>
         </div>

@@ -509,6 +509,16 @@ public class EditFieldAction extends DotPortletAction {
 	private void _deleteField(ActionForm form, ActionRequest req, ActionResponse res) {
 		Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
 		Structure structure = StructureFactory.getStructureByInode(field.getStructureInode());
+		
+		try {
+            _checkUserPermissions(structure, _getUser(req), PERMISSION_PUBLISH);
+        } catch (Exception ae) {
+            if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
+            	String message = "message.insufficient.permissions.to.delete";
+            	SessionMessages.add(req, "error", message);
+            	return;
+            }
+        }
 		// clean contentlet field in db
 		try {
 			String type = field.getFieldType();

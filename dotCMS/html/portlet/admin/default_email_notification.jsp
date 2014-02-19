@@ -33,7 +33,7 @@ EmailConfig registrationEmail = userConfig.getRegistrationEmail();
 <form action="<portlet:actionURL><portlet:param name="struts_action" value="/admin/update_default_email_notification" /></portlet:actionURL>" method="post" name="<portlet:namespace />fm" onSubmit="submitForm(this); return false;">
 <input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="den">
 
-<c:if test="<%= SessionMessages.contains(renderRequest, UpdateUserConfigAction.class.getName()) %>">
+<% if (SessionMessages.contains(renderRequest, UpdateUserConfigAction.class.getName()) ) {%>
 	<table border="0" cellpadding="0" cellspacing="0" width="100%">
 	<tr>
 		<td>
@@ -43,7 +43,7 @@ EmailConfig registrationEmail = userConfig.getRegistrationEmail();
 	</table>
 
 	<br>
-</c:if>
+<%}%>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"default-email-notification\") %>" />

@@ -48,7 +48,7 @@
 
 		<table border="0" cellpadding="0" cellspacing="2">
 
-		<c:if test="<%= SessionErrors.contains(request, UserPasswordException.class.getName()) %>">
+		<% if (SessionErrors.contains(request, UserPasswordException.class.getName())) {%>
 
 			<%
 			UserPasswordException upe = (UserPasswordException)SessionErrors.get(request, UserPasswordException.class.getName());
@@ -58,22 +58,22 @@
 				<td colspan="3">
 					<font class="bg" size="1"><span class="bg-neg-alert">
 
-					<c:if test="<%= upe.getType() == UserPasswordException.PASSWORDS_DO_NOT_MATCH %>">
+					<% if (upe.getType() == UserPasswordException.PASSWORDS_DO_NOT_MATCH ) {%>
 						<%= LanguageUtil.get(pageContext, "please-enter-matching-passwords") %>
-					</c:if>
+					<%}%>
 
-					<c:if test="<%= upe.getType() == UserPasswordException.PASSWORD_INVALID %>">
+					<% if (upe.getType() == UserPasswordException.PASSWORD_INVALID ) {%>
 						<%= LanguageUtil.get(pageContext, "please-enter-a-valid-password") %>
-					</c:if>
+					<%}%>
 
-					<c:if test="<%= upe.getType() == UserPasswordException.PASSWORD_ALREADY_USED %>">
+					<% if (upe.getType() == UserPasswordException.PASSWORD_ALREADY_USED ) {%>
 						<%= LanguageUtil.get(pageContext, "please-enter-a-password-that-has-not-already-been-used") %>
-					</c:if>
+					<%}%>
 
 					</span></font>
 				</td>
 			</tr>
-		</c:if>
+		<%}%>
 
 		<tr>
 			<td>

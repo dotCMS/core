@@ -1,6 +1,7 @@
 package com.dotcms.publisher.util;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ public class DependencyManager {
 	private DependencySet links;
 	private DependencySet relationships;
 	private DependencySet workflows;
+	private DependencySet languages;
 
 	private Set<String> hostsSet;
 	private Set<String> foldersSet;
@@ -90,6 +92,7 @@ public class DependencyManager {
 		relationships = new DependencySet(config.getId(), "relationship", config.isDownloading(), isPublish);
 		links = new DependencySet(config.getId(),"links",config.isDownloading(), isPublish);
 		workflows = new DependencySet(config.getId(),"workflows",config.isDownloading(), isPublish);
+		languages = new DependencySet(config.getId(),"languages",config.isDownloading(), isPublish);
 
 		// these ones are for being iterated over to solve the asset's dependencies
 		hostsSet = new HashSet<String>();
@@ -142,7 +145,7 @@ public class DependencyManager {
 				try {
 					Template t = APILocator.getTemplateAPI().findLiveTemplate(asset.getAsset(), user, false);
 
-					if(t==null) {
+					if(t==null || !UtilMethods.isSet(t.getIdentifier())) {
 						t = APILocator.getTemplateAPI().findWorkingTemplate(asset.getAsset(), user, false);
 					}
 
@@ -205,11 +208,8 @@ public class DependencyManager {
         setStructureDependencies();
         setLinkDependencies();
 
-        if ( config.getOperation().equals( Operation.PUBLISH ) ) {
-            setContentDependencies( config.getLuceneQueries() );
-        } else {
-            contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
-        }
+    	contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+        setContentDependencies( config.getLuceneQueries() );
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -221,6 +221,7 @@ public class DependencyManager {
 		config.setLinks(links);
 		config.setRelationships(relationships);
 		config.setWorkflows(workflows);
+		config.setLanguages(languages);
 	}
 
 	/**
@@ -692,7 +693,7 @@ public class DependencyManager {
 	}
 
 
-	private void processList(List<Contentlet> cons) throws DotDataException, DotSecurityException {
+	private void processList(Set<Contentlet> cons) throws DotDataException, DotSecurityException {
 		Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
 		Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
 
@@ -759,6 +760,8 @@ public class DependencyManager {
 			Folder f = APILocator.getFolderAPI().find(con.getFolder(), user, false);
         	folders.addOrClean( con.getFolder(), f.getModDate()); // adding content folder
 
+        	languages.addOrClean(Long.toString(con.getLanguageId()), new Date()); // will be included only when hasn't been sent ever
+
 			try {
 				if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES",false)) {
 					List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
@@ -822,14 +825,18 @@ public class DependencyManager {
 		try {
 		    // we need to process contents already taken as dependency
 			Set<String> cons = new HashSet<String>(contentsSet);
-            for(String id : cons){
-                processList(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
+
+			Set<Contentlet> allContents = new HashSet<Contentlet>(); // we will put here those already added and the ones from lucene queries
+
+			for(String id : cons){
+            	allContents.addAll(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
             }
 
 			for(String luceneQuery: luceneQueries) {
-				List<Contentlet> cs = APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false);
-				processList(cs);
+				allContents.addAll(APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false));
 			}
+
+			processList(allContents);
 
 		} catch (Exception e) {
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()"

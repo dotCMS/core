@@ -304,7 +304,7 @@
 	<%}%>
 	
 		<dt><%= LanguageUtil.get(pageContext, "Country") %></dt>
-		<dd><script language="javascript">writeCountriesSelect("country", "<bean:write property='country' name='UserManagerListSearchForm'/>", true);</script></dd>
+		<dd><script language="javascript">writeCountriesSelect("country", "<%= UtilMethods.isSet(form.getCountry()) ? form.getCountry() : "" %>", true);</script></dd>
 		
 		<dt><%= LanguageUtil.get(pageContext, "State") %></dt>
 		<dd><input type="text" class="form-text" name="state" id="state" size="30" dojoType="dijit.form.TextBox" value="<%= UtilMethods.isSet(form.getState()) ? form.getState() : "" %>" /></dd>

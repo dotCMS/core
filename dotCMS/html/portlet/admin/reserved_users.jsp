@@ -31,7 +31,7 @@ UserConfig userConfig = AdminConfigManagerUtil.getUserConfig(company.getCompanyI
 <form action="<portlet:actionURL><portlet:param name="struts_action" value="/admin/update_reserved_users" /></portlet:actionURL>" method="post" name="<portlet:namespace />fm" onSubmit="submitForm(this); return false;">
 <input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="ru">
 
-<c:if test="<%= SessionMessages.contains(renderRequest, UpdateUserConfigAction.class.getName()) %>">
+<% if (SessionMessages.contains(renderRequest, UpdateUserConfigAction.class.getName()) ) {%>
 	<table border="0" cellpadding="0" cellspacing="0" width="95%">
 	<tr>
 		<td>
@@ -41,7 +41,7 @@ UserConfig userConfig = AdminConfigManagerUtil.getUserConfig(company.getCompanyI
 	</table>
 
 	<br>
-</c:if>
+<%}%>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"reserved-users\") %>" />

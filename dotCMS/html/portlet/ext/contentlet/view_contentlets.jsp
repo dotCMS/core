@@ -423,7 +423,7 @@
 											  buff.append("{id:'0',value:'',lang:'All',imageurl:'"+imageURL+"',label:'<span style=\""+style.replaceAll("URLHERE",imageURL)+"\"></span>All'}");
 											  for (Language lang : languages) {
 												  imageURL="/html/images/languages/" + lang.getLanguageCode()  + "_" + lang.getCountryCode() +".gif";
-												  final String display=lang.getLanguage() + " - " + lang.getCountry().trim();
+												  final String display=lang.getLanguage() + " (" + lang.getCountryCode().trim() + ")";
 												  buff.append(",{id:'"+lang.getId()+"',");
 												  buff.append("value:'"+lang.getId()+"',");
 												  buff.append("imageurl:'"+imageURL+"',");

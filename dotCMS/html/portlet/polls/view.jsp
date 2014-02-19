@@ -33,13 +33,13 @@ List questions = PollsQuestionManagerUtil.getQuestions(portletConfig.getPortletN
 <table border="0" cellpadding="4" cellspacing="0" width="100%">
 <tr>
 	<td align="center">
-		<c:if test="<%= (questions == null) || (questions.size() == 0) %>">
+		<% if ((questions == null) || (questions.size() == 0) ) {%>
 			<font class="gamma" size="2">
 			<%= LanguageUtil.get(pageContext, "there-are-no-questions") %>
 			</font>
-		</c:if>
+		<%}%>
 
-		<c:if test="<%= (questions != null) && (questions.size() > 0) %>">
+		<% if ((questions != null) && (questions.size() > 0) ) {%>
 			<table border="0" cellpadding="0" cellspacing="0" width="95%">
 			<tr>
 				<td>
@@ -123,7 +123,7 @@ List questions = PollsQuestionManagerUtil.getQuestions(portletConfig.getPortletN
 			%>
 
 			</table>
-		</c:if>
+		<%}%>
 	</td>
 </tr>
 </table>

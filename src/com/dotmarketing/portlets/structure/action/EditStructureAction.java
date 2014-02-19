@@ -516,6 +516,16 @@ public class EditStructureAction extends DotPortletAction {
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
 		
 		try {
+            _checkUserPermissions(structure,user, PERMISSION_PUBLISH);
+        } catch (Exception ae) {
+            if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
+            	String message = "message.insufficient.permissions.to.delete";
+            	SessionMessages.add(req, "error", message);
+            	return;
+            }
+        }
+		
+		try {
 		    APILocator.getStructureAPI().delete(structure, user);
 		    
 		    ActivityLogger.logInfo(ActivityLogger.class, "Delete Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted structure "
