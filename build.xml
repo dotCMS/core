@@ -550,13 +550,13 @@
         <exec osfamily="unix" executable="${test.distribution.path}/bin/deploy-plugins.sh"/>
         <exec osfamily="windows" executable="${test.distribution.path}/bin/deploy-plugins.bat"/>
 
+        <antcall target="restore-files"/>
         <runservertests
                 testurl="http://localhost:${server.port}"
                 starttarget="tomcat-start"
                 stoptarget="tomcat-stop"
                 testtarget="test-all-junits"
                 timeout="600000"/>
-        <antcall target="restore-files"/>
         <!--<antcall target="drop-db"/>-->
     </target>
 
@@ -734,7 +734,9 @@
     <!-- Reestablish the original server.xml and ROOT.xml files -->
     <target name="restore-files" depends="">
         <move file="${src.tests.dir}/server-orig.bck" tofile="${src.tests.dir}/server.xml" overwrite="true"/>
+        <delete file="${src.tests.dir}/server-orig.bck"/>
         <move file="${src.tests.dir}/ROOT-orig.bck" tofile="${src.tests.dir}/ROOT.xml" overwrite="true"/>
+        <delete file="${src.tests.dir}/ROOT-orig.bck"/>
     </target>
 
     <target name="start-server-for-tests" depends="">
