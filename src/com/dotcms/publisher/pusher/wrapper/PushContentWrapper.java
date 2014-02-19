@@ -4,6 +4,7 @@ import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.tag.model.Tag;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class PushContentWrapper implements ContentWrapper {
     private List<Map<String, Object>> tree;
     private List<Tag> tags;
     private Operation operation;
+    private Language language;
 
     public ContentletVersionInfo getInfo () {
         return info;
@@ -66,5 +68,13 @@ public class PushContentWrapper implements ContentWrapper {
     public void setOperation ( Operation operation ) {
         this.operation = operation;
     }
+
+	public Language getLanguage() {
+		return language;
+	}
+
+	public void setLanguage(Language language) {
+		this.language = language;
+	}
 
 }

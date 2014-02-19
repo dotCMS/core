@@ -76,12 +76,12 @@ List rightKVPs = (List)request.getAttribute(WebKeys.MOVE_BOXES_RIGHT_LIST);
 								</select>
 							</td>
 
-							<c:if test="<%= leftReorder %>">
+							<% if (leftReorder ) {%>
 								<td valign="top">
 									<a class="gamma" href="javascript: reorder(document.<%= formName %>.<%= leftBoxName %>, 0);"><img border="0" height="16" hspace="0" src="<%= SKIN_COMMON_IMG %>/03_up.gif" vspace="2" width="16"></a><br>
 									<a class="gamma" href="javascript: reorder(document.<%= formName %>.<%= leftBoxName %>, 1);"><img border="0" height="16" hspace="0" src="<%= SKIN_COMMON_IMG %>/03_down.gif" vspace="2" width="16"></a><br>
 								</td>
-							</c:if>
+							<%}%>
 
 						</tr>
 						</table>
@@ -124,12 +124,12 @@ List rightKVPs = (List)request.getAttribute(WebKeys.MOVE_BOXES_RIGHT_LIST);
 								</select>
 							</td>
 
-							<c:if test="<%= rightReorder %>">
+							<% if (rightReorder ) {%>
 								<td valign="top">
 									<a class="gamma" href="javascript: reorder(document.<%= formName %>.<%= rightBoxName %>, 0);"><img border="0" height="16" hspace="0" src="<%= SKIN_COMMON_IMG %>/03_up.gif" vspace="2" width="16"></a><br>
 									<a class="gamma" href="javascript: reorder(document.<%= formName %>.<%= rightBoxName %>, 1);"><img border="0" height="16" hspace="0" src="<%= SKIN_COMMON_IMG %>/03_down.gif" vspace="2" width="16"></a><br>
 								</td>
-							</c:if>
+							<%}%>
 
 						</tr>
 						</table>

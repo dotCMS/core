@@ -73,7 +73,7 @@ if (!hasVoted) {
 }
 %>
 
-<c:if test="<%= !hasVoted %>">
+<% if (!hasVoted ) {%>
 	<table border="0" cellpadding="4" cellspacing="0" width="95%">
 
 	<form action="<portlet:actionURL><portlet:param name="struts_action" value="/polls_display/view" /></portlet:actionURL>" method="post" name="<portlet:namespace />fm">
@@ -95,7 +95,7 @@ if (!hasVoted) {
 			</tr>
 			</table>
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, NoSuchChoiceException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, NoSuchChoiceException.class.getName()) ) {%>
 				<table border="0" cellpadding="0" cellspacing="0">
 				<tr>
 					<td>
@@ -106,9 +106,9 @@ if (!hasVoted) {
 					<td><img border="0" height="8" hspace="0" src="<%= COMMON_IMG %>/spacer.gif" vspace="0" width="1"></td>
 				</tr>
 				</table>
-			</c:if>
+			<%}%>
 
-			<c:if test="<%= SessionErrors.contains(renderRequest, DuplicateVoteException.class.getName()) %>">
+			<% if (SessionErrors.contains(renderRequest, DuplicateVoteException.class.getName()) ) {%>
 				<table border="0" cellpadding="0" cellspacing="0">
 				<tr>
 					<td>
@@ -119,7 +119,7 @@ if (!hasVoted) {
 					<td><img border="0" height="8" hspace="0" src="<%= COMMON_IMG %>/spacer.gif" vspace="0" width="1"></td>
 				</tr>
 				</table>
-			</c:if>
+			<%}%>
 
 			<table border="0" cellpadding="0" cellspacing="0">
 
@@ -174,9 +174,9 @@ if (!hasVoted) {
 	</form>
 
 	</table>
-</c:if>
+<%}%>
 
-<c:if test="<%= hasVoted %>">
+<% if (hasVoted ) {%>
 
 	<%
 	NumberFormat numberFormat = NumberFormat.getNumberInstance(locale);
@@ -199,7 +199,7 @@ if (!hasVoted) {
 			</tr>
 			</table>
 
-			<c:if test="<%= SessionMessages.contains(renderRequest, \"vote_added\") %>">
+			<% if (SessionMessages.contains(renderRequest, "vote_added") ) {%>
 				<table border="0" cellpadding="0" cellspacing="0">
 				<tr>
 					<td>
@@ -210,7 +210,7 @@ if (!hasVoted) {
 					<td><img border="0" height="8" hspace="0" src="<%= COMMON_IMG %>/spacer.gif" vspace="0" width="1"></td>
 				</tr>
 				</table>
-			</c:if>
+			<%}%>
 
 			<table border="0" cellpadding="4" cellspacing="0" width="100%">
 			<tr>
@@ -263,7 +263,7 @@ if (!hasVoted) {
 								</font>
 							</td>
 
-							<c:if test="<%= votesPercentWidth > 0 %>">
+							<% if (votesPercentWidth > 0 ) {%>
 								<td valign="middle">
 									<table border="0" cellpadding="0" cellspacing="0">
 									<tr>
@@ -272,7 +272,7 @@ if (!hasVoted) {
 									</tr>
 									</table>
 								</td>
-							</c:if>
+							<%}%>
 
 							<td valign="top" width="99%">
 								<font class="<%= className %>" size="2">
@@ -313,12 +313,12 @@ if (!hasVoted) {
 		</td>
 	</tr>
 	</table>
-</c:if>
+<%}%>
 
-<c:if test="<%= pollsDisplayAdmin %>">
+<% if (pollsDisplayAdmin ) {%>
 	<table width="100%">
 	<tr>
-		<td align="right"><font class="bg" size="1">[<a class="bg" href="<portlet:actionURL><portlet:param name="struts_action" value="/polls_display/setup" /></portlet:actionURL>" styleClass="bg"><bean:message key="setup" /></a>]</font></td>
+		<td align="right"><font class="bg" size="1">[<a class="bg" href="<portlet:actionURL><portlet:param name="struts_action" value="/polls_display/setup" /></portlet:actionURL>" styleClass="bg"><%= LanguageUtil.get(pageContext, "setup" ) %></a>]</font></td>
 	</tr>
 	</table>
-</c:if>
+<%}%>

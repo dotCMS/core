@@ -8,10 +8,8 @@ import java.util.Date;
 import java.util.List;
 
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
-
 import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
@@ -21,6 +19,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HTMLPageBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.LanguageVariablesBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.LinkBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
@@ -300,8 +299,9 @@ public class PushPublisher extends Publisher {
                  */
                 list.add( RelationshipBundler.class );
             }
-            list.add( LanguageBundler.class );
+            list.add( LanguageVariablesBundler.class );
             list.add( WorkflowBundler.class );
+            list.add( LanguageBundler.class );
         }
 
         return list;

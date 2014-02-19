@@ -267,7 +267,7 @@
 	                               imgurl="/html/images/languages/" + lang.getLanguageCode()  + "_" + lang.getCountryCode() +"_gray.gif";
 	                               value=editURL + "&lang="+ lang.getId() + "&inode=";
 	                           }
-	                           final String display=lang.getLanguage() + " - " + lang.getCountry().trim();
+	                           final String display=lang.getLanguage() + " (" + lang.getCountryCode().trim() + ")";
 	
 	                           if(!first) buff.append(","); else first=false;
 	                           final String ccode=lang.getLanguageCode()  + "_" + lang.getCountryCode();
