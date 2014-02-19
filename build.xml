@@ -38,7 +38,6 @@
     <property name="plugin.jar.deploy.dir.default" value="${basedir}/../../dotCMS/WEB-INF/lib" />
 
     <property name="dist.update" value="false"/>
-    <property name="dist.test" value="false"/>
     <property name="distribution.output" value="../dist" />
     <property name="distribution.file.output" value="${distribution.output}/.." />
     <property name="distribution.bin.output" value="${distribution.output}/bin" />
@@ -319,15 +318,7 @@
         <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="7.0.42" dest="${tomcat7.home}"/>
 
         <!--Generate the war-->
-        <if>
-            <equals arg1="${dist.test}" arg2="true"/>
-            <then>
-                <antcall target="war-tests" />
-            </then>
-            <else>
-                <antcall target="war" />
-            </else>
-        </if>
+        <antcall target="war" />
 
         <!--Move the war to the ./dotserver/tomcat-tomcat-7.0.42/webapps folder-->
         <antcall target="move-war-tomcat7" />
@@ -514,13 +505,8 @@
                 <!--Do something if exist...?-->
             </then>
             <else>
-
-                <var name="dist.test" unset="true"/>
-                <property name="dist.test" value="true"/>
-
                 <delete dir="${distribution.file.output}"/>
                 <mkdir dir="${distribution.file.output}"/>
-
                 <antcall target="create-dist" />
             </else>
         </if>
@@ -540,6 +526,12 @@
 
         <!--Set the tomcat home-->
         <var name="distribution.catalina.home" value="${test.distribution.path}/dotserver/tomcat-7.0.42"/>
+        <var name="tomcat7.home" value="${distribution.catalina.home}"/>
+
+        <!--Generate the war and replace the ROOT content-->
+        <antcall target="war-tests" />
+        <!--Move the war to the dotserver/tomcat-tomcat-7.0.42/webapps folder-->
+        <antcall target="move-war-tomcat7" />
 
         <!--Prepare and copy some tomcat configuration files to the plugins ROOT folder-->
         <delete file="${test.distribution.path}/plugins/com.dotcms.config/ROOT/dotserver/tomcat-7.0.42/conf/server.xml"/>
@@ -744,15 +736,19 @@
     <!-- Prepare and relocate the server.xml and ROOT.xml used for the test while backing up the originals -->
     <!-- The db attributes and tomcat port is defined in the build.properties file -->
     <target name="set-properties" depends="">
+
         <copy file="${src.tests.dir}/server.xml" tofile="${src.tests.dir}/server-orig.bck"/>
         <copy file="${src.tests.dir}/ROOT.xml" tofile="${src.tests.dir}/ROOT-orig.bck"/>
         <replace file="${src.tests.dir}/server.xml" token="{port}" value="${server.port}"/>
         <replace file="${src.tests.dir}/server.xml" token="{shutdown_port}" value="${server.shutdown.port}"/>
-        <replace file="dotCMS/WEB-INF/classes/dotmarketing-config.properties">
+
+        <copy file="src-conf/dotmarketing-config.properties" tofile="${src.tests.dir}/dotmarketing-config-orig.bck"/>
+        <replace file="src-conf/dotmarketing-config.properties">
             <replacefilter token="es.http.enabled" value="#es.http.enabled"/>
             <replacefilter token="es.transport.tcp.port" value="#es.transport.tcp.port"/>
         </replace>
-        <echo file="dotCMS/WEB-INF/classes/dotmarketing-config.properties" append="true">${line.separator}es.http.enabled=false${line.separator}es.transport.tcp.port=${es.network.port}${line.separator}</echo>
+        <echo file="src-conf/dotmarketing-config.properties" append="true">${line.separator}es.http.enabled=false${line.separator}es.transport.tcp.port=${es.network.port}${line.separator}</echo>
+
         <replace file="${src.tests.dir}/ROOT.xml">
             <replacefilter token="{driver}" value="${db.driver}"/>
             <replacefilter token="{url}" value="${db.url}"/>
@@ -766,8 +762,12 @@
     <target name="restore-files" depends="">
         <move file="${src.tests.dir}/server-orig.bck" tofile="${src.tests.dir}/server.xml" overwrite="true"/>
         <delete file="${src.tests.dir}/server-orig.bck"/>
+
         <move file="${src.tests.dir}/ROOT-orig.bck" tofile="${src.tests.dir}/ROOT.xml" overwrite="true"/>
         <delete file="${src.tests.dir}/ROOT-orig.bck"/>
+
+        <move file="${src.tests.dir}/dotmarketing-config-orig.bck" tofile="src-conf/dotmarketing-config.properties" overwrite="true"/>
+        <delete file="${src.tests.dir}/dotmarketing-config-orig.bck"/>
     </target>
 
     <target name="start-server-for-tests" depends="">
