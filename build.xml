@@ -485,6 +485,15 @@
 
     <target name="test-prepare-dist">
 
+        <!--CHECK FOR FAMILY OS-->
+        <condition property="isWindows">
+            <os family="windows"/>
+        </condition>
+
+        <condition property="isUnix">
+            <os family="unix"/>
+        </condition>
+
         <!--Set the location where the distribution zip file will be located-->
         <var name="distribution.file.output" unset="true"/>
         <property name="distribution.file.output" value="${zip.test.distribution.path}"/>
@@ -506,7 +515,15 @@
         <!--Unzip the distribution-->
         <delete dir="${test.distribution.path}"/>
         <mkdir dir="${test.distribution.path}"/>
-        <unzip src="${distribution.file.output}/dotcms_${dotcms.release.version}.zip" dest="${test.distribution.path}"/>
+        <if>
+            <equals arg1="${isUnix}" arg2="true"/>
+            <then>
+                <untar src="${distribution.file.output}/dotcms_${dotcms.release.version}.tar.gz" dest="${test.distribution.path}" compression="gzip"/>
+            </then>
+            <else>
+                <unzip src="${distribution.file.output}/dotcms_${dotcms.release.version}.zip" dest="${test.distribution.path}"/>
+            </else>
+        </if>
 
         <!--Set the tomcat home-->
         <var name="distribution.catalina.home" value="${test.distribution.path}/dotserver/tomcat-7.0.42"/>
@@ -540,6 +557,7 @@
             <equals arg1="${isUnix}" arg2="true"/>
             <then>
                 <chmod dir="${test.distribution.path}/bin" perm="775" includes="**/*.sh"/>
+                <chmod dir="${distribution.catalina.home}/bin" perm="775" includes="**/*.sh"/>
             </then>
             <!--<else>
                 Windows...
