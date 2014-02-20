@@ -5,6 +5,7 @@
 <%@page import="java.util.Map"%>
 <%@page import="java.util.List"%>
 
+<%@ include file="/html/common/uservalidation.jsp"%>
 
 <table class="listingTable shadowBox">
         <thead>

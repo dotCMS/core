@@ -1,4 +1,5 @@
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
+<%@ include file="/html/common/uservalidation.jsp"%>
 
 <%@page import="com.dotmarketing.business.APILocator"%>
 
