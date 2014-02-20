@@ -106,9 +106,9 @@
                 <dt><%= LanguageUtil.get(pageContext, "Email-Address") %>:</dt>
                 <dd><input id="emailAddress" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
                 <dt><%= LanguageUtil.get(pageContext, "Password") %>:</dt>
-                <dd><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+                <dd><input id="password" type="password" autocomplete="off" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
                 <dt><%= LanguageUtil.get(pageContext, "Password-Again") %>:</dt>
-                <dd><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+                <dd><input id="passwordCheck" type="password" autocomplete="off" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
             </dl>
         </form>
     </div>

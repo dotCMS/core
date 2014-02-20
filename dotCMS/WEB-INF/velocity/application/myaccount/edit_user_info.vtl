@@ -39,7 +39,7 @@ function prefixChanged (obj) {
 		<a href="/dotCMS/registrationHistory" class="button">Registration and Order History</a>
 		<a href="/dotCMS/myAccount" class="button">My Account</a>
 	</div>
-	
+
 	<div style="text-align: center;">
 		#parse('static/messages.html')
 	</div>
@@ -51,7 +51,7 @@ function prefixChanged (obj) {
 <div style="width: 325px; float: left;">
 		<fieldset class="inline hideLabels">
 			<legend>Prefix:</legend>
-		
+
 			#if($!{myAccountForm.prefix} == "mr")
 				#set( $mr = "selected")
 			#elseif($!{myAccountForm.prefix} == "mrs")
@@ -76,44 +76,44 @@ function prefixChanged (obj) {
 				value="#if(${other})$!{myAccountForm.prefix}#end" #if(!${other})
 				readonly="readonly" #end>
 			<label for="prefix">Other Prefix</label>
-			
+
 		</fieldset>
-				
+
 		<label for="firstName" class="required">First Name: <a href="#required">*</a></label>
 		<input type="text" name="firstName" id="firstName" value="$!myAccountForm.firstName" style="width:150px"><br />
-			
+
 		<label for="lastName" class="required">Last Name: <a href="#required">*</a></label>
 		<input type="text" name="lastName" id="lastName" value="$!myAccountForm.lastName" style="width:150px"><br />
-			
+
 		<label for="suffix">Suffix:</label>
 		<input type="text" name="suffix" id="suffix" value="$!myAccountForm.suffix" style="width:150px"><br />
-			
+
 		<label for="title">Title:</label>
 		<input type="text" name="title" id="title" value="$!myAccountForm.title" style="width:150px"><br />
 </div>
 <div style="width: 325px; float: left;">
 		<label for="emailAddress" class="required">Username / E-mail address: <a href="#required">*</a></label>
 		<input type="text" name="emailAddress" id="emailAddress" value="$!myAccountForm.emailAddress" style="width:150px"><br />
-			
+
 		<label for="password">Current Password:</label>
-		<input type="password" name="password" id="password" value="" style="width:150px"><br />
-		
+		<input type="password" autocomplete="off" name="password" id="password" value="" style="width:150px"><br />
+
 		<label for="newPassword">New Password:</label>
-		<input type="password" name="newPassword" id="newPassword" style="width:150px"><br />
+		<input type="password" autocomplete="off" name="newPassword" id="newPassword" style="width:150px"><br />
 
 		<label for="verifyPassword">New Password again:</label>
-		<input type="password" name="verifyPassword" id="verifyPassword" style="width:150px"><br />
+		<input type="password" autocomplete="off" name="verifyPassword" id="verifyPassword" style="width:150px"><br />
 
 		<div class="buttonGroup">
 			<a href="javascript:window.location='/dotCMS/myAccount?userId=$!{myAccountForm.userId}';" class="button">Back</a>
 			<a href="javascript:doSubmit();" class="activeButton">Save</a>
 		</div>
-</div>				
+</div>
 	</fieldset>
-	
+
 	<div class="key">
 		<a name="required" id="required">*required fields</a>
 	</div>
-	
+
 </form>
 
