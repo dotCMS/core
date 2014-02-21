@@ -3,7 +3,7 @@
 <%@ page import="com.dotmarketing.portlets.usermanager.struts.UserManagerForm" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.dotmarketing.util.UtilHTML" %>
-<% 
+<%
 UserManagerForm myAccountForm =(UserManagerForm) request.getAttribute(com.dotmarketing.util.WebKeys.USERMANAGER_EDIT_FORM);
 String referrer = request.getParameter("referer");
 
@@ -13,7 +13,7 @@ try {
 	challengeQuestionProperty = com.dotmarketing.util.Config.getBooleanProperty("USE_CHALLENGE_QUESTION");
 } catch (Exception e) {
 	com.dotmarketing.util.Logger.error(this, "profile_password.jsp - Need to set USE_CHALLENGE_QUESTION property.");
-}	
+}
 %>
 
 <%@page import="java.util.List"%>
@@ -26,12 +26,12 @@ function prefixChanged () {
 	if (dijit.byId('prefix').attr('value') == "other") {
 		dijit.byId('otherPrefix').attr('disabled', false);
 		dijit.byId('otherPrefix').focus();
-		
+
 	} else {
 		dijit.byId('otherPrefix').attr('disabled', true);
 	}
 }
-	
+
 /*Open the Facility PopUp*/
 function openPopUp(url)
 {
@@ -40,12 +40,12 @@ function openPopUp(url)
 	var left = Math.floor( (screen.width - width) / 2);
 	var top = Math.floor( (screen.height - height) / 2);
 	var parameter = 'scrollbars=yes,resizable=yes,status=yes,toolbar=no,width=' + width + ',height=' + height+ ',top=' + top + ',left='+ left;
-		
+
 	window.open(url,'facility',parameter,false);
 	toggleBox('organizationsLayer',0);
-	
+
 }
-	
+
 /*Callback from the facility PopUp*/
 function callback(organizationInode,organizationTitle,street1,street2,state,city,zip,phone,fax)
 {
@@ -53,46 +53,46 @@ function callback(organizationInode,organizationTitle,street1,street2,state,city
 	document.getElementById('organizationTitle').value = organizationTitle;
 }
 
-function getRadio(organization) { 	     
+function getRadio(organization) {
 	return "<input type='radio' value='" + organization["inode"] + "' onclick='OrganizationAjax.getOrganizationMap(organizationSelected, " + organization["inode"] + ")' name='organizationInode' id='organizationInode'>";
 }
-	  
-function getName(organization) 
-{ 
-  return organization["title"]; 
+
+function getName(organization)
+{
+  return organization["title"];
 }
-	  
-function getAddress(organization) { 
+
+function getAddress(organization) {
   	var address = "(" + organization["street1"];
   	if (organization["street2"] != "")
   		address +=  " " + organization["street2"];
   		address +=  ", " + organization["state"];
   		address +=  ", " + organization["city"];
-  		address +=  ", " + organization["zip"] + ")";	  	
-	  	return address; 
+  		address +=  ", " + organization["zip"] + ")";
+	  	return address;
 }
 
-function direct(data) { 
-  	return data; 
+function direct(data) {
+  	return data;
 }
 
-function empty(data) { 
-  	return ""; 
+function empty(data) {
+  	return "";
 }
 
 function fillTable(organizations)
-{  		  				  
+{
       DWRUtil.removeAllRows("organizationsTable");
       if (organizations.length > 0)
-	  {		
+	  {
 	      DWRUtil.addRows("organizationsTable", organizations, [ getRadio, getName, getAddress ]);
 	  }
 	  else
-	  {		
+	  {
 	      DWRUtil.addRows("organizationsTable", {"No School or System found":""}, [ empty, direct ]);
 	  }
 }
-	  
+
 function zipChanged() {
   	document.getElementById("partnerKey").value = ""
   	var zip = document.getElementById("zipCode").value;
@@ -104,14 +104,14 @@ function zipChanged() {
  	  	toggleBox ("organizationsLayer", 1);
  	}
 }
-	  
-function getByPartnerKey() 
+
+function getByPartnerKey()
 {
   	document.getElementById("zipCode").value = "";
   	var key = document.getElementById("partnerKey").value;
   	OrganizationAjax.getOrganizationsByPartnerKey (fillAddress, key);
 }
-	  
+
 function toggleBox(szDivID, iState) // 1 visible, 0 hidden
 {
      var obj = document.layers ? document.layers[szDivID] :
@@ -119,7 +119,7 @@ function toggleBox(szDivID, iState) // 1 visible, 0 hidden
      document.all[szDivID].style;
      obj.visibility = document.layers ? (iState ? "show" : "hide") :
      (iState ? "visible" : "hidden");
-     
+
 }
 
 
@@ -127,21 +127,21 @@ function fillAddress(organizations)
 {
       DWRUtil.removeAllRows("organizationsTable");
       if (organizations.length > 0)
-	  {		
+	  {
 		 var organization = organizations[0];
-	     organizationSelected(organization);   
+	     organizationSelected(organization);
 	  }
 	  else
-	  {		
+	  {
 	      DWRUtil.addRows("organizationsTable", {"No School or System found":""}, [ empty, direct ]);
    	  	  toggleBox ("organizationsLayer", 1);
 	  }
 }
-	  
-function organizationSelected(organization) 
-  {		
+
+function organizationSelected(organization)
+  {
   	toggleBox ("organizationsLayer", 0);
-	var organizationInode = organization["inode"]; 
+	var organizationInode = organization["inode"];
 	var organizationTitle = organization["title"];
 	var street1 = organization["street1"];
   	var street2 = organization["street2"];
@@ -153,8 +153,8 @@ function organizationSelected(organization)
 
 	document.getElementById("organizationInodeAux").value = organizationInode;
 	document.getElementById("organizationTitle").value = organizationTitle;
-	
-} 
+
+}
 
 function iDontBelongChecked() {
   	if (document.getElementById("noOrganization").checked) {
@@ -175,32 +175,32 @@ function iDontBelongChecked() {
 }
 
 function doSave() {
-				
+
     	var form = document.getElementById ("fm1");
     	form.action = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/usermanager/edit_usermanager" /></portlet:actionURL>'
     	form.cmd.value = "save";
     	form.submit ();
     }
-    
+
 function doCancel() {
-				
+
     	var form = document.getElementById ("fm1");
     	form.action = '<%=referrer%>'
     	form.cmd.value = "";
     	form.submit ();
     }
-    
-    
+
+
 </script>
 <script type="text/javascript">
 <!--
 	function validChallengeQuestion() {
-<% if (challengeQuestionProperty) { %>	
+<% if (challengeQuestionProperty) { %>
 		if (document.getElementById('challengeQuestionId').selectedIndex == 0) {
 			alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.usermanager.select.challenge.question")) %>');
 			return false;
 		}
-		
+
 		var challengeQuestionAnswer = trimString(document.getElementById('challengeQuestionAnswer').value);
 		if (challengeQuestionAnswer == '') {
 			alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.usermanager.challenge.question.invalid")) %>');
@@ -228,7 +228,7 @@ function doCancel() {
 		<div id="btn">
             <button dojoType="dijit.form.Button"  onClick="doSave()">
                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-            </button>&nbsp;&nbsp; 
+            </button>&nbsp;&nbsp;
             <button dojoType="dijit.form.Button" onclick="doCancel()">
                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
             </button>
@@ -246,7 +246,7 @@ function doCancel() {
 			</tr>
 			<tr>
 				<td colspan="2">
-					
+
 				</td>
 			</tr>
 			<tr>
@@ -275,7 +275,7 @@ function doCancel() {
 						if(!strPrefix.equals("mr") && !strPrefix.equals("mrs") && !strPrefix.equals("miss") && !strPrefix.equals("dr")){
 							isOther = true;
 						}
-						
+
 					%>
 					<select dojoType="dijit.form.FilteringSelect" name="prefix" id="prefix" onchange="prefixChanged()" value="<%= UtilMethods.isSet(myAccountForm.getPrefix()) ? myAccountForm.getPrefix() : "" %>">
 						<option value="mr" ><%= LanguageUtil.get(pageContext, "Mr") %>.</option>
@@ -315,14 +315,14 @@ function doCancel() {
 			<tr>
 				<td></td>
 				<td><%= LanguageUtil.get(pageContext, "New-Password") %>:</td>
-				<td><input type="password" dojoType="dijit.form.TextBox" name="password" id="password" value="" style="width:150px"/></td>
+				<td><input type="password" autocomplete="off" dojoType="dijit.form.TextBox" name="password" id="password" value="" style="width:150px"/></td>
 			</tr>
 			<tr>
 				<td></td>
 				<td><%= LanguageUtil.get(pageContext, "New-Password-again") %>:</td>
-				<td><input type="password" dojoType="dijit.form.TextBox" name="verifyPassword" id="verifyPassword" value="" style="width:150px"/></td>
-			</tr>	
-		
+				<td><input type="password" autocomplete="off" dojoType="dijit.form.TextBox" name="verifyPassword" id="verifyPassword" value="" style="width:150px"/></td>
+			</tr>
+
 		<% if (challengeQuestionProperty) { %>
 	<tr>
 		<td></td>
@@ -353,17 +353,17 @@ function doCancel() {
 			<input type="text" dojoType="dijit.form.TextBox" name="challengeQuestionAnswer" id="challengeQuestionAnswer" value="<%= userProxy.getChallengeQuestionAnswer() != null ? userProxy.getChallengeQuestionAnswer() : "" %>" size="22" />
 		</td>
 	</tr>
-<% 
+<%
 	}
 	else {
 %>
 <input name="challengeQuestionId" type="hidden" value="">
 <input name="challengeQuestionAnswer" type="hidden" value="">
-<% 
+<%
 	}
 %>
 	<input name="changingChallengeQuestion" id="changingChallengeQuestion" type="hidden" value="false">
-	
+
 	  </table>
 </fieldset>
 </td>
@@ -382,7 +382,7 @@ function doCancel() {
 							<td>&nbsp;</td>
 							<td colspan="2">
 								<input dojoType="dijit.form.RadioButton" type="radio" name="description" id="home" value="home" <%= "home".equals(myAccountForm.getDescription()) ? "checked" : "" %> /> <%= LanguageUtil.get(pageContext, "Home-Address") %>
-								<input dojoType="dijit.form.RadioButton" type="radio" name="description" id="work" value="work" <%= "work".equals(myAccountForm.getDescription()) ? "checked" : "" %> /> <%= LanguageUtil.get(pageContext, "Work-Address") %> 
+								<input dojoType="dijit.form.RadioButton" type="radio" name="description" id="work" value="work" <%= "work".equals(myAccountForm.getDescription()) ? "checked" : "" %> /> <%= LanguageUtil.get(pageContext, "Work-Address") %>
 								<input dojoType="dijit.form.RadioButton" type="radio" name="description" styleId="other" value="other" <%= "other".equals(myAccountForm.getDescription()) ? "checked" : "" %> /> <%= LanguageUtil.get(pageContext, "Other") %>
 							 </td>
 						</tr>
@@ -438,7 +438,7 @@ function doCancel() {
             <button dojoType="dijit.form.Button" onClick="doSave()">
                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
             </button>
-			&nbsp;&nbsp; 
+			&nbsp;&nbsp;
             <button dojoType="dijit.form.Button" onclick="doCancel()">
                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
             </button>

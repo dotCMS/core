@@ -252,7 +252,7 @@ dojo.require("dojo.cookie");
     	 <%request.getSession().removeAttribute("portal_login_as_error");%>
          dojo.byId('portal_loginas_errors').innerHTML = '';
     }
-    
+
     function portal_loginAs_checkAdminRole(isAdmin) {
         var wrapper = dojo.byId('portal_login_as_password_wrapper');
         if(isAdmin) {
@@ -489,7 +489,7 @@ dojo.require("dojo.cookie");
        dijit.byId("dotBackEndDialogCP").setHref("/html/portal/disclaimer.jsp");
        myDialog.show();
 	}
-	
+
 	 function toggleAccount() {
 		if(document.getElementById("account-menu").style.display=="none") {
 			document.getElementById("account-menu").style.display="";
@@ -500,7 +500,7 @@ dojo.require("dojo.cookie");
 			document.getElementById("closeTab").style.display="none";
 			document.getElementById("account-trigger").setAttribute("class", "trigger-off");
 		}
-	}	
+	}
 
 </script>
 
@@ -517,7 +517,7 @@ dojo.require("dojo.cookie");
         <% } %>
 
    		<a id="autoUpdaterLink" style="display:none;" class="goEnterpriseLink"  href="javascript: showAutoUpdaterPopUp();"><span class="exclamation-red"></span><%= LanguageUtil.get(pageContext, "Update-available") %></a>
-		
+
 		<!-- User Actions -->
 		<% if (request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) == null) { %>
 			<a href="#" id="account-trigger" onclick="toggleAccount();" class="trigger-off"><%=user.getFullName()%></a>
@@ -526,7 +526,7 @@ dojo.require("dojo.cookie");
 	    <% } %>
 	</div>
 <% } %>
-    
+
 <!-- End Site Tools -->
 
 
@@ -558,7 +558,7 @@ dojo.require("dojo.cookie");
 			</tbody>
 		</table>
 	</div>
-	
+
     <% if (!hasRolesPortlet && APILocator.getUserAPI().isCMSAdmin(user) ) { %>
         <a class="rolePortletLink" href="<%=portletLinkHREF%>"><bean:message key="warning-roles-portlet" /></a>
     <% } %>
@@ -588,7 +588,7 @@ dojo.require("dojo.cookie");
                         ></select>
                 </div><br/>
                 <div class="formRow" id="portal_login_as_password_wrapper" style="text-align:center; display: none;">
-                    <bean:message key="enter-your-password" /> <input type="password" name="portal_login_as_password" id="portal_login_as_password"/><br/>
+                    <bean:message key="enter-your-password" /> <input type="password" name="portal_login_as_password" autocomplete="off" id="portal_login_as_password"/><br/>
                 </div>
                 <div class="formRow"  style="text-align:center">
                     <button dojoType="dijit.form.Button" id="portal_loginasbutton" iconClass="loginAsIcon"><bean:message key="login-as" /></button>
@@ -626,9 +626,9 @@ dojo.require("dojo.cookie");
                         <dt><%= LanguageUtil.get(pageContext, "Email-Address") %>:</dt>
                         <dd><input id="emailAddressMyAccount" type="text" onkeyup="userInfoChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
                         <dt><%= LanguageUtil.get(pageContext, "Password") %>:</dt>
-                        <dd><input id="passwordMyAccount" type="password" onkeyup="userPasswordChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+                        <dd><input id="passwordMyAccount" type="password" autocomplete="off" onkeyup="userPasswordChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
                         <dt><%= LanguageUtil.get(pageContext, "Password-Again") %>:</dt>
-                        <dd><input id="passwordCheckMyAccount" type="password" onkeyup="userPasswordChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+                        <dd><input id="passwordCheckMyAccount" type="password" autocomplete="off" onkeyup="userPasswordChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
                     </dl>
                 </form>
             </div>
@@ -675,7 +675,7 @@ dojo.require("dojo.cookie");
         </div>
         <%}%>
     <!-- END Auto Updater pop up -->
-	
+
 	<!-- About pop up -->
 	<div id="dotBackEndDialog" dojoType="dijit.Dialog" style="display:none" title="<%= LanguageUtil.get(pageContext, "about") %> dotCMS">
 		<!-- Server Info -->
@@ -711,7 +711,7 @@ dojo.require("dojo.cookie");
 				</div>
 			</td>
 		</tr></table>
-	</div>		
+	</div>
 
 
 

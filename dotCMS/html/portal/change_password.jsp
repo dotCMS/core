@@ -80,10 +80,10 @@
 				<font class="gamma" size="2"><b><%= LanguageUtil.get(pageContext, "password") %></b></font>
 			</td>
 			<td width="10">&nbsp;
-				
+
 			</td>
 			<td>
-				<input class="form-text" name="password_1" size="22" type="password" value="">
+				<input class="form-text" name="password_1" size="22" type="password" autocomplete="off" value="">
 			</td>
 		</tr>
 		<tr>
@@ -91,10 +91,10 @@
 				<font class="gamma" size="2"><b><%= LanguageUtil.get(pageContext, "enter-again") %></b></font>
 			</td>
 			<td width="10">&nbsp;
-				
+
 			</td>
 			<td>
-				<input class="form-text" name="password_2" size="22" type="password" value="">
+				<input class="form-text" name="password_2" size="22" type="password"  autocomplete="off" value="">
 			</td>
 		</tr>
 		<tr>
