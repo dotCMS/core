@@ -191,16 +191,30 @@ public class LoginAction extends Action {
 
 		Company company = PortalUtil.getCompany(req);
 
-		if (company.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-			authResult = UserManagerUtil.authenticateByEmailAddress(
-				company.getCompanyId(), login, password);
+        //Search for the system user
+        User systemUser = APILocator.getUserAPI().getSystemUser();
 
-			userId = UserManagerUtil.getUserId(company.getCompanyId(), login);
-		}
-		else {
-			authResult = UserManagerUtil.authenticateByUserId(
-				company.getCompanyId(), login, password);
-		}
+        if ( company.getAuthType().equals( Company.AUTH_TYPE_EA ) ) {
+
+            //Verify that the System User is not been use to log in inside the system
+            if ( systemUser.getEmailAddress().equals( login ) ) {
+                SecurityLogger.logInfo( this.getClass(), "An invalid attempt to login as a System User has been made from IP: " + req.getRemoteAddr() );
+                throw new AuthException( "Unable to login as System User, System User can not be use to login the system." );
+            }
+
+            authResult = UserManagerUtil.authenticateByEmailAddress( company.getCompanyId(), login, password );
+            userId = UserManagerUtil.getUserId( company.getCompanyId(), login );
+
+        } else {
+
+            //Verify that the System User is not been use to log in inside the system
+            if ( systemUser.getUserId().equals( login ) ) {
+                SecurityLogger.logInfo( this.getClass(), "An invalid attempt to login as a System User has been made from IP: " + req.getRemoteAddr() );
+                throw new AuthException( "Unable to login as System User, System User can not be use to login the system." );
+            }
+
+            authResult = UserManagerUtil.authenticateByUserId( company.getCompanyId(), login, password );
+        }
 
 		try {
 			PrincipalFinder principalFinder =
