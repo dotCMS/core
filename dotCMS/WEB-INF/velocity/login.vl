@@ -2,14 +2,14 @@
 
 <script language="JavaScript">
 	function signIn() {
-		
+
 		if (document.fm.my_account_r_m.checked) {
 			document.fm.my_account_r_m_param.value = "on";
 		}
 		else {
 			document.fm.my_account_r_m_param.value = "off";
 		}
-		
+
 		document.fm.my_account_cmd.value = "auth";
 		document.fm.referer.value = "/c";
 		submitForm(document.fm);
@@ -62,7 +62,7 @@
 					&nbsp;
 				</td>
 				<td>
-					<input class="form-text" name="my_account_password" size="25" tabindex="2" type="password" value="" onKeyPress="if (event.keyCode == 13) { signIn(); }">
+					<input class="form-text" name="my_account_password" size="25" tabindex="2" type="password" autocomplete="off" value="" onKeyPress="if (event.keyCode == 13) { signIn(); }">
 				</td>
 				<td width="10">
 					&nbsp;

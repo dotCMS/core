@@ -25,7 +25,7 @@
 	}
 
 	function doSubmit2()
-	{		
+	{
 		document.getElementById("myAccountForm").submit();
 		return false;
 	}
@@ -79,7 +79,7 @@ color: #666666;
 	<input type="hidden" name="dispatch" value="saveUserInfo">
 	<input type="hidden" name="userName" value="$!myAccountForm.userName">
 
-<!--  application Body Start -->					
+<!--  application Body Start -->
 					<tr>
 						<td valign="top" class="header" colspan="2">E-mail/Username and Password</td>
 					</tr>
@@ -89,15 +89,15 @@ color: #666666;
 					</tr>
 					<tr>
 						<td class="highlight">Old Password: </td>
-						<td><input class="text" type="password" name="oldpassword" value="********"></td>
+						<td><input class="text" type="password" autocomplete="off" name="oldpassword" value="********"></td>
 					</tr>
 					<tr>
 						<td class="highlight">Password: </td>
-						<td><input class="text" type="password" name="password1" value="********" onKeyUp="movePassword();"></td>
+						<td><input class="text" type="password" autocomplete="off" name="password1" value="********" onKeyUp="movePassword();"></td>
 					</tr>
 					<tr>
 						<td class="highlight">Confirm Password:</td>
-						<td><input class="text" type="password" name="password2" value="********"></td>
+						<td><input class="text" type="password" autocomplete="off" name="password2" value="********"></td>
 					</tr>
 					<tr>
 						<td colspan="2"><input type="hidden" name="passwordChanged" value="false"></td>
@@ -125,7 +125,7 @@ color: #666666;
 						<td><input class="text" type="text" name="website" value="$!myAccountForm.website"></td>
 					</tr>
 					<tr>
-						<td class="highlight">Subscribe to our mailing list?: 
+						<td class="highlight">Subscribe to our mailing list?:
 						</td>
 						#if($!myAccountForm.mailSubscription == true)
 							#set ($mail = "checked")
@@ -147,5 +147,5 @@ color: #666666;
 				</form>
 				</table>
 </fieldset>
-""  
-"" 
+""
+""
