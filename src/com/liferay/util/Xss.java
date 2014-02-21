@@ -63,6 +63,7 @@ public class Xss {
      * @param request
      * @return true if any possible XSS fragment is found
      */
+    @SuppressWarnings ("unchecked")
     public static boolean ParamsHaveXSS ( HttpServletRequest request ) {
 
         if ( ESAPI_VALIDATION ) {
@@ -73,6 +74,15 @@ public class Xss {
             for ( String key : keys ) {
 
                 String value = request.getParameter( key );
+
+                /*
+                 TODO: Referer is a special case as its value is not a "standard" parameter value.
+                 If we validate the "referer" param using the isValidInput it will fail, but in order
+                 to avoid exploits using this parameter we will use our XSS regex patter.
+                 */
+                if ( key.equals( "referer" ) || key.endsWith( "_referer" ) ) {
+                    return RegEX.contains( value, XSS_REGEXP_PATTERN );
+                }
 
                 //Validate the parameter name
                 boolean isValid = ESAPI.validator().isValidInput( "URLContext", key, "HTTPParameterName", key.length(), false );
