@@ -197,9 +197,9 @@ public class LoginAction extends Action {
         if ( company.getAuthType().equals( Company.AUTH_TYPE_EA ) ) {
 
             //Verify that the System User is not been use to log in inside the system
-            if ( systemUser.getEmailAddress().equals( login ) ) {
-                SecurityLogger.logInfo( this.getClass(), "An invalid attempt to login as a System User has been made from IP: " + req.getRemoteAddr() );
-                throw new AuthException( "Unable to login as System User, System User can not be use to login the system." );
+            if ( systemUser.getEmailAddress().equalsIgnoreCase( login ) ) {
+                SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
+                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
             }
 
             authResult = UserManagerUtil.authenticateByEmailAddress( company.getCompanyId(), login, password );
@@ -208,9 +208,9 @@ public class LoginAction extends Action {
         } else {
 
             //Verify that the System User is not been use to log in inside the system
-            if ( systemUser.getUserId().equals( login ) ) {
-                SecurityLogger.logInfo( this.getClass(), "An invalid attempt to login as a System User has been made from IP: " + req.getRemoteAddr() );
-                throw new AuthException( "Unable to login as System User, System User can not be use to login the system." );
+            if ( systemUser.getUserId().equalsIgnoreCase( login ) ) {
+                SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
+                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
             }
 
             authResult = UserManagerUtil.authenticateByUserId( company.getCompanyId(), login, password );
