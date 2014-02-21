@@ -141,8 +141,12 @@ public class Xss {
             boolean isValid;
 
             //Verify if the given value is a query string or a URI
-            if ( url.contains( "&" ) || url.contains( "=" ) ) {
-                isValid = ESAPI.validator().isValidInput( "URLContext", url, "HTTPQueryString", url.length(), false );
+            if ( !url.startsWith( "/" ) || url.contains( "&" ) || url.contains( "=" ) ) {
+                if ( url.contains( "=" ) ) {
+                    isValid = ESAPI.validator().isValidInput( "URLContext", url, "HTTPQueryString", url.length(), false );
+                } else {
+                    isValid = ESAPI.validator().isValidInput( "URLContext", url, "HTTPParameterValue", url.length(), false );
+                }
             } else {
                 isValid = ESAPI.validator().isValidInput( "URLContext", url, "HTTPURI", url.length(), false );
             }
