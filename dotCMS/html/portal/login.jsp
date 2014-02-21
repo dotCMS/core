@@ -325,7 +325,7 @@ function showLanguageSelector(){
 			<dd><input name="loginTextBox" id="loginTextBox" dojoType="dijit.form.TextBox" size="25" required="true" type="text" tabindex="1"  value="<%= Xss.escapeHTMLAttrib(login) %>"></dd>
 
 			<dt style="width:180px"><label for="loginPasswordTextBox"><%= LanguageUtil.get(pageContext, "password") %> : </label></dt>
-			<dd><input name="loginPasswordTextBox" id="loginPasswordTextBox" dojoType="dijit.form.TextBox" size="25" required="true" type="password" value="" tabindex="2" ></dd>
+			<dd><input name="loginPasswordTextBox" id="loginPasswordTextBox" dojoType="dijit.form.TextBox" size="25" required="true" type="password" value="" tabindex="2" autocomplete="off"></dd>
 
 			<dt style="width:180px"><label for="rememberMe"><%= LanguageUtil.get(pageContext, "remember-me") %> &nbsp;</label></dt>
 			<dd>
