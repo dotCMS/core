@@ -78,7 +78,7 @@ if(UtilMethods.isSet(uId)){
 
 
 
-
+boolean showResetPasswordForm = false;
 boolean editPassword = Boolean.valueOf(PropsUtil.get("password.forgot.show"));
 boolean rememberMe = ParamUtil.get(request, "my_account_r_m", false);
 
@@ -129,6 +129,19 @@ else  if(cmd.equals("auth") && SessionErrors.contains(request, RequiredLayoutExc
 else  if(cmd.equals("auth") && SessionErrors.contains(request, UserActiveException.class.getName())){
 	 errorMessage = LanguageUtil.format(pageContext, "your-account-is-not-active", new LanguageWrapper[] {new LanguageWrapper("<b><i>", login, "</i></b>")}, false);
 }
+else if(cmd.equals("ereset") && SessionErrors.contains(request, "reset_pass_not_match")) {
+     errorMessage = LanguageUtil.get(pageContext, "reset-password-confirmation-do-not-match");
+}
+else if(cmd.equals("ereset") && SessionMessages.contains(request, "reset_pass_success")) {
+    errorMessage = LanguageUtil.get(pageContext, "reset-password-success");
+}
+else if(cmd.equals("ereset") && SessionMessages.contains(request, "reset_ok")) {
+    showResetPasswordForm = true;
+}
+else if(cmd.equals("ereset") && SessionErrors.contains(request, "reset_token_expired")) {
+    errorMessage = LanguageUtil.get(pageContext, "reset-password-token-expired");
+}
+
 if(errorMessage != null){
 	session.setAttribute("_dotLoginMessages", errorMessage);
 	session.setAttribute("_failedLoginName", login);
@@ -255,7 +268,7 @@ if(errorMessage != null){
 	}
 
 	function forgotPassword() {
-		if (confirm('<%= UnicodeLanguageUtil.get(pageContext, "a-new-password-will-be-generated-and-sent-to-your-external-email-address") %>')) {
+		if (confirm('<%= UnicodeLanguageUtil.get(pageContext, "an-email-with-instructions-will-be-sent") %>')) {
 			document.fm.my_account_cmd.value = 'send';
 
 			dojo.byId("my_account_email_address").value = dojo.byId("forgotPasswordEmailBox").value;
@@ -263,7 +276,24 @@ if(errorMessage != null){
 			document.fm.submit();
 		}
 	}
+	
+	<% if(showResetPasswordForm) { %>
+		function changePassword() {
+			document.resetfm.my_new_pass1.value = dijit.byId("pass1").get('value');
+			document.resetfm.my_new_pass2.value = dijit.byId("pass2").get('value');
+			document.resetfm.submit();
+		}
+		
+		dojo.addOnLoad(function() {
+			var myDialog = dijit.byId("loginBox");
+			myDialog.hide();
 
+			myDialog = dijit.byId("resetPassword");
+			myDialog.connect(myDialog,"hide",showLogin);
+
+			myDialog.show();
+		});
+	<% } %>
 
 
 	dojo.connect(dojo.byId("loginBox"), "onkeypress", function(e){
@@ -300,6 +330,26 @@ function showLanguageSelector(){
 		</div>
 	<% } %>
 
+	<% if(showResetPasswordForm) { %>
+	    <form action="<%= CTX_PATH %>/portal<%= PortalUtil.getAuthorizedPath(request) %>/login" method="post" name="resetfm" target="actionJackson">
+		  <div id="resetPassword" style="display:none" draggable="false" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "reset-password") %>">
+			<dl>
+				<dt><label for="pass1" class="formLabel"> <%= LanguageUtil.get(pageContext, "enter-password") %>:</label></dt>
+				<dd><input id="pass1" type="password" required="true" dojoType="dijit.form.TextBox"></dd>
+				
+				<dt><label for="pass2" class="formLabel"> <%= LanguageUtil.get(pageContext, "re-enter-password") %>:</label></dt>
+				<dd><input id="pass2" type="password" required="true" dojoType="dijit.form.TextBox"></dd>
+				
+				<dd><button dojoType="dijit.form.Button"  onClick="changePassword()"><%= LanguageUtil.get(pageContext, "change-password") %></button></dd>
+			</dl>
+		  </div>
+		  <input type="hidden" name="my_user_id" value="<%= Xss.escapeHTMLAttrib(request.getParameter("my_user_id")) %>" />
+		  <input type="hidden" name="token" value="<%= Xss.escapeHTMLAttrib(request.getParameter("token")) %>" />
+		  <input type="hidden" name="my_account_cmd" value="ereset" />
+		  <input type="hidden" name="my_new_pass1" value="" />
+		  <input type="hidden" name="my_new_pass2" value="" />
+		</form>
+	<% } %>
 
 	<div id="loginBox" dojoType="dijit.Dialog" draggable="false" style="display:none" title="<%= LanguageUtil.get(pageContext, "Login") %>">
 
@@ -407,7 +457,6 @@ function showLanguageSelector(){
 	<input name="password" id="password" type="hidden" value="">
 	<input name="my_account_login" id="my_account_login" type="hidden" value="">
 	<input name="my_account_email_address" id="my_account_email_address" type="hidden" value="">
-
 </form>
 
 <div class="inputCaption" style="color:#dddddd;text-align:right;position:absolute;bottom:10px; right:10px;">

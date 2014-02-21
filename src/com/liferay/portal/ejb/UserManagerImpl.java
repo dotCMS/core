@@ -29,10 +29,12 @@ import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.dotcms.enterprise.AuthPipeProxy;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.liferay.mail.ejb.MailManagerUtil;
@@ -390,37 +392,33 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 		User user = UserUtil.findByC_EA(companyId, emailAddress);
 
-		/*if (user.hasCompanyMx()) {
-			throw new SendPasswordException();
-		}*/
-
-		user.setPassword(PwdToolkitUtil.generate());
-		user.setPasswordEncrypted(false);
-		user.setPasswordReset(GetterUtil.getBoolean(
-			PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
-
+		// we use the ICQ field to store the token:timestamp of the
+		// password reset request we put in the email
+		// the timestamp is used to set an expiration on the token
+		String token = RandomStringUtils.randomAlphanumeric(Config.getIntProperty("RECOVER_PASSWORD_TOKEN_LENGTH", 30));
+		user.setIcqId(token+":"+new Date().getTime());
+		
 		UserUtil.update(user);
 
 		// Send new password
 
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		String adminName = company.getAdminName();
-		String cName = "";
-
-		StringBuffer body = new StringBuffer();
-		body.append("Your new password is -- ");
-		body.append(user.getPassword()).append(".\n\n");
-		body.append("The portal is located at http://");
-		body.append(company.getPortalURL()).append(".\n\n");
-		body.append("Please use ").append(emailAddress);
-		body.append(" as your login.");
+		String url=(company.getPortalURL().contains("://") ? "" : "https://") +
+		        company.getPortalURL() + "/c/portal_public/login?my_account_cmd=ereset&my_user_id="+user.getUserId()+"&token="+token;
+		
+		String body = "<html><body>"+
+		"<p>To reset your password please follow the link below:</p>"+
+		"<p><a href=\""+url+"\">"+url+"</a></p>"+
+		"<p>If you didn't requested this operation then maybe someone is trying to steal your account."+
+		"If that's the case please contact the administrator.</p>"+
+		"</body></html>";
 		
 		try {
 			Mailer m = new Mailer();
 			m.setToEmail(emailAddress);
 			m.setToName(user.getFullName());
-			m.setSubject("dotCMS Password Assistance");
+			m.setSubject("dotcms Password Assistance");
 			m.setHTMLBody(body.toString());
 			m.setFromName(company.getName());
 			m.setFromEmail(company.getEmailAddress());
