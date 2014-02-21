@@ -208,7 +208,14 @@ var editButtonRow="editEventButtonRow";
     	  		Object formValue = null;
     	  		if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
     				CategoryAPI catAPI = APILocator.getCategoryAPI();
-    				formValue =  (List<Category>) catAPI.getParents(contentlet, user, false);
+    				List<Category> formCategoryList = new ArrayList<Category>();
+	    			String[] formCategories = contentletForm.getCategories();
+	    			if(UtilMethods.isSet(formCategories)){
+	    				for(String catId : formCategories){
+	    					formCategoryList.add(catAPI.find(catId,user,false));
+	    				}
+	    			}    				
+    				formValue =  (List<Category>) formCategoryList;
 
     				try {
 	    				Category category = catAPI.find(f.getValues(), user, false);
@@ -373,6 +380,7 @@ var editButtonRow="editEventButtonRow";
 	    	LanguageAPI langAPI = APILocator.getLanguageAPI();
 	    	Language prepopulateLanguage = langAPI.getLanguage( ((ContentletForm) request.getSession().getAttribute("ContentletForm_lastLanguage")).getLanguageId());
 	    	String previousLanguage = prepopulateLanguage.getLanguage() + " - " + prepopulateLanguage.getCountry().trim();
+	    	String reUseInode = ((Contentlet) request.getSession().getAttribute("ContentletForm_lastLanguage_permissions")).getInode();
 
 	    	Map<String, String[]> params = new HashMap<String, String[]>();
 	    	params.put("struts_action", new String[] { "/ext/calendar/edit_event" });
@@ -414,7 +422,7 @@ var editButtonRow="editEventButtonRow";
 	    	}
 
 	    	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED
-	    	.toString(), params)+"&inode=&lang="+ contentletForm.getLanguageId()+ "&reuseLastLang=true&populateaccept=true";
+	    	.toString(), params)+"&inode=&lang="+ contentletForm.getLanguageId()+ "&reuseLastLang=true&populateaccept=true&reUseInode="+reUseInode;
 
 	    	%>
 
