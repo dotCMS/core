@@ -55,6 +55,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
+import org.owasp.esapi.errors.EncodingException;
 
 public class CMSFilter implements Filter {
 
@@ -90,34 +91,36 @@ public class CMSFilter implements Filter {
 
 		Company company = PublicCompanyFactory.getDefaultCompany();
 
-
         /*
          * Here is a list of directories that we will ignore b/c of legacy code
          * and servlet mappings. This is a mess and should be much cleaner
          */
+        if ( Xss.URIHasXSS( uri ) ) {
+            try {
+                uri = Xss.encodeForURL( uri );
+            } catch ( EncodingException e ) {
+                Logger.error( this, "Encoding failure. Unable to encode URI " + uri );
+                throw new ServletException( e.getMessage(), e );
+            }
 
-		if(Xss.URLHasXSS(uri)){
-			uri = Xss.strip(uri);
-			if(uri.equals("")){
-				uri = "/";
-			}
-			response.sendRedirect(uri);
-			return;
-		}
+            if ( uri.equals( "" ) ) {
+                uri = "/";
+            }
+            response.sendRedirect( uri );
+            return;
+        }
 
-		if(!UtilMethods.decodeURL(request.getQueryString()).equals(null)){
-			//http://jira.dotmarketing.net/browse/DOTCMS-6141
-			if(request.getQueryString() != null && request.getQueryString().contains("\"")){
-				response.sendRedirect(uri+"?"+StringEscapeUtils.escapeHtml(StringEscapeUtils.unescapeHtml(request.getQueryString())));
-				return;
-			}
-			String queryString=UtilMethods.decodeURL(request.getQueryString());
-			if(Xss.URLHasXSS(queryString)){
-				response.sendRedirect(uri);
-				return;
-			}
-			
-		}
+        if ( !UtilMethods.decodeURL( request.getQueryString() ).equals( null ) ) {
+            //http://jira.dotmarketing.net/browse/DOTCMS-6141
+            if ( request.getQueryString() != null && request.getQueryString().contains( "\"" ) ) {
+                response.sendRedirect( uri + "?" + StringEscapeUtils.escapeHtml( StringEscapeUtils.unescapeHtml( request.getQueryString() ) ) );
+                return;
+            }
+            if ( Xss.ParamsHaveXSS( request ) ) {
+                response.sendRedirect( uri );
+                return;
+            }
+        }
 
         if (excludeURI(uri)) {
             chain.doFilter(request, response);

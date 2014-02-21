@@ -22,43 +22,138 @@
 
 package com.liferay.util;
 
-import org.owasp.esapi.ESAPI;
-
 import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UtilMethods;
+import org.owasp.esapi.ESAPI;
+import org.owasp.esapi.errors.EncodingException;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <a href="Xss.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
- * @author  Clarence Shen
+ * @author Brian Wing Shun Chan
+ * @author Clarence Shen
  * @version $Revision: 1.3 $
- *
  */
 public class Xss {
 
-	public static final String XSS_REGEXP_PATTERN = GetterUtil.getString(SystemProperties.get(Xss.class.getName() + ".regexp.pattern"));
+    public static final String XSS_REGEXP_PATTERN = GetterUtil.getString( SystemProperties.get( Xss.class.getName() + ".regexp.pattern" ) );
+    public static final Boolean ESAPI_VALIDATION = GetterUtil.getBoolean( SystemProperties.get( Xss.class.getName() + ".ESAPI.validation" ), true );
 
-	public static String strip(String text) {
-		if (text == null) {
-			return null;
-		}
-		return RegEX.replace(text, "", XSS_REGEXP_PATTERN);
-	}
-	
-	public static boolean URLHasXSS(String url){
-		if (url == null) {
-			return false;
-		}
-		return RegEX.contains(url, XSS_REGEXP_PATTERN);	
-	}
-	
-	public static String escapeHTMLAttrib(String value) {
-	    return value!=null ? ESAPI.encoder().encodeForHTMLAttribute(value) : "";
-	}
-	
-	
-	public static String unEscapeHTMLAttrib(String value) {
-	    return value!=null ? ESAPI.encoder().decodeForHTML(value) : "";
-	}
+    /**
+     * Removes from the given text possible XSS hacks
+     *
+     * @param text
+     * @return
+     * @deprecated Is recommended to use instead methods like URIHasXSS or ParamsHaveXSS and handle properly a possible XSS attack
+     */
+    public static String strip ( String text ) {
+        if ( text == null ) {
+            return null;
+        }
+        return RegEX.replace( text, "", XSS_REGEXP_PATTERN );
+    }
+
+    /**
+     * Checks each parameter in the request for possible XSS hacks and return true if any possible XSS fragment is found
+     *
+     * @param request
+     * @return true if any possible XSS fragment is found
+     */
+    public static boolean ParamsHaveXSS ( HttpServletRequest request ) {
+
+        if ( ESAPI_VALIDATION ) {
+            //Get the list of parameters
+            Map parameters = request.getParameterMap();
+            Set<String> keys = parameters.keySet();
+
+            for ( String key : keys ) {
+
+                String value = request.getParameter( key );
+
+                //Validate the parameter name
+                boolean isValid = ESAPI.validator().isValidInput( "URLContext", key, "HTTPParameterName", key.length(), false );
+                if ( !isValid ) {
+                    return true;
+                }
+
+                //Validate the parameter value
+                isValid = ESAPI.validator().isValidInput( "URLContext", value, "HTTPParameterValue", value.length(), true );
+                if ( !isValid ) {
+                    return true;
+                }
+            }
+
+            return false;
+
+        } else {
+            String queryString = UtilMethods.decodeURL( request.getQueryString() );
+            return RegEX.contains( queryString, XSS_REGEXP_PATTERN );
+        }
+    }
+
+    /**
+     * Checks in the given uri for possible XSS hacks and return true if any possible XSS fragment is found
+     *
+     * @param uri
+     * @return true if any possible XSS fragment is found
+     */
+    public static boolean URIHasXSS ( String uri ) {
+
+        if ( uri == null ) {
+            return false;
+        }
+        if ( ESAPI_VALIDATION ) {
+            boolean isValid = ESAPI.validator().isValidInput( "URLContext", uri, "HTTPURI", uri.length(), false );
+            return !isValid;
+        } else {
+            return RegEX.contains( uri, XSS_REGEXP_PATTERN );
+        }
+    }
+
+    /**
+     * Checks in the given url for possible XSS hacks and return true if any possible XSS fragment is found
+     *
+     * @param url
+     * @return true if any possible XSS fragment is found
+     * @deprecated Use instead individually URIHasXSS and ParamsHaveXSS
+     */
+    public static boolean URLHasXSS ( String url ) {
+
+        if ( url == null ) {
+            return false;
+        }
+        if ( ESAPI_VALIDATION ) {
+
+            boolean isValid;
+
+            //Verify if the given value is a query string or a URI
+            if ( url.contains( "&" ) || url.contains( "=" ) ) {
+                isValid = ESAPI.validator().isValidInput( "URLContext", url, "HTTPQueryString", url.length(), false );
+            } else {
+                isValid = ESAPI.validator().isValidInput( "URLContext", url, "HTTPURI", url.length(), false );
+            }
+
+            return !isValid;
+        } else {
+            return RegEX.contains( url, XSS_REGEXP_PATTERN );
+        }
+    }
+
+    public static String encodeForURL ( String value ) throws EncodingException {
+        return value != null ? ESAPI.encoder().encodeForURL( value ) : "";
+    }
+
+    public static String escapeHTMLAttrib ( String value ) {
+        return value != null ? ESAPI.encoder().encodeForHTMLAttribute( value ) : "";
+    }
+
+
+    public static String unEscapeHTMLAttrib ( String value ) {
+        return value != null ? ESAPI.encoder().decodeForHTML( value ) : "";
+    }
 
 }
