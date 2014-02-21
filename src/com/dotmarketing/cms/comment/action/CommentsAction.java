@@ -75,7 +75,7 @@ public class CommentsAction extends DispatchAction {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private CategoryAPI catAPI = APILocator.getCategoryAPI();
 	private HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-	
+
 	public ActionForward unspecified(ActionMapping mapping, ActionForm lf, HttpServletRequest request, HttpServletResponse response) {
 		ActionForward forward = new ActionForward("/");
 		forward.setRedirect(false);
@@ -83,17 +83,20 @@ public class CommentsAction extends DispatchAction {
 	}
 
 	public ActionForward saveComments(ActionMapping mapping, ActionForm lf, HttpServletRequest request, HttpServletResponse response) {
-		
+
 		CommentsForm commentsForm = (CommentsForm) lf;
-		
+
 		request.getSession().setAttribute("commentsForm", commentsForm);
 		ActionErrors ae = commentsForm.validate(mapping, request);
 
-		
+		HashMap<String,String> commentsOptions = (HashMap<String,String>) request.getSession().getAttribute("commentsOptions");
+
+
 		try {
 			HibernateUtil.startTransaction();
 			if ((ae != null) && (ae.size() > 0)) {
-				String referrer = commentsForm.getReferrer();
+//				String referrer = commentsForm.getReferrer();
+				String referrer = UtilMethods.isSet(commentsOptions.get("referer"))?commentsOptions.get("referer"):"";
 				if(referrer != null){
 					referrer=referrer.replaceAll("#comments", "#comments");
 					if(referrer.indexOf("?") > -1){
@@ -101,14 +104,14 @@ public class CommentsAction extends DispatchAction {
 					}else{
 						referrer = referrer + "?dotcache=no";
 					}
-						
+
 				}
 				referrer = (referrer.indexOf("#comments") == -1 ? referrer + "#comments" : referrer);
-				
-				
-				
-				
-				saveMessages(request, ae);				
+
+
+
+
+				saveMessages(request, ae);
 				saveMessages(request.getSession(), ae);
 				ActionForward forward = new ActionForward(referrer);
 				forward.setRedirect(true);
@@ -123,11 +126,11 @@ public class CommentsAction extends DispatchAction {
 			// Contentlet Data
 			Contentlet contentlet = new Contentlet();
 			try{
-				contentlet = conAPI.find(commentsForm.getContentInode(), user, true);
+				contentlet = conAPI.find(commentsOptions.get("contentInode"), user, true);
 			}catch(DotDataException e){
-				Logger.error(this, "Unable to look up comment with inode " + commentsForm.getContentInode(), e);
+				Logger.error(this, "Unable to look up comment with inode " + commentsOptions.get("contentInode"), e);
 			}
-			
+
 			Structure contentletStructure = StructureCache.getStructureByInode(contentlet.getStructureInode());
 			Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
 
@@ -141,7 +144,7 @@ public class CommentsAction extends DispatchAction {
 
 			// set the default language
 			com.dotmarketing.portlets.contentlet.business.Contentlet beanContentlet = (com.dotmarketing.portlets.contentlet.business.Contentlet) InodeFactory.getInode(contentlet.getInode(), com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-			
+
 			contentletComment.setLanguageId(beanContentlet.getLanguageId());
 
 			// Add the default fields
@@ -150,16 +153,16 @@ public class CommentsAction extends DispatchAction {
 			Field field;
 
 			/* Set the title if we have one*/
-			if(UtilMethods.isSet(commentsForm.getCommentTitle())){
-				
+			if(UtilMethods.isSet(commentsOptions.get("commentTitle"))){
+
 				field = commentsStructure.getField("Title");
-				
-				conAPI.setContentletProperty(contentletComment, field, commentsForm.getCommentTitle());
+
+				conAPI.setContentletProperty(contentletComment, field, commentsOptions.get("commentTitle"));
 			}
-			
+
 			/* Validate if a CommentsCount field exists in the contentlet structure
 			   if not, then create it and populate it.*/
-		   
+
 			if (!InodeUtils.isSet(contentletStructure.getField("CommentsCount").getInode())) {
 				List<Field> fields = new ArrayList<Field>();
 			    field = new Field("CommentsCount", Field.FieldType.TEXT, Field.DataType.INTEGER, contentletStructure,
@@ -170,16 +173,16 @@ public class CommentsAction extends DispatchAction {
 				}
 				fields.add(field);
 				FieldsCache.removeFields(contentletStructure);
-				FieldsCache.addFields(contentletStructure,fields); 
+				FieldsCache.addFields(contentletStructure,fields);
 			}
-		   
+
 			/* Get the  value from the CommentsCount field for this contentlet, if the value
 			 * is null, then the contentlet has no comments, otherwise increment its value by one
 			 * and set it to the contentlet.
 			 */
 			field = contentletStructure.getField("CommentsCount");
 			String velVar = field.getVelocityVarName();
-			
+
 			int comentsCount = -1;
 			try {
 				Long countValue = contentlet.getLongProperty(velVar);
@@ -187,7 +190,7 @@ public class CommentsAction extends DispatchAction {
 			} catch (Exception e) {
 				Logger.debug(this, e.toString());
 			}
-			
+
 			if (comentsCount == -1) {
 				try {
 					String countValue = (contentlet.getStringProperty(velVar) ==  null) ? field.getDefaultValue() : contentlet.getStringProperty(velVar);
@@ -196,7 +199,7 @@ public class CommentsAction extends DispatchAction {
 					Logger.debug(this, e.toString());
 				}
 			}
-			
+
 			++comentsCount;
 			conAPI.setContentletProperty(contentlet, field, comentsCount);
 			//Update the contentlet with the new comment count
@@ -213,7 +216,7 @@ public class CommentsAction extends DispatchAction {
 					List<Contentlet> l2 = contentRelationships.get(r);
 					l2.add(co);
 				}
-			}			
+			}
 			conAPI.checkinWithoutVersioning(contentlet, contentRelationships, cats, APILocator.getPermissionAPI().getPermissions(contentlet), user, true);
             */
 			// Date
@@ -223,7 +226,7 @@ public class CommentsAction extends DispatchAction {
 			// User Id
 			field = commentsStructure.getField("UserId");
 			conAPI.setContentletProperty(contentletComment, field, userId);
-			
+
 			// Author
 			field = commentsStructure.getField("Author");
 			conAPI.setContentletProperty(contentletComment, field, VelocityUtil.cleanVelocity(commentsForm.getName()));
@@ -238,48 +241,51 @@ public class CommentsAction extends DispatchAction {
 
 			// EmailResponse
 			field = commentsStructure.getField("Email Response");
-			conAPI.setContentletProperty(contentletComment, field, (commentsForm.isNotify()?"yes":"no"));			
+			conAPI.setContentletProperty(contentletComment, field, (commentsForm.isNotify()?"yes":"no"));
 
 			// IP Address
 			field = commentsStructure.getField("IP Address");
 			conAPI.setContentletProperty(contentletComment, field, request.getRemoteAddr());
-			
+
 			// Comment
 			field = commentsStructure.getField("Comment");
-			String comment = commentsForm.getComment();	
+			String comment = commentsForm.getComment();
 			comment=VelocityUtil.cleanVelocity(comment);
-			if (commentsForm.isCommentStripHtml()) {
+
+
+			if (UtilMethods.isSet(commentsOptions.get("commentStripHtml")) && commentsOptions.get("commentStripHtml").equalsIgnoreCase("true")) {
 				comment = Html.stripHtml(comment);
 			}
+
 			conAPI.setContentletProperty(contentletComment, field, comment);
-				
+
 			// Add the permission
-			PermissionAPI perAPI = APILocator.getPermissionAPI();			
+			PermissionAPI perAPI = APILocator.getPermissionAPI();
 			List<Permission> pers = perAPI.getPermissions(commentsStructure);
-						
-			
-			
-			
+
+
+
+
 			// new workflows
-			if(UtilMethods.isSet(commentsForm.getCommentsModeration())){
+			if(UtilMethods.isSet(commentsOptions.get("commentsModeration"))){
 				if(!UtilMethods.isSet(contentletComment.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY)))
 						contentletComment.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, APILocator.getWorkflowAPI().findEntryAction(contentletComment, user).getId());
 				contentletComment.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, commentsForm.getComment());
 			}
-			
-			
-			
-			
-			
-			
+
+
+
+
+
+
 			// Save the comment
 			contentletComment = conAPI.checkin(contentletComment, new HashMap<Relationship, List<Contentlet>>(), new ArrayList<Category>(), pers, user, true);
-			
+
             // If live I have to publish the asset
-            if (commentsForm.isCommentAutoPublish()) {
+            if (UtilMethods.isSet(commentsOptions.get("commentAutoPublish")) && commentsOptions.get("commentAutoPublish").equalsIgnoreCase("true")) {
                 APILocator.getVersionableAPI().setLive(contentletComment);
             }
-			
+
 			// Set the relation between the content and the comments
 			Identifier contentletCommentIdentifier = APILocator.getIdentifierAPI().find(contentletComment);
 			String commentRelationStructureName = commentsStructure.getName().replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "");
@@ -294,33 +300,35 @@ public class CommentsAction extends DispatchAction {
 			contentletIdentifier.addChild(contentletCommentIdentifier, relationName, ++order);
 
 			ae.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.comment.success"));
-			
+
 			/* If the comment has been sennt successfully, activeDiv is set to its initial value*/
 			commentsForm.setActiveDiv("");
 
 
-			
-			
-			
-			
-			
 
-			
-			beanContentlet = (com.dotmarketing.portlets.contentlet.business.Contentlet) InodeFactory.getInode(contentletComment.getInode(), com.dotmarketing.portlets.contentlet.business.Contentlet.class);			
+
+
+
+
+
+
+			beanContentlet = (com.dotmarketing.portlets.contentlet.business.Contentlet) InodeFactory.getInode(contentletComment.getInode(), com.dotmarketing.portlets.contentlet.business.Contentlet.class);
 			beanContentlet = conAPI.convertContentletToFatContentlet(contentletComment, beanContentlet);
 			HibernateUtil.saveOrUpdate(beanContentlet);
-			if (commentsForm.isCommentAutoPublish()) 
+
+			if (UtilMethods.isSet(commentsOptions.get("commentAutoPublish")) && commentsOptions.get("commentAutoPublish").equalsIgnoreCase("true"))
 			{
 				conAPI.publish(contentletComment, user, true);
 			}
 
-			
+
 			saveMessages(request, ae);
 			saveMessages(request.getSession(), ae);
-			String referrer = commentsForm.getReferrer();
+			String referrer = UtilMethods.isSet(commentsOptions.get("referrer"))?commentsOptions.get("referrer"):"";
 			referrer = (referrer.indexOf("#comments") == -1 ? referrer + "#comments" : referrer);
-			String commentQuestion = commentsForm.getCommentTitle();
-			
+
+			String commentQuestion = commentsOptions.get("commentTitle");
+
 			//The send comment emails should be send when there is a new comment (ALWAYS)
 			String userName = commentsForm.getName();
 			String userEmail = commentsForm.getEmail();
@@ -329,8 +337,8 @@ public class CommentsAction extends DispatchAction {
 			if(!conAPI.isInodeIndexed(contentletComment.getInode())){
 				Logger.error(this, "Problem indexing comment content");
 			}
-			sendCommentEmails(contentletIdentifier, relationName, request, referrer,userName,userEmail,userComment,commentQuestion);
-			
+			sendCommentEmails(contentletIdentifier, relationName, request, referrer,userName,userEmail,userComment,commentQuestion, commentsOptions);
+
 			ActionForward forward = new ActionForward(referrer);
 			forward.setRedirect(true);
 
@@ -350,7 +358,7 @@ public class CommentsAction extends DispatchAction {
 			ae.add(Globals.ERROR_KEY, new ActionMessage("message.comment.failure"));
 			saveMessages(request, ae);
 			saveMessages(request.getSession(), ae);
-			String referrer = commentsForm.getReferrer();
+			String referrer = UtilMethods.isSet(commentsOptions.get("referer"))?commentsOptions.get("referer"):"";
 
 			referrer = (referrer.indexOf("#comments") == -1 ? referrer + "#comments" : referrer);
 			ActionForward forward = new ActionForward(referrer);
@@ -359,7 +367,8 @@ public class CommentsAction extends DispatchAction {
 		}
 	}
 
-	private void sendCommentEmails(Identifier contentletIdentifier, String relationName, HttpServletRequest request, String referrer,String userName,String userEmail,String userComment,String commentQuestion) 
+	private void sendCommentEmails(Identifier contentletIdentifier, String relationName, HttpServletRequest request,
+			String referrer,String userName,String userEmail,String userComment,String commentQuestion, HashMap<String, String> commentsOptions)
 	{
 
 		//This needs to be updated to use a lucene fix
@@ -371,11 +380,11 @@ public class CommentsAction extends DispatchAction {
 		//Get the Email Field
 		field = commentsStructure.getField("Email");
 		String emailField = field.getVelocityVarName();
-		
+
 		//Get the Date Published Field
 		field = commentsStructure.getField("DatePublished");
 		String dateField = field.getVelocityVarName();
-		
+
 		//Get the Email Response Field
 		field = commentsStructure.getField("Email Response");
 		String emailResponseField = field.getVelocityVarName();
@@ -385,7 +394,7 @@ public class CommentsAction extends DispatchAction {
 
 		// Gather all comment no matter the value of the Email Response
 		List<Contentlet> comments = RelationshipFactory.getRelatedContentByParent(contentletIdentifier.getInode(), relationName, true, order);
-		
+
 		//Cycle for all comments to get the most recent comment from each email
 		HashMap<String,CommentDate> commentDates = new HashMap<String, CommentDate>();
 		for(Contentlet comment : comments)
@@ -419,7 +428,7 @@ public class CommentsAction extends DispatchAction {
 			catch(Exception ex)
 			{}
 		}
-				
+
 		//Cycle for all emails, check if they has set the send email to true and add it to the list
 		String emails = new String();
 		Set<String> keys = commentDates.keySet();
@@ -442,23 +451,23 @@ public class CommentsAction extends DispatchAction {
 			emails = emails.substring(0,emails.lastIndexOf(";"));
 		}
 
-		String emailTemplate = request.getParameter("emailTemplate");
+		String emailTemplate = commentsOptions.get("emailTemplate");
 
 		Company liferay = PublicCompanyFactory.getDefaultCompany();
 		String from = liferay.getEmailAddress();
-		String to  =  request.getParameter("email");
+		String to  =  commentsOptions.get("email");
 		String subject = Config.getStringProperty("commentSubject");
 		subject = subject.replaceAll("\\$\\{commentQuestion}", commentQuestion);
 		String URL = "http://" + request.getServerName() + referrer;
 
 		Map<String, Object> parameters = new HashMap<String, Object> ();
 		//I set a dummy TO email address to send the real emails using BCC
-		//parameters.put("to", to); 
+		//parameters.put("to", to);
 		String emailTo = Config.getStringProperty("EMAIL_TO");
 		if(UtilMethods.isSet(emailTo)){
 			parameters.put("to", emailTo);
-		}		
-		parameters.put("from", from); 
+		}
+		parameters.put("from", from);
 		parameters.put("userName", userName);
 		parameters.put("userEmail", userEmail);
 		parameters.put("userComment", userComment);
@@ -474,7 +483,7 @@ public class CommentsAction extends DispatchAction {
 			EmailFactory.sendParameterizedEmail(parameters, new HashSet<String>(), host, null);
 		} catch (Exception e) {
 			Logger.error(this, "An error as ocurred trying to send the comment notification");
-		} 
+		}
 
 
 	}
@@ -484,27 +493,27 @@ public class CommentsAction extends DispatchAction {
 	 *
 	 */
 	private class CommentDate{
-		
+
 		//The email that post the comment
 		private String email;
 		//The date of the comment
 		private Date date;
 		//The value of the email response
 		private boolean send;
-		
+
 		//Default Constructor
 		public CommentDate()
 		{
-			
+
 		}
-		
+
 		public CommentDate(String email,Date date,boolean send)
 		{
 			this.email = email;
 			this.date = date;
 			this.send = send;
 		}
-		
+
 		public String getEmail() {
 			return email;
 		}
@@ -522,6 +531,6 @@ public class CommentsAction extends DispatchAction {
 		}
 		public void setSend(boolean send) {
 			this.send = send;
-		}		
+		}
 	}
 }
