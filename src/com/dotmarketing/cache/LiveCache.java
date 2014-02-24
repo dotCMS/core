@@ -211,8 +211,6 @@ public class LiveCache {
 		String _uri = null;
         try {
             //First lets search in cache for a specific language
-        	String key = getPrimaryGroup() + hostId + ":" + URI;
-        	String group = getPrimaryGroup() + "_" + hostId + "_" + languageId;
             _uri = (String) cache.get( getPrimaryGroup() + hostId + ":" + URI, getPrimaryGroup() + "_" + hostId + "_" + languageId );
             //If nothing found try without a language
             if ( _uri == null ) {
@@ -325,7 +323,7 @@ public class LiveCache {
 
 			if(identifier.getAssetType().equals("contentlet")){
 				Contentlet c = (Contentlet) asset;
-				long languageId = c.getLanguageId();
+				long languageId = UtilMethods.isSet(c.getLanguageId())?c.getLanguageId():APILocator.getLanguageAPI().getDefaultLanguage().getId();
 				cache.remove(getPrimaryGroup() + hostId + ":" + identifier.getURI(),getPrimaryGroup() + "_" + hostId + "_" + languageId  );
 			} else {
 				cache.remove(getPrimaryGroup() + hostId + ":" + identifier.getURI(),getPrimaryGroup() + "_" + hostId);
