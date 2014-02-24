@@ -36,14 +36,14 @@
 			</div>
 			<div class="macro-login-box-row">
 		 		<label for="macro-login-password">$glossary.get("dotcms_macro_login_password")</label>
-		        <input type="password" name="_loginPassword" value="" id="macro-login-password" class="text" tabindex="2" />
+		        <input type="password" autocomplete="off" name="_loginPassword" value="" id="macro-login-password" class="text" tabindex="2" />
 			</div>
 			<div class="macro-login-box-row-center">
 				<input type="checkbox" value="true" name="_loginRememberMe" id="macro-login-remember-me" tabindex="3" />
 				<label for="macro-login-remember-me" style="display: inline">$glossary.get("dotcms_macro_login_rememberMe")</label>
 			</div>
 			<div class="macro-login-box-row-center">
-				 	<input type="submit" name="_loginButton" value="$glossary.get("dotcms_macro_login_button")" id="macro-login-button" tabindex="4"/>    
+				 	<input type="submit" name="_loginButton" value="$glossary.get("dotcms_macro_login_button")" id="macro-login-button" tabindex="4"/>
 			</div>
 			<div id="macro-login-forgot-password">
 			#if($glossary.get("dotcms.macro.login.forgot.password.link") != "dotcms.macro.login.forgot.password.link" && $glossary.get("dotcms.macro.login.forgot.password.link")!="")

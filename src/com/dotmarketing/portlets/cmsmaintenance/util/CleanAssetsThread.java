@@ -147,7 +147,7 @@ public class CleanAssetsThread extends Thread {
                 if(dir.isDirectory()) {
                     for(File ff : dir.listFiles()) {
                         processStatus.setCurrentFiles(++current);
-                        if(dir.isDirectory()) {
+                        if(ff.isDirectory()) {
                             // binary file for a contentlet
                             if(processBinary) {
                                 String inode=ff.getName();
@@ -174,17 +174,17 @@ public class CleanAssetsThread extends Thread {
                                 // remove extension if any
                                 if(inode.indexOf('.')!=-1)
                                     inode=inode.substring(0,inode.indexOf('.'));
+                                com.dotmarketing.portlets.files.model.File file = null;
                                 try {
-                                    com.dotmarketing.portlets.files.model.File file = 
-                                            APILocator.getFileAPI().find(inode, systemUser, false);
-                                    if(file==null || !UtilMethods.isSet(file.getIdentifier())) {
-                                        Logger.info(this, "deleting orphan file_asset "+ff.getAbsolutePath());
-                                        if(FileUtils.deleteQuietly(ff))
-                                            processStatus.setDeleted(++deleted);
-                                    }
+                                    file = APILocator.getFileAPI().find(inode, systemUser, false);
                                 }
                                 catch(Exception ex) {
                                     Logger.warn(this, ex.getMessage(), ex);
+                                }
+                                if(file==null || !UtilMethods.isSet(file.getIdentifier())) {
+                                    Logger.info(this, "deleting orphan file_asset "+ff.getAbsolutePath());
+                                    if(FileUtils.deleteQuietly(ff))
+                                        processStatus.setDeleted(++deleted);
                                 }
                             }
                         }

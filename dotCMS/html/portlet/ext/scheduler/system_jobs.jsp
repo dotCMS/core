@@ -16,6 +16,7 @@
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotmarketing.business.web.WebAPILocator"%>
 
+<%@ include file="/html/common/uservalidation.jsp"%>
 
 <%String[] groups = QuartzUtils.getSequentialScheduler().getJobGroupNames(); %>
 
@@ -33,22 +34,22 @@
 	<th><%= LanguageUtil.get(pageContext, "scheduler.job.runsAt") %></th>
 	<th><%= LanguageUtil.get(pageContext, "scheduler.job.misfire") %></th>
 	</tr>
-	
-	
-	
-	
+
+
+
+
 	<%for(String t : tasks){%>
 		<%JobDetail d = QuartzUtils.getSequentialScheduler().getJobDetail(t, myGroup);  %>
 		<% Trigger trig  =null;%>
 		<%for(Trigger x :  QuartzUtils.getSequentialScheduler().getTriggersOfJob(t, myGroup) ) {trig=x;break;}%>
-		
-		
-		
-		
-	
+
+
+
+
+
 		<tr>
 			<td>
-			
+
 				<%=d.getJobClass() %>
 			</td>
 			<td>
@@ -60,7 +61,7 @@
 			<td>
 				<%=d.isVolatile()%>
 			</td>
-	
+
 			<td align="right">
 				<%if(trig !=null && trig.getNextFireTime()!=null){ %>
 					<%=new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss  z").format( trig.getNextFireTime()) %>
@@ -74,11 +75,11 @@
 						<%= LanguageUtil.get(pageContext, "scheduler.job.misfire.fireOnce") %>
 					<%}%>
 				<%} %>
-			</td> 
-	
-			
-			
-			
+			</td>
+
+
+
+
 		</tr>
 	<%}%>
 	</table>

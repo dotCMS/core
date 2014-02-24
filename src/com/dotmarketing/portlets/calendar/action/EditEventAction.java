@@ -111,6 +111,10 @@ public class EditEventAction extends EditContentletAction {
 	private void retrieveEvent (ActionMapping mapping, ActionForm form, PortletConfig config,
 			ActionRequest req, ActionResponse res, String command, User user) throws DotDataException, DotSecurityException, ParseException  {
 		Contentlet contentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);
+		String reUseInode = (String) req.getParameter("reUseInode");
+		if(!InodeUtils.isSet(contentlet.getInode()) && reUseInode != null){
+			contentlet.setInode(reUseInode);
+		}
 		if(InodeUtils.isSet(contentlet.getInode())) {
 			Event ev = eventAPI.findbyInode(contentlet.getInode(), user, false);
 			req.setAttribute(WebKeys.EVENT_EDIT, ev);

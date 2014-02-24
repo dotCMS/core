@@ -606,7 +606,7 @@ dojo.require("dojo.cookie");
                         ></select>
                 </div><br/>
                 <div class="formRow" id="portal_login_as_password_wrapper" style="text-align:center; display: none;">
-                    <%= LanguageUtil.get(pageContext, "enter-your-password" ) %> <input type="password" name="portal_login_as_password" id="portal_login_as_password"/><br/>
+                    <%= LanguageUtil.get(pageContext, "enter-your-password" ) %> <input type="password" name="portal_login_as_password" id="portal_login_as_password" autocomplete="off"/><br/>
                 </div>
                 <div class="formRow"  style="text-align:center">
                     <button dojoType="dijit.form.Button" id="portal_loginasbutton" iconClass="loginAsIcon"><%= LanguageUtil.get(pageContext, "login-as" ) %></button>
@@ -644,9 +644,9 @@ dojo.require("dojo.cookie");
                         <dt><%= LanguageUtil.get(pageContext, "Email-Address") %>:</dt>
                         <dd><input id="emailAddressMyAccount" type="text" onkeyup="userInfoChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
                         <dt><%= LanguageUtil.get(pageContext, "Password") %>:</dt>
-                        <dd><input id="passwordMyAccount" type="password" onkeyup="userPasswordChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+                        <dd><input id="passwordMyAccount" type="password" onkeyup="userPasswordChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off"/></dd>
                         <dt><%= LanguageUtil.get(pageContext, "Password-Again") %>:</dt>
-                        <dd><input id="passwordCheckMyAccount" type="password" onkeyup="userPasswordChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+                        <dd><input id="passwordCheckMyAccount" type="password" onkeyup="userPasswordChangedMyAccount()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off"/></dd>
                     </dl>
                 </form>
             </div>

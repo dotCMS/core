@@ -10,6 +10,8 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
+import com.dotcms.util.SecurityUtils;
+
 /**
  * Ensures that the <tt>ServletResponse</tt> is properly encoded 
  * setting the character set whenever needed.
@@ -68,11 +70,11 @@ public class ServletResponseCharacterEncoding extends HttpServletResponseWrapper
 	 * @exception IOException if an input/output error occurs
 	 */
 	@Override
-	public void sendRedirect(String location) 
-	throws IOException {
+	public void sendRedirect(String location) throws IOException {
 		// Generate a temporary redirect to the specified location
 		try {
-			setHeader( "Location", location ); 
+			setStatus(301); 
+			setHeader( "Location", SecurityUtils.stripReferer(location) ); 
 			setHeader( "Connection", "close" ); 
 			super.resetBuffer();
 			super.sendRedirect(location);

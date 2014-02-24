@@ -54,7 +54,7 @@
 		}
 		t.start();
 	});
-</script> 
+</script>
 
 <div class="buttonBoxRight">
 	<button dojoType="dijit.form.Button" type="button" onclick="addUser()" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "Add-User") %></button>
@@ -121,9 +121,9 @@
 										<dt><%= LanguageUtil.get(pageContext, "Email-Address") %>:</dt>
 										<dd><input id="emailAddress" type="text" onkeyup="userEmailChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
 										<dt><%= LanguageUtil.get(pageContext, "Password") %>:</dt>
-										<dd><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+										<dd><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off" /></dd>
 										<dt><%= LanguageUtil.get(pageContext, "Password-Again") %>:</dt>
-										<dd><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+										<dd><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off"/></dd>
 									</dl>
 								</form>
 							</div>
@@ -373,11 +373,11 @@
 	});
 
 	resizeRoleBrowser();
-	
+
 	function resetUserRoles() {
 		var uId = document.getElementById("userId");
 		editUser(uId.value);
-				
+
 	}
 
 </script>
