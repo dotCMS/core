@@ -22,6 +22,11 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.SecurityLogger;
+import com.liferay.portal.auth.AuthException;
+import com.liferay.portal.model.User;
+
 /**
  * <a href="UserManagerUtil.java.html"><b><i>View Source</i></b></a>
  *
@@ -60,46 +65,53 @@ public class UserManagerUtil {
 		}
 	}
 
-	public static int authenticateByEmailAddress(java.lang.String companyId,
-		java.lang.String emailAddress, java.lang.String password)
-		throws com.liferay.portal.PortalException, 
-			com.liferay.portal.SystemException {
-		try {
-			UserManager userManager = UserManagerFactory.getManager();
+    public static int authenticateByEmailAddress ( java.lang.String companyId, java.lang.String emailAddress, java.lang.String password ) throws com.liferay.portal.PortalException, com.liferay.portal.SystemException {
 
-			return userManager.authenticateByEmailAddress(companyId,
-				emailAddress, password);
-		}
-		catch (com.liferay.portal.PortalException pe) {
-			throw pe;
-		}
-		catch (com.liferay.portal.SystemException se) {
-			throw se;
-		}
-		catch (Exception e) {
-			throw new com.liferay.portal.SystemException(e);
-		}
-	}
+        try {
 
-	public static int authenticateByUserId(java.lang.String companyId,
-		java.lang.String userId, java.lang.String password)
-		throws com.liferay.portal.PortalException, 
-			com.liferay.portal.SystemException {
-		try {
-			UserManager userManager = UserManagerFactory.getManager();
+            //Search for the system user
+            User systemUser = APILocator.getUserAPI().getSystemUser();
 
-			return userManager.authenticateByUserId(companyId, userId, password);
-		}
-		catch (com.liferay.portal.PortalException pe) {
-			throw pe;
-		}
-		catch (com.liferay.portal.SystemException se) {
-			throw se;
-		}
-		catch (Exception e) {
-			throw new com.liferay.portal.SystemException(e);
-		}
-	}
+            //Verify that the System User is not been use to log in inside the system
+            if ( systemUser.getEmailAddress().equalsIgnoreCase( emailAddress ) ) {
+                SecurityLogger.logInfo( UserManagerUtil.class, "An invalid attempt to login as a System User has been made  - you cannot login as the System User" );
+                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
+            }
+
+            UserManager userManager = UserManagerFactory.getManager();
+            return userManager.authenticateByEmailAddress( companyId, emailAddress, password );
+        } catch ( com.liferay.portal.PortalException pe ) {
+            throw pe;
+        } catch ( com.liferay.portal.SystemException se ) {
+            throw se;
+        } catch ( Exception e ) {
+            throw new com.liferay.portal.SystemException( e );
+        }
+    }
+
+    public static int authenticateByUserId ( java.lang.String companyId, java.lang.String userId, java.lang.String password ) throws com.liferay.portal.PortalException, com.liferay.portal.SystemException {
+
+        try {
+
+            //Search for the system user
+            User systemUser = APILocator.getUserAPI().getSystemUser();
+
+            //Verify that the System User is not been use to log in inside the system
+            if ( systemUser.getUserId().equalsIgnoreCase( userId ) ) {
+                SecurityLogger.logInfo( UserManagerUtil.class, "An invalid attempt to login as a System User has been made  - you cannot login as the System User" );
+                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
+            }
+
+            UserManager userManager = UserManagerFactory.getManager();
+            return userManager.authenticateByUserId( companyId, userId, password );
+        } catch ( com.liferay.portal.PortalException pe ) {
+            throw pe;
+        } catch ( com.liferay.portal.SystemException se ) {
+            throw se;
+        } catch ( Exception e ) {
+            throw new com.liferay.portal.SystemException( e );
+        }
+    }
 
 	public static com.liferay.util.KeyValuePair decryptUserId(
 		java.lang.String companyId, java.lang.String userId,

@@ -191,28 +191,10 @@ public class LoginAction extends Action {
 
 		Company company = PortalUtil.getCompany(req);
 
-        //Search for the system user
-        User systemUser = APILocator.getUserAPI().getSystemUser();
-
         if ( company.getAuthType().equals( Company.AUTH_TYPE_EA ) ) {
-
-            //Verify that the System User is not been use to log in inside the system
-            if ( systemUser.getEmailAddress().equalsIgnoreCase( login ) ) {
-                SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
-                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
-            }
-
             authResult = UserManagerUtil.authenticateByEmailAddress( company.getCompanyId(), login, password );
             userId = UserManagerUtil.getUserId( company.getCompanyId(), login );
-
         } else {
-
-            //Verify that the System User is not been use to log in inside the system
-            if ( systemUser.getUserId().equalsIgnoreCase( login ) ) {
-                SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
-                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
-            }
-
             authResult = UserManagerUtil.authenticateByUserId( company.getCompanyId(), login, password );
         }
 
