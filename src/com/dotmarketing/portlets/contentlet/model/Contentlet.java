@@ -548,11 +548,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 	public java.io.File getBinary(String velocityVarName)throws IOException {
 		File f = (File) map.get(velocityVarName);
-		if((f==null || !f.exists()) && UtilMethods.isSet(map.get(INODE_KEY))){
-			String inode = (String) map.get(INODE_KEY);
-	        try{
-	        	f=null;
-	            java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
+		if((f==null || !f.exists()) ){
+			f=null;
+			map.remove(velocityVarName);
+			if(UtilMethods.isSet(map.get(INODE_KEY))){
+				String inode = (String) map.get(INODE_KEY);
+	        	try{
+	        	
+	        		java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
 	                    + java.io.File.separator
 	                    + inode.charAt(0)
 	                    + java.io.File.separator
@@ -565,14 +568,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	                    	java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
 		                    if(files.length > 0){
 		                    	f = files[0];
+		                    	map.put(velocityVarName, f);
 		                    }
 		                }
 	            }catch(Exception e){
 	                Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
 	                throw new IOException("File System error.");
 	            }
+			}
 		}
-
+		
 		return f;
 		
 	}
