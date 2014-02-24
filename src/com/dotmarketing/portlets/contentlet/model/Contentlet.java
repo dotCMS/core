@@ -33,6 +33,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.Categorizable;
+import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -546,7 +547,35 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		map.put(velocityVarName, newFile);
 	}
 	public java.io.File getBinary(String velocityVarName)throws IOException {
-		return  (File) map.get(velocityVarName);
+		File f = (File) map.get(velocityVarName);
+		if((f==null || !f.exists()) && UtilMethods.isSet(map.get(INODE_KEY))){
+			String inode = (String) map.get(INODE_KEY);
+	        try{
+	            java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
+	                    + java.io.File.separator
+	                    + inode.charAt(0)
+	                    + java.io.File.separator
+	                    + inode.charAt(1)
+	                    + java.io.File.separator
+	                    + inode
+	                    + java.io.File.separator
+	                    + velocityVarName);
+	                    if(binaryFilefolder.exists()){
+	                    java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
+
+	                    if(files.length > 0){
+	                    	f = files[0];
+	                    }
+
+	                }
+	            }catch(Exception e){
+	                Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
+	                throw new IOException("File System error.");
+	            }
+		}
+
+		return f;
+		
 	}
 
 	public InputStream getBinaryStream(String velocityVarName) throws IOException{
