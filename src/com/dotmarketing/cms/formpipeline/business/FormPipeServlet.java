@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
@@ -71,7 +72,7 @@ public class FormPipeServlet extends HttpServlet {
             if (fpb.getErrorMessages() != null && fpb.getErrorMessages().size() > 0) {
                 request.getSession().setAttribute("com.dotmarketing.formpipe.errors", fpb.getErrorMessages());
             }
-            response.sendRedirect(fpb.getReturnUrl());
+            response.sendRedirect(SecurityUtils.stripReferer(fpb.getReturnUrl()));
             return;
 
         } else {
