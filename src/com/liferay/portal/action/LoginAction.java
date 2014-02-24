@@ -22,6 +22,8 @@
 
 package com.liferay.portal.action;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -45,6 +47,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PreviewFactory;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
@@ -70,6 +73,7 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.Encryptor;
+import com.liferay.util.GetterUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.ServerDetector;
@@ -90,7 +94,9 @@ public class LoginAction extends Action {
 			ActionMapping mapping, ActionForm form, HttpServletRequest req,
 			HttpServletResponse res)
 		throws Exception {
-
+	    
+	    SessionErrors.clear(req);
+	    SessionMessages.clear(req);
 		HttpSession ses = req.getSession();
 
 		String cmd = req.getParameter("my_account_cmd");
@@ -131,7 +137,6 @@ public class LoginAction extends Action {
 
 					SessionErrors.add(req, e.getClass().getName());
 					SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + ParamUtil.getString(req, "my_account_login").toLowerCase() + " has been made from IP: " + req.getRemoteAddr());
-					return mapping.findForward("portal.login");
 				}
 				else {
 					req.setAttribute(PageContext.EXCEPTION, e);
@@ -143,8 +148,6 @@ public class LoginAction extends Action {
 		else if ((cmd != null) && (cmd.equals("send"))) {
 			try {
 				_sendPassword(req);
-
-				return mapping.findForward("portal.login");
 			}
 			catch (Exception e) {
 				if (e != null &&
@@ -153,8 +156,6 @@ public class LoginAction extends Action {
 					e instanceof UserEmailAddressException) {
 
 					SessionErrors.add(req, e.getClass().getName());
-
-					return mapping.findForward("portal.login");
 				}
 				else {
 					req.setAttribute(PageContext.EXCEPTION, e);
@@ -163,9 +164,73 @@ public class LoginAction extends Action {
 				}
 			}
 		}
-		else {
-			return mapping.findForward("portal.login");
+		else if(cmd!=null && cmd.equals("ereset")) {
+		    try {
+		        _resetPassword(req);
+		    }
+		    catch(Exception ex) {
+		        req.setAttribute(PageContext.EXCEPTION, ex);
+                return mapping.findForward(Constants.COMMON_ERROR);
+		    }
 		}
+		
+		return mapping.findForward("portal.login");
+	}
+	
+	private void _resetPassword(HttpServletRequest req) throws Exception {
+	    String userId = ParamUtil.getString(req, "my_user_id");
+	    String token = ParamUtil.getString(req, "token");
+	    
+	    String newpass1 = ParamUtil.getString(req, "my_new_pass1");
+	    String newpass2 = ParamUtil.getString(req, "my_new_pass2");
+	    
+	    if(UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
+	        User user = UserLocalManagerUtil.getUserById(userId);
+	        String tokenInfo = user.getIcqId();
+	        if(user!=null && UtilMethods.isSet(tokenInfo) && tokenInfo.matches("^[a-zA-Z0-9]+:[0-9]+$")) {
+	            String userToken = tokenInfo.substring(0,tokenInfo.indexOf(':'));
+	            if(userToken.equals(token)) {
+    	            // check if token expired
+    	            Calendar ttl = Calendar.getInstance();
+    	            ttl.setTimeInMillis(Long.parseLong(tokenInfo.substring(tokenInfo.indexOf(':')+1)));
+    	            ttl.add(Calendar.MINUTE, Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20));
+    	            if(ttl.after(Calendar.getInstance())) {
+    	                // all ok
+    	                if(UtilMethods.isSet(newpass1) && UtilMethods.isSet(newpass2)) {
+    	                    // actualy change password
+    	                    if(newpass1.equals(newpass2)) {
+    	                        user.setPassword(Encryptor.digest(newpass1));
+    	                        user.setPasswordEncrypted(true);
+    	                        user.setIcqId("");
+    	                        user.setPasswordReset(GetterUtil.getBoolean(
+    	                                PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
+    	                        UserLocalManagerUtil.updateUser(user);
+    	                        
+    	                        SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful changed his password from IP:"+req.getRemoteAddr());
+    	                        SessionMessages.add(req, "reset_pass_success");
+    	                        
+    	                    }
+    	                    else {
+    	                        SessionErrors.add(req, "reset_pass_not_match");
+    	                    }
+    	                }
+    	                else {
+    	                    // just show the option to reset in UI
+        	                SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful password reset request from IP:"+req.getRemoteAddr());
+        	                SessionMessages.add(req, "reset_ok");
+    	                }
+    	            }
+    	            else {
+    	                SecurityLogger.logInfo(LoginAction.class, "User "+userId+" requested password reset with expired token from IP:"+req.getRemoteAddr());
+    	                SessionErrors.add(req, "reset_token_expired");
+    	            }
+	            }
+	            else {
+	                SecurityLogger.logInfo(LoginAction.class, "Attempt to reset user password ("+userId+") with wrong token. IP:"+req.getRemoteAddr());
+	            }
+	        }
+	    }
+	    
 	}
 
 	private void _login(HttpServletRequest req, HttpServletResponse res)
@@ -293,7 +358,6 @@ public class LoginAction extends Action {
 		UserManagerUtil.sendPassword(
 			PortalUtil.getCompanyId(req), emailAddress);
 
-		//Logger.info(this, "Email address " + emailAddress + " has request to reset his password from IP: " + req.getRemoteAddr());
 		SecurityLogger.logInfo(this.getClass(),"Email address " + emailAddress + " has request to reset his password from IP: " + req.getRemoteAddr());
 
 		SessionMessages.add(req, "new_password_sent", emailAddress);

@@ -394,9 +394,9 @@ public class UserLocalManagerImpl implements UserLocalManager {
 				System.currentTimeMillis() + Time.DAY * passwordsLifespan);
 		}
 
-		if (user.hasCompanyMx()) {
+		/*if (user.hasCompanyMx()) {
 			MailManagerUtil.updatePassword(userId, password1);
-		}
+		}*/
 
 		user.setPassword(newEncPwd);
 		user.setPasswordEncrypted(true);
