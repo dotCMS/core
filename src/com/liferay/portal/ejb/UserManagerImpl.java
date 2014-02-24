@@ -29,7 +29,7 @@ import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
-import org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -395,7 +395,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		// we use the ICQ field to store the token:timestamp of the
 		// password reset request we put in the email
 		// the timestamp is used to set an expiration on the token
-		String token = RandomStringUtils.randomAlphanumeric(Config.getIntProperty("RECOVER_PASSWORD_TOKEN_LENGTH", 30));
+		String token = RandomStringUtils.randomAlphanumeric( Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ) );
 		user.setIcqId(token+":"+new Date().getTime());
 		
 		UserUtil.update(user);

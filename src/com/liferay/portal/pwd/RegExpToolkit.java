@@ -26,7 +26,6 @@ import com.dotcms.repackage.oro.org.apache.oro.text.perl.Perl5Util;
 
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.PwdGenerator;
-import org.apache.oro.text.perl.Perl5Util;
 
 /**
  * <a href="RegExpToolkit.java.html"><b><i>View Source</i></b></a>
