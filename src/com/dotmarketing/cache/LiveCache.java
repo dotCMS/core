@@ -33,9 +33,9 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 /**
- * 
+ *
  * This cache is used to know when an asset is live, it doesn't store real valuable info in the cache
- * 
+ *
  * @author David
  * @author Jason Tesser
  *
@@ -66,7 +66,7 @@ public class LiveCache {
     public static String addToLiveAssetToCache ( Versionable asset, Long languageId ) {
 
         HostAPI hostAPI = APILocator.getHostAPI();
-    	
+
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         //The default value for velocity page extension
         String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
@@ -78,26 +78,26 @@ public class LiveCache {
         	User systemUser = APILocator.getUserAPI().getSystemUser();
     		Host host = hostAPI.findParentHost((Treeable)asset, systemUser, false);
     		if(host == null) ret = null;
-    		
+
     		//Obtain the URI for future uses
     		String uri = id.getURI();
     		//Obtain the inode value of the host;
     		String hostId = host.getIdentifier();
 
     		//if this is an index page, map its directories to it
-    		if (UtilMethods.isSet(uri)) 
-    		{		    
+    		if (UtilMethods.isSet(uri))
+    		{
     		  if(uri.endsWith("." + ext))
-    		  {		    
+    		  {
     		    Logger.debug(LiveCache.class, "Mapping: " + uri + " to " + uri);
-    		    
+
     		    //Add the entry to the cache
     			cache.put(getPrimaryGroup() + hostId + ":" + uri,uri, getPrimaryGroup() + "_" + hostId);
 
     			if(uri.endsWith("/index." + ext))
     			{
     			    //Add the entry to the cache
-    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/index." + ext)) + " to " + uri);			    
+    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/index." + ext)) + " to " + uri);
     				cache.put(getPrimaryGroup() + hostId + ":" + uri.substring(0,uri.lastIndexOf("/index." + ext)),uri, getPrimaryGroup() + "_" + hostId);
     				//Add the entry to the cache
     			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/index." + ext)) + " to " + uri);
@@ -128,7 +128,7 @@ public class LiveCache {
     			cache.put(getPrimaryGroup() + hostId + ":" + uri,path, getPrimaryGroup() + "_" + hostId);
     			ret = path;
     		}
-    	  }	  
+    	  }
         } catch (DotDataException e) {
         	Logger.error(LiveCache.class,"Unable to retrieve identifier", e);
         	throw new DotRuntimeException(e.getMessage(), e);
@@ -191,14 +191,14 @@ public class LiveCache {
     }
 
     /**
-     * This method return the asset uri when the asset exists in the cache 
+     * This method return the asset uri when the asset exists in the cache
      * @param URI
      * @param hostId
      * @param languageId
      * @return null if the asset is not in the cache, the asset uri if the asset is in the cache
-     * @throws DotSecurityException 
-     * @throws DotDataException 
-     * @throws DotStateException 
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws DotStateException
      */
 	public static String getPathFromCache(String URI, String hostId, Long languageId) throws DotStateException, DotDataException, DotSecurityException{
 
@@ -211,6 +211,8 @@ public class LiveCache {
 		String _uri = null;
         try {
             //First lets search in cache for a specific language
+        	String key = getPrimaryGroup() + hostId + ":" + URI;
+        	String group = getPrimaryGroup() + "_" + hostId + "_" + languageId;
             _uri = (String) cache.get( getPrimaryGroup() + hostId + ":" + URI, getPrimaryGroup() + "_" + hostId + "_" + languageId );
             //If nothing found try without a language
             if ( _uri == null ) {
@@ -226,7 +228,7 @@ public class LiveCache {
 				return null;
 		    return _uri;
 		}
-		
+
 		String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 		if (URI.endsWith("/")) {
 			//it's a folder path, so I add index.{pages ext} at the end
@@ -238,7 +240,7 @@ public class LiveCache {
 			}catch (DotCacheException e) {
 				Logger.debug(LiveCache.class,"Cache Entry not found", e);
 	    	}
-	
+
 			if(_uri != null)
 			{
 				if(_uri.equals(WebKeys.Cache.CACHE_NOT_FOUND))
@@ -246,14 +248,14 @@ public class LiveCache {
 			    return _uri;
 			}
 		}
-		
-		
+
+
 		// lets try to lazy get it.
 		Host fake = new Host();
 		fake.setIdentifier(hostId);
 		Identifier id = APILocator.getIdentifierAPI().find( fake,URI);
 
-		if(!InodeUtils.isSet(id.getInode())) 
+		if(!InodeUtils.isSet(id.getInode()))
 		{
 			cache.put(getPrimaryGroup() + hostId + ":" + URI, WebKeys.Cache.CACHE_NOT_FOUND, getPrimaryGroup() + "_" + hostId);
 
@@ -289,11 +291,11 @@ public class LiveCache {
         } else {
 			asset =  APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(), false);
 		}
-		
+
 		if(asset!=null && InodeUtils.isSet(asset.getInode()))
 		{
 		    Logger.debug(PublishFactory.class, "Lazy Mapping: " + id.getURI() + " to " + URI);
-		    //The cluster entry doesn't need to be invalidated when loading the entry lazily, 
+		    //The cluster entry doesn't need to be invalidated when loading the entry lazily,
 		    //if the entry gets invalidated from the cluster in this case causes an invalidation infinite loop
             return addToLiveAssetToCache( asset, languageId );
         } else {
@@ -320,12 +322,20 @@ public class LiveCache {
 	    		return;
 		    String hostId = host.getIdentifier();
 			Identifier identifier = APILocator.getIdentifierAPI().find(asset);
-			cache.remove(getPrimaryGroup() + hostId + ":" + identifier.getURI(),getPrimaryGroup() + "_" + hostId);
+
+			if(identifier.getAssetType().equals("contentlet")){
+				Contentlet c = (Contentlet) asset;
+				long languageId = c.getLanguageId();
+				cache.remove(getPrimaryGroup() + hostId + ":" + identifier.getURI(),getPrimaryGroup() + "_" + hostId + "_" + languageId  );
+			} else {
+				cache.remove(getPrimaryGroup() + hostId + ":" + identifier.getURI(),getPrimaryGroup() + "_" + hostId);
+			}
+
 		}catch (Exception e) {
 			Logger.error(LiveCache.class, "Unable to remove asset from live cache", e);
 		}
 	}
-	
+
 	public static void clearCache(String hostId){
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 	    //clear the cache
@@ -335,7 +345,7 @@ public class LiveCache {
     	String[] groups = {getPrimaryGroup()};
     	return groups;
     }
-    
+
     public static String getPrimaryGroup() {
     	return "LiveCache";
     }
