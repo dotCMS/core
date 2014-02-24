@@ -19,13 +19,12 @@ import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessages;
 import com.dotcms.repackage.struts.org.apache.struts.actions.DispatchAction;
-
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -46,17 +45,12 @@ import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.util.WebKeys.WorkflowStatuses;
 import com.dotmarketing.viewtools.CommentsWebAPI;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -113,7 +107,7 @@ public class CommentsAction extends DispatchAction {
 
 				saveMessages(request, ae);
 				saveMessages(request.getSession(), ae);
-				ActionForward forward = new ActionForward(referrer);
+				ActionForward forward = new ActionForward(SecurityUtils.stripReferer(referrer));
 				forward.setRedirect(true);
 				return forward;
 			}

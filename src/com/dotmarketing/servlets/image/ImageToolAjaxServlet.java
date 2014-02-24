@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -139,7 +140,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
 		fileUrl+=(fileUrl.indexOf("?") < 0) ? "?":"&"; 
 		fileUrl+= "force_download=true&r" +new Random( 1756547574 ).nextInt();
 		System.out.println(fileUrl);
-		response.sendRedirect(fileUrl);
+		response.sendRedirect(SecurityUtils.stripReferer(fileUrl));
 		return;
     	
     	
