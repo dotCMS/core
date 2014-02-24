@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.Layout;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
@@ -266,7 +267,7 @@ implements ActionResponse {
 			throw new IllegalStateException();
 		}
 
-		_redirectLocation = location;
+		_redirectLocation = SecurityUtils.stripReferer(location);
 	}
 
 	public HttpServletResponse getHttpServletResponse() {

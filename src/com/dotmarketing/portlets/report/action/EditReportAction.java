@@ -33,6 +33,7 @@ import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.util
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -136,7 +137,7 @@ public class EditReportAction extends DotPortletAction {
 		httpReq.setAttribute("dataSources", rfm.getDataSources());
 
 		String reportId = req.getParameter("reportId");
-		String referrer = req.getParameter("referrer");
+		String referrer = SecurityUtils.stripReferer(req.getParameter("referrer"));
 
 		// Report Exists
 		if (UtilMethods.isSet(reportId)) {

@@ -30,6 +30,7 @@ import com.dotcms.repackage.portlet.javax.portlet.PortletSession;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.WebKeys;
@@ -59,7 +60,7 @@ public class CreateUserAction extends PortletAction {
 				(String)req.getPortletSession().getAttribute(
 					WebKeys.CTX_PATH, PortletSession.APPLICATION_SCOPE);
 
-			res.sendRedirect(ctxPath);
+			res.sendRedirect(SecurityUtils.stripReferer(ctxPath));
 		}
 
 		String cmd = req.getParameter(Constants.CMD);

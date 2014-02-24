@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -20,7 +21,6 @@ import com.dotmarketing.portlets.campaigns.model.Recipient;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class RedirectURLServlet extends HttpServlet {
@@ -87,7 +87,7 @@ public class RedirectURLServlet extends HttpServlet {
 				}
 			}
 			//do redirect first for optimal user expierience(tm)
-			response.sendRedirect(redir);
+			response.sendRedirect(SecurityUtils.stripReferer(redir));
 			response.flushBuffer();
 			
 		}
