@@ -2196,7 +2196,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     				                hostId = host.getIdentifier();
 
     				        }
-    				        List<Tag> list=tagAPI.getTagsInText(value, user.getUserId(), hostId);
+    				        List<Tag> list=tagAPI.getTagsInText(value, "", hostId);
     				        for(Tag tag : list)
     				            tagAPI.addTagInode(tag.getTagName(), contentlet.getInode(), hostId);
 				        }

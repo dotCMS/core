@@ -28,7 +28,7 @@
 		var form = document.getElementById("createAccountForm");
 		form.submit();
 	}
-	
+
 </script>
 <script language="javascript">
 	function clickHidden()
@@ -67,14 +67,14 @@ fieldset fieldset legend{
 <div style="width: 300px; float: left; margin-right: 20px;">
 <div class="fieldset">
 	<span class="legend">Registration</span><br />
-	
+
 	<form action="/dotCMS/addRegistration" method="post" id="createAccountForm" name="createAccountForm" autocomplete="off">
     		<input name="referrer" type="hidden" value="$!referrer">
-	
+
 		<p>Not a registered user?<br>
 		Create your Account Now!<br>
 		It's free and it only takes a minute!</p>
-		
+
 		<a href="javascript:createAnAccount();" class="button">Create Account</a>
   	</form>
 </div>
@@ -86,31 +86,31 @@ fieldset fieldset legend{
 
 	<form action="/dotCMS/login" method="post" id="my_account_fm" name="my_account_fm">
 		<input name="dispatch" type="hidden" value="login">
-		
+
 		##The referrer parameter is used by the login action (/dotCMS/login) to know where the login page lives
-		## it has nothing to be with where the login is redirected on sucess for that the 
+		## it has nothing to be with where the login is redirected on sucess for that the
 		##REDIRECT_AFTER_LOGIN session variable is used
 		<input name="referrer" type="hidden" value="$!{request.getRequestURI()}">
-	
+
 		<p>Already a registered user?<br>
 		Login Now!</p>
-		
+
 		<label>Email:</label>
 		<input name="userName" id="userNameText" class="text" type="text" value="$!loginForm.userName"><br>
-	
+
 		<label>Password:</label>
-		<input  name="password"  type="password" class="text" value="" onKeyPress="if (event.keyCode == 13) { doLogin(); }"><br>
-	
+		<input  name="password"  type="password" autocomplete="off" class="text" value="" onKeyPress="if (event.keyCode == 13) { doLogin(); }"><br>
+
 		<label>Remember my user information<br /> on this computer:</label>
 		<input name="rememberMe" type="checkbox"><br>
 
-		
+
 		<p><a href="/dotCMS/forgotPassword" style="float: left; clear: both;">Forgot your Password?</a></p>
-			
+
 		<div class="buttonGroup">
 			<a href="javascript:doLogin();" class="button">Login</a>
 		</div>
-	
+
 	</form>
 
 </fieldset>

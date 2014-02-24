@@ -29,6 +29,7 @@ import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.antlr_3_1_2.antlr.Utils;
 import com.dotcms.repackage.bsh_2_0b4.bsh.util.Util;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -769,10 +770,10 @@ public class DotPortletAction extends PortletAction {
 
 		if (UtilMethods.isSet(referer)) {
 			Logger.debug(this, "\n\nGoing to redirect to referer: " + referer);
-			res.sendRedirect(referer);
+			res.sendRedirect(SecurityUtils.stripReferer(referer));
 		} else if (UtilMethods.isSet(redirect)) {
 			Logger.debug(this, "\n\nGoing to redirect to redirect : " + redirect);
-			res.sendRedirect(redirect);
+			res.sendRedirect(SecurityUtils.stripReferer(redirect));
 		}
 		Logger.debug(this, "End of _sendToReferral");
 	}

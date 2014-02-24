@@ -8,7 +8,10 @@
 <%@page import="com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.node.stats.NodesStatsResponse"%>
 <%@page import="com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.node.stats.NodesStatsRequest"%>
 <%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
-<% 
+
+<%@ include file="/html/common/uservalidation.jsp"%>
+
+<%
 
 String indexName=request.getParameter("indexName");
 
