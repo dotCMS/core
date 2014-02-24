@@ -11,6 +11,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.factories.InodeFactory;
@@ -92,7 +93,7 @@ public class EditMailingListAction extends PortletAction {
 				if (Validator.validate(req,form,mapping)) {
 					_saveMailingList(req, res, config, form, user);
 					if (UtilMethods.isSet(ParamUtil.getString(req, "redirect")))
-						res.sendRedirect(ParamUtil.getString(req, "redirect"));
+						res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 				}
 			}
 			catch (Exception ae) {
@@ -110,7 +111,7 @@ public class EditMailingListAction extends PortletAction {
 				setForward(req, Constants.COMMON_ERROR);
 			}
 			Logger.debug(this, "Returning to view mailing lists page");
-			res.sendRedirect(ParamUtil.getString(req, "redirect"));
+			res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 		}
 
 		/*

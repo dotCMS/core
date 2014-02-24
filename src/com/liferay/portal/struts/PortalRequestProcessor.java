@@ -46,6 +46,7 @@ import javax.servlet.jsp.PageContext;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.config.ForwardConfig;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -149,7 +150,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 						lastPath = lastPath + "?r=" + System.currentTimeMillis();
 					}
 				}
-				res.sendRedirect(lastPath);
+				res.sendRedirect(SecurityUtils.stripReferer(lastPath));
 			}
 			return;
 		}
@@ -597,7 +598,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");	
 	
 				if(host != null || sendMeTo.getHostId().equals(host.getInode())){
-					res.sendRedirect(sendMeTo.getURI() + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis());
+					res.sendRedirect(SecurityUtils.stripReferer(sendMeTo.getURI() + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
 					return null;
 				}
 

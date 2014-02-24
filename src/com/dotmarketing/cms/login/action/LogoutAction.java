@@ -12,6 +12,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.UtilMethods;
 
@@ -40,7 +41,7 @@ public class LogoutAction extends DispatchAction {
 
             ActionForward af = null;
             if(UtilMethods.isSet(referrer)) {
-            	af = new ActionForward(referrer);
+            	af = new ActionForward(SecurityUtils.stripReferer(referrer));
             	af.setRedirect(true);
             } else
             	af = mapping.findForward("afterLogoutPage");

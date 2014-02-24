@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.actions.DispatchAction;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -70,11 +71,11 @@ public class SendArcticleToFriendAction  extends DispatchAction {
 		
 		if (request.getParameter("return") != null)
 		{
-			ActionForward af =  new ActionForward(request.getParameter("return"));
+			ActionForward af =  new ActionForward(SecurityUtils.stripReferer(request.getParameter("return")));
 			af.setRedirect(true);
 			return af;
 		} else if (request.getParameter("returnUrl") != null) {
-			ActionForward af =  new ActionForward(request.getParameter("returnUrl"));
+			ActionForward af =  new ActionForward(SecurityUtils.stripReferer(request.getParameter("returnUrl")));
 			af.setRedirect(true);
 			return af;
 		} else {

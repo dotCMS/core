@@ -10,6 +10,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
@@ -133,7 +134,7 @@ public class LoginAsAction extends Action {
 			
 				//List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(loginAsUser);
 				PortletURLImpl portletURLImp = new PortletURLImpl(req, layouts.get(0).getPortletIds().get(0), layouts.get(0).getId(), false);
-				res.sendRedirect(portletURLImp.toString());
+				res.sendRedirect(SecurityUtils.stripReferer(portletURLImp.toString()));
 				return null;
 				
 			}

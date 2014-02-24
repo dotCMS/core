@@ -14,6 +14,7 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.ChallengeQuestion;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -23,6 +24,7 @@ import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ChallengeQuestionFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.user.factories.UserCommentsFactory;
@@ -217,7 +219,7 @@ public class CMSUsersWebAPI implements ViewTool {
 		return loggedInUser;
 	}
 
-	public void doLoginMacro(HttpServletRequest request, HttpServletResponse response){
+	public void doLoginMacro(HttpServletRequest request, HttpServletResponse response) throws DotSecurityException {
 		String referrer = null;
 		if (UtilMethods.isSet(request.getSession().getAttribute("referrer")) )
 		{
@@ -225,7 +227,7 @@ public class CMSUsersWebAPI implements ViewTool {
 		}
 		if (UtilMethods.isSet(request.getParameter("referrer")) )
 		{
-			referrer = (String)request.getParameter("referrer");
+			referrer = SecurityUtils.stripReferer((String)request.getParameter("referrer"));
 		}
 		if(UtilMethods.isSet(referrer)){
 			request.getSession().setAttribute("referrer", referrer);
@@ -262,7 +264,7 @@ public class CMSUsersWebAPI implements ViewTool {
 
 			if( _rVal && UtilMethods.isSet(referrer)){
 				try {
-					response.sendRedirect(referrer);
+					response.sendRedirect(SecurityUtils.stripReferer(referrer));
 					request.getSession().removeAttribute("referrer");
 					return;
 				} catch (IOException e) {

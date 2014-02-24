@@ -30,6 +30,7 @@ import javax.servlet.jsp.PageContext;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.polls.DuplicateVoteException;
@@ -97,7 +98,7 @@ public class AddVoteAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 }

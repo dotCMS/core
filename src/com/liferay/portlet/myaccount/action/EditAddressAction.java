@@ -30,6 +30,7 @@ import javax.servlet.jsp.PageContext;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.AddressCellException;
 import com.liferay.portal.AddressCityException;
 import com.liferay.portal.AddressCountryException;
@@ -157,7 +158,7 @@ public class EditAddressAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateAddress(ActionRequest req, ActionResponse res)
@@ -200,7 +201,7 @@ public class EditAddressAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateAddressPriority(ActionRequest req, ActionResponse res)
@@ -216,7 +217,7 @@ public class EditAddressAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 }

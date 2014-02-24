@@ -45,6 +45,7 @@ import org.apache.struts.action.ActionServlet;
 import org.apache.struts.config.ForwardConfig;
 import org.apache.struts.config.ModuleConfig;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.model.Portlet;
@@ -165,7 +166,7 @@ public class PortletRequestProcessor extends StxxTilesRequestProcessor {
 				else{
 					forward = forward + "?r=" + System.currentTimeMillis();
 				}
-				res.sendRedirect(forward);
+				res.sendRedirect(SecurityUtils.stripReferer(forward));
 			}
 		}
 	}

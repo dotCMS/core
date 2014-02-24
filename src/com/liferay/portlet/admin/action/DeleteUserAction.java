@@ -30,6 +30,7 @@ import javax.servlet.jsp.PageContext;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.RequiredUserException;
 import com.liferay.portal.auth.PrincipalException;
@@ -67,7 +68,7 @@ public class DeleteUserAction extends PortletAction {
 
 			// Send redirect
 
-			res.sendRedirect(ParamUtil.getString(req, "redirect"));
+			res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 		}
 		catch (Exception e) {
 			if (e != null &&

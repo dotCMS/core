@@ -30,6 +30,7 @@ import javax.servlet.jsp.PageContext;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.ejb.UserManagerUtil;
@@ -108,7 +109,7 @@ public class UploadPortraitAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 }

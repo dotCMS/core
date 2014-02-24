@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.actions.DispatchAction;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -89,7 +90,7 @@ public class CountContentClicksAction extends DispatchAction {
 				contentlet.setStringProperty(field.getVelocityVarName(),String.valueOf(numberOfClicks));
 				conAPI.checkin(contentlet,new HashMap<Relationship, List<Contentlet>>(),new ArrayList<Category>(),new ArrayList<Permission>() ,APILocator.getUserAPI().getSystemUser(),true);
 		    }
-		    ActionForward af = new ActionForward(redirectLink);
+		    ActionForward af = new ActionForward(SecurityUtils.stripReferer(redirectLink));
 	        af.setRedirect(true);
 	        return af;
 		

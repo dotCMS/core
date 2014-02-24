@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.servlet.PortalSessionContext;
 import com.liferay.portal.struts.PortletAction;
@@ -112,7 +113,7 @@ public class KillSessionAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 	private static final Log _log = LogFactory.getLog(KillSessionAction.class);
