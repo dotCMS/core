@@ -15,6 +15,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.actions.DispatchAction;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -41,7 +42,7 @@ public class MyFavoritesAction extends DispatchAction {
 		}
 		if (request.getSession().getAttribute(WebKeys.CMS_USER) == null) {
 			String path = URLEncoder.encode("/dotCMS/addFavorites?url_page="+url_page+"&url_params="+url_params);
-			return new ActionForward("/dotCMS/login?referrer="+path);
+			return new ActionForward(SecurityUtils.stripReferer("/dotCMS/login?referrer="+path));
 		}
 
 		//Getting the user from the session

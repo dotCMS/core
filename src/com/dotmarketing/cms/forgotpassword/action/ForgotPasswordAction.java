@@ -16,6 +16,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -67,7 +68,8 @@ public class ForgotPasswordAction extends DispatchAction {
 		
 		if (Config.getBooleanProperty("USE_CHALLENGE_QUESTION"))
 		{
-    		 af = new ActionForward(mapping.findForward("challengeQuestionPage").getPath() + "?emailAddress=" + form.getEmail());
+    		 af = new ActionForward(SecurityUtils.stripReferer(
+    		         mapping.findForward("challengeQuestionPage").getPath() + "?emailAddress=" + form.getEmail()));
     	}
 		
 		return af;
@@ -101,7 +103,7 @@ public class ForgotPasswordAction extends DispatchAction {
 		}
 		else if (request.getParameter("referrer") != null && !request.getParameter("referrer").toString().equalsIgnoreCase(""))
 		{
-			referrer = (String)request.getParameter("referrer");
+			referrer = SecurityUtils.stripReferer((String)request.getParameter("referrer"));
 		} 
 		
 		try {
@@ -132,7 +134,7 @@ public class ForgotPasswordAction extends DispatchAction {
 			saveMessages(request.getSession(), aes);
 			
 			if(UtilMethods.isSet(referrer)) {
-	        	af = new ActionForward(referrer);
+	        	af = new ActionForward(SecurityUtils.stripReferer(referrer));
 	        	af.setRedirect(true);
 	        	return af;
 			} else 
@@ -190,7 +192,7 @@ public class ForgotPasswordAction extends DispatchAction {
 			af = (mapping.findForward("passwordChangeConfirmationPage"));
 	
 			if(UtilMethods.isSet(referrer)) {
-	        	af = new ActionForward(referrer);
+	        	af = new ActionForward(SecurityUtils.stripReferer(referrer));
 	        	af.setRedirect(true);
 			} 
 	        return af;
@@ -218,7 +220,7 @@ public class ForgotPasswordAction extends DispatchAction {
 		if (request.getAttribute("referrer") != null && !request.getAttribute("referrer").toString().equalsIgnoreCase("")) {
 			referrer = (String)request.getAttribute("referrer");
 		} else if (request.getParameter("referrer") != null && !request.getParameter("referrer").toString().equalsIgnoreCase("")) {
-			referrer = (String)request.getParameter("referrer");
+			referrer = SecurityUtils.stripReferer((String)request.getParameter("referrer"));
 		}
 		
         try {
@@ -252,7 +254,7 @@ public class ForgotPasswordAction extends DispatchAction {
 		            msg.add(Globals.MESSAGE_KEY, new ActionMessage("message.challenge_question.answer_successful", email));
 		            saveMessages(request.getSession(), msg);
 		            if(UtilMethods.isSet(referrer)) {
-			        	return (new ActionForward(referrer + "?" + request.getQueryString()));
+			        	return (new ActionForward(SecurityUtils.stripReferer(referrer + "?" + request.getQueryString())));
 		            } else {
 		            	return mapping.findForward("passwordChangeConfirmationPage");
 		            }

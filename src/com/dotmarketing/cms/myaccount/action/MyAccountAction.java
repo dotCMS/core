@@ -15,6 +15,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
@@ -466,7 +467,7 @@ public class MyAccountAction extends DispatchAction {
 					WebKeys.REDIRECT_AFTER_UPDATE_ACCOUNT_INFO);
 			request.getSession().removeAttribute(
 					WebKeys.REDIRECT_AFTER_UPDATE_ACCOUNT_INFO);
-			ActionForward af = new ActionForward(redir);
+			ActionForward af = new ActionForward(SecurityUtils.stripReferer(redir));
 			af.setRedirect(true);
 			return af;
 		}

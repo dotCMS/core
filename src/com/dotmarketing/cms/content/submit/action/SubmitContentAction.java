@@ -19,6 +19,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -96,7 +97,7 @@ public class SubmitContentAction extends DispatchAction{
 		if(referrer.endsWith("?")){
 			referrer = referrer.substring(0,referrer.length()-1);
 		}
-		ActionForward af = new ActionForward(referrer);
+		ActionForward af = new ActionForward(SecurityUtils.stripReferer(referrer));
 		af.setRedirect(true);
 
 		int index = referrer.lastIndexOf('/');

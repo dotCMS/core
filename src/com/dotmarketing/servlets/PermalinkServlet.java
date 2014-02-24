@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Trackback;
 import com.dotmarketing.business.APILocator;
@@ -141,7 +142,7 @@ public class PermalinkServlet extends HttpServlet {
 
 
 		}
-		response.sendRedirect(redirect);
+		response.sendRedirect(SecurityUtils.stripReferer(redirect));
 
 	}
 

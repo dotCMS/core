@@ -31,6 +31,7 @@ import javax.servlet.jsp.PageContext;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.NoSuchPortletException;
 import com.liferay.portal.PortletActiveException;
 import com.liferay.portal.PortletDefaultPreferencesException;
@@ -183,7 +184,7 @@ public class EditPortletAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updatePortletIndex(ActionRequest req) throws Exception {

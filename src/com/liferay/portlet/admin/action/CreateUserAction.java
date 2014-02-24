@@ -36,6 +36,7 @@ import org.apache.struts.Globals;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.CaptchaException;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.DuplicateUserIdException;
@@ -161,7 +162,7 @@ public class CreateUserAction extends PortletAction {
 
 			// Send redirect
 
-			res.sendRedirect(ParamUtil.getString(req, "redirect"));
+			res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 		}
 		catch (Exception e) {
 			if (e != null &&

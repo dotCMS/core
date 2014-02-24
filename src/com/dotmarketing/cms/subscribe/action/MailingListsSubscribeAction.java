@@ -15,6 +15,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
@@ -99,7 +100,7 @@ public class MailingListsSubscribeAction extends DispatchAction {
 
     	ActionForward af = mapping.findForward("subscribePage");
 		if(UtilMethods.isSet(referrer) && !referrer.startsWith(af.getPath())) {
-			af = new ActionForward(referrer);
+			af = new ActionForward(SecurityUtils.stripReferer(referrer));
 			af.setRedirect(true);
 		}
 
@@ -147,7 +148,7 @@ public class MailingListsSubscribeAction extends DispatchAction {
 			saveMessages(request.getSession(), errors);
 	    	ActionForward af = mapping.findForward("subscribePage");
 			if(UtilMethods.isSet(referrer) && !referrer.startsWith(af.getPath())) {
-				af = new ActionForward(referrer);
+				af = new ActionForward(SecurityUtils.stripReferer(referrer));
 				af.setRedirect(true);
 			}
 			return af;
@@ -184,7 +185,7 @@ public class MailingListsSubscribeAction extends DispatchAction {
 
     	ActionForward af = mapping.findForward("subscribePage");
 		if(UtilMethods.isSet(returnURL) && !returnURL.startsWith(af.getPath())) {
-			af = new ActionForward(returnURL);
+			af = new ActionForward(SecurityUtils.stripReferer(returnURL));
 			af.setRedirect(true);
 		}
 

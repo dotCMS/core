@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -58,9 +59,10 @@ public class EditUserFilterAction extends DotPortletAction {
 				req.setAttribute(WebKeys.USERMANAGERLISTFORM, form);
 				searchForm = (UserManagerListSearchForm) form;
 				ViewUserManagerListAction._doSearch(searchForm, req, res);
-
-				if (UtilMethods.isSet(req.getParameter("referrer"))) {
-					res.sendRedirect(req.getParameter("referrer"));
+				
+				String referrer = req.getParameter("referrer");
+				if (UtilMethods.isSet(referrer)) {
+					res.sendRedirect(SecurityUtils.stripReferer(referrer));
 				} else {
 					setForward(req, "portlet.ext.userfilter.edit_userfilter");
 					return;
@@ -98,8 +100,9 @@ public class EditUserFilterAction extends DotPortletAction {
 				searchForm = (UserManagerListSearchForm) form;
 				ViewUserManagerListAction._doSearch(searchForm, req, res);
 
-				if (UtilMethods.isSet(req.getParameter("referrer"))) {
-					res.sendRedirect(req.getParameter("referrer"));
+				String referrer = req.getParameter("referrer");
+				if (UtilMethods.isSet(referrer)) {
+					res.sendRedirect(SecurityUtils.stripReferer(referrer));
 				} else {
 					setForward(req, "portlet.ext.userfilter.edit_userfilter");
 					return;
@@ -129,7 +132,7 @@ public class EditUserFilterAction extends DotPortletAction {
 				_delete(form, req, res);
 
 				if (UtilMethods.isSet(req.getParameter("returnPath"))) {
-					setForward(req, req.getParameter("returnPath"));
+					setForward(req, SecurityUtils.stripReferer(req.getParameter("returnPath")));
 				}
 				else {
 					_getUserFilter(form, req, res);
@@ -143,8 +146,9 @@ public class EditUserFilterAction extends DotPortletAction {
 				ViewUserManagerListAction._doSearch(searchForm, req, res);
 				req.setAttribute(WebKeys.USERMANAGERLISTFORM, form);
 
-				if (UtilMethods.isSet(req.getParameter("referrer"))) {
-					res.sendRedirect(req.getParameter("referrer"));
+				String referrer = req.getParameter("referrer");
+				if (UtilMethods.isSet(referrer)) {
+					res.sendRedirect(SecurityUtils.stripReferer(referrer));
 				} else {
 					setForward(req, "portlet.ext.userfilter.edit_userfilter");
 					return;

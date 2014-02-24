@@ -14,6 +14,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
@@ -40,6 +41,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
@@ -69,7 +71,7 @@ public class CreateAccountAction extends DispatchAction {
              request.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
              request.getSession().setAttribute("createAccountForm",lf);
              Logger.debug(this.getClass(), "redirecting after account creation: " + redir);
-             ActionForward af = new ActionForward(redir);
+             ActionForward af = new ActionForward(SecurityUtils.stripReferer(redir));
              af.setRedirect(true);
              return af;
          }

@@ -34,6 +34,7 @@ import javax.servlet.jsp.PageContext;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.RequiredUserException;
@@ -271,7 +272,7 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateFavorites(ActionRequest req, ActionResponse res)
@@ -303,7 +304,7 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateIm(ActionRequest req, ActionResponse res)
@@ -334,7 +335,7 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 	private void _updateLocale(ActionRequest req, ActionResponse res)
 	throws Exception {
@@ -363,7 +364,7 @@ public class UpdateProfileAction extends PortletAction {
 
 	// Send redirect
 
-	res.sendRedirect(ParamUtil.getString(req, "redirect"));
+	res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 }
 
 	private void _updateMain(ActionRequest req, ActionResponse res)
@@ -417,7 +418,7 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updatePassword(ActionRequest req, ActionResponse res)
@@ -446,7 +447,7 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateSms(ActionRequest req, ActionResponse res)
@@ -474,7 +475,7 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(ParamUtil.getString(req, "redirect"));
+		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
 	}
 
 }

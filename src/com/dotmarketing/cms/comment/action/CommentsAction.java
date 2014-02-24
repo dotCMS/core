@@ -19,7 +19,9 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
+import org.owasp.esapi.ESAPI;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -113,7 +115,7 @@ public class CommentsAction extends DispatchAction {
 
 				saveMessages(request, ae);
 				saveMessages(request.getSession(), ae);
-				ActionForward forward = new ActionForward(referrer);
+				ActionForward forward = new ActionForward(SecurityUtils.stripReferer(referrer));
 				forward.setRedirect(true);
 				return forward;
 			}
