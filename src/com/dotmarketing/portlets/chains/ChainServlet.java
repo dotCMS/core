@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
@@ -55,7 +56,7 @@ public class ChainServlet extends HttpServlet {
     		}
     		
             if (url.startsWith("http://") || url.startsWith("https://"))
-				response.sendRedirect(url);
+				response.sendRedirect(SecurityUtils.stripReferer(url));
 			else
 				request.getRequestDispatcher(url).forward(request, response);
 			return;
