@@ -32,7 +32,7 @@ function changeStateTextLayer(){
 		showLayer("stateTextDiv");
 		document.getElementById("stateOtherCountryText").focus();
 	}
-	else 
+	else
 	{
 		document.getElementById("stateOtherCountryText").value = "";
 		hideLayer("stateTextDiv");
@@ -45,25 +45,25 @@ visibleLayer = "inline";
 browser = "Explorer";
 
 //Layer Management
-function referenceLayer(layerName) 
-{ 
-	//if (browser=="Netscape") 
-	//	return "document.layers['"+layerName+"']."; 
-	//else 
-	//	return "document.all['"+layerName+"']."; 
-	return "document.getElementById('" + layerName + "').";	
+function referenceLayer(layerName)
+{
+	//if (browser=="Netscape")
+	//	return "document.layers['"+layerName+"'].";
+	//else
+	//	return "document.all['"+layerName+"'].";
+	return "document.getElementById('" + layerName + "').";
 }
 
 function hideLayer(layerName)
 {
-	eval(referenceLayer(layerName)+styleReference+ 'display="none"'); 
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"');
 }
 
-function showLayer(layerName) 
-{ 
-	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"'); 
-} 
-   
+function showLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"');
+}
+
 function change(layer)
 {
 	var layerInstance = document.getElementById(layer);
@@ -85,11 +85,11 @@ function createNew()
 	return false;
 }
 
-	  
+
 	  function passFieldChanged () {
 	  	$("dotRegistrationForm").passChanged.value="true";
 	  }
-	  
+
 
 	  function trim(str)
 	  {
@@ -112,7 +112,7 @@ function findMe () {
 		else{
 		return TRIM_VALUE;
 		}
-	} 
+	}
 
 	function RTrim(VALUE){
 		var w_space = String.fromCharCode(32);
@@ -122,7 +122,7 @@ function findMe () {
 		return"";
 		}
 		var iTemp = v_length -1;
-		
+
 		while(iTemp > -1){
 		if(VALUE.charAt(iTemp) == w_space){
 		}
@@ -131,10 +131,10 @@ function findMe () {
 		break;
 		}
 		iTemp = iTemp-1;
-		
-		} 
+
+		}
 		return strTemp;
-	} 
+	}
 
 	function LTrim(VALUE){
 		var w_space = String.fromCharCode(32);
@@ -143,9 +143,9 @@ function findMe () {
 		}
 		var v_length = VALUE.length;
 		var strTemp = "";
-		
+
 		var iTemp = 0;
-		
+
 		while(iTemp < v_length){
 		if(VALUE.charAt(iTemp) == w_space){
 		}
@@ -154,9 +154,9 @@ function findMe () {
 		break;
 		}
 		iTemp = iTemp + 1;
-		} 
+		}
 		return strTemp;
-	} 
+	}
 </script>
 
 <table align="center">
@@ -166,13 +166,13 @@ function findMe () {
 </table>
 
 	#if ((($!{dotRegistrationForm.from} == "webEventRegistration") || ($!{dotRegistrationForm.from} == "purchaseOrder")) && !($request.getAttribute("errorCreate") == true))
-	<!--  User login box -->	
+	<!--  User login box -->
 	<div id="loginLayer">
 	<form action="/dotCMS/addRegistration" method="post" name="findMeForm" id="findMeForm" autocomplete="off">
-		
+
 		<table>
 		<tr valign="top">
-		
+
 	<td>
 	<table cellpadding="4">
 	<tr>
@@ -189,7 +189,7 @@ function findMe () {
 	</tr>
 	<tr>
 		<td align="center">
-			
+
 			<div class="curveLink" style="margin-left: 20px;"><span><button class="clearInputStyles" onClick="return createNew();">Create Account</button></span></div>
 		</td>
 	</tr>
@@ -199,7 +199,7 @@ function findMe () {
 	<input type="hidden" name="referrer" value="$!{dotRegistrationForm.referrer}">
 	<input type="hidden" name="from" value="$!{dotRegistrationForm.from}">
 	<input type="hidden" name="dispatch" value="findMe">
-	
+
 	<table style="margin-left: 170px;" cellpadding="4">
 		<tr>
 			<td colspan="2"><b>Login</b></td>
@@ -213,13 +213,13 @@ function findMe () {
 	    <tr>
 			<td align="right">&nbsp;&nbsp;&nbsp;<b>Email:</b></td>
 	    	<td><input name="findMeEmailAddress" tabindex="1" id="findMeEmailAddress" class="text" type="text" value="">&nbsp;&nbsp;</td>
-			
+
 	    </tr>
 	    <tr>
 			<td align="right">&nbsp;&nbsp;&nbsp;<b>Password:</b></td>
 	    	<td>
-				<input  name="findMePassword" tabindex="2" type="password" class="text" value="" onKeyPress="if (event.keyCode == 13) { findMe(); }">
-			</td>			
+				<input  name="findMePassword" tabindex="2" type="password" autocomplete="off" class="text" value="" onKeyPress="if (event.keyCode == 13) { findMe(); }">
+			</td>
 	    </tr>
 		<tr align="right">
 			<td>&nbsp;</td>
@@ -239,7 +239,7 @@ function findMe () {
 			#else
 				#set($forgotPassword = "/dotCMS/forgotPassword")
 			#end
-    			<a href="$!forgotPassword">forgot your password?</a> 
+    			<a href="$!forgotPassword">forgot your password?</a>
 			</td>
 	    </tr>
 	</table>
@@ -260,7 +260,7 @@ function findMe () {
 	<input type="hidden" name="from" value="$!{dotRegistrationForm.from}">
 	<input type="hidden" name="noOrganization" value="false">
 	<!-- User Information -->
-	
+
 	<h2 style="margin-left: 170px;">User Information</h2>
 	<table style="margin-left: 170px;">
 	<tr>
@@ -287,14 +287,14 @@ function findMe () {
 		#end
 		</td>
 	</tr>
-	
+
 	<tr>
 		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Password:</b></td>
-		<td><input type="hidden" name="passChanged" value="$!{dotRegistrationForm.passChanged}"><input tabindex="5" type="password" onchange="passFieldChanged()" name="password" value="$!{dotRegistrationForm.password}"></td>
+		<td><input type="hidden" name="passChanged" value="$!{dotRegistrationForm.passChanged}"><input tabindex="5" type="password" autocomplete="off" onchange="passFieldChanged()" name="password" value="$!{dotRegistrationForm.password}"></td>
 	</tr>
 	<tr>
 		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Verify Password:</b></td>
-		<td><input tabindex="6" type="password" onchange="passFieldChanged()" name="verifyPassword" value="$!{dotRegistrationForm.verifyPassword}"></td>
+		<td><input tabindex="6" type="password" autocomplete="off" onchange="passFieldChanged()" name="verifyPassword" value="$!{dotRegistrationForm.verifyPassword}"></td>
 	</tr>
 	<tr>
 		<td>&nbsp;&nbsp;&nbsp;<b>Prefix:</b></td>
@@ -335,7 +335,7 @@ function findMe () {
 		<td><b>&nbsp;&nbsp;&nbsp;Suffix:</b></td>
 		<td><input tabindex="10" type="text" name="suffix" value="$!{dotRegistrationForm.suffix}"></td>
 	</tr>
-	<tr>	
+	<tr>
 		<td><b>&nbsp;&nbsp;&nbsp;Title:</b></td>
 		<td><input tabindex="11" type="text" name="title" value="$!{dotRegistrationForm.title}"></td>
 	</tr>
@@ -397,52 +397,52 @@ function findMe () {
 		</div>
 		</td>
 	</tr>
-	
+
 	<tr>
 		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Country:</b></td>
 		<td>
 		<script language="javascript">writeCountriesSelect("country", '$!dotRegistrationForm.country');</script>
 		</td>
 	</tr>
-	
-	
+
+
 	<tr>
 		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Zip:</b></td>
 		<td><input tabindex="25" type="text" name="zip" value="$!{dotRegistrationForm.zip}"></td>
 	</tr>
-	<tr>	
+	<tr>
 		<td><b><img src="/html/images/required.gif" width="9" height="9">&nbsp;Phone:</b></td>
 		<td><input tabindex="26" type="text" name="phone" value="$!{dotRegistrationForm.phone}"></td>
 	</tr>
-	<tr>	
+	<tr>
 		<td>&nbsp;&nbsp;&nbsp;<b>Fax:</b></td>
 		<td><input tabindex="27" type="text" name="fax" value="$!{dotRegistrationForm.fax}"></td>
 	</tr>
 	</table>
 	<div class="item"></div>
-	
+
 	<!-- END Mailing Aaddres -->
 	<!-- My Profile And Preferences -->
 #if($UtilMethods.isSet($theCategories))
 	<h2 style="margin-left: 170px;">My Profile and Preferences</h2>
 	<div id="preferences">
-	<table style="margin-left: 170px;">	
-		
+	<table style="margin-left: 170px;">
+
 		<tr>
 			<td>Please select the areas that interest you most.</td>
 		</tr>
 		<tr>
 			<td>&nbsp;</td>
 		</tr>
-		<tr>			
+		<tr>
 			<td>$theCategories</td>
 		</tr>
 	</table>
 	</div>
 	<div class="item"></div>
 #end
-	<!-- END My Profile And Preferences -->			
-	<table width="100%">	
+	<!-- END My Profile And Preferences -->
+	<table width="100%">
 		<tr>
 			<td width="50%">
 				<div class="curveLink" style="float: right; margin-right: 2px;"><span><button onClick="cancel();" class="clearInputStyles">Cancel</button></span></div>
