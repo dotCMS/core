@@ -27,6 +27,9 @@ import com.dotmarketing.util.Constants;
 
 import com.dotcms.repackage.fileupload_ext.com.missiondata.fileupload.MonitoredDiskFileItemFactory;
 
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 public class AjaxFileUploadServlet extends HttpServlet {
@@ -58,7 +61,20 @@ public class AjaxFileUploadServlet extends HttpServlet {
 
 		try {
 
-			String userId = session.getAttribute("USER_ID").toString();
+			String userId = null;
+			// if we want front end access, this validation would need to be altered
+			if(UtilMethods.isSet(session.getAttribute("USER_ID"))) {
+				userId = (String) session.getAttribute("USER_ID");
+				User user = UserLocalManagerUtil.getUserById(userId);
+
+				if(!UtilMethods.isSet(user) || !UtilMethods.isSet(user.getUserId())) {
+					throw new Exception("Could not download File. Invalid User");
+				}
+
+			} else {
+				throw new Exception("Could not download File. Invalid User");
+			}
+
 			String fieldName = request.getParameter("fieldName");
 			String fileName = request.getParameter("fileName");
 
@@ -110,8 +126,20 @@ public class AjaxFileUploadServlet extends HttpServlet {
 			boolean hasError = false;
 			isEmptyFile = false;
 
+			String userId = null;
+			// if we want front end access, this validation would need to be altered
+			if(UtilMethods.isSet(session.getAttribute("USER_ID"))) {
+				userId = (String) session.getAttribute("USER_ID");
+				User user = UserLocalManagerUtil.getUserById(userId);
 
-			String userId = session.getAttribute("USER_ID").toString();
+				if(!UtilMethods.isSet(user) || !UtilMethods.isSet(user.getUserId())) {
+					throw new Exception("Could not upload File. Invalid User");
+				}
+
+			} else {
+				throw new Exception("Could not upload File. Invalid User");
+			}
+
 
 			for (Iterator i = items.iterator(); i.hasNext();) {
 				FileItem fileItem = (FileItem) i.next();
