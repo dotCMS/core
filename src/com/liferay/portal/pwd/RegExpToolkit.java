@@ -30,26 +30,25 @@ import com.liferay.util.PwdGenerator;
 /**
  * <a href="RegExpToolkit.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.4 $
- *
  */
 public class RegExpToolkit extends BasicToolkit {
 
-	public RegExpToolkit() {
-		_pattern = PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN);
-	}
+    public RegExpToolkit () {
+        _pattern = PropsUtil.get( PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN );
+    }
 
-	public String generate() {
-		return PwdGenerator.getPinNumber();
-	}
+    public String generate () {
+        return PwdGenerator.getPassword();
+    }
 
-	public boolean validate(String password) {
-		Perl5Util util = new Perl5Util();
+    public boolean validate ( String password ) {
+        Perl5Util util = new Perl5Util();
 
-		return util.match(_pattern, password);
-	}
+        return util.match( _pattern, password );
+    }
 
-	private String _pattern;
+    private String _pattern;
 
 }

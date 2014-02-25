@@ -43,6 +43,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.beans.ContainerStructure;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -181,7 +182,7 @@ public abstract class VelocityServlet extends HttpServlet {
 					&& !forwardFor.endsWith("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"))) {
 				// The query string parameters should be preserved as well
 				String queryString = request.getQueryString();
-				response.sendRedirect(forwardFor + "/" + (UtilMethods.isSet(queryString) ? "?" + queryString : ""));
+				response.sendRedirect(SecurityUtils.stripReferer(forwardFor + "/" + (UtilMethods.isSet(queryString) ? "?" + queryString : "")));
 				return;
 			}
 

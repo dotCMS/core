@@ -1,6 +1,7 @@
 package com.dotmarketing.filters;
 
 import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.repackage.esapi_2_0_1.org.owasp.esapi.errors.EncodingException;
 import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -77,20 +78,24 @@ public class CMSFilter implements Filter {
 
 		Company company = PublicCompanyFactory.getDefaultCompany();
 
-
         /*
          * Here is a list of directories that we will ignore b/c of legacy code
          * and servlet mappings. This is a mess and should be much cleaner
          */
+        if ( Xss.URIHasXSS( uri ) ) {
+            try {
+                uri = Xss.encodeForURL( uri );
+            } catch ( EncodingException e ) {
+                Logger.error( this, "Encoding failure. Unable to encode URI " + uri );
+                throw new ServletException( e.getMessage(), e );
+            }
 
-		if(Xss.URLHasXSS(uri)){
-			uri = Xss.strip(uri);
-			if(uri.equals("")){
-				uri = "/";
-			}
-			response.sendRedirect(uri);
-			return;
-		}
+            if ( uri.equals( "" ) ) {
+                uri = "/";
+            }
+            response.sendRedirect( uri );
+            return;
+        }
 
 		if(!UtilMethods.decodeURL(request.getQueryString()).equals(null)){
 			//http://jira.dotmarketing.net/browse/DOTCMS-6141
@@ -98,13 +103,11 @@ public class CMSFilter implements Filter {
 				response.sendRedirect(uri+"?"+StringEscapeUtils.escapeHtml(StringEscapeUtils.unescapeHtml(request.getQueryString())));
 				return;
 			}
-			String queryString=UtilMethods.decodeURL(request.getQueryString());
-			if(Xss.URLHasXSS(queryString)){
-				response.sendRedirect(uri);
-				return;
-			}
-			
-		}
+            if ( Xss.ParamsHaveXSS( request ) ) {
+                response.sendRedirect( uri );
+                return;
+            }
+        }
 
         if (excludeURI(uri)) {
             chain.doFilter(request, response);
