@@ -262,5 +262,16 @@ public interface UserAPI {
 	 * @throws DotSecurityException
 	 */
 	public boolean isCMSAdmin(User user) throws DotDataException;
+	
+	/**
+	 * Updates user password using PwdToolkitUtil validation.
+	 * It uses Encriptor to put a password digest in the user record. 
+	 * 
+	 * @param user
+	 * @param newpass
+	 * @throws DotDataException
+	 * @throws DotRuntimeException
+	 */
+	public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException, DotInvalidPasswordException;
 
 }
