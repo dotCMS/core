@@ -164,7 +164,7 @@ if(errorMessage != null){
 
 <style>
 	body{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:top center;}
-	#loginBox, #forgotPassword{-moz-box-shadow:2px 2px 8px #274665;-webkit-box-shadow:2px 2px 8px #274665;width:450px;}
+	#loginBox, #forgotPassword, #resetPassword {-moz-box-shadow:2px 2px 8px #274665;-webkit-box-shadow:2px 2px 8px #274665;width:450px;}
 	.dijitTooltipFocusNode:focus{outline: none;}
 	.dijitDialogUnderlay{opacity: 0.2;}
 	.bannerBG, .imageBG{display:none;}
