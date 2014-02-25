@@ -603,13 +603,12 @@ public class ImportUtil {
                     } else {
 
                         Host h = APILocator.getHostAPI().findByName( value, user, false );
-                        if ( h == null ) {
-                            throw new DotRuntimeException( "Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
-                                    ", value: " + value + ", invalid host/folder identifier found, line will be ignored." );
+                        if ( h != null ) {
+                            valueObj = h.getIdentifier();
+                            headersIncludeHostField = true;
+                        } else {
+                            valueObj = null;
                         }
-
-                        valueObj = h.getIdentifier();
-                        headersIncludeHostField = true;
                     }
 
                     if ( valueObj == null ) {
