@@ -567,53 +567,56 @@ public class ImportUtil {
 				}//http://jira.dotmarketing.net/browse/DOTCMS-3232
 				else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
 
-					Identifier identifier = null;
-					try{
-						identifier = APILocator.getIdentifierAPI().findFromInode(value);
-					}
-					catch(DotStateException dse){
-						Logger.debug(ImportUtil.class, dse.getMessage());
-						
-					}
-					if(identifier != null && InodeUtils.isSet(identifier.getInode())){
-						valueObj = value;
-						headersIncludeHostField = true;
-					}else if(value.contains("//")){
-						String hostName=null;
-						StringWriter path = null;
-						
-							String[] arr = value.split("/");
-							path = new StringWriter().append("/");
-							
-							
-							for(String y : arr){
-								if(UtilMethods.isSet(y) && hostName == null){
-									hostName = y;
-									
-								}
-								else if(UtilMethods.isSet(y)){
-									path.append(y);
-									path.append("/");
-									
-								}
-							}
-							Host host = APILocator.getHostAPI().findByName(hostName, user, false);
-							Folder f = APILocator.getFolderAPI().findFolderByPath(path.toString(), host, user, false);
-							valueObj=host.getIdentifier();
-							headersIncludeHostField = true;
-					}
-					else{
-						Host h = APILocator.getHostAPI().findByName(value, user, false);
-						valueObj=h.getIdentifier();	
-						headersIncludeHostField = true;
-					}
+                    Identifier identifier = null;
+                    try {
+                        identifier = APILocator.getIdentifierAPI().findFromInode( value );
+                    } catch ( DotStateException dse ) {
+                        Logger.debug( ImportUtil.class, dse.getMessage() );
+                    }
 
-					if(valueObj ==null){
-						throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
-								", value: " + value + ", invalid host/folder inode found, line will be ignored.");
-						
-					}
-				}else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
+                    if ( identifier != null && InodeUtils.isSet( identifier.getInode() ) ) {
+                        valueObj = value;
+                        headersIncludeHostField = true;
+                    } else if ( value.contains( "//" ) ) {
+                        String hostName = null;
+                        StringWriter path;
+
+                        String[] arr = value.split( "/" );
+                        path = new StringWriter().append( "/" );
+
+
+                        for ( String y : arr ) {
+                            if ( UtilMethods.isSet( y ) && hostName == null ) {
+                                hostName = y;
+
+                            } else if ( UtilMethods.isSet( y ) ) {
+                                path.append( y );
+                                path.append( "/" );
+
+                            }
+                        }
+                        Host host = APILocator.getHostAPI().findByName( hostName, user, false );
+                        Folder f = APILocator.getFolderAPI().findFolderByPath( path.toString(), host, user, false );
+                        valueObj = host.getIdentifier();
+                        headersIncludeHostField = true;
+
+                    } else {
+
+                        Host h = APILocator.getHostAPI().findByName( value, user, false );
+                        if ( h == null ) {
+                            throw new DotRuntimeException( "Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+                                    ", value: " + value + ", invalid host/folder identifier found, line will be ignored." );
+                        }
+
+                        valueObj = h.getIdentifier();
+                        headersIncludeHostField = true;
+                    }
+
+                    if ( valueObj == null ) {
+                        throw new DotRuntimeException( "Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+                                ", value: " + value + ", invalid host/folder identifier found, line will be ignored." );
+                    }
+                }else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 					String filePath = value;
 					if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) && !UtilMethods.isImage(filePath))
 					{
@@ -1021,26 +1024,32 @@ public class ImportUtil {
 					Object value = values.get(column);
 
 					if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484												
-						Host host = hostAPI.find(value.toString(), user, false);
-						Folder folder = new Folder();
-						if(!UtilMethods.isSet(host) || !InodeUtils.isSet(host.getInode())){
-							folder = folderAPI.find(value.toString(),user,false);
-						}
-						if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {
-							if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-								throw new DotSecurityException("User have no Add Children Permissions on selected host");
-							}
-							cont.setHost(folder.getHostId());
-							cont.setFolder(value.toString());
-						}
-						else if(host != null) {
-							if (!permissionAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-								throw new DotSecurityException("User have no Add Children Permissions on selected host");
-							}
-							cont.setHost(value.toString());
-							cont.setFolder(FolderAPI.SYSTEM_FOLDER);
-						}
-						continue;
+
+                        //Verify if the value belongs to a Host or to a Folder
+                        Folder folder = null;
+                        Host host = hostAPI.find( value.toString(), user, false );
+                        //If a host was not found using the given value (identifier) it must be a folder
+                        if ( !UtilMethods.isSet( host ) || !InodeUtils.isSet( host.getInode() ) ) {
+                            folder = folderAPI.find( value.toString(), user, false );
+                        }
+
+                        if ( folder != null && folder.getInode().equalsIgnoreCase( value.toString() ) ) {
+
+                            if ( !permissionAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user ) ) {
+                                throw new DotSecurityException( "User have no Add Children Permissions on selected folder" );
+                            }
+                            cont.setHost( folder.getHostId() );
+                            cont.setFolder( value.toString() );
+
+                        } else if ( host != null ) {
+
+                            if ( !permissionAPI.doesUserHavePermission( host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user ) ) {
+                                throw new DotSecurityException( "User have no Add Children Permissions on selected host" );
+                            }
+                            cont.setHost( value.toString() );
+                            cont.setFolder( FolderAPI.SYSTEM_FOLDER );
+                        }
+                        continue;
 					}
 
 					if(UtilMethods.isSet(field.getDefaultValue()) && (!UtilMethods.isSet(String.valueOf(value)) || value==null)){
