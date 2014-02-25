@@ -3,6 +3,9 @@
 
 
 <%@page import="com.dotcms.repackage.portlet.javax.portlet.RenderRequest"%>
+<%@page import="javax.portlet.RenderRequest"%>
+<%@ include file="/html/common/uservalidation.jsp"%>
+
 <H2>Context information</H2>
 <TABLE>
 <TR>

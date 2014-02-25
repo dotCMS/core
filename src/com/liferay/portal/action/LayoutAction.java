@@ -40,6 +40,7 @@ import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.util.InodeUtils;
@@ -99,7 +100,7 @@ public class LayoutAction extends Action {
 								actionResponse.getRedirectLocation();
 
 							if (Validator.isNotNull(redirectLocation)) {
-								res.sendRedirect(redirectLocation);
+								res.sendRedirect(SecurityUtils.stripReferer(redirectLocation));
 
 								return null;
 							}

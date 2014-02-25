@@ -32,7 +32,7 @@ function changeStateTextLayer(){
 		showLayer("stateTextDiv");
 		document.getElementById("stateOtherCountryText").focus();
 	}
-	else 
+	else
 	{
 		document.getElementById("stateOtherCountryText").value = "";
 		hideLayer("stateTextDiv");
@@ -45,25 +45,25 @@ visibleLayer = "inline";
 browser = "Explorer";
 
 //Layer Management
-function referenceLayer(layerName) 
-{ 
-	//if (browser=="Netscape") 
-	//	return "document.layers['"+layerName+"']."; 
-	//else 
-	//	return "document.all['"+layerName+"']."; 
-	return "document.getElementById('" + layerName + "').";	
+function referenceLayer(layerName)
+{
+	//if (browser=="Netscape")
+	//	return "document.layers['"+layerName+"'].";
+	//else
+	//	return "document.all['"+layerName+"'].";
+	return "document.getElementById('" + layerName + "').";
 }
 
 function hideLayer(layerName)
 {
-	eval(referenceLayer(layerName)+styleReference+ 'display="none"'); 
+	eval(referenceLayer(layerName)+styleReference+ 'display="none"');
 }
 
-function showLayer(layerName) 
-{ 
-	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"'); 
-} 
-   
+function showLayer(layerName)
+{
+	eval(referenceLayer(layerName)+styleReference+ 'display="'+visibleLayer+'"');
+}
+
 function change(layer)
 {
 	var layerInstance = document.getElementById(layer);
@@ -85,11 +85,11 @@ function createNew()
 	return false;
 }
 
-	  
+
 	  function passFieldChanged () {
 	  	$("dotRegistrationForm").passChanged.value="true";
 	  }
-	  
+
 
 	  function trim(str)
 	  {
@@ -112,7 +112,7 @@ function findMe () {
 		else{
 		return TRIM_VALUE;
 		}
-	} 
+	}
 
 	function RTrim(VALUE){
 		var w_space = String.fromCharCode(32);
@@ -122,7 +122,7 @@ function findMe () {
 		return"";
 		}
 		var iTemp = v_length -1;
-		
+
 		while(iTemp > -1){
 		if(VALUE.charAt(iTemp) == w_space){
 		}
@@ -131,10 +131,10 @@ function findMe () {
 		break;
 		}
 		iTemp = iTemp-1;
-		
-		} 
+
+		}
 		return strTemp;
-	} 
+	}
 
 	function LTrim(VALUE){
 		var w_space = String.fromCharCode(32);
@@ -143,9 +143,9 @@ function findMe () {
 		}
 		var v_length = VALUE.length;
 		var strTemp = "";
-		
+
 		var iTemp = 0;
-		
+
 		while(iTemp < v_length){
 		if(VALUE.charAt(iTemp) == w_space){
 		}
@@ -154,9 +154,9 @@ function findMe () {
 		break;
 		}
 		iTemp = iTemp + 1;
-		} 
+		}
 		return strTemp;
-	} 
+	}
 </script>
 
 <style>
@@ -180,10 +180,10 @@ fieldset fieldset legend{
 
 
 #if ((($!{dotRegistrationForm.from} == "webEventRegistration") || ($!{dotRegistrationForm.from} == "purchaseOrder")) && !($request.getAttribute("errorCreate") == true))
-<!--  User login box -->	
+<!--  User login box -->
 
-<div id="loginLayer">	
-#dotParse('/application/login/login_form.vtl')	
+<div id="loginLayer">
+#dotParse('/application/login/login_form.vtl')
 </div>
 
 <!--  END User login box-->
@@ -214,8 +214,8 @@ fieldset fieldset legend{
 
 
 	<fieldset>
-		<legend>User Information</legend>	
-		
+		<legend>User Information</legend>
+
 		<label class="required" for="emailAddress">Email:</label>
 		<input tabindex="4" type="text" name="emailAddress" id="emailAddress" value="$!{dotRegistrationForm.emailAddress}"><br />
 
@@ -224,14 +224,14 @@ fieldset fieldset legend{
 			<a href="/dotCMS/forgotPassword?email=$!{dotRegistrationForm.emailAddress}" class="button">forgot your password?</a>
 		</div>
 		#end
-		
+
 		<label for="password" class="required">Password: <a href="#required">*</a></label>
 		<input type="hidden" name="passChanged" value="$!{dotRegistrationForm.passChanged}">
-		<input tabindex="5" type="password" onchange="passFieldChanged()" name="password" id="password" value="$!{dotRegistrationForm.password}"><br />
-		
+		<input tabindex="5" type="password" autocomplete="off" onchange="passFieldChanged()" name="password" id="password" value="$!{dotRegistrationForm.password}"><br />
+
 		<label for="verifyPassword" class="required">Verify Password: <a href="#required">*</a></label>
-		<input tabindex="6" type="password" onchange="passFieldChanged()" name="verifyPassword" id="verifyPassword" value="$!{dotRegistrationForm.verifyPassword}"><br />
-		
+		<input tabindex="6" type="password" autocomplete="off" onchange="passFieldChanged()" name="verifyPassword" id="verifyPassword" value="$!{dotRegistrationForm.verifyPassword}"><br />
+
 		<label>Prefix:</label>
 		#set( $mr = "")
 		#set( $mrs = "")
@@ -258,10 +258,10 @@ fieldset fieldset legend{
 
 		<label class="required">First Name: <a href="#required">*</a></label>
 		<input tabindex="8" type="text" name="firstName" value="$!{dotRegistrationForm.firstName}"><br />
-	
+
 		<label class="required">Last Name: <a href="#required">*</a></label>
 		<input tabindex="9" type="text" name="lastName" value="$!{dotRegistrationForm.lastName}"><br />
-		
+
 		<label>Suffix:</label>
 		<input tabindex="10" type="text" name="suffix" value="$!{dotRegistrationForm.suffix}"><br />
 
@@ -277,7 +277,7 @@ fieldset fieldset legend{
 	<!-- Mailing Address -->
 	<fieldset>
 		<legend>My Mailing Address</legend>
-		
+
 		<fieldset>
 			<legend class="required">Address Type <a href="#required">*</a></legend>
 			<input type="hidden" name="addressID" value="$!{dotRegistrationForm.addressID}">
@@ -295,13 +295,13 @@ fieldset fieldset legend{
 
 		<label class="required">Street1: <a href="#required">*</a></label>
 		<input tabindex="21" type="text" name="street1" value="$!{dotRegistrationForm.street1}"><br />
-		
+
 		<label>Street 2:</label>
 		<input tabindex="22" type="text" name="street2" value="$!{dotRegistrationForm.street2}"><br />
 
 		<label class="required">City: <a href="#required">*</a></label>
 		<input tabindex="23" type="text" name="city" value="$!{dotRegistrationForm.city}"><br />
-		
+
 		<fieldset class="hideLabels inline">
 			<legend class="required">State: <a href="#required">*</a></legend>
 			<select name="state" id="state" onchange="changeStateTextLayer();">
@@ -315,13 +315,13 @@ fieldset fieldset legend{
 				<label>Other State</label>
 			</div>
 		</fieldset>
-		
+
 		<label class="required">Country: <a href="#required">*</a></label>
 		<script language="javascript">writeCountriesSelect("country", '$!dotRegistrationForm.country');</script><br />
-	
+
 		<label class="required">Zip: <a href="#required">*</a></label>
 		<input tabindex="25" type="text" name="zip" value="$!{dotRegistrationForm.zip}"><br />
-	
+
 		<label class="required">Phone: <a href="#required">*</a></label>
 		<input tabindex="26" type="text" name="phone" value="$!{dotRegistrationForm.phone}"><br />
 
@@ -339,7 +339,7 @@ fieldset fieldset legend{
 
 
 
-	</fieldset>	
+	</fieldset>
 <!-- END Mailing Aaddres -->
 
 <!-- My Profile And Preferences -->
@@ -347,7 +347,7 @@ fieldset fieldset legend{
 
 	<fieldset id="preferences">
 		<legend>My Profile and Preferences</legend>
-		<p>Please select the areas that interest you most.</p>		
+		<p>Please select the areas that interest you most.</p>
 		$theCategories
 
 
@@ -360,12 +360,12 @@ fieldset fieldset legend{
 	</fieldset>
 
 #end
-<!-- END My Profile And Preferences -->			
+<!-- END My Profile And Preferences -->
 
-	<div class="key">	
+	<div class="key">
 		<a name="required" id="required">*required fields</a>
 	</div>
-	
+
 </form>
 <script languaje="javascript">
 changeStateTextLayer();

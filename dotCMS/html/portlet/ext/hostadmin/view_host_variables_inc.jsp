@@ -189,7 +189,7 @@
 
 </script>
 
-<div id="viewHostVariablesDialog" dojoType="dijit.Dialog" style="width: 800px;">
+<div id="viewHostVariablesDialog" dojoType="dijit.Dialog" style="width: 800px;" onCancel="javascript:hostVariablesAdmin.clearFilter();">
     <div class="yui-g portlet-toolbar">
         <div class="yui-u first">
             <input type="text" id="hostVariablesFilter" class="large" value="" />
