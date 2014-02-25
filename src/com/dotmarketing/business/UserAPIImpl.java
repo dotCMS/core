@@ -13,6 +13,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
+import com.liferay.portal.pwd.PwdToolkitUtil;
+import com.liferay.portal.util.PropsUtil;
+import com.liferay.util.Encryptor;
+import com.liferay.util.GetterUtil;
 
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User entities from liferay's repository.  Classes within the dotCMS
@@ -247,6 +251,20 @@ public class UserAPIImpl implements UserAPI {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		return roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
 	}
+
+    @Override
+    public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
+        if(!PwdToolkitUtil.validate(newpass)) {
+            throw new DotInvalidPasswordException("Invalid password");
+        }
+        user.setPassword(Encryptor.digest(newpass));
+        user.setPasswordEncrypted(true);
+        user.setIcqId("");
+        user.setPasswordReset(GetterUtil.getBoolean(
+                PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
+        save(user, currentUser, respectFrontEndRoles);
+        
+    }
 
 
 }

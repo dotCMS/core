@@ -39,9 +39,11 @@ import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.beans.BeanUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -185,7 +187,7 @@ public class LoginAction extends Action {
 	    String newpass2 = ParamUtil.getString(req, "my_new_pass2");
 	    
 	    if(UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
-	        User user = UserLocalManagerUtil.getUserById(userId);
+	        User user = APILocator.getUserAPI().loadUserById(userId);
 	        String tokenInfo = user.getIcqId();
 	        if(user!=null && UtilMethods.isSet(tokenInfo) && tokenInfo.matches("^[a-zA-Z0-9]+:[0-9]+$")) {
 	            String userToken = tokenInfo.substring(0,tokenInfo.indexOf(':'));
@@ -199,15 +201,15 @@ public class LoginAction extends Action {
     	                if(UtilMethods.isSet(newpass1) && UtilMethods.isSet(newpass2)) {
     	                    // actualy change password
     	                    if(newpass1.equals(newpass2)) {
-    	                        user.setPassword(Encryptor.digest(newpass1));
-    	                        user.setPasswordEncrypted(true);
-    	                        user.setIcqId("");
-    	                        user.setPasswordReset(GetterUtil.getBoolean(
-    	                                PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
-    	                        UserLocalManagerUtil.updateUser(user);
-    	                        
-    	                        SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful changed his password from IP:"+req.getRemoteAddr());
-    	                        SessionMessages.add(req, "reset_pass_success");
+    	                        try {
+    	                            APILocator.getUserAPI().updatePassword(user, newpass1, APILocator.getUserAPI().getSystemUser(), false);
+    	                            SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful changed his password from IP:"+req.getRemoteAddr());
+    	                            SessionMessages.add(req, "reset_pass_success");
+    	                        }
+    	                        catch(DotInvalidPasswordException ex) {
+    	                            SecurityLogger.logInfo(LoginAction.class, "User "+userId+" couldn't reset password because it is invalid. From IP:"+req.getRemoteAddr());
+    	                            SessionErrors.add(req, "reset_pass_invalid_pass");
+    	                        }
     	                        
     	                    }
     	                    else {
