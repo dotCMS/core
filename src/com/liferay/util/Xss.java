@@ -67,37 +67,18 @@ public class Xss {
     public static boolean ParamsHaveXSS ( HttpServletRequest request ) {
 
         if ( ESAPI_VALIDATION ) {
-            //Get the list of parameters
-            Map parameters = request.getParameterMap();
-            Set<String> keys = parameters.keySet();
 
-            for ( String key : keys ) {
+        	String queryString = request.getQueryString();
+        	if ( queryString != null ) {
 
-                String value = request.getParameter( key );
+        		//Canonicalizes input before validation to prevent bypassing filters with encoded attacks.
+        		queryString = ESAPI.encoder().canonicalize( queryString, false );
 
-                /*
-                 TODO: Referer is a special case as its value is not a "standard" parameter value.
-                 If we validate the "referer" param using the isValidInput it will fail, but in order
-                 to avoid exploits using this parameter we will use our XSS regex patter.
-                 */
-                if ( key.equals( "referer" ) || key.endsWith( "_referer" ) ) {
-                    return RegEX.contains( value, XSS_REGEXP_PATTERN );
-                }
+        		//Validate the query string
+        		return !ESAPI.validator().isValidInput( "URLContext", queryString, "HTTPQueryString", queryString.length(), true );
+        	}
 
-                //Validate the parameter name
-                boolean isValid = ESAPI.validator().isValidInput( "URLContext", key, "HTTPParameterName", key.length(), false );
-                if ( !isValid ) {
-                    return true;
-                }
-
-                //Validate the parameter value
-                isValid = ESAPI.validator().isValidInput( "URLContext", value, "HTTPParameterValue", value.length(), true );
-                if ( !isValid ) {
-                    return true;
-                }
-            }
-
-            return false;
+        	 return false;
 
         } else {
             String queryString = UtilMethods.decodeURL( request.getQueryString() );
