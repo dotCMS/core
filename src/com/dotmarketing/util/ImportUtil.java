@@ -574,7 +574,7 @@ public class ImportUtil {
 					}
 					catch(DotStateException dse){
 						Logger.debug(ImportUtil.class, dse.getMessage());
-						
+
 					}
 					if(identifier != null && InodeUtils.isSet(identifier.getInode())){
 						valueObj = value;
@@ -1028,14 +1028,19 @@ public class ImportUtil {
 					Object value = values.get(column);
 
 					if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484												
-						Host host = hostAPI.find(value.toString(), user, false);
-						Folder folder = new Folder();
-						if(!UtilMethods.isSet(host) || !InodeUtils.isSet(host.getInode())){
-							folder = folderAPI.find(value.toString(),user,false);
-						}
+
+                        //Verify if the value belongs to a Host or to a Folder
+                        Folder folder = null;
+                        Host host = hostAPI.find( value.toString(), user, false );
+                        //If a host was not found using the given value (identifier) it must be a folder
+                        if ( !UtilMethods.isSet( host ) || !InodeUtils.isSet( host.getInode() ) ) {
+                            folder = folderAPI.find( value.toString(), user, false );
+                        }
+
 						if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {
+
 							if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-								throw new DotSecurityException("User have no Add Children Permissions on selected host");
+                                throw new DotSecurityException( "User have no Add Children Permissions on selected folder" );
 							}
 							cont.setHost(folder.getHostId());
 							cont.setFolder(value.toString());
