@@ -141,6 +141,9 @@ else if(cmd.equals("ereset") && SessionMessages.contains(request, "reset_ok")) {
 else if(cmd.equals("ereset") && SessionErrors.contains(request, "reset_token_expired")) {
     errorMessage = LanguageUtil.get(pageContext, "reset-password-token-expired");
 }
+else if(cmd.equals("ereset") && SessionErrors.contains(request, "reset_pass_invalid_pass")) {
+    errorMessage = LanguageUtil.get(pageContext, "reset-password-invalid-password");
+}
 
 if(errorMessage != null){
 	session.setAttribute("_dotLoginMessages", errorMessage);
