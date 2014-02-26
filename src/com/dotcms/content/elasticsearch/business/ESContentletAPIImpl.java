@@ -311,7 +311,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         String syncMe = (UtilMethods.isSet(contentlet.getIdentifier()))  ? contentlet.getIdentifier() : UUIDGenerator.generateUuid()  ;
 
-        synchronized (syncMe) {
+        synchronized (syncMe.intern()) {
 
             Logger.debug(this, "*****I'm a Contentlet -- Publishing");
 
@@ -320,6 +320,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //APILocator.getVersionableAPI().setLocked(contentlet.getIdentifier(), false, user);
 
             publishAssociated(contentlet, false);
+            
+            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+                Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+                CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+            }
 
         }
     }
@@ -1339,6 +1344,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // Updating lucene index
             indexAPI.addContentToIndex(workingContentlet);
+            
+            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+                Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+                CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+                CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), false);
+            }
 
             ContentletServices.invalidate(contentlet);
             ContentletMapServices.invalidate(contentlet);
@@ -1510,7 +1521,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         indexAPI.addContentToIndex(contentlet);
         indexAPI.removeContentFromLiveIndex(contentlet);
 
-
+        if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+            Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+            CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        }
+        
         ContentletServices.unpublishContentletFile(contentlet);
         ContentletMapServices.unpublishContentletMapFile(contentlet);
         publishRelatedHtmlPages(contentlet);

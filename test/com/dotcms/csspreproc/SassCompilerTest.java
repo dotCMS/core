@@ -12,13 +12,16 @@ import com.dotcms.repackage.junit_4_8_1.org.junit.Before;
 import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 
 public class SassCompilerTest {
     
@@ -98,5 +101,25 @@ public class SassCompilerTest {
         Assert.assertEquals(expectedOutput.replace("blue", "green").trim(), IOUtils.toString(cssURL.openStream(),"UTF-8").trim());
         
         
+        // check every asset is in cache
+        CachedCSS cc = CacheLocator.getCSSCache().get(demo.getIdentifier(), folder.getPath()+"_layout.scss", true);
+        Assert.assertNotNull(cc);
+        cc = CacheLocator.getCSSCache().get(demo.getIdentifier(), folder.getPath()+"_styles.scss", true);
+        Assert.assertNotNull(cc);
+        cc = CacheLocator.getCSSCache().get(demo.getIdentifier(), folder.getPath()+"screen.scss", true);
+        Assert.assertNotNull(cc);
+        
+        // if we unpublish _styles.scss we expect the cache entry to be removed
+        APILocator.getContentletAPI().unpublish(asset, sysuser, false);
+        cc = CacheLocator.getCSSCache().get(demo.getIdentifier(), folder.getPath()+"_styles.scss", true);
+        Assert.assertNull(cc);
+        
+        // now with an archive. it should be wiped too
+        asset = APILocator.getContentletAPI().search(
+                "+conhost:"+demo.getIdentifier()+" +confolder:"+folder.getInode()+" +fileasset.filename:_layout.scss", 
+                1, 0, "", sysuser, false).get(0);
+        APILocator.getContentletAPI().archive(asset, sysuser, false);
+        cc = CacheLocator.getCSSCache().get(demo.getIdentifier(), folder.getPath()+"_layout.scss", true);
+        Assert.assertNull(cc);
     }
 }
