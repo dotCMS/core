@@ -5,6 +5,8 @@ import java.util.StringTokenizer;
 import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
 import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
 import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
 import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
@@ -30,6 +32,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.util.Constants;
+import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.servlet.SessionMessages;
 /**
@@ -43,6 +46,10 @@ public class EditMailingListAction extends PortletAction {
 			ActionRequest req, ActionResponse res)
 		throws Exception {
 	
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String cmd = req.getParameter(Constants.CMD);
 
 		//get the user
@@ -93,7 +100,7 @@ public class EditMailingListAction extends PortletAction {
 				if (Validator.validate(req,form,mapping)) {
 					_saveMailingList(req, res, config, form, user);
 					if (UtilMethods.isSet(ParamUtil.getString(req, "redirect")))
-						res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+						res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 				}
 			}
 			catch (Exception ae) {
@@ -111,7 +118,7 @@ public class EditMailingListAction extends PortletAction {
 				setForward(req, Constants.COMMON_ERROR);
 			}
 			Logger.debug(this, "Returning to view mailing lists page");
-			res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+			res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 		}
 
 		/*

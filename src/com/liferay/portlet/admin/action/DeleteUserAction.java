@@ -25,6 +25,8 @@ package com.liferay.portlet.admin.action;
 import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
 import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
 import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
@@ -39,6 +41,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.SessionMessages;
@@ -58,6 +61,11 @@ public class DeleteUserAction extends PortletAction {
 		throws Exception {
 
 		try {
+
+            // Getting the http request
+            ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+            HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 			User user = PortalUtil.getSelectedUser(req);
 
 			UserManagerUtil.deleteUser(user.getUserId());
@@ -68,7 +76,7 @@ public class DeleteUserAction extends PortletAction {
 
 			// Send redirect
 
-			res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+			res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 		}
 		catch (Exception e) {
 			if (e != null &&

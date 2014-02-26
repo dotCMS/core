@@ -25,6 +25,8 @@ package com.liferay.portlet.polls.action;
 import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
 import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
 import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
@@ -33,6 +35,7 @@ import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.util.Constants;
+import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.polls.DuplicateVoteException;
 import com.liferay.portlet.polls.NoSuchChoiceException;
 import com.liferay.portlet.polls.NoSuchQuestionException;
@@ -87,6 +90,10 @@ public class AddVoteAction extends PortletAction {
 	private void _addVote(ActionRequest req, ActionResponse res)
 		throws Exception {
 
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String questionId = ParamUtil.getString(req, "question_id");
 		String choiceId = ParamUtil.getString(req, "choice_id");
 
@@ -98,7 +105,7 @@ public class AddVoteAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 }

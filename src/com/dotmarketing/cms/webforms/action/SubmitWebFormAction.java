@@ -239,13 +239,13 @@ public final class SubmitWebFormAction extends DispatchAction {
 			
 			if (request.getParameter("return") != null)
 			{
-				ActionForward af = new ActionForward(SecurityUtils.stripReferer(request.getParameter("return")));
+				ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, request.getParameter("return")));
 				af.setRedirect(true);
 				return af;
 			}
 			else if (request.getParameter("returnUrl") != null)
 			{
-				ActionForward af = new ActionForward(SecurityUtils.stripReferer(request.getParameter("returnUrl")));
+				ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, request.getParameter("returnUrl")));
 				af.setRedirect(true);
 				return af;
 			}
@@ -279,9 +279,9 @@ public final class SubmitWebFormAction extends DispatchAction {
 
             ActionForward af;
             if (UtilMethods.isSet(queryString)) {
-                af = new ActionForward(SecurityUtils.stripReferer(errorURL + "?" + queryString));
+                af = new ActionForward(SecurityUtils.stripReferer(request, errorURL + "?" + queryString));
             } else {
-                af = new ActionForward(SecurityUtils.stripReferer(errorURL));
+                af = new ActionForward(SecurityUtils.stripReferer(request, errorURL));
             }
 
             af.setRedirect(true);

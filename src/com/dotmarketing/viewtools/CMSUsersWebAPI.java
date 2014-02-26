@@ -227,7 +227,7 @@ public class CMSUsersWebAPI implements ViewTool {
 		}
 		if (UtilMethods.isSet(request.getParameter("referrer")) )
 		{
-			referrer = SecurityUtils.stripReferer((String)request.getParameter("referrer"));
+			referrer = SecurityUtils.stripReferer(request, (String)request.getParameter("referrer"));
 		}
 		if(UtilMethods.isSet(referrer)){
 			request.getSession().setAttribute("referrer", referrer);
@@ -264,7 +264,7 @@ public class CMSUsersWebAPI implements ViewTool {
 
 			if( _rVal && UtilMethods.isSet(referrer)){
 				try {
-					response.sendRedirect(SecurityUtils.stripReferer(referrer));
+					response.sendRedirect(SecurityUtils.stripReferer(request, referrer));
 					request.getSession().removeAttribute("referrer");
 					return;
 				} catch (IOException e) {

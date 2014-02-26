@@ -30,6 +30,8 @@ import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
 import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
 import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import com.dotcms.repackage.portlet.javax.portlet.PortletSession;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
 import com.dotcms.repackage.struts.org.apache.struts.Globals;
@@ -57,6 +59,7 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PortletKeys;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.servlet.SessionErrors;
@@ -78,6 +81,11 @@ public class CreateUserAction extends PortletAction {
 		throws Exception {
 
 		try {
+
+            // Getting the http request
+            ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+            HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 			PortletSession ses = req.getPortletSession();
 
 			String companyId = PortalUtil.getCompanyId(req);
@@ -162,7 +170,7 @@ public class CreateUserAction extends PortletAction {
 
 			// Send redirect
 
-			res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+			res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 		}
 		catch (Exception e) {
 			if (e != null &&

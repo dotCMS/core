@@ -598,7 +598,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
 
 				if(host != null || sendMeTo.getHostId().equals(host.getInode())){
-					res.sendRedirect(SecurityUtils.stripReferer(sendMeTo.getURI() + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
+					res.sendRedirect(SecurityUtils.stripReferer(req, sendMeTo.getURI() + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
 					return null;
 				}
 

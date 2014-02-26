@@ -42,7 +42,7 @@ public class MyFavoritesAction extends DispatchAction {
 		}
 		if (request.getSession().getAttribute(WebKeys.CMS_USER) == null) {
 			String path = URLEncoder.encode("/dotCMS/addFavorites?url_page="+url_page+"&url_params="+url_params);
-			return new ActionForward(SecurityUtils.stripReferer("/dotCMS/login?referrer="+path));
+			return new ActionForward(SecurityUtils.stripReferer(request, "/dotCMS/login?referrer="+path));
 		}
 
 		//Getting the user from the session
