@@ -141,6 +141,9 @@ else if(cmd.equals("ereset") && SessionMessages.contains(request, "reset_ok")) {
 else if(cmd.equals("ereset") && SessionErrors.contains(request, "reset_token_expired")) {
     errorMessage = LanguageUtil.get(pageContext, "reset-password-token-expired");
 }
+else if(cmd.equals("ereset") && SessionErrors.contains(request, "reset_pass_invalid_pass")) {
+    errorMessage = LanguageUtil.get(pageContext, "reset-password-invalid-password");
+}
 
 if(errorMessage != null){
 	session.setAttribute("_dotLoginMessages", errorMessage);
@@ -164,7 +167,7 @@ if(errorMessage != null){
 
 <style>
 	body{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:top center;}
-	#loginBox, #forgotPassword{-moz-box-shadow:2px 2px 8px #274665;-webkit-box-shadow:2px 2px 8px #274665;width:450px;}
+	#loginBox, #forgotPassword, #resetPassword {-moz-box-shadow:2px 2px 8px #274665;-webkit-box-shadow:2px 2px 8px #274665;width:450px;}
 	.dijitTooltipFocusNode:focus{outline: none;}
 	.dijitDialogUnderlay{opacity: 0.2;}
 	.bannerBG, .imageBG{display:none;}

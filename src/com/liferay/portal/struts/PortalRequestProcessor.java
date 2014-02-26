@@ -141,7 +141,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			if(PortalUtil.getUserId(req) == null){
 				res.sendRedirect("/html/portal/login.jsp?r=" + System.currentTimeMillis());
 			}else{
-				
+
 				if(lastPath != null){
 					if( lastPath.contains("?")){
 						lastPath = lastPath + "&r=" + System.currentTimeMillis();
@@ -150,7 +150,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 						lastPath = lastPath + "?r=" + System.currentTimeMillis();
 					}
 				}
-				res.sendRedirect(SecurityUtils.stripReferer(lastPath));
+				res.sendRedirect(lastPath);
 			}
 			return;
 		}
@@ -279,7 +279,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				else {
 					parameterMap = req.getParameterMap();
 				}
-				
+
 				ses.setAttribute(
 					WebKeys.LAST_PATH,
 					new ObjectValuePair(
@@ -348,13 +348,13 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 				return _PATH_PORTAL_LOGOUT_AS;
 		}
-		
+
 		if ((userId != null || user != null) && (path != null) &&
 				(path.equals(_PATH_PORTAL_LOGIN_AS))) {
 
 				return _PATH_PORTAL_LOGIN_AS;
 		}
-		
+
 		// Authenticated users can always agree to terms of use
 
 		if ((userId != null || user != null) && (path != null) &&
@@ -472,26 +472,26 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			}
 		}
 
-		
-		/** 
-		 * Authenticated users must have access to at least one host, 
+
+		/**
+		 * Authenticated users must have access to at least one host,
 		 * and can only view a host to which they have read permissions
-		 * 
+		 *
 		 */
 
 		if(user == null){
 			return path;
 		}
-		
+
 		PermissionAPI pAPI = APILocator.getPermissionAPI();
-		HostAPI hostAPI = APILocator.getHostAPI();	
-		
+		HostAPI hostAPI = APILocator.getHostAPI();
+
 		Host host = null;
 		// if someone is changing hosts as a parameter, check permissions
 		if(UtilMethods.isSet(req.getParameter("host_id"))){
 			try{
 				host = hostAPI.find(req.getParameter("host_id"), user, false);
-				 
+
 				if(host != null && pAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, false)){
 					req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, req.getParameter("host_id"));
 					UserUtil.setLastHost(user, host);
@@ -524,12 +524,12 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			catch(Exception e){
 				Logger.error(this.getClass(), "user " + user.getUserId() + " does not have permission to host " +req.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
 				req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-					
+
 			}
 		}
 		// try to get the last host from the user record
 		else{
-			
+
 				try {
 					host = UserUtil.getLastHost(user);
 					req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
@@ -538,10 +538,10 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				} catch (DotSecurityException e) {
 					Logger.warn(this.getClass(), "User " + user.getUserId() + " does not have permissions to host " + e.toString());
 				}
-			
+
 		}
-		
-		
+
+
 		// finally, if user does not have a host
 		// set to default host if it is not in the session
 		if(!UtilMethods.isSet(req.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID))){
@@ -571,16 +571,16 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 			}
 		}
-		
-		
-		
+
+
+
 		if(req.getSession().getAttribute("LOGIN_TO_EDIT_MODE") != null){
 			try{
 				Identifier sendMeTo =(Identifier) req.getSession().getAttribute("LOGIN_TO_EDIT_MODE") ;
 				req.getSession().removeAttribute("LOGIN_TO_EDIT_MODE");
 				Layout layout = null;
 				List<Layout> userLayouts;
-	
+
 				userLayouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
 				if(userLayouts != null && userLayouts.size() > 0){
 					layout = userLayouts.get(0);
@@ -590,13 +590,13 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 					res.sendRedirect("/c/portal/logout?referer=/&r="  +System.currentTimeMillis());
 					return null;
 				}
-	
+
 				PreviewFactory.setVelocityURLS(req, layout);
-			
+
 				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, true);
 				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");	
-	
+				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
+
 				if(host != null || sendMeTo.getHostId().equals(host.getInode())){
 					res.sendRedirect(SecurityUtils.stripReferer(sendMeTo.getURI() + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
 					return null;
@@ -606,13 +606,13 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			catch(Exception e){
 				Logger.error(this.getClass(), "Error redirecting after login" + e);
 			}
-			
+
 			res.sendRedirect("/");
 			return null;
 		}
-		
-		
-		
+
+
+
 		return path;
 	}
 

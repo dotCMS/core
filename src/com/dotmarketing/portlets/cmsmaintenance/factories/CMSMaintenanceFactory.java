@@ -66,7 +66,7 @@ public class CMSMaintenanceFactory {
 	
 				Logger.info(CMSMaintenanceFactory.class, "Removing Contentlets");
 				auxCount = conAPI.deleteOldContent(runDate.getTime());
-				counter  = auxCount;
+				counter  += auxCount;
 				Logger.info(CMSMaintenanceFactory.class, "Removed "+ auxCount+ " Contentlets");
 	
 				Logger.info(CMSMaintenanceFactory.class, "Removing HTML Pages");
