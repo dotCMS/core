@@ -71,7 +71,7 @@ public class CreateAccountAction extends DispatchAction {
              request.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
              request.getSession().setAttribute("createAccountForm",lf);
              Logger.debug(this.getClass(), "redirecting after account creation: " + redir);
-             ActionForward af = new ActionForward(SecurityUtils.stripReferer(redir));
+             ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, redir));
              af.setRedirect(true);
              return af;
          }

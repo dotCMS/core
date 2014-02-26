@@ -181,7 +181,7 @@ public abstract class VelocityServlet extends HttpServlet {
 					&& !forwardFor.endsWith("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"))) {
 				// The query string parameters should be preserved as well
 				String queryString = request.getQueryString();
-				response.sendRedirect(SecurityUtils.stripReferer(forwardFor + "/" + (UtilMethods.isSet(queryString) ? "?" + queryString : "")));
+				response.sendRedirect(SecurityUtils.stripReferer(request, forwardFor + "/" + (UtilMethods.isSet(queryString) ? "?" + queryString : "")));
 				return;
 			}
 

@@ -14,7 +14,9 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.PortletSession;
+import javax.servlet.http.HttpServletRequest;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
@@ -44,6 +46,10 @@ public class EditUserFilterAction extends DotPortletAction {
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req,
 			ActionResponse res) throws Exception {
 
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String cmd = req.getParameter(com.liferay.portal.util.Constants.CMD);
 		UserManagerListSearchForm searchForm = (UserManagerListSearchForm) form;
 
@@ -62,7 +68,7 @@ public class EditUserFilterAction extends DotPortletAction {
 				
 				String referrer = req.getParameter("referrer");
 				if (UtilMethods.isSet(referrer)) {
-					res.sendRedirect(SecurityUtils.stripReferer(referrer));
+					res.sendRedirect(SecurityUtils.stripReferer(httpReq, referrer));
 				} else {
 					setForward(req, "portlet.ext.userfilter.edit_userfilter");
 					return;
@@ -102,7 +108,7 @@ public class EditUserFilterAction extends DotPortletAction {
 
 				String referrer = req.getParameter("referrer");
 				if (UtilMethods.isSet(referrer)) {
-					res.sendRedirect(SecurityUtils.stripReferer(referrer));
+					res.sendRedirect(SecurityUtils.stripReferer(httpReq, referrer));
 				} else {
 					setForward(req, "portlet.ext.userfilter.edit_userfilter");
 					return;
@@ -132,7 +138,7 @@ public class EditUserFilterAction extends DotPortletAction {
 				_delete(form, req, res);
 
 				if (UtilMethods.isSet(req.getParameter("returnPath"))) {
-					setForward(req, SecurityUtils.stripReferer(req.getParameter("returnPath")));
+					setForward(req, SecurityUtils.stripReferer(httpReq, req.getParameter("returnPath")));
 				}
 				else {
 					_getUserFilter(form, req, res);
@@ -148,7 +154,7 @@ public class EditUserFilterAction extends DotPortletAction {
 
 				String referrer = req.getParameter("referrer");
 				if (UtilMethods.isSet(referrer)) {
-					res.sendRedirect(SecurityUtils.stripReferer(referrer));
+					res.sendRedirect(SecurityUtils.stripReferer(httpReq, referrer));
 				} else {
 					setForward(req, "portlet.ext.userfilter.edit_userfilter");
 					return;

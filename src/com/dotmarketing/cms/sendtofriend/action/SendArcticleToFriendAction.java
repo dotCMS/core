@@ -71,11 +71,11 @@ public class SendArcticleToFriendAction  extends DispatchAction {
 		
 		if (request.getParameter("return") != null)
 		{
-			ActionForward af =  new ActionForward(SecurityUtils.stripReferer(request.getParameter("return")));
+			ActionForward af =  new ActionForward(SecurityUtils.stripReferer(request, request.getParameter("return")));
 			af.setRedirect(true);
 			return af;
 		} else if (request.getParameter("returnUrl") != null) {
-			ActionForward af =  new ActionForward(SecurityUtils.stripReferer(request.getParameter("returnUrl")));
+			ActionForward af =  new ActionForward(SecurityUtils.stripReferer(request, request.getParameter("returnUrl")));
 			af.setRedirect(true);
 			return af;
 		} else {

@@ -25,8 +25,10 @@ package com.liferay.portlet.myaccount.action;
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -152,17 +154,25 @@ public class EditAddressAction extends PortletAction {
 	private void _deleteAddress(ActionRequest req, ActionResponse res)
 		throws Exception {
 
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String addressId = ParamUtil.getString(req, "address_id");
 
 		AddressManagerUtil.deleteAddress(addressId);
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateAddress(ActionRequest req, ActionResponse res)
 		throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		String addressId = ParamUtil.getString(req, "address_id");
 
@@ -201,11 +211,15 @@ public class EditAddressAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateAddressPriority(ActionRequest req, ActionResponse res)
 		throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		String addressId = ParamUtil.getString(req, "address_id");
 		boolean priority = ParamUtil.getBoolean(req, "address_priority");
@@ -217,7 +231,7 @@ public class EditAddressAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 }

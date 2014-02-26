@@ -137,7 +137,7 @@ public class EditReportAction extends DotPortletAction {
 		httpReq.setAttribute("dataSources", rfm.getDataSources());
 
 		String reportId = req.getParameter("reportId");
-		String referrer = SecurityUtils.stripReferer(req.getParameter("referrer"));
+		String referrer = SecurityUtils.stripReferer(httpReq, req.getParameter("referrer"));
 
 		// Report Exists
 		if (UtilMethods.isSet(reportId)) {

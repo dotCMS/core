@@ -33,6 +33,7 @@ import javax.portlet.PortletModeException;
 import javax.portlet.PortletURL;
 import javax.portlet.WindowState;
 import javax.portlet.WindowStateException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
@@ -267,7 +268,10 @@ implements ActionResponse {
 			throw new IllegalStateException();
 		}
 
-		_redirectLocation = SecurityUtils.stripReferer(location);
+        // Getting the http request
+        HttpServletRequest httpReq = getReq().getHttpServletRequest();
+
+		_redirectLocation = SecurityUtils.stripReferer(httpReq, location);
 	}
 
 	public HttpServletResponse getHttpServletResponse() {

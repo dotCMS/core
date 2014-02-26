@@ -115,7 +115,7 @@ public class CommentsAction extends DispatchAction {
 
 				saveMessages(request, ae);
 				saveMessages(request.getSession(), ae);
-				ActionForward forward = new ActionForward(SecurityUtils.stripReferer(referrer));
+				ActionForward forward = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 				forward.setRedirect(true);
 				return forward;
 			}

@@ -29,8 +29,10 @@ import java.util.List;
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -142,18 +144,26 @@ public class EditQuestionAction extends PortletAction {
 	private void _deleteQuestion(ActionRequest req, ActionResponse res)
 		throws Exception {
 
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String questionId = ParamUtil.getString(req, "question_id");
 
 		PollsQuestionManagerUtil.deleteQuestion(questionId);
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateQuestion(
 			PortletConfig config, ActionRequest req, ActionResponse res)
 		throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		String questionId = req.getParameter("question_id");
 
@@ -213,7 +223,7 @@ public class EditQuestionAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 }

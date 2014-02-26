@@ -26,7 +26,9 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.PortletSession;
+import javax.servlet.http.HttpServletRequest;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -54,13 +56,17 @@ public class CreateUserAction extends PortletAction {
 
 		if (req.getRemoteUser() != null) {
 
+            // Getting the http request
+            ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+            HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 			// Send redirect
 
 			String ctxPath =
 				(String)req.getPortletSession().getAttribute(
 					WebKeys.CTX_PATH, PortletSession.APPLICATION_SCOPE);
 
-			res.sendRedirect(SecurityUtils.stripReferer(ctxPath));
+			res.sendRedirect(SecurityUtils.stripReferer(httpReq, ctxPath));
 		}
 
 		String cmd = req.getParameter(Constants.CMD);

@@ -26,8 +26,10 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.PreferencesValidator;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -149,6 +151,10 @@ public class EditPortletAction extends PortletAction {
 	private void _updatePortlet(ActionRequest req, ActionResponse res)
 		throws Exception {
 
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String portletId = ParamUtil.getString(req, "portlet_id");
 
 		String groupId = ParamUtil.getString(req, "group_id");
@@ -184,7 +190,7 @@ public class EditPortletAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updatePortletIndex(ActionRequest req) throws Exception {

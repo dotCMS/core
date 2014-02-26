@@ -166,7 +166,7 @@ public class PortletRequestProcessor extends StxxTilesRequestProcessor {
 				else{
 					forward = forward + "?r=" + System.currentTimeMillis();
 				}
-				res.sendRedirect(SecurityUtils.stripReferer(forward));
+				res.sendRedirect(SecurityUtils.stripReferer(httpReq, forward));
 			}
 		}
 	}
