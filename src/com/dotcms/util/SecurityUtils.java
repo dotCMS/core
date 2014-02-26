@@ -14,6 +14,8 @@ public class SecurityUtils {
 
     public static String stripReferer ( HttpServletRequest request, String referer ) throws IllegalArgumentException {
 
+    	if(referer==null) return referer;
+
         String ref = referer;
         if(Config.getBooleanProperty("DISABLE_EXTERNAL_REFERERS",true) && ref.contains("://")) {
 
