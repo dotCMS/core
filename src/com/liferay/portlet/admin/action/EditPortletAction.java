@@ -26,6 +26,8 @@ import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
 import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
 import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import com.dotcms.repackage.portlet.javax.portlet.PreferencesValidator;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
@@ -42,6 +44,7 @@ import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.PortletPreferencesSerializer;
 import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
@@ -149,6 +152,10 @@ public class EditPortletAction extends PortletAction {
 	private void _updatePortlet(ActionRequest req, ActionResponse res)
 		throws Exception {
 
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String portletId = ParamUtil.getString(req, "portlet_id");
 
 		String groupId = ParamUtil.getString(req, "group_id");
@@ -184,7 +191,7 @@ public class EditPortletAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updatePortletIndex(ActionRequest req) throws Exception {

@@ -766,14 +766,18 @@ public class DotPortletAction extends PortletAction {
 	 */
 	protected void _sendToReferral(ActionRequest req, ActionResponse res, String referer) throws Exception {
 
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String redirect = req.getParameter("redirect");
 
 		if (UtilMethods.isSet(referer)) {
 			Logger.debug(this, "\n\nGoing to redirect to referer: " + referer);
-			res.sendRedirect(SecurityUtils.stripReferer(referer));
+			res.sendRedirect(SecurityUtils.stripReferer(httpReq, referer));
 		} else if (UtilMethods.isSet(redirect)) {
 			Logger.debug(this, "\n\nGoing to redirect to redirect : " + redirect);
-			res.sendRedirect(SecurityUtils.stripReferer(redirect));
+			res.sendRedirect(SecurityUtils.stripReferer(httpReq, redirect));
 		}
 		Logger.debug(this, "End of _sendToReferral");
 	}

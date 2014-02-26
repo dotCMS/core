@@ -61,7 +61,7 @@ public class CharsetEncodingFilter implements Filter {
         request.setCharacterEncoding(CHARSET);
 		
 		// Wrap the response object
-        response = new ServletResponseCharacterEncoding((HttpServletResponse)response);
+        response = new ServletResponseCharacterEncoding( (HttpServletRequest) request, (HttpServletResponse)response);
 
         
         //Handling the language selection
