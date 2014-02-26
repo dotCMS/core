@@ -56,7 +56,7 @@ public class ChainServlet extends HttpServlet {
     		}
     		
             if (url.startsWith("http://") || url.startsWith("https://"))
-				response.sendRedirect(SecurityUtils.stripReferer(url));
+				response.sendRedirect(SecurityUtils.stripReferer(request, url));
 			else
 				request.getRequestDispatcher(url).forward(request, response);
 			return;
