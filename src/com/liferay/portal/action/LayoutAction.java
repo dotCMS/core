@@ -100,7 +100,7 @@ public class LayoutAction extends Action {
 								actionResponse.getRedirectLocation();
 
 							if (Validator.isNotNull(redirectLocation)) {
-								res.sendRedirect(SecurityUtils.stripReferer(redirectLocation));
+								res.sendRedirect(SecurityUtils.stripReferer(req, redirectLocation));
 
 								return null;
 							}

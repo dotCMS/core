@@ -7,6 +7,7 @@ package com.dotmarketing.util;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
@@ -28,9 +29,11 @@ import com.dotcms.util.SecurityUtils;
 public class ServletResponseCharacterEncoding extends HttpServletResponseWrapper {
 
 	private boolean encodingSpecified = false;
+	private HttpServletRequest request;
 
-	public ServletResponseCharacterEncoding(HttpServletResponse response) {
+	public ServletResponseCharacterEncoding(HttpServletRequest request, HttpServletResponse response) {
 		super(response);
+        this.request = request;
 	}
 
 	@Override
@@ -73,12 +76,12 @@ public class ServletResponseCharacterEncoding extends HttpServletResponseWrapper
 	public void sendRedirect(String location) throws IOException {
 		// Generate a temporary redirect to the specified location
 		try {
-			setStatus(301); 
-			setHeader( "Location", SecurityUtils.stripReferer(location) ); 
-			setHeader( "Connection", "close" ); 
+			setStatus(301);
+			setHeader( "Location", SecurityUtils.stripReferer(this.request, location) );
+			setHeader( "Connection", "close" );
 			super.resetBuffer();
-			super.sendRedirect(location);
-		} catch (IllegalArgumentException e) {
+            super.sendRedirect( SecurityUtils.stripReferer( this.request, location ) );
+        } catch (IllegalArgumentException e) {
 			setStatus(SC_NOT_FOUND);
 		}
 	}
