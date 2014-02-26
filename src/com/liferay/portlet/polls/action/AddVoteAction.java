@@ -25,8 +25,10 @@ package com.liferay.portlet.polls.action;
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -87,6 +89,10 @@ public class AddVoteAction extends PortletAction {
 	private void _addVote(ActionRequest req, ActionResponse res)
 		throws Exception {
 
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String questionId = ParamUtil.getString(req, "question_id");
 		String choiceId = ParamUtil.getString(req, "choice_id");
 
@@ -98,7 +104,7 @@ public class AddVoteAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 }

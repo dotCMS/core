@@ -7,10 +7,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URL;
 
 public class SecurityUtils {
-    public static String stripReferer(String referer) throws IllegalArgumentException {
+
+    public static String stripReferer ( HttpServletRequest request, String referer ) throws IllegalArgumentException {
+
         String ref = referer;
         if(Config.getBooleanProperty("DISABLE_EXTERNAL_REFERERS",true) && ref.contains("://")) {
 
@@ -24,17 +27,23 @@ public class SecurityUtils {
                  could lead to security threats.
                   */
                 URL url = new URL( referer );
-                String urlHost = url.getHost();
+                String refererHost = url.getHost();
 
-                //Trying to find the host in our list of host
-                Host foundHost = APILocator.getHostAPI().findByName( urlHost, systemUser, false );
-                if ( !UtilMethods.isSet( foundHost ) ) {
-                    foundHost = APILocator.getHostAPI().findByAlias( urlHost, systemUser, false );
-                }
+                String serverName = request.getServerName();
 
-                //If the host was not found it means it is a external url
-                if ( !UtilMethods.isSet( foundHost ) ) {
-                    ref = "/";
+                //Verify if we want to move inside the same app
+                if ( !refererHost.equals( serverName ) ) {
+
+                    //Trying to find the host in our list of host
+                    Host foundHost = APILocator.getHostAPI().findByName( refererHost, systemUser, false );
+                    if ( !UtilMethods.isSet( foundHost ) ) {
+                        foundHost = APILocator.getHostAPI().findByAlias( refererHost, systemUser, false );
+                    }
+
+                    //If the host was not found it means it is a external url
+                    if ( !UtilMethods.isSet( foundHost ) ) {
+                        ref = "/";
+                    }
                 }
 
             } catch ( Exception e ) {

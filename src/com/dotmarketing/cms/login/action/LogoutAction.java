@@ -41,7 +41,7 @@ public class LogoutAction extends DispatchAction {
 
             ActionForward af = null;
             if(UtilMethods.isSet(referrer)) {
-            	af = new ActionForward(SecurityUtils.stripReferer(referrer));
+            	af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
             	af.setRedirect(true);
             } else
             	af = mapping.findForward("afterLogoutPage");

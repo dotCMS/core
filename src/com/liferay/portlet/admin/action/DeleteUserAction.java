@@ -25,8 +25,10 @@ package com.liferay.portlet.admin.action;
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -58,6 +60,11 @@ public class DeleteUserAction extends PortletAction {
 		throws Exception {
 
 		try {
+
+            // Getting the http request
+            ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+            HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 			User user = PortalUtil.getSelectedUser(req);
 
 			UserManagerUtil.deleteUser(user.getUserId());
@@ -68,7 +75,7 @@ public class DeleteUserAction extends PortletAction {
 
 			// Send redirect
 
-			res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+			res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 		}
 		catch (Exception e) {
 			if (e != null &&

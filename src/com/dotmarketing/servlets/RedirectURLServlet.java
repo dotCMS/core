@@ -87,7 +87,7 @@ public class RedirectURLServlet extends HttpServlet {
 				}
 			}
 			//do redirect first for optimal user expierience(tm)
-			response.sendRedirect(SecurityUtils.stripReferer(redir));
+			response.sendRedirect(SecurityUtils.stripReferer(request, redir));
 			response.flushBuffer();
 			
 		}

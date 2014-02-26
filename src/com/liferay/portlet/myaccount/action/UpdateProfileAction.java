@@ -29,8 +29,10 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.PortletSession;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -250,6 +252,10 @@ public class UpdateProfileAction extends PortletAction {
 	private void _updateComments(ActionRequest req, ActionResponse res)
 		throws Exception {
 
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+
 		String comments = ParamUtil.getString(req, "comments");
 
 		User user = PortalUtil.getSelectedUser(req);
@@ -272,11 +278,15 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateFavorites(ActionRequest req, ActionResponse res)
 		throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		String activity = ParamUtil.getString(req, "favorite_activity");
 		String bibleVerse = ParamUtil.getString(req, "favorite_bible_verse");
@@ -304,11 +314,15 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateIm(ActionRequest req, ActionResponse res)
 		throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		String aimId = ParamUtil.getString(req, "aim_id");
 		String icqId = ParamUtil.getString(req, "icq_id");
@@ -335,10 +349,14 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 	private void _updateLocale(ActionRequest req, ActionResponse res)
 	throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 	String language = ParamUtil.getString(req, "user_language_id");
 	String timezone = ParamUtil.getString(req, "user_tz_id");
@@ -364,11 +382,15 @@ public class UpdateProfileAction extends PortletAction {
 
 	// Send redirect
 
-	res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+	res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 }
 
 	private void _updateMain(ActionRequest req, ActionResponse res)
 		throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		String firstName = ParamUtil.getString(req, "first_name");
 		String middleName = ParamUtil.getString(req, "middle_name");
@@ -418,11 +440,15 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updatePassword(ActionRequest req, ActionResponse res)
 		throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		PortletSession ses = req.getPortletSession();
 
@@ -447,11 +473,15 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 	private void _updateSms(ActionRequest req, ActionResponse res)
 		throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		String smsId = ParamUtil.getString(req, "sms_id");
 
@@ -475,7 +505,7 @@ public class UpdateProfileAction extends PortletAction {
 
 		// Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 	}
 
 }

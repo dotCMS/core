@@ -97,7 +97,7 @@ public class SubmitContentAction extends DispatchAction{
 		if(referrer.endsWith("?")){
 			referrer = referrer.substring(0,referrer.length()-1);
 		}
-		ActionForward af = new ActionForward(SecurityUtils.stripReferer(referrer));
+		ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 		af.setRedirect(true);
 
 		int index = referrer.lastIndexOf('/');

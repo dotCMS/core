@@ -76,7 +76,7 @@ public class LoginAction extends DispatchAction {
 		}
 		else if (request.getParameter("referrer") != null && !request.getParameter("referrer").toString().equalsIgnoreCase(""))
 		{
-			referrer = SecurityUtils.stripReferer((String)request.getParameter("referrer"));
+			referrer = SecurityUtils.stripReferer(request, (String)request.getParameter("referrer"));
 		}
 
 		try {
@@ -123,7 +123,7 @@ public class LoginAction extends DispatchAction {
 	                String redir = (String) request.getSession().getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 	                request.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 	                Logger.debug(this.getClass(), "redirecting after account creation: " + redir);
-	                ActionForward af = new ActionForward(SecurityUtils.stripReferer(redir));
+	                ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, redir));
 	                af.setRedirect(true);
 	                return af;
 	            }
@@ -132,7 +132,7 @@ public class LoginAction extends DispatchAction {
 	            msg.add(Globals.MESSAGE_KEY, new ActionMessage("message.Login.Successful"));
 	            request.setAttribute(Globals.MESSAGE_KEY, msg);
 
-	            ActionForward af = new ActionForward(SecurityUtils.stripReferer(referrer));
+	            ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 	            af.setRedirect(true);
 	            return af;
 	        }
@@ -146,13 +146,13 @@ public class LoginAction extends DispatchAction {
 	        request.getSession().setAttribute(Globals.ERROR_KEY, errors);
 
 	        if(referrer != null && !referrer.equals("/")) {
-	        	ActionForward af = new ActionForward(SecurityUtils.stripReferer(referrer));
+	        	ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 	        	af.setRedirect(true);
 	        	return af;
 	        } else {
 	        	if (!Config.getBooleanProperty("USE_CHALLENGE_QUESTION")) {
 	    	        if(referrer != null && !referrer.equals("/")) {
-	    	        	ActionForward af = new ActionForward(SecurityUtils.stripReferer(referrer));
+	    	        	ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 	    	        	af.setRedirect(true);
 	    	        	return af;
 	    	        } else
@@ -165,7 +165,7 @@ public class LoginAction extends DispatchAction {
 	            	} else {
 	            		user = APILocator.getUserAPI().loadUserById(form.getUserName().toLowerCase(),APILocator.getUserAPI().getSystemUser(),false);
 	            	}
-	        		ActionForward af = new ActionForward(SecurityUtils.stripReferer(mapping.findForward("challengeQuestionPage").getPath() + "?emailAddress=" + user.getEmailAddress()));
+	        		ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, mapping.findForward("challengeQuestionPage").getPath() + "?emailAddress=" + user.getEmailAddress()));
 
 	        		return af;
 	        	}
@@ -178,7 +178,7 @@ public class LoginAction extends DispatchAction {
 	        request.setAttribute(Globals.ERROR_KEY, errors);
 	        //return to login page showing message the user doesn't exist
 	        if(referrer != null && !referrer.equals("/")) {
-	        	ActionForward af = new ActionForward(SecurityUtils.stripReferer(referrer));
+	        	ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 	        	af.setRedirect(true);
 	        	return af;
 	        } else

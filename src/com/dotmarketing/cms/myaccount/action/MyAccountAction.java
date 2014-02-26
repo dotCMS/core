@@ -467,7 +467,7 @@ public class MyAccountAction extends DispatchAction {
 					WebKeys.REDIRECT_AFTER_UPDATE_ACCOUNT_INFO);
 			request.getSession().removeAttribute(
 					WebKeys.REDIRECT_AFTER_UPDATE_ACCOUNT_INFO);
-			ActionForward af = new ActionForward(SecurityUtils.stripReferer(redir));
+			ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, redir));
 			af.setRedirect(true);
 			return af;
 		}

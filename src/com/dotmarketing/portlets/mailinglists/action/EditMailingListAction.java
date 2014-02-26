@@ -5,8 +5,10 @@ import java.util.StringTokenizer;
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
+import com.liferay.portlet.ActionRequestImpl;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
@@ -42,6 +44,10 @@ public class EditMailingListAction extends PortletAction {
 			ActionMapping mapping, ActionForm form, PortletConfig config,
 			ActionRequest req, ActionResponse res)
 		throws Exception {
+
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 	
 		String cmd = req.getParameter(Constants.CMD);
 
@@ -93,7 +99,7 @@ public class EditMailingListAction extends PortletAction {
 				if (Validator.validate(req,form,mapping)) {
 					_saveMailingList(req, res, config, form, user);
 					if (UtilMethods.isSet(ParamUtil.getString(req, "redirect")))
-						res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+						res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 				}
 			}
 			catch (Exception ae) {
@@ -111,7 +117,7 @@ public class EditMailingListAction extends PortletAction {
 				setForward(req, Constants.COMMON_ERROR);
 			}
 			Logger.debug(this, "Returning to view mailing lists page");
-			res.sendRedirect(SecurityUtils.stripReferer(ParamUtil.getString(req, "redirect")));
+			res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
 		}
 
 		/*
