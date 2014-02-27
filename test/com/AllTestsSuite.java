@@ -3,6 +3,8 @@ package com;
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
+import com.dotcms.csspreproc.LessCompilerTest;
+import com.dotcms.csspreproc.SassCompilerTest;
 import com.dotcms.notification.business.NotificationAPITest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
 import com.dotcms.rest.ContentResourceTest;
@@ -62,7 +64,9 @@ import com.dotcms.repackage.junit_4_8_1.org.junit.runners.Suite;
     FolderAPITest.class,
     HostAPITest.class,
     WorkflowSearcherTest.class,
-    NotificationAPITest.class
+    NotificationAPITest.class,
+    SassCompilerTest.class,
+    LessCompilerTest.class
 })
 public class AllTestsSuite {
 

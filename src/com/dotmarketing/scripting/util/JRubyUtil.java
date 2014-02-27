@@ -2,10 +2,10 @@ package com.dotmarketing.scripting.util;
 
 import java.util.List;
 
-import com.dotcms.repackage.jruby.org.jruby.Ruby;
-import com.dotcms.repackage.jruby.org.jruby.RubyHash;
-import com.dotcms.repackage.jruby.org.jruby.RubyObject;
-import com.dotcms.repackage.jruby.org.jruby.runtime.builtin.InstanceVariables;
+import org.jruby.Ruby;
+import org.jruby.RubyHash;
+import org.jruby.RubyObject;
+import org.jruby.runtime.builtin.InstanceVariables;
 
 public class JRubyUtil {
 

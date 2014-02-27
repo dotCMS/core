@@ -600,6 +600,8 @@ public class CMSFilter implements Filter {
          set.add("^/JSONTags/");
          set.add("^/spring/");
          set.add("^/api/");
+         set.add("^/DOTLESS/");
+         set.add("^/DOTSASS/");
 
          //Load exclusions from plugins
          PluginAPI pAPI=APILocator.getPluginAPI();
