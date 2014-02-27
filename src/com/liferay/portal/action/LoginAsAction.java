@@ -134,7 +134,7 @@ public class LoginAsAction extends Action {
 			
 				//List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(loginAsUser);
 				PortletURLImpl portletURLImp = new PortletURLImpl(req, layouts.get(0).getPortletIds().get(0), layouts.get(0).getId(), false);
-				res.sendRedirect(SecurityUtils.stripReferer(portletURLImp.toString()));
+				res.sendRedirect(SecurityUtils.stripReferer(req, portletURLImp.toString()));
 				return null;
 				
 			}

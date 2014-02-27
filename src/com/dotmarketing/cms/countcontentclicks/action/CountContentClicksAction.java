@@ -90,7 +90,7 @@ public class CountContentClicksAction extends DispatchAction {
 				contentlet.setStringProperty(field.getVelocityVarName(),String.valueOf(numberOfClicks));
 				conAPI.checkin(contentlet,new HashMap<Relationship, List<Contentlet>>(),new ArrayList<Category>(),new ArrayList<Permission>() ,APILocator.getUserAPI().getSystemUser(),true);
 		    }
-		    ActionForward af = new ActionForward(SecurityUtils.stripReferer(redirectLink));
+		    ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, redirectLink));
 	        af.setRedirect(true);
 	        return af;
 		
