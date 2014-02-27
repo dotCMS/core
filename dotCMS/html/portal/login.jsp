@@ -96,6 +96,7 @@ boolean rememberMe = ParamUtil.get(request, "my_account_r_m", false);
 //Build errors
 
 String errorMessage = null;
+String resetMessage = null;
 if(cmd.equals("send") && SessionErrors.contains(request, NoSuchUserException.class.getName())){
 	errorMessage = LanguageUtil.get(pageContext, "the-email-address-you-requested-is-not-registered-in-our-database") ;
 }
@@ -130,7 +131,8 @@ else  if(cmd.equals("auth") && SessionErrors.contains(request, UserActiveExcepti
 	 errorMessage = LanguageUtil.format(pageContext, "your-account-is-not-active", new LanguageWrapper[] {new LanguageWrapper("<b><i>", login, "</i></b>")}, false);
 }
 else if(cmd.equals("ereset") && SessionErrors.contains(request, "reset_pass_not_match")) {
-     errorMessage = LanguageUtil.get(pageContext, "reset-password-confirmation-do-not-match");
+     resetMessage = LanguageUtil.get(pageContext, "reset-password-confirmation-do-not-match");
+     showResetPasswordForm = true;
 }
 else if(cmd.equals("ereset") && SessionMessages.contains(request, "reset_pass_success")) {
     errorMessage = LanguageUtil.get(pageContext, "reset-password-success");
@@ -142,7 +144,8 @@ else if(cmd.equals("ereset") && SessionErrors.contains(request, "reset_token_exp
     errorMessage = LanguageUtil.get(pageContext, "reset-password-token-expired");
 }
 else if(cmd.equals("ereset") && SessionErrors.contains(request, "reset_pass_invalid_pass")) {
-    errorMessage = LanguageUtil.get(pageContext, "reset-password-invalid-password");
+    resetMessage = LanguageUtil.get(pageContext, "reset-password-invalid-password");
+    showResetPasswordForm = true;
 }
 
 if(errorMessage != null){
@@ -334,8 +337,13 @@ function showLanguageSelector(){
 	<% } %>
 
 	<% if(showResetPasswordForm) { %>
-	    <form action="<%= CTX_PATH %>/portal<%= PortalUtil.getAuthorizedPath(request) %>/login" method="post" name="resetfm" target="actionJackson">
+	    <form action="<%= CTX_PATH %>/portal<%= PortalUtil.getAuthorizedPath(request) %>/login" method="post" name="resetfm">
 		  <div id="resetPassword" style="display:none" draggable="false" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "reset-password") %>">
+		    <% if(resetMessage!=null) { %>
+		       <div class="error-message" id="dotResetMessagesDiv"><%= resetMessage %></div>
+		    <% } else { %>
+		       <div class="error-message" id="dotResetMessagesDiv"></div>
+		    <% } %>
 			<dl>
 				<dt><label for="pass1" class="formLabel"> <%= LanguageUtil.get(pageContext, "enter-password") %>:</label></dt>
 				<dd><input id="pass1" type="password" required="true" dojoType="dijit.form.TextBox"></dd>
