@@ -133,7 +133,7 @@ public class DotJobStore extends JobStoreCMT {
 			}
 		} else if (DbConnectionFactory.isH2()) {
             try {
-                setDriverDelegateClass("org.quartz.impl.jdbcjobstore.HSQLDBDelegate");
+                setDriverDelegateClass("org.quartz.impl.jdbcjobstore.StdJDBCDelegate");
                 setLockHandler(sem);
             } catch (Exception e) {
                 Logger.info(this, e.getMessage());
