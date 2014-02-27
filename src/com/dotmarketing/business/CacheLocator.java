@@ -7,6 +7,8 @@ import java.util.Set;
 import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.JChannel;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.csspreproc.CSSCache;
+import com.dotcms.csspreproc.CSSCacheImpl;
 import com.dotcms.notifications.business.NewNotificationCache;
 import com.dotcms.notifications.business.NewNotificationCacheImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
@@ -241,6 +243,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static PushedAssetsCache getPushedAssetsCache() {
 		return (PushedAssetsCache)getInstance(CacheIndex.PushedAssets);
 	}
+	
+	public static CSSCache getCSSCache() {
+	    return (CSSCache)getInstance(CacheIndex.CSSCache);
+	}
 
 	public static NewNotificationCache getNewNotificationCache() {
 		return (NewNotificationCache)getInstance(CacheIndex.NewNotification);
@@ -328,6 +334,7 @@ enum CacheIndex
 	NavTool("Navigation Tool"),
 	PublishingEndPoint("PublishingEndPoint Cache"),
 	PushedAssets("PushedAssets Cache"),
+	CSSCache("Processed CSS Cache"),
 	NewNotification("NewNotification Cache");
 
 	Cachable create() {
@@ -363,6 +370,7 @@ enum CacheIndex
       	case NavTool: return new NavToolCacheImpl();
       	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
       	case PushedAssets: return new PushedAssetsCacheImpl();
+      	case CSSCache: return new CSSCacheImpl();
       	case NewNotification: return new NewNotificationCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

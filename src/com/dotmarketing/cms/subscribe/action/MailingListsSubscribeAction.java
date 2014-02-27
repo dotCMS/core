@@ -100,7 +100,7 @@ public class MailingListsSubscribeAction extends DispatchAction {
 
     	ActionForward af = mapping.findForward("subscribePage");
 		if(UtilMethods.isSet(referrer) && !referrer.startsWith(af.getPath())) {
-			af = new ActionForward(SecurityUtils.stripReferer(referrer));
+			af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 			af.setRedirect(true);
 		}
 
@@ -148,7 +148,7 @@ public class MailingListsSubscribeAction extends DispatchAction {
 			saveMessages(request.getSession(), errors);
 	    	ActionForward af = mapping.findForward("subscribePage");
 			if(UtilMethods.isSet(referrer) && !referrer.startsWith(af.getPath())) {
-				af = new ActionForward(SecurityUtils.stripReferer(referrer));
+				af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 				af.setRedirect(true);
 			}
 			return af;
@@ -185,7 +185,7 @@ public class MailingListsSubscribeAction extends DispatchAction {
 
     	ActionForward af = mapping.findForward("subscribePage");
 		if(UtilMethods.isSet(returnURL) && !returnURL.startsWith(af.getPath())) {
-			af = new ActionForward(SecurityUtils.stripReferer(returnURL));
+			af = new ActionForward(SecurityUtils.stripReferer(request, returnURL));
 			af.setRedirect(true);
 		}
 

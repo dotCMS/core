@@ -142,7 +142,7 @@ public class PermalinkServlet extends HttpServlet {
 
 
 		}
-		response.sendRedirect(SecurityUtils.stripReferer(redirect));
+		response.sendRedirect(SecurityUtils.stripReferer(request, redirect));
 
 	}
 

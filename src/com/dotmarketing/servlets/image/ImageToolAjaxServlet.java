@@ -84,7 +84,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
 			request.getSession().removeAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
     		return ;
     	}else if("download".equals(action)){
-    		doDownload(fileUrl, response);
+    		doDownload(fileUrl, request, response);
     		return ;
     	}
 		else if("saveAs".equals(action)){
@@ -136,11 +136,11 @@ public class ImageToolAjaxServlet extends HttpServlet {
 		return;
     }
     
-    private void doDownload(String fileUrl, HttpServletResponse response) throws IOException{
+    private void doDownload(String fileUrl, HttpServletRequest request, HttpServletResponse response) throws IOException{
 		fileUrl+=(fileUrl.indexOf("?") < 0) ? "?":"&"; 
 		fileUrl+= "force_download=true&r" +new Random( 1756547574 ).nextInt();
 		System.out.println(fileUrl);
-		response.sendRedirect(SecurityUtils.stripReferer(fileUrl));
+		response.sendRedirect(SecurityUtils.stripReferer(request, fileUrl));
 		return;
     	
     	

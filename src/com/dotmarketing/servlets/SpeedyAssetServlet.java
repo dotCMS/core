@@ -39,6 +39,8 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.repackage.guava_11_0_1.com.google.common.io.Files;
+import com.dotcms.util.DownloadUtil;
+import com.dotcms.util.DownloadUtil.ThreadLocalHTTPDate;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -49,17 +51,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static String realPath = null;
 	private static String assetPath = "/assets";
-	private static class ThreadLocalHTTPDate extends ThreadLocal<java.text.SimpleDateFormat>{
-		@Override
-		protected SimpleDateFormat initialValue() {
-			SimpleDateFormat sdf = new java.text.SimpleDateFormat(Constants.RFC2822_FORMAT);
-			sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
-			return sdf;
-		}
-	}
-
-	private static final ThreadLocalHTTPDate httpDate = new SpeedyAssetServlet.ThreadLocalHTTPDate();
-
+	
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     public void init(ServletConfig config) throws ServletException {
@@ -70,7 +62,6 @@ public class SpeedyAssetServlet extends HttpServlet {
         try {
             assetPath = Config.getStringProperty("ASSET_PATH");
         } catch (Exception e) { }
-        httpDate.get().setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 
 
@@ -333,69 +324,15 @@ public class SpeedyAssetServlet extends HttpServlet {
 			    // Set the expiration time
 				if (!_adminMode) {
 
-				    int _daysCache = Config.getIntProperty("asset.cache.control.max.days", 30);
-				    GregorianCalendar expiration = new GregorianCalendar();
-					expiration.add(java.util.Calendar.DAY_OF_MONTH, _daysCache);
-					int seconds = (_daysCache * 24 * 60 * 60);
-
-					long _lastModified = f.lastModified();
-					if(_lastModified < 0) {
-					    _lastModified = 0;
-					}
-					// we need to round the _lastmodified to get rid of the milliseconds.
-					_lastModified = _lastModified / 1000;
-					_lastModified = _lastModified * 1000;
-					Date _lastModifiedDate = new java.util.Date(_lastModified);
-
-
-					long _fileLength = f.length();
-					String _eTag = "dot:" + inode + ":" + _lastModified + ":" + _fileLength;
-
-
-	                /* Setting cache friendly headers */
-                    response.setHeader("Expires", httpDate.get().format(expiration.getTime()));
-                    response.setHeader("Cache-Control", "public, max-age="+seconds);
-
-
-                    String ifModifiedSince = request.getHeader("If-Modified-Since");
-                    String ifNoneMatch = request.getHeader("If-None-Match");
-
-                    /*
-                     * If the etag matches then the file is the same
-                     *
-                    */
-                    if(ifNoneMatch != null){
-                        if(_eTag.equals(ifNoneMatch) || ifNoneMatch.equals("*")){
-                            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
-                            f = null;
-                            return;
-                        }
-                    }
-
-                    /* Using the If-Modified-Since Header */
-                     if(ifModifiedSince != null){
-					    try{
-					        Date ifModifiedSinceDate = httpDate.get().parse(ifModifiedSince);
-
-					        if(_lastModifiedDate.getTime() <= ifModifiedSinceDate.getTime()){
-
-					            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
-					            f = null;
-					            return;
-					        }
-					    }
-					    catch(Exception e){}
-
-					}
-
-                    response.setHeader("Last-Modified", httpDate.get().format(_lastModifiedDate));
-                    response.setHeader("ETag", _eTag);
+				    if(!DownloadUtil.isModifiedEtag(request, response, inode, f.lastModified(), f.length())) {
+				        return;
+				    }
 
                 /* if we are in ADMIN MODE, don't cache */
 				}else{
 				    GregorianCalendar expiration = new GregorianCalendar();
 					expiration.add(java.util.Calendar.MONTH, -1);
-					response.setHeader("Expires", httpDate.get().format(expiration.getTime()));
+					response.setHeader("Expires", DownloadUtil.httpDate.get().format(expiration.getTime()));
 					response.setHeader("Cache-Control", "max-age=-1");
 				}
 

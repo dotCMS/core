@@ -72,7 +72,7 @@ public class FormPipeServlet extends HttpServlet {
             if (fpb.getErrorMessages() != null && fpb.getErrorMessages().size() > 0) {
                 request.getSession().setAttribute("com.dotmarketing.formpipe.errors", fpb.getErrorMessages());
             }
-            response.sendRedirect(SecurityUtils.stripReferer(fpb.getReturnUrl()));
+            response.sendRedirect(SecurityUtils.stripReferer(request, fpb.getReturnUrl()));
             return;
 
         } else {
