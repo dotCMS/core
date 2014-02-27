@@ -216,7 +216,7 @@ public class TemplateAjax {
 		}
 		if(template!=null){
 			Identifier imageIdentifier = APILocator.getIdentifierAPI().find(template.getImage());
-			if(imageIdentifier.getAssetType().equals("contentlet")) {
+			if(UtilMethods.isSet(imageIdentifier.getAssetType()) && imageIdentifier.getAssetType().equals("contentlet")) {
 				Contentlet imageContentlet = TemplateFactory.getImageContentlet(template);
 				if(imageContentlet!=null){
 					toReturn.put("inode", imageContentlet.getInode());
