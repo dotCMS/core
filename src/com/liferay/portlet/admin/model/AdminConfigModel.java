@@ -41,24 +41,7 @@ public class AdminConfigModel extends BaseModel {
 	public static int MAX_SIZE = GetterUtil.get(PropsUtil.get(
 				"value.object.max.size.com.liferay.portlet.admin.model.AdminConfig"),
 			VALUE_OBJECT_MAX_SIZE);
-	public static boolean XSS_ALLOW_BY_MODEL = GetterUtil.get(PropsUtil.get(
-				"xss.allow.com.liferay.portlet.admin.model.AdminConfig"),
-			XSS_ALLOW);
-	public static boolean XSS_ALLOW_CONFIGID = GetterUtil.get(PropsUtil.get(
-				"xss.allow.com.liferay.portlet.admin.model.AdminConfig.configId"),
-			XSS_ALLOW_BY_MODEL);
-	public static boolean XSS_ALLOW_COMPANYID = GetterUtil.get(PropsUtil.get(
-				"xss.allow.com.liferay.portlet.admin.model.AdminConfig.companyId"),
-			XSS_ALLOW_BY_MODEL);
-	public static boolean XSS_ALLOW_TYPE = GetterUtil.get(PropsUtil.get(
-				"xss.allow.com.liferay.portlet.admin.model.AdminConfig.type"),
-			XSS_ALLOW_BY_MODEL);
-	public static boolean XSS_ALLOW_NAME = GetterUtil.get(PropsUtil.get(
-				"xss.allow.com.liferay.portlet.admin.model.AdminConfig.name"),
-			XSS_ALLOW_BY_MODEL);
-	public static boolean XSS_ALLOW_CONFIG = GetterUtil.get(PropsUtil.get(
-				"xss.allow.com.liferay.portlet.admin.model.AdminConfig.config"),
-			XSS_ALLOW_BY_MODEL);
+	
 	public static long LOCK_EXPIRATION_TIME = GetterUtil.getLong(PropsUtil.get(
 				"lock.expiration.time.com.liferay.portlet.admin.model.AdminConfigModel"));
 
@@ -92,9 +75,6 @@ public class AdminConfigModel extends BaseModel {
 				((configId != null) && (_configId == null)) ||
 				((configId != null) && (_configId != null) &&
 				!configId.equals(_configId))) {
-			if (!XSS_ALLOW_CONFIGID) {
-				configId = Xss.strip(configId);
-			}
 
 			_configId = configId;
 			setModified(true);
@@ -110,10 +90,7 @@ public class AdminConfigModel extends BaseModel {
 				((companyId != null) && (_companyId == null)) ||
 				((companyId != null) && (_companyId != null) &&
 				!companyId.equals(_companyId))) {
-			if (!XSS_ALLOW_COMPANYID) {
-				companyId = Xss.strip(companyId);
-			}
-
+		    
 			_companyId = companyId;
 			setModified(true);
 		}
@@ -127,9 +104,6 @@ public class AdminConfigModel extends BaseModel {
 		if (((type == null) && (_type != null)) ||
 				((type != null) && (_type == null)) ||
 				((type != null) && (_type != null) && !type.equals(_type))) {
-			if (!XSS_ALLOW_TYPE) {
-				type = Xss.strip(type);
-			}
 
 			_type = type;
 			setModified(true);
@@ -144,9 +118,6 @@ public class AdminConfigModel extends BaseModel {
 		if (((name == null) && (_name != null)) ||
 				((name != null) && (_name == null)) ||
 				((name != null) && (_name != null) && !name.equals(_name))) {
-			if (!XSS_ALLOW_NAME) {
-				name = Xss.strip(name);
-			}
 
 			_name = name;
 			setModified(true);
@@ -162,9 +133,6 @@ public class AdminConfigModel extends BaseModel {
 				((config != null) && (_config == null)) ||
 				((config != null) && (_config != null) &&
 				!config.equals(_config))) {
-			if (!XSS_ALLOW_CONFIG) {
-				config = Xss.strip(config);
-			}
 
 			_config = config;
 			setModified(true);
