@@ -498,6 +498,22 @@
         <var name="distribution.file.output" unset="true"/>
         <property name="distribution.file.output" value="${zip.test.distribution.path}"/>
 
+        <!--Set the location where the distribution build will be made-->
+        <var name="distribution.output" unset="true"/>
+        <property name="distribution.output" value="${test.distribution.build.path}" />
+
+        <var name="distribution.bin.output" unset="true"/>
+        <property name="distribution.bin.output" value="${distribution.output}/bin" />
+
+        <var name="distribution.dotserver.output" unset="true"/>
+        <property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
+
+        <var name="distribution.autoupdater.output" unset="true"/>
+        <property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
+
+        <var name="distribution.plugins.output" unset="true"/>
+        <property name="distribution.plugins.output" value="${distribution.output}/plugins" />
+
         <!--Create the distribution zip file if it does not exist, if exist lets just used-->
         <if>
             <available file="${distribution.file.output}/dotcms_${dotcms.release.version}.zip" type="file" />
@@ -580,7 +596,6 @@
                 stoptarget="tomcat-stop"
                 testtarget="test-all-junits"
                 timeout="600000"/>
-        <!--<antcall target="drop-db"/>-->
     </target>
 
     <!-- Hit the tests servlet to run all the unit tests of the application -->
