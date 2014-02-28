@@ -53,8 +53,7 @@ public interface IdentifierAPI {
 
 
 	/**
-	 * Will take a String from an identifiers id and return its identifier from cache or db. If cache miss
-	 * this will always hit the db
+	 * Will take a String from an identifiers id and return its identifier from cache or db.
 	 * @param id
 	 * @return Identifier
 	 * @throws DotDataException

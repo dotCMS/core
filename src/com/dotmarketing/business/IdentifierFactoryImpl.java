@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UUIDGenerator;
@@ -40,6 +41,7 @@ import com.liferay.portal.model.User;
 public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	IdentifierCache ic = CacheLocator.getIdentifierCache();
+	public static final String IDENT404 = "$$__404__CACHE_MISS__$$";
 
 	@Override
 	protected List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean pullDeleted,boolean include,Host host)throws DotDataException {
@@ -122,9 +124,31 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		saveIdentifier(identifier);
 
 	}
+	
+	private Identifier check404(Identifier value) {
+	    return value!=null && value.getId()!=null && value.getId().equals(IDENT404) ? null : value;
+	}
+	
+	private Identifier build404(String hostId, String uri) {
+	    Identifier obj = new Identifier();
+	    obj.setHostId(hostId);
+	    obj.setAssetName(uri);
+	    obj.setParentPath(null);
+	    obj.setId(null);
+	    return obj;
+	}
+	
+	private Identifier build404(String x) {
+        Identifier obj = new Identifier();
+        obj.setHostId(null);
+        obj.setAssetName(null);
+        obj.setParentPath(null);
+        obj.setId(x);
+        return obj;
+    }
 
 	protected Identifier loadByURIFromCache(Host host, String uri) {
-		return ic.getIdentifier(host, uri);
+		return check404(ic.getIdentifier(host, uri));
 	}
 
 	protected Identifier findByURI(Host host, String uri) throws DotHibernateException {
@@ -135,7 +159,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		Identifier identifier = ic.getIdentifier(uri, hostId);
 		if (identifier != null) {
-			return identifier;
+			return check404(identifier);
 		}
 
 		HibernateUtil dh = new HibernateUtil(Identifier.class);
@@ -147,9 +171,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		dh.setParam(assetName);
 		dh.setParam(hostId);
 		identifier = (Identifier) dh.load();
+		
+		if(identifier==null || !InodeUtils.isSet(identifier.getId())) {
+		    identifier = build404(hostId,uri);
+		}
 
 		ic.addIdentifierToCache(identifier);
-		return identifier;
+		return check404(identifier);
 	}
 	
 	protected List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException {
@@ -181,18 +209,18 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	protected Identifier loadFromCache(String identifier) {
-		return ic.getIdentifier(identifier);
+		return check404(ic.getIdentifier(identifier));
 	}
 
 	protected Identifier loadFromCache(Host host, String uri) {
-		return ic.getIdentifier(host, uri);
+		return check404(ic.getIdentifier(host, uri));
 	}
 
 	protected Identifier loadFromCache(Versionable versionable) {
 
 		String idStr= ic.getIdentifierFromInode(versionable);
 		if(idStr ==null) return null;
-		return ic.getIdentifier(idStr);
+		return check404(ic.getIdentifier(idStr));
 	}
 
 	/**
@@ -217,15 +245,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		else{
 			id= find(versionable.getVersionId());
-			if(id != null){
-				ic.addIdentifierToCache(id, versionable);
-			}
 		}
-	
-
+		
 		return id;
-		
-		
 	}
 	
 	protected Identifier createNewIdentifier(Versionable versionable, Folder folder) throws DotDataException {
@@ -291,10 +313,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		identifier.setHostId(host.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
 
-		if(uuid!=null)
+		if(uuid!=null) {
 			HibernateUtil.saveWithPrimaryKey(identifier, uuid);
-		else
+			ic.removeFromCacheByIdentifier(identifier.getId());
+			ic.removeFromCacheByURI(identifier.getURI(), identifier.getHostId());
+		}
+		else {
 			saveIdentifier(identifier);
+		}
 
 		versionable.setVersionId(identifier.getId());
 
@@ -360,12 +386,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
         if ( uuid != null ) {
             HibernateUtil.saveWithPrimaryKey( identifier, uuid );
+            ic.removeFromCacheByIdentifier(identifier.getId());
+            ic.removeFromCacheByURI(identifier.getURI(), identifier.getHostId());
         } else {
             saveIdentifier( identifier );
         }
 
         versionable.setVersionId( identifier.getId() );
-
+        
         return identifier;
     }
 
@@ -404,20 +432,27 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	protected Identifier find(String x) throws DotStateException, DotDataException {
 
 		Identifier id = ic.getIdentifier(x);
-		if (id != null && UtilMethods.isSet(id.getInode())) {
-			return id;
+		if (id != null && UtilMethods.isSet(id.getId())) {
+			return check404(id);
 		}
 
 		id = loadFromDb(x);
+		
+		if(id==null || !InodeUtils.isSet(id.getId())) {
+		    id = build404(x);
+		}
 
 		ic.addIdentifierToCache(id);
 
-		return id;
+		return check404(id);
 	}
 
 	protected Identifier saveIdentifier(Identifier identifier) throws DotDataException {
 		try {
 			HibernateUtil.saveOrUpdate(identifier);
+			
+			ic.removeFromCacheByIdentifier(identifier.getId());
+			ic.removeFromCacheByURI(identifier.getURI(), identifier.getHostId());
 		} catch (DotHibernateException e) {
 			Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
 			throw new DotDataException(e.toString());
@@ -487,6 +522,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			db.loadResult();
 
 			ic.removeFromCacheByIdentifier(ident.getId());
+			ic.removeFromCacheByURI(ident.getURI(), ident.getHostId());
 
 			//HibernateUtil.delete(ident);
 		} catch (Exception e) {
