@@ -89,8 +89,7 @@ public class CommentsAction extends DispatchAction {
 		try {
 			HibernateUtil.startTransaction();
 			if ((ae != null) && (ae.size() > 0)) {
-//				String referrer = commentsForm.getReferrer();
-				String referrer = UtilMethods.isSet(commentsOptions.get("referer"))?commentsOptions.get("referer"):"";
+				String referrer = UtilMethods.isSet(commentsOptions.get("referrer"))?commentsOptions.get("referrer"):"";
 				if(referrer != null){
 					referrer=referrer.replaceAll("#comments", "#comments");
 					if(referrer.indexOf("?") > -1){
@@ -352,7 +351,7 @@ public class CommentsAction extends DispatchAction {
 			ae.add(Globals.ERROR_KEY, new ActionMessage("message.comment.failure"));
 			saveMessages(request, ae);
 			saveMessages(request.getSession(), ae);
-			String referrer = UtilMethods.isSet(commentsOptions.get("referer"))?commentsOptions.get("referer"):"";
+			String referrer = UtilMethods.isSet(commentsOptions.get("referrer"))?commentsOptions.get("referrer"):"";
 
 			referrer = (referrer.indexOf("#comments") == -1 ? referrer + "#comments" : referrer);
 			ActionForward forward = new ActionForward(referrer);
