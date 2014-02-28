@@ -550,6 +550,16 @@
 
 #macro(comment $commentContentInode)
 	#set($_commentContentInode = $commentContentInode)
+	#set ($commentsOptions = {})
+	#set($dummy = $commentsOptions.put('contentInode', $!commentContentInode))
+	#set($dummy = $commentsOptions.put('commentAutoPublish', $!commentAutoPublish))
+	#set($dummy = $commentsOptions.put('commentStripHtml', $!commentStripHtml))
+	#set($dummy = $commentsOptions.put('commentTitle', $!commentTitle))
+	#set($dummy = $commentsOptions.put('referrer', $!commentReferer))
+	#set($dummy = $commentsOptions.put('emailTemplate', $!emailTemplate))
+	#set($dummy = $commentsOptions.put('commentsModeration', $!commentsModeration))
+	$session.setAttribute("commentsOptions", $commentsOptions)
+
 	#if(!$UtilMethods.isSet("$!maxDepth") || $maxDepth < 1)
 		#set($maxDepth = 1)
 	#end
@@ -1552,7 +1562,7 @@ Has 2 option variables id and value which can be set.
       #dotParse($submitContentSrc)
    #else
       $velutil.mergeTemplate('/static/content/content_form_macro.vtl')
-      
+
    #end
 #end
 
