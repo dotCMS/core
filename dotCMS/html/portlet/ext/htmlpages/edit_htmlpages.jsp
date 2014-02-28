@@ -241,11 +241,11 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 			</dd>
 				<%
 				 if(!fileAsContent && templateImgPreviewFile!=null && InodeUtils.isSet(templateImgPreviewFile.getInode())){%>
-					<dd><img src="/thumbnail?id=<%=templateImgPreviewFile.getIdentifier() %>&w=250&h=250" id="templateImage" border="0" style="border:1px solid #B6CBEB;"></dd>
+					<dd><img alt="" src="/thumbnail?id=<%=templateImgPreviewFile.getIdentifier() %>&w=250&h=250" id="templateImage" style="border:1px solid #B6CBEB;"></dd>
 				<%} else if(fileAsContent && templateImgPreviewContent!=null && InodeUtils.isSet(templateImgPreviewContent.getInode())) {%>
-					<dd><img src="/thumbnail?id=<%=templateImgPreviewContent.getIdentifier() %>&w=250&h=250" id="templateImage" border="0" style="border:1px solid #B6CBEB;"></dd>
+					<dd><img alt="" src="/thumbnail?id=<%=templateImgPreviewContent.getIdentifier() %>&w=250&h=250" id="templateImage" style="border:1px solid #B6CBEB;"></dd>
 				<%} if(templateImgPreviewContent==null || InodeUtils.isSet(templateImgPreviewContent.getInode())) {%>
-				<dd><img src="" id="templateImage" border="0" style="border:1px solid #B6CBEB;"></dd>
+				<dd><img alt="" src="" id="templateImage" border="0"></dd>
 				<%} else {} %>
 		</dl>
 	</div>
