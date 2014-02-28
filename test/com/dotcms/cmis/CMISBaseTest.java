@@ -2,6 +2,7 @@ package com.dotcms.cmis;
 
 import java.io.FileInputStream;
 import java.math.BigInteger;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ import com.dotcms.repackage.chemistry_opencmis_commons_impl_0_8_0.org.apache.che
 import com.dotcms.repackage.chemistry_opencmis_commons_impl_0_8_0.org.apache.chemistry.opencmis.commons.impl.dataobjects.PropertyStringImpl;
 import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.server.CallContext;
 import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.junit_4_8_1.org.junit.AfterClass;
 import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
 
@@ -27,13 +29,12 @@ import com.dotcms.enterprise.cmis.server.CMISManager;
 import com.dotcms.enterprise.cmis.server.CMISService;
 import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 
 public class CMISBaseTest extends TestBase {
 
@@ -80,30 +81,27 @@ public class CMISBaseTest extends TestBase {
         // TODO cleanup tasks if any
     }
 
-    protected static String createFile ( String fileName , String folderId ) throws Exception {
-        
-        String testFilesPath = ".." + java.io.File.separator +
-                "test" + java.io.File.separator +
-                "com" + java.io.File.separator +
-                "dotmarketing" + java.io.File.separator +
-                "portlets" + java.io.File.separator +
-                "contentlet" + java.io.File.separator +
-                "business" + java.io.File.separator +
-                "test_files" + java.io.File.separator;
-        
+    protected static String createFile ( URL resource, String fileName , String folderId ) throws Exception {
+
+        //Creates a temporal folder where to put the content
+        final String runId = UUIDGenerator.generateUuid();
+        final java.io.File tmpDir = new java.io.File( APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + runId );
+        tmpDir.mkdirs();
+
+        final java.io.File resourceFile = new java.io.File( tmpDir, fileName );
+        FileUtils.copyURLToFile( resource, resourceFile );
+
         //Reading the file
-        String testFilePath = FileUtil.getRealPath( testFilesPath + fileName );
-        java.io.File tempTestFile = new java.io.File( testFilePath );
-        if ( !tempTestFile.exists() ) {
-            String message = "File does not exist: '" + testFilePath + "'";
+        if ( !resourceFile.exists() ) {
+            String message = "File " + fileName + " does not exist.";
             throw new Exception( message );
         }
         
         ContentStreamImpl contentStream = new ContentStreamImpl();
         contentStream.setFileName(fileName + new java.util.Date().getTime());
-        contentStream.setLength(BigInteger.valueOf(testFilePath.length()));
+        contentStream.setLength(BigInteger.valueOf(resourceFile.length()));
         contentStream.setMimeType(APILocator.getFileAPI().getMimeType(fileName));
-        contentStream.setStream(new FileInputStream(tempTestFile));
+        contentStream.setStream(new FileInputStream(resourceFile));
                 
         PropertiesImpl result = new PropertiesImpl();
         result.addProperty(new PropertyIdImpl(PropertyIds.OBJECT_TYPE_ID, BaseTypeId.CMIS_DOCUMENT.value()));

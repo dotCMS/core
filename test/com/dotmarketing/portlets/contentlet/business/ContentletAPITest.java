@@ -818,7 +818,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet = contentletList.iterator().next();
 
             //Creating the test file
-            testFile = createFile( "test.txt" );
+            testFile = createFile( ContentletAPITest.class.getResource( "test_files/test.txt" ), "test.txt" );
 
             /*//Gettting the related files to this contentlet
             List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
@@ -880,7 +880,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet = contentletList.iterator().next();
 
             //Creating the test file
-            testFile = createFile( "test.gif" );
+            testFile = createFile( ContentletAPITest.class.getResource( "test_files/test.gif" ), "test.gif" );
 
             /*//Gettting the related files to this contentlet
             List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
