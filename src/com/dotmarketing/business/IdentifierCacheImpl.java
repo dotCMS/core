@@ -41,16 +41,20 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	
 	
 	protected void addIdentifierToCache(Identifier id) {
-
-		if (id == null || ! InodeUtils.isSet(id.getInode())) {
+		if (id == null) {
 			return;
 		}
-		// Obtain the key for the new entrance
-		String key = id.getHostId() + "-" + id.getURI();
+		
+		String uri = id.getURI();
+		if(UtilMethods.isSet(id.getHostId()) && UtilMethods.isSet(uri)) {
+        	// Obtain the key for the new entrance
+        	String key = id.getHostId() + "-" + uri;
+        	cache.put(getPrimaryGroup() + key, id, getPrimaryGroup());
+		}
 
-		// Add the new entry to the cache
-		cache.put(getPrimaryGroup() + key, id, getPrimaryGroup());
-		cache.put(getPrimaryGroup() + id.getInode(), id, getPrimaryGroup());
+		if(InodeUtils.isSet(id.getId())) {
+		    cache.put(getPrimaryGroup() + id.getId(), id, getPrimaryGroup());
+		}
 		
 	}
 	
@@ -118,9 +122,15 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	protected void removeFromCacheByIdentifier(Identifier id) {
 		if(id==null) return;
 		
-		cache.remove(getPrimaryGroup() + id.getId(),  getPrimaryGroup());
-		String key = id.getHostId() + "-" + id.getURI();
-		cache.remove(getPrimaryGroup() + key, getPrimaryGroup());
+		if(InodeUtils.isSet(id.getId())) {
+		    cache.remove(getPrimaryGroup() + id.getId(),  getPrimaryGroup());
+		}
+		
+		String uri = id.getURI();
+		if(UtilMethods.isSet(id.getHostId()) && UtilMethods.isSet(uri)) {
+    		String key = id.getHostId() + "-" + uri;
+    		cache.remove(getPrimaryGroup() + key, getPrimaryGroup());
+		}
 		
 		if(UtilMethods.isSet(id.getAssetType()) && id.getAssetType().equals("folder")) {
 		    try {
@@ -168,6 +178,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		// clear the cache
 		cache.flushGroup(getPrimaryGroup());
 		cache.flushGroup(getVersionInfoGroup());
+		cache.flushGroup(getVersionGroup());
 	}
 
     @Override
