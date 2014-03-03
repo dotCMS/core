@@ -6,6 +6,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Config;
@@ -25,10 +26,12 @@ abstract class OSGIBaseAJAX extends AjaxAction {
 		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
 		Object arglist[] = new Object[] { request, response };
 		try {
-			if (getUser() == null ) {
+		    if(getUser()==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("OSGI_MANAGER", getUser())){
 				response.sendError(401);
 				return;
 			}
+			
+			
 
 			meth = this.getClass().getMethod(cmd, partypes);
 
