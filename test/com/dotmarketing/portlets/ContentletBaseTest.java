@@ -90,7 +90,7 @@ public class ContentletBaseTest extends TestBase {
     protected static Collection<Template> templates;
     protected static Collection<Permission> permissions;
     protected static Collection<Identifier> identifiers;
-    protected static int FIELDS_SIZE = 13;
+    protected static int FIELDS_SIZE = 14;
 
     private static String wysiwygValue = "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. " +
             "Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem.</p>" +
@@ -326,8 +326,8 @@ public class ContentletBaseTest extends TestBase {
         field = new Field( "JUnit Test Image", Field.FieldType.IMAGE, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 11, false, false, false );
         FieldFactory.saveField( field );
 
-        /*field = new Field( "JUnit Test Binary", Field.FieldType.BINARY, Field.DataType.BINARY, jUnitTestStructure, false, false, false, 12, false, false, false );
-        FieldFactory.saveField( field );*/
+        field = new Field( "JUnit Test Binary", Field.FieldType.BINARY, Field.DataType.BINARY, jUnitTestStructure, false, false, false, 12, false, false, false );
+        FieldFactory.saveField( field );
 
         field = new Field( "JUnit Test Host Folder", Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 12, false, false, false );
         FieldFactory.saveField( field );
