@@ -60,17 +60,6 @@ $session.removeAttribute("commentsForm")
 	#set($commentUseAudioCaptcha = false)
 #end
 
-
-#set ($commentsOptions = {})
-#set($dummy = $commentsOptions.put('contentInode', $!superParentInode))
-#set($dummy = $commentsOptions.put('commentAutoPublish', $!commentAutoPublish))
-#set($dummy = $commentsOptions.put('commentStripHtml', $!commentStripHtml))
-#set($dummy = $commentsOptions.put('commentTitle', $!commentTitle))
-#set($dummy = $commentsOptions.put('commentReferer', $!commentReferer))
-#set($dummy = $commentsOptions.put('emailTemplate', $!emailTemplate))
-#set($dummy = $commentsOptions.put('commentsModeration', $!commentsModeration))
-$session.setAttribute("commentsOptions", $commentsOptions)
-
 <script language="javascript">
 
 
