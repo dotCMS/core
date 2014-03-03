@@ -555,9 +555,18 @@
 	#set($dummy = $commentsOptions.put('commentAutoPublish', $!commentAutoPublish))
 	#set($dummy = $commentsOptions.put('commentStripHtml', $!commentStripHtml))
 	#set($dummy = $commentsOptions.put('commentTitle', $!commentTitle))
-	#set($dummy = $commentsOptions.put('referrer', $!commentReferer))
 	#set($dummy = $commentsOptions.put('emailTemplate', $!emailTemplate))
 	#set($dummy = $commentsOptions.put('commentsModeration', $!commentsModeration))
+
+	#if(!$UtilMethods.isSet($commentReferer))
+	  	#if($URLMapContent)
+		    #set($commentReferer =  $contents.getUrlMapForContentlet($URLMapContent.identifier))
+	  	#else
+		    #set($commentReferer =  "${VTLSERVLET_URI}?$!{request.getQueryString()}")
+	  	#end
+	#end
+
+	#set($dummy = $commentsOptions.put('referrer', $!commentReferer))
 	$session.setAttribute("commentsOptions", $commentsOptions)
 
 	#if(!$UtilMethods.isSet("$!maxDepth") || $maxDepth < 1)
