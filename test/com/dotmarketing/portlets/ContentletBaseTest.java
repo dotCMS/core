@@ -1,15 +1,13 @@
 package com.dotmarketing.portlets;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.junit_4_8_1.org.junit.AfterClass;
 import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
 
@@ -57,9 +55,9 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 
 /**
  * Created by Jonathan Gamba.
@@ -588,52 +586,20 @@ public class ContentletBaseTest extends TestBase {
      * @throws Exception
      * @see File
      */
-    protected static File createFile ( String fileName ) throws Exception {
+    protected static File createFile ( URL resource, String fileName ) throws Exception {
 
-        String testFilesPath = ".." + java.io.File.separator +
-                "test" + java.io.File.separator +
-                "com" + java.io.File.separator +
-                "dotmarketing" + java.io.File.separator +
-                "portlets" + java.io.File.separator +
-                "contentlet" + java.io.File.separator +
-                "business" + java.io.File.separator +
-                "test_files" + java.io.File.separator;
+        //Creates a temporal folder where to put the content
+        final String runId = UUIDGenerator.generateUuid();
+        final java.io.File tmpDir = new java.io.File( APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + runId );
+        tmpDir.mkdirs();
 
-        String copyTestFilesPath = ".." + java.io.File.separator +
-                "test" + java.io.File.separator +
-                "com" + java.io.File.separator +
-                "dotmarketing" + java.io.File.separator +
-                "portlets" + java.io.File.separator +
-                "contentlet" + java.io.File.separator +
-                "business" + java.io.File.separator +
-                "test_files" + java.io.File.separator +
-                "copy" + java.io.File.separator;
+        final java.io.File resourceFile = new java.io.File( tmpDir, fileName );
+        FileUtils.copyURLToFile( resource, resourceFile );
 
         //Reading the file
-        String testFilePath = FileUtil.getRealPath( testFilesPath + fileName );
-        java.io.File tempTestFile = new java.io.File( testFilePath );
-        if ( !tempTestFile.exists() ) {
-            String message = "File does not exist: '" + testFilePath + "'";
+        if ( !resourceFile.exists() ) {
+            String message = "File " + fileName + " does not exist.";
             throw new Exception( message );
-        }
-
-        //Copying the file
-        String copyTestFilePath = FileUtil.getRealPath( copyTestFilesPath + fileName );
-        java.io.File copyTempTestFile = new java.io.File( copyTestFilePath );
-        if ( !copyTempTestFile.exists() ) {
-            if ( !copyTempTestFile.createNewFile() ) {
-                String message = "Cannot create copy of the test file: '" + copyTestFilePath + "'";
-                throw new Exception( message );
-            }
-        }
-
-        InputStream in = new FileInputStream( tempTestFile );
-        OutputStream out = new FileOutputStream( copyTestFilePath );
-
-        byte[] buf = new byte[1024];
-        int len;
-        while ( 0 < ( len = in.read( buf ) ) ) {
-            out.write( buf, 0, len );
         }
 
         //Creating a test file
@@ -649,19 +615,15 @@ public class ContentletBaseTest extends TestBase {
         testFile.setOwner( user.getUserId() );
         testFile.setPublishDate( new Date() );
         testFile.setShowOnMenu( true );
-        testFile.setSize( ( int ) tempTestFile.length() );
+        testFile.setSize( (int) resourceFile.length() );
         testFile.setSortOrder( 2 );
         testFile.setTitle( "JUnit Test File" );
         testFile.setType( "file_asset" );
 
         //Storing the file
-        File savedFile = fileAPI.saveFile( testFile, copyTempTestFile, testFolder, user, false );
+        File savedFile = fileAPI.saveFile( testFile, resourceFile, testFolder, user, false );
         //Adding permissions
         permissionAPI.copyPermissions( testFolder, savedFile );
-
-        if ( copyTempTestFile.exists() ) {
-            copyTempTestFile.delete();
-        }
 
         return savedFile;
     }
