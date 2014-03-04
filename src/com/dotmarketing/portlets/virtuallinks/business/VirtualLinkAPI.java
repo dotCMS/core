@@ -73,7 +73,7 @@ public interface VirtualLinkAPI {
 	public VirtualLink checkVirtualLinkForEditPermissions(VirtualLink link,User user) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Retrieves all virtual links associated to a host with the specified URI
+	 * Retrieves all virtual links with the specified URI
 	 * @param host
 	 * @return
 	 */

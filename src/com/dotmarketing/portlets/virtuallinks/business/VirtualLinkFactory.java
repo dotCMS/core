@@ -24,7 +24,7 @@ public interface VirtualLinkFactory {
 	public List<VirtualLink> getHostVirtualLinks(Host host);
 
 	/**
-	 * Retrieves all virtual links associated to a host with the specified URI
+	 * Retrieves all virtual links with the specified URI
 	 * @param host
 	 * @return
 	 */
