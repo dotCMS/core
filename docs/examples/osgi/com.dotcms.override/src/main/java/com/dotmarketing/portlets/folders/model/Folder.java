@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -64,11 +64,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
      * @return String
      */
     public String getInode() {
-        if(InodeUtils.isSet(inode))
-            return inode;
-        else if(UtilMethods.isSet(inode)&& inode.equalsIgnoreCase(FolderAPI.SYSTEM_FOLDER))// DOTCMS-3232
-            return FolderAPI.SYSTEM_FOLDER;
-        return "";
+        return inode;
     }
 
     /**

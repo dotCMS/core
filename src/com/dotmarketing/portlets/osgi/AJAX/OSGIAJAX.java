@@ -1,10 +1,5 @@
 package com.dotmarketing.portlets.osgi.AJAX;
 
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.OSGIUtil;
-import com.liferay.util.FileUtil;
-
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemFactory;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemIterator;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemStream;
@@ -12,6 +7,9 @@ import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.OSGIUtil;
+import com.liferay.util.FileUtil;
 import org.osgi.framework.BundleException;
 
 import javax.servlet.ServletException;
@@ -28,10 +26,31 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     public void undeploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
         String jar = request.getParameter( "jar" );
+        String bundleId = request.getParameter( "bundleId" );
+
+        //First uninstall the bundle
+        try {
+            try {
+                OSGIUtil.getInstance().getBundleContext().getBundle( new Long( bundleId ) ).uninstall();
+            } catch ( NumberFormatException e ) {
+                OSGIUtil.getInstance().getBundleContext().getBundle( bundleId ).uninstall();
+            }
+        } catch ( BundleException e ) {
+            Logger.error( OSGIAJAX.class, e.getMessage(), e );
+            throw new ServletException( e.getMessage() + " Unable to stop bundle", e );
+        }
+
+        //Then move the bundle from the load folder to the undeployed folder
         File from = new File( FileUtil.getRealPath( "/WEB-INF/felix/load/" + jar ) );
         File to = new File( FileUtil.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
-        from.renameTo( to );
-        writeSuccess( response, "OSGI Bundle Undeployed" );
+
+        Boolean success = FileUtil.move( from, to );
+        if ( success ) {
+            writeSuccess( response, "OSGI Bundle Undeployed" );
+        } else {
+            Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle" );
+            writeError( response, "Error undeploying OSGI Bundle" );
+        }
     }
 
     public void deploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -39,8 +58,14 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         String jar = request.getParameter( "jar" );
         File from = new File( FileUtil.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
         File to = new File( FileUtil.getRealPath( "/WEB-INF/felix/load/" + jar ) );
-        from.renameTo( to );
-        writeSuccess( response, "OSGI Bundle Loaded" );
+
+        Boolean success = from.renameTo( to );
+        if ( success ) {
+            writeSuccess( response, "OSGI Bundle Loaded" );
+        } else {
+            Logger.error( OSGIAJAX.class, "Error Loading OSGI Bundle " + jar );
+            writeError( response, "Error Loading OSGI Bundle" );
+        }
     }
 
     public void stop ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {

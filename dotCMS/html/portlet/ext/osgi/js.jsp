@@ -80,9 +80,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		mainAdmin.show(href);
 	},
 
-	undeploy : function (jarName){
+	undeploy : function (jarName, bundleId){
 		var xhrArgs = {
-			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=undeploy&jar=" + jarName,
+			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=undeploy&jar=" + jarName + "&bundleId=" + bundleId,
 			handle : function(dataOrError, ioArgs) {
 				if (dojo.isString(dataOrError)) {
 					if (dataOrError.indexOf("FAILURE") == 0) {
