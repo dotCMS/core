@@ -43,6 +43,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     private String parent;
     private String type;
     private String permissionId;
+    private String target;
     
     private String hostId;
     private String folderId;
@@ -250,6 +251,18 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getTarget() {
+    	if(type.equals("link"))
+            return target;
+    	else
+    		return "_self";
+    }
+
+    public void setTarget(String target) {
+    	
+        this.target = target;
     }
 
     public String getPermissionId() {
