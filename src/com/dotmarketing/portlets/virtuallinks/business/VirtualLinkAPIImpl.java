@@ -19,13 +19,13 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 public class VirtualLinkAPIImpl implements VirtualLinkAPI {
-	
+
 	private com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactory virtualLinkFactory;
-	
+
 	public VirtualLinkAPIImpl() {
 		virtualLinkFactory = FactoryLocator.getVirtualLinkFactory();
 	}
-	
+
 	public List<VirtualLink> getVirtualLinks(String title, String url, OrderBy orderby) {
 		return virtualLinkFactory.getVirtualLinks(title, url, orderby);
 	}
@@ -45,7 +45,11 @@ public class VirtualLinkAPIImpl implements VirtualLinkAPI {
 	public List<VirtualLink> getHostVirtualLinks(Host host) {
 		return virtualLinkFactory.getHostVirtualLinks(host);
 	}
-	
+
+	public List<VirtualLink> getVirtualLinksByURI(String uri) {
+		return virtualLinkFactory.getVirtualLinksByURI(uri);
+	}
+
 	public List<VirtualLink> getVirtualLinks(String title, List<Host> hosts, OrderBy orderby) {
 		return virtualLinkFactory.getVirtualLinks(title, hosts, orderby);
 	}
@@ -54,51 +58,52 @@ public class VirtualLinkAPIImpl implements VirtualLinkAPI {
 		HostAPI hostAPI=APILocator.getHostAPI();
 		List <Host>  hosts = hostAPI.getHostsWithPermission(PERMISSION_CREATE_VIRTUAL_LINKS, false, user, false);
 		List <VirtualLink> vlinks=new ArrayList<VirtualLink>();
-		
+
 		try {
 			if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
-				
+
 				vlinks=list;
 			}
 			else for(VirtualLink vlink : list)
 			{
 				for(Host host: hosts){
-					
+
 					if(vlink.getUrl().startsWith(host.getHostname())){
 						vlinks.add(vlink);
 					}
-					
+
 				}
 			}
 		} catch (DotDataException e) {
 			Logger.error(VirtualLinkFactory.class,e.getMessage(),e);
-		}	
-		
+		}
+
 		return vlinks;
 	}
-	
-	
+
+
 	public VirtualLink checkVirtualLinkForEditPermissions(VirtualLink link,User user) throws DotDataException, DotSecurityException {
 		HostAPI hostAPI=APILocator.getHostAPI();
 		List <Host>  hosts = hostAPI.getHostsWithPermission(PERMISSION_CREATE_VIRTUAL_LINKS, false, user, false);
-		
+
 		try {
 			if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
-				
+
 				return link;
 			}
 				for(Host host: hosts){
-					
+
 					if(link.getUrl().startsWith(host.getHostname())){
 						return link;
 					}
-					
+
 				}
-			
+
 		} catch (DotDataException e) {
 			Logger.error(VirtualLinkFactory.class,e.getMessage(),e);
-		}	
-		
+		}
+
 		return null;
 	}
+
 }
