@@ -128,7 +128,7 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 			<td>
 				<%if(b.getState() != Bundle.ACTIVE){ %><a href="javascript:bundles.start('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a><% } %>
 				<%if(b.getState() == Bundle.ACTIVE){ %><a href="javascript:bundles.stop('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a><% } %>
-				<%if(b.getLocation().contains(separator) && b.getLocation().contains(separator + "load" + separator)){ %>&nbsp;|&nbsp;<a href="javascript:bundles.undeploy('<%=b.getLocation().substring(b.getLocation().lastIndexOf(separator) + 1)%>')"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a><%} %>
+				<%if(b.getLocation().contains(separator) && b.getLocation().contains(separator + "load" + separator)){ %>&nbsp;|&nbsp;<a href="javascript:bundles.undeploy('<%=b.getLocation().substring(b.getLocation().lastIndexOf(separator) + 1)%>', '<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a><%} %>
 			</td>
 		</tr>
         <script type="text/javascript">
