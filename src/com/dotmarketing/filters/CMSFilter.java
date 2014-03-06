@@ -240,9 +240,7 @@ public class CMSFilter implements Filter {
 
         /* if edit mode */
         if (PREVIEW_MODE || EDIT_MODE) {
-			try {				
-				if (uri.endsWith("/"))
-					uri = uri.substring(0, uri.length() - 1);
+			try {
 				pointer = WorkingCache.getPathFromCache(uri, host);
 
 				if(!UtilMethods.isSet(pointer)){//DOTCMS-7062
@@ -370,7 +368,7 @@ public class CMSFilter implements Filter {
                 	if (!pointer.contains("." + ext + "?")) {
                 		boolean isDotPage = true;
                 		if(!pointer.contains("." + ext) && !pointer.endsWith("/") && pointer.contains("/")){
-                			
+
                 			if(pointer.substring(pointer.lastIndexOf("/")).contains(".")){
 	                			uri = pointer;
 	                			try {
@@ -396,7 +394,7 @@ public class CMSFilter implements Filter {
                 				}
                 				if(!pointer.startsWith("/")){
                 					pointer = "/" + pointer;
-                				}     
+                				}
                 				String endSlash = pointer.substring(pointer.lastIndexOf("/"));
                 				if (!pointer.endsWith("." + ext) && !endSlash.contains("#")) {
                 					if (!pointer.endsWith("/"))
@@ -570,9 +568,9 @@ public class CMSFilter implements Filter {
     private static void buildExcludeList() {
         synchronized(mutex) {
          if(excludeList!=null) return;
-         
+
          Set<String> set=new HashSet<String>();
-         
+
     	 // allow servlets to be called without a 404
          set.add("^/servlet/");
          set.add("^/servlets/");
@@ -659,7 +657,7 @@ public class CMSFilter implements Filter {
 			}
     	}
     }
-    
+
     public static boolean excludeURI(String uri) {
 
         if (uri.trim().equals("/c")
@@ -673,19 +671,19 @@ public class CMSFilter implements Filter {
         if(excludeList==null) buildExcludeList();
 
         if(excludeList.contains(uri)) return true;
-        
+
         for ( String exclusion : excludeList ) {
             if ( RegEX.contains( uri, exclusion ) ) {
                 return true;
             }
         }
-        
+
         // finally, if we have the file, serve it
         if(!"/".equals(uri)){
 			File f = new File(FileUtil.getRealPath(uri));
 			if( f.exists()){
 				return true;
-    			
+
     		}
         }
 
