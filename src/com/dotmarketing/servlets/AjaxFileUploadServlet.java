@@ -3,8 +3,6 @@ package com.dotmarketing.servlets;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -22,12 +20,9 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 import com.missiondata.fileupload.MonitoredDiskFileItemFactory;
 
 public class AjaxFileUploadServlet extends HttpServlet {
@@ -201,12 +196,9 @@ public class AjaxFileUploadServlet extends HttpServlet {
 		}
 	}
 
-	private static boolean isValidPath(String path) throws IOException {
-		Path child = Paths.get(path).toAbsolutePath();
+	private static boolean isValidPath(String child) throws IOException {
 		String tempBinaryPath = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()).getCanonicalPath();
-		Path parent = Paths.get(tempBinaryPath).toAbsolutePath();
-
-		return child.startsWith(parent);
+		return child.startsWith(tempBinaryPath);
 	}
 
 }
