@@ -10,6 +10,8 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 
 public interface IdentifierAPI {
+    
+    public static final String IDENT404 = "$$__404__CACHE_MISS__$$";
 
 	/**
 	 * Will look for all identifiers matting a URI pattern  
@@ -53,8 +55,7 @@ public interface IdentifierAPI {
 
 
 	/**
-	 * Will take a String from an identifiers id and return its identifier from cache or db. If cache miss
-	 * this will always hit the db
+	 * Will take a String from an identifiers id and return its identifier from cache or db.
 	 * @param id
 	 * @return Identifier
 	 * @throws DotDataException
