@@ -41,7 +41,7 @@ import com.liferay.portal.model.User;
 public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	IdentifierCache ic = CacheLocator.getIdentifierCache();
-	public static final String IDENT404 = "$$__404__CACHE_MISS__$$";
+	
 
 	@Override
 	protected List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean pullDeleted,boolean include,Host host)throws DotDataException {
@@ -126,7 +126,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 	
 	private Identifier check404(Identifier value) {
-	    return value!=null && value.getId()!=null && value.getId().equals(IDENT404) ? null : value;
+	    return value!=null && value.getAssetType()!=null && value.getAssetType().equals(IdentifierAPI.IDENT404) ? new Identifier() : value;
 	}
 	
 	private Identifier build404(String hostId, String uri) {
@@ -135,6 +135,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	    obj.setAssetName(uri);
 	    obj.setParentPath(null);
 	    obj.setId(null);
+	    obj.setAssetType(IdentifierAPI.IDENT404);
 	    return obj;
 	}
 	
@@ -144,6 +145,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         obj.setAssetName(null);
         obj.setParentPath(null);
         obj.setId(x);
+        obj.setAssetType(IdentifierAPI.IDENT404);
         return obj;
     }
 
@@ -157,7 +159,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	protected Identifier findByURI(String hostId, String uri) throws DotHibernateException {
 
-		Identifier identifier = ic.getIdentifier(uri, hostId);
+		Identifier identifier = ic.getIdentifier(hostId, uri);
 		if (identifier != null) {
 			return check404(identifier);
 		}
@@ -220,7 +222,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		String idStr= ic.getIdentifierFromInode(versionable);
 		if(idStr ==null) return null;
-		return check404(ic.getIdentifier(idStr));
+		return check404(ic.getIdentifier(idStr)); 
 	}
 
 	/**
@@ -316,7 +318,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		if(uuid!=null) {
 			HibernateUtil.saveWithPrimaryKey(identifier, uuid);
 			ic.removeFromCacheByIdentifier(identifier.getId());
-			ic.removeFromCacheByURI(identifier.getURI(), identifier.getHostId());
+			ic.removeFromCacheByURI(identifier.getHostId(), identifier.getURI());
 		}
 		else {
 			saveIdentifier(identifier);
@@ -387,7 +389,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         if ( uuid != null ) {
             HibernateUtil.saveWithPrimaryKey( identifier, uuid );
             ic.removeFromCacheByIdentifier(identifier.getId());
-            ic.removeFromCacheByURI(identifier.getURI(), identifier.getHostId());
+            ic.removeFromCacheByURI(identifier.getHostId(), identifier.getURI() );
         } else {
             saveIdentifier( identifier );
         }
@@ -452,7 +454,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			HibernateUtil.saveOrUpdate(identifier);
 			
 			ic.removeFromCacheByIdentifier(identifier.getId());
-			ic.removeFromCacheByURI(identifier.getURI(), identifier.getHostId());
+			ic.removeFromCacheByURI(identifier.getHostId(), identifier.getURI());
 		} catch (DotHibernateException e) {
 			Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
 			throw new DotDataException(e.toString());
@@ -522,7 +524,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			db.loadResult();
 
 			ic.removeFromCacheByIdentifier(ident.getId());
-			ic.removeFromCacheByURI(ident.getURI(), ident.getHostId());
+			ic.removeFromCacheByURI(ident.getHostId(), ident.getURI());
 
 			//HibernateUtil.delete(ident);
 		} catch (Exception e) {
