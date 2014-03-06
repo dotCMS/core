@@ -275,9 +275,9 @@ dojo.require("dojox.layout.ContentPane");
 		var k = 0;
 		$(document.getElementById(formId)).getElementsBySelector('textarea').each(
 				function (textareaObj) {
-					var aceEditor;
-					if(textareaObj.id == aceTextId) {
-						aceEditor = textEditor;
+					var aceEditor;					
+					if(textareaObj.id == aceTextId[textareaObj.id]) {
+						aceEditor = textEditor[aceTextId[textareaObj.id]];
 					} else{
 						aceEditor = aceEditors[textareaObj.id];
 					}
