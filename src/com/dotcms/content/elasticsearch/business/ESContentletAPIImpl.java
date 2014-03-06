@@ -2372,11 +2372,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	contentlet.setBinary(velocityVarNm, newFile);
 			                }
 			            } catch (FileNotFoundException e) {
-			                e.printStackTrace();
-			                throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage());
+			                throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
 			            } catch (IOException e) {
-			                e.printStackTrace();
-			                throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage());
+			                throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
 			            }
 			        }
 			    }

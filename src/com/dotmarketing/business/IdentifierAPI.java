@@ -10,6 +10,8 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 
 public interface IdentifierAPI {
+    
+    public static final String IDENT404 = "$$__404__CACHE_MISS__$$";
 
 	/**
 	 * Will look for all identifiers matting a URI pattern  
