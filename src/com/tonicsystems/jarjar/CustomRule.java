@@ -38,15 +38,15 @@ public class CustomRule extends Rule {
         public int compare ( CustomRule rule1, CustomRule rule2 ) {
 
             if ( rule1.getParent() == null ) {
-                return 1;
+                return -1;
             }
 
-            if ( rule1.getParent().equals( rule2.getParent() ) ) {
-                return 0;
-            } else if ( !rule1.getParent().equals( rule2.getParent() ) && rule1.getParent().equals( parent ) ) {
+            if ( rule1.getParent().equals( this.getParent() ) ) {
                 return -1;
-            } else {
+            } else if ( !rule1.getParent().equals( this.getParent() ) ) {
                 return 1;
+            } else {
+                return 0;
             }
         }
     }
