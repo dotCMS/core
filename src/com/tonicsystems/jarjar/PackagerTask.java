@@ -639,9 +639,10 @@ public class PackagerTask extends JarJarTask {
      */
     private void generate ( File outFile, Collection<CustomRule> rules, Collection<File> jars, boolean renameServices ) {
 
+        String originalFileName = outFile.getName().replace( getPrefix(), "" );
         //First lets sort the rules collection, first the rules created from this jar
         List<CustomRule> rulesList = new ArrayList<CustomRule>( rules );
-        Collections.sort( rulesList, new CustomRule().new RuleSortByParent( outFile.getName() ) );
+        Collections.sort( rulesList, new CustomRule().new RuleSortByParent( originalFileName ) );
 
         //Destiny file
         setDestFile( outFile );
