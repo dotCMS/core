@@ -203,6 +203,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this.search_fields_table.innerHTML = "";
 		var htmlstr = "<dl>";
 		for(var i = 0; i < data.length; i++) {
+			var type = data[i]["fieldFieldType"];
+	        	if(type=='category' || type=='hidden'){
+	                 continue;
+	        	}
 			htmlstr += "<dt>" + this._fieldName(data[i]) + "</dt>";
 			htmlstr += "<dd>" + this._renderSearchField(data[i]) + "</dd>";
 		}
