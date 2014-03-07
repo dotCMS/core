@@ -13,5 +13,5 @@ configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL())
 ant.importBuild 'build.xml'
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.8'
+    gradleVersion = '1.11'
 }
