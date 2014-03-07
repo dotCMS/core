@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.io.Serializable;
 import java.util.List;
 
 public abstract class RoleCache implements Cachable{
@@ -45,8 +46,9 @@ public abstract class RoleCache implements Cachable{
 
 	abstract protected void removeLayoutsOnRole(String roleId);
 
-	protected static class UserRoleCacheHelper{
-		private String roleId;
+	protected static class UserRoleCacheHelper implements Serializable {
+        private static final long serialVersionUID = 6600085101661951648L;
+        private String roleId;
 		private boolean inherited;
 
 		protected UserRoleCacheHelper(String roleId, boolean inherited){
