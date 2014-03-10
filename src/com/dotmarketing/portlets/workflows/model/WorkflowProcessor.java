@@ -26,7 +26,7 @@ public class WorkflowProcessor {
 	List<WorkflowHistory> history;
 	String workflowMessage;
 	List<WorkflowActionClass> actionClasses;
-	
+
 	public List<WorkflowActionClass> getActionClasses() {
 		return actionClasses;
 	}
@@ -88,32 +88,32 @@ public class WorkflowProcessor {
 			this.user = firingUser;
 			scheme = getWorkflowAPI().findSchemeForStruct(contentlet.getStructure());
 			task = getWorkflowAPI().findTaskByContentlet(contentlet);
-			
+
 			String workflowActionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
 			if (!UtilMethods.isSet(workflowActionId) && task.isNew()){
 				workflowActionId=scheme.getEntryActionId();
-			}	
-			
-			
-			
-			
+			}
+
+
+
+
 			if (!UtilMethods.isSet(workflowActionId)) {
 				if (scheme.isMandatory() ) {
-					throw new DotWorkflowException("A workflow action is manditory for content of type: " + contentlet.getStructure().getName());
+					throw new DotWorkflowException("A workflow action is mandatory for content of type: " + contentlet.getStructure().getName());
 				}
-				
+
 				return;
 			}
 
-			
+
 			try{
 				action = getWorkflowAPI().findAction(workflowActionId, user);
 			}
 			catch(Exception ex){
 				throw new DotWorkflowException("invalid workflow action specified:" + contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY));
 			}
-			
-			
+
+
 			if(action.requiresCheckout()){
 				try{
 					APILocator.getContentletAPI().canLock(contentlet, user);
@@ -128,19 +128,19 @@ public class WorkflowProcessor {
 			if(!UtilMethods.isSet(nextAssign)){
 				nextAssign = getRoleAPI().loadRoleById(action.getNextAssign());
 			}
-			
-			
+
+
 			// if the action's next assign is the "System User", we assign to the user executing the workflow
 			if((!UtilMethods.isSet(nextAssign)) || getRoleAPI().loadCMSAnonymousRole().getId().equals(nextAssign.getId())){
 				nextAssign = getRoleAPI().loadRoleByKey(user.getUserId());
 			}
-			
-			
-			
+
+
+
 			if(UtilMethods.isSet(Contentlet.WORKFLOW_COMMENTS_KEY)){
 				workflowMessage = contentlet.getStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY);
 			}
-			
+
 			nextStep = getWorkflowAPI().findStep(action.getNextStep());
 			step = getWorkflowAPI().findStep(action.getStepId());
 			actionClasses = getWorkflowAPI().findActionClasses(action);
@@ -148,7 +148,7 @@ public class WorkflowProcessor {
 			if(task != null && UtilMethods.isSet(task.getId())){
 				history = getWorkflowAPI().findWorkflowHistory(task);
 			}
-				
+
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage());
 		}
