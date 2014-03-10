@@ -10,6 +10,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 public class WorkflowProcessor {
 
@@ -99,7 +100,7 @@ public class WorkflowProcessor {
 
 			if (!UtilMethods.isSet(workflowActionId)) {
 				if (scheme.isMandatory() ) {
-					throw new DotWorkflowException("A workflow action is mandatory for content of type: " + contentlet.getStructure().getName());
+					throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.mandatory.action.type") + contentlet.getStructure().getName());
 				}
 
 				return;
@@ -110,7 +111,7 @@ public class WorkflowProcessor {
 				action = getWorkflowAPI().findAction(workflowActionId, user);
 			}
 			catch(Exception ex){
-				throw new DotWorkflowException("invalid workflow action specified:" + contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY));
+				throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.invalid.action") + contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY));
 			}
 
 
@@ -119,7 +120,7 @@ public class WorkflowProcessor {
 					APILocator.getContentletAPI().canLock(contentlet, user);
 				}
 				catch(Exception ex){
-					throw new DotWorkflowException("This workflow action requires a lock on the content before executing for content of type: " + contentlet.getStructure().getName());
+					throw new DotWorkflowException(LanguageUtil.get(firingUser, "message.workflow.error.content.requires.lock") + contentlet.getStructure().getName());
 				}
 			}
 			if (UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY))) {
