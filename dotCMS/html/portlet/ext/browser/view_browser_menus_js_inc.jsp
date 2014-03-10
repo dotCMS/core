@@ -180,7 +180,8 @@
 	}
 
 	function showFolderPopUp(folder, cmsAdminUser, origReferer, e) {
-
+		if(actionLoading) return;
+		
 		var referer = encodeURIComponent(origReferer);
 
 		var objId = folder.inode;
