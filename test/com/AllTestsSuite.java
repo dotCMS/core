@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
 import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
 import com.dotmarketing.portlets.templates.business.TemplateAPITest;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest;
+import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.webdav.WebDavTest;
 
 /**
@@ -67,7 +68,8 @@ import com.dotmarketing.webdav.WebDavTest;
     NotificationAPITest.class,
     SassCompilerTest.class,
     LessCompilerTest.class,
-    IdentifierAPITest.class
+    IdentifierAPITest.class,
+    ImportUtilTest.class
 })
 public class AllTestsSuite {
 
