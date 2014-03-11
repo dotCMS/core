@@ -254,7 +254,6 @@
                 display: ''
             });
             dojo.style('addHostDialog', {width: '800px'});
-            dijit.byId('addHostDialog').layout();
             document.getElementById('copyTagStorage').value=thumbnails[0].tagStorage;
 		},
         goToStep1: function(){
@@ -265,7 +264,6 @@
                 display: 'none'
             });
             dojo.style('addHostDialog', {width: '450px'});
-            dijit.byId('addHostDialog').layout();
         },
         copyAllChanged: function(){
             if (dijit.byId('copyAll').attr('value')) {
