@@ -1,85 +1,76 @@
 package com.dotmarketing.sitesearch.ajax;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.net.URL;
+import java.util.Date;
 import java.util.Map;
 
-import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
+import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.junit_4_8_1.org.junit.Assert;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Before;
 import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /**
- * Test if the edit job in the sitesearch duplicate jobs
+ * Test if the edit job in the sitesearch generates duplicate jobs.
+ * Reference https://github.com/dotCMS/dotCMS/issues/4926
  * @author Oswaldo Gallango
  * @since 3/11/14
  */
 public class SiteSearchAjaxActionTest {
 
+	protected String baseURL=null;
+
+	@Before
+	public void prepare() throws Exception {
+		HttpServletRequest req=ServletTestRunner.localRequest.get();
+		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob/u/admin@dotcms.com/p/admin";
+	}
+
 	@Test
 	public void scheduleJob() throws Exception {
 
-		int initialAmountOfJobs = APILocator.getSiteSearchAPI().getTasks().size();
 		User user=APILocator.getUserAPI().getSystemUser();
-
 		Host host=APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
-		List<Host> hostList = new ArrayList<Host>();
-		hostList.add(host);
-		List<String> excludePatterns = new ArrayList<String>();
-		excludePatterns.add("*.vtl");
-		excludePatterns.add("*.css");
+		int initialAmountOfJobs = APILocator.getSiteSearchAPI().getTasks().size();
+		String taskName = "SiteSearch Test "+UtilMethods.dateToHTMLDate(new Date(),"MM-dd-yyyy-HHmmss");
 
-		String taskName = "SiteSearch Test";
-		Map<String,Object> map= new HashMap<String,Object>();
-		map.put("indexhost",host.getIdentifier());
-		map.put("RUN_NOW",false);
-		map.put("QUARTZ_JOB_NAME", taskName);
-		map.put("indexAlias", "create-new");
-		map.put("langToIndex", APILocator.getLanguageAPI().getDefaultLanguage().getId());
-		map.put("includeExclude", "exclude");
-		map.put("paths", "*.vtl, *.css,*.js");
-		map.put("CRON_EXPRESSION", "0 0/60 * * * ?");
-				
-		SiteSearchConfig config = new SiteSearchConfig();
-		for(String key : map.keySet()){
-			if(((String[]) map.get(key)).length ==1 && !key.equals("langToIndex")){
-				config.put(key,((String[]) map.get(key))[0]);
-			}
-			else{
-				config.put(key,map.get(key));
-			}
-		}
-
-		APILocator.getSiteSearchAPI().scheduleTask(config);
+		URL scheduleJobUrl = new URL(baseURL+"?indexhost="+UtilMethods.encodeURIComponent(host.getIdentifier())+"&RUN_NOW=false&QUARTZ_JOB_NAME="+UtilMethods.encodeURIComponent(taskName)+"&indexAlias=create-new&langToIndex="+APILocator.getLanguageAPI().getDefaultLanguage().getId()+"&includeExclude=exclude&paths="+UtilMethods.encodeURIComponent("*.vtl,*.css,*.js")+"&CRON_EXPRESSION="+UtilMethods.encodeURIComponent("0 0/60 * * * ?"));
+		IOUtils.toString(scheduleJobUrl.openStream(),"UTF-8");
 		int currentAmountOfJobs = APILocator.getSiteSearchAPI().getTasks().size();
+		/**
+		 * Validate if the job was created
+		 */
 		Assert.assertTrue(currentAmountOfJobs > initialAmountOfJobs);
 
-		Map<String, Object> props = APILocator.getSiteSearchAPI().getTask(taskName).getProperties();
-		config = new SiteSearchConfig();
-		for(String key : props.keySet()){
-			if(((String[]) props.get(key)).length ==1 && !key.equals("langToIndex")){
-				config.put(key,((String[]) props.get(key))[0]);
-			}
-			else{
-				config.put(key,props.get(key));
-			}
-		}
-
-		String newCronExpression = "0 0/30 * * * ?";
-		config.setCronExpression(newCronExpression);
-		APILocator.getSiteSearchAPI().scheduleTask(config);
+		/*
+		 * Editing exiting sitesearch job	
+		 */
+		String newCronExpression="0 0/30 * * * ?";
+		String newPaths="*.vtl,*.css,*.js,*.vtl";
+		scheduleJobUrl = new URL(baseURL+"?indexhost="+UtilMethods.encodeURIComponent(host.getIdentifier())+"&RUN_NOW=false&QUARTZ_JOB_NAME="+UtilMethods.encodeURIComponent(taskName)+"&indexAlias=create-new&langToIndex="+APILocator.getLanguageAPI().getDefaultLanguage().getId()+"&includeExclude=exclude&paths="+UtilMethods.encodeURIComponent(newPaths)+"&CRON_EXPRESSION="+UtilMethods.encodeURIComponent(newCronExpression));
+		IOUtils.toString(scheduleJobUrl.openStream(),"UTF-8");
 
 		int newAmountOfJobs = APILocator.getSiteSearchAPI().getTasks().size();
-		props = APILocator.getSiteSearchAPI().getTask(taskName).getProperties();
 
+		/*
+		 * Validate if the job was edited 
+		 */
 		Assert.assertTrue(currentAmountOfJobs == newAmountOfJobs);
+		Map<String, Object> props = APILocator.getSiteSearchAPI().getTask(taskName).getProperties();
 		Assert.assertTrue(newCronExpression.equals(UtilMethods.webifyString((String) props.get("CRON_EXPRESSION"))));
+
+		/*
+		 * Removing the sitesearch test job and validate the removal
+		 */
 		APILocator.getSiteSearchAPI().deleteTask(taskName);
-		Assert.assertTrue(currentAmountOfJobs > newAmountOfJobs);
+		newAmountOfJobs = APILocator.getSiteSearchAPI().getTasks().size();
+		Assert.assertTrue(initialAmountOfJobs == newAmountOfJobs);
 	}
 
 }
