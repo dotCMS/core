@@ -23,14 +23,18 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHit;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHits;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHit;
+import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHits;
+import com.dotcms.repackage.tika_app_1_3.com.google.gson.Gson;
+import com.dotcms.repackage.tika_app_1_3.com.google.gson.GsonBuilder;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -115,13 +119,9 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.dotcms.repackage.tika_app_1_3.com.google.gson.Gson;
-import com.dotcms.repackage.tika_app_1_3.com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
  * @author Jason Tesser
@@ -3848,6 +3848,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	                rels.put(crr.getRelationship(), crr.getRecords());
 	            }
             }
+            
+            newContentlet.getMap().put("_dont_validate_me",contentletToCopy.getMap().get("_dont_validate_me"));
+            newContentlet.getMap().put("__disable_workflow__",contentletToCopy.getMap().get("__disable_workflow__"));
 
             newContentlet = checkin(newContentlet, rels, parentCats, perAPI.getPermissions(contentlet), user, respectFrontendRoles);
             if(!UtilMethods.isSet(newIdentifier))

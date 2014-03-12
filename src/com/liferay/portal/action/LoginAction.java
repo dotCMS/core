@@ -23,25 +23,21 @@
 package com.liferay.portal.action;
 
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
+import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import com.dotcms.repackage.struts.org.apache.struts.action.Action;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
-
-import org.springframework.beans.BeanUtils;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
@@ -51,7 +47,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
@@ -66,7 +61,6 @@ import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.ejb.UserManagerUtil;
-import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -75,11 +69,8 @@ import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.util.Encryptor;
-import com.liferay.util.GetterUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
-import com.liferay.util.ServerDetector;
 import com.liferay.util.Validator;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.SessionMessages;
@@ -370,10 +361,10 @@ public class LoginAction extends Action {
 			emailAddress = user.getEmailAddress();
 		}
 		
-		 
+		Locale locale = (Locale)req.getSession().getAttribute(Globals.LOCALE_KEY);
 
 		UserManagerUtil.sendPassword(
-			PortalUtil.getCompanyId(req), emailAddress);
+			PortalUtil.getCompanyId(req), emailAddress, locale);
 
 		SecurityLogger.logInfo(this.getClass(),"Email address " + emailAddress + " has request to reset his password from IP: " + req.getRemoteAddr());
 
