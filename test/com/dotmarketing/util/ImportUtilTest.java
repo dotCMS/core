@@ -7,6 +7,7 @@ import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
 import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -36,9 +37,6 @@ public class ImportUtilTest extends TestBase {
     private static Host defaultHost;
     private static Language defaultLanguage;
 
-    private final static String languageCodeHeader = "languageCode";
-    private final static String countryCodeHeader = "countryCode";
-
     @BeforeClass
     public static void prepare () throws DotDataException, DotSecurityException {
         user = APILocator.getUserAPI().getSystemUser();
@@ -46,8 +44,16 @@ public class ImportUtilTest extends TestBase {
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
     }
 
+    /**
+     * Testing the {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, com.liferay.portal.model.User, long, String[], com.dotcms.repackage.javacsv.com.csvreader.CsvReader, int, int, java.io.Reader)} method
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws InterruptedException
+     */
     @Test
-    public void importFile () throws DotDataException, DotSecurityException, IOException {
+    public void importFile () throws DotDataException, DotSecurityException, IOException, InterruptedException {
 
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
@@ -135,8 +141,19 @@ public class ImportUtilTest extends TestBase {
         assertNotNull( savedData );
         assertEquals( savedData.size(), 4 );
 
-        //---------------USING KEY FIELDS-----------------------------------------------
+        //---------------USING KEY FIELDS-----------------------------------------
         //------------------------------------------------------------------------
+
+        //Making sure the contentlets are in the indexes
+        List<ContentletSearch> contentletSearchResults;
+        int x = 0;
+        do {
+            Thread.sleep( 200 );
+            //Verify if it was added to the index
+            contentletSearchResults = contentletAPI.searchIndex( "+structureName:" + structure1.getVelocityVarName() + " +working:true +deleted:false +" + structure1.getVelocityVarName() + ".title:Test1 +languageId:1", 0, -1, null, user, true );
+            x++;
+        } while ( (contentletSearchResults == null || contentletSearchResults.isEmpty()) && x < 100 );
+
         //Create the csv file to import
         reader = createTempFile( "Title, Host" + "\r\n" +
                 "Test1, " + defaultHost.getIdentifier() + "\r\n" +
@@ -163,18 +180,16 @@ public class ImportUtilTest extends TestBase {
         String id1 = null;
         String id2 = null;
         for ( Contentlet content : savedData ) {
-            if ( id1 == null ) {
+            if ( content.getMap().get( "title" ).equals( "Test1" ) ) {
                 id1 = content.getIdentifier();
-            } else if ( id2 == null ) {
+            } else if ( content.getMap().get( "title" ).equals( "Test2" ) ) {
                 id2 = content.getIdentifier();
-            } else {
-                break;
             }
         }
 
         reader = createTempFile( "Identifier, Title, Host" + "\r\n" +
-                id1 + ", TestX_edited, " + defaultHost.getIdentifier() + "\r\n" +
-                id2 + ", TestY_edited, " + defaultHost.getIdentifier() + "\r\n" );
+                id1 + ", Test1_edited, " + defaultHost.getIdentifier() + "\r\n" +
+                id2 + ", Test2_edited, " + defaultHost.getIdentifier() + "\r\n" );
         csvreader = new CsvReader( reader );
         csvreader.setSafetySwitch( false );
         csvHeaders = csvreader.getHeaders();
@@ -189,8 +204,47 @@ public class ImportUtilTest extends TestBase {
         //Validations
         assertNotNull( savedData );
         assertEquals( savedData.size(), 4 );
+
+        //-------------------------LANGUAGE AND KEY FIELDS------------------------
+        //------------------------------------------------------------------------
+        //Create the csv file to import
+        reader = createTempFile( "languageCode, countryCode, Title, Host" + "\r\n" +
+                "es, ES, Test1_edited, " + defaultHost.getIdentifier() + "\r\n" +
+                "es, ES, Test2_edited, " + defaultHost.getIdentifier() + "\r\n" );
+        csvreader = new CsvReader( reader );
+        csvreader.setSafetySwitch( false );
+        csvHeaders = csvreader.getHeaders();
+
+        int languageCodeHeaderColumn = 0;
+        int countryCodeHeaderColumn = 1;
+        //Preview=false
+        results = ImportUtil.importFile( 0L, defaultHost.getInode(), structure1.getInode(), new String[]{textFileStructure1.getInode()}, false, true, user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader );
+        //Validations
+        validate( results, false, false, false );
+
+        //We used the key fields, so the import process should update instead to add new records
+        savedData = contentletAPI.findByStructure( structure1.getInode(), user, false, 0, 0 );
+        //Validations
+        assertNotNull( savedData );
+        assertEquals( savedData.size(), 6 );
+
+        //Validate we saved the contentlets on spanish
+        int spanishFound = 0;
+        for ( Contentlet contentlet : savedData ) {
+            if ( contentlet.getLanguageId() == 2 ) {
+                spanishFound++;
+            }
+        }
+        assertEquals( spanishFound, 2 );
     }
 
+    /**
+     * Creates a temporal file using a given content
+     *
+     * @param content
+     * @return
+     * @throws IOException
+     */
     private Reader createTempFile ( String content ) throws IOException {
 
         File tempTestFile = File.createTempFile( "csvTest_" + String.valueOf( new Date().getTime() ), ".txt" );
@@ -200,6 +254,14 @@ public class ImportUtilTest extends TestBase {
         return new InputStreamReader( new ByteArrayInputStream( bytes ), Charset.forName( "UTF-8" ) );
     }
 
+    /**
+     * Validates a given result generated by the ImportUtil.importFile method
+     *
+     * @param results
+     * @param preview
+     * @param expectingErrors
+     * @param expectingWarnings
+     */
     private void validate ( HashMap<String, List<String>> results, Boolean preview, Boolean expectingErrors, Boolean expectingWarnings ) {
 
         //Reading the results
@@ -232,10 +294,6 @@ public class ImportUtilTest extends TestBase {
 
         if ( !preview ) {
 
-            /*linesread=4
-            errors=0
-            newContent=4
-            contentToUpdate=0*/
             List<String> lastInode = results.get( "lastInode" );
             assertNotNull( lastInode );
             assertTrue( !lastInode.isEmpty() );
