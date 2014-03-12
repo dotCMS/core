@@ -30,7 +30,6 @@
     <property name="war.name" value="dotcms"/>
     <property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
     <property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
-    <property name="build.packager" value="${build.dir}/packager" />
     <property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
     <property name="agent.version" value="30"/>
 
@@ -1208,70 +1207,6 @@
         </jar>
     </target>
 
-    <!--++++++++++++++++++++++++++++++++++++++++++-->
-    <!--++++++++++++++++++++++++++++++++++++++++++-->
-
-    <target name="find-duplicated-classes">
-
-        <taskdef classname="com.tonicsystems.jarjar.InspectorTask" name="inspectorTask">
-            <classpath>
-                <path refid="files-classpath" />
-            </classpath>
-        </taskdef>
-
-        <inspectorTask librarypath="${lib.app}"/>
-    </target>
-
-    <target name="find-dependencies">
-
-        <property name="lib.classpath" refid="files-classpath"/>
-
-        <java jar="${lib.app}/jarjar-1.4.jar" fork="true">
-            <arg value="find"/>
-            <arg value="jar"/>
-            <arg value="${lib.classpath}"/>
-        </java>
-    </target>
-
-    <!--Dependencies that have the given jar-->
-    <target name="find-dependencies-for-jar">
-
-        <property name="lib.classpath" refid="files-classpath"/>
-
-        <java jar="${lib.app}/jarjar-1.4.jar" fork="true">
-            <arg value="find"/>
-            <arg value="jar"/>
-
-            <arg value="${lib.app}/dotcms_2.6.jar"/>
-            <arg value="${lib.classpath}"/>
-        </java>
-    </target>
-
-    <!--Who depend on a given jar-->
-    <target name="find-dependencies-on-jar">
-
-        <property name="lib.classpath" refid="files-classpath"/>
-
-        <java jar="${lib.app}/jarjar-1.4.jar" fork="true">
-            <arg value="find"/>
-            <arg value="jar"/>
-            <!--<arg value="class"/>-->
-
-            <arg value="${lib.classpath}"/>
-            <arg value="${lib.app}/dotcms_2.6.jar"/>
-        </java>
-    </target>
-
-    <target name="print-classpath" description="Print the application classpath">
-        <!-- Capture the path as a delimited property using the refid attribute -->
-        <property name="app-classpath" refid="files-classpath"/>
-        <!-- Emit the property to the ant console -->
-        <echo message="${app-classpath}"/>
-    </target>
-
-    <!--<target name="war" depends="deploy-no-jsp,repackage-libraries,deploy-plugins" description="builds dotCMS as a war without the jsps precompiled">-->
-
-
     <target name="war" depends="deploy" description="builds dotCMS as a war without the jsps precompiled">
         <antcall target="war-file"/><!--This depends on depends="war-file"-->
     </target>
@@ -1472,41 +1407,6 @@
         </git>
     </target>-->
     <!--GIT COMMANDS-->
-    <!--++++++++++++++++++++++++++++++++++++++++++-->
-
-    <!--++++++++++++++++++++++++++++++++++++++++++-->
-    <!--PACKAGER-->
-    <path id="packager-classpath">
-        <fileset dir="${lib.app}">
-            <include name="**/*.jar" />
-        </fileset>
-    </path>
-
-    <target name="build-packager-classpath">
-        <manifestclasspath property="packager-jar-cp" jarfile="${lib.app}/packager-taks.jar">
-            <classpath refid="packager-classpath" />
-        </manifestclasspath>
-    </target>
-
-    <target name="clean-packager">
-        <delete file="${lib.app}/packager-taks.jar" failonerror="false" />
-        <delete dir="${build.packager}" failonerror="false"/>
-    </target>
-
-    <target name="compile-packager" depends="clean-packager, prepare" description="Compiles packager source.">
-        <mkdir dir="${build.packager}" />
-        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.packager}"
-               source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true"
-               memoryinitialsize="256m" memorymaximumsize="512m" >
-            <classpath refid="files-classpath" />
-            <include name="com/tonicsystems/jarjar/**"/>
-        </javac>
-    </target>
-
-    <target name="jar-packager" depends="compile-packager,build-packager-classpath" description="Generates packager-taks.jar in the 'build/packager' directory.">
-        <jar jarfile="${lib.app}/packager-taks.jar" basedir="${build.packager}"/>
-    </target>
-    <!--PACKAGER-->
     <!--++++++++++++++++++++++++++++++++++++++++++-->
 
 </project>
