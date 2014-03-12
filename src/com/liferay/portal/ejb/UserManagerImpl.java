@@ -29,15 +29,15 @@ import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.dotcms.enterprise.AuthPipeProxy;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.repackage.mail_ejb.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
-import com.dotcms.repackage.mail_ejb.com.liferay.mail.ejb.MailManagerUtil;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.RequiredUserException;
@@ -49,6 +49,7 @@ import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.auth.PrincipalFinder;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
@@ -381,7 +382,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return users.size();
 	}
 
-	public void sendPassword(String companyId, String emailAddress)
+	public void sendPassword(String companyId, String emailAddress, Locale locale)
 		throws PortalException, SystemException {
 
 		emailAddress = emailAddress.trim().toLowerCase();
@@ -405,20 +406,16 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
 		String url=(company.getPortalURL().contains("://") ? "" : "https://") +
-		        company.getPortalURL() + "/c/portal_public/login?my_account_cmd=ereset&my_user_id="+user.getUserId()+"&token="+token;
+		        company.getPortalURL() + "/c/portal_public/login?my_account_cmd=ereset&my_user_id="+user.getUserId()+
+		        "&token="+token+"&switchLocale="+locale.getLanguage()+"_"+locale.getCountry();
 		
-		String body = "<html><body>"+
-		"<p>To reset your password please follow the link below:</p>"+
-		"<p><a href=\""+url+"\">"+url+"</a></p>"+
-		"<p>If you didn't requested this operation then maybe someone is trying to steal your account."+
-		"If that's the case please contact the administrator.</p>"+
-		"</body></html>";
+		String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);
 		
 		try {
 			Mailer m = new Mailer();
 			m.setToEmail(emailAddress);
 			m.setToName(user.getFullName());
-			m.setSubject("dotcms Password Assistance");
+			m.setSubject(LanguageUtil.get(locale, "reset-password-email-subject"));
 			m.setHTMLBody(body.toString());
 			m.setFromName(company.getName());
 			m.setFromEmail(company.getEmailAddress());
