@@ -49,7 +49,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
      var lastActiveHost = "";
      var showArchived = false;
      var doubleClicked = false;
-
+     var actionLoading = false;
      var markedForCopy = "";
      var markedForCut = "";
 
@@ -1374,6 +1374,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	function deleteHost(objId, referer) {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-the-selected-host-and-ALL-its-contents")) %>')) {
 			top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_host" /></portlet:actionURL>&cmd=delete&inode=' + objId + '&referer=' + escape(referer);
+			actionLoading = true;
 			return true;
 		}
 		return false;
@@ -1399,6 +1400,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 	function deleteFolder(objId, referer) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-this-folder-this-action-cant-be-undone")) %>')) {
+			actionLoading = true;
+			cleanContentSide();
+			Element.show('loadingContentListing');
 			top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_folder" /><portlet:param name="cmd" value="<%=Constants.DELETE%>" /></portlet:actionURL>&inode=' + objId + '&referer=' + escape(referer);
 		}
 	}

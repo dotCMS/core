@@ -23,13 +23,13 @@
     List<Layout> layoutListForLicenseManager=null;
     try {
         if (isCommunity) {
-        	licenseMessage = LanguageUtil.get(pageContext, "Try-Enterprise-Now") + "!" ;
 
-            layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
+            layoutListForLicenseManager=APILocator.getLayoutAPI().loadLayoutsForUser(user);
             for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
                 List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
                 if (portletIdsForLicenseManager.contains("EXT_LICENSE_MANAGER")) {
                     licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=EXT_LICENSE_MANAGER&p_p_action=0";
+                    licenseMessage = LanguageUtil.get(pageContext, "Try-Enterprise-Now") + "!" ;
                     break;
                 }
 
