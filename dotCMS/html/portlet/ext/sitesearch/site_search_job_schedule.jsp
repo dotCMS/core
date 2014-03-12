@@ -135,7 +135,7 @@ boolean hasPath = false;
 				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "name") %></strong>:
 			</td>
 			<td>
-				<input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text" dojoType='dijit.form.ValidationTextBox' regExp="[\w -]+" required="true" style='width: 400px' value="<%=QUARTZ_JOB_NAME %>" size="200" />
+				<input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text" dojoType='dijit.form.ValidationTextBox' regExp="[\w -]+" required="true" style='width: 400px' <%if(UtilMethods.isSet(QUARTZ_JOB_NAME)){ %>readonly<% } %> value="<%=QUARTZ_JOB_NAME %>" size="200" />
 			</td>
 		</tr>
 
