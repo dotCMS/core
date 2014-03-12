@@ -132,7 +132,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			}
 		}
 
-		config.setJobName(config.getJobName()+"_"+config.get("indexAlias"));
+		
 
 		try {
 			if(config.runNow()){

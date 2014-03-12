@@ -845,6 +845,19 @@
 
     </target>
 
+	<target name="create-jar-tests" depends="prepare,compile" description="Compiles all test source code and outputs a jar with the tests only">
+		<mkdir dir="${build.dir}/testbuild" />
+        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.6" target="1.6" compiler="javac1.6" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+            <classpath refid="files-classpath" />
+        </javac>
+        <copy todir="${build.dir}/testbuild">
+            <fileset dir="${src.tests.dir}">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+		<jar jarfile="${distribution.file.output}/dotcms_tests_${dotcms.release.version}.jar" basedir="${build.dir}/testbuild" />
+
+    </target>
 
     <target name="tests" depends="compile, compile-tests, instrument-classes, start-server-for-tests" description="runs unit tests">
 

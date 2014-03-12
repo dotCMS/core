@@ -64,4 +64,32 @@ public class HostAPITest {
         
         Assert.assertNull(host);
     }
+    
+    @Test
+    public void makeDefault() throws Exception {
+    	User user=APILocator.getUserAPI().getSystemUser();
+    	
+    	Host hdef = APILocator.getHostAPI().findDefaultHost(user, false);
+    	
+    	Host host=new Host();
+        host.setHostname("test"+System.currentTimeMillis()+".demo.dotcms.com");
+        host.setDefault(false);
+        host=APILocator.getHostAPI().save(host, user, false);
+        APILocator.getHostAPI().publish(host, user, false);
+        
+        APILocator.getHostAPI().makeDefault(host, user, false);
+        
+        hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
+        Assert.assertTrue(hdef.isLive());
+        Assert.assertFalse(hdef.isDefault());
+        
+        APILocator.getHostAPI().makeDefault(hdef, user, false);
+        
+        host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
+        Assert.assertFalse(host.isDefault());
+        Assert.assertTrue(host.isLive());
+        
+        Host def = APILocator.getHostAPI().findDefaultHost(user, false);
+        Assert.assertEquals(hdef.getIdentifier(), def.getIdentifier());
+    }
 }
