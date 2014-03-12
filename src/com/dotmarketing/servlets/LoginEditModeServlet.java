@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -38,7 +39,10 @@ public class LoginEditModeServlet extends HttpServlet {
 				String pageId= clickstream.getLastPageId();
 				_edit_mode_id = (Identifier) HibernateUtil.load(Identifier.class, pageId);
 					
-
+				if(_edit_mode_id.getAssetType().equals("contentlet")){
+					com.dotmarketing.portlets.contentlet.model.Contentlet cont =  APILocator.getContentletAPI().findContentletByIdentifier(_edit_mode_id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+					_edit_mode_id.setURI(cont.getMap().get("URL_MAP_FOR_CONTENT").toString());
+				}
 			}
 			catch(Exception e){
 				Logger.error(this.getClass(), "unable to get last page"  + e);
