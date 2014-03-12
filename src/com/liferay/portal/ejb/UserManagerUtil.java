@@ -22,6 +22,8 @@
 
 package com.liferay.portal.ejb;
 
+import java.util.Locale;
+
 /**
  * <a href="UserManagerUtil.java.html"><b><i>View Source</i></b></a>
  *
@@ -374,12 +376,12 @@ public class UserManagerUtil {
 
 	
 	public static void sendPassword(java.lang.String companyId,
-		java.lang.String emailAddress)
+		String emailAddress, Locale locale)
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException {
 		try {
 			UserManager userManager = UserManagerFactory.getManager();
-			userManager.sendPassword(companyId, emailAddress);
+			userManager.sendPassword(companyId, emailAddress, locale);
 		}
 		catch (com.liferay.portal.PortalException pe) {
 			throw pe;
