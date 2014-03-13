@@ -200,8 +200,6 @@
         </if>
     </target>
 
-    <!-- Prepare and relocate the server.xml and ROOT.xml used for the test while backing up the originals -->
-    <!-- The db attributes and tomcat port is defined in the build.properties file -->
     <target name="set-properties" depends="">
         <unjar dest="${tomcat.dir}/conf">
         	<patternset>
@@ -226,7 +224,7 @@
         </replace>
         <echo file="${tomcat.dir}/webapps/ROOT/WEB-INF/classes/dotmarketing-config.properties" append="true">${line.separator}es.http.enabled=false${line.separator}es.transport.tcp.port=${es.network.port}${line.separator}</echo>
 
-        <replace file="${tomcat.dir}/webapps/ROOT/META-INF/ROOT.xml">
+        <replace file="${tomcat.dir}/webapps/ROOT/META-INF/context.xml">
             <replacefilter token="{driver}" value="${db.driver}"/>
             <replacefilter token="{url}" value="${db.url}"/>
             <replacefilter token="{username}" value="${db.username}"/>
