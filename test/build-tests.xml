@@ -212,7 +212,7 @@
     	
     	<unjar dest="${tomcat.dir}/webapps/ROOT/META-INF">
         	<patternset>
-        		<include name="ROOT.xml"/>
+        		<include name="context.xml"/>
         	</patternset>
     	    <fileset dir="${tomcat.dir}/webapps/ROOT/WEB-INF/lib" includes="dotcms_tests_*.jar" />
         </unjar>
