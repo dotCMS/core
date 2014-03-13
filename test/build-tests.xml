@@ -2,7 +2,8 @@
 
 
 <project name="dotcms-tests" default="test-dotcms" basedir=".">
-
+	<!-- include ant-contrib -->
+    <taskdef resource="net/sf/antcontrib/antlib.xml"/>
     
     <taskdef resource="cactus.tasks">
         <classpath>
