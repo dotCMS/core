@@ -469,7 +469,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 					 value: '',
 					 required: true,
 					 store: myStore,
-					 searchAttr: "id",
+					 searchAttr: "displayName",
 					 labelAttr: "label",
 					 labelType: "html",
 					 onChange: elementTypeChange,
