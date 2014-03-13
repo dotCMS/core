@@ -23,7 +23,7 @@
         <fileset dir="${tomcat.dir}/lib">
             <include name="*.jar" />
         </fileset>
-        <fileset dir="${tomcat.dir}/webapp/ROOT/WEB-INF/lib">
+        <fileset dir="${tomcat.dir}/webapps/ROOT/WEB-INF/lib">
             <include name="*.jar" />
         </fileset>
     </path>
