@@ -447,7 +447,10 @@
 		        <include name="**/**"/>
 				<exclude name="**/*.sh"/>
 		    </tarfileset>
-		    <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
+		    <tarfileset dir="${distribution.output}/autoupdater" prefix="/autoupdater" filemode="755">
+		        <include name="**/*.sh"/>
+		    </tarfileset>
+            <tarfileset dir="${distribution.output}/dotserver/bin" prefix="/dotserver/bin" filemode="755">
 		        <include name="**/*.sh"/>
 		    </tarfileset>
 			<tarfileset dir="${distribution.output}/dotserver/tomcat/bin" prefix="/dotserver/tomcat/bin" filemode="755">
