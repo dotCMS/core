@@ -11,6 +11,7 @@ import com.dotcms.repackage.junit_4_8_1.org.junit.runner.notification.Failure;
 import com.dotcms.repackage.junit_4_8_1.org.junit.runner.notification.RunListener;
 
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -18,6 +19,7 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 /**
  * Created by Jonathan Gamba.
@@ -66,6 +68,13 @@ public class TestXmlRingingListener extends RunListener {
         System.setErr( new PrintStream( err ) );
         System.setOut( new PrintStream( out ) );
     }
+    
+    protected static String sanitizeXmlChars(String xml) {
+        if (xml == null || ("".equals(xml))) return "";
+        Pattern xmlInvalidChars =
+          Pattern.compile("[^\\u0009\\u000A\\u000D\\u0020-\\uD7FF\\uE000-\\uFFFD\\x{10000}-\\x{10FFFF}]");
+        return xmlInvalidChars.matcher(xml).replaceAll("");
+    }
 
     /**
      * Called when all tests have finished
@@ -86,8 +95,8 @@ public class TestXmlRingingListener extends RunListener {
         root.addAttribute( "time", formatTime( result.getRunTime() ) );
         root.addAttribute( "hostname", getHostName() );
         root.addAttribute( "timestamp", getIsoTimestamp() );
-        root.addElement( "system-out" ).addCDATA( out.toString() );
-        root.addElement( "system-err" ).addCDATA( err.toString() );
+        root.addElement( "system-out" ).addCDATA( sanitizeXmlChars( out.toString() ) );
+        root.addElement( "system-err" ).addCDATA( sanitizeXmlChars( err.toString() ) );
 
         System.setErr( originalErr );
         System.setOut( originalOut );
