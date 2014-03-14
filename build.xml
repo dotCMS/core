@@ -195,11 +195,36 @@
 
 
     <target name="deploy-config" >
-        <copy todir="${classes.app}">
-            <fileset dir="${src.conf.dir}">
-                <exclude name="**/.svn" />
-            </fileset>
-        </copy>
+
+        <if>
+            <!--
+            Verify if there is specified a custom location for the dotcms installation.
+            When the war structure is used the "target.root" property will be set in order to
+            specify where the war folder is located, if not present the normal dotcms git structure is assumed.
+            -->
+            <contains string="${target.root}" substring="target.root"/>
+            <then>
+                <copy todir="${classes.app}">
+                    <fileset dir="${src.conf.dir}">
+                        <exclude name="**/.svn" />
+                        <exclude name="**/.git" />
+                        <exclude name=".git" />
+                        <exclude name=".git/**" />
+                    </fileset>
+                </copy>
+            </then>
+            <else>
+                <var name="distributionPath" value="${basedir}/../.."/>
+                <copy todir="${plugin.root.dir}/WEB-INF/classes">
+                    <fileset dir="${distributionPath}/bin/system/${src.conf.dir}">
+                        <exclude name="**/.svn" />
+                        <exclude name="**/.git" />
+                        <exclude name=".git" />
+                        <exclude name=".git/**" />
+                    </fileset>
+                </copy>
+            </else>
+        </if>
     </target>
 
     <target name="deploy-core-jsp" depends="jsp,jar,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
@@ -331,6 +356,13 @@
             <fileset dir="bin">
                 <exclude name="autoupdater/**"/>
                 <exclude name="**/*.class"/>
+            </fileset>
+        </copy>
+
+        <!--bin folder (./bin/system/src-conf)-->
+        <copy todir="${distribution.bin.output}/system/src-conf">
+            <fileset dir="src-conf">
+                <include name="**/*"/>
             </fileset>
         </copy>
 
@@ -718,12 +750,7 @@
         <delete file="${plugin.root.dir}/WEB-INF/classes/plugins.xml" />
         <delete dir="${plugin.root.dir}/html/plugins" failonerror="false" />
 
-        <if>
-            <contains string="${target.root}" substring="target.root"/>
-            <then>
-                <antcall target="deploy-config" />
-            </then>
-        </if>
+        <antcall target="deploy-config" />
     </target>
 
     <target name="clean-plugins-libs" depends="setup-deploy-location">
@@ -809,6 +836,9 @@
         <copy todir="${build.war}/${war.name}.war/WEB-INF/classes" overwrite="true">
             <fileset dir="${src.conf.dir}">
                 <exclude name="**/.svn" />
+                <exclude name="**/.git" />
+                <exclude name=".git" />
+                <exclude name=".git/**" />
             </fileset>
         </copy>
 
