@@ -895,7 +895,7 @@
         Same as the deploy-war-tomcat7-tests except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
         This is useful in cases when you need to make a deploy-war-tomcat7-tests but keeping your current data.
     -->
-    <target name="deploy-war-tomcat7-backup-tests" depends="clone-pull-tomcat7, backup-war-tomcat7-data, war-tests">
+    <target name="deploy-war-tomcat7-tests-backup" depends="clone-pull-tomcat7, backup-war-tomcat7-data, war-tests">
         <antcall target="move-war-tomcat7"/>
         <antcall target="restore-backup-war-tomcat7-data"/>
     </target>
@@ -985,39 +985,51 @@
         <mkdir dir="${tomcat7.home}/temp"/>
 
         <delete dir="${tomcat7.home}/temp/assets"/>
-        <mkdir dir="${tomcat7.home}/temp/assets"/>
-        <copydir src="${tomcat7.home}/webapps/ROOT/assets" dest="${tomcat7.home}/temp/assets"/>
+        <move todir="${tomcat7.home}/temp/assets">
+            <fileset dir="${tomcat7.home}/webapps/ROOT/assets">
+                <include name="**/*"/>
+            </fileset>
+        </move>
 
         <delete dir="${tomcat7.home}/temp/dotsecure"/>
-        <mkdir dir="${tomcat7.home}/temp/dotsecure"/>
-        <copydir src="${tomcat7.home}/webapps/ROOT/dotsecure" dest="${tomcat7.home}/temp/dotsecure"/>
+        <move todir="${tomcat7.home}/temp/dotsecure">
+            <fileset dir="${tomcat7.home}/webapps/ROOT/dotsecure">
+                <include name="**/*"/>
+            </fileset>
+        </move>
 
         <delete dir="${tomcat7.home}/temp/h2"/>
-        <mkdir dir="${tomcat7.home}/temp/h2"/>
-        <copy todir="${tomcat7.home}/temp/h2">
+        <move todir="${tomcat7.home}/temp/h2">
             <fileset dir="${tomcat7.home}/webapps/ROOT">
                 <include name="*.db" />
             </fileset>
-        </copy>
+        </move>
 
     </target>
 
     <target name="restore-backup-war-tomcat7-data">
 
         <delete dir="${tomcat7.home}/webapps/ROOT/assets"/>
-        <mkdir dir="${tomcat7.home}/webapps/ROOT/assets"/>
-        <copydir dest="${tomcat7.home}/webapps/ROOT/assets" src="${tomcat7.home}/temp/assets"/>
+        <move todir="${tomcat7.home}/webapps/ROOT/assets">
+            <fileset dir="${tomcat7.home}/temp/assets">
+                <include name="**/*"/>
+            </fileset>
+        </move>
 
         <delete dir="${tomcat7.home}/webapps/ROOT/dotsecure"/>
-        <mkdir dir="${tomcat7.home}/webapps/ROOT/dotsecure"/>
-        <copydir dest="${tomcat7.home}/webapps/ROOT/dotsecure" src="${tomcat7.home}/temp/dotsecure"/>
+        <move todir="${tomcat7.home}/webapps/ROOT/dotsecure">
+            <fileset dir="${tomcat7.home}/temp/dotsecure">
+                <include name="**/*"/>
+            </fileset>
+        </move>
 
-        <copy todir="${tomcat7.home}/webapps/ROOT" overwrite="true">
+        <move todir="${tomcat7.home}/webapps/ROOT" overwrite="true">
             <fileset dir="${tomcat7.home}/temp/h2">
                 <include name="*.db" />
             </fileset>
-        </copy>
+        </move>
 
+        <delete dir="${tomcat7.home}/temp"/>
     </target>
 
     <target name="clone-pull-tomcat7">
