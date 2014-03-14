@@ -76,14 +76,15 @@ public class HostAPITest {
         host.setDefault(false);
         host=APILocator.getHostAPI().save(host, user, false);
         APILocator.getHostAPI().publish(host, user, false);
-        
         APILocator.getHostAPI().makeDefault(host, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
         
         hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
         Assert.assertTrue(hdef.isLive());
         Assert.assertFalse(hdef.isDefault());
         
         APILocator.getHostAPI().makeDefault(hdef, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
         
         host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
         Assert.assertFalse(host.isDefault());

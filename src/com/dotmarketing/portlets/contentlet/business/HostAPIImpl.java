@@ -778,7 +778,6 @@ public class HostAPIImpl implements HostAPI {
 		}
 		Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
 		APILocator.getContentletAPI().publish(c, user, respectFrontendRoles);
-		APILocator.getContentletAPI().isInodeIndexed(c.getInode(),true);
 		hostCache.add(host);
 		hostCache.clearAliasCache();
 
