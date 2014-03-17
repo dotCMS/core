@@ -79,24 +79,38 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	}
 	
 	private final String UPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ?  where bundle_id = ? ";
-	
+	private final String UPDATESQL_CREATION_DATE="update publishing_queue_audit set status = ?, status_pojo = ?, create_date = ?, status_updated = ? where bundle_id = ? ";
+
+    @Override
+    public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history ) throws DotPublisherException {
+        updatePublishAuditStatus(bundleId, newStatus, history, false );
+    }
+
 	@Override
-	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history) throws DotPublisherException {
+	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history, Boolean updateDates ) throws DotPublisherException {
 	    boolean local=false;
 		try{
 			local = HibernateUtil.startLocalTransactionIfNeeded();
 			DotConnect dc = new DotConnect();
-			dc.setSQL(UPDATESQL);
-			dc.addParam(newStatus.getCode());
+            if ( updateDates ) {
+                dc.setSQL( UPDATESQL_CREATION_DATE );
+            } else {
+                dc.setSQL( UPDATESQL );
+            }
+            dc.addParam(newStatus.getCode());
 			
 			if(history != null)
 				dc.addParam(history.getSerialized());
 			else
 				dc.addParam("");
-			
+
+            if ( updateDates ) {
+                dc.addParam( new Date() );
+                dc.addParam( new Date() );
+            }
+
 			dc.addParam(bundleId);
-			
-			
+
 			dc.loadResult();
 			
 			if(local) {
