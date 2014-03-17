@@ -40,6 +40,18 @@ public abstract class PublishAuditAPI {
 	 */
 	//Update
 	public abstract void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history) throws DotPublisherException;
+
+    /**
+     * Update publish audit status
+     *
+     * @param bundleId
+     * @param newStatus
+     * @param history
+     * @param updateDates True if want to override the create_date and status_updated with the current date
+     * @throws DotPublisherException
+     */
+    //Update
+	public abstract void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history, Boolean updateDates ) throws DotPublisherException;
 	
 	/**
 	 * Remove publish audit row from publish_audit table
