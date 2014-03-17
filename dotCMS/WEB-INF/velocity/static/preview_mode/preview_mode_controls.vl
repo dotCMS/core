@@ -44,13 +44,13 @@ $import.read("/html/common/messages_inc.jsp")
 	function remotePublish(){
     	dojo.require("dotcms.dojo.push.PushHandler");
     	pushHandler = new dotcms.dojo.push.PushHandler('$languagewebapi.getFromUserLanguage("Remote-Publish")');
-        pushHandler.showDialog('$htmlPageInode');
+        pushHandler.showDialog('$HTMLPAGE_IDENTIFIER');
     }
 
     function addToBundle (objId) {
     	dojo.require("dotcms.dojo.push.PushHandler");
     	pushHandler = new dotcms.dojo.push.PushHandler();
-		pushHandler.showAddToBundleDialog('$htmlPageInode', '$languagewebapi.getFromUserLanguage("Add-To-Bundle")');
+		pushHandler.showAddToBundleDialog('$HTMLPAGE_IDENTIFIER', '$languagewebapi.getFromUserLanguage("Add-To-Bundle")');
 	}
 
 	function openAddWidget(containerInode) {
