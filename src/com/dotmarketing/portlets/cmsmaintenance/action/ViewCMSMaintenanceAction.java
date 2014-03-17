@@ -522,7 +522,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		}
 		FileUtil.copyDirectory(assetDir, backupTempFilePath + File.separator + "asset", new AssetFileNameFilter());
 
-		//do not ship the com.dotcms.repackage.tika_app_1_3.license.
+		//do not ship the license.
 		String f = backupTempFilePath + File.separator + "asset" + File.separator + "license";
 		FileUtil.deltree(f);
 
