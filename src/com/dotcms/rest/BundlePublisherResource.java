@@ -96,10 +96,10 @@ public class BundlePublisherResource extends WebResource {
 			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
 			String fileName=fileDetail.getFileName();
 			String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
-			
-			PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, groupId, bundleFolder);
-			
-			if(bundleName.trim().length()>0) {
+
+            PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, groupId, bundleFolder, true );
+
+            if(bundleName.trim().length()>0) {
 			    // save bundle if it doesn't exists
 			    if(APILocator.getBundleAPI().getBundleById(bundleFolder)!=null) {
                     Bundle b = new Bundle();
