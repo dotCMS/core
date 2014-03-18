@@ -267,10 +267,8 @@ public class RemotePublishAjaxActionTest extends TestBase {
         Date finalCreationDate = status.getCreateDate();
         Date finalUpdateDate = status.getStatusUpdated();
         //Validations
-        assertNotSame( latestCreationDate, finalCreationDate );
-        assertNotSame( latestUpdateDate, finalUpdateDate );
-        assertTrue( latestCreationDate.before( finalCreationDate ) );
-        assertTrue( latestUpdateDate.before( finalUpdateDate ) );
+        assertNotSame( latestCreationDate.getTime(), finalCreationDate.getTime() );
+        assertNotSame( latestUpdateDate.getTime(), finalUpdateDate.getTime() );
     }
 
 }
