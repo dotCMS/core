@@ -211,7 +211,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
         assertTrue( initialUpdateDate.before( latestUpdateDate ) );
 
         //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        //++++++++++++++++++++SIMULATE A END POINT+++++++++++++++++++++++++
+        //++++++++++++++++++++SIMULATE AN END POINT++++++++++++++++++++++++
         /*
          And finally lets try to simulate a end point sending directly an already created bundle file to
          the api/bundlePublisher/publish service
