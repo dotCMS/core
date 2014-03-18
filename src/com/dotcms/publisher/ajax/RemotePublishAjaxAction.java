@@ -86,6 +86,11 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
 				LoginFactory.doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+                //Set the logged user in order to make it available from this action using the getUser() method
+                if ( user != null ) {
+                    setUser( user );
+                }
+
 				if(user==null) {
 				    setUser(request);
 	                user = getUser();
@@ -216,6 +221,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 jsonResponse.put( "errorMessages", jsonErrors.toArray() );
                 jsonResponse.put( "errors", responseMap.get( "errors" ) );
                 jsonResponse.put( "total", responseMap.get( "total" ) );
+                jsonResponse.put( "bundleId", responseMap.get( "bundleId" ) );
 
                 //And send it back to the user
                 response.getWriter().println( jsonResponse.toString() );
