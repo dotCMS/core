@@ -101,7 +101,8 @@ public class BundlePublisherResource extends WebResource {
 
             if(bundleName.trim().length()>0) {
 			    // save bundle if it doesn't exists
-			    if(APILocator.getBundleAPI().getBundleById(bundleFolder)!=null) {
+                Bundle foundBundle = APILocator.getBundleAPI().getBundleById( bundleFolder );
+                if ( foundBundle == null || foundBundle.getId() == null ) {
                     Bundle b = new Bundle();
                     b.setId(bundleFolder);
                     b.setName(bundleName);
