@@ -131,8 +131,18 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 				config.put(key,map.get(key));
 			}
 		}
-
+		String taskName = ((String[]) map.get("QUARTZ_JOB_NAME"))[0];
+		String taskPreviousName = ((String[]) map.get("OLD_QUARTZ_JOB_NAME"))[0];
 		
+		if(UtilMethods.isSet(taskPreviousName) && !taskName.equals(taskPreviousName)){
+			try {
+				APILocator.getSiteSearchAPI().deleteTask(taskPreviousName);
+			} catch (Exception e) {
+				Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
+				writeError(response, e.getMessage());
+
+			}
+		}
 
 		try {
 			if(config.runNow()){
