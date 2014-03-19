@@ -359,7 +359,7 @@ public class HostAPIImpl implements HostAPI {
 		APILocator.getContentletAPI().copyProperties(c, host.getMap());;
 		c.setInode("");
 		c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
-		APILocator.getContentletAPI().isInodeIndexed(c.getInode());
+		
 		APILocator.getVersionableAPI().setLive(c);
 		Host savedHost =  new Host(c);
 
@@ -383,7 +383,6 @@ public class HostAPIImpl implements HostAPI {
 					    otherHost.setProperty("__disable_workflow__",true);
 
 					Contentlet cont = conAPI.checkin(otherHost, user, respectFrontendRoles);
-					conAPI.isInodeIndexed(cont.getInode());
 					if(isHostRunning) {
 						otherHost = new Host(cont);
 						publish(otherHost, user, respectFrontendRoles);
@@ -779,7 +778,6 @@ public class HostAPIImpl implements HostAPI {
 		}
 		Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
 		APILocator.getContentletAPI().publish(c, user, respectFrontendRoles);
-		APILocator.getContentletAPI().isInodeIndexed(c.getInode(),true);
 		hostCache.add(host);
 		hostCache.clearAliasCache();
 
