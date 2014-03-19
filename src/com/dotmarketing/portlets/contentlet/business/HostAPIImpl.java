@@ -558,7 +558,7 @@ public class HostAPIImpl implements HostAPI {
 				dc.setSQL("select distinct id, language_id from identifier join contentlet on contentlet.identifier=identifier.id where identifier.host_inode=?");
 				dc.addParam(host.getIdentifier());
 				for (Map<String,Object> rr : dc.loadObjectResults()) {
-				    Contentlet contentlet = contentAPI.findContentletByIdentifier((String)rr.get("id"), false, (Long)rr.get("language_id"), user, false);
+				    Contentlet contentlet = contentAPI.findContentletByIdentifier((String)rr.get("id"), false, ((Number)rr.get("language_id")).longValue(), user, false);
 					contentAPI.delete(contentlet, user, respectFrontendRoles);
 				}
 
