@@ -132,7 +132,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			}
 		}
 		String taskName = ((String[]) map.get("QUARTZ_JOB_NAME"))[0];
-		String taskPreviousName = ((String[]) map.get("OLD_QUARTZ_JOB_NAME"))[0];
+		String taskPreviousName = map.get("OLD_QUARTZ_JOB_NAME")!=null ? ((String[]) map.get("OLD_QUARTZ_JOB_NAME"))[0] : "";
 		
 		if(UtilMethods.isSet(taskPreviousName) && !taskName.equals(taskPreviousName)){
 			try {
