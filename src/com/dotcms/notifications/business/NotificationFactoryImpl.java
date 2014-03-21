@@ -1,7 +1,6 @@
 package com.dotcms.notifications.business;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -142,8 +141,7 @@ public class NotificationFactoryImpl extends NotificationFactory {
 		}
 
 		List<Map<String, Object>> results = dc.loadObjectResults();
-		Long count = Long.parseLong(results.get(0).get("count").toString());
-		return count;
+		return ((Number)results.get(0).get("count")).longValue();
 	}
 
 	public void markNotificationsAsRead(String userId) throws DotDataException {
