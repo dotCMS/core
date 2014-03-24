@@ -614,63 +614,67 @@ public class BrowserAjax {
      * @throws Exception
      */
     public String copyFile ( String inode, String newFolder ) throws Exception {
-
-        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser( req );
-
-        //Contentlet file identifier
-        Identifier id = APILocator.getIdentifierAPI().findFromInode( inode );
-
-        // gets folder parent
-        Folder parent = null;
-        try {
-            parent = APILocator.getFolderAPI().find( newFolder, user, false );
-        } catch ( Exception ignored ) {
-            //Probably what we have here is a host
-        }
-
-        Host host = null;
-        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
-            host = APILocator.getHostAPI().find( newFolder, user, false );
-        }
-
-        // Checking permissions
-        String permissionsError = "File-failed-to-copy-check-you-have-the-required-permissions";
-        if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ) {
-            return permissionsError;
-        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
-            return permissionsError;
-        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
-            return permissionsError;
-        }
-
-        if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
-
-            //Getting the contentlet file
-            Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
-
-            if ( parent != null ) {
-
-                FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet( cont );
-                if ( UtilMethods.isSet( fileAsset.getFileName() ) && !folderAPI.matchFilter( parent, fileAsset.getFileName() ) ) {
-                    return "message.file_asset.error.filename.filters";
-                }
-            }
-
-            if ( parent != null ) {
-                APILocator.getContentletAPI().copyContentlet( cont, parent, user, false );
-            } else {
-                APILocator.getContentletAPI().copyContentlet( cont, host, user, false );
-            }
-
-            // issues/1788
-            // issues/1967
-
-    		Folder srcFolder = APILocator.getFolderAPI().find(cont.getFolder(),user,false);
-    		refreshIndex(null, parent, user, host, srcFolder );
-
-
-            return "File-copied";
+		try{
+			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+			User user = getUser( req );
+	
+			//Contentlet file identifier
+			Identifier id = APILocator.getIdentifierAPI().findFromInode( inode );
+	
+			// gets folder parent
+			Folder parent = null;
+			try {
+				parent = APILocator.getFolderAPI().find( newFolder, user, false );
+			} catch ( Exception ignored ) {
+				//Probably what we have here is a host
+			}
+	
+			Host host = null;
+			if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+				host = APILocator.getHostAPI().find( newFolder, user, false );
+			}
+	
+			// Checking permissions
+			String permissionsError = "File-failed-to-copy-check-you-have-the-required-permissions";
+			if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ) {
+				return permissionsError;
+			} else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+				return permissionsError;
+			} else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+				return permissionsError;
+			}
+	
+			if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
+	
+				//Getting the contentlet file
+				Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
+	
+				if ( parent != null ) {
+	
+					FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet( cont );
+					if ( UtilMethods.isSet( fileAsset.getFileName() ) && !folderAPI.matchFilter( parent, fileAsset.getFileName() ) ) {
+						return "message.file_asset.error.filename.filters";
+					}
+				}
+	
+				if ( parent != null ) {
+					APILocator.getContentletAPI().copyContentlet( cont, parent, user, false );
+				} else {
+					APILocator.getContentletAPI().copyContentlet( cont, host, user, false );
+				}
+	
+				// issues/1788
+				// issues/1967
+	
+				Folder srcFolder = APILocator.getFolderAPI().find(cont.getFolder(),user,false);
+				refreshIndex(null, parent, user, host, srcFolder );
+	
+	
+				return "File-copied";
+			}catch(Exception e){
+				Logger.error(this, "Error trying to copy the file to folder.", e);
+			}
+			return "";
         }
 
         File file = (File) InodeFactory.getInode( inode, File.class );
@@ -683,7 +687,6 @@ public class BrowserAjax {
         if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
             return "File-failed-to-copy-check-you-have-the-required-permissions";
         }
-        refreshIndex(file, parent, user, host, null );
 
         if ( parent != null ) {
             APILocator.getFileAPI().copyFile( file, parent, user, false );
