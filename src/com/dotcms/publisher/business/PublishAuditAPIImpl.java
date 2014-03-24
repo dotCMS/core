@@ -79,24 +79,38 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	}
 	
 	private final String UPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ?  where bundle_id = ? ";
-	
+	private final String UPDATESQL_CREATION_DATE="update publishing_queue_audit set status = ?, status_pojo = ?, create_date = ?, status_updated = ? where bundle_id = ? ";
+
+    @Override
+    public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history ) throws DotPublisherException {
+        updatePublishAuditStatus(bundleId, newStatus, history, false );
+    }
+
 	@Override
-	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history) throws DotPublisherException {
+	public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history, Boolean updateDates ) throws DotPublisherException {
 	    boolean local=false;
 		try{
 			local = HibernateUtil.startLocalTransactionIfNeeded();
 			DotConnect dc = new DotConnect();
-			dc.setSQL(UPDATESQL);
-			dc.addParam(newStatus.getCode());
+            if ( updateDates ) {
+                dc.setSQL( UPDATESQL_CREATION_DATE );
+            } else {
+                dc.setSQL( UPDATESQL );
+            }
+            dc.addParam(newStatus.getCode());
 			
 			if(history != null)
 				dc.addParam(history.getSerialized());
 			else
 				dc.addParam("");
-			
+
+            if ( updateDates ) {
+                dc.addParam( new Date() );
+                dc.addParam( new Date() );
+            }
+
 			dc.addParam(bundleId);
-			
-			
+
 			dc.loadResult();
 			
 			if(local) {
@@ -272,9 +286,13 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 	}
-	
-	public PublishAuditStatus updateAuditTable(String endpointId, String groupId, String bundleFolder)
-			throws DotPublisherException {
+
+    public PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder ) throws DotPublisherException {
+        return updateAuditTable( endpointId, groupId, bundleFolder, false );
+    }
+
+    public PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder, Boolean updateDates ) throws DotPublisherException {
+
 		//Status
 		PublishAuditStatus status =  new PublishAuditStatus(bundleFolder);
 		//History
@@ -290,10 +308,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		PublishAuditStatus existing=PublishAuditAPI.getInstance().getPublishAuditStatus(status.getBundleId());
 		if(existing!=null) {
 		    // update if there is an existing record.
-		    PublishAuditAPI.getInstance().updatePublishAuditStatus(
-		            status.getBundleId(), status.getStatus(), status.getStatusPojo());
-		}
-		else {
+            PublishAuditAPI.getInstance().updatePublishAuditStatus( status.getBundleId(), status.getStatus(), status.getStatusPojo(), updateDates );
+        } else {
     		//Insert in Audit table
     		PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
 		}
