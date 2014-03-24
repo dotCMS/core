@@ -95,7 +95,13 @@ public class CSSPreProcessServlet extends HttpServlet {
                     if(cache==null || cache.data==null) {
                         Logger.debug(this, "compiling css data for "+host.getHostname()+":"+uri);
                         
-                        compiler.compile();
+                        try {
+                            compiler.compile();
+                        }
+                        catch(Throwable ex) {
+                            Logger.error(this, "Error compiling "+host.getHostname()+":"+uri, ex);
+                            throw new Exception(ex);
+                        }
                         
                         // build cache object
                         ContentletVersionInfo vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defLang);

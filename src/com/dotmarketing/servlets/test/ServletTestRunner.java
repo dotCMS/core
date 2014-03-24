@@ -107,10 +107,12 @@ public class ServletTestRunner extends HttpServlet {
         JUnitCore jUnitCore = new JUnitCore();
 
         //Preparing the reports folder
-        String logsDirectory = ".." + File.separator + "tomcat" + File.separator + "logs" + File.separator + "test" + File.separator;
-        File reportDirectory = new File( FileUtil.getRealPath( logsDirectory ) );
+        String logsDirectory = Config.CONTEXT.getRealPath( "dotsecure" ) + File.separator + "logs" + File.separator + "test" + File.separator;
+        File reportDirectory = new File( logsDirectory );
         FileUtils.deleteDirectory( reportDirectory );
         reportDirectory.mkdirs();
+
+        Logger.info( "Generating XML report in " + reportDirectory.getAbsolutePath() );
 
         //Adding a listener for the running test
         TestXmlRingingListener testXmlRingingListener = new TestXmlRingingListener( reportDirectory );

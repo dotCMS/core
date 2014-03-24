@@ -154,8 +154,10 @@ public class ImportUtil {
                             //Importing a line
                             Long languageToImport = language;
                             if ( language == -1 ) {
-                                Language dotCMSLanguage = langAPI.getLanguage( csvLine[languageCodeHeaderColumn], csvLine[countryCodeHeaderColumn] );
-                                languageToImport = dotCMSLanguage.getId();
+                                if ( languageCodeHeaderColumn != -1 && countryCodeHeaderColumn != -1 ) {
+                                    Language dotCMSLanguage = langAPI.getLanguage( csvLine[languageCodeHeaderColumn], csvLine[countryCodeHeaderColumn] );
+                                    languageToImport = dotCMSLanguage.getId();
+                                }
                             }
 
                             if ( languageToImport != -1 ) {

@@ -16,6 +16,7 @@ import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -44,8 +45,8 @@ public class DotCMSCMISTest extends CMISBaseTest {
         assertNotNull(newf);
         assertTrue(InodeUtils.isSet(newf.getInode()));
         assertEquals(newf.getInode(),folderId);
-        
-        assertNotNull(createFile("test.txt", folderId));
+
+        assertNotNull( createFile( ContentletAPITest.class.getResource( "test_files/test.txt" ), "test.txt", folderId ) );
         
         List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByFolder(newf, "", false, user, false);
         assertNotNull(files);

@@ -2,13 +2,16 @@ package com.dotcms.util;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.net.URL;
+import java.util.List;
 
 public class SecurityUtils {
 
@@ -44,7 +47,14 @@ public class SecurityUtils {
 
                     //If the host was not found it means it is a external url
                     if ( !UtilMethods.isSet( foundHost ) ) {
-                        ref = "/";
+
+                    	// lets check if it is a Virtual Link
+                    	List<VirtualLink> virtualLinks = APILocator.getVirtualLinkAPI().getVirtualLinksByURI(referer);
+
+                    	if(!UtilMethods.isSet(virtualLinks) || virtualLinks.isEmpty()) {
+                    		ref = "/";
+                    	}
+
                     }
                 }
 

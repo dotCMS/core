@@ -558,9 +558,9 @@ public class TexenTask
                             // them available in the context. So for
                             // a line like the following in a properties file:
                             //
-                            // com.dotcms.repackage.tika_app_1_3.license.file.contents = com.dotcms.repackage.tika_app_1_3.license.txt
+                            // license.file.contents = license.txt
                             //
-                            // We will pull in the contents of com.dotcms.repackage.tika_app_1_3.license.txt
+                            // We will pull in the contents of license.txt
                             // and make it available in the context as
                             // $license. This should make texen a little
                             // more flexible.

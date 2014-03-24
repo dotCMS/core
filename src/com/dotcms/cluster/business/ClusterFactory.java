@@ -119,9 +119,9 @@ public class ClusterFactory {
         	}
         }
 
-//        if(anyOtherServerAlive && !sameAssetsDir) {
-//        	throw new Exception("Assets folder of this node needs to point to /Assets of the master node to join the Cluster");
-//        }
+        if(anyOtherServerAlive && !sameAssetsDir) {
+        	throw new Exception("Assets folder of this node needs to point to /Assets of the master node to join the Cluster");
+        }
 
         // Get IP Address
 		InetAddress addr = InetAddress.getLocalHost();

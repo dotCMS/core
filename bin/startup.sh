@@ -34,6 +34,7 @@ if [ -r "$RUN_CONF" ]; then
     . "$RUN_CONF" 2>/dev/null
 fi
 
+DISTRIBUTION_HOME=`cd "$PRGDIR/.." ; pwd`
 TOMCAT_HOME=`cd "$PRGDIR/../$SERVER_FOLDER" ; pwd`
 DOTCMS_HOME=`cd "$PRGDIR/../$HOME_FOLDER" ; pwd`
 
@@ -59,8 +60,14 @@ DOTCMS_HOME=`cd "$PRGDIR/../$HOME_FOLDER" ; pwd`
 JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xmx1G -XX:MaxPermSize=256m -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -javaagent:$DOTCMS_HOME/WEB-INF/lib/jamm-0.2.5.jar"
 
 if [ "$1" = "debug" ] ; then
-   #debug
-   JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 $JAVA_OPTS"
+
+    DEBUG_PORT="8000"
+    if [ ! -x $2 ] ; then
+        DEBUG_PORT="$2"
+    fi
+
+    #debug
+    JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=$DEBUG_PORT $JAVA_OPTS"
 fi
 
 
@@ -85,7 +92,7 @@ fi
 
 # Sets DOTSERVER if not specified and changes existing JAVA_OPTS to use it 
 if [ -z "$DOTSERVER" ]; then
-        DOTSERVER=`echo "$DOTCMS_HOME" | sed -e 's/\(.*\)\///'`
+        DOTSERVER=`echo "$DISTRIBUTION_HOME" | sed -e 's/\(.*\)\///'`
 fi
 export JAVA_OPTS="$JAVA_OPTS -Ddotserver=$DOTSERVER"
 

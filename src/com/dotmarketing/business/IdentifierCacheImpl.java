@@ -20,7 +20,7 @@ import com.dotmarketing.util.UtilMethods;
  * @author David
  * 
  */
-public class IdentifierCacheImpl extends IdentifierCache {
+public class IdentifierCacheImpl extends IdentifierCache { 
 
 	DotCacheAdministrator cache = null;
 
@@ -37,26 +37,33 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	}
 	
 	
-	
+	private String getIdentGroup(Identifier id) {
+	    return id.getAssetType()!=null && id.getAssetType().equals(IdentifierAPI.IDENT404) ? 
+	            get404Group() : getPrimaryGroup();
+	}
 	
 	
 	protected void addIdentifierToCache(Identifier id) {
-
-		if (id == null || ! InodeUtils.isSet(id.getInode())) {
+		if (id == null) {
 			return;
 		}
-		// Obtain the key for the new entrance
-		String key = id.getHostId() + "-" + id.getURI();
+		
+		String uri = id.getURI();
+		if(UtilMethods.isSet(id.getHostId()) && UtilMethods.isSet(uri)) {
+        	// Obtain the key for the new entrance
+        	String key = getPrimaryGroup() + id.getHostId() + "-" + uri;
+        	cache.put(key, id, getIdentGroup(id));
+		}
 
-		// Add the new entry to the cache
-		cache.put(getPrimaryGroup() + key, id, getPrimaryGroup());
-		cache.put(getPrimaryGroup() + id.getInode(), id, getPrimaryGroup());
+		if(InodeUtils.isSet(id.getId())) {
+		    cache.put(getPrimaryGroup() + id.getId(), id, getIdentGroup(id));
+		}
 		
 	}
 	
 	protected Identifier getIdentifier(Host host,String URI) {
 		if(host ==null) return null;
-		return getIdentifier(URI, host.getIdentifier());
+		return getIdentifier(host.getIdentifier(), URI);
 	}
 
 	/**
@@ -71,11 +78,15 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	 * @return The identifier or an empty (inode = 0) identifier if it wasn't
 	 *         found in momory and db.
 	 */
-	protected Identifier getIdentifier( String URI, String hostId) {
+	protected Identifier getIdentifier( String hostId, String URI ) {
 
 		Identifier value = null;
 		try {
-			value = (Identifier) cache.get(getPrimaryGroup() + hostId + "-" + URI, getPrimaryGroup());
+		    final String key = getPrimaryGroup() + hostId + "-" + URI;
+			value = (Identifier) cache.get(key, getPrimaryGroup());
+			if(value ==null) {
+			    value = (Identifier) cache.get(key, get404Group());
+			}
 		} catch (DotCacheException e) {
 			Logger.debug(IdentifierCacheImpl.class, "Cache Entry not found", e);
 		}
@@ -88,7 +99,11 @@ public class IdentifierCacheImpl extends IdentifierCache {
 
 		Identifier value = null;
 		try {
-			value = (Identifier) cache.get(getPrimaryGroup() + identId, getPrimaryGroup());
+		    final String key = getPrimaryGroup() + identId;
+			value = (Identifier) cache.get(key, getPrimaryGroup());
+			if(value==null) {
+			    value = (Identifier) cache.get(key, get404Group());
+			}
 		} catch (DotCacheException e) {
 			Logger.debug(IdentifierCacheImpl.class, "Cache Entry not found", e);
 		}
@@ -118,9 +133,18 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	protected void removeFromCacheByIdentifier(Identifier id) {
 		if(id==null) return;
 		
-		cache.remove(getPrimaryGroup() + id.getId(),  getPrimaryGroup());
-		String key = id.getHostId() + "-" + id.getURI();
-		cache.remove(getPrimaryGroup() + key, getPrimaryGroup());
+		if(InodeUtils.isSet(id.getId())) {
+		    final String key = getPrimaryGroup() + id.getId();
+            cache.remove(key,  getPrimaryGroup());
+		    cache.remove(key,  get404Group());
+		}
+		
+		String uri = id.getURI();
+		if(UtilMethods.isSet(id.getHostId()) && UtilMethods.isSet(uri)) {
+    		final String key = getPrimaryGroup() + id.getHostId() + "-" + uri;
+    		cache.remove(key, getPrimaryGroup());
+    		cache.remove(key, get404Group());
+		}
 		
 		if(UtilMethods.isSet(id.getAssetType()) && id.getAssetType().equals("folder")) {
 		    try {
@@ -150,9 +174,14 @@ public class IdentifierCacheImpl extends IdentifierCache {
 
 	protected void removeFromCacheByURI(String hostId,String URI) {
 		Identifier id = getIdentifier(hostId,URI);
-		String key = hostId + "-" + URI;
-		cache.remove(getPrimaryGroup() + key, getPrimaryGroup());
-		removeFromCacheByIdentifier(id);
+		if(id==null) {
+    		String key = getPrimaryGroup() + hostId + "-" + URI;
+    		cache.remove(key, getPrimaryGroup());
+    		cache.remove(key, get404Group());
+		}
+		else {
+		    removeFromCacheByIdentifier(id);
+		}
 
 	}
 
@@ -160,14 +189,14 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		
 		removeFromCacheByIdentifier(versionable.getVersionId());
 
-
 	}
 	
 	
 	public void clearCache() {
 		// clear the cache
-		cache.flushGroup(getPrimaryGroup());
-		cache.flushGroup(getVersionInfoGroup());
+	    for(String group : getGroups()) {
+	        cache.flushGroup(group);
+	    }
 	}
 
     @Override

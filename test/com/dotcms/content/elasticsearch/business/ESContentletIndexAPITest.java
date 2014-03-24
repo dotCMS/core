@@ -596,6 +596,80 @@ public class ESContentletIndexAPITest extends TestBase {
         }
     }
 
+    @Test
+    public void testSearchIndexByDate () throws Exception {
+
+    	Folder testFolder = null;
+    	Structure testStructure = null;
+    	Contentlet testContent = null;
+    	ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+    	try {
+	    	ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
+
+	    	//Creating a test structure
+	    	PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+	    	//Set up a test folder
+	    	testFolder = APILocator.getFolderAPI().createFolders( "testSearchIndexByDateFolder", defaultHost, user, false );
+	    	permissionAPI.permissionIndividually( permissionAPI.findParentPermissionable( testFolder ), testFolder, user, false );
+
+	    	//Set up a test structure
+	    	String structureName = "testSearchIndexByDateStructure";
+	    	testStructure = new Structure();
+	    	testStructure.setHost( defaultHost.getIdentifier() );
+	    	testStructure.setFolder( testFolder.getInode() );
+	    	testStructure.setName( structureName );
+	    	testStructure.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
+	    	testStructure.setOwner( user.getUserId() );
+	    	testStructure.setVelocityVarName( structureName );
+	    	StructureFactory.saveStructure( testStructure );
+	    	StructureCache.addStructure( testStructure );
+	    	//Adding test field
+
+	    	Field field = new Field( "testSearchIndexByDateField", Field.FieldType.DATE_TIME,  Field.DataType.DATE, testStructure, true, true, true, 1, false, false, true );
+	    	field.setVelocityVarName( "testSearchIndexByDateField" );
+	    	field.setListed( true );
+	    	FieldFactory.saveField( field );
+	    	FieldsCache.addField( field );
+
+	    	//Creating a test contentlet
+	    	testContent = new Contentlet();
+	    	testContent.setReviewInterval( "1m" );
+	    	testContent.setStructureInode( testStructure.getInode() );
+	    	testContent.setHost( defaultHost.getIdentifier() );
+	    	testContent.setLanguageId(1);
+
+	    	contentletAPI.setContentletProperty( testContent, field, "03/05/2014" );
+
+	    	testContent = contentletAPI.checkin( testContent, null, permissionAPI.getPermissions( testStructure ), user, false );
+	    	APILocator.getVersionableAPI().setLive(testContent);
+
+			//And add it to the index
+			indexAPI.addContentToIndex( testContent );
+
+			//We are just making time in order to let it apply the index
+			contentletAPI.isInodeIndexed( testContent.getInode(), true );
+
+			//Verify if it was added to the index
+			String query = "+structureName:" + testStructure.getVelocityVarName() + " +testSearchIndexByDateStructure.testSearchIndexByDateField:03/05/2014 +deleted:false +live:true";
+			List<Contentlet> result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+
+			assertTrue(UtilMethods.isSet(result) && !result.isEmpty());
+
+    	} catch(Exception e) {
+    		Logger.error("Error executing testSearchIndexByDate", e.getMessage(), e);
+    	} finally {
+    		if(UtilMethods.isSet(testStructure)) {
+    			APILocator.getStructureAPI().delete(testStructure, user);
+    		}
+    		if(UtilMethods.isSet(testFolder)) {
+    			APILocator.getFolderAPI().delete(testFolder, user, false);
+    		}
+    	}
+
+    }
+
     /**
      * Creates and returns a test html page
      *

@@ -146,7 +146,7 @@
 
 			try{
 			 //contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(),false,lang, user, true);
-			 contentlet = APILocator.getContentletAPI().search("+identifier: "+task.getWebasset(), 0, -1, null, user, true).get(0);
+			 contentlet = APILocator.getContentletAPI().search("+identifier: "+task.getWebasset(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), true).get(0);
 			}
 			catch(Exception e){
 				Logger.error(this.getClass(), e.getMessage());	

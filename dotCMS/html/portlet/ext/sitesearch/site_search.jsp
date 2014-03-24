@@ -600,7 +600,9 @@ function submitSchedule() {
 					var tabs =dijit.byId("mainTabContainer");
 					var pane = dijit.byId("jobTabCp");
 					tabs.selectChild(pane);
-					refreshJobStats()
+					//This line is not necessary there is another function refreshing teh jobs stats.
+					// this line throws "CancelError: Request canceled" if is enable
+					//refreshJobStats();
 				}
 			}
 		});
