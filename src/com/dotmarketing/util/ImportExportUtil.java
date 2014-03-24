@@ -928,7 +928,7 @@ public class ImportExportUtil {
             if(f.getName().equals(".svn")){
                 continue;
             }
-            if(f.getName().equals("com.dotcms.repackage.tika_app_1_3.license.dat")){
+            if(f.getName().equals("license.dat")){
                 continue;
             }
             if(f.isDirectory()){
