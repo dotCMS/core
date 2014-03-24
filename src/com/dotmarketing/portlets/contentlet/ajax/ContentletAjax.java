@@ -1972,6 +1972,21 @@ public class ContentletAjax {
 		
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
+
+		HttpSession ses = req.getSession();
+		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+		
+		if(!UtilMethods.isSet(tempBinaryImageInodes))
+			ses.setAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST, new ArrayList<String>());
+		
+		tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+		for(String tempBinaryImageInode : tempBinaryImageInodes){
+			if(conAPI.find(tempBinaryImageInode, user, false).getStringProperty(FileAssetAPI.TITLE_FIELD).equalsIgnoreCase(fileName)){
+				callbackData.put("contentletInode", tempBinaryImageInode);
+				return callbackData;
+			}
+		}
+		
 		Contentlet newCont = new Contentlet();
 		
 		Structure fileAssetStr = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
@@ -2019,18 +2034,12 @@ public class ContentletAjax {
 	                    +File.separator+user.getUserId()+File.separator+field.getFieldContentlet());
 	            FileUtil.deltree(tmp);
 	        }
+		}	
+		
+		if(UtilMethods.isSet(newCont.getInode())){
+			callbackData.put("contentletInode", newCont.getInode());
+			tempBinaryImageInodes.add(newCont.getInode());
 		}
-		
-		callbackData.put("contentletInode", newCont.getInode());
-		
-		HttpSession ses = req.getSession();
-		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-		
-		if(!UtilMethods.isSet(tempBinaryImageInodes))
-			ses.setAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST, new ArrayList<String>());
-		
-		tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-		tempBinaryImageInodes.add(newCont.getInode());
 		
 		return callbackData;
 	}

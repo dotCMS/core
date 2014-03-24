@@ -666,12 +666,14 @@ dojo.require("dojox.layout.ContentPane");
 				                                + '<%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>'
 								+ '</div>';
 
-				var newFileDialog = new dijit.Dialog({
-					id: data['contentletInode']+'_Dialog',
-				    title: newFileDialogTitle,
-				    content: newFileDialogContent,
-				    style: "overflow:auto;width:760px;height:540px;"
-				});
+				if(dijit.byId(data['contentletInode']+'_Dialog') == undefined){
+					var newFileDialog = new dijit.Dialog({
+						id: data['contentletInode']+'_Dialog',
+					    title: newFileDialogTitle,
+					    content: newFileDialogContent,
+					    style: "overflow:auto;width:760px;height:540px;"
+					});
+				}
 
 				var thumbNailImg = document.createElement("img");
 				thumbNailImg.setAttribute("src","/contentAsset/image/"+data['contentletInode']+"/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_w=300&thumbnail_h=300");
