@@ -40,6 +40,18 @@ public abstract class PublishAuditAPI {
 	 */
 	//Update
 	public abstract void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history) throws DotPublisherException;
+
+    /**
+     * Update publish audit status
+     *
+     * @param bundleId
+     * @param newStatus
+     * @param history
+     * @param updateDates True if want to override the create_date and status_updated with the current date
+     * @throws DotPublisherException
+     */
+    //Update
+	public abstract void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history, Boolean updateDates ) throws DotPublisherException;
 	
 	/**
 	 * Remove publish audit row from publish_audit table
@@ -101,15 +113,28 @@ public abstract class PublishAuditAPI {
 	 * @throws DotPublisherException
 	 */
 	public abstract List<PublishAuditStatus> getPendingPublishAuditStatus() throws DotPublisherException;
-	
-	/**
-	 * Updates the audit table with the bundle info and status
-	 * @param endpointId
-	 * @param groupId
-	 * @param bundleFolder
-	 * @return
-	 * @throws DotPublisherException
-	 */
-	public abstract PublishAuditStatus updateAuditTable(String endpointId, String groupId, String bundleFolder)
-			throws DotPublisherException;
+
+    /**
+     * Updates the audit table with the bundle info and status
+     *
+     * @param endpointId
+     * @param groupId
+     * @param bundleFolder
+     * @return
+     * @throws DotPublisherException
+     */
+    public abstract PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder ) throws DotPublisherException;
+
+    /**
+     * Updates the audit table with the bundle info and status
+     *
+     * @param endpointId
+     * @param groupId
+     * @param bundleFolder
+     * @param updateDates  True if want to override the create_date and status_updated with the current date
+     * @return
+     * @throws DotPublisherException
+     */
+    public abstract PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder, Boolean updateDates ) throws DotPublisherException;
+
 }

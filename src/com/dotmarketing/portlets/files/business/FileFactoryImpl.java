@@ -614,6 +614,7 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
         File newFile = new File();
 
         newFile.copy( file );
+        newFile.setParent(parent.getInode());
 
         // gets filename before extension
         String fileName = com.dotmarketing.util.UtilMethods.getFileName( file.getFileName() );

@@ -706,7 +706,7 @@ var cmsfile=null;
 	}
 	
 	var textEditor = new Array();
-	var aceTextId;
+	var aceTextId = new Array();
 	function aceText(textarea,keyValue) {
 		if(document.getElementById('aceTextArea_'+textarea).style.position != 'relative'){
 			document.getElementById('aceTextArea_'+textarea).style.position='relative';
@@ -714,7 +714,7 @@ var cmsfile=null;
 			textEditor[textarea].setTheme("ace/theme/textmate");
 			textEditor[textarea].getSession().setMode("ace/mode/"+keyValue);
 			textEditor[textarea].getSession().setUseWrapMode(true);
-			aceTextId = textarea;
+			 aceTextId[textarea] = textarea;
 		}
     	dijit.byId("toggleEditor_"+textarea).disabled=true;
 		var acetId = document.getElementById('aceTextArea_'+textarea);

@@ -22,6 +22,8 @@
 
 package com.liferay.portal.ejb;
 
+import java.util.Locale;
+
 /**
  * <a href="UserManager.java.html"><b><i>View Source</i></b></a>
  *
@@ -124,7 +126,7 @@ public interface UserManager {
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
 
 	public void sendPassword(java.lang.String companyId,
-		java.lang.String emailAddress)
+		java.lang.String emailAddress,Locale locale)
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
 

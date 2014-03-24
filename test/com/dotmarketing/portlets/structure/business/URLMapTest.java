@@ -57,6 +57,9 @@ public class URLMapTest extends TestBase  {
 	private Structure testSt;
 	private Contentlet widget;
 	private User user;
+	
+	final String salt=Long.toString(System.currentTimeMillis());
+
 
 	@Before
 	public void createAssets() throws Exception {
@@ -201,7 +204,7 @@ public class URLMapTest extends TestBase  {
 			// add the widget to the detail page
 			MultiTreeFactory.saveMultiTree( new MultiTree( htmlPage.getIdentifier(), container.getIdentifier(), widget.getIdentifier() ) );
 
-
+			
 			// STRUCTURE
 			testSt = new Structure();
 
@@ -209,12 +212,12 @@ public class URLMapTest extends TestBase  {
 			testSt.setDescription( "News Test" );
 			testSt.setFixed( false );
 			testSt.setIDate( new Date() );
-			testSt.setName( "NewsTest" );
+			testSt.setName( "NewsTest" +salt);
 			testSt.setOwner( user.getUserId() );
 			testSt.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
 			testSt.setType( "structure" );
-			testSt.setVelocityVarName( "NewsTest" );
-			testSt.setUrlMapPattern("/newstest/{urlNewsTitle}");
+			testSt.setVelocityVarName( "NewsTest" +salt );
+			testSt.setUrlMapPattern("/newstest"+salt+"/{urlNewsTitle}");
 			testSt.setDetailPage( htmlPage.getIdentifier() );
 
 			StructureFactory.saveStructure( testSt );
@@ -330,11 +333,11 @@ public class URLMapTest extends TestBase  {
 		String serverName = request.getServerName();
 		Integer serverPort = request.getServerPort();
 
-		URL urlE = new URL("http://"+serverName+":"+serverPort+"/newstest/the-gas-price/");
+		URL urlE = new URL("http://"+serverName+":"+serverPort+"/newstest"+salt+"/the-gas-price/");
 		assertTrue(IOUtils.toString(urlE.openStream()).contains("the-gas-price"));
 
 		try {
-		    URL urlS = new URL("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas/");
+		    URL urlS = new URL("http://"+serverName+":"+serverPort+"/newstest"+salt+"/el-precio-del-gas/");
 		    urlS.openStream();
 		    
 		    Assert.fail(); // the previus line should throw an exception
@@ -344,7 +347,7 @@ public class URLMapTest extends TestBase  {
 		}
 		
 		// for spanish it should load of language_id=2
-		URL urlS = new URL("http://"+serverName+":"+serverPort+"/newstest/el-precio-del-gas?language_id=2");
+		URL urlS = new URL("http://"+serverName+":"+serverPort+"/newstest"+salt+"/el-precio-del-gas?language_id=2");
 		assertTrue(IOUtils.toString(urlS.openStream()).contains("el-precio-del-gas"));
 	}
 

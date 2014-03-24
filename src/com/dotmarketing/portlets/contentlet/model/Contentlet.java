@@ -551,8 +551,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		if((f==null || !f.exists()) ){
 			f=null;
 			map.remove(velocityVarName);
-			if(UtilMethods.isSet(map.get(INODE_KEY))){
-				String inode = (String) map.get(INODE_KEY);
+            if ( map.get( INODE_KEY ) != null && InodeUtils.isSet( (String) map.get( INODE_KEY ) ) ) {
+                String inode = (String) map.get(INODE_KEY);
 	        	try{
 	        	
 	        		java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()

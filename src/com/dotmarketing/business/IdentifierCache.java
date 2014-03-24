@@ -17,7 +17,7 @@ public abstract class IdentifierCache implements Cachable {
 
 	abstract protected String getIdentifierFromInode(Versionable versionable);
 
-	abstract protected void removeFromCacheByURI(String URI, String hostId);
+	abstract protected void removeFromCacheByURI(String hostId, String URI);
 
 	abstract public void removeFromCacheByVersionable(Versionable versionable);
 
@@ -38,7 +38,7 @@ public abstract class IdentifierCache implements Cachable {
 	abstract public void clearCache();
 
 	public String[] getGroups() {
-		String[] groups = { getPrimaryGroup(), getVersionInfoGroup(),getVersionGroup() };
+		String[] groups = { getPrimaryGroup(), getVersionInfoGroup(),getVersionGroup(),get404Group() };
 		return groups;
 	}
 
@@ -53,6 +53,11 @@ public abstract class IdentifierCache implements Cachable {
 	public String getVersionGroup() {
 	    return "VersionCache";
 	}
+	
+	public String get404Group() {
+	    return "Identifier404Cache";
+	}
+	
     abstract protected void addIdentifierToCache(Identifier id, Versionable v) ;
 
 		

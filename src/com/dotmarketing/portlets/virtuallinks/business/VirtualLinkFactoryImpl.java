@@ -23,47 +23,47 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 				return null;
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public List<VirtualLink> getVirtualLinks(String title, String url, VirtualLinkAPI.OrderBy orderby) {
 		HibernateUtil dh = new HibernateUtil(VirtualLink.class);
 		java.util.List<VirtualLink> result =null;
 		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link'";
-		
+
 		if (UtilMethods.isSet(title)){
 			query += " and lower(title) like ?";
 		}
-		
+
 		if (UtilMethods.isSet(url)){
 			query += " and (url like ? or url like ?)";
 		}
-		
+
 		query += " and active = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue();
 		if (orderby != null)
 			query += " order by " + getOrderByField(orderby);
-		
+
         try {
 			dh.setQuery(query);
 		} catch (DotHibernateException e) {
 			Logger.error(VirtualLinkFactoryImpl.class, e.getMessage(),e);
 		}
-        
+
         if (UtilMethods.isSet(title)){
         	dh.setParam("%" + title.toLowerCase() + "%");
         }
-        
+
         if (UtilMethods.isSet(url)){
         	dh.setParam("%" + url+ "%");
         	dh.setParam("%/%");
         }
-        
+
         try {
 			result = dh.list();
 		} catch (DotHibernateException e) {
 			Logger.error(VirtualLinkFactoryImpl.class, "getVirtualLinks failed:" + e,e);
 		}
-        
-        return result; 
+
+        return result;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -71,7 +71,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 		HibernateUtil dh = new HibernateUtil(VirtualLink.class);
 		java.util.List<VirtualLink> result = null;
 		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link'";
-		
+
 		query += " and url like ?";
 		try {
 			dh.setQuery(query);
@@ -79,19 +79,39 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 			result = dh.list();
 		} catch (DotHibernateException e) {
 			Logger.error(VirtualLinkFactoryImpl.class, "getHostVirtualLinks failed:" + e,e);
-		}        
-        return result; 	
+		}
+        return result;
     }
-	
-	
+
+	@SuppressWarnings("unchecked")
+	public List<VirtualLink> getVirtualLinksByURI(String uri) {
+		HibernateUtil dh = new HibernateUtil(VirtualLink.class);
+		java.util.List<VirtualLink> result = null;
+
+		if(!UtilMethods.isSet(uri)) return null;
+
+		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link'";
+
+		query += " and uri = ?";
+		try {
+			dh.setQuery(query);
+			dh.setParam(uri);
+			result = dh.list();
+		} catch (DotHibernateException e) {
+			Logger.error(VirtualLinkFactoryImpl.class, "getHostVirtualLinks failed:" + e,e);
+		}
+        return result;
+    }
+
+
 	public List<VirtualLink> getVirtualLinks(String title, List<Host> hosts, VirtualLinkAPI.OrderBy orderby) {
 		HibernateUtil dh = new HibernateUtil(VirtualLink.class);
 		java.util.List<VirtualLink> result=null;
 		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link'";
-		
+
 		if (title != null)
 			query += " and title like ?";
-		
+
 		if (hosts != null) {
 			StringBuilder filterHosts = new StringBuilder(128);
 			filterHosts.ensureCapacity(32);
@@ -101,24 +121,24 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 				else
 					filterHosts.append(" or url like ?");
 			}
-			
+
 			if (0 < hosts.size())
 				query += " and (" + filterHosts.toString() + ")";
 		}
-		
+
 		query += " and active = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue();
 		if (orderby != null)
 			query += " order by " + getOrderByField(orderby);
-		
+
         try {
 			dh.setQuery(query);
 		} catch (DotHibernateException e) {
 			Logger.error(VirtualLinkFactoryImpl.class, e.getMessage(),e);
 		}
-        
+
         if (title != null)
         	dh.setParam("%" + title.toLowerCase() + "%");
-        
+
         if (hosts != null) {
         	for (Host host: hosts) {
         		if (host.isSystemHost())
@@ -127,7 +147,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
         			dh.setParam("%" + host.getHostname() + ":/%");
         	}
         }
-        
+
         try {
 			result = dh.list();
 		} catch (DotHibernateException e) {
@@ -135,4 +155,5 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 		}
 		return result;
 	}
+
 }

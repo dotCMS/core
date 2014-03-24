@@ -136,6 +136,7 @@ boolean hasPath = false;
 			</td>
 			<td>
 				<input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text" dojoType='dijit.form.ValidationTextBox' regExp="[\w -]+" required="true" style='width: 400px' value="<%=QUARTZ_JOB_NAME %>" size="200" />
+				<input id="OLD_QUARTZ_JOB_NAME" name="OLD_QUARTZ_JOB_NAME" type="hidden" value="<%=QUARTZ_JOB_NAME%>" />
 			</td>
 		</tr>
 

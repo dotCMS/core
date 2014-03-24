@@ -147,9 +147,9 @@ public class MainServlet extends ActionServlet {
 			        if(UtilMethods.isSet(serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID"))) {
 			        	server.setServerId(serverId);
 			        }
-			        server.setIpAddress("");
+			        server.setIpAddress("127.0.0.1");
 
-			        String hostName = "";
+			        String hostName = "localhost";
 		    		try {
 		    			hostName = InetAddress.getLocalHost().getHostName();
 

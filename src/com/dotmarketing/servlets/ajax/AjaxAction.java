@@ -60,7 +60,11 @@ public abstract class AjaxAction {
 		
 		return user;
 	}
-	
+
+    public void setUser(User user){
+        this.user = user;
+    }
+
 	public void setUser(HttpServletRequest request){
 		
 		HttpSession session = request.getSession(false);

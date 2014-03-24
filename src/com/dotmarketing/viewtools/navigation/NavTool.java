@@ -131,6 +131,7 @@ public class NavTool implements ViewTool {
                     nav.setTitle(itemLink.getTitle());
                     nav.setOrder(itemLink.getSortOrder());
                     nav.setType("link");
+                    nav.setTarget(itemLink.getTarget());
                     nav.setPermissionId(itemLink.getPermissionId());
                     children.add(nav);
                 }

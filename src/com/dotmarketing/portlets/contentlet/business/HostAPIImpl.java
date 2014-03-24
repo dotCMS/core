@@ -359,6 +359,7 @@ public class HostAPIImpl implements HostAPI {
 		APILocator.getContentletAPI().copyProperties(c, host.getMap());;
 		c.setInode("");
 		c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
+		
 		APILocator.getVersionableAPI().setLive(c);
 		Host savedHost =  new Host(c);
 
@@ -381,7 +382,12 @@ public class HostAPIImpl implements HostAPI {
 					if(host.getMap().containsKey("__disable_workflow__"))
 					    otherHost.setProperty("__disable_workflow__",true);
 
-					conAPI.checkin(otherHost, user, respectFrontendRoles);
+					Contentlet cont = conAPI.checkin(otherHost, user, respectFrontendRoles);
+					if(isHostRunning) {
+						otherHost = new Host(cont);
+						publish(otherHost, user, respectFrontendRoles);
+					}
+					
 				}
 			}
 		}
@@ -552,7 +558,7 @@ public class HostAPIImpl implements HostAPI {
 				dc.setSQL("select distinct id, language_id from identifier join contentlet on contentlet.identifier=identifier.id where identifier.host_inode=?");
 				dc.addParam(host.getIdentifier());
 				for (Map<String,Object> rr : dc.loadObjectResults()) {
-				    Contentlet contentlet = contentAPI.findContentletByIdentifier((String)rr.get("id"), false, (Long)rr.get("language_id"), user, false);
+				    Contentlet contentlet = contentAPI.findContentletByIdentifier((String)rr.get("id"), false, ((Number)rr.get("language_id")).longValue(), user, false);
 					contentAPI.delete(contentlet, user, respectFrontendRoles);
 				}
 
