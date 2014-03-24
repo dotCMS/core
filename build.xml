@@ -429,6 +429,11 @@
                     <tarfileset dir="${distribution.output}/dotserver/tomcat-7.0.42/bin" prefix="/dotserver/tomcat-7.0.42/bin" filemode="755">
                         <include name="**/*.sh"/>
                     </tarfileset>
+
+                    <tarfileset dir="${distribution.output}/dotserver/tomcat-7.0.42/webapps/ROOT" prefix="/dotserver/tomcat-7.0.42/webapps/ROOT" filemode="755">
+                        <include name="**/*.sh"/>
+                    </tarfileset>
+
                 </tar>
             </then>
         </if>

@@ -134,7 +134,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this._hideMatchingResults ();
 		this.nextDiv.style.display = "none";
 		this.previousDiv.style.display = "none";
-		this.langDropdown.style.display = "";
+		if(this.langDropdown)
+			this.langDropdown.style.display = "";
 		//this.counter_radio = 0;
 		this.counter_checkbox = 0;
 	},
@@ -171,8 +172,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_fillLanguages: function(data) {
 		if(dijit.byId('langcombo+'+this.dialogCounter)){
-			console.log("destroying:langcombo+" + this.dialogCounter)
-			dijit.destroy(dijit.byId('langcombo+'+this.dialogCounter));
+			window.console.log("destroying:langcombo+" + this.dialogCounter)
+			dijit.byId('langcombo+'+this.dialogCounter).destroy();			
 		}
 		this.availableLanguages = data;
 		this.search_languages_table.innerHTML = "";

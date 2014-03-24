@@ -240,6 +240,7 @@ public class PublisherAPIImpl extends PublisherAPI{
         //Preparing and returning the response status object
         resultMap.put( "errorMessages", errorsList );
         resultMap.put( "errors", errorsList.size() );
+        resultMap.put( "bundleId", bundleId );
         resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
         return resultMap;
     }
