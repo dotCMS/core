@@ -1,5 +1,22 @@
 package com.dotmarketing.portlets.browser.ajax;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
+import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -14,7 +31,11 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -46,15 +67,6 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
-
-import static com.dotmarketing.business.PermissionAPI.*;
 
 /**
  *
@@ -671,29 +683,30 @@ public class BrowserAjax {
 	
 	
 				return "File-copied";
-			}catch(Exception e){
-				Logger.error(this, "Error trying to copy the file to folder.", e);
 			}
-			return "";
-        }
 
-        File file = (File) InodeFactory.getInode( inode, File.class );
-        // CHECK THE FOLDER PATTERN		//DOTCMS-6017
-        if ( UtilMethods.isSet( file.getFileName() ) && (parent != null && !folderAPI.matchFilter( parent, file.getFileName() )) ) {
-            return "message.file_asset.error.filename.filters";
-        }
-
-        // Checking permissions
-        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
-            return "File-failed-to-copy-check-you-have-the-required-permissions";
-        }
-
-        if ( parent != null ) {
-            APILocator.getFileAPI().copyFile( file, parent, user, false );
-        } else {
-            APILocator.getFileAPI().copyFile( file, host, user, false );
-        }
-        return "File-copied";
+            File file = (File) InodeFactory.getInode( inode, File.class );
+            // CHECK THE FOLDER PATTERN		//DOTCMS-6017
+            if ( UtilMethods.isSet( file.getFileName() ) && (parent != null && !folderAPI.matchFilter( parent, file.getFileName() )) ) {
+                return "message.file_asset.error.filename.filters";
+            }
+    
+            // Checking permissions
+            if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
+                return "File-failed-to-copy-check-you-have-the-required-permissions";
+            }
+    
+            if ( parent != null ) {
+                APILocator.getFileAPI().copyFile( file, parent, user, false );
+            } else {
+                APILocator.getFileAPI().copyFile( file, host, user, false );
+            }
+            return "File-copied";
+		}
+		catch(Exception ex) {
+		    Logger.error(this, "Error trying to copy the file to folder.", ex);
+		}
+        return "";
     }
 
     /**
