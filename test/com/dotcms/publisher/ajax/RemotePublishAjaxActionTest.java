@@ -648,6 +648,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 * Validations: Check if the folder was created, then if the not archive page was send, and if the contentlet 
 		 * only have one reference to the page send
 		 */
+		Thread.sleep( 3000 );
 		APILocator.getContentletAPI().refreshAllContent();
 		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
 		assertTrue(UtilMethods.isSet(folder.getInode()));
