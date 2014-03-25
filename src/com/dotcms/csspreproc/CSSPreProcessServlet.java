@@ -48,6 +48,11 @@ public class CSSPreProcessServlet extends HttpServlet {
             String reqURI=req.getRequestURI();
             String uri = reqURI.substring(reqURI.indexOf('/', 1));
             
+            if(!reqURI.endsWith(".css")) {
+                req.getRequestDispatcher(uri).forward(req, resp);
+                return;
+            }
+            
             // choose compiler based on the request URI
             Class<? extends CSSCompiler> compilerClass = reqURI.startsWith("/DOTSASS/") ? SassCompiler.class
                                            :  (reqURI.startsWith("/DOTLESS/") ? LessCompiler.class : null);
