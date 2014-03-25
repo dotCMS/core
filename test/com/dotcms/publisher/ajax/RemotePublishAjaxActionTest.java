@@ -389,8 +389,8 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		contentlet.setStructureInode(structure.getInode());
 		contentlet.setHost(host.getIdentifier());
 		contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-		contentlet.setStringProperty("title", "test1");
-		contentlet.setStringProperty("body", "test1");
+		contentlet.setStringProperty("title", "test5086");
+		contentlet.setStringProperty("body", "test5086");
 		contentlet.setHost(host.getIdentifier());
 
 		contentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser,false);
@@ -654,13 +654,14 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		List<HTMLPage> pages = APILocator.getHTMLPageAPI().findWorkingHTMLPages(folder);
 		assertTrue(pages.size() ==1);
 		HTMLPage page = pages.get(0);
-		assertTrue(APILocator.getHTMLPageAPI().hasContent(page, containerId));
-		List<Contentlet> contList = APILocator.getContentletAPI().findPageContentlets(page.getIdentifier(), containerId.getIdentifier(), "modDate", true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-		assertTrue(contList.size()==1);
-		contentlet = contList.get(0);
+		contentlet = APILocator.getContentletAPI().findContentletByIdentifier(contenletIdentifier.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+		assertTrue(UtilMethods.isSet(contentlet.getInode()));
 		references = APILocator.getContentletAPI().getContentletReferences(contentlet, systemUser, false);
 		assertTrue(references.size() == 1);
-
+		Map<String,Object> pageRefecence = references.get(0); 
+		HTMLPage page2 = (HTMLPage)pageRefecence.get("page");
+		assertTrue(page2.getIdentifier().equals(page.getIdentifier()));
+		
 	}
 
 
