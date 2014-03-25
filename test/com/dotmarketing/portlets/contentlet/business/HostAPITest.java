@@ -82,12 +82,17 @@ public class HostAPITest {
         host=APILocator.getHostAPI().save(host, user, false);
         APILocator.getHostAPI().publish(host, user, false);
         APILocator.getHostAPI().makeDefault(host, user, false);
+        
+        host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
         APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
+        hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
+        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(),true);
         
         /*
          * Validate if the previous default host. Is live and not default
          */
-        hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
         Assert.assertTrue(hdef.isLive());
         Assert.assertFalse(hdef.isDefault());
         
@@ -95,14 +100,22 @@ public class HostAPITest {
          * get Back to default the previous host
          */
         APILocator.getHostAPI().makeDefault(hdef, user, false);
+        
+        host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
+        hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
         APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(),true);
         
         /*
          * Validate if the new host is not default anymore and if its live
          */
-        host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
         Assert.assertFalse(host.isDefault());
         Assert.assertTrue(host.isLive());
+        
+        Assert.assertTrue(hdef.isLive());
+        Assert.assertTrue(hdef.isDefault());
         
         /*
          * Delete the new test host
