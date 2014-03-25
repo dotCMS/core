@@ -114,6 +114,8 @@
   <filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
@@ -124,23 +126,33 @@
 	<filter-mapping>
 		<filter-name>SalesForceFilter</filter-name>
 		<url-pattern>/dotCMS/login</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>SalesForceFilter</filter-name>
 		<url-pattern>/admin</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>SalesForceFilter</filter-name>
 		<url-pattern>/c</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	
   <filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
   <filter-mapping>
 		<filter-name>FixCmisFilter</filter-name>
 		<url-pattern>/cmis</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 <!--
   <filter-mapping>
@@ -159,50 +171,74 @@
 	<filter-mapping>
 		<filter-name>URLMapFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>*.gif</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>*.png</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>/dwr/*</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>*.jpg</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>*.PNG</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>/image/company_logo</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>/icon</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>/titleServlet</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>*.swf</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CacheImagesFilter</filter-name>
 		<url-pattern>/thumbnail</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<!--
 	<filter-mapping>
@@ -217,14 +253,20 @@
 	<filter-mapping>
 		<filter-name>NoCacheFilter</filter-name>
 		<url-pattern>/dotCMS/*</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
     <filter-mapping>
         <filter-name>UrlRewriteFilter</filter-name>
         <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
 	<!--
 	<filter>
@@ -255,10 +297,14 @@
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>Secure AxisServlet Filter</filter-name>
 		<url-pattern>/webxservices/*</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
 	</filter-mapping>
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
