@@ -3,6 +3,7 @@ package com;
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
+import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.csspreproc.LessCompilerTest;
 import com.dotcms.csspreproc.SassCompilerTest;
 import com.dotcms.notification.business.NotificationAPITest;
@@ -73,7 +74,8 @@ import com.dotmarketing.webdav.WebDavTest;
     IdentifierAPITest.class,
     ImportUtilTest.class,
     SiteSearchAjaxActionTest.class,
-    RemotePublishAjaxActionTest.class
+    RemotePublishAjaxActionTest.class,
+    CSSPreProcessServletTest.class
 })
 public class AllTestsSuite {
 
