@@ -2678,7 +2678,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String filterSystemHost = req.getParameter("filterSystemHost");
 			String filterLocked = req.getParameter("filterLocked");
 			String filterUnpublish = req.getParameter("filterUnpublish");
-			String currentSortBy = req.getParameter("currentSortBy");
+			String currentSortBy = req.getParameter("expCurrentSortBy");
 			String modDateFrom = req.getParameter("modDateFrom");
 			String modDateTo = req.getParameter("modDateTo");
 
