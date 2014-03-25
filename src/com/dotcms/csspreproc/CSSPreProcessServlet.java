@@ -22,6 +22,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cache.LiveCache;
+import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -29,6 +31,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class CSSPreProcessServlet extends HttpServlet {
@@ -49,7 +52,13 @@ public class CSSPreProcessServlet extends HttpServlet {
             String uri = reqURI.substring(reqURI.indexOf('/', 1));
             
             if(!reqURI.endsWith(".css")) {
-                req.getRequestDispatcher(uri).forward(req, resp);
+                String path=live ? LiveCache.getPathFromCache(uri, host.getIdentifier()) : WorkingCache.getPathFromCache(uri, host.getIdentifier());
+                if(UtilMethods.isSet(path)) {
+                    req.getRequestDispatcher("/dotAsset?path=" + path).forward(req, resp);
+                }
+                else {
+                    resp.sendError(404);
+                }
                 return;
             }
             
