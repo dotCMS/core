@@ -49,14 +49,8 @@
 	var fromDate;
 	var toDate;
 
-	function initializeListCalendar() {
-	
-		renderListCalendar();
-		
-		var range = currentRange;
-		
-		dwr.util.setValue('rangeSelector', range);
-		
+	function initializeListCalendar() {	
+		renderListCalendar();			
 	}
 	
 	function changeDatesRange () {

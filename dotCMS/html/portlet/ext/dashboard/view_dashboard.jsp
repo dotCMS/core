@@ -394,8 +394,7 @@ int periodData = dAPI.checkPeriodData(0,0);
 	    
 </script>
 <style media="all" type="text/css">
-	@import url(/html/css/widget.css);
-	@import url(/html/portlet/ext/contentlet/field/edit_field.css);
+	@import url(/html/css/widget.css);	
 	@import url(/html/portlet/ext/browser/browser.css);
 </style>
 
