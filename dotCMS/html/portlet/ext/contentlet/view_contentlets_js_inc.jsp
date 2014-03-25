@@ -889,7 +889,7 @@
                 href += "<portlet:param name='cmd' value='export' />";
                 href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
                 href += "</portlet:actionURL>";
-                href += "&expStructureInode="+structureInode+"&expFieldsValues="+fieldsValues+"&expCategoriesValues="+categoriesValues+"&showDeleted="+showDeleted+"&currentSortBy="+currentSortBy+"&filterSystemHost="+filterSystemHost+"&filterLocked="+filterLocked+"&filterUnpublish="+filterUnpublish;
+                href += "&expStructureInode="+structureInode+"&expFieldsValues="+fieldsValues+"&expCategoriesValues="+categoriesValues+"&showDeleted="+showDeleted+"&expCurrentSortBy="+currentSortBy+"&filterSystemHost="+filterSystemHost+"&filterLocked="+filterLocked+"&filterUnpublish="+filterUnpublish;
 
                 /*if we have a date*/
                         var dateFrom= null;
