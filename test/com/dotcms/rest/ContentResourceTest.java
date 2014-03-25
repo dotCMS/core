@@ -111,7 +111,7 @@ public class ContentResourceTest extends TestBase {
                                 new JSONObject()
                                 .put("stInode", st.getInode())
                                 .put("languageId", 1)
-                                .put("title", "Test content from ContentResourceTest (folderId)")
+                                .put("title", "test content with folderid")
                                 .put("body", "this is an example text")
                                 .put("contentHost", folder.getInode()).toString());
         location=response.getLocation().toString();
@@ -126,7 +126,7 @@ public class ContentResourceTest extends TestBase {
                         new JSONObject()
                                 .put("stInode", st.getInode())
                                 .put("languageId", 1)
-                                .put("title", "Test content from ContentResourceTest (folderId)")
+                                .put("title", "Test content from ContentResourceTest folderId")
                                 .put("body", "this is an example text")
                                 .put("contentHost", "demo.dotcms.com").toString());
         location=response.getLocation().toString();
@@ -141,7 +141,7 @@ public class ContentResourceTest extends TestBase {
                         new JSONObject()
                                 .put("stInode", st.getInode())
                                 .put("languageId", 1)
-                                .put("title", "Test content from ContentResourceTest (folderId)")
+                                .put("title", "Test content from ContentResourceTest folderId")
                                 .put("body", "this is an example text")
                                 .put("contentHost", "demo.dotcms.com:/home").toString());
         location=response.getLocation().toString();
