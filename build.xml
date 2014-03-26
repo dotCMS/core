@@ -208,8 +208,6 @@
                     <fileset dir="${src.conf.dir}">
                         <exclude name="**/.svn" />
                         <exclude name="**/.git" />
-                        <exclude name=".git" />
-                        <exclude name=".git/**" />
                     </fileset>
                 </copy>
             </then>
@@ -219,8 +217,6 @@
                     <fileset dir="${distributionPath}/bin/system/${src.conf.dir}">
                         <exclude name="**/.svn" />
                         <exclude name="**/.git" />
-                        <exclude name=".git" />
-                        <exclude name=".git/**" />
                     </fileset>
                 </copy>
             </else>
@@ -355,6 +351,9 @@
             </fileset>
             <fileset dir="bin">
                 <exclude name="autoupdater/**"/>
+                <exclude name="com/**"/>
+                <exclude name="net/**"/>
+                <exclude name="org/**"/>
                 <exclude name="**/*.class"/>
             </fileset>
         </copy>
@@ -379,8 +378,6 @@
         <copy todir="${distribution.plugins.output}">
             <fileset dir="plugins">
                 <exclude name="**/.git" />
-                <exclude name=".git" />
-                <exclude name=".git/**" />
             </fileset>
         </copy>
         <!--Set some startup variables-->
@@ -833,17 +830,15 @@
                 <exclude name="assets/"/>
                 <exclude name="WEB-INF/backup/"/>
                 <exclude name="WEB-INF/dotlucene/"/>
+                <exclude name="WEB-INF/classes/"/>
                 <exclude name="dot_secure/"/>
                 <exclude name="dotsecure/"/>
-                <exclude name="**/*.class"/>
             </fileset>
         </copy>
-        <copy todir="${build.war}/${war.name}.war/WEB-INF/classes" overwrite="true">
-            <fileset dir="${src.conf.dir}">
+        <copy todir="${build.war}/${war.name}.war/WEB-INF/classes" overwrite="true" includeemptydirs="false">
+            <fileset dir="dotCMS/WEB-INF/classes">
                 <exclude name="**/.svn" />
                 <exclude name="**/.git" />
-                <exclude name=".git" />
-                <exclude name=".git/**" />
             </fileset>
         </copy>
 
@@ -922,32 +917,24 @@
         <copy todir="${exploded.war.location}/elasticsearch/" overwrite="true">
             <fileset dir="dotCMS/elasticsearch/">
                 <exclude name="**/.git" />
-                <exclude name=".git" />
-                <exclude name=".git/**" />
             </fileset>
         </copy>
 
         <copy todir="${exploded.war.location}/html/" overwrite="true">
             <fileset dir="dotCMS/html/">
                 <exclude name="**/.git" />
-                <exclude name=".git" />
-                <exclude name=".git/**" />
             </fileset>
         </copy>
 
         <copy todir="${exploded.war.location}/portal/" overwrite="true">
             <fileset dir="dotCMS/portal/">
                 <exclude name="**/.git" />
-                <exclude name=".git" />
-                <exclude name=".git/**" />
             </fileset>
         </copy>
 
         <copy todir="${exploded.war.location}/WEB-INF/jsp/" overwrite="true">
             <fileset dir="dotCMS/WEB-INF/jsp/">
                 <exclude name="**/.git" />
-                <exclude name=".git" />
-                <exclude name=".git/**" />
             </fileset>
         </copy>
     </target>
@@ -967,8 +954,6 @@
         <copy todir="${tomcat7.home}/webapps/ROOT">
             <fileset dir="${build.war}/${war.name}.war">
                 <exclude name="**/.git" />
-                <exclude name=".git" />
-                <exclude name=".git/**" />
             </fileset>
         </copy>
 
@@ -990,21 +975,28 @@
         <mkdir dir="${tomcat7.home}/temp"/>
 
         <delete dir="${tomcat7.home}/temp/assets"/>
-        <move todir="${tomcat7.home}/temp/assets">
+        <move todir="${tomcat7.home}/temp/assets" failonerror="false">
             <fileset dir="${tomcat7.home}/webapps/ROOT/assets">
                 <include name="**/*"/>
             </fileset>
         </move>
 
         <delete dir="${tomcat7.home}/temp/dotsecure"/>
-        <move todir="${tomcat7.home}/temp/dotsecure">
+        <move todir="${tomcat7.home}/temp/dotsecure" failonerror="false">
             <fileset dir="${tomcat7.home}/webapps/ROOT/dotsecure">
                 <include name="**/*"/>
             </fileset>
         </move>
 
+        <delete dir="${tomcat7.home}/temp/META-INF"/>
+        <move todir="${tomcat7.home}/temp/META-INF" failonerror="false">
+            <fileset dir="${tomcat7.home}/webapps/ROOT/META-INF">
+                <include name="**/*"/>
+            </fileset>
+        </move>
+
         <delete dir="${tomcat7.home}/temp/h2"/>
-        <move todir="${tomcat7.home}/temp/h2">
+        <move todir="${tomcat7.home}/temp/h2" failonerror="false">
             <fileset dir="${tomcat7.home}/webapps/ROOT">
                 <include name="*.db" />
             </fileset>
@@ -1015,20 +1007,27 @@
     <target name="restore-backup-war-tomcat7-data">
 
         <delete dir="${tomcat7.home}/webapps/ROOT/assets"/>
-        <move todir="${tomcat7.home}/webapps/ROOT/assets">
+        <move todir="${tomcat7.home}/webapps/ROOT/assets" failonerror="false">
             <fileset dir="${tomcat7.home}/temp/assets">
                 <include name="**/*"/>
             </fileset>
         </move>
 
         <delete dir="${tomcat7.home}/webapps/ROOT/dotsecure"/>
-        <move todir="${tomcat7.home}/webapps/ROOT/dotsecure">
+        <move todir="${tomcat7.home}/webapps/ROOT/dotsecure" failonerror="false">
             <fileset dir="${tomcat7.home}/temp/dotsecure">
                 <include name="**/*"/>
             </fileset>
         </move>
 
-        <move todir="${tomcat7.home}/webapps/ROOT" overwrite="true">
+        <delete dir="${tomcat7.home}/webapps/ROOT/META-INF"/>
+        <move todir="${tomcat7.home}/webapps/ROOT/META-INF" failonerror="false">
+            <fileset dir="${tomcat7.home}/temp/META-INF">
+                <include name="**/*"/>
+            </fileset>
+        </move>
+
+        <move todir="${tomcat7.home}/webapps/ROOT" overwrite="true" failonerror="false">
             <fileset dir="${tomcat7.home}/temp/h2">
                 <include name="*.db" />
             </fileset>

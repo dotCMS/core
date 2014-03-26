@@ -10,6 +10,7 @@ import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.liferay.util.FileUtil;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import javax.servlet.ServletException;
@@ -23,21 +24,24 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     public void action ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
     }
 
-    public void undeploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+    public void undeploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, InterruptedException {
 
         String jar = request.getParameter( "jar" );
         String bundleId = request.getParameter( "bundleId" );
 
         //First uninstall the bundle
+        Bundle bundle;
         try {
             try {
-                OSGIUtil.getInstance().getBundleContext().getBundle( new Long( bundleId ) ).uninstall();
+                bundle = OSGIUtil.getInstance().getBundleContext().getBundle( new Long( bundleId ) );
             } catch ( NumberFormatException e ) {
-                OSGIUtil.getInstance().getBundleContext().getBundle( bundleId ).uninstall();
+                bundle = OSGIUtil.getInstance().getBundleContext().getBundle( bundleId );
             }
+
+            bundle.uninstall();
         } catch ( BundleException e ) {
             Logger.error( OSGIAJAX.class, e.getMessage(), e );
-            throw new ServletException( e.getMessage() + " Unable to stop bundle", e );
+            throw new ServletException( e.getMessage() + " Unable to undeploy bundle", e );
         }
 
         //Then move the bundle from the load folder to the undeployed folder
