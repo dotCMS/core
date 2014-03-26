@@ -629,6 +629,7 @@
 	function showHTMLPagePopUp(page, cmsAdminUser, origReferer, e) {
 
 		var objId = page.inode;
+		var objIden = page.identifier;
 		var referer = encodeURIComponent(origReferer);
 
 		if($('context_menu_popup_'+objId) == null) {
@@ -684,13 +685,13 @@
 
             if (enterprise) {
                 if (sendingEndpoints) {
-                    strHTML += '<a href="javascript: remotePublish(\'' + objId + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+                    strHTML += '<a href="javascript: remotePublish(\'' + objIden + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
                     strHTML += '<span class="sServerIcon"></span>';
                     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
                     strHTML += '</a>';
                 }
 
-				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objIden + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
 				strHTML += '<span class="bundleIcon"></span>';
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
