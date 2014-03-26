@@ -4,6 +4,7 @@ import org.github.jamm.MemoryMeter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
@@ -25,17 +26,18 @@ public class UrlOsgiClassLoader extends URLClassLoader {
     Instrumentation instrumentation;
     OSGIClassTransformer transformer;
 
-    private ClassLoader topClassLoader;
     private ClassLoader mainClassLoader;
 
     private Collection<URL> urls;
+    private Long bundleId;
 
-    public UrlOsgiClassLoader ( URL url, ClassLoader mainClassLoader ) throws Exception {
+    public UrlOsgiClassLoader ( URL url, ClassLoader mainClassLoader, Long bundleId ) throws Exception {
 
         super( new URL[]{url}, null );
 
         urls = new ArrayList<URL>();
         urls.add( url );
+        this.bundleId = bundleId;
 
         //Find and set the instrumentation object
         instrumentation = findInstrumentation();
@@ -48,9 +50,6 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
         //Set our main class loader in order to use it in case we don't find a reference to a class we need to load
         this.mainClassLoader = mainClassLoader;
-
-        //Search for the top class loader in the dotCMS class loaders hierarchy
-        this.topClassLoader = findTopLoader( ClassLoader.getSystemClassLoader() );
     }
 
     @Override
@@ -193,6 +192,9 @@ public class UrlOsgiClassLoader extends URLClassLoader {
      */
     public void linkClassLoaders () throws Exception {
 
+        //Search for the top class loader in the dotCMS class loaders hierarchy
+        ClassLoader topClassLoader = findTopLoader( ClassLoader.getSystemClassLoader() );
+
         //Inject our custom class loader
         Field parentLoaderField = ClassLoader.class.getDeclaredField( "parent" );
         parentLoaderField.setAccessible( true );
@@ -207,10 +209,13 @@ public class UrlOsgiClassLoader extends URLClassLoader {
      */
     public void unlinkClassLoaders () throws Exception {
 
+        //Search for the top class loader in the dotCMS class loaders hierarchy
+        ClassLoader topClassLoader = findTopLoader( ClassLoader.getSystemClassLoader() );
+
         //Remove our custom class loader
         Field parentLoaderField = ClassLoader.class.getDeclaredField( "parent" );
         parentLoaderField.setAccessible( true );
-        parentLoaderField.set( topClassLoader, null );
+        parentLoaderField.set( topClassLoader, this.getParent() );//We will remove this class loader from the way
         parentLoaderField.setAccessible( false );
     }
 
@@ -225,8 +230,26 @@ public class UrlOsgiClassLoader extends URLClassLoader {
         if ( loader.getParent() == null ) {
             return loader;
         } else {
-            return findTopLoader( loader.getParent() );
+            if ( loader.getParent() instanceof UrlOsgiClassLoader
+                    && ((UrlOsgiClassLoader) loader.getParent()).getBundleId().equals( this.getBundleId() ) ) {
+                return loader;
+            } else {
+                return findTopLoader( loader.getParent() );
+            }
         }
+    }
+
+    public void close () throws IOException {
+        urls.clear();
+        super.close();
+    }
+
+    public Long getBundleId () {
+        return bundleId;
+    }
+
+    public void setBundleId ( Long bundleId ) {
+        this.bundleId = bundleId;
     }
 
     /**
