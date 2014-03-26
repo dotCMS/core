@@ -13,6 +13,9 @@ public class Activator extends GenericBundleActivator {
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
 
+        //Initializing services...
+        initializeServices( context );
+
         //Expose bundle elements
         publishBundleServices( context );
 
