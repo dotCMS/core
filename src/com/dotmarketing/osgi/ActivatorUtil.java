@@ -27,14 +27,26 @@ class ActivatorUtil {
     static final String OSGI_FOLDER = "/osgi";
     static final String VELOCITY_FOLDER = "/WEB-INF/velocity";
 
-    static UrlOsgiClassLoader findCustomURLLoader ( ClassLoader loader ) {
+    /**
+     * Searches for the custom classloader created for a specified bundle if any
+     *
+     * @param loader
+     * @param bundleId
+     * @return
+     */
+    static UrlOsgiClassLoader findCustomURLLoader ( ClassLoader loader, Long bundleId ) {
 
         if ( loader == null ) {
             return null;
         } else if ( loader instanceof UrlOsgiClassLoader ) {
-            return (UrlOsgiClassLoader) loader;
+            UrlOsgiClassLoader urlOsgiClassLoader = (UrlOsgiClassLoader) loader;
+            if ( urlOsgiClassLoader.getBundleId().equals( bundleId ) ) {
+                return urlOsgiClassLoader;
+            } else {
+                return findCustomURLLoader( loader.getParent(), bundleId );
+            }
         } else {
-            return findCustomURLLoader( loader.getParent() );
+            return findCustomURLLoader( loader.getParent(), bundleId );
         }
     }
 
