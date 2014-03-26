@@ -58,17 +58,27 @@ public class Xss {
     }
 
     /**
-     * Checks each parameter in the request for possible XSS hacks and return true if any possible XSS fragment is found
+     * Checks into the request query string for possible XSS hacks and return true if any possible XSS fragment is found
      *
      * @param request
      * @return true if any possible XSS fragment is found
      */
     @SuppressWarnings ("unchecked")
     public static boolean ParamsHaveXSS ( HttpServletRequest request ) {
+        return ParamsHaveXSS( request.getQueryString() );
+    }
+
+    /**
+     * Checks into a given query string for possible XSS hacks and return true if any possible XSS fragment is found
+     *
+     * @param queryString
+     * @return true if any possible XSS fragment is found
+     */
+    @SuppressWarnings ("unchecked")
+    public static boolean ParamsHaveXSS ( String queryString ) {
 
         if ( ESAPI_VALIDATION ) {
-        	String queryString = request.getQueryString();
-        	if ( queryString != null ) {
+        	if ( queryString != null && !queryString.isEmpty() ) {
 
         		//Canonicalizes input before validation to prevent bypassing filters with encoded attacks.
         		queryString = ESAPI.encoder().canonicalize( queryString, false );
@@ -80,7 +90,7 @@ public class Xss {
         	 return false;
 
         } else {
-            String queryString = UtilMethods.decodeURL( request.getQueryString() );
+            queryString = UtilMethods.decodeURL( queryString );
             return RegEX.contains( queryString, XSS_REGEXP_PATTERN );
         }
     }
@@ -96,8 +106,27 @@ public class Xss {
         if ( uri == null ) {
             return false;
         }
+
         if ( ESAPI_VALIDATION ) {
-            boolean isValid = ESAPI.validator().isValidInput( "URLContext", uri, "HTTPURI", uri.length(), false );
+
+            /*
+             Verify if the given URI have parameters, if it have them apply the security check to both, the
+             URI and the parameters.
+             */
+            String finalURI = uri;
+            String queryString = null;
+            if ( uri.contains( "?" ) ) {
+                finalURI = uri.substring( 0, uri.indexOf( "?" ) );
+                queryString = uri.substring( uri.indexOf( "?" ) + 1, uri.length() );
+            }
+
+            //Validate the URI
+            boolean isValid = ESAPI.validator().isValidInput( "URLContext", finalURI, "HTTPURI", uri.length(), false );
+            //Validate the query string if present
+            if ( isValid && queryString != null ) {
+                return ParamsHaveXSS( queryString );
+            }
+
             return !isValid;
         } else {
             return RegEX.contains( uri, XSS_REGEXP_PATTERN );
