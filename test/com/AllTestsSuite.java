@@ -1,6 +1,7 @@
 package com;
 
 import com.dotcms.cmis.DotCMSCMISTest;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
@@ -75,7 +76,8 @@ import com.dotmarketing.webdav.WebDavTest;
     ImportUtilTest.class,
     SiteSearchAjaxActionTest.class,
     RemotePublishAjaxActionTest.class,
-    CSSPreProcessServletTest.class
+    CSSPreProcessServletTest.class,
+    ESContentFactoryImplTest.class
 })
 public class AllTestsSuite {
 
