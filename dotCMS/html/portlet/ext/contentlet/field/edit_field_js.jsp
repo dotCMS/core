@@ -585,7 +585,15 @@ var cmsfile=null;
 		var value = dijit.byId(fieldValueId+'_value').value;
 		var table = document.getElementById(fieldId+'_kvtable');
 		var row = document.getElementById(fieldId+'_'+key);
-		if(row!=null){
+		var trs = table.getElementsByTagName('tr');
+		var duplicateKey = false;
+		for(var i=0;i<trs.length;i++){
+			if(trs[i].id.toUpperCase() == (fieldId+'_'+key).toUpperCase()){
+				duplicateKey = true;
+				break;
+			}
+		}		
+		if(duplicateKey){
 			 alert('<%= LanguageUtil.get(pageContext, "key-already-exists") %>');
 		}else{
 			var newRow = table.insertRow(table.rows.length);
