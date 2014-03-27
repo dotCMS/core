@@ -253,7 +253,7 @@
 	<%} %>
 	<form name="executeTasksFrm" id="executeTasksFrm" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=executeActions" method="post">
 		<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
-		<input name="wfActionComments" id="wfActionComments" type="hidden"" value="">
+		<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 		<input name="wfActionId" id="wfActionId" type="hidden" value="">
 		<input name="wfCons" id="wfCons" type="hidden" value="">
 	</form>
