@@ -41,6 +41,7 @@ import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.config.Default
 import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.FormDataMultiPart;
 import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.file.FileDataBodyPart;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.junit_4_8_1.junit.framework.Assert;
 import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
 import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -67,6 +68,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -127,8 +129,8 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		//Now we need to create the end point
 		PublishingEndPoint endpoint = new PublishingEndPoint();
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
-		endpoint.setAddress( "222.222.222.222" );
-		endpoint.setPort( "9999" );
+		endpoint.setAddress( "127.0.0.1" );
+		endpoint.setPort( "999" );
 		endpoint.setProtocol( "http" );
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
@@ -190,7 +192,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 100 );
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
 		//At this points should not be here anymore
 		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 		assertTrue( foundBundles == null || foundBundles.isEmpty() );
@@ -308,17 +310,8 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Creating testing folder
 		 */
-		String folderPath = "/testfolder";
-		Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, true);
-		if(!UtilMethods.isSet(folder.getInode())){
-			folder = APILocator.getFolderAPI().createFolders(folderPath, host, systemUser, true);
-
-			Permission p = new Permission();
-			p.setInode(folder.getPermissionId());
-			p.setRoleId(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
-			p.setPermission(PermissionAPI.PERMISSION_READ);
-			APILocator.getPermissionAPI().save(p, folder, systemUser, true);
-		}
+		String folderPath = "/testfolder"+UUIDGenerator.generateUuid();
+		Folder folder = APILocator.getFolderAPI().createFolders(folderPath, host, systemUser, true);
 
 		/*
 		 * Creating testing pages
@@ -484,8 +477,8 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 */
 		PublishingEndPoint endpoint = new PublishingEndPoint();
 		endpoint.setServerName( new StringBuilder( "TestEndPoint" + String.valueOf( new Date().getTime() ) ) );
-		endpoint.setAddress( "222.222.222.222" );
-		endpoint.setPort( "9999" );
+		endpoint.setAddress( "127.0.0.1" );
+		endpoint.setPort( "999" );
 		endpoint.setProtocol( "http" );
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
@@ -547,7 +540,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 			 */
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 100 );
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
 		/*
 		 * At this points should not be here anymore
 		 */
@@ -572,6 +565,10 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset, systemUser, true);
 		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
 		APILocator.getFolderAPI().delete(folder, systemUser, false);
+		
+		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset).size());
+		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset2).size());
+		Assert.assertEquals(0,MultiTreeFactory.getMultiTreeByChild(contentlet.getIdentifier()).size());
 
 		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
 		assertTrue(!UtilMethods.isSet(folder.getInode()));
@@ -648,8 +645,17 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 * Validations: Check if the folder was created, then if the not archive page was send, and if the contentlet 
 		 * only have one reference to the page send
 		 */
-		Thread.sleep( 3000 );
-		APILocator.getContentletAPI().refreshAllContent();
+		String bId=APILocator.getBundleAPI().getBundleByName(bundle.getName()).getId();
+		x = 0;
+        do {
+            Thread.sleep( 3000 );
+            /*
+             * Verify if it continues in the queue job
+             */
+            foundBundles = publisherAPI.getQueueElementsByBundleId( bId );
+            x++;
+        } while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
+		
 		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
 		assertTrue(UtilMethods.isSet(folder.getInode()));
 		List<HTMLPage> pages = APILocator.getHTMLPageAPI().findWorkingHTMLPages(folder);
