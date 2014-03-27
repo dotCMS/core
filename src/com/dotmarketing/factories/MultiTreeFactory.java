@@ -1,10 +1,16 @@
 package com.dotmarketing.factories;
 
+import java.util.Date;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -208,7 +214,17 @@ public class MultiTreeFactory {
 	    if(!InodeUtils.isSet(o.getChild()) | !InodeUtils.isSet(o.getParent1()) || !InodeUtils.isSet(o.getParent2())) throw new DotRuntimeException("Make sure your Multitree is set!");
 		try {
 			HibernateUtil.saveOrUpdate(o);
+			
+			VersionInfo htmlVI = APILocator.getVersionableAPI().getVersionInfo(o.getParent1());
+			htmlVI.setVersionTs(new Date());
+			APILocator.getVersionableAPI().saveVersionInfo(htmlVI);
 		} catch (DotHibernateException e) {
+			Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
+			throw new DotRuntimeException(e.getMessage());
+		} catch (DotStateException e) {
+			Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
+			throw new DotRuntimeException(e.getMessage());
+		} catch (DotDataException e) {
 			Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
 			throw new DotRuntimeException(e.getMessage());
 		}

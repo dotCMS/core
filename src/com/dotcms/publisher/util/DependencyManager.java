@@ -84,7 +84,7 @@ public class DependencyManager {
 		boolean isPublish=config.getOperation().equals(Operation.PUBLISH);
 		hosts = new DependencySet(config.getId(), "host", config.isDownloading(), isPublish);
 		folders = new DependencySet(config.getId(), "folder", config.isDownloading(), isPublish);
-		htmlPages = new DependencySet(config.getId(), "htmlPage", config.isDownloading(), isPublish);
+		htmlPages = new DependencySet(config.getId(), "htmlpage", config.isDownloading(), isPublish);
 		templates = new DependencySet(config.getId(), "template", config.isDownloading(), isPublish);
 		structures = new DependencySet(config.getId(), "structure", config.isDownloading(), isPublish);
 		containers = new DependencySet(config.getId(), "container", config.isDownloading(), isPublish);
