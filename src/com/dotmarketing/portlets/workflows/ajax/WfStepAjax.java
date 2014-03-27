@@ -116,7 +116,9 @@ public class WfStepAjax extends WfBaseAction {
 				}
 			}
 			WorkflowStep step = new WorkflowStep();
-			step.setMyOrder(maxOrder +1);
+			if(steps.size() != 0)
+				maxOrder = maxOrder + 1;
+			step.setMyOrder(maxOrder);
 			step.setName(stepName);
 			step.setSchemeId(schemeId);
 			step.setResolved(stepResolved);
