@@ -293,7 +293,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotDataException(e.getLocalizedMessage());
 		}
 		List<WorkflowStep> newSteps = new ArrayList<WorkflowStep>();
-		order = (order < 1) ? 1 : (order > steps.size()) ? steps.size() : order;
+		order = (order < 0) ? 0 : (order >= steps.size()) ? (steps.size() - 1) : order;
 		for (int i = 0; i < steps.size(); i++) {
 			WorkflowStep s = steps.get(i);
 			if (s.equals(step)) {
@@ -302,7 +302,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			newSteps.add(s);
 		}
 
-		newSteps.add(order-1, step);
+		newSteps.add(order, step);
 		int newOrder=0;
 		for(WorkflowStep newStep : newSteps){
 			newStep.setMyOrder(newOrder++);
