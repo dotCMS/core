@@ -28,7 +28,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -42,6 +42,8 @@ public class Xss {
 
     public static final String XSS_REGEXP_PATTERN = GetterUtil.getString( SystemProperties.get( Xss.class.getName() + ".regexp.pattern" ) );
     public static final Boolean ESAPI_VALIDATION = GetterUtil.getBoolean( SystemProperties.get( Xss.class.getName() + ".ESAPI.validation" ), true );
+
+    private static Set<String> excludeList = null;
 
     /**
      * Removes from the given text possible XSS hacks
@@ -70,8 +72,30 @@ public class Xss {
         	String queryString = request.getQueryString();
         	if ( queryString != null ) {
 
-        		//Canonicalizes input before validation to prevent bypassing filters with encoded attacks.
-        		queryString = ESAPI.encoder().canonicalize( queryString, false );
+                if ( excludeList == null ) {
+                    buildExcludeList();
+                }
+
+                /*
+                 Having in the query string something like "&or" will create problems when we are trying
+                 to canonicalize the content before the security check because the HTMLEntityCodec used inside by the ESAPI.encoder().canonicalize
+                 will see it as a html character, in this example the html character for the logical "OR" and will replace it with a "∨".
+                 So content like:
+                    param1=123&param2=456&orderBy=status
+                 will be replaced by:
+                    param1=123&param2=456vderBy=status
+                 making the security check to fail as it is not longer a valid query string.
+
+                 A legal html character should end with a semi-colon "&or;" but for the ESPI: "Formats all are legal both with and without semi-colon, upper/lower case..."
+                 */
+                for ( String toExclude : excludeList ) {
+                    if ( queryString.contains( toExclude ) ) {
+                        queryString = queryString.replaceAll( toExclude, "&XYZ" );
+                    }
+                }
+
+                //Canonicalizes input before validation to prevent bypassing filters with encoded attacks.
+                queryString = ESAPI.encoder().canonicalize( queryString, false );
 
         		//Validate the query string
         		return !ESAPI.validator().isValidInput( "URLContext", queryString, "HTTPQueryString", queryString.length(), true );
@@ -148,6 +172,13 @@ public class Xss {
 
     public static String unEscapeHTMLAttrib ( String value ) {
         return value != null ? ESAPI.encoder().decodeForHTML( value ) : "";
+    }
+
+    private static void buildExcludeList () {
+        if ( excludeList != null ) return;
+        excludeList = new HashSet<String>();
+        excludeList.add( "&or" );
+        excludeList.add( "&Or" );
     }
 
 }

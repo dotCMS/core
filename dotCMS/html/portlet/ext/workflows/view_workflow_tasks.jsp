@@ -177,13 +177,19 @@
 
 			var newURL = "";
 			var x  =lastUrlParams.split("&");
-			for(i =0;i<x.length;i++){
-				if(x[i].indexOf("orderBy")<0){
-					newURL+="&" + x[i];
-				}
 
+            for (i = 0; i < x.length; i++) {
+                if (x[i].indexOf("orderBy") < 0) {
 
-			}
+                    if (x[i].length > 0) {
+                        if (x[i].indexOf("&") == 0) {
+                            newURL += x[i];
+                        } else {
+                            newURL += "&" + x[i];
+                        }
+                    }
+                }
+            }
 
 			newURL+="&orderBy=" +newOrder;
 
