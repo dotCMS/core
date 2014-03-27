@@ -58,7 +58,7 @@
 				<td><input type="text" name="stepOrder" style="width:50px;"
 					id="stepOrder" dojoType="dijit.form.ValidationTextBox" regExp="\d+"
 
-					value="<%=(step.getMyOrder())+1%>">
+					value="<%=step.getMyOrder()%>">
 				</td>
 			</tr>
 			<tr>
