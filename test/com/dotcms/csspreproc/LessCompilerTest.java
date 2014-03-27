@@ -74,12 +74,12 @@ public class LessCompilerTest {
         Assert.assertEquals(expectedOutput.trim(), response.trim());
         
         // now it should take less time as its in cache now
-        for(int x=0; x<100; x++) {
+        for(int x=0; x<10; x++) {
             long ttx = System.currentTimeMillis();
             response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
             ttx = System.currentTimeMillis() - ttx;
             
-            Assert.assertTrue(ttx < (tt1/100));
+            Assert.assertTrue(ttx < (tt1/10));
         }
         
         // now lets modify a bit one of the imported files and check if the resulting file reflects the change 
