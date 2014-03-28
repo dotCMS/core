@@ -607,8 +607,16 @@ public class DependencyManager {
 				hosts.addOrClean( APILocator.getContainerAPI().getParentHost( c, user, false ).getIdentifier(), h.getModDate());
 
 				containerList.clear();
-				containerList.add(APILocator.getContainerAPI().getWorkingContainerById(id, user, false));
-				containerList.add(APILocator.getContainerAPI().getLiveContainerById(id, user, false));
+
+                Container workingContainer = APILocator.getContainerAPI().getWorkingContainerById( id, user, false );
+                if ( workingContainer != null ) {
+                    containerList.add( workingContainer );
+                }
+
+                Container liveContainer = APILocator.getContainerAPI().getLiveContainerById( id, user, false );
+                if ( liveContainer != null ) {
+                    containerList.add( liveContainer );
+                }
 
 				for (Container container : containerList) {
 					// Structure dependencies
