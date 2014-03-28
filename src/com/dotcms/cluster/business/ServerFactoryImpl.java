@@ -60,11 +60,16 @@ public class ServerFactoryImpl extends ServerFactory {
 				server.setIpAddress((String)row.get("ip_address"));
 				server.setName((String)row.get("name"));
 				server.setHost((String)row.get("host"));
-				server.setCachePort(((Number)row.get("cache_port")).intValue());
-				server.setEsTransportTcpPort(((Number)row.get("es_transport_tcp_port")).intValue());
-				server.setEsHttpPort(((Number)row.get("es_http_port")).intValue());
-
-			}
+                if ( row.get( "cache_port" ) != null ) {
+                    server.setCachePort( ((Number) row.get( "cache_port" )).intValue() );
+                }
+                if ( row.get( "es_transport_tcp_port" ) != null ) {
+                    server.setEsTransportTcpPort( ((Number) row.get( "es_transport_tcp_port" )).intValue() );
+                }
+                if ( row.get( "es_http_port" ) != null ) {
+                    server.setEsHttpPort( ((Number) row.get( "es_http_port" )).intValue() );
+                }
+            }
 		} catch (DotDataException e) {
 			Logger.error(ServerFactoryImpl.class, "Could not get Server with id:" + serverId, e);
 		}
@@ -128,10 +133,16 @@ public class ServerFactoryImpl extends ServerFactory {
 			server.setIpAddress((String)row.get("ip_address"));
 			server.setHost((String)row.get("host"));
 			server.setName((String)row.get("name"));
-			server.setCachePort(((Number)row.get("cache_port")).intValue());
-			server.setEsTransportTcpPort(((Number)row.get("es_transport_tcp_port")).intValue());
-			server.setEsHttpPort(((Number)row.get("es_http_port")).intValue());
-			server.setLastHeartBeat((Date)row.get("last_heartbeat"));
+            if ( row.get( "cache_port" ) != null ) {
+                server.setCachePort( ((Number) row.get( "cache_port" )).intValue() );
+            }
+            if ( row.get( "es_transport_tcp_port" ) != null ) {
+                server.setEsTransportTcpPort( ((Number) row.get( "es_transport_tcp_port" )).intValue() );
+            }
+            if ( row.get( "es_http_port" ) != null ) {
+                server.setEsHttpPort( ((Number) row.get( "es_http_port" )).intValue() );
+            }
+            server.setLastHeartBeat((Date)row.get("last_heartbeat"));
 			servers.add(server);
 		}
 
