@@ -1,0 +1,120 @@
+package com.dotmarketing.db;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.dotcms.repackage.junit_4_8_1.junit.framework.Assert;
+import com.dotcms.repackage.junit_4_8_1.org.junit.After;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Before;
+import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.model.User;
+
+public class HibernateUtilTest {
+    
+    static User user;
+    static Host host;
+    
+    @BeforeClass
+    public static void init() throws Exception {
+        user = APILocator.getUserAPI().getSystemUser();
+        host = APILocator.getHostAPI().findDefaultHost(user, false);
+    }
+    
+    @After
+    @Before
+    public void prep() throws Exception {
+        HibernateUtil.closeSession();
+    }
+    
+    @Test
+    public void updateOnDirtyObjectWhenFlush() throws Exception {
+        HibernateUtil.startTransaction();
+        
+        Container container = new Container();
+        String title = "Test container #"+UUIDGenerator.generateUuid();
+        container.setTitle(title);
+        container.setPreLoop("pre"); container.setPostLoop("post");
+        
+        List<ContainerStructure> containerStructureList = new ArrayList<ContainerStructure>();
+        ContainerStructure cs=new ContainerStructure();
+        cs.setStructureId(StructureCache.getStructureByVelocityVarName("webPageContent").getInode());
+        cs.setCode("$body");
+        containerStructureList.add(cs);
+        container = APILocator.getContainerAPI().save(container, containerStructureList, host, user, false);
+        String cInode=container.getInode();
+        
+        // clear cache lo ensure we load from hibernate
+        CacheLocator.getCacheAdministrator().flushAll();
+        
+        container = (Container)HibernateUtil.load(Container.class, cInode);
+        
+        container.setTitle("my dirty title");
+        
+        HibernateUtil.closeSession();
+        
+        container = (Container)HibernateUtil.load(Container.class, cInode);
+        
+        Assert.assertEquals(title,container.getTitle());
+    }
+    
+    @Test
+    public void updateOnDirtyObjectWhenQuery() throws Exception {
+        // now test it can happen at load of another object
+        
+        // 1st
+        Container container = new Container();
+        String title = "Test container #"+UUIDGenerator.generateUuid();
+        container.setTitle(title);
+        container.setPreLoop("pre"); container.setPostLoop("post");
+        
+        List<ContainerStructure> containerStructureList = new ArrayList<ContainerStructure>();
+        ContainerStructure cs=new ContainerStructure();
+        cs.setStructureId(StructureCache.getStructureByVelocityVarName("webPageContent").getInode());
+        cs.setCode("$body");
+        containerStructureList.add(cs);
+        container = APILocator.getContainerAPI().save(container, containerStructureList, host, user, false);
+        String cInode=container.getInode();
+        
+        
+        // 2nd
+        container = new Container();
+        String title2 = "Test 2nd container #"+UUIDGenerator.generateUuid();
+        container.setTitle(title2);
+        container.setPreLoop("pre"); container.setPostLoop("post");
+        containerStructureList = new ArrayList<ContainerStructure>();
+        cs=new ContainerStructure();
+        cs.setStructureId(StructureCache.getStructureByVelocityVarName("webPageContent").getInode());
+        cs.setCode("$body"); containerStructureList.add(cs);
+        container = APILocator.getContainerAPI().save(container, containerStructureList, host, user, false);
+        String cInode2=container.getInode();
+        container = null;
+        
+        HibernateUtil.closeSession();
+        
+        // load the first and make it dirty
+        Container fst = (Container)HibernateUtil.load(Container.class, cInode);
+        fst.setTitle("my dirty title 2");
+        
+        // load the second. it might trigger an update on the first one
+        HibernateUtil hh = new HibernateUtil(Container.class);
+        hh.setQuery("from "+Container.class.getName()+" c where c.inode=?");
+        hh.setParam(cInode2);
+        Container cc = (Container)hh.load();
+        Assert.assertEquals(title2, cc.getTitle());
+        
+        // lets see if in the db it remains the same
+        DotConnect dc = new DotConnect();
+        dc.setSQL("select title from containers where inode=?");
+        dc.addParam(cInode);
+        Assert.assertEquals(title, dc.loadObjectResults().get(0).get("title"));
+    }
+}
