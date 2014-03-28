@@ -198,8 +198,8 @@
 	}
 
 
-	var stepStore = new dojo.data.ItemFileReadStore({url:"/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme"});
-	var assignedToStore = new dotcms.dojo.data.RoleReadStore({nodeId: "assignedTo", jsId:"assignedToStore"});
+	var stepStore = new dojo.data.ItemFileReadStore({url:"/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme"});	
+	var assignedToStore = new dojo.data.ItemFileReadStore({url:"/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfRoleStoreAjax"});
 	var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
 	var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
 	var daysData= { "identifier" : "d", "label" : "days", "items":
@@ -217,14 +217,10 @@
             searchDelay: 300,
             pageSize: 20,
             required: false,
-            value: "<%=assignedTo.getId()%>",
-            onClick: function () {
-                if (show4All == false) {
-                    dijit.byId("assignedTo").set("displayedValue", "");
-                    dijit.byId("assignedTo").loadDropDown();
-                }
-            },
-            onChange: doFilter
+            value: "<%=assignedTo.getId()%>",           
+            onChange:function(){            	
+		    	doFilter();
+		    }
         },
         "assignedTo");
         doFilter();
