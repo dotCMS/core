@@ -97,8 +97,8 @@ public class CMSFilter implements Filter {
             return;
         }
 
-		if(!UtilMethods.decodeURL(request.getQueryString()).equals(null)){
-			//http://jira.dotmarketing.net/browse/DOTCMS-6141
+        if ( request.getQueryString() != null && !UtilMethods.decodeURL( request.getQueryString() ).equals( null ) ) {
+            //http://jira.dotmarketing.net/browse/DOTCMS-6141
 			if(request.getQueryString() != null && request.getQueryString().contains("\"")){
 				response.sendRedirect(uri+"?"+StringEscapeUtils.escapeHtml(StringEscapeUtils.unescapeHtml(request.getQueryString())));
 				return;
@@ -521,8 +521,24 @@ public class CMSFilter implements Filter {
             }
             LogFactory.getLog(this.getClass()).debug("CMS Filter going to redirect to pointer");
 
-            if(pointer.endsWith(dotExtension)){
-            	//Serving a page through the velocity servlet
+            String pointerURI = pointer;
+            if ( pointer.contains( "?" ) ) {//Verify if the pointer have params in order to analyze just the URI
+                pointerURI = pointer.substring( 0, pointer.indexOf( "?" ) );
+            }
+            if ( pointerURI.endsWith( dotExtension ) ) {
+
+                /*
+                Verify if the pointer have parameters, if it have them apply a security check, on fail we will
+                allow to pass just the URI without the parameters.
+                 */
+                if ( pointer.contains( "?" ) ) {
+                    String queryString = pointer.substring( pointer.indexOf( "?" ) + 1, pointer.length() );
+                    if ( Xss.ParamsHaveXSS( queryString ) ) {
+                        pointer = pointerURI;
+                    }
+                }
+
+                //Serving a page through the velocity servlet
                 request.getRequestDispatcher(pointer).forward(request, response);
             } else {
             	//Serving a regular asset through the speedy asset servlet
