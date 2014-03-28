@@ -34,14 +34,20 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
+<%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
 
 <%
 
 	WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
-	int langId = -1;
-	if(request.getParameter("language")!= null)
-		langId = Integer.parseInt(request.getParameter("language"));
-	Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false, langId, APILocator.getUserAPI().getSystemUser(), true);
+
+    //Search for the contentlet (Using the same way the view_tasks_list use to find the contentlet on each WorkflowTask and show it in the list)
+    Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier: " + task.getWebasset(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), true ).get( 0 );
+    if ( contentlet == null ) {
+        out.println( LanguageUtil.get( pageContext, "the-selected-content-cannot-be-found" ) );
+        return;
+    }
+    Language contentletLanguage = APILocator.getLanguageAPI().getLanguage( contentlet.getLanguageId() );
+
 	Structure structure = contentlet.getStructure();
 
 	Role createdBy 		= APILocator.getRoleAPI().loadRoleById(task.getCreatedBy());
@@ -66,7 +72,7 @@
 	params.put("struts_action",new String[] {"/ext/workflows/edit_workflow_task"});
 	params.put("cmd",new String[] {"view"});
 	params.put("taskId",new String[] {String.valueOf(task.getInode())});
-	params.put("langId",new String[] {String.valueOf(langId)});
+    params.put( "langId", new String[]{String.valueOf( contentletLanguage.getId() )} );
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
 
 	List<User> users = APILocator.getUserAPI().findAllUsers();
@@ -430,7 +436,7 @@
 							<p>
 								<strong><%= LanguageUtil.get(pageContext, "Comment-By") %>:</strong> <%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()) == null ? "": APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %><br/>
 								<strong><%= LanguageUtil.get(pageContext, "Created") %>:</strong> <%= DateUtil.prettyDateSince(comment.getCreationDate()) %>
-								<div style="font-size: 10pt;margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></span>
+								<div style="font-size: 10pt;margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></div>
 							</p>
 						</td>
 					</tr>
