@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHit;
@@ -3737,11 +3739,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     	Contentlet resultContentlet = new Contentlet();
     	String newIdentifier = "";
-    	List<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
+    	ArrayList<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
     	List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
 
     	versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), user, respectFrontendRoles));
 
+    	// we need to save the versions from older-to-newer to make sure the last save
+    	// is the current version
+    	Collections.sort(versionsToCopy, new Comparator<Contentlet>() {
+            public int compare(Contentlet o1, Contentlet o2) {
+                return o1.getModDate().compareTo(o2.getModDate());
+            }
+    	});
+    	
     	for(Contentlet contentlet : versionsToCopy){
 
         	boolean isContentletLive = false;

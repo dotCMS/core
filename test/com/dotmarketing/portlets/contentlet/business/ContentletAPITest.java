@@ -17,17 +17,20 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.time.FastDateFormat;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Ignore;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Assert;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Ignore;
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
@@ -48,7 +51,7 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -474,6 +477,69 @@ public class ContentletAPITest extends ContentletBaseTest {
         } finally {
             contentletAPI.delete( copyContentlet, user, false );
         }
+    }
+    
+    @Test
+    public void copyContentletWithSeveralVersionsOrderIssue() throws Exception {
+        long defLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        
+        Host host1=new Host();
+        host1.setHostname("copy.contentlet.t1_"+System.currentTimeMillis());
+        host1.setDefault(false);
+        host1.setLanguageId(defLang);
+        host1 = APILocator.getHostAPI().save(host1, user, false);
+        contentletAPI.isInodeIndexed(host1.getInode());
+        
+        Host host2=new Host();
+        host2.setHostname("copy.contentlet.t2_"+System.currentTimeMillis());
+        host2.setDefault(false);
+        host2.setLanguageId(defLang);
+        host2 = APILocator.getHostAPI().save(host2, user, false);
+        contentletAPI.isInodeIndexed(host2.getInode());
+        
+        
+        java.io.File bin=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator 
+                + UUIDGenerator.generateUuid() + java.io.File.separator + "hello.txt");
+        bin.getParentFile().mkdirs();
+        
+        bin.createNewFile();
+        FileUtils.writeStringToFile(bin, "this is the content of the file");
+        
+        Contentlet file=new Contentlet();
+        file.setHost(host1.getIdentifier());
+        file.setFolder("SYSTEM_FOLDER");
+        file.setStructureInode(StructureCache.getStructureByVelocityVarName("FileAsset").getInode());
+        file.setLanguageId(defLang);
+        file.setStringProperty(FileAssetAPI.TITLE_FIELD,"test copy");
+        file.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "hello.txt");
+        file.setBinary(FileAssetAPI.BINARY_FIELD, bin);
+        file = contentletAPI.checkin(file, user, false);
+        contentletAPI.isInodeIndexed(file.getInode());
+        final String ident = file.getIdentifier();
+        
+        // create 20 versions
+        for(int i=1; i<=20; i++) {
+            file = contentletAPI.findContentletByIdentifier(ident, false, defLang, user, false);
+            APILocator.getFileAssetAPI().renameFile(file, "hello"+i, user, false);
+            contentletAPI.isInodeIndexed(APILocator.getVersionableAPI().getContentletVersionInfo(ident, defLang).getWorkingInode());
+        }
+        
+        file = contentletAPI.findContentletByIdentifier(ident, false, defLang, user, false);
+        
+        // the issue https://github.com/dotCMS/dotCMS/issues/5007 is caused by an order issue
+        // when we call copy it saves all the versions in the new location. but it should
+        // do it in older-to-newer order. because the last save will be the asset_name in the
+        // identifier and the data that will have the "working" (or live) version.
+        Contentlet copy = contentletAPI.copyContentlet(file, host2, user, false);
+        Identifier copyIdent = APILocator.getIdentifierAPI().find(copy);
+        
+        copy = contentletAPI.findContentletByIdentifier(copyIdent.getId(), false, defLang, user, false);
+        
+        assertEquals("hello20.txt",copyIdent.getAssetName());
+        assertEquals("hello20.txt",copy.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+        assertEquals("hello20.txt",copy.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+        assertEquals("this is the content of the file", FileUtils.readFileToString(copy.getBinary(FileAssetAPI.BINARY_FIELD)));
+        
     }
 
     /**
