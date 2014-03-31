@@ -665,14 +665,14 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 			<input type="text" dojoType="dijit.form.TextBox" name="regexCheck" id="regexCheck" style="width:250px" readonly="<%=fieldForm.isFixed() || fieldForm.isReadOnly()%>" value="<%= UtilMethods.isSet(fieldForm.getRegexCheck()) ? UtilMethods.webifyString(fieldForm.getRegexCheck()) : "" %>" />
 			<select dojoType="dijit.form.FilteringSelect" name="validation" id="validation" onchange="fillRegexp(this)">
 				<option value=""><--<%= LanguageUtil.get(pageContext, "Select-validation") %>--></option>
-				<option value="^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,4})$"><%= LanguageUtil.get(pageContext, "Email") %></option>
-				<option value="[0-9]*"><%= LanguageUtil.get(pageContext, "Numbers-only") %></option>
-				<option value="[a-zA-Z\s]*"><%= LanguageUtil.get(pageContext, "Letters-only") %></option>
-				<option value="[0-9a-zA-Z\s]*"><%= LanguageUtil.get(pageContext, "Alphanumeric") %></option>
-				<option value="(^\d{5}$)|(^\d{5}-\d{4}$)"><%= LanguageUtil.get(pageContext, "US-Zip-Code") %></option>
-				<option value="^\(?[1-9]\d{2}[\)\-]\s?\d{3}\-\d{4}$"><%= LanguageUtil.get(pageContext, "US-Phone") %></option>
-				<option value="^((http|ftp|https):\/\/w{3}[\d]*.|(http|ftp|https):\/\/|w{3}[\d]*.)([\w\d\._\-#\(\)\[\]\,;:]+@[\w\d\._\-#\(\)\[\]\,;:])?([a-z0-9]+.)*[a-z\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\/[\/a-zA-Z0-9\._\-,\%\s]+)*(\/|\?[a-z0-9=%&\.\-,#]+)?$"><%= LanguageUtil.get(pageContext, "URL-Pattern") %></option>
-				<option value="[^(<[.\n]+>)]*"><%= LanguageUtil.get(pageContext, "No-HTML") %></option>
+				<option value="^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,4})$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,4})$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Email") %></option>
+				<option value="[0-9]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[0-9]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Numbers-only") %></option>
+				<option value="[a-zA-Z\s]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[a-zA-Z\\s]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Letters-only") %></option>
+				<option value="[0-9a-zA-Z\s]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[0-9a-zA-Z\\s]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Alphanumeric") %></option>
+				<option value="(^\d{5}$)|(^\d{5}-\d{4}$)" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("(^\\d{5}$)|(^\\d{5}-\\d{4}$)")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "US-Zip-Code") %></option>
+				<option value="^\(?[1-9]\d{2}[\)\-]\s?\d{3}\-\d{4}$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^\\(?[1-9]\\d{2}[\\)\\-]\\s?\\d{3}\\-\\d{4}$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "US-Phone") %></option>
+				<option value="^((http|ftp|https):\/\/w{3}[\d]*.|(http|ftp|https):\/\/|w{3}[\d]*.)([\w\d\._\-#\(\)\[\]\,;:]+@[\w\d\._\-#\(\)\[\]\,;:])?([a-z0-9]+.)*[a-z\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\/[\/a-zA-Z0-9\._\-,\%\s]+)*(\/|\?[a-z0-9=%&\.\-,#]+)?$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^((http|ftp|https):\\/\\/w{3}[\\d]*.|(http|ftp|https):\\/\\/|w{3}[\\d]*.)([\\w\\d\\._\\-#\\(\\)\\[\\]\\,;:]+@[\\w\\d\\._\\-#\\(\\)\\[\\]\\,;:])?([a-z0-9]+.)*[a-z\\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\\/[\\/a-zA-Z0-9\\._\\-,\\%\\s]+)*(\\/|\\?[a-z0-9=%&\\.\\-,#]+)?$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "URL-Pattern") %></option>
+				<option value="[^(<[.\n]+>)]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[^(<[.\\n]+>)]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "No-HTML") %></option>
 			</select>
 			
 		</dd>
