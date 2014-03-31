@@ -16,7 +16,9 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import net.sf.hibernate.FlushMode;
 import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.MappingException;
 import net.sf.hibernate.MappingException;
 import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
@@ -567,7 +569,7 @@ public class HibernateUtil {
 		Logger.debug(HibernateUtil.class, "Done loading Hibernate Mappings from plugins ");
 	}
 
-	/*
+	/**
 	 * Attempts to find a session associated with the Thread. If there isn't a
 	 * session, it will create one.
 	 */
@@ -580,7 +582,6 @@ public class HibernateUtil {
 	
 			if (session == null) {
 					session = sessionFactory.openSession(DbConnectionFactory.getConnection());
-					sessionHolder.set(session);
 			} else {
 				try {
 					if (session.connection().isClosed()) {
@@ -591,27 +592,28 @@ public class HibernateUtil {
                         }
                         session = null;
 						session = sessionFactory.openSession(DbConnectionFactory.getConnection());
-						sessionHolder.set(session);
 					}
-			} catch (Exception e) {
-	        	try {
-	        		session.close();
-				}
-				catch (Exception ex) {
-					Logger.error(HibernateUtil.class,e.getMessage() );
-		        	Logger.debug(HibernateUtil.class,e.getMessage(),e);
-				}
-				session = null;
-				try{
-					session = sessionFactory.openSession(DbConnectionFactory.getConnection());
-					sessionHolder.set(session);
-				}
-				catch (Exception ex) {
-					Logger.error(HibernateUtil.class,ex.getMessage() );
-		        	Logger.debug(HibernateUtil.class,ex.getMessage(),ex);
-				}
-        	}
+    			} catch (Exception e) {
+    	        	try {
+    	        		session.close();
+    				}
+    				catch (Exception ex) {
+    					Logger.error(HibernateUtil.class,e.getMessage() );
+    		        	Logger.debug(HibernateUtil.class,e.getMessage(),e);
+    				}
+    				session = null;
+    				try{
+    					session = sessionFactory.openSession(DbConnectionFactory.getConnection());
+    					
+    				}
+    				catch (Exception ex) {
+    					Logger.error(HibernateUtil.class,ex.getMessage() );
+    		        	Logger.debug(HibernateUtil.class,ex.getMessage(),ex);
+    				}
+            	}
 			}
+			sessionHolder.set(session);
+			session.setFlushMode(FlushMode.NEVER);
 			return session;
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to get Hibernate Session ", e);
