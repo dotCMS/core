@@ -11,6 +11,8 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -3737,11 +3739,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     	Contentlet resultContentlet = new Contentlet();
     	String newIdentifier = "";
-    	List<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
+    	ArrayList<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
     	List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
 
     	versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), user, respectFrontendRoles));
 
+    	// we need to save the versions from older-to-newer to make sure the last save
+    	// is the current version
+    	Collections.sort(versionsToCopy, new Comparator<Contentlet>() {
+            public int compare(Contentlet o1, Contentlet o2) {
+                return o1.getModDate().compareTo(o2.getModDate());
+            }
+    	});
+    	
     	for(Contentlet contentlet : versionsToCopy){
 
         	boolean isContentletLive = false;
