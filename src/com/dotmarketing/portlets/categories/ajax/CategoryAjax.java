@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -548,6 +549,32 @@ public class CategoryAjax {
 
 		csvreader.close();
 		br.close();
+	}
+	
+	public Map<String, Object> getCategoryMap (String catInode)
+			throws DotDataException, DotSecurityException, PortalException, SystemException {
+		
+		Map<String,Object> categoryMap = new HashMap<String,Object>();
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest request = ctx.getHttpServletRequest();		
+		//Retrieving the current user
+		User user = userWebAPI.getLoggedInUser(request);
+		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
+
+		
+		Category category = null;
+		try {
+			category = categoryAPI.find(catInode, user, respectFrontendRoles);
+		} catch (Exception e) { }
+		if(UtilMethods.isSet(category)){
+			categoryMap.put("inode", category.getInode());
+			categoryMap.put("category_name", category.getCategoryName());
+			categoryMap.put("category_key", category.getKey());
+			categoryMap.put("category_velocity_var_name", category.getCategoryVelocityVarName());
+			categoryMap.put("sort_order", category.getSortOrder());
+			categoryMap.put("keywords", category.getKeywords());
+		}
+		return categoryMap;
 	}
 
 }
