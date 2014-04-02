@@ -360,7 +360,9 @@ public class HostAPIImpl implements HostAPI {
 		c.setInode("");
 		c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
 		
-		APILocator.getVersionableAPI().setLive(c);
+		if(host.isWorking() || host.isLive()){
+			APILocator.getVersionableAPI().setLive(c);
+		}
 		Host savedHost =  new Host(c);
 
 		if(host.isDefault()) {  // If host is marked as default make sure that no other host is already set to be the default
