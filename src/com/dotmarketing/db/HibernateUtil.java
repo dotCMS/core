@@ -449,12 +449,16 @@ public class HibernateUtil {
 
 	public static void save(Object obj)  throws DotHibernateException{
 		try{
+		    forceDirtyObject.set(obj);
 			Session session = getSession();
 			session.save(obj);
 			session.flush();
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to save Object to Hibernate Session ", e);
 		}
+		finally {
+            forceDirtyObject.remove();
+        }
 	}
 
 	public static void saveOrUpdate(Object obj)  throws DotHibernateException{
@@ -473,11 +477,15 @@ public class HibernateUtil {
 
 	public static void update(Object obj)  throws DotHibernateException{
 		try{
+		    forceDirtyObject.set(obj);
 			Session session = getSession();
 			session.update(obj);
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to update Object to Hibernate Session ", e);
 		}
+		finally {
+            forceDirtyObject.remove();
+        }
 	}
 
 	// Session management methods
