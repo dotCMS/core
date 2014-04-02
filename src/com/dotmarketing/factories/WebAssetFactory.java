@@ -141,7 +141,7 @@ public class WebAssetFactory {
 		//HibernateUtil.saveOrUpdate(id);
 		APILocator.getIdentifierAPI().save(id);
 		webasset.setIdentifier(id.getId());
-
+		HibernateUtil.saveOrUpdate(webasset);
         APILocator.getVersionableAPI().setWorking(webasset);
 	}
 
@@ -291,6 +291,7 @@ public class WebAssetFactory {
 		APILocator.getIdentifierAPI().save(id);
 		
 		webasset.setIdentifier(id.getId());
+		HibernateUtil.saveOrUpdate(webasset);
 		
         APILocator.getVersionableAPI().setWorking(webasset);
         if(isLive)
@@ -755,109 +756,6 @@ public class WebAssetFactory {
 		}
 		return new java.util.ArrayList();
 	}
-
-	// Swap assets properties and tree relationships to convert the newAsset
-	// into the workingAsset
-	// This method don�t swap the multitree relationships and correctly set the
-	// working/live and parent folder
-	// relationships and properties
-	/*
-	@SuppressWarnings("deprecation")
-	private static WebAsset swapAssets(WebAsset workingAsset, WebAsset newAsset) throws Exception {
-		Folder parentFolder = null;
-		if (!isAbstractAsset(workingAsset)){
-			parentFolder = (Folder) APILocator.getFolderAPI().findParentFolder(workingAsset,APILocator.getUserAPI().getSystemUser(),false);
-		}
-		Identifier identifier = (Identifier) APILocator.getIdentifierAPI().find(workingAsset);
-		
-
-		// Retrieving assets properties excluding (inode, children, parents and
-		// parent)
-		Map workingAssetProps = PropertyUtils.describe(workingAsset);
-		workingAssetProps.remove("class");
-		workingAssetProps.remove("inode");
-		workingAssetProps.remove("children");
-		workingAssetProps.remove("parents");
-		workingAssetProps.remove("parent");
-
-		Map newAssetProps = PropertyUtils.describe(newAsset);
-		newAssetProps.remove("class");
-		newAssetProps.remove("inode");
-		newAssetProps.remove("children");
-		newAssetProps.remove("parents");
-		newAssetProps.remove("parent");
-
-		boolean newAssetLive = newAsset.isLive();
-
-		// Swaping props
-		Iterator keys = workingAssetProps.keySet().iterator();
-		while (keys.hasNext()) {
-			try {
-				String key = (String) keys.next();
-				Object x = workingAssetProps.get(key);
-				if(x != null && !key.equalsIgnoreCase("working")&& !key.equalsIgnoreCase("live")){
-					PropertyUtils.setProperty(newAsset, key, x);
-				}
-			} catch (NoSuchMethodException e) {
-			} catch (InvocationTargetException e) {
-			}
-
-		}
-		keys = newAssetProps.keySet().iterator();
-		while (keys.hasNext()) {
-			try {
-				String key = (String) keys.next();
-				Object x = newAssetProps.get(key);
-				if(x!=null && !key.equalsIgnoreCase("working")&& !key.equalsIgnoreCase("live")){
-					PropertyUtils.setProperty(workingAsset, key, x);
-				}
-			} catch (NoSuchMethodException e) {
-			} catch (InvocationTargetException e) {
-			}
-		}
-
-		// Setting working/live/locked/date/user properties
-
-        APILocator.getVersionableAPI().setWorking(workingAsset);
-        if(newAssetLive)
-            APILocator.getVersionableAPI().setWorking(workingAsset);
-		workingAsset.setModDate(new java.util.Date());
-
-        APILocator.getVersionableAPI().setLocked(newAsset.getIdentifier(), false, null);
-
-		if (!isAbstractAsset(workingAsset)) {
-			// Removing the folder for the new version
-			parentFolder.deleteChild(newAsset);
-		}
-		// Saving changes
-		HibernateUtil.saveOrUpdate(workingAsset);
-		HibernateUtil.saveOrUpdate(newAsset);
-
-		// Swaping tree relationships
-		//TreeFactory.swapTrees(workingAsset, newAsset);
-
-		if (!isAbstractAsset(workingAsset)) {
-			// Setting folders and identifiers
-			//parentFolder.addChild(workingAsset);
-			//parentFolder.deleteChild(newAsset);
-		}
-		//identifier.addChild(workingAsset);
-		//identifier.addChild(newAsset);
-
-		if (!isAbstractAsset(workingAsset)) {
-			if (newAsset.isLive()) {
-				//parentFolder.addChild(newAsset);
-			}
-		}
-
-		HibernateUtil.flush();
-		HibernateUtil.getSession().refresh(workingAsset);
-		HibernateUtil.getSession().refresh(newAsset);
-
-		return workingAsset;
-
-	}
-*/
 
 	/**
 	 * This method save the new asset as the new working version and change the

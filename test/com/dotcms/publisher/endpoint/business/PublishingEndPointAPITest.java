@@ -66,8 +66,11 @@ public class PublishingEndPointAPITest extends TestBase{
 	}
 	
 	@AfterClass
-	public static void cleanup() {
+	public static void cleanup() throws Exception {
 		_endPoints.clear();		
+		for(PublishingEndPoint pep : api.getAllEndPoints()) {
+		    api.deleteEndPointById(pep.getId());
+		}
 	}
 
 	

@@ -601,7 +601,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     }
                 }
                 catch(Exception ex) {
-                    Logger.warn(this, "error deleting contentlet inode "+con.getInode(), ex);
+                    Logger.warn(this, "error deleting contentlet inode "+con.getInode()+". Maybe were deleted already?");
                 }
 
             }
