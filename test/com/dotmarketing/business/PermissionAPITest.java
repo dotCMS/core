@@ -230,7 +230,7 @@ public class PermissionAPITest extends TestBase {
             nrole.setEditPermissions(true);
             nrole.setEditLayouts(true);
             nrole.setDescription("Testing Role 4");
-            APILocator.getRoleAPI().save(nrole);
+            nrole = APILocator.getRoleAPI().save(nrole);
         }
         APILocator.getFolderAPI().createFolders("/f1/", host, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f1/", host, sysuser, false);
@@ -418,7 +418,7 @@ public class PermissionAPITest extends TestBase {
         s.setName("test_str_str_str");
         s.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
         s.setOwner(sysuser.getUserId());
-        s.setVelocityVarName("testtesttest");
+        s.setVelocityVarName("testtesttest"+System.currentTimeMillis());
         StructureFactory.saveStructure(s);
         StructureCache.addStructure(s);
 
@@ -562,7 +562,7 @@ public class PermissionAPITest extends TestBase {
             s.setHost(hh.getIdentifier());
             s.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
             s.setOwner(sysuser.getUserId());
-            s.setVelocityVarName("str847");
+            s.setVelocityVarName("str847"+System.currentTimeMillis());
             StructureFactory.saveStructure(s);
             StructureCache.addStructure(s);
 
@@ -738,7 +738,7 @@ public class PermissionAPITest extends TestBase {
     @Test
     public void issue560() throws Exception {
         Host hh = new Host();
-        hh.setHostname("issue560.demo.dotcms.com");
+        hh.setHostname("issue560_"+System.currentTimeMillis()+".demo.dotcms.com");
         hh=APILocator.getHostAPI().save(hh, sysuser, false);
 
         Role nrole1=APILocator.getRoleAPI().loadRoleByKey("TestingRole8");
@@ -750,7 +750,7 @@ public class PermissionAPITest extends TestBase {
             nrole1.setEditPermissions(true);
             nrole1.setEditLayouts(true);
             nrole1.setDescription("Testing Role 8");
-            APILocator.getRoleAPI().save(nrole1);
+            nrole1 = APILocator.getRoleAPI().save(nrole1);
         }
 
         Role nrole2=APILocator.getRoleAPI().loadRoleByKey("TestingRole9");
@@ -762,7 +762,7 @@ public class PermissionAPITest extends TestBase {
             nrole2.setEditPermissions(true);
             nrole2.setEditLayouts(true);
             nrole2.setDescription("Testing Role 9");
-            APILocator.getRoleAPI().save(nrole2);
+            nrole2 = APILocator.getRoleAPI().save(nrole2);
         }
 
         Structure s=null;
@@ -777,7 +777,7 @@ public class PermissionAPITest extends TestBase {
             s.setName("issue560");
             s.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
             s.setOwner(sysuser.getUserId());
-            s.setVelocityVarName("issue560");
+            s.setVelocityVarName("issue560"+System.currentTimeMillis());
             StructureFactory.saveStructure(s);
             StructureCache.addStructure(s);
 
