@@ -435,7 +435,7 @@ td {font-size: 100%;}
 				dojo.place("<li  style=\"cursor:pointer\" i class=\"lastCrumb\" ><b>"+name+"</b></li>", "ulNav", "last");
 			}
 			else{
-				dojo.place("<a id=\"a_"+inode+"\" href=\"javascript:prepareCrumbs('"+inode+"', '"+name+"');  \"><li  style=\"cursor:pointer\"  >"+name+"</li></a>", "ulNav", "last");
+				dojo.place("<a id=\"a_"+inode+"\" href=\"javascript:rollUp('"+inode+"', '"+name+"');  \"><li  style=\"cursor:pointer\"  >"+name+"</li></a>", "ulNav", "last");
 			}
 		}
 
@@ -502,7 +502,45 @@ td {font-size: 100%;}
 		dijit.byId('catFilter').attr('value', '');
 		doSearch();
 	}
+	
+	// roll up of a category, load the children, properties
+	function rollUp(inode, name) {
 
+		prepareCrumbs(inode, name);
+		
+		if(currentInodeOrIdentifier == "" || currentInodeOrIdentifier == "0"){
+			dojo.byId("propertiesNA").style.display = "block";
+			dojo.byId("propertiesDiv").style.display = "none";
+			dojo.byId("permissionNA").style.display = "block";
+			dojo.byId("permissionDiv").style.display = "none";
+		}else{
+			dojo.byId("propertiesNA").style.display = "none";
+			dojo.byId("propertiesDiv").style.display = "block";
+			dojo.byId("permissionNA").style.display = "none";
+			dojo.byId("permissionDiv").style.display = "block";
+		}
+		
+		CategoryAjax.getCategoryMap(inode,getCategoryMapCallback);
+	}
+
+	function getCategoryMapCallback(categoryMap){
+
+		var inode = categoryMap['inode'];
+		var name = categoryMap['category_name'];
+		var velVar = categoryMap['category_velocity_var_name'];
+		var key = categoryMap['category_key'];
+		var keywords = categoryMap['keywords'];
+
+		key = key=="null"?"":key;
+		keywords = keywords=="null"?"":keywords;
+		dojo.byId("CatVelVarName").value = velVar;
+		dojo.byId("CatName").value = name;
+		dojo.byId("CatKey").value = key;
+		dojo.byId("CatKeywords").value = keywords;
+		dijit.byId('catFilter').attr('value', '');
+		doSearch();
+
+	}
     // delete muliple or single category, via ajax
 	function deleteCategories() {
 
