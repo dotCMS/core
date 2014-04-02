@@ -577,35 +577,32 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 wff.deleteWorkflowTask(wft);
             }
 
-            com.dotmarketing.portlets.contentlet.business.Contentlet c =
-                (com.dotmarketing.portlets.contentlet.business.Contentlet) InodeFactory.getInode(con.getInode(), com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-            //Checking contentlet exists inode > 0
-            if(InodeUtils.isSet(c.getInode())){
-                APILocator.getPermissionAPI().removePermissions(c);
+            
+            if(InodeUtils.isSet(con.getInode())){
+                APILocator.getPermissionAPI().removePermissions(con);
 
-                ContentletVersionInfo verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(c.getIdentifier(), c.getLanguageId());
+                ContentletVersionInfo verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
                 if(verInfo!=null && UtilMethods.isSet(verInfo.getIdentifier())) {
-                    if(UtilMethods.isSet(verInfo.getLiveInode()) && verInfo.getLiveInode().equals(c.getInode()))
+                    if(UtilMethods.isSet(verInfo.getLiveInode()) && verInfo.getLiveInode().equals(con.getInode()))
                         try {
-                            APILocator.getVersionableAPI().removeLive(c.getIdentifier(), c.getLanguageId());
+                            APILocator.getVersionableAPI().removeLive(con.getIdentifier(), con.getLanguageId());
                         } catch (Exception e) {
                             throw new DotDataException(e.getMessage(),e);
                         }
-                    if(verInfo.getWorkingInode().equals(c.getInode()))
-                        APILocator.getVersionableAPI().deleteContentletVersionInfo(c.getIdentifier(), c.getLanguageId());
+                    if(verInfo.getWorkingInode().equals(con.getInode()))
+                        APILocator.getVersionableAPI().deleteContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
                 }
 
-                HibernateUtil.delete(c);
-                //db.setSQL("delete from inode where identifier like '6050'");
-                //try{
-                //  db.loadResult();
-                //}catch (Exception e) {
-                //  Logger.error(this, e.getMessage(), e);
-                //  throw new DotDataException(e.getMessage(), e);
-                //}
-                //InodeFactory.deleteInode(c);
-
-
+                try {
+                    com.dotmarketing.portlets.contentlet.business.Contentlet c = 
+                            (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, con.getInode());
+                    if(c!=null && InodeUtils.isSet(c.getInode())) {
+                        HibernateUtil.delete(c);
+                    }
+                }
+                catch(Exception ex) {
+                    Logger.warn(this, "error deleting contentlet inode "+con.getInode(), ex);
+                }
 
             }
         }
