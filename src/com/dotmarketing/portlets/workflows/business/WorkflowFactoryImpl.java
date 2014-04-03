@@ -403,6 +403,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
+	public int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException{
+		int amount = 0;
+		final DotConnect db = new DotConnect();
+		
+		// get step related assets
+		db.setSQL(sql.SELECT_COUNT_CONTENTLES_BY_STEP);
+		db.addParam(step.getId());
+		Map<String,Object> res = db.loadObjectResults().get(0);
+		amount=Integer.parseInt(String.valueOf(res.get("count")));
+		return amount;
+	}
+	
 	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);

@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.structure.business.URLMapTest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
 import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
 import com.dotmarketing.portlets.templates.business.TemplateAPITest;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPITest;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest;
 import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
@@ -77,7 +78,8 @@ import com.dotmarketing.webdav.WebDavTest;
     SiteSearchAjaxActionTest.class,
     RemotePublishAjaxActionTest.class,
     CSSPreProcessServletTest.class,
-    ESContentFactoryImplTest.class
+    ESContentFactoryImplTest.class,
+    WorkflowAPITest.class
 })
 public class AllTestsSuite {
 
