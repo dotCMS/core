@@ -107,7 +107,7 @@ public class WorkflowAPITest extends TestBase{
 		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfActionAjax?cmd=save&stepId="+step2.getId()+"&schemeId="+UtilMethods.webifyString(ws.getId())+"&actionName=Publish&whoCanUse=";
 		baseURL+=role.getId()+",&actionIconSelect=workflowIcon&actionAssignable=true&actionCommentable=true&actionRequiresCheckout=false&actionRoleHierarchyForAssign=false";
 		baseURL+="&actionAssignToSelect="+role.getId()+"&actionNextStep="+step2.getId()+"&actionCondition=";
-		
+
 		testUrl = new URL(baseURL);
 		IOUtils.toString(testUrl.openStream(),"UTF-8");
 		List<WorkflowAction> actions2= wapi.findActions(step2, systemUser);
@@ -173,13 +173,15 @@ public class WorkflowAPITest extends TestBase{
 		 * Test that delete is not possible for step2
 		 * while has associated step or content
 		 */
-		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfTaskAjax?wfActionId=" + action1.getId() +"&wfConId="+contentlet1.getInode()+"&wfActionComments=test&wfActionAssign="+role.getId();
-		testUrl = new URL(baseURL);
-		IOUtils.toString(testUrl.openStream(),"UTF-8");
+		contentlet1.setStringProperty("wfActionId", action1.getId());
+		contentlet1.setStringProperty("wfActionComments", "step1");
+		contentlet1.setStringProperty("wfActionAssign", role.getId());
+		wapi.fireWorkflowNoCheckin(contentlet1, systemUser);
 
-		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfTaskAjax?wfActionId=" + action2.getId() +"&wfConId="+contentlet1.getInode()+"&wfActionComments=test&wfActionAssign="+role.getId();
-		testUrl = new URL(baseURL);
-		IOUtils.toString(testUrl.openStream(),"UTF-8");
+		contentlet1.setStringProperty("wfActionId", action2.getId());
+		contentlet1.setStringProperty("wfActionComments", "step2");
+		contentlet1.setStringProperty("wfActionAssign", role.getId());
+		wapi.fireWorkflowNoCheckin(contentlet1, systemUser);
 
 		WorkflowStep  currentStep = wapi.findStepByContentlet(contentlet1);
 		Assert.assertTrue(currentStep.getId()==step2.getId());
@@ -187,24 +189,47 @@ public class WorkflowAPITest extends TestBase{
 		/*
 		 * Validate that step2 could not be deleted
 		 */
-		wapi.deleteStep(step2);
+		try{
+			wapi.deleteStep(step2);
+		}catch(Exception e){
+			/*
+			 * Should enter here with this exception
+			 * </br> <b> Step : 'Publish' is being referenced by </b> </br></br> Step : 'Edit' ->  Action : 'Edit' </br></br>
+			 */
+		}
 		Assert.assertTrue(UtilMethods.isSet(wapi.findStep(step2.getId())));
 		/*
 		 * Validate correct deletion of step1
 		 */
 		wapi.deleteStep(step1);
-		Assert.assertTrue(!UtilMethods.isSet(wapi.findStep(step1.getId())));
+		
 		/*
 		 * Validate that the step 1 was deleted from the scheme
 		 */
-		actions2= wapi.findActions(step2, systemUser);
-		Assert.assertTrue(actions2.size()==1);
+		steps = wapi.findSteps(ws);
+		Assert.assertTrue(steps.size()==1);
+		Assert.assertTrue(steps.get(0).getId()==step2.getId());
 
 		/*
 		 * Validate that step2 could not be deleted
 		 */
-		wapi.deleteStep(step2);
-		Assert.assertTrue(UtilMethods.isSet(wapi.findStep(step2.getId())));
+		try{
+			wapi.deleteStep(step2);
+		}catch(Exception e){
+			/*
+			 * Should enter here with this exception
+			 * </br> <b> Step : 'Publish' is being referenced by: X Contentlet(s) </br></br>
+			 */
+		}
+		currentStep = wapi.findStepByContentlet(contentlet1);
+		Assert.assertTrue(currentStep.getId()==step2.getId());
+		
+		/*
+		 * Validate that step2 is not deleted
+		 */
+		steps = wapi.findSteps(ws);
+		Assert.assertTrue(steps.size()==1);
+		Assert.assertTrue(steps.get(0).getId()==step2.getId());
 	}
 
 }
