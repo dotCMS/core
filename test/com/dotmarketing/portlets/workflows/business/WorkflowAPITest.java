@@ -131,7 +131,6 @@ public class WorkflowAPITest extends TestBase{
 			st.setPublishDateVar("");
 			StructureFactory.saveStructure(st);
 
-			APILocator.getWorkflowAPI().saveSchemeForStruct(st, ws);
 			Permission p = new Permission();
 			p.setInode(st.getPermissionId());
 			p.setRoleId(roleAPI.loadCMSAnonymousRole().getId());
@@ -155,6 +154,7 @@ public class WorkflowAPITest extends TestBase{
 			FieldFactory.saveField(title);
 			FieldsCache.addField(title);
 		}
+		APILocator.getWorkflowAPI().saveSchemeForStruct(st, ws);
 		/*
 		 * Create test content and set it up in scheme step
 		 */
@@ -162,7 +162,7 @@ public class WorkflowAPITest extends TestBase{
 		contentlet1.setStructureInode(st.getInode());
 		contentlet1.setHost(host.getIdentifier());
 		contentlet1.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-		contentlet1.setStringProperty("title", "test5197-1");
+		contentlet1.setStringProperty("title", "test5197-1"+UtilMethods.dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss"));
 		contentlet1.setHost(host.getIdentifier());
 
 		contentlet1 = APILocator.getContentletAPI().checkin(contentlet1, systemUser,false);
@@ -230,6 +230,13 @@ public class WorkflowAPITest extends TestBase{
 		steps = wapi.findSteps(ws);
 		Assert.assertTrue(steps.size()==1);
 		Assert.assertTrue(steps.get(0).getId()==step2.getId());
+		
+		/*
+		 * Clean test
+		 */
+		APILocator.getContentletAPI().delete(contentlet1, systemUser, false);
+		wapi.deleteStep(step2);
+		wapi.deleteScheme(ws);
 	}
 
 }
