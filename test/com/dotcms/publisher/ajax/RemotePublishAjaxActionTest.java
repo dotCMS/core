@@ -304,14 +304,15 @@ public class RemotePublishAjaxActionTest extends TestBase {
 	 * @throws Exception 
 	 */
 	@Test
-	public void retry_issue5086 () throws Exception {
+	public void push_archived_issue5086 () throws Exception {
+
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
 
 		/*
 		 * Creating testing folder
 		 */
-		String folderPath = "/testfolder"+UUIDGenerator.generateUuid();
+        String folderPath = "/testfolder" + UUIDGenerator.generateUuid();
 		Folder folder = APILocator.getFolderAPI().createFolders(folderPath, host, systemUser, true);
 
 		/*
@@ -684,14 +685,15 @@ public class RemotePublishAjaxActionTest extends TestBase {
 	 * @throws Exception 
 	 */
 	@Test
-	public void retry_issue5189 () throws Exception {
+	public void push_container_issue5189 () throws Exception {
+
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
 
 		/*
 		 * Creating testing folder
 		 */
-		String folderPath = "/testfolder";
+		String folderPath = "/testfolder_" + String.valueOf( new Date().getTime() );
 		Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, true);
 		if(!UtilMethods.isSet(folder.getInode())){
 			folder = APILocator.getFolderAPI().createFolders(folderPath, host, systemUser, true);
