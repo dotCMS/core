@@ -85,6 +85,8 @@ public interface WorkFlowFactory {
 	public void deleteAction(WorkflowAction action) throws DotDataException;
 
 	public void deleteStep(WorkflowStep step) throws DotDataException;
+	
+	public int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException;
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException;
 
