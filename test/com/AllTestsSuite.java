@@ -18,6 +18,7 @@ import com.dotcms.rest.WebResourceTest;
 import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.business.RoleAPITest;
+import com.dotmarketing.db.HibernateUtilTest;
 import com.dotmarketing.plugin.PluginMergerTest;
 import com.dotmarketing.portlets.categories.business.CategoryAPITest;
 import com.dotmarketing.portlets.containers.business.ContainerAPITest;
@@ -79,6 +80,7 @@ import com.dotmarketing.webdav.WebDavTest;
     RemotePublishAjaxActionTest.class,
     CSSPreProcessServletTest.class,
     ESContentFactoryImplTest.class,
+    HibernateUtilTest.class,
     WorkflowAPITest.class
 })
 public class AllTestsSuite {

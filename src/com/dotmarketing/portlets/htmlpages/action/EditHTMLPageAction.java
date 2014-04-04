@@ -628,31 +628,6 @@ public class EditHTMLPageAction extends DotPortletAction implements DotPortletAc
 			workingAsset = newHtmlPage;
 		}
 
-		// Setting HTML Page relations
-		/*
-		 * if (UtilMethods.isSet(template)) { // Removing old template
-		 * Identifier currentTemplateIdent =
-		 * APILocator.getIdentifierAPI().find(workingAsset.getTemplateId());
-		 * 
-		 * if (currentTemplateIdent == null ||
-		 * !InodeUtils.isSet(currentTemplateIdent.getInode()) ||
-		 * (InodeUtils.isSet(currentTemplateIdent.getInode()) &&
-		 * (!currentTemplateIdent .getInode().equalsIgnoreCase(
-		 * templateIdentifier.getInode())))) { // Updating the template that has
-		 * changed for (Tree tree : TreeFactory.getTreesByChildAndRelationType(
-		 * workingAsset, "parentPageTemplate")) { if
-		 * (!tree.getParent().equalsIgnoreCase(
-		 * currentTemplateIdent.getInode())) TreeFactory.deleteTree(tree); }
-		 * Tree tree = TreeFactory.getTree( currentTemplateIdent.getInode(),
-		 * workingAsset .getInode(), "parentPageTemplate");
-		 * tree.setParent(templateIdentifier.getInode());
-		 * tree.setChild(workingAsset.getInode());
-		 * tree.setRelationType("parentPageTemplate");
-		 * TreeFactory.saveTree(tree); }
-		 * 
-		 * }
-		 */
-
 		HibernateUtil.flush();
 		HibernateUtil.getSession().refresh(workingAsset);
 
