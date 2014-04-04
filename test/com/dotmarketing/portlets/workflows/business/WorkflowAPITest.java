@@ -184,7 +184,7 @@ public class WorkflowAPITest extends TestBase{
 		wapi.fireWorkflowNoCheckin(contentlet1, systemUser);
 
 		WorkflowStep  currentStep = wapi.findStepByContentlet(contentlet1);
-		Assert.assertTrue(currentStep.getId()==step2.getId());
+		Assert.assertTrue(currentStep.getId().equals(step2.getId()));
 
 		/*
 		 * Validate that step2 could not be deleted
@@ -208,7 +208,7 @@ public class WorkflowAPITest extends TestBase{
 		 */
 		steps = wapi.findSteps(ws);
 		Assert.assertTrue(steps.size()==1);
-		Assert.assertTrue(steps.get(0).getId()==step2.getId());
+		Assert.assertTrue(steps.get(0).getId().equals(step2.getId()));
 
 		/*
 		 * Validate that step2 could not be deleted
@@ -222,19 +222,20 @@ public class WorkflowAPITest extends TestBase{
 			 */
 		}
 		currentStep = wapi.findStepByContentlet(contentlet1);
-		Assert.assertTrue(currentStep.getId()==step2.getId());
+		Assert.assertTrue(currentStep.getId().equals(step2.getId()));
 		
 		/*
 		 * Validate that step2 is not deleted
 		 */
 		steps = wapi.findSteps(ws);
 		Assert.assertTrue(steps.size()==1);
-		Assert.assertTrue(steps.get(0).getId()==step2.getId());
+		Assert.assertTrue(steps.get(0).getId().equals(step2.getId()));
 		
 		/*
 		 * Clean test
 		 */
 		APILocator.getContentletAPI().delete(contentlet1, systemUser, false);
+		APILocator.getStructureAPI().delete(st, systemUser);
 		wapi.deleteStep(step2);
 		wapi.deleteScheme(ws);
 	}
