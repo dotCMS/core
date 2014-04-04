@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -216,7 +217,8 @@ public class JSONContentServlet extends HttpServlet implements Servlet {
 		response.getWriter().println("<?xml version=\"1.0\" encoding='UTF-8'?>");	
 		response.getWriter().println("<contentlets>");	
 		for(Contentlet c : cons){
-				Map m = c.getMap();
+            Map<String, Object> m = new HashMap<String, Object>();
+            m.putAll(c.getMap());
 				Structure s = c.getStructure();
 				for(Field f : s.getFields()){
 					if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
