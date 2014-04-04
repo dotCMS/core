@@ -400,7 +400,10 @@ public class EditFieldAction extends DotPortletAction {
 					// validate if a field with the same category already exists
 					List<Field> stFields = FieldsCache.getFieldsByStructureInode(field.getStructureInode());
 					for (Field stField : stFields) {
-						if(UtilMethods.isSet(stField.getValues()) && stField.getValues().equals(field.getValues())) {
+						if(stField.getFieldType().equalsIgnoreCase(Field.FieldType.CATEGORY.toString())
+								&& UtilMethods.isSet(stField.getValues()) 
+								&& stField.getValues().equals(field.getValues())
+								&& !stField.getInode().equals(field.getInode())) {
 							SessionMessages.add(httpReq, "message", "message.category.existing.field");
 							return false;
 						}
