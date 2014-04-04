@@ -13,6 +13,11 @@
 <%
 String inode=request.getParameter("inode");// DOTCMS-7085
 GregorianCalendar cal = new GregorianCalendar();
+Date dateValue = new Date();
+cal.setTime(dateValue);
+
+String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
+String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
 
 %>
 
@@ -36,7 +41,7 @@ GregorianCalendar cal = new GregorianCalendar();
                 <input type="text" dojoType="dijit.form.DateTextBox" value="now" required="true"
                        id="wfFilterDateAux" name="wfFilterDateAux" style="width: 110px;">
 
-                <input type="text" data-dojo-type="dijit.form.TimeTextBox" value="now" required="true"
+                <input type="text" data-dojo-type="dijit.form.TimeTextBox" value='T<%=hour+":"+min%>:00' required="true"
                        id="wfFilterTimeAux" name="wfFilterTimeAux" style="width: 100px;"/>
             </div>
             <div class="clear"></div>
@@ -56,10 +61,6 @@ GregorianCalendar cal = new GregorianCalendar();
 		</div>
 
 
-		<%
-			String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
-			String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
-		%>
 		<div class="fieldWrapper" id="publishTimeDiv">
 
 			<div class="fieldName" style="width:120px">
@@ -72,10 +73,10 @@ GregorianCalendar cal = new GregorianCalendar();
 					validate="return false;"
 					invalidMessage=""
 					id="wfPublishDateAux"
-					name="wfPublishDateAux" value="now" style="width: 110px;">
+					name="wfPublishDateAux" value='now' style="width: 110px;">
 
 
-				<input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value="now"
+				<input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value='T<%=hour+":"+min%>:00'
 				 	data-dojo-type="dijit.form.TimeTextBox"
 					required="true" style="width: 100px;"/>
 
@@ -92,10 +93,10 @@ GregorianCalendar cal = new GregorianCalendar();
 				type="text"
 				dojoType="dijit.form.DateTextBox"
 				validate="return false;"
-				id="wfExpireDateAux" name="wfExpireDateAux" value="now" style="width: 110px;">
+				id="wfExpireDateAux" name="wfExpireDateAux" value='now' style="width: 110px;">
 
 
-			<input type="text" name="wfExpireTimeAux" id="wfExpireTimeAux" value="now"
+			<input type="text" name="wfExpireTimeAux" id="wfExpireTimeAux" value='T<%=hour+":"+min%>:00'
 			    data-dojo-type="dijit.form.TimeTextBox"
 				style="width: 100px;" />
 			</div>
