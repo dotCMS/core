@@ -595,6 +595,15 @@ public abstract class GenericBundleActivator implements BundleActivator {
         UrlOsgiClassLoader urlOsgiClassLoader = findCustomURLLoader( ClassLoader.getSystemClassLoader(), this.context.getBundle().getBundleId() );
         if ( urlOsgiClassLoader != null ) {
 
+            //Get the activator class for this OSGI bundle
+            String activatorClass = getManifestHeaderValue( context, MANIFEST_HEADER_BUNDLE_ACTIVATOR );
+            //Get the location of this OSGI bundle jar source code using a known class inside this bundle
+            Class clazz = Class.forName( activatorClass, false, this.getClass().getClassLoader() );
+            URL sourceURL = clazz.getProtectionDomain().getCodeSource().getLocation();
+
+            //Restoring to their original state any override class
+            urlOsgiClassLoader.reload( sourceURL, true );
+
             /*
             Closes this URLClassLoader, so that it can no longer be used to load
             new classes or resources that are defined by this loader.

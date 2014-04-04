@@ -11,9 +11,7 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -24,16 +22,21 @@ import java.util.jar.JarFile;
 public class UrlOsgiClassLoader extends URLClassLoader {
 
     Instrumentation instrumentation;
-    OSGIClassTransformer transformer;
 
     private ClassLoader mainClassLoader;
 
     private Collection<URL> urls;
+    private Collection<OSGIClassTransformer> transformers;
     private Long bundleId;
+
+    private HashMap<String, byte[]> originalByteCodes;
 
     public UrlOsgiClassLoader ( URL url, ClassLoader mainClassLoader, Long bundleId ) throws Exception {
 
         super( new URL[]{url}, null );
+
+        transformers = new ArrayList<OSGIClassTransformer>();
+        originalByteCodes = new HashMap<String, byte[]>();
 
         urls = new ArrayList<URL>();
         urls.add( url );
@@ -41,12 +44,6 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
         //Find and set the instrumentation object
         instrumentation = findInstrumentation();
-        //Creates our transformer, a class that will allows to redefine a class content
-        transformer = new OSGIClassTransformer();
-
-        //Adding the transformer
-        instrumentation.removeTransformer( transformer );//Just to be sure we don't have two instances of the same transformer
-        instrumentation.addTransformer( transformer, true );
 
         //Set our main class loader in order to use it in case we don't find a reference to a class we need to load
         this.mainClassLoader = mainClassLoader;
@@ -95,13 +92,17 @@ public class UrlOsgiClassLoader extends URLClassLoader {
         }
     }
 
+    public void reload ( URL url ) throws Exception {
+        reload( url, false );
+    }
+
     /**
      * Reload all the loaded classes of this custom class loader of a given url, by reload we mean to redefine those classes.
      * <br>USE THIS METHOD IF YOU DON'T WANT TO RELOAD ALL THE CLASSES FOR ALL THE URLS ADDED TO THIS CLASSLOADER
      *
      * @throws Exception
      */
-    public void reload ( URL url ) throws Exception {
+    public void reload ( URL url, Boolean restoreOriginal ) throws Exception {
 
         /*
          Remove our custom class loader from the dotCMS class loaders hierarchy in order to avoid problems redefining
@@ -126,33 +127,86 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                 Class currentClass = searchClassForReloading( className );
                 if ( currentClass != null ) {
 
-                    InputStream in = null;
-                    ByteArrayOutputStream out = null;
                     try {
-                        in = jar.getInputStream( entry );
-                        out = new ByteArrayOutputStream();
 
-                        byte[] buffer = new byte[1024];
-                        int length;
-                        while ( (length = in.read( buffer )) > 0 ) {
-                            out.write( buffer, 0, length );
-                        }
-                        byte[] byteCode = out.toByteArray();
+                        byte[] byteCode;
+                        if ( restoreOriginal ) {
+                            //Get the original implementation for this class in order to restore it to its original state
+                            byteCode = originalByteCodes.get( className );
+                        } else {
 
-                        try {
-                            //And finally redefine the class
-                            ClassDefinition classDefinition = new ClassDefinition( currentClass, byteCode );
-                            instrumentation.redefineClasses( classDefinition );
-                        } catch ( ClassNotFoundException e ) {
-                            //If the class has not been loaded we don't need to redefine it
+                            //Save the original implementation of this class before to redefine it
+                            if ( !originalByteCodes.containsKey( className ) ) {
+
+                                InputStream originalIn = null;
+                                ByteArrayOutputStream originalOut = null;
+                                try {
+                                    originalIn = currentClass.getClassLoader().getResourceAsStream( entry.getName() );
+                                    originalOut = new ByteArrayOutputStream();
+
+                                    byte[] buffer = new byte[1024];
+                                    int length;
+                                    while ( (length = originalIn.read( buffer )) > 0 ) {
+                                        originalOut.write( buffer, 0, length );
+                                    }
+                                    originalByteCodes.put( className, originalOut.toByteArray() );
+                                } finally {
+                                    if ( originalIn != null ) {
+                                        originalIn.close();
+                                    }
+                                    if ( originalOut != null ) {
+                                        originalOut.close();
+                                    }
+                                }
+                            }
+
+                            //Read the implementation we want to use to redefine the class
+                            InputStream in = null;
+                            ByteArrayOutputStream out = null;
+                            try {
+                                in = jar.getInputStream( entry );
+                                out = new ByteArrayOutputStream();
+
+                                byte[] buffer = new byte[1024];
+                                int length;
+                                while ( (length = in.read( buffer )) > 0 ) {
+                                    out.write( buffer, 0, length );
+                                }
+                                byteCode = out.toByteArray();
+                            } finally {
+                                if ( in != null ) {
+                                    in.close();
+                                }
+                                if ( out != null ) {
+                                    out.close();
+                                }
+                            }
                         }
-                    } finally {
-                        if ( in != null ) {
-                            in.close();
+
+                        //Remove any old transformer created to redefined this class
+                        Iterator<OSGIClassTransformer> transformerIterator = transformers.iterator();
+                        while ( transformerIterator.hasNext() ) {
+                            OSGIClassTransformer osgiClassTransformer = transformerIterator.next();
+
+                            String classToTransform = className.replace( '.', '/' );
+                            if ( osgiClassTransformer.getClassName().equals( classToTransform ) ) {
+                                instrumentation.removeTransformer( osgiClassTransformer );
+                                transformerIterator.remove();
+                            }
                         }
-                        if ( out != null ) {
-                            out.close();
-                        }
+
+                        //Creates our transformer, a class that will allows to redefine a class content
+                        OSGIClassTransformer transformer = new OSGIClassTransformer( className, currentClass.getClassLoader() );
+
+                        //Adding the transformer
+                        transformers.add( transformer );
+                        instrumentation.addTransformer( transformer, true );
+
+                        //And finally redefine the class
+                        ClassDefinition classDefinition = new ClassDefinition( currentClass, byteCode );
+                        instrumentation.redefineClasses( classDefinition );
+                    } catch ( ClassNotFoundException e ) {
+                        //If the class has not been loaded we don't need to redefine it
                     }
                 }
 
@@ -240,6 +294,17 @@ public class UrlOsgiClassLoader extends URLClassLoader {
     }
 
     public void close () throws IOException {
+
+        //Remove any transformer defined on this class loader
+        Iterator<OSGIClassTransformer> transformerIterator = transformers.iterator();
+        while ( transformerIterator.hasNext() ) {
+            OSGIClassTransformer osgiClassTransformer = transformerIterator.next();
+
+            instrumentation.removeTransformer( osgiClassTransformer );
+            transformerIterator.remove();
+        }
+
+        originalByteCodes.clear();
         urls.clear();
         super.close();
     }
