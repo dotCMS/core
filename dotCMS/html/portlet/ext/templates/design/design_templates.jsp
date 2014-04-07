@@ -13,6 +13,8 @@
 <%@ page import="java.net.URLDecoder"%>
 <%@ include file="/html/portlet/ext/templates/init.jsp" %>
 <%@ page import="com.dotmarketing.portlets.containers.business.ContainerAPI"%>
+<%@ page import="com.dotmarketing.portlets.templates.business.TemplateAPI" %>
+<%@ page import="com.dotmarketing.portlets.containers.model.Container"%>
 
 <%@ page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
 <%@ include file="/html/js/template/utility-left-menu.jsp" %>
@@ -32,6 +34,7 @@
 
 	PermissionAPI perAPI = APILocator.getPermissionAPI();
 	ContainerAPI containerAPI = APILocator.getContainerAPI();
+	TemplateAPI templateAPI = APILocator.getTemplateAPI();
 	HostAPI hostAPI = APILocator.getHostAPI();
 
 	com.dotmarketing.portlets.templates.model.Template template;
@@ -41,7 +44,20 @@
 	else {
 		template = (com.dotmarketing.portlets.templates.model.Template) com.dotmarketing.factories.InodeFactory.getInode(request.getParameter("inode"),com.dotmarketing.portlets.templates.model.Template.class);
 	}
-
+	List<Container> containersList = null;
+	StringBuilder containersStr = new StringBuilder();
+	int containerSize = 0 ;
+	
+	if(template != null){
+		 containersList = templateAPI.getContainersInTemplate(template, user, true);
+		 if(containersList != null && containersList.size() > 0){
+			 containerSize = containersList.size();
+			for (int i = 0; i < containersList.size(); i++) {
+				    Container container = (Container)containersList.get(i);
+				    containersStr.append(container.getTitle()+",");
+				}
+		 }
+	}
 	StringBuffer drawedBodyTemplate = new StringBuffer();
 
 	//Permissions variables
@@ -324,7 +340,7 @@
 
 <script type="text/javascript">
 	dojo.addOnLoad(function() {
-		drawDefault(<%=overrideBody%>,'<%=LanguageUtil.get(pageContext, "Add-Container")%>','<%=LanguageUtil.get(pageContext, "Remove-Container")%>');
+		drawDefault(<%=overrideBody%>,'<%=LanguageUtil.get(pageContext, "Add-Container")%>','<%=LanguageUtil.get(pageContext, "Remove-Container")%>','<%=containersStr.toString()%>',<%=containerSize%>);
 		//setTimeout('codeMirrorArea()',1);
 		dojo.byId("titleField").focus(true);
 	});

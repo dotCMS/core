@@ -15,7 +15,7 @@ var countContainersAdded;
 var containersAdded = [];
 
 
-function drawDefault(overrideBody, addContainer, removeContainer){
+function drawDefault(overrideBody, addContainer, removeContainer,containersStr,containersLen){
 	addContainerMSG = addContainer;
 	removeContainerMSG = removeContainer;
 	countAddContainerLinks = document.getElementById("countAddContainerLinks");
@@ -48,6 +48,17 @@ function drawDefault(overrideBody, addContainer, removeContainer){
 		mainDiv.insertBefore(bodyDiv,document.getElementById("ft-template"));
 	}else{
 		mainTemplateDiv.innerHTML=textareaDrawedBodyHidden.value;
+		var containerArray = new Array();
+		 containerArray = containersStr.split(',',containersLen);
+		 var existedContainers = mainTemplateDiv.getElementsByTagName("H2");
+		 var existedContLen = existedContainers.length;
+		 if(existedContLen == containersLen){
+			 for(var i = 0; i < containersLen; i++) {
+				 if(existedContainers[i].innerHTML.substring(11) != containerArray[i]){
+					 mainTemplateDiv.getElementsByTagName("H2")[i].innerHTML = mainTemplateDiv.getElementsByTagName("H2")[i].innerHTML.replace(existedContainers[i].innerHTML.substring(11),containerArray[i]);
+				 }
+	        }
+		 }
 	}
 	textareaDrawedBodyHidden.value="";
 	textareaBodyHidden.value="";
