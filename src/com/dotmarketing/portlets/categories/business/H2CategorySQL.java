@@ -4,9 +4,9 @@ class H2CategorySQL extends CategorySQL{
 	
 	public String getCreateSortTopLevel() {
 		return "create table category_reorder as " +
-				" SELECT category.inode, rownum() rnum from category left join tree tree on category.inode = tree.child, " +
+				" SELECT  rownum() rnum, * FROM (SELECT category.inode from category left join tree tree on category.inode = tree.child, " +
 				" inode category_1_ where tree.child is null and category_1_.inode = category.inode and category_1_.type = 'category' " +
-				" order by sort_order ";
+				" order by sort_order) ";
 	}
 	
 	public String getUpdateSort() {
