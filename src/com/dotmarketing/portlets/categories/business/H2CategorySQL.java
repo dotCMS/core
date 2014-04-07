@@ -21,9 +21,9 @@ class H2CategorySQL extends CategorySQL{
 	
 	public String getCreateSortChildren(String inode) {
 		return "create table category_reorder as " +
-				" SELECT category.inode, rownum() rnum from inode category_1_, category, tree where " +
+				" SELECT  rownum() rnum, * FROM (SELECT category.inode from inode category_1_, category, tree where " +
 				"category.inode = tree.child and tree.parent = '" + inode + "' and category_1_.inode = category.inode " +
-				" and category_1_.type = 'category' order by sort_order ";
+				" and category_1_.type = 'category' order by sort_order) ";
 	}
 
 
