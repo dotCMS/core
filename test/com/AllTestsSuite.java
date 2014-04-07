@@ -22,6 +22,7 @@ import com.dotmarketing.db.HibernateUtilTest;
 import com.dotmarketing.plugin.PluginMergerTest;
 import com.dotmarketing.portlets.categories.business.CategoryAPITest;
 import com.dotmarketing.portlets.containers.business.ContainerAPITest;
+import com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
 import com.dotmarketing.portlets.contentlet.business.HostAPITest;
@@ -81,7 +82,8 @@ import com.dotmarketing.webdav.WebDavTest;
     CSSPreProcessServletTest.class,
     ESContentFactoryImplTest.class,
     HibernateUtilTest.class,
-    WorkflowAPITest.class
+    WorkflowAPITest.class,
+    ContentletAjaxTest.class
 })
 public class AllTestsSuite {
 
