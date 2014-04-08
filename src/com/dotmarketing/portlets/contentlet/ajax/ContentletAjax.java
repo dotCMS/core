@@ -725,7 +725,11 @@ public class ContentletAjax {
 							        }
 							        String y[] = next.split(" ");
 							        for(int j=0;j<y.length;j++){
-							            luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
+							        	if(fieldName.equals("languageId")){
+							        		luceneQuery.append("+" + fieldName +":" + y[j] + " ");
+							        	}else{
+							        		luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
+							        	}
 							        }
 							    }
 							    else{
