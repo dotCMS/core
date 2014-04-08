@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.ajax;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.repackage.junit_4_8_1.junit.framework.Assert;
 import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
@@ -77,6 +78,7 @@ public class ContentletAjaxTest {
 		if(APILocator.getPermissionAPI().doesUserHavePermission(contentlet1, PermissionAPI.PERMISSION_PUBLISH, systemUser))
 			APILocator.getVersionableAPI().setLive(contentlet1);
 
+		APILocator.getContentletAPI().isInodeIndexed(contentlet1.getInode());
 		String ident = contentlet1.getIdentifier();
 		contentlet1 = APILocator.getContentletAPI().findContentletByIdentifier(ident, true, defaultLang.getId(), systemUser, false);
 		contentlet1.setLanguageId(lan.getId());
@@ -86,13 +88,16 @@ public class ContentletAjaxTest {
 		contentlet1 = APILocator.getContentletAPI().checkin(contentlet1, systemUser,false);
 		if(APILocator.getPermissionAPI().doesUserHavePermission(contentlet1, PermissionAPI.PERMISSION_PUBLISH, systemUser))
 			APILocator.getVersionableAPI().setLive(contentlet1);
-
+		APILocator.getContentletAPI().isInodeIndexed(contentlet1.getInode());
 		/*
 		 * Validate that there are two contentlets associated to the same identifier wit different languages
 		 */
 		List<Contentlet> contList = APILocator.getContentletAPI().getSiblings(ident);
 		Assert.assertTrue(contList.size()==2);
 
+		/*
+		 * Get english version
+		 */
 		List<String> fieldsValues = new ArrayList<String>();
 		fieldsValues.add("conHost");
 		fieldsValues.add(host.getIdentifier());
@@ -100,11 +105,16 @@ public class ContentletAjaxTest {
 		fieldsValues.add(title);
 		fieldsValues.add("languageId");
 		fieldsValues.add(String.valueOf(defaultLang.getId()));
-
-		List<Object> results=new ContentletAjax().searchContentlets (structure.getInode(), fieldsValues, new ArrayList<String>(), false, false, false, false, 1, "modDate Desc", null, null);
-		Assert.assertTrue(contList.size()==2);
-		Assert.assertTrue(contList.size()==2);
-
+		List<String> categories = new ArrayList<String>();
+		List<Object> results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
+		Map<String,Object> result = (Map<String,Object>)results.get(0);
+		Assert.assertTrue((Long)result.get("total")==1);
+		result = (Map<String,Object>)results.get(3);
+		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
+		
+		/*
+		 * Get italian version
+		 */
 		fieldsValues = new ArrayList<String>();
 		fieldsValues.add("conHost");
 		fieldsValues.add(host.getIdentifier());
@@ -113,9 +123,11 @@ public class ContentletAjaxTest {
 		fieldsValues.add("languageId");
 		fieldsValues.add(String.valueOf(lan.getId()));
 
-		results=new ContentletAjax().searchContentlets (structure.getInode(), fieldsValues, new ArrayList<String>(), false, false, false, false, 1, "modDate Desc", null, null);
-		Assert.assertTrue(contList.size()==2);
-		Assert.assertTrue(contList.size()==2);
+		results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
+		result = (Map<String,Object>)results.get(0);
+		Assert.assertTrue((Long)result.get("total")==1);
+		result = (Map<String,Object>)results.get(3);
+		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==lan.getId());
 	}
 
 }
