@@ -12,6 +12,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -42,19 +43,25 @@ public class ContentletAjaxTest {
 		Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
 		Language lan = APILocator.getLanguageAPI().getLanguage(102);
 		if(!UtilMethods.isSet(lan) || lan.getId() == 0){
-			lan = new Language();
-			lan.setCountry("Italy");
-			lan.setCountryCode("IT");
-			lan.setLanguageCode("it");
-			lan.setLanguage("Italian");
-			APILocator.getLanguageAPI().saveLanguage(lan);
-			/*
-			 * changin id to recreate possible match between languages
-			 */
-			DotConnect dc = new DotConnect();
-			dc.setSQL("update language set id="+defaultLang.getId()+"02 where language_code='it'");
-			dc.loadResult();
-			
+			if(DbConnectionFactory.getDBType().equals("Microsoft SQL Server")){
+				DotConnect dc = new DotConnect();
+				String sql = "set identity_insert language ON;insert into language(id,language_code,country_code,language,country) values(102,'it','IT','Italian','Italy');set identity_insert language OFF;";
+				dc.setSQL(sql);
+				dc.loadResult();
+			}else{
+				lan = new Language();
+				lan.setCountry("Italy");
+				lan.setCountryCode("IT");
+				lan.setLanguageCode("it");
+				lan.setLanguage("Italian");
+				APILocator.getLanguageAPI().saveLanguage(lan);
+				/*
+				 * changin id to recreate possible match between languages
+				 */
+				DotConnect dc = new DotConnect();
+				dc.setSQL("update language set id="+defaultLang.getId()+"02 where language_code='it'");
+				dc.loadResult();
+			}
 			lan = APILocator.getLanguageAPI().getLanguage("it", "IT");
 		}
 
@@ -63,7 +70,7 @@ public class ContentletAjaxTest {
 		 */
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
-		
+
 		Structure structure = StructureCache.getStructureByVelocityVarName("webPageContent");
 		Contentlet contentlet1 = new Contentlet();
 		contentlet1.setStructureInode(structure.getInode());
@@ -111,7 +118,7 @@ public class ContentletAjaxTest {
 		Assert.assertTrue((Long)result.get("total")==1);
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
-		
+
 		/*
 		 * Get italian version
 		 */
