@@ -28,6 +28,7 @@ import com.dotcms.repackage.hibernate2.net.sf.hibernate.SessionFactory;
 import com.dotcms.repackage.hibernate2.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.hibernate2.net.sf.hibernate.cfg.Mappings;
 import com.dotcms.repackage.hibernate2.net.sf.hibernate.type.Type;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -288,8 +289,8 @@ public class HibernateUtil {
 				Logger.warn(this, "Too slow query sql: " + query.getQueryString() + " " + params);
 			}
 			return l;
-		}catch (Exception e) {
-			Logger.warn(this, "---------- DotHibernate: error on list ---------------", e);
+        } catch ( ObjectNotFoundException e ) {
+            Logger.warn(this, "---------- DotHibernate: error on list ---------------", e);
 			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback 
 			 * when we are doing a search and the object is not found. this make some other operation
 			 * to rollback when this is not required
@@ -297,8 +298,10 @@ public class HibernateUtil {
 			//handleSessionException();
 			// throw new DotRuntimeException(e.toString());
 			return new java.util.ArrayList();
-		}
-	}
+        } catch ( Exception e ) {
+            throw new DotRuntimeException( e.getMessage(), e );
+        }
+    }
 
 	public Object load(long id)throws DotHibernateException {
 		Session session = getSession();
@@ -313,8 +316,8 @@ public class HibernateUtil {
 
 		try {
 			return session.load(thisClass, new Long(id));
-		} catch (Exception e) {
-			Logger.debug(this, "---------- DotHibernate: error on load ---------------", e);
+        } catch ( ObjectNotFoundException e ) {
+            Logger.debug(this, "---------- DotHibernate: error on load ---------------", e);
 			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback 
 			 * when we are doing a search and the object is not found. this make some other operation
 			 * to rollback when this is not required
@@ -327,7 +330,9 @@ public class HibernateUtil {
 			} catch (Exception ex) {
 				throw new DotRuntimeException(e.toString());
 			}
-		}
+		} catch ( Exception e ) {
+            throw new DotRuntimeException( e.getMessage(), e );
+        }
 	}
 
 	/**
@@ -349,8 +354,8 @@ public class HibernateUtil {
 
 		try {
 			return session.load(thisClass, id);
-		} catch (Exception e) {
-			Logger.debug(this, "---------- DotHibernate: error on load ---------------", e);
+        } catch ( ObjectNotFoundException e ) {
+            Logger.debug(this, "---------- DotHibernate: error on load ---------------", e);
 			
 			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback 
 			 * when we are doing a search and the object is not found. this make some other operation
@@ -364,7 +369,9 @@ public class HibernateUtil {
 			} catch (Exception ex) {
 				throw new DotRuntimeException(e.toString());
 			}
-		}
+		} catch ( Exception e ) {
+            throw new DotRuntimeException( e.getMessage(), e );
+        }
 	}
 
 	public Object get(long id)throws DotHibernateException {
@@ -415,8 +422,8 @@ public class HibernateUtil {
 				Logger.error(this, query.getQueryString(), ex);
 				throw new DotRuntimeException(ex.toString());
 			}
-		} catch (Exception e) {
-			Logger.warn(this, "---------- DotHibernate: can't load- no results from query---------------", e);
+        } catch ( ObjectNotFoundException e ) {
+            Logger.warn(this, "---------- DotHibernate: can't load- no results from query---------------", e);
 			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback 
 			 * when we are doing a search and the object is not found. this make some other operation
 			 * to rollback when this is not required
@@ -429,7 +436,9 @@ public class HibernateUtil {
 				Logger.error(this, "---------- DotHibernate: can't load- thisClass.newInstance()---------------", e);
 				throw new DotRuntimeException(e.toString());
 			}
-		}
+		} catch ( Exception e ) {
+            throw new DotRuntimeException( e.getMessage(), e );
+        }
 
 		return obj;
 	}
