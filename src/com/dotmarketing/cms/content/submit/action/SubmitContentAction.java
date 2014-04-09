@@ -88,7 +88,8 @@ public class SubmitContentAction extends DispatchAction{
 		String moderatorRole="";
 		List<Field> imageFields = new ArrayList<Field>();
 		List<Field> fileFields = new ArrayList<Field>();
-		String fName = "";
+		List<String> imageNames = new ArrayList<String>();
+		List<String> fileNames = new ArrayList<String>();
 
 		/**
 		 * Getting Referrer
@@ -341,7 +342,7 @@ public class SubmitContentAction extends DispatchAction{
 						}else{
 							cve.addBadTypeField(f);
 							hasError = true;
-							fName = title;
+							imageNames.add(title);
 							continue;
 						}
 					}
@@ -380,6 +381,8 @@ public class SubmitContentAction extends DispatchAction{
 				for(Field f : fileFields){
 					java.io.File uploadedFile = uploadReq.getFile(f.getVelocityVarName());
 					String title = uploadReq.getFileName(f.getVelocityVarName());
+					fileNames.add(title);
+
 					if(f.isRequired() && !UtilMethods.isSet(title)){
 						cve.addRequiredField(f);
 						hasError = true;
@@ -469,19 +472,19 @@ public class SubmitContentAction extends DispatchAction{
 		}catch (DotContentletValidationException ve) {
 			HibernateUtil.rollbackTransaction();
 			Logger.debug(this, ve.getMessage());
-			
+
 			Language userlang=langAPI.getLanguage(
             			        (String)request.getSession().getAttribute(
             			                com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
 
-			if(ve.hasRequiredErrors()){ 
+			if(ve.hasRequiredErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
 				for (Field errorField : reqs) {
 				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, 
-						        new ActionMessage("secure.form.error.message.contentlet", fname, 
+						errors.add(Globals.ERROR_KEY,
+						        new ActionMessage("secure.form.error.message.contentlet", fname,
 						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
 						errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.required", fname));
@@ -494,7 +497,7 @@ public class SubmitContentAction extends DispatchAction{
 				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, 
+						errors.add(Globals.ERROR_KEY,
 						        new ActionMessage("secure.form.error.message.contentlet", fname,
 						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
@@ -508,7 +511,7 @@ public class SubmitContentAction extends DispatchAction{
 				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, 
+						errors.add(Globals.ERROR_KEY,
 						        new ActionMessage("secure.form.error.message.contentlet", fname,
 						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
@@ -516,7 +519,7 @@ public class SubmitContentAction extends DispatchAction{
 					}
 				}
 			}
-			
+
 			if(ve.hasRelationshipErrors()){
 				//need to update message to support multiple relationship validation errors
 				errors.add(Globals.ERROR_KEY, new ActionMessage("message.relationship.required", "relationships"));
@@ -528,7 +531,7 @@ public class SubmitContentAction extends DispatchAction{
 				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, 
+						errors.add(Globals.ERROR_KEY,
 						        new ActionMessage("secure.form.error.message.contentlet", fname,
 						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
@@ -542,7 +545,7 @@ public class SubmitContentAction extends DispatchAction{
 				    String fname=langAPI.getStringKey(userlang, errorField.getFieldName());
 					String customizedMessage = SubmitContentUtil.getCustomizedFieldErrorMessage(errorField, SubmitContentUtil.errorFieldVariable);
 					if(UtilMethods.isSet(customizedMessage)){
-						errors.add(Globals.ERROR_KEY, 
+						errors.add(Globals.ERROR_KEY,
 						        new ActionMessage("secure.form.error.message.contentlet", fname,
 						                langAPI.getStringKey(userlang, customizedMessage)));
 					}else{
@@ -560,18 +563,19 @@ public class SubmitContentAction extends DispatchAction{
 		}
 
 		if(errors.size() > 0 && UtilMethods.isSet(params)){
-			String[] pList = params.split("&");
+			String[] paramList = params.split("&");
             String l = "";
-            if(!fName.isEmpty()){
-            	for(String x : pList){
-            		if((!x.contains(fName)) && !x.isEmpty()){
-            			l = l + "&" + x;
-                    }
-                }
+
+            for(String param : paramList){
+
+            	if(UtilMethods.isSet(param)) {
+	            	String leftSide = param.substring(0, param.indexOf("="));
+	        		if((!imageNames.contains(leftSide)) && !fileNames.contains(leftSide)){
+	        			l = l + "&" + param;
+	                }
+            	}
             }
-            else{
-            	l = params.substring(1);
-            }
+
             referrer=referrer+"?"+l;
 			af = new ActionForward(referrer);
 			af.setRedirect(true);
