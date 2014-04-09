@@ -679,9 +679,9 @@ public class ContentletAjax {
 
 
 									metakey = VelocityUtil.convertToVelocityVariable(metakey);
-									String metaVal = splitter[splitter.length-1];
+									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
-									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName +  "." +  fieldValue.toString().replaceAll("\"", "\\\"") + " ");
+									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName+  fieldValue.toString().replaceAll("\"", "\\\"") + " ");
 
 
 								}
