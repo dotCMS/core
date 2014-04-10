@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import com.dotcms.repackage.hibernate2.net.sf.hibernate.*;
 import com.dotcms.repackage.hibernate2.net.sf.hibernate.CallbackException;
 import com.dotcms.repackage.hibernate2.net.sf.hibernate.FlushMode;
 import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
