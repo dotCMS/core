@@ -36,12 +36,34 @@ public class ServerFactoryImpl extends ServerFactory {
 			server.setServerId(UUID.randomUUID().toString());
 		}
 		server.setClusterId(ClusterFactory.getClusterId());
-		dc.setSQL("insert into cluster_server(server_id, cluster_id, name, ip_address) values(?,?,?,?)");
+		dc.setSQL("insert into cluster_server(server_id, cluster_id, name, ip_address, key_) values(?,?,?,?,?)");
 		dc.addParam(server.getServerId());
 		dc.addParam(server.getClusterId());
 		dc.addParam(server.getName());
 		dc.addParam(server.getIpAddress());
+		dc.addParam(server.getKey());
 		dc.loadResult();
+	}
+	
+	protected Server readServerResult(Map<String, Object> row) {
+	    Server server = new Server();
+        server.setServerId((String)row.get("server_id"));
+        server.setClusterId((String)row.get("cluster_id"));
+        server.setIpAddress((String)row.get("ip_address"));
+        server.setName((String)row.get("name"));
+        server.setHost((String)row.get("host"));
+        if ( row.get( "cache_port" ) != null ) {
+            server.setCachePort( ((Number) row.get( "cache_port" )).intValue() );
+        }
+        if ( row.get( "es_transport_tcp_port" ) != null ) {
+            server.setEsTransportTcpPort( ((Number) row.get( "es_transport_tcp_port" )).intValue() );
+        }
+        if ( row.get( "es_http_port" ) != null ) {
+            server.setEsHttpPort( ((Number) row.get( "es_http_port" )).intValue() );
+        }
+        server.setKey((String)row.get("key_"));
+        
+        return server;
 	}
 
 	public Server getServer(String serverId) {
@@ -54,21 +76,7 @@ public class ServerFactoryImpl extends ServerFactory {
 
 			if(results!=null && !results.isEmpty()) {
 				Map<String, Object> row = results.get(0);
-				server = new Server();
-				server.setServerId((String)row.get("server_id"));
-				server.setClusterId((String)row.get("cluster_id"));
-				server.setIpAddress((String)row.get("ip_address"));
-				server.setName((String)row.get("name"));
-				server.setHost((String)row.get("host"));
-                if ( row.get( "cache_port" ) != null ) {
-                    server.setCachePort( ((Number) row.get( "cache_port" )).intValue() );
-                }
-                if ( row.get( "es_transport_tcp_port" ) != null ) {
-                    server.setEsTransportTcpPort( ((Number) row.get( "es_transport_tcp_port" )).intValue() );
-                }
-                if ( row.get( "es_http_port" ) != null ) {
-                    server.setEsHttpPort( ((Number) row.get( "es_http_port" )).intValue() );
-                }
+				server = readServerResult(row);
             }
 		} catch (DotDataException e) {
 			Logger.error(ServerFactoryImpl.class, "Could not get Server with id:" + serverId, e);
@@ -120,29 +128,15 @@ public class ServerFactoryImpl extends ServerFactory {
 	public List<Server> getAllServers() throws DotDataException {
 		List<Server> servers = new ArrayList<Server>();
 
-		dc.setSQL("select server_id, cluster_id, name, ip_address, host, cache_port, es_transport_tcp_port, es_network_port, es_http_port, "
+		dc.setSQL("select server_id, cluster_id, name, ip_address, host, cache_port, es_transport_tcp_port, es_network_port, es_http_port, key_,  "
 				+ "(select max(heartbeat) as last_heartbeat from cluster_server_uptime where server_id = s.server_id) as last_heartbeat"
 				+ " from cluster_server s");
 		List<Map<String, Object>> results = dc.loadObjectResults();
 
 
 		for (Map<String, Object> row : results) {
-			Server server = new Server();
-			server.setServerId((String)row.get("server_id"));
-			server.setClusterId((String)row.get("cluster_id"));
-			server.setIpAddress((String)row.get("ip_address"));
-			server.setHost((String)row.get("host"));
-			server.setName((String)row.get("name"));
-            if ( row.get( "cache_port" ) != null ) {
-                server.setCachePort( ((Number) row.get( "cache_port" )).intValue() );
-            }
-            if ( row.get( "es_transport_tcp_port" ) != null ) {
-                server.setEsTransportTcpPort( ((Number) row.get( "es_transport_tcp_port" )).intValue() );
-            }
-            if ( row.get( "es_http_port" ) != null ) {
-                server.setEsHttpPort( ((Number) row.get( "es_http_port" )).intValue() );
-            }
-            server.setLastHeartBeat((Date)row.get("last_heartbeat"));
+		    Server server = readServerResult(row);
+		    server.setLastHeartBeat((Date)row.get("last_heartbeat"));
 			servers.add(server);
 		}
 
@@ -209,7 +203,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public void updateServer(Server server) throws DotDataException {
-		dc.setSQL("update cluster_server set cluster_id = ?, name=?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ? where server_id = ?");
+		dc.setSQL("update cluster_server set cluster_id = ?, name=?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ?, key_ = ? where server_id = ?");
 		dc.addParam(server.getClusterId());
 		dc.addParam(server.getName());
 		dc.addParam(server.getIpAddress());
@@ -217,6 +211,7 @@ public class ServerFactoryImpl extends ServerFactory {
 		dc.addParam(server.getCachePort());
 		dc.addParam(server.getEsTransportTcpPort());
 		dc.addParam(server.getEsHttpPort());
+		dc.addParam(server.getKey());
 		dc.addParam(server.getServerId());
 		dc.loadResult();
 	}

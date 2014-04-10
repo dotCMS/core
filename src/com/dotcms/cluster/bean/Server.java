@@ -14,6 +14,7 @@ public class Server {
 	private Integer esHttpPort;
 	private Integer cachePort;
 	private Date lastHeartBeat;
+	private String key;
 
 	public String getServerId() {
 		return serverId;
@@ -75,5 +76,10 @@ public class Server {
 	public void setLastHeartBeat(Date lastHeartBeat) {
 		this.lastHeartBeat = lastHeartBeat;
 	}
-
+	public String getKey() {
+	    return this.key;
+	}
+	public void setKey(String key) {
+	    this.key = key;
+	}
 }
