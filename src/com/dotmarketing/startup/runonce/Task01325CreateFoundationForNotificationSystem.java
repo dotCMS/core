@@ -34,7 +34,7 @@ public class Task01325CreateFoundationForNotificationSystem extends AbstractJDBC
 
 	@Override
 	public String getMSSQLScript() {
-		return "create table notification(id varchar(36) NOT NULL,message text NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar2(255) NOT NULL, time_sent DATETIME NOT NULL, was_read tinyint default 0, PRIMARY KEY (id));\n"
+		return "create table notification(id varchar(36) NOT NULL,message text NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar(255) NOT NULL, time_sent DATETIME NOT NULL, was_read tinyint default 0, PRIMARY KEY (id));\n"
 				+ "create index idx_not_user ON notification (user_id);"
 				+ "create index idx_not_read ON notification (was_read);";
 	}
