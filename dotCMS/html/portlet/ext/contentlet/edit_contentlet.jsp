@@ -238,7 +238,7 @@ var editButtonRow="editContentletButtonRow";
 
 
 
-
+	<%@ include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
 
 
 
@@ -462,7 +462,6 @@ var editButtonRow="editContentletButtonRow";
 	<%}%>
 	</div>
 
-	<%@ include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
 
 	<!-- START Left Column -->
 	 <div class="buttonRow-left lineRight" id="editContentletButtonRow">
