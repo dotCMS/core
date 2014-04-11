@@ -319,7 +319,7 @@
 								}
 							}
 		 %>
-		 		cont['<%=fieldName%>'] = '<%=fieldValue.replaceAll("'","\\\\'").replaceAll("\n","").replaceAll("\r","").trim()%>';
+		 cont['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'] = '<%=fieldValue.replaceAll("'","\\\\'").replaceAll("\n","").replaceAll("\r","").trim()%>';
 		 <%
 						}
 					}
@@ -456,7 +456,7 @@
 	 		function <%= functionName %> (o) {
 				var value = "";
 				if (o != null){
-					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['<%=fieldName%>'] + "</a>";
+					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'] + "</a>";
 	 			}
 	 			return value;
 			}
