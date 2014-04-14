@@ -1,16 +1,36 @@
 package com.dotmarketing.startup.runonce;
 
 import java.util.List;
+import java.util.Map;
 
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 public class Task01320PostgresqlIndiciesFK extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {
-        return DbConnectionFactory.isPostgres() && Config.getBooleanProperty("ENABLE_Task01320PostgresqlIndiciesFK",true);
+
+    	// verify if any of these indices already exist
+    	boolean indicesExist = false;
+
+    	if(DbConnectionFactory.isPostgres()) {
+	    	DotConnect dc=new DotConnect();
+			dc.setSQL("select * from pg_class where relname = 'idx_fileasset_vi_live'");
+
+			try {
+				List<Map<String, Object>> results = dc.loadObjectResults();
+				indicesExist = !results.isEmpty();
+			} catch(Exception e) {
+				Logger.error(this, "Error checking if indices exist", e);
+			}
+    	}
+
+        return DbConnectionFactory.isPostgres() && !indicesExist && Config.getBooleanProperty("ENABLE_Task01320PostgresqlIndiciesFK",true);
     }
 
     @Override
