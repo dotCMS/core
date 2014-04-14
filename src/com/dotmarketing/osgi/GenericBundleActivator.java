@@ -39,10 +39,7 @@ import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.dotmarketing.osgi.ActivatorUtil.*;
 
@@ -636,9 +633,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void unregisterViewToolServices () {
 
         if ( this.toolboxManager != null && viewTools != null ) {
-            for ( ToolInfo toolInfo : viewTools ) {
 
+            Iterator<ToolInfo> toolInfoIterator = viewTools.iterator();
+            while ( toolInfoIterator.hasNext() ) {
+
+                ToolInfo toolInfo = toolInfoIterator.next();
                 this.toolboxManager.removeTool( toolInfo );
+                toolInfoIterator.remove();
+
                 Logger.info( this, "Removed View Tool: " + toolInfo.getKey() );
             }
         }

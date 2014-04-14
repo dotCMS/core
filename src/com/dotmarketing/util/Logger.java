@@ -5,30 +5,30 @@
  */
 package com.dotmarketing.util;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Level;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.velocity.VelocityServlet;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.velocity.VelocityServlet;
-
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.util.WeakHashMap;
 
 /**
  *@author     David Torres
  */
 public class Logger{
 
-	private static Map<Class, com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger> map = new HashMap<Class, com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger>();
+	private static WeakHashMap<Class, com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger> map = new WeakHashMap<Class, com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger>();
 
 	public static void clearLoggers(){
 		map.clear();
+	}
+
+    public static com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger clearLogger ( Class clazz ) {
+        return map.remove( clazz );
 	}
 	
 	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
