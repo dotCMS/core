@@ -43,7 +43,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		String dropFKs = "";
 		if (DbConnectionFactory.isMySql()){
 
-			dropFKs = "ALTER TABLE structure DROP FOREIGN KEY fk_structure_host;" + 
+			dropFKs = "ALTER TABLE structure DROP FOREIGN KEY fk_structure_host;" +
 			          "ALTER TABLE tree DROP FOREIGN KEY FK36739EC4AB08AA;" +
 			          "ALTER TABLE tree DROP FOREIGN KEY FK36739E5A3F51C;" +
 			          "ALTER TABLE permission DROP FOREIGN KEY permission_inode_fk;" +
@@ -60,9 +60,9 @@ public class Task00785DataModelChanges implements StartupTask  {
             		  "Alter table structure drop constraint fk_structure_host;"+
             		  "Alter table identifier drop constraint fk9f88aca95fb51eb;";
 		}
-		
+
 		String deleteIdentifiers = "";
-		
+
 		if(Config.getBooleanProperty("upgrade-cleanup-bad-data",true))
 		      deleteIdentifiers =  "DELETE from tree where (parent in(select identifier from inode where type='file_asset') or parent in(select inode from folder)) and child in(select inode from inode where type ='file_asset');" +
 								   "DELETE from tree where parent in(select identifier from inode where type='template')and child in(select inode from inode where type ='template');" +
@@ -70,10 +70,10 @@ public class Task00785DataModelChanges implements StartupTask  {
 								   "DELETE from tree where parent in(select identifier from inode where type='contentlet')and child in(select inode from inode where type ='contentlet');" +
 								   "DELETE from tree where (parent in(select identifier from inode where type='htmlpage')or parent in(select inode from folder)) and child in(select inode from inode where type ='htmlpage');" +
 								   "DELETE from tree where (parent in(select identifier from inode where type='links') or parent in(select inode from folder)) and child in(select inode from inode where type ='links');";
-		
+
 		deleteIdentifiers+="DELETE from inode where type='identifier';";
 
-		
+
 		/*String addFKs = "alter table tree add constraint FK36739EC4AB08AA foreign key (parent) references inode;" +
 						"alter table tree add constraint FK36739E5A3F51C foreign key (child) references inode;" +
 						"alter table permission add constraint permission_inode_fk foreign key (inode_id) references inode(inode);" +
@@ -831,7 +831,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 											      "from deleted\n" +
 											      "for Read Only\n" +
 											      "open container_cur_Deleted\n" +
-											      "fetch next from content_cur_Deleted into @identifier\n" +
+											      "fetch next from container_cur_Deleted into @identifier\n" +
 											      "while @@FETCH_STATUS <> -1\n" +
 											      "BEGIN\n" +
 											      	"select @totalCount = count(*) from containers where identifier = @identifier\n" +
@@ -1217,7 +1217,7 @@ public class Task00785DataModelChanges implements StartupTask  {
                 dc.addParam(folder.get("host_inode").trim());
                 dc.addParam(type);
                 dc.loadResult();
-                
+
                 dc.setSQL("Update folder set identifier =? where inode=?");
                 dc.addParam(uuid);
                 dc.addParam(inode);
@@ -1269,19 +1269,19 @@ public class Task00785DataModelChanges implements StartupTask  {
 		  if (DbConnectionFactory.isMsSql())
 		     dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 
-		
+
 		deleteIdentifiersFromInode();
 		if(Config.getBooleanProperty("upgrade-cleanup-bad-data",true))
 		    deleteOrphanedAssets();
-		
+
 		String addConstraint = "";
 		String addIdentifierColumn = "alter table containers add identifier varchar(36);" +
 			             			 "alter table template add identifier varchar(36);" +
 			             		     "alter table htmlpage add identifier varchar(36);"+
 			             		     "alter table file_asset add identifier varchar(36);" +
 			             			 "alter table contentlet add identifier varchar(36);" +
-			             			 "alter table links add identifier varchar(36);";		
-		
+			             			 "alter table links add identifier varchar(36);";
+
 	    if (DbConnectionFactory.isMySql()){
 	        try {
 	            dc.executeStatement("alter table identifier drop foreign key host_inode_fk");
@@ -1290,7 +1290,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 	        catch(Exception ex) {
 	            Logger.info(this, "no need to drop host_inode_fk");
 	        }
-	        addConstraint = 
+	        addConstraint =
                     "ALTER TABLE identifier change inode id varchar(36);" +
                     "ALTER TABLE identifier drop index uri;";
 	    }else  if(DbConnectionFactory.isMsSql()) {
@@ -1299,7 +1299,7 @@ public class Task00785DataModelChanges implements StartupTask  {
             } catch(Exception ex) {
                 Logger.info(this, "no need to drop host_inode_fk");
             }
-	        
+
 	        dc.setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS where table_name='identifier' and constraint_type<>'FOREIGN KEY'");
 		    List<Map<String, String>> results = dc.getResults();
 		    for(Map<String, String> key :results){
@@ -1321,7 +1321,7 @@ public class Task00785DataModelChanges implements StartupTask  {
             } catch(Exception ex) {
                 Logger.info(this, "no need to drop host_inode_fk");
             }
-	        
+
 	        addConstraint = "ALTER TABLE identifier add id varchar2(36);" +
 	   		  				"UPDATE identifier set id = cast(inode as varchar2(36));" +
 	   		  				"ALTER TABLE identifier drop column inode;" +
@@ -1345,25 +1345,25 @@ public class Task00785DataModelChanges implements StartupTask  {
 		addConstraint =  addConstraint+
 					     "ALTER TABLE Inode DROP COLUMN identifier;" +
 					     "ALTER TABLE structure add constraint fk_structure_host foreign key (host) references identifier(id);"+
-					     
+
 					     "delete from containers where identifier is null or identifier='';"+
 					     "ALTER TABLE containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);" +
-					     
+
 					     "delete from template where identifier is null or identifier='';"+
 					     "ALTER TABLE template add constraint template_identifier_fk foreign key (identifier) references identifier(id);" +
-					     
+
 					     "delete from htmlpage where identifier is null or identifier='';"+
 					     "ALTER TABLE htmlpage add constraint htmlpage_identifier_fk foreign key (identifier) references identifier(id);" +
-					     
+
 					     "delete from file_asset where identifier is null or identifier='';"+
 					     "ALTER TABLE file_asset add constraint file_identifier_fk foreign key (identifier) references identifier(id);" +
-					     
+
 					     "delete from contentlet where identifier is null or identifier='';"+
 					     "ALTER TABLE contentlet add constraint content_identifier_fk foreign key (identifier) references identifier(id);" +
-					     
+
 					     "delete from links where identifier is null or identifier='';"+
 					     "ALTER TABLE links add constraint links_identifier_fk foreign key (identifier) references identifier(id);" +
-					     
+
 					     "ALTER TABLE identifier add parent_path varchar(255);" +
 					     "ALTER TABLE identifier add asset_name varchar(255);" +
 					     "ALTER TABLE identifier add asset_type varchar(64);";
