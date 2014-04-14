@@ -524,6 +524,7 @@
 		dojo.byId("displayRoleName1").innerHTML= roleName;
 		dojo.byId("displayRoleName2").innerHTML= roleName;
 		dojo.byId("displayRoleName3").innerHTML = roleName;
+		lastSelectedNode =  null;
 		buildRolesTree();
 
 	}
