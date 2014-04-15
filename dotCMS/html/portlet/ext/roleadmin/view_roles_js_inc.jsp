@@ -664,7 +664,8 @@
 				loadRoleLayouts(currentRoleId);
 				break;
 		}
-		resizeRoleBrowser();
+	 	dojo.style(dojo.byId('roleTabs'), { display: '' });
+	 	resizeRoleBrowser();
 		// DOTCMS-6233 need the timeout for users tab initially //
 		setTimeout("resizeRoleBrowser();", 200);
 	}
