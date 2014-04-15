@@ -366,7 +366,8 @@
 		// if less than 3 characters are typed in the filter textbox, a tooltip will show up after 3 seconds
 		if(name!=null && name.length> 0 && name.length<3) {
 			hideToolTip();
-			setTimeout("showToolTip()", 3000);
+			setTimeout("showToolTip()", 1000);
+			setTimeout("hideToolTip()", 3000);
 		} else if(name=='' || (name!=null && name.length>2)) {// if filter textbox is empty, or at least has 3 chars, we build the resulting tree
 			hideToolTip();
 			lastSelectedNode = null;
@@ -385,6 +386,7 @@
 			}
 
 		}
+		
 	}
 
 	function hideToolTip() {
