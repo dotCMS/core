@@ -40,7 +40,7 @@ public class PushPublishActionlet extends WorkFlowActionlet {
 
 	@Override
 	public String getName() {
-		return "Remote Publish";
+		return "Push Publish";
 	}
 
 	@Override
