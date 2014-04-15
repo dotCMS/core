@@ -43,6 +43,7 @@
     <property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
     <property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
     <property name="distribution.plugins.output" value="${distribution.output}/plugins" />
+    <property name="distribution.docs.output" value="${distribution.output}/docs" />
 
     <property name="tomcat7.home" value="${tomcat7.install.location}"/>
     <property name="jboss7.home" value="${jboss7.install.location}"/>
@@ -361,7 +362,6 @@
         <!--bin folder (./bin/system/src-conf)-->
         <copy todir="${distribution.bin.output}/system/src-conf">
             <fileset dir="src-conf">
-                <include name="**/*"/>
             </fileset>
         </copy>
 
@@ -380,6 +380,14 @@
                 <exclude name="**/.git" />
             </fileset>
         </copy>
+
+    	 <!--docs folder (./docs) -->
+        <copy todir="${distribution.docs.output}">
+        	<fileset dir="docs">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
+
         <!--Set some startup variables-->
         <replace file="${distribution.bin.output}/build.conf"><!--Unix-->
             <replacefilter token="#SERVER_FOLDER" value="SERVER_FOLDER"/>
