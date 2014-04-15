@@ -368,7 +368,16 @@
 			hideToolTip();
 			setTimeout("showToolTip()", 1000);
 			setTimeout("hideToolTip()", 3000);
-		} else if(name=='' || (name!=null && name.length>2)) {// if filter textbox is empty, or at least has 3 chars, we build the resulting tree
+		} else if(name=='') {// if filter textbox is empty
+			hideToolTip();
+			lastSelectedNode = null;
+			buildRolesTree(null);
+			dojo.byId('editRoleButtonWrapper').style.display = 'none';
+			dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
+			dojo.style(dojo.byId('roleTabs'), { display: 'none' });
+			currentRoleId=null;
+			currentRole=null;
+		} else if(name!=null && name.length>2) {// if filter textbox has at least 3 chars, we build the resulting tree
 			hideToolTip();
 			lastSelectedNode = null;
 			var filteredRoles = searchRoles(name);
@@ -376,17 +385,7 @@
 
 			if(filteredRoles && filteredRoles.items[0].children.length == 0)
 				dojo.style(dojo.byId('noRolesFound'), { display: '' });
-
-			if(name=='') {
-				dojo.byId('editRoleButtonWrapper').style.display = 'none';
-				dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
-				dojo.style(dojo.byId('roleTabs'), { display: 'none' });
-				currentRoleId=null;
-				currentRole=null;
-			}
-
 		}
-		
 	}
 
 	function hideToolTip() {
