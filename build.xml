@@ -362,6 +362,7 @@
         <!--bin folder (./bin/system/src-conf)-->
         <copy todir="${distribution.bin.output}/system/src-conf">
             <fileset dir="src-conf">
+                <include name="**/*"/>
             </fileset>
         </copy>
 
