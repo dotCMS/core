@@ -10,9 +10,9 @@ import java.util.List;
 import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilder;
 import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilderFactory;
 
-import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Document;
-import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Element;
-import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.NodeList;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import com.dotmarketing.beans.GoogleMiniSearch;
 import com.dotmarketing.beans.GoogleMiniSearchResult;
