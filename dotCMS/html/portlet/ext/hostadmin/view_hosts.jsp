@@ -45,12 +45,11 @@
 	function stopEvent(event){
 		if(event.preventDefault){
 			event.preventDefault();
-			event.stopPropagation(); 
+			event.stopPropagation();
 		}
 	}
 
-
-</script> 
+</script>
     <div class="yui-u" style="text-align: right;">
 		<input dojoType="dijit.form.CheckBox" type="checkbox" name="showDeleted" id="showDeleted" onClick="hostAdmin.filterHosts();" <%=(showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : ""%> value="true" />
 		<label for="showDeleted" style="font-size:85%;"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
@@ -122,14 +121,14 @@
 	            <br/>
 	            <span style="text-align: center"><%= LanguageUtil.get(pageContext, "or") %></span>
 				<br/>
-				<input type="radio" name="copyHost" dojoType="dijit.form.RadioButton" id="startBlankHostRadio" value="off" />
+				<input type="radio" name="copyHost" dojoType="dijit.form.RadioButton" id="startBlankHostRadio" <%if(LicenseUtil.getLevel() > 199){%>value="off"<% }else{ %>checked value="on"<% } %>  />
 	            <label for="startBlankHostRadio">
 	                <%= LanguageUtil.get(pageContext, "Start-with-a-blank-Host") %>
 	            </label>
             </div>
             <hr/>
             <div class="buttonRow">
-                <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep2(); stopEvent; return false; " iconClass="nextIcon">
+                <button id="nextButtonStep1" dojoType="dijit.form.Button" onClick="hostAdmin.goToStep2(); stopEvent; return false; " iconClass="nextIcon">
                     <%= LanguageUtil.get(pageContext, "Next") %>
                 </button>
                 <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent; return false; " iconClass="cancelIcon">
