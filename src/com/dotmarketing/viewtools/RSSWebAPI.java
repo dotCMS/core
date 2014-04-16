@@ -16,10 +16,10 @@ import java.util.Set;
 import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilder;
 import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilderFactory;
 
-import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Document;
-import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Element;
-import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Node;
-import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.NodeList;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
