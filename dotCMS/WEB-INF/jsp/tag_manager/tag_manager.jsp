@@ -136,7 +136,7 @@ td {font-size: 100%;}
         var tagName = grid.store.getValue(grid.getItem(index), 'tagname');
         var hostId = grid.store.getValue(grid.getItem(index), 'hostId');
         var hostName = grid.store.getValue(grid.getItem(index), 'hostName');
-		return "<a href=\"javascript:tagClicked('"+index+"','"+tagId+"', '"+tagName+"', '"+hostId+"', '"+hostName+"')\" >"+tagName+"</a>";
+		return "<a href=\"javascript:tagClicked('"+index+"')\" >"+tagName+"</a>";
 	};
 
   	function createStore(params) {
@@ -225,12 +225,11 @@ td {font-size: 100%;}
 			doSearch();
 		}
 
-		function tagClicked(index,tagId,tagName,hostId,hostName) {
-			/*var grid = dijit.byId("tagsEnhancedGrid");
-	        var tagId = grid.store.getValue(grid.getItem(evt.rowIndex), 'tagId');
-	        var tagName = grid.store.getValue(grid.getItem(evt.rowIndex), 'tagname');
-	        var hostId = grid.store.getValue(grid.getItem(evt.rowIndex), 'hostId');
-	        var hostName = grid.store.getValue(grid.getItem(evt.rowIndex), 'hostName');*/
+		function tagClicked(index) {
+	        var tagId = tagStore.getValue(tagsGrid.getItem(index),'tagId');
+	        var tagName = tagStore.getValue(tagsGrid.getItem(index), 'tagname');
+	        var hostId = tagStore.getValue(tagsGrid.getItem(index), 'hostId');
+	        var hostName = tagStore.getValue(tagsGrid.getItem(index), 'hostName');
 
 	        dijit.byId('addTagDialog').set('title',editTagMsg);
 	        dijit.byId('deleteButton').set('disabled',false);
