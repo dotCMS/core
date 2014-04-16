@@ -128,7 +128,7 @@
             </div>
             <hr/>
             <div class="buttonRow">
-                <button id="nextButtonStep1" dojoType="dijit.form.Button" onClick="hostAdmin.goToStep2(); stopEvent; return false; " iconClass="nextIcon">
+                <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep2(); stopEvent; return false; " iconClass="nextIcon">
                     <%= LanguageUtil.get(pageContext, "Next") %>
                 </button>
                 <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent; return false; " iconClass="cancelIcon">
