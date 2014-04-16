@@ -309,7 +309,7 @@ td {font-size: 100%;}
 	   		var tagName = document.getElementById('tagName').value;
 
 	   		if(tagName.indexOf(',')>-1) {
-	   			var message = '<%= LanguageUtil.get(pageContext, "message.tags.add.tags.error") %>';
+	   			var message = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.add.tags.error")) %>';
 	   			dojo.byId("savedMessage").innerHTML = message;
 	   			return;
 	   		}
