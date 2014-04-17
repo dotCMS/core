@@ -10,10 +10,10 @@
   This text is replaced by the Flash movie.
 </div>
 
-#if($path.endsWith('.mp3'))
-	#set($mp3path = "song_url=${path}")
+#if($songOrPlaylistPath.endsWith('.mp3'))
+	#set($mp3path = "song_url=${songOrPlaylistPath}")
 #else
-	#set($mp3path = "playlist_url=${path}")
+	#set($mp3path = "playlist_url=${songOrPlaylistPath}")
 #end
 
 <script type="text/javascript">
