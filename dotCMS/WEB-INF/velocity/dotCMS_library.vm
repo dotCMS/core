@@ -96,8 +96,9 @@
 
 #end
 
-#macro(mp3Player $path )
+#macro(mp3Player $path)
 
+	#set($songOrPlaylistPath = $path)
 	#set($format = "slim")
 	#set($width = "400")
 	#set($height = "15")
@@ -111,6 +112,7 @@
 
 #macro(mp3PlayerExtended $path)
 
+	#set($songOrPlaylistPath = $path)
 	#set($format = "full")
 	#set($width = "400")
 	#set($height = "170")
