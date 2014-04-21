@@ -380,7 +380,7 @@
 // 					Set the jsp to load up when the action panel is activated
 // 				 **/
 
-				  actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/portlet/ext/cmsconfig/cluster_config_right_panel.jsp", alwaysShow:true});
+				  actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/portlet/ext/clusterconfig/cluster_config_right_panel.jsp", alwaysShow:true});
 
 			  });
 		});
