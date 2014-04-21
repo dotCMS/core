@@ -523,15 +523,10 @@ public class DependencyManager {
 						String contentIdentifier = mt.getChild();
 						// Contents dependencies
 
-                        Contentlet content;
-                        try {
-                            content = APILocator.getContentletAPI().findContentletByIdentifier( contentIdentifier, true, -1, user, false );
-                        } catch ( DotContentletStateException e ) {
-                            content = APILocator.getContentletAPI().findContentletByIdentifier( contentIdentifier, false, -1, user, false );
-                        }
-                        if ( content != null ) {
-                            contents.addOrClean( contentIdentifier, content.getModDate() );
-                            contentsSet.add( contentIdentifier );
+                        List<Contentlet> contentList = APILocator.getContentletAPI().search( "+identifier:" + contentIdentifier, 0, 0, "moddate", user, false );
+                        for ( Contentlet contentlet : contentList ) {
+                            contents.addOrClean( contentlet.getIdentifier(), contentlet.getModDate() );
+                            contentsSet.add( contentlet.getIdentifier() );
                         }
                     }
 				}
