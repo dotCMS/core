@@ -82,7 +82,7 @@ public class TikaUtils {
 					int count;
 					ris = new ReaderInputStream(fulltext, StandardCharsets.UTF_8);
 
-					int metadataLimit = Config.getIntProperty("CONTENT_METADATA_COMPRESSOR", 5) * 1024 * 1024;
+					int metadataLimit = Config.getIntProperty("META_DATA_MAX_SIZE", 5) * 1024 * 1024;
 					int numOfChunks = metadataLimit / 1024;
 
 					char[] buf = new char[1024];
