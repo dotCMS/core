@@ -25,10 +25,10 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JRParameter;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperCompileManager;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperReport;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.util.JRLoader;
+import net.sf.jasperreports.engine.JRParameter;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.util.JRLoader;
 
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
