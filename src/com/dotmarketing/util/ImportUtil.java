@@ -1250,8 +1250,10 @@ public class ImportUtil {
 								else {
 									for (String tagName : tags)
 										try {
-											TagFactory.addTagInode(tagName.trim(), cont.getInode(), Host.SYSTEM_HOST);
-										} catch (Exception e) {
+                                            if ( tagName != null && !tagName.trim().isEmpty() ) {
+                                                TagFactory.addTagInode( tagName.trim(), cont.getInode(), Host.SYSTEM_HOST );
+                                            }
+                                        } catch (Exception e) {
 											e.printStackTrace();
 										}
 								}
