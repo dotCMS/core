@@ -24,7 +24,7 @@ import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-//com.dotcms.repackage.jasperreports_3_5_0.
+
 import net.sf.jasperreports.engine.JRParameter;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperReport;
