@@ -46,7 +46,9 @@ String dojoPath = Config.getStringProperty("path.to.dojo");
 
 String currentHostId = request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID).toString();
 Host currentHost = APILocator.getHostAPI().find(currentHostId, APILocator.getUserAPI().getSystemUser(), false);
-String currentHostName = currentHost.getHostname();
+String currentHostStore =  currentHost.getTagStorage();
+Host hostTagStore = APILocator.getHostAPI().find(currentHostStore, APILocator.getUserAPI().getSystemUser(), false);
+String tagStoreHostName = hostTagStore.getHostname();
 
 %>
 
@@ -120,7 +122,7 @@ td {font-size: 100%;}
 	var fileRequiredMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.file.required"))%>';
 	
 	var currentHostId = '<%=currentHostId %>';
-	var currentHostName = '<%=currentHostName %>';
+	var tagStoreHostName = '<%=tagStoreHostName %>';
 
 	var tagsGrid;
 	var layout;
@@ -290,7 +292,7 @@ td {font-size: 100%;}
 			dojo.byId('addTagErrorMessagesList').innerHTML = '';
 
 			document.getElementById('tagStorage').value = currentHostId;
-			document.getElementById('tagStorage_dropDown').value = currentHostName;
+			document.getElementById('tagStorage_dropDown').value = tagStoreHostName;
 
 		}
 

@@ -830,7 +830,7 @@ public class TagAPIImpl implements TagAPI{
                     	else if(newTagStorageId.equals(Host.SYSTEM_HOST)){
                     		//update old tag to global tags
                     		tag = getTag(tag.getTagName(), "", Host.SYSTEM_HOST);
-                    	}else {
+                    	}else if(hostIdentifier.equals(oldTagStorageId)) {			
                     		// update old tag with new tag storage
                     		updateTag(tag.getTagId(), tag.getTagName(), true, newTagStorageId);
                     	}
