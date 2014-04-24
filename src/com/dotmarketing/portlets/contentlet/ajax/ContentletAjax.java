@@ -681,7 +681,7 @@ public class ContentletAjax {
 									metakey = VelocityUtil.convertToVelocityVariable(metakey);
 									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
-									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName+  fieldValue.toString().replaceAll("\"", "\\\"") + " ");
+									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll("\"", "\\\"") + " ");
 
 
 								}
@@ -718,7 +718,7 @@ public class ContentletAjax {
 						} else {
 							if(isStructField==false){
 							    String next =  fieldValue.toString();
-							    if(!next.contains("'") && ! next.contains("\"")){ 
+							    if(!next.contains("'") && ! next.contains("\"")){
 							        next = next.replaceAll("\\*", "");
 							        while(next.contains("  ")){
 							        	next = next.replace("  ", " ");
@@ -754,9 +754,9 @@ public class ContentletAjax {
 		//for (String cat : categories) {
 		//	luceneQuery.append("+c" + cat + "c:on ");
 		//}
-		
+
 		lastSearchMap.put("categories", categories);
-		
+
 		//Adding the headers as the second row of the results
 		for (Field f : targetFields) {
 		    if (f.isListed()) {
@@ -830,7 +830,7 @@ public class ContentletAjax {
 		Map<String, Object> counters = new HashMap<String, Object>();
 		results.add(counters);
 
-		
+
 		if (headers.size() == 0) {
 			Map<String, String> fieldMap = new HashMap<String, String> ();
 			fieldMap.put("fieldVelocityVarName", "__title__");
@@ -905,7 +905,7 @@ public class ContentletAjax {
 				typeStringToShow = s.getName();
 			}
 			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
-			
+
 			String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 
 			searchResult.put("modDate", fieldValue);
@@ -1000,13 +1000,13 @@ public class ContentletAjax {
 	                wfActionMap.put( "assignable", action.isAssignable() );
 	                wfActionMap.put( "commentable", action.isCommentable() || UtilMethods.isSet( action.getCondition() ) );
 	                wfActionMap.put( "requiresCheckout", action.requiresCheckout() );
-	                
-	                List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); 
-	                for(WorkflowActionClass actionlet : actionlets){ 
-	                	if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ 
-	                		hasPushPublishActionlet = true; 
+
+	                List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
+	                for(WorkflowActionClass actionlet : actionlets){
+	                	if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
+	                		hasPushPublishActionlet = true;
 	                	}
-	                } 
+	                }
 	                wfActionMap.put( "hasPushPublishActionlet", hasPushPublishActionlet );
 	                try {
 						wfActionMap.put( "wfActionNameStr", LanguageUtil.get( currentUser, action.getName() ) );
@@ -1428,7 +1428,7 @@ public class ContentletAjax {
 
 			// everything Ok? then commit
 			HibernateUtil.commitTransaction();
-			
+
 			// clean up tmp_binary
 			// https://github.com/dotCMS/dotCMS/issues/2921
 			if(contentlet!=null) {
@@ -1440,10 +1440,10 @@ public class ContentletAjax {
 			        }
 			    }
 			}
-			
+
 			HttpSession ses = req.getSession();
 			List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-			
+
 			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
 				for(String inode : tempBinaryImageInodes){
 					conAPI.delete(conAPI.find(inode, user, false), user, false, true);
@@ -1451,7 +1451,7 @@ public class ContentletAjax {
 				tempBinaryImageInodes.clear();
 			}
 		}
-		
+
 		catch (DotContentletValidationException ve) {
 
 			if(ve instanceof FileAssetValidationException){
@@ -1612,7 +1612,7 @@ public class ContentletAjax {
 		if(!isAutoSave
 				&&(saveContentErrors == null
 						|| saveContentErrors.size() == 0)){
-			
+
 			if(referer.contains("referer")){
 				String ref = "referer=";
                 String sourceReferer = referer.substring(referer.indexOf(ref)+ref.length(),referer.length());
@@ -1648,7 +1648,7 @@ public class ContentletAjax {
 			//contentletWebAPI.cancelContentEdit(workingContentletInode,currentContentletInode,user);
 			HttpSession ses = req.getSession();
 			List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-			
+
 			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
 				for(String inode : tempBinaryImageInodes){
 					conAPI.delete(conAPI.find(inode, user, false), user, false, true);
@@ -1968,21 +1968,21 @@ public class ContentletAjax {
 	}
 
 	public Map<String, Object> saveBinaryFileOnContent(String fileName, String fieldInode) throws DotContentletValidationException, Exception{
-		
+
 		Map<String,Object> callbackData = new HashMap<String,Object>();
 		if(!UtilMethods.isImage(fileName)){
 			return callbackData;
 		}
-		
+
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 
 		HttpSession ses = req.getSession();
 		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-		
+
 		if(!UtilMethods.isSet(tempBinaryImageInodes))
 			ses.setAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST, new ArrayList<String>());
-		
+
 		tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
 		for(String tempBinaryImageInode : tempBinaryImageInodes){
 			if(conAPI.find(tempBinaryImageInode, user, false).getStringProperty(FileAssetAPI.TITLE_FIELD).equalsIgnoreCase(fileName)){
@@ -1990,28 +1990,28 @@ public class ContentletAjax {
 				return callbackData;
 			}
 		}
-		
+
 		Contentlet newCont = new Contentlet();
-		
+
 		Structure fileAssetStr = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
-		
+
 		ContentletAPI conAPI = APILocator.getContentletAPI();
-		
+
 		newCont.setStructureInode(fileAssetStr.getInode());
-		
+
 		try {
-			
+
 			newCont.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-			
+
 			for(Field field : FieldsCache.getFieldsByStructureVariableName(fileAssetStr.getInode())){
 				if(field.getVelocityVarName().equals(FileAssetAPI.TITLE_FIELD))
 					conAPI.setContentletProperty(newCont, field, fileName);
-				
+
 				if(field.getVelocityVarName().equals(FileAssetAPI.HOST_FOLDER_FIELD))
 					conAPI.setContentletProperty(newCont, field, APILocator.getHostAPI().findSystemHost().getInode());
-				
+
 				if(field.getVelocityVarName().equals(FileAssetAPI.BINARY_FIELD)){
-					
+
 					File binaryFile = null;
 					if(UtilMethods.isSet(fileName)){
 						fileName = ContentletUtil.sanitizeFileName(fileName);
@@ -2019,17 +2019,17 @@ public class ContentletAjax {
 								+ File.separator + user.getUserId() + File.separator + FieldsCache.getField(fieldInode).getFieldContentlet()
 								+ File.separator + fileName.trim());
 						}
-					
+
 					conAPI.setContentletProperty(newCont, field, binaryFile);
 				}
 			}
-			
+
 			newCont = conAPI.checkin(newCont, user, false);
-			
+
 		} catch (Exception e) {
 			Logger.error(this,"Contentlet failed while creating new binary content",e);
 		}
-		
+
 		// clean up tmp_binary
 		if(newCont !=null ) {
 		    Field field = FieldsCache.getField(fieldInode);
@@ -2038,13 +2038,13 @@ public class ContentletAjax {
 	                    +File.separator+user.getUserId()+File.separator+field.getFieldContentlet());
 	            FileUtil.deltree(tmp);
 	        }
-		}	
-		
+		}
+
 		if(UtilMethods.isSet(newCont.getInode())){
 			callbackData.put("contentletInode", newCont.getInode());
 			tempBinaryImageInodes.add(newCont.getInode());
 		}
-		
+
 		return callbackData;
 	}
 }
