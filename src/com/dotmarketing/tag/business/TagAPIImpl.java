@@ -635,7 +635,7 @@ public class TagAPIImpl implements TagAPI{
      */
 	public List getTagInodeByInode(String inode) {
         try {
-            HibernateUtil dh = new HibernateUtil(Tag.class);
+            HibernateUtil dh = new HibernateUtil(TagInode.class);
             dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where inode = ?");
             dh.setParam(inode);
 
@@ -655,7 +655,7 @@ public class TagAPIImpl implements TagAPI{
      */
 	public List<TagInode> getTagInodeByTagId(String tagId) {
         try {
-            HibernateUtil dh = new HibernateUtil(Tag.class);
+            HibernateUtil dh = new HibernateUtil(TagInode.class);
             dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ?");
             dh.setParam(tagId);
 
@@ -670,13 +670,13 @@ public class TagAPIImpl implements TagAPI{
 
 	/**
 	 * Gets a tagInode by name and inode
-	 * @param name name of the tag
+	 * @param tagId id of the tag
 	 * @param inode inode of the object tagged
 	 * @return the tagInode
 	 */
 	public TagInode getTagInode(String tagId, String inode)  throws DotHibernateException  {
 		// getting the tag inode record
-        HibernateUtil dh = new HibernateUtil(Tag.class);
+        HibernateUtil dh = new HibernateUtil(TagInode.class);
         dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ? and inode = ?");
         dh.setParam(tagId);
         dh.setParam(inode);

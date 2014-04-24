@@ -355,7 +355,7 @@ public class TagFactory {
     public static TagInode addTagInode(String tagName, String inode, String hostId) throws Exception {
 
     	//Ensure the tag exists in the tag table
-    	Tag existingTag = getTag(tagName, inode, hostId);
+    	Tag existingTag = getTag(tagName, "", hostId);
 
     	//validates the tagInode already exists
 		TagInode existingTagInode = getTagInode(existingTag.getTagId(), inode);
@@ -389,7 +389,7 @@ public class TagFactory {
      */
 	public static List getTagInodeByInode(String inode) {
         try {
-            HibernateUtil dh = new HibernateUtil(Tag.class);
+            HibernateUtil dh = new HibernateUtil(TagInode.class);
             dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where inode = ?");
             dh.setParam(inode);
 
@@ -410,7 +410,7 @@ public class TagFactory {
 	 */
 	public static TagInode getTagInode(String tagId, String inode) {
 		// getting the tag inode record
-        HibernateUtil dh = new HibernateUtil(Tag.class);
+        HibernateUtil dh = new HibernateUtil(TagInode.class);
         try {
         	  dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ? and inode = ?");
      	} catch (DotHibernateException e) {
@@ -624,11 +624,19 @@ public class TagFactory {
         		}
         	}
         }
+
         String oldUserId = newTag.getUserId();
-        if(oldUserId!=userId){
-        	userId = oldUserId+","+userId;
+        if ( oldUserId != null && !oldUserId.isEmpty() ) {
+
+            if ( userId == null || userId.isEmpty() ) {
+                userId = oldUserId;
+            } else if ( !oldUserId.equals( userId ) && !oldUserId.contains( userId ) ) {
+                userId = oldUserId + "," + userId;
+            }
         }
-        newTag.setUserId(userId);
+
+        newTag.setUserId( userId );
+
         // returning tag
         return newTag;
 	}
@@ -698,7 +706,7 @@ public class TagFactory {
      */
 	public static List<TagInode> getTagInodeByTagId(String tagId) {
         try {
-            HibernateUtil dh = new HibernateUtil(Tag.class);
+            HibernateUtil dh = new HibernateUtil(TagInode.class);
             dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ?");
             dh.setParam(tagId);
 
