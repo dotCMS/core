@@ -75,7 +75,8 @@ public abstract class Publisher implements IPublisher {
 				throw new DotPublishingException("no bundle file found");
 			}
 
-            List<String> path = Arrays.asList( file.getAbsolutePath().split( File.separator ) );
+			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
+            List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
             String host = path.get(path.indexOf(config.getId())+2);
 
 			return APILocator.getHostAPI().resolveHostName(host, APILocator.getUserAPI().getSystemUser(), true);
@@ -89,12 +90,13 @@ public abstract class Publisher implements IPublisher {
 	public String getUriFromFilePath(File file) throws DotPublishingException{
 
 		try{
+
 			if(!file.getAbsolutePath().contains(config.getId())){
 				throw new DotPublishingException("no bundle file found");
 			}
 
-			String absolutePath = file.getAbsolutePath();
-            List<String> path = Arrays.asList( absolutePath.split( File.separator ) );
+			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
+            List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
             path = path.subList(path.indexOf(config.getId())+4, path.size());
 			StringBuilder bob = new StringBuilder();
 			for(String x:path){

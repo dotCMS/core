@@ -39,10 +39,7 @@ import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.dotmarketing.osgi.ActivatorUtil.*;
 
@@ -595,6 +592,15 @@ public abstract class GenericBundleActivator implements BundleActivator {
         UrlOsgiClassLoader urlOsgiClassLoader = findCustomURLLoader( ClassLoader.getSystemClassLoader(), this.context.getBundle().getBundleId() );
         if ( urlOsgiClassLoader != null ) {
 
+            //Get the activator class for this OSGI bundle
+            String activatorClass = getManifestHeaderValue( context, MANIFEST_HEADER_BUNDLE_ACTIVATOR );
+            //Get the location of this OSGI bundle jar source code using a known class inside this bundle
+            Class clazz = Class.forName( activatorClass, false, this.getClass().getClassLoader() );
+            URL sourceURL = clazz.getProtectionDomain().getCodeSource().getLocation();
+
+            //Restoring to their original state any override class
+            urlOsgiClassLoader.reload( sourceURL, true );
+
             /*
             Closes this URLClassLoader, so that it can no longer be used to load
             new classes or resources that are defined by this loader.
@@ -627,9 +633,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void unregisterViewToolServices () {
 
         if ( this.toolboxManager != null && viewTools != null ) {
-            for ( ToolInfo toolInfo : viewTools ) {
 
+            Iterator<ToolInfo> toolInfoIterator = viewTools.iterator();
+            while ( toolInfoIterator.hasNext() ) {
+
+                ToolInfo toolInfo = toolInfoIterator.next();
                 this.toolboxManager.removeTool( toolInfo );
+                toolInfoIterator.remove();
+
                 Logger.info( this, "Removed View Tool: " + toolInfo.getKey() );
             }
         }

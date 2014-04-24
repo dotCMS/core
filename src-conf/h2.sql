@@ -3042,4 +3042,6 @@ create index idx_htmlpage_vi_version_ts on htmlpage_version_info(version_ts);
 create index idx_fileasset_vi_version_ts on fileasset_version_info(version_ts);
 create index idx_link_vi_version_ts on link_version_info(version_ts);
 
-
+-- container multiple structures
+create index idx_container_id on container_structures(container_id);
+alter table container_structures add constraint FK_cs_container_id foreign key (container_id) references identifier(id);

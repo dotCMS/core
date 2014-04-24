@@ -17,12 +17,11 @@ import com.dotmarketing.util.UtilMethods;
 
 public class ServerFactoryImpl extends ServerFactory {
 
-	private DotConnect dc;
 	private String TIMESTAMPSQL = "NOW()";
 	private static final String HEARTBEAT_TIMEOUT_DEFAULT_VALUE = "300";
 
 	public ServerFactoryImpl() {
-		dc = new DotConnect();
+
 
 		if (DbConnectionFactory.isMsSql()) {
             TIMESTAMPSQL = "GETDATE()";
@@ -32,6 +31,8 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public void saveServer(Server server) throws DotDataException {
+		DotConnect dc = new DotConnect();
+
 		if(!UtilMethods.isSet(server.getServerId())) {
 			server.setServerId(UUID.randomUUID().toString());
 		}
@@ -67,6 +68,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public Server getServer(String serverId) {
+		DotConnect dc = new DotConnect();
 		dc.setSQL("select * from cluster_server where server_id = ?");
 		dc.addParam(serverId);
 		Server server = null;
@@ -88,6 +90,7 @@ public class ServerFactoryImpl extends ServerFactory {
 
 
 	public void createServerUptime(String serverId) throws DotDataException {
+		DotConnect dc = new DotConnect();
 		dc.setSQL("insert into cluster_server_uptime(id, server_id, startup) values(?,?, " + TIMESTAMPSQL + ")");
 		String serverUptimeId = UUID.randomUUID().toString();
 		dc.addParam(serverUptimeId);
@@ -96,8 +99,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public void updateHeartbeat(String serverId) throws DotDataException {
-
-		dc = new DotConnect();
+		DotConnect dc = new DotConnect();
 		String id = null;
 
 		if (DbConnectionFactory.isMsSql()) {
@@ -119,6 +121,7 @@ public class ServerFactoryImpl extends ServerFactory {
 			id = row.get("id").toString();
 		}
 
+		dc = new DotConnect();
 		dc.setSQL("update cluster_server_uptime set heartbeat = "+ TIMESTAMPSQL +" where server_id = ? and id = ?");
 		dc.addParam(serverId);
 		dc.addParam(id);
@@ -127,7 +130,7 @@ public class ServerFactoryImpl extends ServerFactory {
 
 	public List<Server> getAllServers() throws DotDataException {
 		List<Server> servers = new ArrayList<Server>();
-
+        DotConnect dc = new DotConnect();
 		dc.setSQL("select server_id, cluster_id, name, ip_address, host, cache_port, es_transport_tcp_port, es_network_port, es_http_port, key_,  "
 				+ "(select max(heartbeat) as last_heartbeat from cluster_server_uptime where server_id = s.server_id) as last_heartbeat"
 				+ " from cluster_server s");
@@ -148,6 +151,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException {
+		DotConnect dc = new DotConnect();
 		if (DbConnectionFactory.isMsSql()) {
 			dc.setSQL("select DISTINCT s.server_id from cluster_server s join cluster_server_uptime sut on s.server_id = sut.server_id "
 					+ "where DATEDIFF(SECOND, heartbeat, GETDATE()) < " + Config.getStringProperty("HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT_DEFAULT_VALUE));
@@ -203,7 +207,8 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public void updateServer(Server server) throws DotDataException {
-		dc.setSQL("update cluster_server set cluster_id = ?, name=?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ?, key_ = ? where server_id = ?");
+        DotConnect dc = new DotConnect();		
+        dc.setSQL("update cluster_server set cluster_id = ?, name=?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ?, key_ = ? where server_id = ?");
 		dc.addParam(server.getClusterId());
 		dc.addParam(server.getName());
 		dc.addParam(server.getIpAddress());
@@ -217,6 +222,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	}
 
 	public void updateServerName(String serverId, String name) throws DotDataException {
+		DotConnect dc = new DotConnect();
 		dc.setSQL("update cluster_server set name=? where server_id = ?");
 		dc.addParam(name);
 		dc.addParam(serverId);

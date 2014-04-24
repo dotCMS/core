@@ -46,7 +46,9 @@ String dojoPath = Config.getStringProperty("path.to.dojo");
 
 String currentHostId = request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID).toString();
 Host currentHost = APILocator.getHostAPI().find(currentHostId, APILocator.getUserAPI().getSystemUser(), false);
-String currentHostName = currentHost.getHostname();
+String currentHostStore =  currentHost.getTagStorage();
+Host hostTagStore = APILocator.getHostAPI().find(currentHostStore, APILocator.getUserAPI().getSystemUser(), false);
+String tagStoreHostName = hostTagStore.getHostname();
 
 %>
 
@@ -120,7 +122,7 @@ td {font-size: 100%;}
 	var fileRequiredMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.file.required"))%>';
 	
 	var currentHostId = '<%=currentHostId %>';
-	var currentHostName = '<%=currentHostName %>';
+	var tagStoreHostName = '<%=tagStoreHostName %>';
 
 	var tagsGrid;
 	var layout;
@@ -136,7 +138,7 @@ td {font-size: 100%;}
         var tagName = grid.store.getValue(grid.getItem(index), 'tagname');
         var hostId = grid.store.getValue(grid.getItem(index), 'hostId');
         var hostName = grid.store.getValue(grid.getItem(index), 'hostName');
-		return "<a href=\"javascript:tagClicked('"+index+"','"+tagId+"', '"+tagName+"', '"+hostId+"', '"+hostName+"')\" >"+tagName+"</a>";
+		return "<a href=\"javascript:tagClicked('"+index+"')\" >"+tagName+"</a>";
 	};
 
   	function createStore(params) {
@@ -225,12 +227,11 @@ td {font-size: 100%;}
 			doSearch();
 		}
 
-		function tagClicked(index,tagId,tagName,hostId,hostName) {
-			/*var grid = dijit.byId("tagsEnhancedGrid");
-	        var tagId = grid.store.getValue(grid.getItem(evt.rowIndex), 'tagId');
-	        var tagName = grid.store.getValue(grid.getItem(evt.rowIndex), 'tagname');
-	        var hostId = grid.store.getValue(grid.getItem(evt.rowIndex), 'hostId');
-	        var hostName = grid.store.getValue(grid.getItem(evt.rowIndex), 'hostName');*/
+		function tagClicked(index) {
+	        var tagId = tagStore.getValue(tagsGrid.getItem(index),'tagId');
+	        var tagName = tagStore.getValue(tagsGrid.getItem(index), 'tagname');
+	        var hostId = tagStore.getValue(tagsGrid.getItem(index), 'hostId');
+	        var hostName = tagStore.getValue(tagsGrid.getItem(index), 'hostName');
 
 	        dijit.byId('addTagDialog').set('title',editTagMsg);
 	        dijit.byId('deleteButton').set('disabled',false);
@@ -291,7 +292,7 @@ td {font-size: 100%;}
 			dojo.byId('addTagErrorMessagesList').innerHTML = '';
 
 			document.getElementById('tagStorage').value = currentHostId;
-			document.getElementById('tagStorage_dropDown').value = currentHostName;
+			document.getElementById('tagStorage_dropDown').value = tagStoreHostName;
 
 		}
 
@@ -310,7 +311,7 @@ td {font-size: 100%;}
 	   		var tagName = document.getElementById('tagName').value;
 
 	   		if(tagName.indexOf(',')>-1) {
-	   			var message = '<%= LanguageUtil.get(pageContext, "message.tags.add.tags.error") %>';
+	   			var message = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.add.tags.error")) %>';
 	   			dojo.byId("savedMessage").innerHTML = message;
 	   			return;
 	   		}

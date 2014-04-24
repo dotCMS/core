@@ -1121,8 +1121,13 @@ public class ImportUtil {
                         languageId = existingMultilingualLanguage;//Using the language another an existing contentlet with the same identifier
                     }
 
-                    Contentlet workingCont = conAPI.findContentletByIdentifier( cont.getIdentifier(), false, languageId, user, false );
-                    categoriesOnWorkingContent = catAPI.getParents( workingCont, user, false );
+                    Contentlet workingCont;
+                    try{
+                    	workingCont = conAPI.findContentletByIdentifier( cont.getIdentifier(), false, languageId, user, false );
+                    	categoriesOnWorkingContent = catAPI.getParents( workingCont, user, false );
+                    }catch(DotContentletStateException dse){
+                    	Logger.error(ImportContentletsAction.class,dse.getMessage());
+                    }
 
                     for(Category existingCat : categoriesOnWorkingContent){
 						for(Category retainCat :categoriesToRetain){
