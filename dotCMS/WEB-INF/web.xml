@@ -706,10 +706,6 @@
 		<url-pattern>/cmis/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>ScheduledJobs</servlet-name>
-		<url-pattern>/dotScheduledJobs</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
 		<servlet-name>JSONContentServlet</servlet-name>
 		<url-pattern>/JSONContent/*</url-pattern>
 	</servlet-mapping>
@@ -756,10 +752,6 @@
 	    <url-pattern>/resize_image</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>JRImageServlet</servlet-name>
-		<url-pattern>/servlets/jrimage</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
 		<servlet-name>XlsServlet</servlet-name>
 		<url-pattern>/servlets/xls</url-pattern>
 	</servlet-mapping>
@@ -774,10 +766,6 @@
 	<servlet-mapping>
 	    <servlet-name>ResizeImageServlet</servlet-name>
 	    <url-pattern>/resize_image</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>JRImageServlet</servlet-name>
-		<url-pattern>/servlets/jrimage</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>XlsServlet</servlet-name>
