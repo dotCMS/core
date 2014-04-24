@@ -304,7 +304,7 @@
 	</servlet>
 	<servlet>
 		<servlet-name>PdfServlet</servlet-name>
-		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.PdfServlet</servlet-class>
+		<servlet-class>net.sf.jasperreports.j2ee.servlets.PdfServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>HTMLPDFServlet</servlet-name>
@@ -312,19 +312,19 @@
 	</servlet>
 	<servlet>
 		<servlet-name>JRImageServlet</servlet-name>
-		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.ImageServlet</servlet-class>
+		<servlet-class>net.sf.jasperreports.j2ee.servlets.ImageServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>XlsServlet</servlet-name>
-		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.XlsServlet</servlet-class>
+		<servlet-class>net.sf.jasperreports.j2ee.servlets.XlsServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>JExcelApiServlet</servlet-name>
-		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.JExcelApiServlet</servlet-class>
+		<servlet-class>net.sf.jasperreports.j2ee.servlets.JExcelApiServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>RtfServlet</servlet-name>
-		<servlet-class>com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.RtfServlet</servlet-class>
+		<servlet-class>net.sf.jasperreports.j2ee.servlets.RtfServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>ResizeImageServlet</servlet-name>
@@ -639,7 +639,7 @@
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
  <!-- END SERVLETS -->
-    <!-- TEST FRAMEWORK SERVLETS 
+    <!-- TEST FRAMEWORK SERVLETS -->                                                                                                                                                                                           
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
@@ -648,7 +648,7 @@
          <servlet-name>ServletTestRunner</servlet-name>
          <url-pattern>/servlet/test</url-pattern>
       </servlet-mapping>
-	END OF TEST FRAMEWORK SERVLETS -->
+	<!-- END OF TEST FRAMEWORK SERVLETS -->
 	<!-- BEGIN GRAZIANO issue-12-dnd-template -->
     <servlet>
     	<description>Provides the drawed template preview functionality</description>

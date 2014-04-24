@@ -66,6 +66,7 @@ public class DependencyManager {
 	private Set<String> containersSet;
 	private Set<String> contentsSet;
 	private Set<String> linksSet;
+	private Set<String> solvedStructures;
 
 	private User user;
 
@@ -103,6 +104,7 @@ public class DependencyManager {
 		containersSet = new HashSet<String>();
 		contentsSet = new HashSet<String>();
 		linksSet = new HashSet<String>();
+		solvedStructures = new HashSet<String>();
 
 		this.user = user;
 	}
@@ -521,15 +523,10 @@ public class DependencyManager {
 						String contentIdentifier = mt.getChild();
 						// Contents dependencies
 
-                        Contentlet content;
-                        try {
-                            content = APILocator.getContentletAPI().findContentletByIdentifier( contentIdentifier, true, -1, user, false );
-                        } catch ( DotContentletStateException e ) {
-                            content = APILocator.getContentletAPI().findContentletByIdentifier( contentIdentifier, false, -1, user, false );
-                        }
-                        if ( content != null ) {
-                            contents.addOrClean( contentIdentifier, content.getModDate() );
-                            contentsSet.add( contentIdentifier );
+                        List<Contentlet> contentList = APILocator.getContentletAPI().search( "+identifier:" + contentIdentifier, 0, 0, "moddate", user, false );
+                        for ( Contentlet contentlet : contentList ) {
+                            contents.addOrClean( contentlet.getIdentifier(), contentlet.getModDate() );
+                            contentsSet.add( contentlet.getIdentifier() );
                         }
                     }
 				}
@@ -687,14 +684,18 @@ public class DependencyManager {
 
 			if(!structures.contains(r.getChildStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
 				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
+				solvedStructures.add(stInode);
 				structures.addOrClean( r.getChildStructureInode(), struct.getModDate());
-                                if(st!=null)
+
+				if(!solvedStructures.contains(r.getChildStructureInode()))
 				    structureDependencyHelper( r.getChildStructureInode() );
 			}
 			if(!structures.contains(r.getParentStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
 				Structure struct = StructureCache.getStructureByInode(r.getParentStructureInode());
+				solvedStructures.add(stInode);
 				structures.addOrClean( r.getParentStructureInode(), struct.getModDate());
-                                if(st!=null)
+
+				if(!solvedStructures.contains(r.getParentStructureInode()))
 				    structureDependencyHelper( r.getParentStructureInode() );
 			}
 		}

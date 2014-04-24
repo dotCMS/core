@@ -366,8 +366,18 @@
 		// if less than 3 characters are typed in the filter textbox, a tooltip will show up after 3 seconds
 		if(name!=null && name.length> 0 && name.length<3) {
 			hideToolTip();
-			setTimeout("showToolTip()", 3000);
-		} else if(name=='' || (name!=null && name.length>2)) {// if filter textbox is empty, or at least has 3 chars, we build the resulting tree
+			setTimeout("showToolTip()", 1000);
+			setTimeout("hideToolTip()", 3000);
+		} else if(name=='') {// if filter textbox is empty
+			hideToolTip();
+			lastSelectedNode = null;
+			buildRolesTree(null);
+			dojo.byId('editRoleButtonWrapper').style.display = 'none';
+			dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
+			dojo.style(dojo.byId('roleTabs'), { display: 'none' });
+			currentRoleId=null;
+			currentRole=null;
+		} else if(name!=null && name.length>2) {// if filter textbox has at least 3 chars, we build the resulting tree
 			hideToolTip();
 			lastSelectedNode = null;
 			var filteredRoles = searchRoles(name);
@@ -375,15 +385,6 @@
 
 			if(filteredRoles && filteredRoles.items[0].children.length == 0)
 				dojo.style(dojo.byId('noRolesFound'), { display: '' });
-
-			if(name=='') {
-				dojo.byId('editRoleButtonWrapper').style.display = 'none';
-				dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
-				dojo.style(dojo.byId('roleTabs'), { display: 'none' });
-				currentRoleId=null;
-				currentRole=null;
-			}
-
 		}
 	}
 
@@ -524,6 +525,7 @@
 		dojo.byId("displayRoleName1").innerHTML= roleName;
 		dojo.byId("displayRoleName2").innerHTML= roleName;
 		dojo.byId("displayRoleName3").innerHTML = roleName;
+		lastSelectedNode =  null;
 		buildRolesTree();
 
 	}
@@ -662,7 +664,8 @@
 				loadRoleLayouts(currentRoleId);
 				break;
 		}
-		resizeRoleBrowser();
+	 	dojo.style(dojo.byId('roleTabs'), { display: '' });
+	 	resizeRoleBrowser();
 		// DOTCMS-6233 need the timeout for users tab initially //
 		setTimeout("resizeRoleBrowser();", 200);
 	}

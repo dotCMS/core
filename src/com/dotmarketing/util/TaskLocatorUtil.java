@@ -83,6 +83,7 @@ import com.dotmarketing.startup.runonce.Task01311CreateClusterConfigModel;
 import com.dotmarketing.startup.runonce.Task01320PostgresqlIndiciesFK;
 import com.dotmarketing.startup.runonce.Task01325CreateFoundationForNotificationSystem;
 import com.dotmarketing.startup.runonce.Task01330CreateIndicesForVersionTables;
+import com.dotmarketing.startup.runonce.Task01335FixContainerCheckTrigger;
 
 public class TaskLocatorUtil {
 
@@ -168,6 +169,7 @@ public class TaskLocatorUtil {
         ret.add(Task01320PostgresqlIndiciesFK.class);
         ret.add(Task01325CreateFoundationForNotificationSystem.class);
         ret.add(Task01330CreateIndicesForVersionTables.class);
+        ret.add(Task01335FixContainerCheckTrigger.class);
         return ret;
     }
 

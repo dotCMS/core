@@ -33,7 +33,7 @@ public class Task01300CreateContainertStructures implements StartupTask{
 
 		String createIndex = "create index idx_container_id on container_structures(container_id)";
 
-		String addTemplateFK = "alter table container_structures add constraint FK_container_id foreign key (container_id) references identifier(id)";
+		String addTemplateFK = "alter table container_structures add constraint FK_cs_container_id foreign key (container_id) references identifier(id)";
 
 		String container_structures_relations = "Select identifier,structure_inode, code from containers where max_contentlets > 0 ";
 
@@ -69,6 +69,17 @@ public class Task01300CreateContainertStructures implements StartupTask{
 				dc.loadResult();
 			}
 			dc.executeStatement(delete_code_when_content);
+
+			// let's remove the foreign key if exists prior to drop the column
+			try {
+				if (DbConnectionFactory.isMySql())
+					dc.executeStatement("alter table containers drop foreign key structure_fk ");
+				else
+					dc.executeStatement("alter table containers drop constraint structure_fk ");
+			} catch(Exception e) {
+				Logger.info(this, "foreign key for structure_inode on containers table didn't exist, not dropping anything here");
+			}
+
 			dc.executeStatement(drop_structure_column);
 			dc.executeStatement(drop_metadata_column);
 		} catch (Exception e) {

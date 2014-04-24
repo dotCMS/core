@@ -10,17 +10,43 @@ import java.security.ProtectionDomain;
  */
 public class OSGIClassTransformer implements ClassFileTransformer {
 
-    public OSGIClassTransformer () {
-        super();
+    /**
+     * The internal form class name of the class to transform
+     */
+    protected String className;
+    /**
+     * The class loader of the class
+     */
+    protected ClassLoader classLoader;
+
+    public OSGIClassTransformer ( String className, ClassLoader classLoader ) {
+        this.className = className.replace( '.', '/' );
+        this.classLoader = classLoader;
     }
 
     public byte[] transform ( ClassLoader loader, String className, Class redefiningClass, ProtectionDomain domain, byte[] bytes ) throws IllegalClassFormatException {
 
-        if ( !(loader instanceof UrlOsgiClassLoader) ) {
-            return null;
+        if ( className.equals( this.className ) && loader.equals( classLoader ) ) {
+            return bytes;
         }
 
-        return bytes;
+        return null;
+    }
+
+    public ClassLoader getClassLoader () {
+        return classLoader;
+    }
+
+    public void setClassLoader ( ClassLoader classLoader ) {
+        this.classLoader = classLoader;
+    }
+
+    public String getClassName () {
+        return className;
+    }
+
+    public void setClassName ( String className ) {
+        this.className = className;
     }
 
 }

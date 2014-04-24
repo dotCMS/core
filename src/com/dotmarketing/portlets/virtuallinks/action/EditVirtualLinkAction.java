@@ -121,9 +121,13 @@ public class EditVirtualLinkAction extends DotPortletAction {
 			    String[] splittedLink = linkUrl.split(":");
 			    if (splittedLink.length > 1) {
 			        Host host = hostAPI.findByName(splittedLink[0], user, false);
-			        ((VirtualLinkForm)form).setUrl(splittedLink[1]);
-			        ((VirtualLinkForm)form).setHostId(host.getIdentifier());
-			    }
+                    if ( host != null ) {
+                        ((VirtualLinkForm) form).setUrl( splittedLink[1] );
+                        ((VirtualLinkForm) form).setHostId( host.getIdentifier() );
+                    } else {
+                        Logger.error( this, "Host not found OR Unexpected URL format for Vanity URL: " + linkUrl );
+                    }
+                }
 			}
 		}
 		

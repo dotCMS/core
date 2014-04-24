@@ -76,7 +76,7 @@ public class OSGIUtil {
 
     public Framework initializeFramework ( ServletContextEvent context ) {
     	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
-    	
+
     		return null;
     	}
         servletContextEvent = context;
@@ -127,7 +127,7 @@ public class OSGIUtil {
         hostActivator.setServletContext( context.getServletContext() );
         list.add( hostActivator );
         configProps.put( FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, list );
-        
+
 	String felixFileInstallDirPath = configProps.getProperty(FELIX_FILEINSTALL_DIR);
 	if (felixFileInstallDirPath == null || !new File(felixFileInstallDirPath).isDirectory()) {
 	    configProps.put(FELIX_FILEINSTALL_DIR, autoLoadDir);
@@ -248,13 +248,16 @@ public class OSGIUtil {
     public String getExtraOSGIPackages () throws IOException {
 
         String extraPackages;
-        
+
         File f = new File(FELIX_EXTRA_PACKAGES_FILE);
         if(!f.exists()){
         	StringBuilder bob = new StringBuilder();
         	final Collection<String> list = ResourceCollectorUtil.getResources();
             for ( final String name : list ) {
-                if ( File.separator.equals( "/" ) ) {
+            	if(name.startsWith("/")) continue;
+            	if(name.contains(":")) continue;
+
+            	if ( File.separator.equals( "/" ) ) {
                     bob.append( name.replace( File.separator, "." ) + "," + "\n" );
                 } else {
                     //Zip entries have '/' as separator on all platforms
@@ -270,7 +273,7 @@ public class OSGIUtil {
         			"javax.inject.Qualifier," +
         			"javax.servlet.resources," +
         			"javax.servlet;javax.servlet.http;version=2.5");
-        	
+
         	BufferedWriter writer = null;
         	try {
         	    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream( FELIX_EXTRA_PACKAGES_FILE_GENERATED ), "utf-8"));
@@ -281,7 +284,7 @@ public class OSGIUtil {
         	   try {writer.close();} catch (Exception ex) {Logger.error(this, ex.getMessage(), ex);}
         	}
         }
-        
+
         //Reading the file with the extra packages
         FileInputStream inputStream = null;
         if(f.exists()){

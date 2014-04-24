@@ -14,7 +14,7 @@
 <%@page import="com.dotmarketing.db.DbConnectionFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.business.FieldAPI"%>
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
-<%	
+<%
 
 
 String referer = request.getParameter("referer");
@@ -32,10 +32,10 @@ if(textArea!=null){
 	textArea = textArea.replaceAll("<", "&lt;");
 	textArea = textArea.replaceAll(">", "&gt;");
 }
-		 
-String s1 = "<textarea name=\"values\" style=\"width:537px;height:146px;\"  class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>"; 
+
+String s1 = "<textarea name=\"values\" style=\"width:537px;height:146px;\"  class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 String s2 = "<textarea name=\"values\" style=\"width:300px;height:120px;\"";
-s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>"; 
+s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 %>
 
@@ -49,20 +49,20 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	<%@ include file="/html/portlet/ext/structure/field_type_js_array.jsp" %>
 
 
-	
 
 
-	function addNewField(){   
-	
+
+	function addNewField(){
+
 		var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
 		href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_field' />";
 		href = href + "<portlet:param name='cmd' value='add' />";
-		href = href + "</portlet:actionURL>";	
+		href = href + "</portlet:actionURL>";
 		var form = document.getElementById("field");
 		form.action = href;
-			
+
 		enableAllForFormSubmit(form);
-		
+
 		form.submit();
 	}
 
@@ -82,7 +82,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 	function ifUniqueChecked(){
 		var form = document.getElementById("field");
-		if(dijit.byId("uniqueCB").attr('value') == 'on'){	
+		if(dijit.byId("uniqueCB").attr('value') == 'on'){
 			dijit.byId('requiredCB').attr('disabled', true);
 			dijit.byId('indexedCB').attr('disabled', true);
 		}else{
@@ -90,9 +90,9 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				dijit.byId('indexedCB').attr('disabled', true);
 			}else{
 				dijit.byId('indexedCB').attr('disabled', false);
-			}			
+			}
 			dijit.byId('requiredCB').attr('disabled', false);
-		}				
+		}
 	}
 
 	function ifUserSearchableChecked(){
@@ -103,7 +103,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 			if(!form.unique.checked){
 				dijit.byId('indexedCB').attr('disabled', false);
 			}
-		}			
+		}
 	}
 
 	function ifShowInListingChecked(){
@@ -114,22 +114,22 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 			if(!form.unique.checked){
 				dijit.byId('indexedCB').attr('disabled', false);
 			}
-		}			
+		}
 	}
-	
+
 	function ifRequiredCBChecked(){
 		var form = document.getElementById("field");
 		if(form.requiredCB.checked){
 			dijit.byId("indexedCB").attr('value', 'on');
 			dijit.byId('indexedCB').attr('disabled', true);
-		}	
+		}
 	}
-	
-	
+
+
 	function disableSelect(){
 		var form = document.getElementById("field");
 	    var fieldinode='<%=request.getParameter("inode")%>';
-	    if(fieldinode!="null"){   
+	    if(fieldinode!="null"){
 	    	dijit.byId("elementSelectBox").setDisabled(true);
 	    	//document.getElementById('fieldVarLink').style.display = "";
 	    }
@@ -145,14 +145,14 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 	//This function checks if the required checkbox has been checked or not
 	function ifRequiredChecked(){
-		
+
 		if(document.getElementById("requiredId") != null){
 			if(document.getElementById("requiredId").value == true){
 				dijit.byId("indexedCB").attr('value', 'on')
 			}else{
-				
+
 			}
-		}	
+		}
 	}
 
 	function cancel(event) {
@@ -168,7 +168,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		var imagestyle = "url('" + dijit.byId("elementSelectBox").item.imageurl + "')";
 		var selField = dojo.query('#elementSelect div.dijitInputField')[0];
 
-		
+
 		dojo.style(selField, "backgroundImage", imagestyle);
 		dojo.style(selField, "backgroundRepeat", "no-repeat");
 		dojo.style(selField, "padding", "0px 0px 0px 20px");
@@ -176,7 +176,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		dojo.style(selField, "backgroundPosition", "4px 4px");
 
 	}
-	
+
 	function isTrue(x){
 		if(x==undefined) return false;
 		if("true" == x || x){
@@ -184,7 +184,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		}
 		return false;
 	}
-	
+
 	function isSet(x){
 		if(x==undefined) return false;
 		if(x.toString().length > 0){
@@ -192,21 +192,22 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		}
 		return false;
 	}
-	
-	
-	
+
+
+
 	function elementTypeChange(){
 		updateSelectBoxImage();
 		hideAllElements();
 		var fieldObj = dijit.byId("elementSelectBox").item;
+		dijit.byId("TabOne").set("style", "min-height:180px");
 		document.getElementById("elementSelectBox").value =  fieldObj.displayName ;
-		
-		
-		
+
+
+
 		var form = document.getElementById("field");
 		var selValue = "whatever";
-		
-		
+
+
 		// get our object
 		for(i=0;i<fieldObj.show.length;i++){
 			try{
@@ -216,7 +217,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				alert("cant find obj to show from the field type array : " + fieldObj.show[i]);
 			}
 		}
-		
+
 		if(isSet(fieldObj.dataType)){
 			if (dijit.byId("dataType"+fieldObj.dataType) != undefined) {
 <%
@@ -230,7 +231,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				document.getElementById("element").value = "constant";
 			}
 		}
-		
+
 		if(isSet(fieldObj.helpText)){
 			dojo.byId("values_eg").innerHTML = "<h3>" + fieldObj.displayName + "</h3>" + fieldObj.helpText;
 			showElement(dojo.byId("values_eg"));
@@ -239,10 +240,10 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		//http://jira.dotmarketing.net/browse/DOTCMS-5022
 		dijit.byId("saveButton").attr('iconClass', 'saveIcon');
 		dijit.byId("cancelButton").attr('iconClass', 'cancelIcon');
-		
-		
+
+
 	}
-	
+
 	function hideAllElements(){
 		hideElement(dojo.byId("valueRow"));
 		hideElement(dojo.byId("defaultText"));
@@ -263,19 +264,19 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		hideElement(dojo.byId("radioSystemField"));
 		hideElement(dojo.byId("radioBinary"));
 		hideElement(dojo.byId("userSearchable"));
-		hideElement(dojo.byId("labelRow"));	
-		hideElement(dojo.byId("categoryRow"));	
+		hideElement(dojo.byId("labelRow"));
+		hideElement(dojo.byId("categoryRow"));
 		hideElement(dojo.byId("values_eg"));
 	}
-	
+
 	function hideUnique(form){
 		document.getElementById("unique").style.display = "none";
-		
+
 	}
-	
+
 	function typeChangeonload(){
 		var form = document.getElementById("field");
-	
+
 		form.fieldType.value="<%= fieldForm.getFieldType()%>";
 
 		<% // DOTCMS-4364
@@ -285,15 +286,15 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		<%
 		}
 		%>
-		
+
 		if(form.fieldType.value!=""){
 			dijit.byId("elementSelectBox").setValue(form.fieldType.value);
 			elementTypeChange();
 		}
 	}
-	
-	
-	
+
+
+
 
 
 
@@ -302,7 +303,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	}
 
 	function setInitialValues(){
-		//fix to check required when struts eros thrown 
+		//fix to check required when struts eros thrown
 		<% if(fieldForm.isRequired()){%>
 			dijit.byId("requiredCB").attr('value', 'on');
 		<%}%>
@@ -311,59 +312,59 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	function setSearchable(){
 			var form = document.getElementById("field");
 			var indexed = <%=fieldForm.isIndexed()%>;
-		
+
 		if(form.searchableCB.checked){
 			dijit.byId("indexedCB").attr('value', 'on')
 		   <%if(!hasInode){%>
 		   	dijit.byId("indexedCB").attr('value', 'on')
 		 	<%}%>
 		}else{
-		    
-		if(!dijit.byId("uniqueCB").attr('value') == 'on'){ 
-		 if(form.fieldType.value != "category"){ 
+
+		if(!dijit.byId("uniqueCB").attr('value') == 'on'){
+		 if(form.fieldType.value != "category"){
 		  if(!indexed){
 			  dijit.byId("indexedCB").attr('value', 'off')
 		  }
 		   <%if(!hasInode){%>
 		   		dijit.byId("indexedCB").attr('value', 'off')
 		   <%}%>
-		  } 
+		  }
 		 }
-		}      
+		}
 		ifUserSearchableChecked();
 	}
-	
+
 	function setShowInListing(){
 		var form = document.getElementById("field");
 		var indexed = <%=fieldForm.isIndexed()%>;
-	
+
 		if(form.listedCB.checked){
 			dijit.byId("indexedCB").attr('value', 'on')
 		   <%if(!hasInode){%>
 		   	dijit.byId("indexedCB").attr('value', 'on')
 		 	<%}%>
 		}else{
-		    
-		if(!dijit.byId("uniqueCB").attr('value') == 'on'){ 
-		 if(form.fieldType.value != "category"){ 
+
+		if(!dijit.byId("uniqueCB").attr('value') == 'on'){
+		 if(form.fieldType.value != "category"){
 		  if(!indexed){
 			  dijit.byId("indexedCB").attr('value', 'off')
 		  }
 		   <%if(!hasInode){%>
 		   		dijit.byId("indexedCB").attr('value', 'off')
 		   <%}%>
-		  } 
+		  }
 		 }
-		}      
+		}
 		ifShowInListingChecked();
 	}
-  
-	function showCategories(show){ 
+
+	function showCategories(show){
 	  if(show){
 	   document.getElementById("textAreaValues").style.display="none";
 	   document.getElementById("categories").style.display="";
 	   document.getElementById("valueRowLabel").innerHTML = '<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "category") %>: ';
-	     
+
 	  }else{
 	    document.getElementById("textAreaValues").style.display="";
 	    document.getElementById("categories").style.display="none";
@@ -388,14 +389,14 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	function uniqueUnchecked(){
 		var form = document.getElementById("field");
 		if(!form.uniqueCB.checked){}
-			
+
 	}
 
 	function setUnique(){
-	
+
 		var form = document.getElementById("field");
 		var indexed = <%=fieldForm.isIndexed()%>;
-		
+
 	    if(form.unique.checked){
 	    	dijit.byId("indexedCB").attr('value', 'on');
 	       dijit.byId("requiredCB").attr('value', 'on');
@@ -403,48 +404,48 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 			dijit.byId('indexedCB').attr('disabled', true);
 			dijit.byId('requiredCB').attr('disabled', true);
 	     	<%}%>
-	     	
-	     	 
+
+
 	    }else{
 			dijit.byId('indexedCB').attr('disabled', false);
 			dijit.byId('requiredCB').attr('disabled', false);
-	            
+
 	    	if(!form.searchable.checked){
-	     		if(form.fieldType.value != "category"){ 
+	     		if(form.fieldType.value != "category"){
 	      			if(!indexed){
 	      				dijit.byId("indexedCB").attr('value', 'off');
 	          			dijit.byId("requiredCB").attr('value', 'off');
 	      			}
-	      			
+
 	       			<%if(hasInode){%>
 		    			dijit.byId('indexedCB').attr('disabled', false);
 		       			dijit.byId("requiredCB").attr('value', 'off');
 	       			<%}%>
-	      		} 
+	      		}
 	     	}
-	       	
+
 	       <%if(!hasInode){%>
 			  dijit.byId('requiredCB').attr('disabled', false);
-	       <%}%>   
-	    }  
-	    ifUniqueChecked();  
+	       <%}%>
+	    }
+	    ifUniqueChecked();
 	}
-    
 
-  
+
+
 	function setUniqueDataType(dataType){
 		var form=document.getElementById("field");
-	
+
 		if(form.fieldType.value != 'text'){
 			//if(dataType != 'integer' && dataType != 'text'){
 		         //document.getElementById("unique").style.display = "none";
 		         //document.getElementById("unique").style.display = "none";
-		   	//}else{ 		
+		   	//}else{
 		       document.getElementById("uniqueCB").style.display = "none";
 		       document.getElementById("unique").style.display = "none";
 		   	//}
 		}
-	} 
+	}
 
 
 	dojo.require("dojo.data.ItemFileReadStore");
@@ -455,17 +456,17 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	function myLabelFunc(item, store) {
         return store.getValue(item, "label");
     }
-    
+
 	var myStore = new dojo.data.ItemFileReadStore({data: myData});
-		
+
 
 	dojo.addOnLoad(
-			function() {	
+			function() {
 
-		
+
 				var myselect = new dijit.form.FilteringSelect({
 					 id: "elementSelectBox",
-					 name: "fieldType", 
+					 name: "fieldType",
 					 value: '',
 					 required: true,
 					 store: myStore,
@@ -473,11 +474,11 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 					 labelAttr: "label",
 					 labelType: "html",
 					 onChange: elementTypeChange,
-					 labelFunc: myLabelFunc  
-				}, 
+					 labelFunc: myLabelFunc
+				},
 				dojo.byId("elementSelectBox"));
 
-	
+
 				typeChangeonload();
 
 			    disableSelect();
@@ -489,7 +490,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				ifShowInListingChecked();
 				//setInitialValues();
                 //ifRequiredCBChecked;
-                
+
 				var form=document.getElementById("field");
 				dojo.place("<input type=\"hidden\" id=\"requiredId\" value=\"" + dijit.byId("requiredCB").attr('value') + "\"/>", dojo.body(), 'last');
 				//http://jira.dotmarketing.net/browse/DOTCMS-5022
@@ -497,14 +498,14 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				dijit.byId("cancelButton").attr('iconClass', 'cancelIcon');
 			}
 	);
-	
+
 	function editFieldVariables(){
 		var fieldId='<%=request.getParameter("inode")%>';
 	    if(fieldId!="null"){
 	    	fieldVariablesAdmin.showFieldVariables(fieldId,false);
 	    } else {
 	    	fieldVariablesAdmin.showInitFieldVariables();
-	    }	
+	    }
 	}
 </script>
 
@@ -533,15 +534,15 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		<html:hidden property="fieldRelationType" />
 
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-	
+
 <!-- START Tab1 -->
-<div id="TabOne" dojoType="dijit.layout.ContentPane" title="Overview">
-	<!-- START Field Options -->	
+<div id="TabOne" dojoType="dijit.layout.ContentPane" title="Overview" >
+	<!-- START Field Options -->
 	<%-- Hint Box  --%>
-	<div style="position:absolute;top:80px;right:40px;width:300px;display:none;text-align:left;" class="callOutBox2" id="values_eg"></div>	
-	
-	
-	
+	<div style="position:absolute;top:50px;right:40px;width:300px;display:none;text-align:left;" class="callOutBox2" id="values_eg"></div>
+
+
+
 	<dl id="elementFormTable;">
 		<dt>
 			<span id="VariableIdTitle" <%if(!UtilMethods.isSet(fieldForm.getVelocityVarName())){%> style="display:none"<%}%>>
@@ -549,7 +550,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 			</span>
 		</dt>
 		<dd style="clear: none;">
-			<html:text property="velocityVarName" readonly="true" style="width:250px;border:0px;" />	
+			<html:text property="velocityVarName" readonly="true" style="width:250px;border:0px;" />
 		</dd>
 		<dt>
 			<div id="displayType">
@@ -558,11 +559,11 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		</dt>
 		<dd>
 			<div id="elementSelect">
-				<input id="elementSelectBox" />				
+				<input id="elementSelectBox" />
 			</div>
 		</dd>
 	</dl>
-	
+
 	<dl id="labelRow" style="display:none">
 		<dt>
 			<span class="required"></span>  <%= LanguageUtil.get(pageContext, "Label") %>:
@@ -575,7 +576,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 			<% }  %>
 		</dd>
 	</dl>
-	
+
 	<dl id="dataTypeRow" style="display:none">
 		<dt>
 			<span id="req_data_type" class="required"></span> <%= LanguageUtil.get(pageContext, "Data-Type") %>:
@@ -585,7 +586,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypetext" <%=fixed?"readonly=\"readonly\"":"" %> value="text" onclick="setUniqueDataType('text');" <% if(fieldForm.getDataType().equals(Field.DataType.TEXT.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypetext"><%= LanguageUtil.get(pageContext, "Text") %></label> &nbsp;
 			</span>
-			<span id="radioBool">	
+			<span id="radioBool">
 				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypebool" <%=fixed?"readonly=\"readonly\"":"" %> value="bool" onclick="setUniqueDataType('bool');" <% if(fieldForm.getDataType().equals(Field.DataType.BOOL.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypebool"><%= LanguageUtil.get(pageContext, "True-False") %></label> &nbsp;
 			</span>
@@ -619,7 +620,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 			</span>
 		</dd>
 	</dl>
-		
+
 	<dl id="valueRow" style="display:none">
 		<dt id="valueRowLabel">
 			<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Value") %>:
@@ -628,7 +629,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 			<div id="valueRow_inner"><textarea dojoType="dijit.form.Textarea" name="values" style="width:300px;min-height:120px;" id="textAreaValues"><%=UtilMethods.htmlifyString(textArea)%></textarea></div>
 		</dd>
 	</dl>
-	
+
 	<dl id="categoryRow" style="display:none">
 		<dt id="valueRowLabel">
 			<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Category") %>:
@@ -641,24 +642,24 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 					for (Category category : cats) {
 						if (catAPI.canUseCategory(category, user, false)) {%>
 						 <%if(selectedCategory != null && selectedCategory.trim().equalsIgnoreCase(category.getInode())){ %>
-							<option selected value="<%=category.getInode()%>"><%=category.getCategoryName()%></option>	
+							<option selected value="<%=category.getInode()%>"><%=category.getCategoryName()%></option>
 						<%}else{%>
-							<option value="<%=category.getInode()%>"><%=category.getCategoryName()%></option>	
-						<%}	
+							<option value="<%=category.getInode()%>"><%=category.getCategoryName()%></option>
+						<%}
 						}
 					}
 				%>
 			</select>
 		</dd>
 	</dl>
-	
-	
-	
+
+
+
 	<dl style="display:none;">
 		<dt>&nbsp;</dt>
 		<dd><div id="structureCode"></div>&nbsp;</dd>
 	</dl>
-		
+
 	<dl id="validationRow" style="display:none">
 		<dt><%= LanguageUtil.get(pageContext, "Validation-RegEx") %>:</dt>
 		<dd>
@@ -674,10 +675,10 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				<option value="^((http|ftp|https):\/\/w{3}[\d]*.|(http|ftp|https):\/\/|w{3}[\d]*.)([\w\d\._\-#\(\)\[\]\,;:]+@[\w\d\._\-#\(\)\[\]\,;:])?([a-z0-9]+.)*[a-z\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\/[\/a-zA-Z0-9\._\-,\%\s]+)*(\/|\?[a-z0-9=%&\.\-,#]+)?$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^((http|ftp|https):\\/\\/w{3}[\\d]*.|(http|ftp|https):\\/\\/|w{3}[\\d]*.)([\\w\\d\\._\\-#\\(\\)\\[\\]\\,;:]+@[\\w\\d\\._\\-#\\(\\)\\[\\]\\,;:])?([a-z0-9]+.)*[a-z\\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\\/[\\/a-zA-Z0-9\\._\\-,\\%\\s]+)*(\\/|\\?[a-z0-9=%&\\.\\-,#]+)?$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "URL-Pattern") %></option>
 				<option value="[^(<[.\n]+>)]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[^(<[.\\n]+>)]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "No-HTML") %></option>
 			</select>
-			
+
 		</dd>
 	</dl>
-		
+
 	<dl id="defaultText" style="display:none">
 		<dt><span id="defaultText" ><%= LanguageUtil.get(pageContext, "Default-Value") %>:</span></dt>
 		<dd><input type="text" dojoType="dijit.form.TextBox" name="defaultValue" style="width:250px" onblur="validateCategories(this);" value="<%= UtilMethods.isSet(fieldForm.getDefaultValue()) ? UtilMethods.webifyString(fieldForm.getDefaultValue()) : "" %>" /></span></dd>
@@ -687,13 +688,13 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		<dd><input type="text" dojoType="dijit.form.TextBox" name="hint" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getHint()) ? UtilMethods.webifyString(fieldForm.getHint()) : "" %>" /></dd>
 	</dl>
 	<!-- END Field Options -->
-		
+
 	<!-- START Check Boxes -->
 	<dl id="required" style="display:none">
 		<dt>&nbsp;</dt>
 		<dd>
 			<input type="checkbox" dojoType="dijit.form.CheckBox" name="required" id="requiredCB" <%=fixed?"readonly=\"readonly\"":"" %> onClick="writeRequired();" <% if(fieldForm.isRequired()){ %> checked="checked" <% } %> />
-			<label for="requiredCB"><%= LanguageUtil.get(pageContext, "Required") %></label> 
+			<label for="requiredCB"><%= LanguageUtil.get(pageContext, "Required") %></label>
 		</dd>
 	</dl>
 	<dl id="userSearchable" style="display:none">
@@ -725,16 +726,16 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		</dd>
 	</dl>
 	<!-- END Check Boxes -->
-	
+
 </div>
 <!-- END Tab1 -->
 
 <!-- START Tab2 -->
 <div id="TabTwo" dojoType="dijit.layout.ContentPane" onShow='javascript:editFieldVariables();' title="Field Variables">
- 
+
 	<!--<dl id="fieldVarLink" style="display:none">
 		<dt>&nbsp;</dt>
-		<dd>			
+		<dd>
 			<button dojoType="dijit.form.Button" onClick="javascript:editFieldVariables();" iconClass="plusIcon">
                 <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-new-Field-Variable")) %>
             </button>

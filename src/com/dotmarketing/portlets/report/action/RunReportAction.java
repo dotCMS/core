@@ -36,16 +36,16 @@ import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JRException;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JRExporterParameter;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperFillManager;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperPrint;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.JasperReport;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.export.JRHtmlExporter;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.export.JRHtmlExporterParameter;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.engine.util.JRLoader;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.BaseHttpServlet;
-import com.dotcms.repackage.jasperreports_3_5_0.net.sf.jasperreports.j2ee.servlets.ImageServlet;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JRExporterParameter;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.export.JRHtmlExporter;
+import net.sf.jasperreports.engine.export.JRHtmlExporterParameter;
+import net.sf.jasperreports.engine.util.JRLoader;
+import net.sf.jasperreports.j2ee.servlets.BaseHttpServlet;
+import net.sf.jasperreports.j2ee.servlets.ImageServlet;
 
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
