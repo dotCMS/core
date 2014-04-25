@@ -3277,7 +3277,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 						Map<String, Object> cMap = c.getMap();
 						Object obj = cMap.get(field.getVelocityVarName());
 
-						if(((String) obj).equals(((String) o))) { //DOTCMS-7275
+						if(((String) obj).equalsIgnoreCase(((String) o))) { //DOTCMS-7275
 							unique = false;
 							break;
 						}
