@@ -324,9 +324,18 @@ public class TagAjax {
 	 * @param name name of the tag searched
 	 * @return list of suggested tags
 	 */
-	public List<Tag> getSuggestedTag(String tagName, String selectedHostId) {
+	public List<Tag> getSuggestedTag(String tagName, String selectedHostOrFolderId) {
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		return TagFactory.getSuggestedTag(req, tagName, selectedHostId);
+		try{
+			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+			Host host = APILocator.getHostAPI().find(selectedHostOrFolderId, currentUser, false);
+			if(!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode())){
+				selectedHostOrFolderId = APILocator.getFolderAPI().find(selectedHostOrFolderId, currentUser, false).getHostId();
+			}
+		}catch(Exception e){
+			Logger.error(TagAjax.class,e.getMessage());
+		}
+		return TagFactory.getSuggestedTag(req, tagName, selectedHostOrFolderId);
 	}
 
 	/**
