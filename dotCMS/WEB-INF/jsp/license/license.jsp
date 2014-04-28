@@ -23,21 +23,6 @@ catch(Exception e){
 }
 boolean expired = (expires !=null && expires.before(new Date()));
 
-
-
-String licenseFormStr = LicenseUtil.getRequestForm();
-
-if(!UtilMethods.isSet(licenseFormStr)){
-	licenseFormStr = LanguageUtil.get(pageContext, "Behind-A-Proxy-Request-A-License");
-	
-}
-
-
-
-
-
-
-
 %>
 
 <%@page import="com.dotmarketing.util.UtilMethods"%>

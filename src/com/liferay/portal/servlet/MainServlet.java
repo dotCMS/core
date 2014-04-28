@@ -158,6 +158,7 @@ public class MainServlet extends ActionServlet {
 					}
 
 		    		server.setName(hostName);
+		    		
 		    		serverAPI.saveServer(server);
 
 			        try {
