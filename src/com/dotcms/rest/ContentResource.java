@@ -285,6 +285,33 @@ public class ContentResource extends WebResource {
 		return sb.toString();
 	}
 
+	private String getXMLContentIds(Contentlet con) throws DotDataException, IOException {
+		XStream xstream = new XStream(new DomDriver());
+		xstream.alias("content", Map.class);
+		xstream.registerConverter(new MapEntryConverter());
+		StringBuilder sb = new StringBuilder();
+		sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
+		sb.append("<contentlet>");
+		Map<String, Object> m = new HashMap<String, Object>();
+		m.put("inode",con.getInode());
+		m.put("identifier",con.getIdentifier());
+		sb.append(xstream.toXML(m));
+		sb.append("</contentlet>");
+		return sb.toString();
+	}
+	
+	private String getJSONContentIds(Contentlet con) throws IOException{
+		JSONObject json = new JSONObject();
+		try {
+			json.put("inode", con.getInode());
+			json.put("identifier", con.getIdentifier());
+		} catch (JSONException e) {
+			Logger.warn(this.getClass(), "unable JSON contentlet " + con.getIdentifier());
+			Logger.debug(this.getClass(), "unable to find contentlet", e);
+		}
+		return json.toString();
+	}
+
 	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws IOException{
 		JSONObject json = new JSONObject();
 		JSONArray jsonCons = new JSONArray();
@@ -463,7 +490,7 @@ public class ContentResource extends WebResource {
 			}
 		}
 
-		return saveContent(contentlet,init,request, response);
+		return saveContent(contentlet,init);
 	}
 
 	@PUT
@@ -500,7 +527,7 @@ public class ContentResource extends WebResource {
 			return responseBuilder.build();
 		}
 
-		return saveContent(contentlet,init,request, response);
+		return saveContent(contentlet,init);
 	}
 
 	/*
@@ -512,7 +539,7 @@ public class ContentResource extends WebResource {
         return Response.ok().build();
     }*/
 
-	protected Response saveContent(Contentlet contentlet, InitDataObject init,HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
+	protected Response saveContent(Contentlet contentlet, InitDataObject init) throws URISyntaxException {
 		boolean live = init.getParamsMap().containsKey("publish");
 		boolean clean=false;
 		try {
@@ -640,41 +667,40 @@ public class ContentResource extends WebResource {
 				init.setParamsMap(map);
 			}
 
-			ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
-			String render = init.getParamsMap().get(RESTParams.RENDER.getValue());
 			String type = init.getParamsMap().get(RESTParams.TYPE.getValue());
 			String result ="";
-			List<Contentlet> contList = new ArrayList<Contentlet>();
-			contList.add(contentlet);
 			try {
 				if("xml".equals(type)) {
-					result = getXML(contList, request, response, render);
+					
+					result = getXMLContentIds(contentlet);
 					return Response.ok(result,MediaType.APPLICATION_XML)
 							.location(new URI("/content/inode/"+contentlet.getInode()+"/type/xml"))
 							.header("inode", contentlet.getInode())
 							.header("identifier", contentlet.getIdentifier())
 							.status(Status.OK).build();
-				} else {
-					result = getJSON(contList, request, response, render);
+				} else if("text".equals(type)){
+					
+					return Response.ok("inode:"+contentlet.getInode()+",identifier:"+contentlet.getIdentifier(),MediaType.TEXT_PLAIN)
+							.location(new URI("/content/inode/"+contentlet.getInode()+"/type/text"))
+							.header("inode", contentlet.getInode())
+							.header("identifier", contentlet.getIdentifier())
+							.status(Status.OK).build();
+				}else {
+
+					result = getJSONContentIds(contentlet);
+
 					if(type.equals("jsonp")){
-						
+
 						String callback = init.getParamsMap().get(RESTParams.CALLBACK.getValue());
 						return Response.ok(callback+"("+result+")","application/javascript")
 								.location(new URI("/content/inode/"+contentlet.getInode()+"/type/jsonp/callback/"+callback))
 								.header("inode", contentlet.getInode())
 								.header("identifier", contentlet.getIdentifier())
 								.status(Status.OK).build();
-					}else if(type.equals("json")){
-						
+					}else{
+
 						return Response.ok(result,MediaType.APPLICATION_JSON)
 								.location(new URI("/content/inode/"+contentlet.getInode()+"/type/json"))
-								.header("inode", contentlet.getInode())
-								.header("identifier", contentlet.getIdentifier())
-								.status(Status.OK).build();
-					}else{
-						
-						return Response.ok(result,MediaType.TEXT_PLAIN)
-								.location(new URI("/content/inode/"+contentlet.getInode()+"/type/text"))
 								.header("inode", contentlet.getInode())
 								.header("identifier", contentlet.getIdentifier())
 								.status(Status.OK).build();
