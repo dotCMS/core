@@ -635,7 +635,7 @@ public class TagAPIImpl implements TagAPI{
      */
 	public List getTagInodeByInode(String inode) {
         try {
-            HibernateUtil dh = new HibernateUtil(Tag.class);
+            HibernateUtil dh = new HibernateUtil(TagInode.class);
             dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where inode = ?");
             dh.setParam(inode);
 
@@ -655,7 +655,7 @@ public class TagAPIImpl implements TagAPI{
      */
 	public List<TagInode> getTagInodeByTagId(String tagId) {
         try {
-            HibernateUtil dh = new HibernateUtil(Tag.class);
+            HibernateUtil dh = new HibernateUtil(TagInode.class);
             dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ?");
             dh.setParam(tagId);
 
@@ -670,13 +670,13 @@ public class TagAPIImpl implements TagAPI{
 
 	/**
 	 * Gets a tagInode by name and inode
-	 * @param name name of the tag
+	 * @param tagId id of the tag
 	 * @param inode inode of the object tagged
 	 * @return the tagInode
 	 */
 	public TagInode getTagInode(String tagId, String inode)  throws DotHibernateException  {
 		// getting the tag inode record
-        HibernateUtil dh = new HibernateUtil(Tag.class);
+        HibernateUtil dh = new HibernateUtil(TagInode.class);
         dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ? and inode = ?");
         dh.setParam(tagId);
         dh.setParam(inode);
@@ -820,17 +820,22 @@ public class TagAPIImpl implements TagAPI{
     			HibernateUtil dh = new HibernateUtil(Tag.class);
     			dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where host_id = ?");
     			dh.setParam(oldTagStorageId);
-                List<Tag> list = (List<Tag>)dh.list();
+                List<Tag> list = (List<Tag>)dh.list();            
+
+                HibernateUtil dh1 = new HibernateUtil(Tag.class);
+    			dh1.setQuery("from tag in class com.dotmarketing.tag.model.Tag where host_id = ?");
+    			dh1.setParam(hostIdentifier);
+    			List<Tag> hostTagList = (List<Tag>)dh1.list();
+    			
             	for (Tag tag: list){
                 	try{
-            			if(hostIdentifier.equals(newTagStorageId) && !newTagStorageId.equals(Host.SYSTEM_HOST)){
+                		if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)){
                     		//copy old tag to host with new tag storage
                     		tag = saveTag(tag.getTagName(), "", hostIdentifier);
-                    	}
-                    	else if(newTagStorageId.equals(Host.SYSTEM_HOST)){
+                    	}else if(newTagStorageId.equals(Host.SYSTEM_HOST)){
                     		//update old tag to global tags
                     		tag = getTag(tag.getTagName(), "", Host.SYSTEM_HOST);
-                    	}else if(hostIdentifier.equals(oldTagStorageId)) {			
+                    	}else if(hostIdentifier.equals(newTagStorageId) && hostTagList.size() > 0 || hostIdentifier.equals(oldTagStorageId)) {			
                     		// update old tag with new tag storage
                     		updateTag(tag.getTagId(), tag.getTagName(), true, newTagStorageId);
                     	}

@@ -127,7 +127,7 @@ public class UserProxyFactoryImpl extends UserProxyFactory {
     		((roles != null) && (0 < roles.size())) ||
     		showUserRoles) {
 			//sqlCount.append(", users_roles, role_");
-			sqlFields.append(", cms_role.name as role_name");
+			sqlFields.append(", cms_role.role_name as role_name");
         	//sqlFrom.append(", users_roles, role_");
 			sqlFrom.append(", users_cms_roles,cms_role ");
        	}

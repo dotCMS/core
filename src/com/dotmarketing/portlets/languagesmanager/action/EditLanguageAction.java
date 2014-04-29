@@ -63,7 +63,6 @@ public class EditLanguageAction extends DotPortletAction {
           
                     Logger.debug(this, "I'm saving");
             		_save(req, res, config, form);
-            		_sendToReferral(req, res, "");
             	}
             } catch (Exception ae) {
                 _handleException(ae, req);
@@ -107,15 +106,21 @@ public class EditLanguageAction extends DotPortletAction {
 		Language language = (Language) req.getAttribute(WebKeys.LANGUAGE_MANAGER_LANGUAGE) ;
 		
 		BeanUtils.copyProperties(language,form);
-		try{
-			langAPI.saveLanguage(language);
+		if(language.getLanguageCode() != "" && language.getCountryCode() != ""){
+			try{
+				langAPI.saveLanguage(language);
+			}
+			catch(Exception e ){
+				SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
+				throw new SQLException();
+			}
+			SessionMessages.add(req,"message", "message.languagemanager.language_save");
+			_sendToReferral(req, res, "");
+
+		}else{
+			SessionMessages.add(req,"message", "message.languagemanager.language_should_not_be_empty");
+			setForward(req, "portlet.ext.languagesmanager.edit_language");
 		}
-		catch(Exception e ){
-			SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
-			throw new SQLException();
-		}
-		SessionMessages.add(req,"message", "message.languagemanager.language_save");
-		
 		
 	}
    /* here I delete the language from the database*/
