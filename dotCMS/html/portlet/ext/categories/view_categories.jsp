@@ -406,6 +406,7 @@ td {font-size: 100%;}
 		dojo.byId("addCatName").value = "";
 		dojo.byId("addCatKey").value = "";
 		dojo.byId("addCatKeywords").value = "";
+		dojo.byId("savedMessage").innerHTML = "";
 	}
 
 
