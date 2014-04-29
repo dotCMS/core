@@ -6,6 +6,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -52,8 +53,8 @@ public class UserResource extends WebResource {
 		StringBuilder node = new StringBuilder();
 		node.append("{");
 		node.append("userId: '").append(user.getUserId()).append("',");
-		node.append("firstName: '").append(user.getFirstName()).append("',");
-		node.append("lastName: '").append(user.getLastName()).append("',");
+		node.append("firstName: '").append(UtilMethods.escapeSingleQuotes(user.getFirstName())).append("',");
+		node.append("lastName: '").append(UtilMethods.escapeSingleQuotes(user.getLastName())).append("',");
 		node.append("roleId: '").append(myRole.getId()).append("'");
 		node.append("}");
 
