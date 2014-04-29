@@ -138,19 +138,22 @@
 			}
 		}
 		//in backend, check if structure has host or folder field and dynamically suggest tags for that field's value
-		var selectedHostId  ="";
+		var selectedHostOrFolderId  ="";
 
 		if(dojo.byId('hostId')){
-			selectedHostId = dojo.byId('hostId').value;
+			selectedHostOrFolderId = dojo.byId('hostId').value;
+			if(selectedHostOrFolderId == ''){
+				selectedHostOrFolderId = dojo.byId('folderInode').value;
+			}
 		}
 
 		//in frontend, check for hidden field with host identifier
 		if(dojo.byId('currentHostIdForTagSuggestion')){
-			selectedHostId = dojo.byId('currentHostIdForTagSuggestion').value;
+			selectedHostOrFolderId = dojo.byId('currentHostIdForTagSuggestion').value;
 		}
 
 		if (tagName != "" & tagName.length >= 3) {
-			TagAjax.getSuggestedTag(tagName, selectedHostId, showTagsForSearch);
+			TagAjax.getSuggestedTag(tagName, selectedHostOrFolderId, showTagsForSearch);
 		}
 		else {
 			clearSuggestTagsForSearch();
