@@ -463,7 +463,7 @@ public class ContentResource extends WebResource {
             }
         }
 
-        return saveContent(contentlet,init);
+        return saveContent(contentlet,init,request, response);
     }
 
     @PUT
@@ -500,7 +500,7 @@ public class ContentResource extends WebResource {
             return responseBuilder.build();
         }
 
-        return saveContent(contentlet,init);
+        return saveContent(contentlet,init,request, response);
     }
 
     /*
@@ -512,11 +512,22 @@ public class ContentResource extends WebResource {
         return Response.ok().build();
     }*/
 
-    protected Response saveContent(Contentlet contentlet, InitDataObject init) throws URISyntaxException {
+    protected Response saveContent(Contentlet contentlet, InitDataObject init,HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
         boolean live = init.getParamsMap().containsKey("publish");
         boolean clean=false;
-
         try {
+        	if(!init.getParamsMap().containsKey("type")){
+        		if(init.getParamsMap().containsKey("callback")){
+        			Map<String,String> map = init.getParamsMap();
+        			map.put("type", "jsonp");
+        			init.setParamsMap(map);
+        		}else{
+        			Map<String,String> map = init.getParamsMap();
+        			map.put("type", "json");
+        			init.setParamsMap(map);
+        		}
+        	}
+        	
             // preparing categories
             List<Category> cats=new ArrayList<Category>();
             for(Field field : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
@@ -632,11 +643,24 @@ public class ContentResource extends WebResource {
         } catch (Exception ex) {
             return Response.serverError().build();
         }
+  
+        ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
+        String render = init.getParamsMap().get(RESTParams.RENDER.getValue());
+        String type = init.getParamsMap().get(RESTParams.TYPE.getValue());
+        String result ="";
+        List<Contentlet> contList = new ArrayList<Contentlet>();
+        contList.add(contentlet);
+        try {
+            if("xml".equals(type)) {
+                result = getXML(contList, request, response, render);
+            } else {
+                result = getJSON(contList, request, response, render);
+            }
+        } catch (Exception e) {
+            Logger.warn(this, "Error converting result to XML/JSON");
+        }
 
-        return Response.seeOther(new URI("/content/inode/"+contentlet.getInode()))
-                       .header("inode", contentlet.getInode())
-                       .header("identifier", contentlet.getIdentifier())
-                       .status(Status.OK).build();
+        return responseResource.response( result );
     }
 
     @SuppressWarnings("unchecked")
