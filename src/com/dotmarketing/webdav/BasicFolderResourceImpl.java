@@ -8,7 +8,6 @@ import java.io.OutputStream;
 import java.util.Map;
 
 import com.dotcms.repackage.myspell.org.dts.spell.utils.FileUtils;
-
 import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.FolderResource;
 import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.HttpManager;
@@ -19,6 +18,8 @@ import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotAut
 import com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.exceptions.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -49,7 +50,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             // http://jira.dotmarketing.net/browse/DOTCMS-7285
             return null;
     	}
-        
+   
         User user=(User)HttpManager.request().getAuthorization().getTag();
         
         if(!path.endsWith("/")){
