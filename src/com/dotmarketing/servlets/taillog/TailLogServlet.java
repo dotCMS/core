@@ -24,7 +24,7 @@ import com.liferay.portal.model.User;
 public class TailLogServlet extends HttpServlet {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -1700686919872123657L;
 
@@ -39,9 +39,9 @@ public class TailLogServlet extends HttpServlet {
 
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-		
-		
-		
+
+
+
 		User user = null;
 		try {
 			user = com.liferay.portal.util.PortalUtil.getUser(request);
@@ -62,56 +62,51 @@ public class TailLogServlet extends HttpServlet {
 		if(logFolder ==null){
 			return;
 		}
-		
-		
-		
+
+
+
 		String fileName = request.getParameter("fileName");
-	
+
 		if(fileName.trim().isEmpty()) {
 		    return;
 		}
-		
-		if(!fileName.startsWith(com.dotmarketing.util.FileUtil.getAbsolutlePath(com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER")))){
-			response.sendError(403);
-			AdminLogger.log(TailLogServlet.class, "service", "Someone tried to use the TailLogServlet to display a file not in the logs directory");
-			return;
-		}
-		
-		// clean and check passed in filename against allowed files
-
-		
-		
-		
-		String regex = Config.getStringProperty("TAIL_LOG_FILE_REGEX");
-		if(!UtilMethods.isSet(regex)){
-			regex="!.*";
-		}
-		
-		//regex=".*\\.log$|.*\\.out$";
-		//regex="!.*";
-		
-		if(!Pattern.compile(regex).matcher(fileName).matches()){
-			//response.sendError(403);
-			return;
-		}
-		
-		response.setContentType("text/html;charset=UTF-8");
-
-		ServletOutputStream out = response.getOutputStream();
 
 		File file = null;
 		try {
-			file = new File(fileName);
+			file = new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/")+fileName));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "unable to open log file '" + logFolder
 					+ "' please set the config variable TAIL_LOG_SERVLET_FILEPATH correctly");
 		}
 		if (file == null || !file.exists()) {
 
-			out.write(new String("unable to open log file '" + logFolder
-					+ "' please set the config variable TAIL_LOG_SERVLET_FILEPATH correctly").getBytes());
+			response.sendError(403);
+			AdminLogger.log(TailLogServlet.class, "service", "Someone tried to use the TailLogServlet to display a file not in the logs directory");
 			return;
 		}
+
+		// clean and check passed in filename against allowed files
+
+
+
+
+		String regex = Config.getStringProperty("TAIL_LOG_FILE_REGEX");
+		if(!UtilMethods.isSet(regex)){
+			regex="!.*";
+		}
+
+		//regex=".*\\.log$|.*\\.out$";
+		//regex="!.*";
+
+		if(!Pattern.compile(regex).matcher(fileName).matches()){
+			//response.sendError(403);
+			return;
+		}
+
+		response.setContentType("text/html;charset=UTF-8");
+
+		ServletOutputStream out = response.getOutputStream();
+
 
 		out.print("<html>"
 				+ "<head>"

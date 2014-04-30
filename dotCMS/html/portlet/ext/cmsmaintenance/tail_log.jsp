@@ -45,9 +45,9 @@
 
 
 <style type="text/css">
-	
+
 	body,html{ height: 100%; }
-	
+
 	#tailingFrame{
 		border:1px solid silver;
 		overflow: auto;
@@ -125,12 +125,12 @@
         } );
 
     }
-   
+
 
     /**
      * Will search for all the current logs and it will populate the table with those logs details
      */
-    function getCurrentLogs () {  	 
+    function getCurrentLogs () {
 
         var xhrArgs = {
 
@@ -148,7 +148,7 @@
             }
         };
         dojo.xhrPost( xhrArgs );
-        dijit.byId( "checkAllCkBx" ).set('checked',false);        
+        dijit.byId( "checkAllCkBx" ).set('checked',false);
     }
 
     /**
@@ -241,9 +241,8 @@
 		<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Tail")%>:
 		<select name="fileName" dojoType="dijit.form.FilteringSelect" ignoreCase="true" id="fileName" style="width:250px;" onchange="reloadTail();">
 			<option value=""></option>
-			<%for(File f: files){ %>
-
-					<option value="<%= f.getPath()%>"><%= f.getPath().replace(logPath + File.separator, "")%></option>
+			<%for(File f: files){%>
+					<option value="<%= f.getPath().replace(logPath + File.separator, "")%>"><%= f.getPath().replace(logPath + File.separator, "")%></option>
 
 			<%} %>
 		</select>
@@ -278,7 +277,7 @@
 		        </tr>
 		    </table>
 		</div>
-		<div>&nbsp;</div>		
+		<div>&nbsp;</div>
 		<div class="buttonRow">
 		    <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onClick="enableDisableLogs()"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %> </button>
 		    <button dojoType="dijit.form.Button" iconClass="resetIcon" name="refreshButton" onClick="getCurrentLogs ()"> Refresh </button>
