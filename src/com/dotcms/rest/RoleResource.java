@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -169,7 +170,7 @@ public class RoleResource extends WebResource {
 		node.append("DBFQN: '").append(role.getDBFQN()).append("',");
 		node.append("FQN: '").append(role.getFQN()).append("',");
 		node.append("children: [],");
-		node.append("description: '").append(role.getDescription()).append("',");
+        node.append("description: '").append( StringEscapeUtils.escapeJavaScript( role.getDescription() ) ).append( "'," );
 		node.append("editLayouts: ").append(role.isEditLayouts()).append(",");
 		node.append("editPermissions: ").append(role.isEditPermissions()).append(",");
 		node.append("editUsers: ").append(role.isEditUsers()).append(",");
