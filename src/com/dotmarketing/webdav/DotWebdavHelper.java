@@ -881,12 +881,12 @@ public class DotWebdavHelper {
 					
 					//Validate if the user have the right permission before 
 					if(isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user) ){
-						APILocator.getContentletAPI().archive(fileAsset, user, false);
-						APILocator.getContentletAPI().delete(fileAsset, user, false);
+						APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 						throw new DotSecurityException("User does not have permission to publish contentlets");
 			        }else if(!isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_EDIT, user)){
-			        	APILocator.getContentletAPI().archive(fileAsset, user, false);
-						APILocator.getContentletAPI().delete(fileAsset, user, false);
+			        	APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 						throw new DotSecurityException("User does not have permission to edit contentlets");
 			        }
 					if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user))
