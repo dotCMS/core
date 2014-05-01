@@ -878,6 +878,17 @@ public class DotWebdavHelper {
 					fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAsset.setHost(host.getIdentifier());
 					fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
+					
+					//Validate if the user have the right permission before 
+					if(isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user) ){
+						APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+						throw new DotSecurityException("User does not have permission to publish contentlets");
+			        }else if(!isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_EDIT, user)){
+			        	APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+						throw new DotSecurityException("User does not have permission to edit contentlets");
+			        }
 					if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user))
 					    APILocator.getContentletAPI().publish(fileAsset, user, false);
 				}
@@ -1118,7 +1129,7 @@ public class DotWebdavHelper {
 
 					    APILocator.getContentletAPI().unlock(newversion, user, false);
 
-					    APILocator.getContentletAPI().delete(origin, user, false);
+					    APILocator.getContentletAPI().delete(origin, APILocator.getUserAPI().getSystemUser(), false);
 					    while(APILocator.getContentletAPI().isInodeIndexed(origin.getInode(),1));
 					}
 				}else{
