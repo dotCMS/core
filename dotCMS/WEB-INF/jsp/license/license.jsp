@@ -1,3 +1,6 @@
+<%@page import="java.text.SimpleDateFormat"%>
+<%@page import="java.util.List"%>
+<%@page import="com.dotcms.enterprise.license.LicenseManager.Contract"%>
 <%
 String error=null;
 String message=null;
@@ -22,11 +25,14 @@ catch(Exception e){
     
 }
 boolean expired = (expires !=null && expires.before(new Date()));
-
+boolean isPerpetual = System.getProperty("dotcms_license_perpetual").equals("true");
 
 String requestCode=(String)request.getAttribute("requestCode");
 
+List<Contract> contracts=(List<Contract>)request.getAttribute("contracts");
 
+SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
+SimpleDateFormat dfOut = new SimpleDateFormat("MMM dd, yyyy");
 
 %>
 
@@ -51,6 +57,10 @@ String requestCode=(String)request.getAttribute("requestCode");
         dojo.byId("uploadLicenseForm").submit();
     }
 
+    function doOnlineLicenseRequest() {
+        dojo.byId("uploadLicenseForm").submit();
+    }
+
 function doShowHideRequest(){
 
     dojo.style("pasteMe", "display", "none");
@@ -70,6 +80,10 @@ function doShowHideRequest(){
     }
     else if(dijit.byId("reqonlineRadio").checked) {
         dojo.style("userauth", "display", "");
+        <% if(contracts!=null) { %>
+            dojo.style("licensedata", "display", "");
+
+        <% } %>
     }
 
 
@@ -87,7 +101,21 @@ function doPaste(){
     dojo.byId("uploadLicenseForm").submit();
 }
 
+<% if(contracts!=null) { %>
+    dojo.addOnLoad(function() {
+        dijit.byId("reqonlineRadio").set("checked",true)
+    });    
+<% } %>
+
 </script>
+
+<style type="text/css">
+#contracts-table tbody tr:hover {
+    background-color:#D8F6CE;
+    cursor: pointer;
+}
+</style>
+
 <div class="portlet-wrapper">
 
 
@@ -123,13 +151,18 @@ function doPaste(){
                     </dd>
                     <% if (!isCommunity) { %>
                         <dt><%= LanguageUtil.get(pageContext, "license-valid-until") %>:</dt>
-                        <dd><%if(expired){ %><font color="red"><%} %>
-                        <%= expireString%>
-                        <%if(expired){ %> (expired)</font><%} %>
-                        </dd>
+                        <% if(isPerpetual) { %>
+                            <dd>Perpetual</dd>
+                        <%} else {%>
+                            <dd><%if(expired && !isPerpetual){ %><font color="red"><%} %>
+                            <%= expireString %>
+                            <%if(expired && !isPerpetual){ %> (expired)</font><%} %>
+                            </dd>
+                        <%}%>
                         <dt><%= LanguageUtil.get(pageContext, "licensed-to") %></dt>
                         <dd><%=  UtilMethods.isSet(System.getProperty("dotcms_license_client_name")) ? System.getProperty("dotcms_license_client_name") + "": "No License Found" %></dd>
-                        
+                        <dt><%= LanguageUtil.get(pageContext, "license-type") %></dt>
+                        <dd><%=System.getProperty("dotcms_license_type_name")%></dd>
                     <% } %>
                 </dl>
             </div>
@@ -177,16 +210,51 @@ function doPaste(){
                         </div>
                     </dd>
 
-                    <dd id="userauth" style="<%if(isCommunity){ %>display:none<%} %>">
+                    <dd id="userauth" style="display:none">
                         <p><%= LanguageUtil.get(pageContext, "request-license-online-description")%></p>
-                        <label for="support_user"><%= LanguageUtil.get(pageContext, "request-license-user") %></label>
-                        <input type="text" dojoType="dijit.form.TextBox" name="support_user" id="support_user"/>
-                        <br/>
-                        <label for="support_pass"><%= LanguageUtil.get(pageContext, "request-license-pass") %></label>
-                        <input type="password" dojoType="dijit.form.TextBox" name="support_pass" id="support_pass"/>
+
+                        <%if(contracts!=null) {%>
+                            <table border=1 id="contracts-table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Level</th>
+                                        <th>Start</th>
+                                        <th>End</th>
+                                        <th>Perpetual</th>
+                                        <th>Site</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <%for(Contract con : contracts) {%>
+                                        <tr>
+                                            <td><input type="radio" name="contractId" value="<%=con.getId()%>" dojoType="dijit.form.RadioButton"/></td>
+                                            <td><%=con.getLevel()%></td>
+                                            <td><%=dfOut.format(df.parseObject(con.getStart()))%></td>
+                                            <td><%=dfOut.format(df.parseObject(con.getEnd()))%></td>
+                                            <td><%=con.isPerpetual()%></td>
+                                            <td><%=con.isSite()%></td>
+                                        </tr>
+                                    <%}%>
+                                </tbody>
+                            </table> 
+                            <input type="hidden" name="support_user" value="<%=request.getParameter("support_user")%>"/>
+                            <input type="hidden" name="support_pass" value="<%=request.getParameter("support_pass")%>"/>
+                        <%} else {%>
+                            <label for="support_user"><%= LanguageUtil.get(pageContext, "request-license-user") %></label>
+                            <input type="text" dojoType="dijit.form.TextBox" name="support_user" id="support_user"/>
+                            <br/>
+                            <label for="support_pass"><%= LanguageUtil.get(pageContext, "request-license-pass") %></label>
+                            <input type="password" dojoType="dijit.form.TextBox" name="support_pass" id="support_pass"/>
+
+                            <div style="padding:10px;">
+                                <button type="button" onclick="doCodeRequest()" id="onlinereqButton" dojoType="dijit.form.Button" name="onlinereqButton" iconClass="keyIcon" value="upload"><%= LanguageUtil.get(pageContext, "request-online-contracts") %></button>      
+                            </div>
+                        <%}%>
+                        
                     </dd>
 
-                    <dd id="licensedata" style="<%if(isCommunity){ %>display:none<%} %>">
+                    <dd id="licensedata" style="display:none">
                         <label for="license_type"><%= LanguageUtil.get(pageContext, "request-license-type") %></label>
                         <select id="license_type" name="license_type" dojoType="dijit.form.Select">
                             <option value="prod"><%= LanguageUtil.get(pageContext, "request-license-prod") %></option>
@@ -200,7 +268,15 @@ function doPaste(){
                             <option value="400"><%= LanguageUtil.get(pageContext, "request-license-prime") %></option>
                         </select>
                         <div style="padding:10px;">
-                            <button type="button" onclick="doCodeRequest()" id="codereqButton" dojoType="dijit.form.Button" name="codereqButton" iconClass="keyIcon" value="upload"><%= LanguageUtil.get(pageContext, "request-license-code") %></button>      
+                        <% if(contracts==null) {%>
+                            
+                            <button type="button" onclick="doCodeRequest()" id="codereqButton" 
+                             dojoType="dijit.form.Button" name="codereqButton" iconClass="keyIcon" value="upload"><%= LanguageUtil.get(pageContext, "request-license-code") %> </button>      
+                            
+                        <%} else {%>
+                            <button type="button" onclick="doOnlineLicenseRequest()" id="codereqButton" 
+                             dojoType="dijit.form.Button" name="codereqButton" iconClass="keyIcon" value="upload"><%= LanguageUtil.get(pageContext, "request-license-online") %> </button>      
+                        <%}%>
                         </div>
                     </dd>
 
