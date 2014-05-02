@@ -185,8 +185,10 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotDataException(e.getMessage());
 		}
 
-        vi.setVersionTs(new Date());
-        
+        if(updateVersionTS) {
+        	vi.setVersionTs(new Date());
+        }
+
         if(isNew) {
             HibernateUtil.save(vi);
         }
