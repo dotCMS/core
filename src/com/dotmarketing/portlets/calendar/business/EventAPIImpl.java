@@ -325,13 +325,15 @@ public class EventAPIImpl implements EventAPI {
 			event.addDateToIgnore(startDate);
 
 			List<Category> eventCategories =  APILocator.getCategoryAPI().getParents(event, user, true);
-
+			
 			Contentlet oldCont  = conAPI.checkout(event.getInode(), user, true);
 			oldCont.setStringProperty("recurrenceDatesToIgnore", event.getStringProperty("recurrenceDatesToIgnore"));
-			oldCont = conAPI.checkin(oldCont, user, true);
+			oldCont = conAPI.checkin(oldCont, user,true, eventCategories);
 			if(event.isLive())
 			    APILocator.getVersionableAPI().setLive(oldCont);
 			newEvent = eventFactory.convertToEvent(conAPI.checkin(newEvent, user, true, eventCategories));
+			if(oldCont.isLive())
+			    APILocator.getVersionableAPI().setLive(newEvent);
 		}
 		return newEvent;
 	}
