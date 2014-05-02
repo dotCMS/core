@@ -16,17 +16,18 @@ import com.dotmarketing.portlets.structure.model.Relationship;
  * @since 1.6
  */
 public class DotContentletValidationException extends DotContentletStateException {
-	
+
 	public final static String VALIDATION_FAILED_BADTYPE = "badType";
 	public final static String VALIDATION_FAILED_REQUIRED = "required";
 	public final static String VALIDATION_FAILED_MAXLENGTH = "length";
 	public final static String VALIDATION_FAILED_PATTERN = "pattern";
-	
+
 	public final static String VALIDATION_FAILED_REQUIRED_REL = "reqRel";
 	public final static String VALIDATION_FAILED_INVALID_REL_CONTENT = "badRelCon";
 	public final static String VALIDATION_FAILED_BAD_REL = "badRel";
 	public final static String VALIDATION_FAILED_UNIQUE = "unique";
-	
+	public final static String VALIDATION_FAILED_BAD_CARDINALITY = "badCar";
+
 	private static final long serialVersionUID = 1L;
 	private Map<String, List<Field>> notValidFields = new HashMap<String, List<Field>>();
 	private Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships = new HashMap<String, Map<Relationship, List<Contentlet>>>();
@@ -38,7 +39,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	public DotContentletValidationException(String x) {
 		super(x);
 	}
-	
+
 	/**
 	 * Used for throwing contentlet validation problems
 	 * @param x
@@ -66,7 +67,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		m.put(relationship, contentlets);
 		notValidRelationships.put(VALIDATION_FAILED_REQUIRED_REL, m);
 	}
-	
+
 	/**
 	 * If the contentlet doesn't match the proper structure
 	 * @param relationship
@@ -77,7 +78,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		m.put(relationship, contentlets);
 		notValidRelationships.put(VALIDATION_FAILED_INVALID_REL_CONTENT, m);
 	}
-	
+
 	/**
 	 * Use to add a validation exception if the structure isn't allowed to be related to the content
 	 * @param relationship
@@ -88,7 +89,18 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		m.put(relationship, contentlets);
 		notValidRelationships.put(VALIDATION_FAILED_BAD_REL, m);
 	}
-	
+
+	/**
+	 * Use to add a validation exception if the structure isn't allowed to be related to the content
+	 * @param relationship
+	 * @param contentlets
+	 */
+	public void addBadCardinalityRelationship(Relationship relationship, List<Contentlet> contentlets){
+		Map<Relationship, List<Contentlet>> m = new HashMap<Relationship, List<Contentlet>>();
+		m.put(relationship, contentlets);
+		notValidRelationships.put(VALIDATION_FAILED_BAD_CARDINALITY, m);
+	}
+
 	/**
 	 * Use to add a required field that failed validation
 	 * @param field
@@ -100,7 +112,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_REQUIRED, fields);
 	}
-	
+
 	/**
 	 * Use to add a field that failed pattern validation
 	 * @param field
@@ -112,7 +124,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_PATTERN, fields);
 	}
-	
+
 	/**
 	 * Use to add a field that failed length validation
 	 * @param field
@@ -124,7 +136,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_MAXLENGTH, fields);
 	}
-	
+
 	/**
 	 * Use to add a field that failed because it has an unknown type
 	 * @param field
@@ -136,7 +148,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_BADTYPE, fields);
 	}
-	
+
 	/**
 	 * Use to add a field that failed unique field validation
 	 * @param field
@@ -148,35 +160,35 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_UNIQUE, fields);
 	}
-	
+
 	public boolean hasRequiredErrors(){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_REQUIRED);
 		if(fields == null || fields.isEmpty())
 			return false;
 		return true;
 	}
-	
+
 	public boolean hasLengthErrors(){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_MAXLENGTH);
 		if(fields == null || fields.isEmpty())
 			return false;
 		return true;
 	}
-	
+
 	public boolean hasPatternErrors(){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_PATTERN);
 		if(fields == null || fields.isEmpty())
 			return false;
 		return true;
 	}
-	
+
 	public boolean hasBadTypeErrors(){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_BADTYPE);
 		if(fields == null || fields.isEmpty())
 			return false;
 		return true;
 	}
-	
+
 	/**
 	 * use to find out if contentlet has any field validation errors
 	 * @return
@@ -187,7 +199,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		}
 		return false;
 	}
-	
+
 	/**
 	 * use to find out is contentlet has any relationship validation errors
 	 * @return
@@ -198,17 +210,17 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		}
 		return false;
 	}
-	
+
 	/**
-	 * use to return the relationships that have errors  
+	 * use to return the relationships that have errors
 	 */
-	
+
 	public Map<String,Map<Relationship,List<Contentlet>>> getNotValidRelationship()
 	{
 		return notValidRelationships;
 	}
-	
-	
+
+
 	/**
 	 * use to find out is contentlet has any relationship validation errors
 	 * @return
@@ -219,21 +231,21 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 			return false;
 		return true;
 	}
-	
+
 	@Override
 	public String toString()
 	{
 		boolean parentException = true;
 		return toString(parentException);
 	}
-	
+
 	public String toString(boolean parentException)
 	{
 		StringBuffer sb = new StringBuffer();
 		if(parentException)
 		{
 			sb.append(super.toString() + "\n");
-		}				
+		}
 		//Print the Field errors
 		Set<String> keys = notValidFields.keySet();
 		if(keys.size() > 0)
@@ -247,7 +259,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 				{
 					sb.append(field.getVelocityVarName() + "/" + field.getFieldName() + ", ");
 				}
-				sb.append("\n");			
+				sb.append("\n");
 			}
 		}
 		//Print the Relationship errors
@@ -258,7 +270,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 			for(String key : keys)
 			{
 				sb.append(key.toUpperCase() + ": ");
-				Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);			
+				Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);
 				for(Entry<Relationship,List<Contentlet>> relationship : relationshipContentlets.entrySet())
 				{
 					sb.append(relationship.getKey().getRelationTypeValue() + ", ");
