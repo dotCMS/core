@@ -238,7 +238,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(ver.getIdentifier()))
             throw new DotStateException("No version info. Call setWorking first");
         ver.setLiveInode(null);
-        vfac.saveVersionInfo(ver);
+        vfac.saveVersionInfo(ver, true);
     }
 
     public void removeLive ( String identifier, long lang ) throws DotDataException, DotStateException, DotSecurityException {
@@ -292,7 +292,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
             info.setDeleted(deleted);
-            vfac.saveVersionInfo(info);
+            vfac.saveVersionInfo(info, true);
         }
     }
 
@@ -333,7 +333,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                 throw new DotStateException( "No version info. Call setWorking first" );
             }
             info.setLiveInode( versionable.getInode() );
-            vfac.saveVersionInfo( info );
+            vfac.saveVersionInfo( info, true );
         }
     }
 
@@ -360,7 +360,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                 info.setLocked(user.getUserId());
             else
                 info.unLock();
-            vfac.saveVersionInfo(info);
+            vfac.saveVersionInfo(info, false);
         }
     }
 
@@ -389,7 +389,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             }
             else {
                 info.setWorkingInode(versionable.getInode());
-                vfac.saveVersionInfo(info);
+                vfac.saveVersionInfo(info, true);
             }
         }
     }
@@ -442,7 +442,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	@Override
 	public void saveVersionInfo(VersionInfo vInfo) throws DotDataException, DotStateException {
-		vfac.saveVersionInfo(vInfo);
+		vfac.saveVersionInfo(vInfo, true);
 	}
 
 	@Override
