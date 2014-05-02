@@ -126,7 +126,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             dh.setQuery("from "+clazz.getName()+" where identifier=?");
             dh.setParam(identifier);
             Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
-            vi=(VersionInfo)dh.load(); 
+            vi=(VersionInfo)dh.load();
             if(!UtilMethods.isSet(vi.getIdentifier())) {
             	vi.setIdentifier(identifier);
             	vi.setWorkingInode("NOTFOUND");
@@ -173,21 +173,23 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 
     @Override
-    protected void saveVersionInfo(VersionInfo info) throws DotDataException, DotStateException {
+    protected void saveVersionInfo(VersionInfo info, boolean updateVersionTS) throws DotDataException, DotStateException {
 
     	//reload versionInfo from db (JIRA-7203)
         Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
+        HibernateUtil.evict(info);
         VersionInfo vi=(VersionInfo) findVersionInfoFromDb(ident);
+
+        if(updateVersionTS) {
+        	 vi.setVersionTs(new Date());
+        }
+
         boolean isNew = vi==null || !InodeUtils.isSet(vi.getIdentifier());
         try {
 			BeanUtils.copyProperties(vi, info);
 		} catch (Exception e) {
 			throw new DotDataException(e.getMessage());
 		}
-
-        if(updateVersionTS) {
-        	vi.setVersionTs(new Date());
-        }
 
         if(isNew) {
             HibernateUtil.save(vi);
@@ -227,7 +229,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
          contv = (ContentletVersionInfo)dh.load();
          return contv;
     }
-    
+
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
     	Identifier ident = APILocator.getIdentifierAPI().find(cvInfo.getIdentifier());
@@ -263,7 +265,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         cVer.setLang(lang);
         cVer.setWorkingInode(workingInode);
         cVer.setVersionTs(new Date());
-        
+
         HibernateUtil.save(cVer);
         return cVer;
     }
@@ -307,7 +309,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         dh.setParam(lang);
         Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
         ContentletVersionInfo contv = (ContentletVersionInfo)dh.load();
-     
+
         if(UtilMethods.isSet(contv.getIdentifier())) {
         	HibernateUtil.delete(contv);
         	icache.removeContentletVersionInfoToCache(id, lang);
