@@ -316,6 +316,7 @@ public class SubmitContentUtil {
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
 		Structure st = StructureCache.getStructureByName(structureName);
 		String contentletInode = null;
+		long contentLanguageId = 1;
 		Field fileField = new Field(),imageField=new Field(),binaryField=new Field();
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		for (Field field : fields) {
@@ -325,10 +326,12 @@ public class SubmitContentUtil {
 				imageField= field;
 			else if(parametersName.contains(field.getVelocityVarName()+"oldBinaryInode"))
 				binaryField= field;
+
 		}	
+
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(st.getInode());
-		contentlet.setLanguageId(lAPI.getDefaultLanguage().getId());
+		contentlet.setLanguageId(contentLanguageId);
 
 		for(int i=0; i < parametersName.size(); i++){
 			String fieldname = parametersName.get(i);
