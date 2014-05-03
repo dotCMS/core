@@ -179,11 +179,11 @@ function doPaste(){
                         <dt><%= LanguageUtil.get(pageContext, "I-want-to") %>:</dt>
                         <dd>
                             
-                            <input onChange="doShowHideRequest()" type="radio" checked="true" name="iwantTo" id="requestRadio"  dojoType="dijit.form.RadioButton" value="request_trial">
-                            <label for="requestRadio"><%= LanguageUtil.get(pageContext, "request-trial-license") %></label><br/>
+                            <input onChange="doShowHideRequest()" type="radio" checked="true" name="iwantTo" id="requestRadio"  dojoType="dijit.form.RadioButton" value="request_trial" style="display:none">
+                            <label for="requestRadio" style="display:none"><%= LanguageUtil.get(pageContext, "request-trial-license") %></label>
 
-                            <input onChange="doShowHideRequest()" type="radio" checked="false" name="iwantTo" id="reqonlineRadio"  dojoType="dijit.form.RadioButton" value="request_online">
-                            <label for="requestRadio"><%= LanguageUtil.get(pageContext, "request-online-to-support-portal") %></label><br/>
+                            <input onChange="doShowHideRequest()" type="radio" checked="false" name="iwantTo" id="reqonlineRadio"  dojoType="dijit.form.RadioButton" value="request_online" style="display:none">
+                            <label for="requestRadio" style="display:none"><%= LanguageUtil.get(pageContext, "request-online-to-support-portal") %></label>
 
                             <input onChange="doShowHideRequest()" type="radio" checked="false" name="iwantTo" id="reqcodeRadio"  dojoType="dijit.form.RadioButton" value="request_code">
                             <label for="requestRadio"><%= LanguageUtil.get(pageContext, "request-code-for-support-portal") %></label><br/>
@@ -197,7 +197,7 @@ function doPaste(){
                             <input type="hidden" name="iwantTo" value="paste_license"/> 
                     <%}%>
                     <dt>
-                    <dd id="requestMe" style="<%if(!isCommunity){ %>display:none<%} %>">
+                    <dd id="requestMe" style="display:none">
                         <button  id="requestTrialButton" iconClass="keyIcon" onclick="requestTrial()"  dojoType="dijit.form.Button" value="request_trial"><%= LanguageUtil.get(pageContext, "request-trial-license") %></button>
                         <br />&nbsp;<br><%= LanguageUtil.get(pageContext, "license-you-request-will-automatically-be-downloaded-and-installed") %>
                     
