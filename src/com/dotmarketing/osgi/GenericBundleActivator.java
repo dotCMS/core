@@ -1,5 +1,60 @@
 package com.dotmarketing.osgi;
 
+import static com.dotmarketing.osgi.ActivatorUtil.PATH_SEPARATOR;
+import static com.dotmarketing.osgi.ActivatorUtil.cleanResources;
+import static com.dotmarketing.osgi.ActivatorUtil.findCustomURLLoader;
+import static com.dotmarketing.osgi.ActivatorUtil.getBundleFolder;
+import static com.dotmarketing.osgi.ActivatorUtil.getManifestHeaderValue;
+import static com.dotmarketing.osgi.ActivatorUtil.getModuleConfig;
+import static com.dotmarketing.osgi.ActivatorUtil.moveResources;
+import static com.dotmarketing.osgi.ActivatorUtil.moveVelocityResources;
+import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
+import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.PropertyResourceBundle;
+import java.util.Set;
+
+import javax.servlet.Filter;
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+
+import org.apache.felix.http.api.ExtHttpService;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.apache.velocity.tools.view.ToolInfo;
+import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
+import org.osgi.util.tracker.ServiceTracker;
+import org.quartz.CronTrigger;
+import org.quartz.Job;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.impl.StdSchedulerFactory;
+import org.springframework.web.servlet.DispatcherServlet;
+
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.Validate;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.struts.org.apache.struts.config.ActionConfig;
@@ -7,10 +62,16 @@ import com.dotcms.repackage.struts.org.apache.struts.config.ForwardConfig;
 import com.dotcms.repackage.struts.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.urlrewritefilter_4_0_3.org.tuckey.web.filters.urlrewrite.NormalRule;
 import com.dotcms.repackage.urlrewritefilter_4_0_3.org.tuckey.web.filters.urlrewrite.Rule;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.config.RestServiceUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
@@ -28,20 +89,6 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
-import org.apache.felix.http.proxy.DispatcherTracker;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.apache.velocity.tools.view.ToolInfo;
-import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.quartz.SchedulerException;
-
-import java.net.URL;
-import java.util.*;
-
-import static com.dotmarketing.osgi.ActivatorUtil.*;
 
 /**
  * Created by Jonathan Gamba
@@ -67,6 +114,13 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private Collection<Rule> rules;
     private Collection<String> preHooks;
     private Collection<String> postHooks;
+    
+	private List<ServiceTracker<ExtHttpService, ExtHttpService>> trackers = new ArrayList<ServiceTracker<ExtHttpService, ExtHttpService>>();
+	private boolean languageVariablesNotAdded = true;
+
+    private Scheduler scheduler;
+    private Properties schedulerProperties;
+    
 
     /**
      * Verify and initialize if necessary the required OSGI services to create plugins
@@ -557,7 +611,324 @@ public abstract class GenericBundleActivator implements BundleActivator {
         interceptor.addPostHook( postHook );
         postHooks.add( postHook.getClass().getName() );
     }
+    
+	protected void addServlet(BundleContext context, final Class<? extends Servlet> clazz, final String path) {
+		Validate.notNull(clazz, "Servlet class may not be null");
+		Validate.notEmpty(path, "Servlet path may not be null");
+		Validate.isTrue(path.startsWith("/"), "Servlet path must start with a /");
 
+		final Servlet servlet;
+		try {
+			servlet = clazz.newInstance();
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+
+		Logger.info(this, "Registering Servlet " + servlet.getClass().getSimpleName());
+
+		addServlet(context, servlet, path, false);
+	}
+
+	/**
+	 * @param handleBundleServices is used to add/remove bundleServices, which are needed for the DispatcherServlet
+	 */
+	private void addServlet(BundleContext context, final Servlet servlet, final String path, final boolean handleBundleServices) {
+		ServiceTracker<ExtHttpService, ExtHttpService> tracker = new ServiceTracker<ExtHttpService, ExtHttpService>(context, ExtHttpService.class, null) {
+			@Override public ExtHttpService addingService(ServiceReference<ExtHttpService> reference) {
+				ExtHttpService extHttpService = super.addingService(reference);
+
+				try {
+					if(handleBundleServices) {
+						publishBundleServices(context);
+					}
+
+					extHttpService.registerServlet(path, servlet, null, null);
+
+				} catch (Exception e) {
+					throw new RuntimeException("Failed to register servlet " + servlet.getClass().getSimpleName(), e);
+				}
+
+				CMSFilter.addExclude(path);
+				CMSFilter.addExclude("/app" + path);
+
+				return extHttpService;
+			}
+			@Override public void removedService(ServiceReference<ExtHttpService> reference, ExtHttpService extHttpService) {
+				extHttpService.unregisterServlet(servlet);
+				CMSFilter.removeExclude(path);
+				CMSFilter.removeExclude("/app" + path);
+
+				if(handleBundleServices) {
+					try {
+						unpublishBundleServices();
+					} catch (Exception e) {
+						//Only a warning since this exception was added later
+						Logger.warn(this, "Exception while unpublishing bundle services", e);
+					}
+				}
+
+				super.removedService(reference, extHttpService);
+			}
+		};
+
+		this.trackers.add(tracker);
+		tracker.open();
+
+	}
+
+	protected void addFilter(BundleContext context, final Class <? extends Filter> clazz, final String regex) {
+		Validate.notNull(clazz, "Filter class may not be null");
+		Validate.notEmpty(regex, "Filter regex may not be null");
+		Validate.isTrue(regex.startsWith("/"), "Filter regex must start with a /");
+
+		final Filter filterToRegister;
+		try {
+			filterToRegister = clazz.newInstance();
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+
+		Logger.info(this, "Registering Filter " + filterToRegister.getClass().getSimpleName());
+
+		ServiceTracker<ExtHttpService, ExtHttpService> tracker = new ServiceTracker<ExtHttpService, ExtHttpService>(context, ExtHttpService.class, null) {
+			@Override public ExtHttpService addingService(ServiceReference<ExtHttpService> reference) {
+				ExtHttpService extHttpService = super.addingService(reference);
+
+				try {
+
+					extHttpService.registerFilter(filterToRegister, regex, null, trackers.size(), null);
+
+				} catch (ServletException e) {
+					throw new RuntimeException("Failed to register filter " + filterToRegister.getClass().getSimpleName(), e);
+				}
+
+				CMSFilter.addExclude(regex);
+				CMSFilter.addExclude("/app" + regex);
+
+				return extHttpService;
+			}
+			@Override public void removedService(ServiceReference<ExtHttpService> reference, ExtHttpService extHttpService) {
+				extHttpService.unregisterFilter(filterToRegister);
+				CMSFilter.removeExclude(regex);
+				CMSFilter.removeExclude("/app" + regex);
+				super.removedService(reference, extHttpService);
+			}
+		};
+
+		tracker.open();
+		this.trackers.add(tracker);
+
+	}
+
+	/**
+	 * This method parses the conf/macros-ext.vm file. This means that the macros in that file will
+	 * be available in Dotcms, but can't be removed. They will be stored in memory. 
+	 * @param context
+	 */
+	protected void addMacros(BundleContext context) {
+		Logger.info(this, "Registering macros");
+
+		final VelocityEngine engine = VelocityUtil.getEngine();
+		URL macrosExtUrl = context.getBundle().getResource("conf/macros-ext.vm");
+
+		InputStream instream = null;
+		try {
+			instream = macrosExtUrl.openStream();
+		    engine.evaluate(VelocityUtil.getBasicContext(), new StringWriter(), context.getBundle().getSymbolicName(), new InputStreamReader(instream, Charset.forName("UTF-8")));
+		} catch (IOException e) {
+			Logger.warn(this, "Exception while reading macros-ext.vm", e);
+		} finally {
+			try {
+				if(instream != null) {
+					instream.close();
+				}
+			} catch (IOException e) {
+				Logger.warn(this, "Exception while closing stream to macros-ext.vm", e);
+			}
+		}
+	}
+
+	private void addLanguageVariables(Map<String, String> languageVariables, Language language) {
+		Map<String, String> emptyMap = new HashMap<String, String>();
+		Set<String> emptySet = new HashSet<String>();
+		try {
+
+			Logger.info(this, "Registering " + languageVariables.keySet().size() + " language variable(s)");
+			APILocator.getLanguageAPI().saveLanguageKeys(language, languageVariables, emptyMap, emptySet);
+
+		} catch (DotDataException e) {
+			Logger.warn(this, "Unable to register language variables", e);
+		}
+	}
+
+	/**
+	 * Registers the ENGLISH language variables that are saved in the conf/language-ext.properties file
+	 * TODO: add multi-language functionality
+	 */
+	protected void addLanguageVariables(BundleContext context) {
+		if(languageVariablesNotAdded) {
+			languageVariablesNotAdded = false;
+			try {
+
+				// Read all the language variables from the properties file
+				URL resourceURL = context.getBundle().getResource("conf/Language-ext.properties");
+				PropertyResourceBundle resourceBundle = new PropertyResourceBundle(resourceURL.openStream());
+
+				// Put the properties in a map
+				Map<String, String> languageVariables = new HashMap<String, String>();
+				for(String key: resourceBundle.keySet()) {
+					languageVariables.put(key, resourceBundle.getString(key));
+				}
+
+				// Register the variables in locale en_US
+				addLanguageVariables(languageVariables, APILocator.getLanguageAPI().getLanguage("en", "US"));
+
+			} catch (IOException e) {
+				Logger.warn(this, "Exception while registering language variables", e);
+			}
+		}
+	}
+	
+	protected void addRestService(BundleContext context, final Class<? extends WebResource> clazz) {
+		Logger.info(this, "Registering REST service " + clazz.getSimpleName());
+		ServiceTracker<ExtHttpService, ExtHttpService> tracker = new ServiceTracker<ExtHttpService, ExtHttpService>(context, ExtHttpService.class, null) {
+			@Override public ExtHttpService addingService(ServiceReference<ExtHttpService> reference) {
+				ExtHttpService extHttpService = super.addingService(reference);
+
+				RestServiceUtil.addResource(clazz);
+				return extHttpService;
+			}
+			@Override public void removedService(ServiceReference<ExtHttpService> reference, ExtHttpService extHttpService) {
+				RestServiceUtil.removeResource(clazz);
+				super.removedService(reference, extHttpService);
+			}
+		};
+
+		tracker.open();
+		this.trackers.add(tracker);
+
+	}
+
+	protected void addPortlets(BundleContext context) {
+		if(languageVariablesNotAdded) {
+			addLanguageVariables(context);
+		}
+
+		Logger.info(this, "Registering portlet(s)");
+
+		ServiceTracker<ExtHttpService, ExtHttpService> tracker = new ServiceTracker<ExtHttpService, ExtHttpService>(context, ExtHttpService.class, null) {
+			@Override public ExtHttpService addingService(ServiceReference<ExtHttpService> reference) {
+				ExtHttpService extHttpService = super.addingService(reference);
+
+				try {
+					registerPortlets(context, new String[] { "conf/portlet.xml", "conf/liferay-portlet.xml"});
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+
+				return extHttpService;
+			}
+			@Override public void removedService(ServiceReference<ExtHttpService> reference, ExtHttpService extHttpService) {
+				try {
+					unregisterPortles();
+				} catch (Exception e) {
+					Logger.warn(this, "Exception while unregistering portlet", e);
+				}
+				super.removedService(reference, extHttpService);
+			}
+		};
+
+		tracker.open();
+		this.trackers.add(tracker);
+
+		CacheLocator.getVeloctyResourceCache().clearCache();
+	}
+
+	protected void addSpringController(BundleContext context, String path, String contextConfigLocation) {
+		Logger.info(this, "Registering spring controller " + contextConfigLocation);
+
+		try {
+			publishBundleServices(context);
+		} catch (Exception e) {
+			Logger.warn(this, "Unable to publish bundle services", e);
+		}
+
+		DispatcherServlet dispatcherServlet = new DispatcherServlet();
+		dispatcherServlet.setContextConfigLocation(contextConfigLocation);
+
+		addServlet(context, dispatcherServlet, path, true);
+	}
+	
+	/**
+	 * Set the properties that the org.quartz Scheduler will use. Can only be called once, and only before
+	 * a Job is added.
+	 */
+	protected void initializeSchedulerProperties(Properties properties) {
+		if(this.schedulerProperties != null) {
+			throw new IllegalStateException("Can't overwrite scheduler properties when they are already set. Set the properties before adding Jobs, and do not change them afterwards.");
+		}
+		
+		this.schedulerProperties = properties;
+	}
+	
+	protected Properties getDefaultSchedulerProperties() {
+        Properties properties = new Properties();
+        
+        //Default properties, retrieved from a quartz.properties file
+        //We only changed the threadcount to 1
+        properties.setProperty("org.quartz.scheduler.instanceName", "DefaultQuartzScheduler");
+        properties.setProperty("org.quartz.scheduler.rmi.export", "false");
+        properties.setProperty("org.quartz.scheduler.rmi.proxy", "false");
+        properties.setProperty("org.quartz.scheduler.wrapJobExecutionInUserTransaction", "false");
+        properties.setProperty("org.quartz.threadPool.class", "org.quartz.simpl.SimpleThreadPool");
+        properties.setProperty("org.quartz.threadPool.threadCount", "1");
+        properties.setProperty("org.quartz.threadPool.threadPriority", "5");
+        properties.setProperty("org.quartz.threadPool.threadsInheritContextClassLoaderOfInitializingThread", "true");
+        properties.setProperty("org.quartz.jobStore.misfireThreshold", "60000");
+        properties.setProperty("org.quartz.jobStore.class", "org.quartz.simpl.RAMJobStore");
+		
+        return properties;
+	}
+	
+	/**
+	 * Adds a Job, and starts a Scheduler when none was yet started
+	 */
+	protected void addJob(BundleContext context, Class<? extends Job> clazz, String cronExpression) {
+		String jobName = clazz.getName();
+		String jobGroup = FrameworkUtil.getBundle(clazz).getSymbolicName();
+        JobDetail job = new JobDetail(jobName, jobGroup, clazz);
+        job.setDurability(false);
+        job.setVolatility(true);
+        job.setDescription(jobName);
+        
+        try {
+	        CronTrigger trigger = new CronTrigger(jobName, jobGroup, cronExpression);
+	        
+	        if(scheduler == null) {
+	        	if(schedulerProperties == null) {
+	        		schedulerProperties = getDefaultSchedulerProperties();
+	        	}
+	        	scheduler = new StdSchedulerFactory(schedulerProperties).getScheduler();
+				scheduler.start();
+	        }
+	        
+			Date date = scheduler.scheduleJob(job, trigger);
+			
+			Logger.info(this, "Scheduled job " + jobName + ", next trigger is on " + date);
+			
+        } catch (ParseException e) {
+        	Logger.error(this, "Cron expression '" + cronExpression + "' has an exception. Throwing IllegalArgumentException", e);
+        	throw new IllegalArgumentException(e);
+        } catch (SchedulerException e) {
+        	Logger.error(this, "Unable to schedule job " + jobName, e);
+		}
+		
+	}
+	
     //*******************************************************************
     //*******************************************************************
     //****************UNREGISTER SERVICES METHODS************************
@@ -581,8 +952,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterRewriteRule();
         cleanResources( context );
         unregisterServlets( context );
+        
+		removeTrackedServices();
+		removeScheduler();
     }
-
+    
     /**
      * Unpublish this bundle elements
      */
@@ -775,6 +1149,27 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 throw new RuntimeException( "Non UrlRewriteFilter found!" );
             }
         }
+    }
+    
+	/**
+	 * Removes Dotcms services that are tracked by the GenericBundleActivator. These are
+	 * services that require more than just a simple register/unregister. For instance Servlets and Filters.
+	 */
+	protected void removeTrackedServices() {
+		for(ServiceTracker<ExtHttpService, ExtHttpService> tracker: trackers) {
+			tracker.close();
+		}
+	}
+	
+	/**
+	 * Shutdown and remove the scheduler if one was instantiated
+	 */
+    private void removeScheduler() throws Exception {
+		if(scheduler != null) {
+			scheduler.shutdown(false);
+			scheduler = null;
+			schedulerProperties = null;
+		}
     }
 
 }
