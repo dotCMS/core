@@ -380,9 +380,9 @@ var deleteLabel = "";
                     <%}%>
 		    	    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
                 <%}%>
-
+				<%if(!structure.isFixed()){%>
                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"stopIcon\" onClick=\"deleteStructure('<%=structure.getInode()%>');\">"+deleteLabel+"</div>";
-
+				<%}%>
 		        popupMenus += "</div>";
 
 		        popupMenusDiv = document.getElementById("results_table_popup_menus");
