@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.structure.business;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,12 +12,14 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
@@ -73,6 +76,9 @@ public class StructureAPIImpl implements StructureAPI {
             contentlets = conAPI.findByStructure(st, user, false, limit, offset);
             conAPI.delete(contentlets, user, false);
         } while(contentlets.size()>0);
+
+        //delete bad data contents
+        deleteStructureContentlets(st.getInode());
         
         // delete Forms entry if it is a form structure
         if (st.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
@@ -129,9 +135,17 @@ public class StructureAPIImpl implements StructureAPI {
 				
 		
 	}
-    
-    
-    
-    
-    
+
+	/**
+	 * Delete broken contentlet that use the structure specified
+	 * @param structureInode
+	 */
+	private void deleteStructureContentlets(String structureInode){
+		 DotConnect db = new DotConnect();
+	     db.setSQL("delete from contentlet where structure_inode = '" + structureInode + "'");
+	     db.getResult();
+	}
+
+
+
 }
