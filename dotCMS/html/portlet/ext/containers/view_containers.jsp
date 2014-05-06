@@ -202,7 +202,7 @@ function processDelete(inode, referer) {
 	<div class="yui-u first">
 
 		<select name="structure_id" id="structure_id" autocomplete="false"  dojoType="dijit.form.FilteringSelect" onChange="submitfm()" >
-			<OPTION value=" " selected="selected"><%= LanguageUtil.get(pageContext, "Any-Structure") %></OPTION>
+			<OPTION value=" " <%=!UtilMethods.isSet(structureId)?"selected":""%>><%= LanguageUtil.get(pageContext, "Any-Structure") %></OPTION>
 			<%
 				Iterator structuresIt = structures.iterator();
 				while (structuresIt.hasNext()) {
