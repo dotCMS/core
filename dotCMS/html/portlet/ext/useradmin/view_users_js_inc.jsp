@@ -1567,6 +1567,7 @@
 				roleNode = data;
 			},
 			error : function(error) {
+                console.error("Error returning Role data for role id [" + roleid + "]", error);
 				targetNode.innerHTML = "An unexpected error occurred: " + error;
 			}
 		};

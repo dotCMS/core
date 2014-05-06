@@ -333,6 +333,7 @@ public class SubmitContentUtil {
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
 		Structure st = StructureCache.getStructureByName(structureName);
 		String contentletInode = null;
+		long contentLanguageId = 1;
 		Field fileField = new Field(),imageField=new Field(),binaryField=new Field();
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		for (Field field : fields) {
@@ -349,12 +350,14 @@ public class SubmitContentUtil {
 				customDatePattern = values.get(i)[0];
 			if(parametersName.get(i).equals("customDateTimePattern"))
 				customDateTimePattern = values.get(i)[0];
+			if(parametersName.get(i).equals("contentLanguageId"))
+				contentLanguageId = Long.parseLong(values.get(i)[0]);
 		}
 		
 			 
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(st.getInode());
-		contentlet.setLanguageId(lAPI.getDefaultLanguage().getId());
+		contentlet.setLanguageId(contentLanguageId);
 
 		for(int i=0; i < parametersName.size(); i++){
 			String fieldname = parametersName.get(i);

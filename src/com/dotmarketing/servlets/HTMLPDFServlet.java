@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.dotmarketing.servlets;
 
@@ -25,24 +25,26 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
 import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilder;
 import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilderFactory;
-
 import com.dotcms.repackage.struts.org.apache.struts.Globals;
+
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.tools.view.context.ChainedContext;
+
 import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Document;
 import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Node;
 import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.NodeList;
 import com.dotcms.repackage.tidy.org.w3c.tidy.Tidy;
 import com.dotcms.repackage.core_renderer_modified.org.xhtmlrenderer.pdf.ITextRenderer;
+import com.dotcms.repackage.esapi_2_0_1.org.owasp.esapi.ESAPI;
 import com.dotcms.repackage.tika_app_1_3.org.xml.sax.EntityResolver;
 import com.dotcms.repackage.tika_app_1_3.org.xml.sax.InputSource;
-
 import com.dotmarketing.beans.BrowserSniffer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -63,6 +65,8 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.servlets.taillog.TailLogServlet;
+import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -73,23 +77,24 @@ import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.liferay.util.Xss;
 import com.dotcms.repackage.itext_2_1_0.com.lowagie.text.DocumentException;
 
 /**
  * @author Jason Tesser
  * @author Andres Olarte
  * @since 1.6.5
- * 
+ *
  */
 public class HTMLPDFServlet extends VelocityServlet {
 
 	private static final FileAPI fileAPI = APILocator.getFileAPI();
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 	private PermissionAPI perAPI;
-	
+
 	private User user;
 	Map<String, String> map = new HashMap<String, String>();
 	private ServletContext context;
@@ -101,14 +106,25 @@ public class HTMLPDFServlet extends VelocityServlet {
 	protected void service(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 
-		
-		
-		
-		
-		
+
+
+		if(!Xss.ESAPI_VALIDATION) {
+			String queryString = req.getQueryString();
+
+			//Canonicalizes input before validation to prevent bypassing filters with encoded attacks.
+	        queryString = ESAPI.encoder().canonicalize( queryString, false );
+
+			//Validate the query string
+			if(!ESAPI.validator().isValidInput( "URLContext", queryString, "HTTPQueryString", queryString.length(), true )) {
+				resp.sendError(403);
+				AdminLogger.log(HTMLPDFServlet.class, "service", "Someone tried to use the HTMLPDFServlet for XSS");
+				return;
+			}
+		}
+
 		String fName = req.getParameter("fname");
 		resp.setContentType("application/pdf");
-		
+
 		if(UtilMethods.isSet(fName)){
 			if(!fName.toLowerCase().endsWith(".pdf")){
 				fName= fName + ".pdf";
@@ -117,22 +133,22 @@ public class HTMLPDFServlet extends VelocityServlet {
 		else{
 			fName = "document.pdf";
 		}
-		
+
 		BrowserSniffer bs = new BrowserSniffer(req.getHeader("User-Agent"));
-			
+
 		if(bs.isBot()){
 			resp.sendError(401, "No Bots Allowed");
 			return;
 		}
-		
-		
-		
+
+
+
 		resp.setHeader("Content-Disposition", "attachment; filename=" + fName);
 		HttpSession session = req.getSession();
 		String reqURI = req.getRequestURI();
 
 		Logger.debug(this, "Starting PDFServlet at URI " + reqURI);
-		
+
 		// Copied directly out of VelocityServlet
 		String language = String.valueOf(langAPI.getDefaultLanguage().getId());
 		// set default page language
@@ -175,13 +191,13 @@ public class HTMLPDFServlet extends VelocityServlet {
 		} catch (SystemException e2) {
 			Logger.debug(this, "SystemException: " + e2.getMessage(), e2);
 		}
-		
+
 		if(user != null){
 			Logger.debug(this, "The user is " + user.getUserId());
 		}else{
 			Logger.debug(this, "The user is null");
 		}
-		
+
 		boolean working = false;
 		boolean live = false;
 
@@ -193,7 +209,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 		}
 
 		Logger.debug(this, "The location is " + location);
-		
+
 		boolean PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
 		boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null));
 
@@ -390,7 +406,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 			try {
 				ident = APILocator.getIdentifierAPI().find(host, uri);
 			} catch (Exception e) {
-				Logger.debug(this, "Exception: " + e.getMessage(), e);			} 
+				Logger.debug(this, "Exception: " + e.getMessage(), e);			}
 		} catch (Exception e1) {
 			Logger.debug(this, e1.getMessage(), e1);
 		}
@@ -617,7 +633,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 
 		return text;
 	}
-	
+
 	@Override
 	public void _setClientVariablesOnContext(HttpServletRequest request,
 			ChainedContext context) {
@@ -646,7 +662,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 		} catch (DotDataException e) {
 			Logger.error(HTMLPDFServlet.class, e.getMessage(), e);
 			throw new ServletException(e.getMessage(), e);
-			
+
 		} catch (DotSecurityException e) {
 			Logger.error(HTMLPDFServlet.class, e.getMessage(), e);
 			throw new ServletException(e.getMessage(), e);
@@ -677,7 +693,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 		}
 
 	}
-	
+
 	private static class DTDResolver implements EntityResolver {
 		public InputSource resolveEntity(String publicId, String systemId) {
 			String uri = null;

@@ -322,7 +322,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //APILocator.getVersionableAPI().setLocked(contentlet.getIdentifier(), false, user);
 
             publishAssociated(contentlet, false);
-            
+
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
                 Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
                 CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
@@ -1346,7 +1346,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // Updating lucene index
             indexAPI.addContentToIndex(workingContentlet);
-            
+
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
                 Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
                 CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
@@ -1527,7 +1527,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
             CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
         }
-        
+
         ContentletServices.unpublishContentletFile(contentlet);
         ContentletMapServices.unpublishContentletMapFile(contentlet);
         publishRelatedHtmlPages(contentlet);
@@ -1797,6 +1797,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //If contentlet is not new
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
             workingCon = findWorkingContentlet(contentlet);
+
+            if(cats==null) {
+            	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+            }
+
             contentRelationships = findContentRelationships(workingCon);
         }
         else
@@ -1826,7 +1831,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //If contentlet is not new
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
             workingCon = findWorkingContentlet(contentlet);
-            cats = catAPI.getParents(contentlet, APILocator.getUserAPI().getSystemUser(), true);
+            cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
             contentRelationships = findContentRelationships(workingCon);
         }
         else
@@ -1851,6 +1856,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //If contentlet is not new
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
             workingCon = findWorkingContentlet(contentlet);
+            if(cats==null) {
+            	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+            }
+            if(contentRelationships==null) {
+            	 contentRelationships = findContentRelationships(workingCon);
+            }
             permissions = perAPI.getPermissions(workingCon);
         }
 
@@ -1876,7 +1887,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
             workingCon = findWorkingContentlet(contentlet);
             permissions = perAPI.getPermissions(workingCon);
-            cats = catAPI.getParents(contentlet, APILocator.getUserAPI().getSystemUser(), true);
+            cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+
+            if(contentRelationships==null) {
+            	contentRelationships = findContentRelationships(workingCon);
+            }
         }
 
         if(permissions == null)
@@ -1937,6 +1952,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //If contentlet is not new
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
             workingCon = findWorkingContentlet(contentlet);
+            if(cats==null) {
+            	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+            }
             permissions = perAPI.getPermissions(workingCon, false, true);
             contentRelationships = findContentRelationships(workingCon);
         }
@@ -2494,7 +2512,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				            }
 				        }
 				    }
-				    
+
 				    // clear possible CSS cache
 				    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
 				    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
@@ -3409,6 +3427,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         cve.addRequiredRelationship(rel, cons);
                     }
+                    if(rel.getCardinality()==0 && cons.size()>1) {
+                    	hasError = true;
+                    	cve.addBadCardinalityRelationship(rel, cons);
+                    }
                     for(Contentlet con : cons){
                         if(!con.getStructureInode().equalsIgnoreCase(rel.getParentStructureInode())){
                             hasError = true;
@@ -3751,7 +3773,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return o1.getModDate().compareTo(o2.getModDate());
             }
     	});
-    	
+
     	for(Contentlet contentlet : versionsToCopy){
 
         	boolean isContentletLive = false;
@@ -3859,7 +3881,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	                rels.put(crr.getRelationship(), crr.getRecords());
 	            }
             }
-            
+
             newContentlet.getMap().put("_dont_validate_me",contentletToCopy.getMap().get("_dont_validate_me"));
             newContentlet.getMap().put("__disable_workflow__",contentletToCopy.getMap().get("__disable_workflow__"));
 
