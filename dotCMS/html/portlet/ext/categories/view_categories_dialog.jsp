@@ -195,7 +195,7 @@
 	function createGrid<%=counter%>() {
 			var layout = [
 			{
-				field : 'add',
+				field : '',
 				name : ' ',
 				width : '20px',
 				formatter : addFormatter<%=counter%>
