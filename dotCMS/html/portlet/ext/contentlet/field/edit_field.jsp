@@ -35,13 +35,15 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.portlets.structure.model.FieldVariable"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 
 <%
     Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-
+    Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
+    long contentLanguage = contentlet.getLanguageId();
     Field field = (Field) request.getAttribute("field");
 
     Object value = (Object) request.getAttribute("value");
@@ -137,7 +139,7 @@
             textValue = textValue.replaceAll("<", "&lt;");
             textValue = textValue.replaceAll(">", "&gt;");
         }
-        List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true); 
+        List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
         for(FieldVariable fv : fieldVariables){
 			if(fv.getKey().equals( com.dotmarketing.util.WebKeys.TEXT_EDITOR)){
 				keyValue = fv.getValue();
@@ -164,7 +166,7 @@
             type="text" id="glossary_term_<%= field.getVelocityVarName() %>"
             name="glossary_term_<%= field.getVelocityVarName() %>"
             class="form-text"
-            onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= defaultLang.getId() %>');" />
+            onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
             <div style="position: absolute; display: none;"
                 id="glossary_term_popup_<%= field.getVelocityVarName() %>">
                 <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
@@ -246,7 +248,7 @@
 	                	<input type="text" dojoType="dijit.form.TextBox" id="glossary_term_<%= field.getVelocityVarName() %>"
 							name="glossary_term_<%= field.getVelocityVarName() %>"
 	                    	class="form-text"
-							onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= defaultLang.getId() %>');" />
+							onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
 
 							<div style="display:none;position:absolute;border:1px solid #ddd;padding:5px 10px;z-index:1" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
 	                    		<div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
@@ -406,7 +408,7 @@
             	java.io.File fileValue = (java.io.File)value;
                 fileName = fileValue.getName();
         	}
-        	
+
         	catch(Exception e){
         		Logger.error(this.getClass(), "-----------------------------------");
         		Logger.error(this.getClass(), e.getMessage());
@@ -475,11 +477,10 @@
             <%}
 
             }%>
-            <% com.dotmarketing.portlets.contentlet.model.Contentlet contentlet = (com.dotmarketing.portlets.contentlet.model.Contentlet) request.getAttribute("contentlet"); %>
             <div id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
                fieldName="<%=field.getVelocityVarName()%>"
                inode="<%= binInode%>"
-               identifier="<%=field.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')" 
+               identifier="<%=field.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
                dojoType="dotcms.dijit.form.FileAjaxUploader" onUploadFinish="saveBinaryFileOnContent<%=field.getVelocityVarName()%>">
             </div>
             <script type="text/javascript">

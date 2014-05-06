@@ -1053,7 +1053,9 @@ function updateDateTime(fieldname){
 
 function updateCategoriesList(inode, name, selectval){	
  var f=dijit.byId(selectval).attr('value');
- var c=dojo.byId(name).value.indexOf(dojo.byId(selectval).value);
+ var selectValue = dojo.byId(selectval).value;
+ var c=dojo.byId(name).value.indexOf(selectValue);
+
 
     if (c == -1){
          var categorias  = f.split(',');
@@ -1074,7 +1076,10 @@ function updateCategoriesList(inode, name, selectval){
 		buffer+="";
 		dojo.byId(inode+'categorieslist').innerHTML = buffer;
 	}
-	else alert("Category already selected");
+    else if(selectValue){
+    	alert("Category already selected");
+    	}
+    dijit.byId(selectval).attr('displayedValue','');
 }
 
 function clearCategoriesList(inode, name){	

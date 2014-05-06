@@ -1521,6 +1521,10 @@ public class ContentletAjax {
 						{
 							errorMessage = "<b>Bad Relationship</b>";
 						}
+						else if(key.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY))
+						{
+							errorMessage = "<b>One to Many Relation Violated</b>";
+						}
 
 						sb.append(errorMessage + ":<br>");
 						Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);

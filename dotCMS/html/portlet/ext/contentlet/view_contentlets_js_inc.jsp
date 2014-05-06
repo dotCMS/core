@@ -1576,6 +1576,7 @@
         }
 
         function previousPage () {
+        	if(parseInt(currentPage-1) > 0)
                 doSearch (currentPage - 1);
         }
 
