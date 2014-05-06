@@ -12,6 +12,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
     dateFilter: false,
     container: null,
     cats: false,
+    restricted:false,
 
     show: function () {
 
@@ -28,6 +29,8 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         //Verify if we need to display the date filtering box
         var dateFilter = this.dateFilter;
         var cats = this.cats;
+        var restricted = this.restricted;
+        
         var connection = dojo.connect(dia, "onLoad", function () {
             dojo.disconnect(connection);
 
@@ -38,7 +41,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
                 filterDiv.style.display = "none";
             }
 
-            if(cats) {
+            if(cats || restricted) {
             	dijit.byId("iwtExpire").set("disabled", true) ;
             	dijit.byId("iwtPublishExpire").set("disabled", true) ;
             }

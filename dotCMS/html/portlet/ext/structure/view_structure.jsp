@@ -187,8 +187,12 @@ dojo.addOnLoad(function() {
 dojo.require("dotcms.dojo.push.PushHandler");
 var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
-function remotePublishStructure (inode) {
-	pushHandler.showDialog(inode);
+function remotePublishStructure (inode,isFixed) {
+	if(isFixed){
+		pushHandler.showRestrictedDialog(inode);
+	}else{
+		pushHandler.showDialog(inode);
+	}
 }
 
 function addToBundle (objId) {
@@ -376,7 +380,7 @@ var deleteLabel = "";
 
                 <% if ( enterprise ) { %>
                     <% if ( sendingEndpoints ) { %>
-		    	        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+		    	        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>',<%=structure.isFixed()%>);\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
                     <%}%>
 		    	    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
                 <%}%>
