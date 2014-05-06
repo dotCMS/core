@@ -198,29 +198,44 @@
 	}
 
 
-	var stepStore = new dojo.data.ItemFileReadStore({url:"/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme"});	
-	var assignedToStore = new dojo.data.ItemFileReadStore({url:"/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfRoleStoreAjax"});
+	var stepStore = new dojo.data.ItemFileReadStore({url:"/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme"});
 	var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
 	var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
 	var daysData= { "identifier" : "d", "label" : "days", "items":
 		[{d:1},{d:2},{d:5},{d:10},{d:15},{d:20},{d:30},{d:40},{d:50},{d:60}]};
 	var daysOldStore = new dojo.data.ItemFileReadStore({data:daysData});
 
+	var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "assignedTo", includeFake:false});
+
 	dojo.ready(function(){
+
+		if(dojo.isIE){
+	    	setTimeout(function(){
+	        	var randomParam = Math.floor((Math.random()*10000)+1);
+	            var myRoleReadStoreURL = myRoleReadStore.url;
+	            var dummyVar = new Array();
+	            myRoleReadStore.url = myRoleReadStoreURL+"?randomParam="+randomParam;
+	            myRoleReadStore.fetch({onComplete: dummyVar});
+	        },100);
+	    }
 
 
 	<%if(isAdministrator){%>
         var assignedTo = new dijit.form.FilteringSelect({
             id: "assignedTo",
             name: "assignedTo",
-            store: assignedToStore,
+            store: myRoleReadStore,
             searchDelay: 300,
-            pageSize: 20,
+            pageSize: 30,
             required: false,
-            value: "<%=assignedTo.getId()%>",           
-            onChange:function(){            	
-		    	doFilter();
-		    }
+            value: "<%=assignedTo.getId()%>",
+            onClick:function(){
+            	dijit.byId("assignedTo").set("displayedValue","");
+            	dijit.byId("assignedTo").loadDropDown();
+            },
+            onChange:function(){
+            	doFilter();
+            }
         },
         "assignedTo");
         doFilter();
