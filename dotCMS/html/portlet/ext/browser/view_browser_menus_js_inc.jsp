@@ -122,12 +122,12 @@
 				}
 
 				if(isAdminUser || userRoles.fileModifiable) {
-					strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);">';
+					strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');">';
 					    strHTML += '<span class="fileNewIcon"></span>';
 					    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 				    strHTML += '</a>';
 
-				    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);">';
+				    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');">';
                     strHTML += '<span class="fileNewIcon"></span>';
                     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
                     strHTML += '</a>';
@@ -287,12 +287,12 @@
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 		strHTML += '</a>';
 
-	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);">';
+	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 		    strHTML += '<span class="fileNewIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 		strHTML += '</a>';
 
-	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);">';
+	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 		    strHTML += '<span class="fileMultiIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
 		strHTML += '</a>';
@@ -917,7 +917,7 @@
 					htmlCode += '</div>';
 				}
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + objId + '\',\'' + referer + '\',false)">';
+				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 				htmlCode += '<span class="fileNewIcon"></span>&nbsp;';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 				htmlCode += '</div>';
@@ -939,12 +939,12 @@
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 				htmlCode += '</div>';
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',false)">';
+				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 				htmlCode += '<span class="fileNewIcon"></span>&nbsp;';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 				htmlCode += '</div>';
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',true)">';
+				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 				htmlCode += '<span class="fileMultiIcon"></span>&nbsp;';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
 				htmlCode += '</div>';
