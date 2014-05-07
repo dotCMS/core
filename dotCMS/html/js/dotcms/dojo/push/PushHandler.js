@@ -80,6 +80,40 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 	    	})},200);
 
     },
+    
+    showRestrictedDialog: function (assetId, displayDateFilter) {
+    	if(this.environmentStore==null) {
+    		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
+
+    	}
+
+    	this.clear();
+
+        var dateFilter = false;
+        if (displayDateFilter != undefined && displayDateFilter != null) {
+            dateFilter = displayDateFilter;
+        }
+
+        this.assetIdentifier = assetId;
+        dialog = new dotcms.dijit.RemotePublisherDialog();
+        dialog.title = this.title;
+        dialog.dateFilter = dateFilter;
+        dialog.container = this;
+        dialog.restricted = true;
+        dialog.show();
+        
+        var thes=this;
+        setTimeout(function() {
+	        thes.environmentStore.fetch({
+	    		onComplete:function(items,request) {
+	    			if(items.length==2) {
+	    				thes.addToWhereToSend(items[1].id, items[1].name);
+	    				thes.refreshWhereToSend();
+	    			}
+	    		}
+	    	})},200);
+
+    },
 
     showAddToBundleDialog: function (assetId, title, displayDateFilter) {
 
@@ -125,6 +159,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 }
             })},200);
     },
+    
+    
 
     togglePublishExpireDivs: function () {
 
