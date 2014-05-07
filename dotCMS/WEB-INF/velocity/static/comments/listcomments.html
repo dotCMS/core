@@ -143,7 +143,7 @@ $session.removeAttribute("commentsForm")
 
 
 		#if($commentUseCaptcha)
-			HTML += "<div id=\"comments-captcha-image\" name=\"captchaImage\"><img src='/Captcha.jpg?$math.getRandom()'  width='200' height='50' alt='Captcha' title='Captcha Image'/></div>";
+			HTML += "<div id=\"comments-captcha-image\" name=\"captchaImage\"><img src='/Captcha.jpg?r=$math.getRandom()'  width='200' height='50' alt='Captcha' title='Captcha Image'/></div>";
 			HTML += "<div id=\"comments-captcha-audio\"></div>";
 			HTML += "<div id=\"comments-captcha-tools\">";
 			HTML += "<div id=\"comments-captcha-reset\" onclick='javascript:resetCaptcha();'></div>";
