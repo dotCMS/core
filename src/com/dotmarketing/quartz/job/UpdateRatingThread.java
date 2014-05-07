@@ -45,12 +45,12 @@ public class UpdateRatingThread implements StatefulJob {
 	private CategoryAPI catAPI = APILocator.getCategoryAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
-	private static final String  NUMBER_OF_VOTES_VAR_NAME ="numberOfVotes"; 
-	private static final String  AVERAGE_RATING_VAR_NAME ="averageRating"; 
+	private static final String  NUMBER_OF_VOTES_VAR_NAME ="numberOfVotes";
+	private static final String  AVERAGE_RATING_VAR_NAME ="averageRating";
 	public UpdateRatingThread() {
 	}
 
-	
+
 
 
 	@SuppressWarnings("unchecked")
@@ -97,7 +97,7 @@ public class UpdateRatingThread implements StatefulJob {
 					}
 					dbAvg = Float.parseFloat((String) map.get("avg_rating"));
 
-					dbNumberOfVotes = Long.parseLong((String) map.get("votes_number")); 
+					dbNumberOfVotes = Long.parseLong((String) map.get("votes_number"));
 					Structure s = c.getStructure();
 					if(s == null || !InodeUtils.isSet(s.getInode())){
 						continue;
@@ -114,11 +114,10 @@ public class UpdateRatingThread implements StatefulJob {
 					Long ctNumberOfVotesObj = null;
 					if(avgField != null && c != null){
 						try{
-							String x =(String)  conAPI.getFieldValue(c, avgField);
-							ctAvgObj = Float.valueOf(x);
+							ctAvgObj =  (Float) conAPI.getFieldValue(c, avgField);
 						}
 						catch(Exception e){
-							
+							Logger.error(UpdateRatingThread.class, e.getMessage(), e);
 						}
 					}
 					if(numOfVotesField != null && c != null){
@@ -130,7 +129,7 @@ public class UpdateRatingThread implements StatefulJob {
 						if(ctNumberOfVotes == dbNumberOfVotes){
 							continue;
 						}
-						
+
 					}
 					else {
 
@@ -142,21 +141,21 @@ public class UpdateRatingThread implements StatefulJob {
 						int fieldsSize = fields.size();
 						for (int i = 0; i < fieldsSize; ++i) {
 							if (fields.get(i).getFieldName().trim().equalsIgnoreCase("Average Rating"))
-								avfield = fields.get(i); 
+								avfield = fields.get(i);
 							if (fields.get(i).getFieldName().trim().equalsIgnoreCase("Number Of Votes"))
-								countfield = fields.get(i); 
+								countfield = fields.get(i);
 						}
 						if (avfield ==null || countfield == null) {
 							fields = FieldFactory.getFieldsByStructure(struct.getInode());
 							fieldsSize = fields.size();
 							for (int i = 0; i < fieldsSize; ++i) {
 								if (fields.get(i).getFieldName().trim().equalsIgnoreCase("Average Rating"))
-									avfield = fields.get(i); 
+									avfield = fields.get(i);
 								if (fields.get(i).getFieldName().trim().equalsIgnoreCase("Number Of Votes"))
-									countfield = fields.get(i); 
+									countfield = fields.get(i);
 							}
 						}
-						
+
 						if (avfield == null) {
 							Field averageRatingField = new Field("Average Rating", FieldType.TEXT, DataType.FLOAT, struct, false, false, true, ++fieldsSize, true, true, false);
 							averageRatingField.setVelocityVarName(AVERAGE_RATING_VAR_NAME);
@@ -220,8 +219,8 @@ public class UpdateRatingThread implements StatefulJob {
 						conAPI.checkinWithoutVersioning(c, contentRelationships, cats, APILocator.getPermissionAPI().getPermissions(c), user, true);
 						HibernateUtil.commitTransaction();
 					}
-					
-					
+
+
 				} catch (DotContentletStateException e) {
 					Logger.warn(UpdateRatingThread.class,e.getMessage(), e);
 					if (e.getMessage().equals("No contenlet found for given identifier")) {
@@ -252,7 +251,7 @@ public class UpdateRatingThread implements StatefulJob {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Thread#destroy()
 	 */
 	public void destroy() {
