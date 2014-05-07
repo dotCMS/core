@@ -61,6 +61,14 @@ SimpleDateFormat dfOut = new SimpleDateFormat("MMM dd, yyyy");
         dojo.byId("uploadLicenseForm").submit();
     }
 
+    function toggleLevel() {
+        //dijit.byId('license_level').set('disabled','');
+        if(dijit.byId("license_type").get("value")=="trial") {
+            dijit.byId('license_level').set('value','400');
+            //dijit.byId('license_level').set('disabled','disabled');
+        }
+    }
+
 function doShowHideRequest(){
 
     dojo.style("pasteMe", "display", "none");
@@ -101,9 +109,12 @@ function doPaste(){
     dojo.byId("uploadLicenseForm").submit();
 }
 
-<% if(contracts!=null) { %>
+<% if(isCommunity) { %>
     dojo.addOnLoad(function() {
-        dijit.byId("reqonlineRadio").set("checked",true)
+        dijit.byId('reqcodeRadio').set('checked','true');
+        dijit.byId("license_type").set("value","trial");
+        toggleLevel();
+
     });    
 <% } %>
 
@@ -136,7 +147,7 @@ function doPaste(){
             <% if(requestCode!=null) {%>
                 <div style="margin-left:auto;margin-right:auto;width:600px;" class="callOutBox">
                     <p><%= LanguageUtil.get(pageContext, "license-code-description") %></p>
-                    <p style="word-wrap: break-word;"><%=requestCode%></p>
+                    <p style="word-wrap: break-word;"><strong><%=requestCode%></strong></p>
                 </div>
             <% } %>
             
@@ -183,10 +194,10 @@ function doPaste(){
                             <label for="requestRadio" style="display:none"><%= LanguageUtil.get(pageContext, "request-trial-license") %></label>
 
                             <input onChange="doShowHideRequest()" type="radio" checked="false" name="iwantTo" id="reqonlineRadio"  dojoType="dijit.form.RadioButton" value="request_online" style="display:none">
-                            <label for="requestRadio" style="display:none"><%= LanguageUtil.get(pageContext, "request-online-to-support-portal") %></label>
+                            <label for="reqonlineRadio" style="display:none"><%= LanguageUtil.get(pageContext, "request-online-to-support-portal") %></label>
 
                             <input onChange="doShowHideRequest()" type="radio" checked="false" name="iwantTo" id="reqcodeRadio"  dojoType="dijit.form.RadioButton" value="request_code">
-                            <label for="requestRadio"><%= LanguageUtil.get(pageContext, "request-code-for-support-portal") %></label><br/>
+                            <label for="reqcodeRadio"><%= LanguageUtil.get(pageContext, "request-code-for-support-portal") %></label><br/>
 
 
                             <input onChange="doShowHideRequest()"  type="radio" name="iwantTo" id="pasteRadio"  dojoType="dijit.form.RadioButton" value="paste_license">
@@ -256,7 +267,8 @@ function doPaste(){
 
                     <dd id="licensedata" style="display:none">
                         <label for="license_type"><%= LanguageUtil.get(pageContext, "request-license-type") %></label>
-                        <select id="license_type" name="license_type" dojoType="dijit.form.Select">
+                        <select id="license_type" name="license_type" dojoType="dijit.form.Select" onChange="toggleLevel()">
+                            <option value="trial"><%= LanguageUtil.get(pageContext, "request-license-trial") %></option>
                             <option value="prod"><%= LanguageUtil.get(pageContext, "request-license-prod") %></option>
                             <option value="dev"><%= LanguageUtil.get(pageContext, "request-license-dev") %></option>
                         </select>
