@@ -110,11 +110,18 @@ public class UpdateRatingThread implements StatefulJob {
 					if(numOfVotesField ==null){
 						numOfVotesField = s.getField("Number Of Votes");
 					}
-					Float ctAvgObj = new Float(0);
+					Float ctAvgFloat = new Float(0);
 					Long ctNumberOfVotesObj = null;
+
 					if(avgField != null && c != null){
 						try{
-							ctAvgObj =  (Float) conAPI.getFieldValue(c, avgField);
+							Object ctAvgObj = conAPI.getFieldValue(c, avgField);
+
+							if(ctAvgObj instanceof String) {
+								ctAvgFloat = Float.valueOf(((String) ctAvgObj));
+							} else {
+								ctAvgFloat =  (Float) ctAvgObj;
+							}
 						}
 						catch(Exception e){
 							Logger.error(UpdateRatingThread.class, e.getMessage(), e);
@@ -123,8 +130,8 @@ public class UpdateRatingThread implements StatefulJob {
 					if(numOfVotesField != null && c != null){
 						ctNumberOfVotesObj = (Long) conAPI.getFieldValue(c, numOfVotesField);
 					}
-					if (UtilMethods.isSet(ctAvgObj) && UtilMethods.isSet(ctNumberOfVotesObj)) {
-						ctAvg = ctAvgObj.floatValue();
+					if (UtilMethods.isSet(ctAvgFloat) && UtilMethods.isSet(ctNumberOfVotesObj)) {
+						ctAvg = ctAvgFloat.floatValue();
 						ctNumberOfVotes = ctNumberOfVotesObj.longValue();
 						if(ctNumberOfVotes == dbNumberOfVotes){
 							continue;
