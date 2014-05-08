@@ -358,53 +358,6 @@
 	#set($x = 0)
 #end
 
-#macro(photoGallery $localIndexFolder)
-    #set($indexFolder = $localIndexFolder)
-    #if($request.getParameter("indexFolder"))
-    	#set ($indexFolder = $request.getParameter("indexFolder"))
-    #end
-
-    #if(!$photoWidth)
-    	#set ($photoWidth = "600")
-    #end
-
-    #if(!$photoHeight)
-    	#set ($photoHeight = "450")
-    #end
-
-    #if(!$thumbnailWidth)
-    	#set ($thumbnailWidth = "90")
-    #end
-
-    #if(!$thumbnailHeight)
-    	#set ($thumbnailHeight = "90")
-    #end
-
-    #if(!$UtilMethods.isSet($showSubgalleryTitle))
-    	#set($showSubgalleryTitle = true)
-    #end
-
-    #if(!$UtilMethods.isSet($showPhotoTitle))
-    	#set($showPhotoTitle = true)
-    #end
-
-    #if($UtilMethods.isSet($indexFolder))
-
-		#set ($folderImages = $photoTool.getPhotoGalleryFolderImages($indexFolder,$host))
-		#set ($images = $photoTool.getPhotoGalleryIndexImages($indexFolder, $host, $indexImage))
-
-		#if($photoGallerySourceCode)
-			#dotParse($photoGallerySourceCode)
-		#else
-			$velutil.mergeTemplate('/static/photo_gallery/photo_gallery.html')
-		#end
-	#else
-		#if (!($UtilMethods.isSet($dontShowMessage) && ($dontShowMessage == 'true')))
-			index folder is required
-		#end
-	#end
-#end
-
 #macro(videoGallery $indexFolder)
 	#if($videoGallerySourceCode)
 		#dotParse($videoGallerySourceCode)
@@ -1039,79 +992,6 @@ function submitFavoriteForm() {
 	#set($tagCloudCacheKey = "")
 	#set($tagCloudCacheTTL = "")
 
-#end
-
-#*
-
-Usage Example
-
-#set($photoList = $contents.getEmptyList())
-
-#set($photo = $contents.getEmptyMap())
-#set($dummy = $!photo.put("url", "/html/1.jpg"))
-#set($dummy = $!photo.put("link", "http://www.yahoo.com"))
-#set($dummy = $!photoList.add($photo))
-
-#set($photo = $contents.getEmptyMap())
-#set($dummy = $!photo.put("url", "/html/2.jpg"))
-#set($dummy = $!photo.put("link", "http://www.google.com"))
-#set($dummy = $!photoList.add($photo))
-
-#set($photo = $contents.getEmptyMap())
-#set($dummy = $!photo.put("url", "/html/3.jpg"))
-#set($dummy = $!photo.put("link", "http://www.dotcms.org"))
-#set($dummy = $!photoList.add($photo))
-
-#set($photo = $contents.getEmptyMap())
-#set($dummy = $!photo.put("url", "/html/4.jpg"))
-#set($dummy = $!photo.put("link", "http://www.hotmail.com"))
-#set($dummy = $!photoList.add($photo))
-
-#set($photoDimensions = $contents.getEmptyMap())
-#set($dummy = $!photoDimensions.put("width", "125"))
-#set($dummy = $!photoDimensions.put("height", "125"))
-
-#set($photoCarrouselAutoSlide = true)
-
-#photoCarrousel($photoList $photoDimensions)
-
-*#
-#macro(photoCarrousel $photoList $photoDimensions)
-	##CHECK THE PHOTO LIST
-	#if(!$UtilMethods.isSet($photoList) || $photoList.size() == 0)
-		#if(!$UtilMethods.isSet($photoList))
-			#set($photoList = $contents.getEmptyList())
-		#end
-		#set ($images = $photoTool.getPhotoGalleryFolderImages($imageFolder,$host))
-		#foreach ($img in $images)
-			#set($photo = $contents.getEmptyMap())
-			#set($dummy = $!photo.put("url", $img.getURI()))
-			#set($dummy = $!photo.put("link", ""))
-			#set($dummy = $!photo.put("caption", $img.title))
-			#set($dummy = $!photoList.add($photo))
-		#end
-
-	#end
-
-	#set($photosCount = $photoList.size())
-
-	#if(!$UtilMethods.isSet($photoDimensions.width))
-		#set($dummy = $!photoDimensions.put("width", "100"))
-	#end
-	#set($photoWidth = $photoDimensions.width)
-
-	#if(!$UtilMethods.isSet($photoDimensions.height))
-		#set($dummy = $!photoDimensions.put("height", "100"))
-	#end
-	#set($photoHeight = $photoDimensions.height)
-	#set($totalWidth = $math.mul($photoWidth, $math.add($photosCount, 1)))
-	#set($offset = $math.add($photoWidth, 4))
-
-	#if($photoCarrouselSourceCode)
-		#dotParse($photoCarrouselSourceCode)
-	#else
-		$velutil.mergeTemplate('/static/photoCarrousel/index.vtl')
-	#end
 #end
 
 ## This macro create a permanent link to a file, page or contentlet
