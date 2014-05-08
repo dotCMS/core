@@ -863,7 +863,7 @@
     Task mean to be use from a distribution structure using the buildwar.sh script.
     This task will just use the already deployed folder inside the app server and compressed to a war file.
     -->
-    <target name="custom-dist-war" depends="setup-deploy-location" description="builds dotCMS as a war">
+    <target name="custom-dist-war" depends="deploy-plugins" description="builds dotCMS as a war">
 
         <!--Clean-up-->
         <delete dir="../../WAR"/>
