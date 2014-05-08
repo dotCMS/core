@@ -93,6 +93,4 @@ fi
 CURRENT_PWD=`pwd`
 cd $DOTCMS_HOME
 
-echo Deploying plugins
-
 $JAVA_HOME/bin/java -jar "$DOTCMS_HOME/bin/ant/ant-launcher.jar" -buildfile "$DOTCMS_HOME/bin/ant"/build.xml custom-dist-war
