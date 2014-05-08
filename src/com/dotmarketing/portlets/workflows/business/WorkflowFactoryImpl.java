@@ -652,7 +652,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.loadResult();
 
 			}
-			cache.remove(contentlet);
 			cache.addStep(contentlet, step);
 		}
 		return step;
@@ -839,6 +838,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			if (UtilMethods.isSet(searcher.getOrderBy())) {
 				orderby=searcher.getOrderBy();
 			} else {
+
 				orderby="mod_date desc";
 			}
 			query.append(orderby.replace("mod_date", "workflow_task.mod_date"));
