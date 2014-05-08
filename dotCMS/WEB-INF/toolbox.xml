@@ -259,11 +259,6 @@
 		<class>com.dotmarketing.viewtools.DateViewWebAPI</class>
 	</tool>
 	<tool>
-		<key>photoTool</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.viewtools.PictureGalleryWebAPI</class>
-	</tool>
-	<tool>
 		<key>languagewebapi</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.LanguageWebAPI</class>
