@@ -14,6 +14,7 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -33,7 +34,7 @@ public class RefreshMenus {
 
 	private static String velocityRootPath = ConfigUtils.getDynamicVelocityPath() + java.io.File.separator;
 	private static String MENU_VTL_PATH = velocityRootPath + "menus" + java.io.File.separator;
-	
+
 	public static boolean shouldRefreshMenus(com.dotmarketing.portlets.files.model.File newFile) throws DotDataException{
 		try{
 
@@ -47,7 +48,7 @@ public class RefreshMenus {
 			if(map.size() ==0){
 				return true;
 			}
-			boolean oldShowOnMenu = (Boolean) map.get("show_on_menu");
+			boolean oldShowOnMenu = (DbConnectionFactory.isDBTrue(map.get("show_on_menu").toString()));
 			String oldTitle = (String) map.get("title");
 			String path = (String) map.get("parent_path") + (String)map.get("asset_name");
 			if(newFile.isShowOnMenu() != oldShowOnMenu){
@@ -61,7 +62,7 @@ public class RefreshMenus {
 					return true;
 				}
 			}
-			
+
 		}
 		catch(Exception e){
 			Logger.warn(RefreshMenus.class, e.getMessage());
@@ -82,7 +83,7 @@ public class RefreshMenus {
 			if(map.size() ==0){
 				return true;
 			}
-			boolean oldShowOnMenu = (Boolean) map.get("show_on_menu");
+			boolean oldShowOnMenu = (DbConnectionFactory.isDBTrue(map.get("show_on_menu").toString()));
 			String oldTitle = (String) map.get("title");
 			String path = (String) map.get("parent_path") + (String)map.get("page_url");
 			if(newFile.isShowOnMenu() != oldShowOnMenu){
@@ -106,10 +107,10 @@ public class RefreshMenus {
 			Logger.warn(RefreshMenus.class, e.getMessage());
 			return true;
 		}
-		
+
 	}
-	
-	
+
+
 	public static boolean shouldRefreshMenus(IFileAsset oldFile, IFileAsset newFile){
 		try{
 			if(oldFile == null || newFile ==null){
@@ -135,12 +136,12 @@ public class RefreshMenus {
 			return true;
 		}
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	public static void deleteMenusOnFileSystemOnly(){
 		java.io.File directory = new java.io.File(MENU_VTL_PATH);
 
@@ -153,7 +154,7 @@ public class RefreshMenus {
 			}
 		}
 	}
-	
+
 	public static void deleteMenus() {
 		java.io.File directory = new java.io.File(MENU_VTL_PATH);
 
@@ -171,8 +172,8 @@ public class RefreshMenus {
 		DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
         vc.clearMenuCache();
 	}
-	
-	public static void deleteMenu(Host host) 
+
+	public static void deleteMenu(Host host)
 	{
 		java.io.File directory = new java.io.File(MENU_VTL_PATH);
 
@@ -180,15 +181,15 @@ public class RefreshMenus {
 			//get all files for this directory
 			java.io.File[] files = directory.listFiles();
 			String hostId = host.getIdentifier();
-			for (int i = 0; i < files.length; i++) 
+			for (int i = 0; i < files.length; i++)
 			{
 				File
 				file = files[i];
-				String fileName = file.getName();				
+				String fileName = file.getName();
 				if(fileName.startsWith(hostId))
 				{
 					file.delete();
-				}		
+				}
 			}
 		}
 		//http://jira.dotmarketing.net/browse/DOTCMS-1873
@@ -205,15 +206,15 @@ public class RefreshMenus {
 	}
 
 	public static void deleteMenu(WebAsset webAsset)
-	{	
+	{
 		Folder folder = new Folder();
 		try {
 			folder = APILocator.getFolderAPI().findParentFolder(webAsset, APILocator.getUserAPI().getSystemUser(),false);
 		} catch (Exception e) {
 			Logger.error(RefreshMenus.class,e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);
-		} 
-		
+		}
+
 		if(folder!=null && InodeUtils.isSet(folder.getInode()))
 		{
 			deleteMenu(folder);
@@ -221,7 +222,7 @@ public class RefreshMenus {
 	}
 
 	public static void deleteMenu(Folder folder)
-	{				
+	{
 		java.io.File directory = new java.io.File(MENU_VTL_PATH);
 
 		//Delete the menu's file in the directory
@@ -234,14 +235,14 @@ public class RefreshMenus {
 				//get all files for the menu directory
 				java.io.File[] files = directory.listFiles();
 				//String folderInodeString = Long.toString(folderInode);
-				for (int i = 0; i < files.length; i++) 
+				for (int i = 0; i < files.length; i++)
 				{
 					File file = files[i];
-					String fileName = file.getName();				
+					String fileName = file.getName();
 					if(fileName.startsWith(folderInode))
 					{
 						file.delete();
-					}				
+					}
 				}
 				auxFolder = folder;
 				try {
@@ -249,7 +250,7 @@ public class RefreshMenus {
 				} catch (Exception e) {
 					Logger.error(RefreshMenus.class,e.getMessage(), e);
 					throw new DotRuntimeException(e.getMessage(),e);
-				} 
+				}
 				if(folder==null) folderInode=null;
 				else folderInode = folder.getInode();
 			}
@@ -265,24 +266,24 @@ public class RefreshMenus {
 				} catch (DotSecurityException e) {
 					Logger.error(RefreshMenus.class, e.getMessage(), e);
 					throw new DotRuntimeException(e.getMessage(), e);
-				} 
+				}
 				java.io.File[] files = directory.listFiles();
 				if(files.length > 0){
 					if(host == null){
 						Logger.error(RefreshMenus.class, "Folder id :" + auxFolder.getInode() + " has no host");
 						return;
-					}				
-					for (int i = 0; i < files.length; i++) 
+					}
+					for (int i = 0; i < files.length; i++)
 					{
 						File file = files[i];
-						String fileName = file.getName();				
+						String fileName = file.getName();
 						if(fileName.startsWith(host.getIdentifier()))
 						{
 							file.delete();
-						}				
+						}
 					}
 				}
-			}			
+			}
 		}
 		//http://jira.dotmarketing.net/browse/DOTCMS-1873
 		//To clear velocity cache
