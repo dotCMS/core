@@ -663,7 +663,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.loadResult();
 
 			}
-			cache.remove(contentlet);
 			cache.addStep(contentlet, step);
 		}
 		return step;
