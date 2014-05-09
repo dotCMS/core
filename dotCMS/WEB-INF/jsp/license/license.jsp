@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.license.LicenseManager"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotcms.enterprise.license.LicenseManager.Contract"%>
@@ -137,6 +138,10 @@ function doPaste(){
             </div>
                 <br clear="all">
         </div>
+            
+            <div style="margin-left:auto;margin-right:auto;width:600px;background:#eee;" class="callOutBox">
+                Server ID: <%= LicenseManager.getInstance().getDisplayServerId() %>
+            </div>
       
             <%if(request.getAttribute("LICENSE_APPLIED_SUCCESSFULLY") != null){ %>
                 <div style="margin-left:auto;margin-right:auto;width:600px;" class="callOutBox">
@@ -174,6 +179,8 @@ function doPaste(){
                         <dd><%=  UtilMethods.isSet(System.getProperty("dotcms_license_client_name")) ? System.getProperty("dotcms_license_client_name") + "": "No License Found" %></dd>
                         <dt><%= LanguageUtil.get(pageContext, "license-type") %></dt>
                         <dd><%=System.getProperty("dotcms_license_type_name")%></dd>
+                        <dt><%= LanguageUtil.get(pageContext, "license-serial") %></dt>
+                        <dd><%=System.getProperty("dotcms_license_serial")%></dd>
                     <% } %>
                 </dl>
             </div>
