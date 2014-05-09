@@ -741,14 +741,14 @@
                                 fieldsValues[fieldsValues.length] = folderValue;
                         }
                 }
-                
+
 				var allField = dijit.byId("allFieldTB").getValue();
 				if (allField != undefined && allField.length>0 ) {
 
                         fieldsValues[fieldsValues.length] = "_all";
                         fieldsValues[fieldsValues.length] = allField + "*";
 				}
-				
+
                 for (var j = 0; j < currentStructureFields.length; j++) {
                         var field = currentStructureFields[j];
             var fieldId = selectedStruct+"."+field["fieldVelocityVarName"] + "Field";
@@ -1479,7 +1479,8 @@
             }
                 var categoriesValues = new Array ();
                 var form = document.getElementById("search_form");
-                var categories = form.categories;
+                var categories = document.getElementsByName("categories");
+
                 if (categories != null) {
                         if (categories.options != null) {
                                 var opts = categories.options;
@@ -1502,6 +1503,7 @@
                                 }
                         }
                 }
+
                 if (page == null)
                         currentPage = 1;
                 else
