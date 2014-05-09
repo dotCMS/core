@@ -1,4 +1,4 @@
- <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.beans.Clickstream404"%>
 <%@page import="com.dotmarketing.factories.ClickstreamRequestFactory"%>
 <%@page import="com.dotmarketing.cms.factories.PublicCompanyFactory"%>
@@ -39,36 +39,36 @@ if("add".equals(action)){
 	List<Contentlet> cons = APILocator.getContentletAPI().search("*", 100, 0, "modDate", APILocator.getUserAPI().getSystemUser(), false);
 
 	for(int g = 0;g<visits;g++){
-	
-	
+
+
 
 		Host host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
-	
-		
+
+
 		List<Identifier> ids = new ArrayList<Identifier>();
-		
+
 		for(String x : urls){
 			Identifier id = APILocator.getIdentifierAPI().find(host, x);
 			ids.add( id );
 		}
 
-	
-		
+
+
 		String dmid = UUIDGenerator.generateUuid();
 	    // one month back
 	    int secMax = 60*60*24*days;
-	
+
 	    Random generator = new Random( );
 	    int secBack =   generator.nextInt(secMax);
-	 	
-	
-	    
+
+
+
 	    Calendar cal = Calendar.getInstance();
 	    cal.add(Calendar.SECOND, -secBack);
-	
-	   
-	    
-		
+
+
+
+
 		Clickstream click = new Clickstream();
 		click.setBot(false);
 		click.setStart(cal.getTime());
@@ -85,19 +85,19 @@ if("add".equals(action)){
 		click.setLastPageId(ids.get(ids.size()-1).getId());
 
 	    ClickstreamFactory.save(click);
-	    
-	    
+
+
 	    DotConnect dc = new DotConnect();
 	    String select_clickstream_id = "select clickstream_id from clickstream where cookie_id = ?";
-	    
+
 	    dc.setSQL(select_clickstream_id);
 	    dc.addParam(dmid);
-	
-	
-	    
+
+
+
 	    int click_id = dc.getInt("clickstream_id");
-	    
-	    
+
+
 		int ord = 0;
 	    for(Identifier x : ids){
 	    	ClickstreamRequest creq = new ClickstreamRequest();
@@ -112,15 +112,15 @@ if("add".equals(action)){
 			creq.setRequestURI(x.getPath());
 			creq.setAssociatedIdentifier(x.getId());
 	    	ClickstreamRequestFactory.save(creq);
-	
+
 	    }
-	    
+
 	    Clickstream404 c404 = new Clickstream404();
 	    c404.setHostId(host.getIdentifier());
 	    c404.setTimestamp(cal.getTime());
 	    c404.setRefererURI("http://nowhere.com/testing.html");
 	    c404.setRequestURI("/this/doesnotwork/" + secBack+ ".html");
-	
+
 	    ClickstreamFactory.save404(c404);
 
 	}

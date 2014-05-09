@@ -51,18 +51,18 @@ public abstract class DashboardFactory {
 	protected String getSummaryContentQuery(){
 		return (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) ?
 			" select count(*) as hits, identifier.parent_path as uri ,contentlet.identifier as inode, contentlet.title as title  from clickstream_request "+
-			" join identifier on identifier.id = associated_identifier join contentlet on contentlet.identifier = identifier.id  "+
+			" join identifier on identifier.id = associated_identifier join multi_tree on associated_identifier = parent1 join contentlet on contentlet.identifier = multi_tree.child  "+
 			" where extract(day from timestampper) = ? and extract(month from timestampper) = ? and "+
 			" extract(year from timestampper) = ? and host_id = ?"+
 			" group by associated_identifier, identifier.parent_path,contentlet.identifier,contentlet.title "
 			:DbConnectionFactory.isMySql() ?
 					" select count(*) as hits, identifier.parent_path as uri ,contentlet.identifier as inode, contentlet.title as title  from clickstream_request "+
-					" join identifier on identifier.id = associated_identifier join contentlet on contentlet.identifier = identifier.id  "+
+					" join identifier on identifier.id = associated_identifier join multi_tree on associated_identifier = parent1 join contentlet on contentlet.identifier = multi_tree.child  "+
 					" where DAY(timestampper) = ? and MONTH(timestampper) = ? and YEAR(timestampper) = ? "+
 					" and host_id = ? group by associated_identifier, identifier.parent_path,contentlet.identifier,contentlet.title "
 					:DbConnectionFactory.isMsSql() ?
 							" select count(*) as hits, identifier.parent_path as uri ,contentlet.identifier as inode, contentlet.title as title  from clickstream_request "+
-							" join identifier on identifier.id = associated_identifier join contentlet on contentlet.identifier = identifier.id  "+
+							" join identifier on identifier.id = associated_identifier join multi_tree on associated_identifier = parent1 join contentlet on contentlet.identifier = multi_tree.child  "+
 							" where DATEPART(day, timestampper) = ? and DATEPART(month, timestampper) = ? and DATEPART(year, timestampper) = ? "+
 							" and host_id = ? group by associated_identifier, identifier.parent_path,contentlet.identifier,contentlet.title ":"";
 	}
