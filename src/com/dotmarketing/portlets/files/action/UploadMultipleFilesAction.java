@@ -75,12 +75,12 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
 		User user = _getUser(req);
 		if(cmd != null && cmd.equals(Constants.EDIT)) {
-	        HibernateUtil.startTransaction();			
+	        HibernateUtil.startTransaction();
 			try {
 				Logger.debug(this, "Calling Retrieve method");
 				_retrieveWebAsset(req, res, config, form, user, File.class, WebKeys.FILE_EDIT);
 	            Logger.debug(this, "Calling Edit Method");
-				_editWebAsset(req, res, config, form, user);	
+				_editWebAsset(req, res, config, form, user);
 			}
 			catch (Exception ae) {
 				_handleException(ae, req);
@@ -189,25 +189,25 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 	throws WebAssetException, ActionException, DotDataException, DotSecurityException, LanguageException {
 
 	    boolean isAdmin = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
-	    
+
 	    com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
         HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
         HttpSession session = httpReq.getSession();
-	    
+
 		UploadPortletRequest uploadReq = PortalUtil.getUploadPortletRequest(req);
 
 		String parent = ParamUtil.getString(req, "parent");
 
 		//parent folder
 		Folder folder = (Folder) APILocator.getFolderAPI().find(parent, user, false);
-		
+
 		String hostId=folder.getHostId();
 		boolean isRootHost=APILocator.getFolderAPI().findSystemFolder().equals(folder);
 		if(isRootHost)
 		    hostId=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
 		Host host=APILocator.getHostAPI().find(hostId, user, false);
-		
+
 		//check permissions
 		if(isRootHost) {
 		    if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user))
@@ -226,7 +226,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 			selectedStructureInode = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
 		String[] fileNamesArray = fileNamesStr.split(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR);
-		String customMessage = LanguageUtil.get(user, "message.file_asset.error.filename.filters"+" : ");
+		String customMessage = LanguageUtil.get(user, "message.file_asset.error.filename.filters") + ": ";
 		if(fileNamesArray.length > 2)
 			SessionMessages.add(req, "custommessage", LanguageUtil.get(user, "message.contentlets.batch.reindexing.background"));
 		boolean filterError = false;
@@ -241,16 +241,16 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				contentlet.setFolder(folder.getInode());
 				String fileName = fileNamesArray[k];
 				String title = getFriendlyName(fileName);
-	
+
 				fileName = checkMACFileName(fileName);
-	
+
 				if(!APILocator.getFolderAPI().matchFilter(folder,fileName))
 	            {
 				   customMessage += fileName + ", ";
 	               filterError = true;
 	               continue;
 	            }
-	
+
 				if (fileName.length()>0) {
 
                     //sets filename for this new file
@@ -277,10 +277,10 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
                             APILocator.getVersionableAPI().setLive( contentlet );
                         }
-                        
+
                         HibernateUtil.commitTransaction();
                         APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
-                        
+
                     }
 				}
 			}

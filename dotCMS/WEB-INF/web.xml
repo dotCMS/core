@@ -299,10 +299,6 @@
 	    <load-on-startup>0</load-on-startup>
 	</servlet> -->
 	<servlet>
-		<servlet-name>JSONContentServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.JSONContentServlet</servlet-class>
-	</servlet>
-	<servlet>
 		<servlet-name>PdfServlet</servlet-name>
 		<servlet-class>net.sf.jasperreports.j2ee.servlets.PdfServlet</servlet-class>
 	</servlet>
@@ -721,10 +717,6 @@
 	<servlet-mapping>
 		<servlet-name>CMIS</servlet-name>
 		<url-pattern>/cmis/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>JSONContentServlet</servlet-name>
-		<url-pattern>/JSONContent/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
