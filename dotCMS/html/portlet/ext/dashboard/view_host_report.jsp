@@ -344,6 +344,7 @@ try {
 	var noRecordsTemplate = '<tr class="alternate_1" id="rowNoResults"><td colspan="5"><div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "No-Records-Found") %></div></td></tr>';
 		 
 	var topContentTemplate = '<tr class="${className}"><td><div class="urlWrapper" onmouseover="tip(this)"><span><a href="${uri}" target="_blank">${title}</a></span></div></td><td width="70" align="center">${hits}</td></tr>';
+	var topContentTemplate2 = '<tr class="${className}"><td><div class="urlWrapper" onmouseover="tip(this)"><span>${title}</span></div></td><td width="70" align="center">${hits}</td></tr>';
 	   
 	function fillTopContentTable(data){
 
@@ -356,7 +357,12 @@ try {
 			for(var i = 0; i < topContent.length; i++) {
 				var content = topContent[i];
 				var trClassName = (i%2==0)?'alternate_1':'alternate_2';
-				var html = dojo.string.substitute(topContentTemplate, { className:trClassName, uri:content.uri,  title: content.title, hits: content.hits });
+				var html="";
+				if(content.uri != null){
+					html = dojo.string.substitute(topContentTemplate, { className:trClassName, uri:content.uri,  title: content.title, hits: content.hits });
+				}else{
+					html = dojo.string.substitute(topContentTemplate2, { className:trClassName, title: content.title, hits: content.hits });
+				}
 				tableHTML += html;
 				
 			}
@@ -514,7 +520,12 @@ try {
 			for(var i = 0; i < topContent.length; i++) {
 				var content = topContent[i];
 				var trClassName = (i%2==0)?'alternate_1':'alternate_2';
-				var html = dojo.string.substitute(topContentTemplate, { className:trClassName,  uri:content.uri, title: content.title, hits: content.hits });
+				var html ="";
+				if(content.uri !=null){
+					html = dojo.string.substitute(topContentTemplate, { className:trClassName,  uri:content.uri, title: content.title, hits: content.hits });
+				}else{
+					html = dojo.string.substitute(topContentTemplate2, { className:trClassName,  title: content.title, hits: content.hits });
+				}
 				tableHTML += html;	
 			}
 			dojo.place(tableHTML, 'summaryList', 'last');
