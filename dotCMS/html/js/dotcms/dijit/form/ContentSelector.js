@@ -173,7 +173,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	_fillLanguages: function(data) {
 		if(dijit.byId('langcombo+'+this.dialogCounter)){
 			window.console.log("destroying:langcombo+" + this.dialogCounter)
-			dijit.byId('langcombo+'+this.dialogCounter).destroy();			
+			dijit.byId('langcombo+'+this.dialogCounter).destroy();
 		}
 		this.availableLanguages = data;
 		this.search_languages_table.innerHTML = "";
@@ -419,7 +419,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		var form = this.search_form;
 		form.categories = null;
 		if(form.categories != null){
-        	var tempChildNodesLength = form.categories.childNodes.length; 
+        	var tempChildNodesLength = form.categories.childNodes.length;
         	for(var i = 0; i < tempChildNodesLength; i++){
         		form.categories.removeChild(form.categories.childNodes[0]);
         	}
@@ -607,7 +607,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		var categoriesValues = new Array ();
 		var form = this.search_form;
-		var categories = form.categories;
+		var categories = document.getElementsByName("categories");
+
 		if (categories != null) {
 			if (categories.options != null) {
 				var opts = categories.options;
@@ -709,7 +710,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		cell.setAttribute("class","beta");
 		cell.setAttribute("className","beta");
 		cell.setAttribute("width","5%");
-		
+
 		var cell = row.insertCell (row.cells.length);
 		cell.setAttribute("class","beta");
 		cell.setAttribute("className","beta");
@@ -737,7 +738,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			} else {
 				cell.innerHTML = this._selectButton(cellData);
 			}
-			
+
 			for(var l = 0; l < this.availableLanguages.length; l++){
 				if(this.availableLanguages[l]['id'] == cellData['languageId']){
 					var cell = row.insertCell (row.cells.length);
