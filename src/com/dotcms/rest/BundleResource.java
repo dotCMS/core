@@ -11,7 +11,13 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+
 import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
@@ -19,6 +25,8 @@ import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.CacheControl;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+
+import java.net.URISyntaxException;
 import java.util.List;
 
 
@@ -84,7 +92,7 @@ public class BundleResource extends WebResource {
 
             JSONObject jsonBundle = new JSONObject();
             jsonBundle.put( "id", b.getId() );
-            jsonBundle.put( "name", b.getName() );
+            jsonBundle.put( "name", StringEscapeUtils.unescapeJava(b.getName()));
             //Added to the response list
             jsonBundles.add( jsonBundle );
         }
@@ -104,31 +112,30 @@ public class BundleResource extends WebResource {
 	@GET
 	@Path("/updatebundle/{params:.*}")
 	@Produces("application/json")
-	public Response updateBundle(@Context HttpServletRequest request, @PathParam("params") String params) {
-
+	public Response updateBundle(@Context HttpServletRequest request, @PathParam("params") String params) throws IOException {
+	
 		InitDataObject initData = init(params, true, request, true);
-        //Creating an utility response object
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-
+	    //Creating an utility response object
+	    ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+	
 		String bundleId = initData.getParamsMap().get("bundleid");
-		String bundleName = initData.getParamsMap().get("bundlename");
-
+		String bundleName = URLDecoder.decode(request.getParameter("bundleName"), "UTF-8");
 		try {
-
+	
 			if(!UtilMethods.isSet(bundleId)) {
-                return responseResource.response( "false" );
+	            return responseResource.response( "false" );
 			}
-
+	
 			Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
 			bundle.setName(bundleName);
 			APILocator.getBundleAPI().updateBundle(bundle);
-
+	
 		} catch (DotDataException e) {
 			Logger.error(getClass(), "Error trying to update Bundle. Bundle ID: " + bundleId);
-            return responseResource.response( "false" );
+	        return responseResource.response( "false" );
 		}
-
-        return responseResource.response( "true" );
+	
+	    return responseResource.response("true");
 	}
 
 	@GET
