@@ -1659,6 +1659,17 @@ public class ContentletAjax {
 				}
 				tempBinaryImageInodes.clear();
 			}
+
+			// if we are canceling the edition of a host, let's restore the default one for the site browser
+
+			Contentlet content = conAPI.find(workingContentletInode, user, false);
+			Structure structure = content.getStructure();
+
+			if(structure!= null && UtilMethods.isSet(structure.getInode()) && structure.getVelocityVarName().equals("Host")) {
+				Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
+				ses.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,defaultHost.getIdentifier() );
+			}
+
 		}
 		catch(Exception ae){
 			Logger.debug(this, "Error trying to cancelContentEdit");
