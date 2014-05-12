@@ -6,12 +6,13 @@
 <%@page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.Role"%>
+<%@page import="com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils"%>
 <%
 	String identifier = request.getParameter("id");
 	Bundle bundle = APILocator.getBundleAPI().getBundleById(identifier);
 
 %>
-
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <script type="text/javascript">
 	require(["dojo/parser", "dijit/form/SimpleTextarea", "dotcms/dojo/data/RoleReadStore",  "dijit/form/FilteringSelect"]);
 
@@ -29,10 +30,10 @@
 		if (form.validate()) {
 
 			var name = dijit.byId("bundleName").value;
-
 			var xhrArgs = {
-				url: "/api/bundle/updatebundle/bundleid/<%=bundle.getId()%>/bundlename/"+name,
-				handleAs: "text",
+				url: "/api/bundle/updatebundle/bundleid/<%=bundle.getId()%>",
+				content:{bundleName : encodeURIComponent(convertStringToUnicode(name))}, 
+				handleAs: "json",
 				load: function(data){
 					if(data=="false"){
 
@@ -59,6 +60,22 @@
 		loadUnpushedBundles();
 
 	}
+	
+	function convertStringToUnicode(name) {
+		  var unicodeString = '';
+		   for (var i=0; i < name.length; i++) {
+			  if(name.charCodeAt(i) > 128){
+				 var str = name.charCodeAt(i).toString(16).toUpperCase();
+			 	 while(str.length < 4)
+			        str = "0" + str;
+				  unicodeString += "\\u" + str;
+			  }else{
+		          unicodeString += name[i];
+			  }
+		   }
+		   
+		  return unicodeString;
+	}
 
 </script>
 
@@ -83,7 +100,7 @@
 							  name="bundleName"
 							  id="bundleName"
 							  style="width:200px;"
-							  value="<%=bundle.getName() %>"
+							  value="<%=StringEscapeUtils.unescapeJava(bundle.getName()) %>"
 							  />
 				</td>
 			</tr>
