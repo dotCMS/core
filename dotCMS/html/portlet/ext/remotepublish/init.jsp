@@ -1,5 +1,6 @@
 <%@ page import="com.dotcms.publisher.environment.bean.Environment" %>
 <%@ page import="java.util.List" %>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
 <%
     //Verify if we have set environments on session
     List<Environment> lastSelectedEnvironments = null;
@@ -35,6 +36,6 @@
         String id = lastSelectedBundle.getId();
         String name = lastSelectedBundle.getName();%>
 
-        window.lastSelectedBundle = {name: '<%=name%>', id: '<%=id%>'};
+        window.lastSelectedBundle = {name: '<%=UtilMethods.escapeSingleQuotes(name)%>', id: '<%=id%>'};
     <%}%>
 </script>
