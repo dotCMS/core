@@ -145,21 +145,26 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		var htmlstr = "<dl>";
 		htmlstr += "<dt><b>Content Type:</b></dt>";
 		htmlstr += "<dd>";
-		dojo.require("dijit.form.FilteringSelect");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' onChange='displayStructure(this.value)'  id='structuresSelect+"+this.dialogCounter+"' required='false' name='structuresSelect+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.structureInode+"'>";
+		if(this.containerStructures.length > 1){
+			dojo.require("dijit.form.FilteringSelect");
+			htmlstr += "<select dojoType='dijit.form.FilteringSelect' onChange='displayStructure(this.value)'  id='structuresSelect+"+this.dialogCounter+"' required='false' name='structuresSelect+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.structureInode+"'>";
 
-		var defaultValue = "";
+			var defaultValue = "";
 
-		for (var i = 0; i < this.containerStructures.length; i++) {
+			for (var i = 0; i < this.containerStructures.length; i++) {
 
-			if(i==0) {
-				defaultValue = this.containerStructures[i].inode;
+				if(i==0) {
+					defaultValue = this.containerStructures[i].inode;
+				}
+				htmlstr += "<option  value='"+this.containerStructures[i].inode+"'";
+				htmlstr += ">"+this.containerStructures[i].name+"</option>"
 			}
-			htmlstr += "<option  value='"+this.containerStructures[i].inode+"'";
-			htmlstr += ">"+this.containerStructures[i].name+"</option>"
-		}
 
-		htmlstr += "</select>";
+			htmlstr += "</select>";
+		}else{
+			htmlstr += this.containerStructures[0].name;
+			this.displayStructureFields(this.containerStructures[0].inode);
+		}
 		htmlstr += "</dd>";
 		htmlstr += "</dl>";
 		dojo.place(htmlstr,this.structures_select);
