@@ -84,10 +84,14 @@ public class ResourceCollectorUtil{
         final File file,
         final Pattern pattern){
         final Set<String> retval = new HashSet<String>();
+
+        if(file==null) return retval;
+
         ZipFile zf;
         try{
             zf = new ZipFile(file);
         } catch(final ZipException e){
+        	Logger.error(ResourceCollectorUtil.class, "Problem while creating ZipFile for file: " + file.getName());
             throw new Error(e);
         }  catch(final FileNotFoundException e){
         	Logger.error(ResourceCollectorUtil.class, e.getMessage());
