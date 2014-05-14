@@ -1250,6 +1250,17 @@
 		</property>
 	</class>
 
+	<class name="com.dotmarketing.beans.ContainerStructure" table="container_structures">
+	    <id name="id" column="id" type="string" length="36" unsaved-value="">
+		  <generator class="com.dotmarketing.util.UUIDGenerator" />
+		</id>
+		<property name="containerId" type="string">
+			<column name="container_id" length="36" not-null="true" />
+		</property>
+		<property name="structureId" type="string">
+			<column name="structure_id" length="36" not-null="true"/>
+		</property>
+	</class>
 
 	 <!-- Dashboard -->
 

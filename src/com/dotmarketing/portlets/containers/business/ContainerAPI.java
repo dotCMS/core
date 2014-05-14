@@ -80,7 +80,7 @@ public interface ContainerAPI {
  	 *
  	 */
  
- 	public List<ContainerStructures> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
+ 	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
  
 
 	/**

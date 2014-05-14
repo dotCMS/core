@@ -247,9 +247,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
  	 *
  	 */
  	@SuppressWarnings("unchecked")
- 	public List<ContainerStructures> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
+ 	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
  
- 		HibernateUtil dh = new HibernateUtil(ContainerStructures.class);
+ 		HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
  		dh.setSQLQuery("select {container_structures.*} from container_structures where container_structures.container_id = ?");
  		dh.setParam(container.getIdentifier());
  		return dh.list();
