@@ -31,27 +31,27 @@ public class Task01340AddLicenseRepoModel extends AbstractJDBCStartupTask {
 
     @Override
     public String getPostgresScript() {
-        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null)";
+        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping timestamp not null)";
     }
 
     @Override
     public String getMySQLScript() {
-        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license longtext not null)";
+        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license longtext not null, lastping datetime not null)";
     }
 
     @Override
     public String getOracleScript() {
-        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license nclob not null)";
+        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license nclob not null, lastping date not null)";
     }
 
     @Override
     public String getMSSQLScript() {
-        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null)";
+        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping datetime not null)";
     }
 
     @Override
     public String getH2Script() {
-        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null)";
+        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping timestamp not null)";
     }
 
     @Override

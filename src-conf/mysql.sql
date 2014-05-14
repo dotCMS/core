@@ -3143,4 +3143,4 @@ create index idx_container_id on container_structures(container_id);
 alter table container_structures add constraint FK_cs_container_id foreign key (container_id) references identifier(id);
 
 -- license repo
-create table sitelic(id varchar(36) primary key, serverid varchar(100), license longtext not null);
+create table sitelic(id varchar(36) primary key, serverid varchar(100), license longtext not null, lastping datetime not null);

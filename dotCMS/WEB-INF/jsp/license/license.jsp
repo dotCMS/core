@@ -1,7 +1,11 @@
-<%@page import="com.dotcms.enterprise.license.LicenseManager"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="java.util.List"%>
-<%@page import="com.dotcms.enterprise.license.LicenseManager.Contract"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="java.util.Date"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="java.text.SimpleDateFormat"%>
+
 <%
 String error=null;
 String message=null;
@@ -12,12 +16,12 @@ if (request.getMethod().equalsIgnoreCase("POST") ) {
 }
 
 
-boolean isCommunity = ("100".equals(System.getProperty("dotcms_level")));
+boolean isCommunity = LicenseUtil.getLevel()==100;
 
 String expireString = "unknown";
 Date expires = null;
 try{
-    expires = new Date(Long.parseLong(System.getProperty("dotcms_valid_until")));
+    expires = LicenseUtil.getValidUntil();
     SimpleDateFormat format =
         new SimpleDateFormat("MMMM d, yyyy");
     expireString=  format.format(expires);
@@ -26,22 +30,15 @@ catch(Exception e){
     
 }
 boolean expired = (expires !=null && expires.before(new Date()));
-boolean isPerpetual = System.getProperty("dotcms_license_perpetual").equals("true");
+boolean isPerpetual = LicenseUtil.isPerpetual();
 
 String requestCode=(String)request.getAttribute("requestCode");
-
-List<Contract> contracts=(List<Contract>)request.getAttribute("contracts");
 
 SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
 SimpleDateFormat dfOut = new SimpleDateFormat("MMM dd, yyyy");
 
 %>
 
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="java.util.Date"%>
-<%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="com.dotcms.enterprise.LicenseUtil"%>
-<%@page import="java.text.SimpleDateFormat"%>
 <script type="text/javascript">
 
 <%if(UtilMethods.isSet(error)){ %>
@@ -163,7 +160,7 @@ function doPaste(){
                         <span class='<%if(isCommunity){  %>lockIcon<%}else{ %>unlockIcon<%} %>'></span>
                             <%= LanguageUtil.get(pageContext, "license-level") %>
                         </dt>
-                        <dd><%= System.getProperty("dotcms_level_name")  %>
+                        <dd><%= LicenseUtil.getLevelName()  %>
                     </dd>
                     <% if (!isCommunity) { %>
                         <dt><%= LanguageUtil.get(pageContext, "license-valid-until") %>:</dt>
@@ -176,11 +173,11 @@ function doPaste(){
                             </dd>
                         <%}%>
                         <dt><%= LanguageUtil.get(pageContext, "licensed-to") %></dt>
-                        <dd><%=  UtilMethods.isSet(System.getProperty("dotcms_license_client_name")) ? System.getProperty("dotcms_license_client_name") + "": "No License Found" %></dd>
+                        <dd><%=  UtilMethods.isSet(LicenseUtil.getClientName()) ? UtilMethods.isSet(LicenseUtil.getClientName()) : "No License Found" %></dd>
                         <dt><%= LanguageUtil.get(pageContext, "license-type") %></dt>
-                        <dd><%=System.getProperty("dotcms_license_type_name")%></dd>
+                        <dd><%= LicenseUtil.getLevelName() %></dd>
                         <dt><%= LanguageUtil.get(pageContext, "license-serial") %></dt>
-                        <dd><%=System.getProperty("dotcms_license_serial")%></dd>
+                        <dd><%= LicenseUtil.getSerial() %></dd>
                     <% } %>
                 </dl>
             </div>
