@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.portlets.containers.model.Container;
