@@ -558,11 +558,6 @@ public class HibernateUtil {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Seq",cfg);
 				cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.OracleDialect");
-			} else if (DbConnectionFactory.isH2()) {
-			    cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
-                cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
-                getPluginsHBM("Id",cfg);
-                cfg.setProperty("hibernate.dialect", "net.sf.hibernate.dialect.HSQLDialect");
 			}
 
 			cfg.setInterceptor(new NoDirtyFlushInterceptor());
