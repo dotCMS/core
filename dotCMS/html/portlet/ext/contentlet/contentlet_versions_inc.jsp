@@ -88,8 +88,9 @@
 		<td nowrap="nowrap">
 		<% if (!working) {  %>
 			<% if(canEdit) {  %>
-				<% if (!live) { %>
-					<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a> -
+				<% if (!live) { %>					
+					<a  href="javascript:void(0);" onclick="deleteVersion('<%= vinode%>');return false;"><%= LanguageUtil.get(pageContext, "Delete") %></a> -
+					
 				<% } %>
 				<a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
 			<% } %>
