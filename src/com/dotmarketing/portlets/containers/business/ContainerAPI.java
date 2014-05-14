@@ -80,7 +80,6 @@ public interface ContainerAPI {
  	 * @throws DotStateException
  	 *
  	 */
- 
  	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
  
 
