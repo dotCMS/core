@@ -156,7 +156,7 @@ public class CommentsAction extends DispatchAction {
 			/* Set the title if we have one*/
 			if(UtilMethods.isSet(commentsOptions.get("commentTitle"))){
 
-				field = commentsStructure.getFieldVar("Title");
+				field = commentsStructure.getFieldVar("title");
 
 				conAPI.setContentletProperty(contentletComment, field, commentsOptions.get("commentTitle"));
 			}
@@ -164,7 +164,7 @@ public class CommentsAction extends DispatchAction {
 			/* Validate if a CommentsCount field exists in the contentlet structure
 			   if not, then create it and populate it.*/
 
-			if (!InodeUtils.isSet(contentletStructure.getFieldVar("CommentsCount").getInode())) {
+			if (!InodeUtils.isSet(contentletStructure.getFieldVar("commentscount").getInode())) {
 				List<Field> fields = new ArrayList<Field>();
 			    field = new Field("CommentsCount", Field.FieldType.TEXT, Field.DataType.INTEGER, contentletStructure,
 						          false, false, true, Integer.MAX_VALUE, "0", "0", "",true, true, true);
@@ -181,7 +181,7 @@ public class CommentsAction extends DispatchAction {
 			 * is null, then the contentlet has no comments, otherwise increment its value by one
 			 * and set it to the contentlet.
 			 */
-			field = contentletStructure.getFieldVar("CommentsCount");
+			field = contentletStructure.getFieldVar("commentscount");
 			String velVar = field.getVelocityVarName();
 
 			int comentsCount = -1;
@@ -221,35 +221,35 @@ public class CommentsAction extends DispatchAction {
 			conAPI.checkinWithoutVersioning(contentlet, contentRelationships, cats, APILocator.getPermissionAPI().getPermissions(contentlet), user, true);
             */
 			// Date
-			field = commentsStructure.getFieldVar("DatePublished");
+			field = commentsStructure.getFieldVar("datePublished");
 			conAPI.setContentletProperty(contentletComment, field, new Date());
 
 			// User Id
-			field = commentsStructure.getFieldVar("UserId");
+			field = commentsStructure.getFieldVar("userid");
 			conAPI.setContentletProperty(contentletComment, field, userId);
 
 			// Author
-			field = commentsStructure.getFieldVar("Author");
+			field = commentsStructure.getFieldVar("author");
 			conAPI.setContentletProperty(contentletComment, field, VelocityUtil.cleanVelocity(commentsForm.getName()));
 
 			// Email
-			field = commentsStructure.getFieldVar("Email");
+			field = commentsStructure.getFieldVar("email");
 			conAPI.setContentletProperty(contentletComment, field, VelocityUtil.cleanVelocity(commentsForm.getEmail()));
 
 			// WebSite
-			field = commentsStructure.getFieldVar("Website");
+			field = commentsStructure.getFieldVar("website");
 			conAPI.setContentletProperty(contentletComment, field, VelocityUtil.cleanVelocity(commentsForm.getWebsite()));
 
 			// EmailResponse
-			field = commentsStructure.getFieldVar("Email Response");
+			field = commentsStructure.getFieldVar("emailResponse");
 			conAPI.setContentletProperty(contentletComment, field, (commentsForm.isNotify()?"yes":"no"));
 
 			// IP Address
-			field = commentsStructure.getFieldVar("IP Address");
+			field = commentsStructure.getFieldVar("ipAddress");
 			conAPI.setContentletProperty(contentletComment, field, request.getRemoteAddr());
 
 			// Comment
-			field = commentsStructure.getFieldVar("Comment");
+			field = commentsStructure.getFieldVar("comment");
 			String comment = commentsForm.getComment();
 			comment=VelocityUtil.cleanVelocity(comment);
 
@@ -375,19 +375,19 @@ public class CommentsAction extends DispatchAction {
 		//This needs to be updated to use a lucene fix
 		// Condition
 		Structure commentsStructure = StructureCache.getStructureByVelocityVarName(CommentsWebAPI.commentsVelocityStructureName);
-		Field field = commentsStructure.getFieldVar("Email Response");
+		Field field = commentsStructure.getFieldVar("emailResponse");
 		String responseField = field.getFieldContentlet();
 
 		//Get the Email Field
-		field = commentsStructure.getFieldVar("Email");
+		field = commentsStructure.getFieldVar("email");
 		String emailField = field.getVelocityVarName();
 
 		//Get the Date Published Field
-		field = commentsStructure.getFieldVar("DatePublished");
+		field = commentsStructure.getFieldVar("datePublished");
 		String dateField = field.getVelocityVarName();
 
 		//Get the Email Response Field
-		field = commentsStructure.getFieldVar("Email Response");
+		field = commentsStructure.getFieldVar("emailResponse");
 		String emailResponseField = field.getVelocityVarName();
 
 		// Order
