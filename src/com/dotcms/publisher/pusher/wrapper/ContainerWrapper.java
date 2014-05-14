@@ -13,6 +13,7 @@ public class ContainerWrapper {
 	private Container container;
 	private VersionInfo cvi;
 	private Operation operation;
+	private List<ContainerStructure> csList;
 	
 	// ISSUE #80
 	private List<Map<String,Object>> multiTree;
@@ -64,6 +65,14 @@ public class ContainerWrapper {
 	 */
 	public void setOperation(Operation operation) {
 		this.operation = operation;
+	}
+	
+	public List<ContainerStructure> getCsList() {
+		return csList;
+	}
+
+	public void setCsList(List<ContainerStructure> csList) {
+		this.csList = csList;
 	}
 
 	public List<Map<String,Object>> getMultiTree() {
