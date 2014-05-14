@@ -192,17 +192,6 @@ public class PushPublisherConfig extends PublisherConfig {
 //	}
 	
 	@SuppressWarnings("unchecked")
-	public Set<String> getWorkflows() {
-	  if(get(AssetTypes.WORKFLOWS.name()) == null){
-	    Set<String> workflowsToBuild =   new HashSet<String>();
-	    put(AssetTypes.WORKFLOWS.name(), workflowsToBuild);
-	  }
-
-	  return (Set<String>) get(AssetTypes.WORKFLOWS.name());
-
-	}
-	
-	@SuppressWarnings("unchecked")
 	public Set<String> getRelationships() {
 		if(get(AssetTypes.RELATIONSHIPS.name()) == null){
 			Set<String> relationshipsToBuild =   new HashSet<String>();
