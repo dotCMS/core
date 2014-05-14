@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.beans.Host" %>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -530,7 +531,7 @@ function editImage(inode, callingImg){
 						<dt><%= LanguageUtil.get(pageContext, "Image") %>:</dt>
 						<dd>
 
-							<%if(("100".equals(System.getProperty("dotcms_level")))){ %>
+							<%if(LicenseUtil.getLevel()==100){ %>
 								<div style="position:relative;width:<%=showDim+40 %>px;">
 									<img src="/contentAsset/image/<%=file.getInode() %>/?byInode=1&filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
 											class="thumbnailDiv"

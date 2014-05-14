@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.business.UserAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
@@ -477,7 +478,7 @@ function showLanguageSelector(){
 	<% if (UtilMethods.isSet(serverId)){ %>
 		<%= LanguageUtil.get(pageContext, "Server") %>: <%=serverId%> <br />
 	<%} %>
-	<%= System.getProperty("dotcms_level_name")%>
+	<%= LicenseUtil.getLevelName() %>
 	<%= ReleaseInfo.getVersion() %><br/>
 	(<%= ReleaseInfo.getBuildDateString() %>)
 </div>
