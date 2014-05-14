@@ -69,6 +69,21 @@ public interface ContainerAPI {
 	public List<Container> getContainersInTemplate(Template parentTemplate) throws DotHibernateException, DotStateException, DotDataException, DotSecurityException;
 
 	/**
+ 	 *
+ 	 * Retrieves a list of container-structure relationships by container
+ 	 *
+ 	 * @param container
+ 	 * @return
+ 	 * @throws DotSecurityException
+ 	 * @throws DotDataException
+ 	 * @throws DotStateException
+ 	 *
+ 	 */
+ 
+ 	public List<ContainerStructures> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
+ 
+
+	/**
 	 * Retrieves all the containers attached to the given host
 	 * @param parentPermissionable
 	 * @author David H Torres

@@ -234,6 +234,27 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return containers;
 	}
 
+
+	/**
+ 	 *
+ 	 * Retrieves a list of container-structure relationships by container
+ 	 *
+ 	 * @param container
+ 	 * @return
+ 	 * @throws DotSecurityException
+ 	 * @throws DotDataException
+ 	 * @throws DotStateException
+ 	 *
+ 	 */
+ 	@SuppressWarnings("unchecked")
+ 	public List<ContainerStructures> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
+ 
+ 		HibernateUtil dh = new HibernateUtil(ContainerStructures.class);
+ 		dh.setSQLQuery("select {container_structures.*} from container_structures where container_structures.container_id = ?");
+ 		dh.setParam(container.getIdentifier());
+ 		return dh.list();
+ 	}
+
 	/**
 	 * Retrieves all the containers attached to the given host
 	 * @param parentPermissionable
