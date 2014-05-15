@@ -16,11 +16,13 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.InodeFactory;
@@ -79,7 +81,7 @@ public class OrderMenuAction extends DotPortletAction {
 
 			req.setAttribute("htmlTreeList", l.get(0));
 			req.setAttribute("showSaveButton", l.get(1));
-
+			List<Treeable> navs = new ArrayList<Treeable>();
 			//This condition works while saving the reordered menu
 			if (((cmd != null) && cmd.equals("generatemenu"))) {
 				HibernateUtil.startTransaction();
@@ -89,16 +91,29 @@ public class OrderMenuAction extends DotPortletAction {
 					doReorderMenu = ((Boolean)l.get(1)).booleanValue();
 				}
 				if(doReorderMenu){
-					_orderMenuItemsDragAndDrop(req,res,config,form);
+					navs = _orderMenuItemsDragAndDrop(req,res,config,form);
 				}else{
 					Logger.warn(this, "Possible hack attack: User submitting menu post of which they have no permissions to");
 					_sendToReferral(req,res,req.getParameter("referer"));
 					return;
 				}
 				RefreshMenus.deleteMenus();
-				CacheLocator.getNavToolCache().clearCache();
+
 				HibernateUtil.commitTransaction();
 				_sendToReferral(req,res,req.getParameter("referer"));
+				
+				
+				// we have to clear navs after db commit
+				for(Treeable treeable : navs){
+					Identifier id = APILocator.getIdentifierAPI().find(treeable.getIdentifier());
+					if("folder".equals(id.getAssetType())){
+						CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getPath());
+					}
+					Folder folder = APILocator.getFolderAPI().findParentFolder(treeable, user, false);
+					String folderId = (folder==null) ? FolderAPI.SYSTEM_FOLDER : folder.getIdentifier();
+					CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderId);
+				}
+				
 				return;
 			}
 
@@ -162,8 +177,9 @@ public class OrderMenuAction extends DotPortletAction {
 		return h;
 	}
 
-	private void _orderMenuItemsDragAndDrop(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form)
+	private List<Treeable> _orderMenuItemsDragAndDrop(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form)
 	throws Exception {
+		List<Treeable> ret = new ArrayList<Treeable>();
 		try
 		{
 			Enumeration parameterNames = req.getParameterNames();
@@ -191,6 +207,7 @@ public class OrderMenuAction extends DotPortletAction {
 				}
 			}
 
+
 			Set<String> keys = hashMap.keySet();
 			Iterator keysIterator = keys.iterator();
 			while(keysIterator.hasNext())
@@ -210,9 +227,14 @@ public class OrderMenuAction extends DotPortletAction {
 
 					if (asset instanceof Folder) {
 						((Folder)asset).setSortOrder(i);
-					} if (asset instanceof WebAsset)  {
+						ret.add(((Folder)asset));
+					} 
+					if (asset instanceof WebAsset)  {
 						((WebAsset)asset).setSortOrder(i);
-					} if (APILocator.getFileAssetAPI().isFileAsset(c))  {
+						ret.add(((WebAsset)asset));
+					} 
+					if (APILocator.getFileAssetAPI().isFileAsset(c))  {
+						ret.add(c);
 						c.setSortOrder(i);
 						APILocator.getContentletAPI().refresh(c);
 					}
@@ -225,6 +247,7 @@ public class OrderMenuAction extends DotPortletAction {
 			Logger.error(this, "_orderMenuItemsDragAndDrop: Exception ocurred.", ex);
 			throw ex;
 		}
+		return ret;
 	}
 
 	private void _orderMenuItems(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form)
