@@ -19,10 +19,17 @@ dojo.declare("dotcms.dojo.data.RoleReadStore", dojox.data.QueryReadStore, {
 
     fetch:function(request) {
     	var searchName = dijit.byId(this.nodeId).get("displayedValue");
+        var query = request.query;
+        if (query) {
+            if (query.name) {
+                query = query.name;
+            }
+        }
+
         request.serverQuery = {
         	"getRoles":request.cmd,
-        	"q":request.query,
-        	"searchName":searchName,
+        	"q":query,
+        	"searchName":searchName, 
         	"roleId":request.identity,
         	"start":request.start,
         	"count":request.count,
