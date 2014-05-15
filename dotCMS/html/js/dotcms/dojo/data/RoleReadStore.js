@@ -25,7 +25,7 @@ dojo.declare("dotcms.dojo.data.RoleReadStore", dojox.data.QueryReadStore, {
                 query = query.name;
             }
         }
-
+ 
         request.serverQuery = {
         	"getRoles":request.cmd,
         	"q":query,
