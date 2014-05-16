@@ -15,6 +15,7 @@ import java.util.UUID;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
@@ -91,7 +92,7 @@ public class ClusterFactory {
 	}
 
 	public static void addNodeToCluster(Map<String,String> properties, String serverId) throws Exception {
-
+	    
 		if(properties==null) {
 			properties = new HashMap<String, String>();
 		}
@@ -136,7 +137,6 @@ public class ClusterFactory {
         		my_loop:
         		while (interfaces.hasMoreElements()){
         			NetworkInterface current = interfaces.nextElement();
-        			System.out.println(current);
         			if (!current.isUp() || current.isLoopback() || current.isVirtual()) continue;
         			Enumeration<InetAddress> addresses = current.getInetAddresses();
         			while (addresses.hasMoreElements()){
@@ -158,6 +158,8 @@ public class ClusterFactory {
         		Logger.error(MainServlet.class, "Error trying to get Server Ip Address.", e);
         	}
         }
+        
+        LicenseUtil.setUpLicenseRepo();
 
         currentServer.setIpAddress(address);
         serverAPI.updateServer(currentServer);
