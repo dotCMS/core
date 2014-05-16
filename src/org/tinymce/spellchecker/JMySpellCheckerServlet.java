@@ -33,7 +33,6 @@ import com.dotcms.repackage.myspell.org.dts.spell.dictionary.SpellDictionary;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
 /**
@@ -44,7 +43,6 @@ import java.util.zip.ZipFile;
  */
 public class JMySpellCheckerServlet extends TinyMCESpellCheckerServlet {
 
-    private static Logger logger = Logger.getLogger(JMySpellCheckerServlet.class.getName());
     private static final long serialVersionUID = 2L;
 
     private Map<String, SpellChecker> spellcheckersCache = new Hashtable<String, SpellChecker>(2);
@@ -85,9 +83,25 @@ public class JMySpellCheckerServlet extends TinyMCESpellCheckerServlet {
      */
     protected Object getChecker(String lang) throws SpellCheckException {
         SpellChecker cachedCheker = spellcheckersCache.get(lang);
-        if (cachedCheker == null) {
-            cachedCheker = loadSpellChecker(lang);
-            spellcheckersCache.put(lang, cachedCheker);
+
+        /**
+         * Even if the SpellChecker is present we need to validate if the dictionary is available for use,
+         * and if not we should force a reloading of the SpellChecker for this language.
+         *
+         * On some scenarios the dictionary (WEB-INF/dictionary/jmyspell/en_US.zip, WEB-INF/dictionary/jmyspell/es_ES.zip, etc)
+         * is not longer available even with the SpellChecker object alive causing a java.lang.IllegalStateException, that's why
+         * a check on the dictionary and a reload is required.
+         */
+        Boolean forceReloading = false;
+        if ( cachedCheker != null ) {
+            if ( cachedCheker.getDictionary() == null || !cachedCheker.getDictionary().isLoad() ) {
+                forceReloading = true;
+            }
+        }
+
+        if ( cachedCheker == null || forceReloading ) {
+            cachedCheker = loadSpellChecker( lang );
+            spellcheckersCache.put( lang, cachedCheker );
         }
         return cachedCheker;
     }
