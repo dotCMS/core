@@ -1047,10 +1047,10 @@ public class ContentletAjax {
 			counters.put("hasNext", perPage < hits.size());
 
 		// Data to show in the bottom content listing page
-		String luceneQueryToShow2= luceneQuery.toString();
+		String luceneQueryToShow2= luceneQuery.toString();		
 		luceneQueryToShow2=luceneQueryToShow2.replaceAll("\\+languageId:[0-9]*\\*?","").replaceAll("\\+deleted:[a-zA-Z]*","")
-			.replaceAll("\\+working:[a-zA-Z]*","").trim();
-		String luceneQueryToShow= luceneQuery.toString();
+			.replaceAll("\\+working:[a-zA-Z]*","").replaceAll("\\s+", " ").trim();
+		String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
 		counters.put("luceneQueryRaw", luceneQueryToShow);
 		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","${esc.quote}"));
 		counters.put("sortByUF", orderBy);
