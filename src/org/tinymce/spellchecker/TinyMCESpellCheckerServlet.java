@@ -29,6 +29,7 @@ package org.tinymce.spellchecker;
 import com.dotcms.repackage.json.org.json.JSONArray;
 import com.dotcms.repackage.json.org.json.JSONException;
 import com.dotcms.repackage.json.org.json.JSONObject;
+import com.dotmarketing.util.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -38,15 +39,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author: Andrey Chorniy
  * Date: 03.01.2010
  * This is a base class for implementing TinyMCE JSON based request/response
  * Abstract classes define methods required to implement spellchecking functionality/lifecycle
- *  
+ *
  * TODO: refactor to single servlet which will use particular implementation based on delegating methods to spellchecker implementation
  * TODO: Delegate abstract methods to interface (named as SpellcheckerAdapter for example) to move them away from servlet code
  * TODO: Servlet will only do specific servlet functions: Reading JSONRequest, delegate spellchecking functionality to SpellcheckerAdapter and write JSON-response
@@ -55,8 +54,6 @@ import java.util.logging.Logger;
 
 public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-
-    private static Logger logger = Logger.getLogger(TinyMCESpellCheckerServlet.class.getName());
 
     private static final String MAX_SUGGESTIONS_COUNT_PARAM = "maxSuggestionsCount";
     private static final String PRELOADED_LANGUAGES_PARAM = "preloadedLanguages";
@@ -180,10 +177,10 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
             pw.println(jsonOutput.toString());
 
         } catch (SpellCheckException se) {
-            logger.log(Level.WARNING, se.getMessage(), se);
+            Logger.error( this.getClass(), se.getMessage(), se );
             returnError(response, se.getMessage());
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            Logger.error( this.getClass(), e.getMessage(), e );
             returnError(response, e.getMessage());
         }
 
