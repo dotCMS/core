@@ -314,7 +314,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	}
 
 
-	private static final String MULTI_TREE_QUERY = "select multi_tree.* from multi_tree join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 join container_version_info on container_version_info.identifier = multi_tree.parent2 join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child where multi_tree.child = ? and htmlpage_version_info.deleted = "+DbConnectionFactory.getDBFalse()+" and container_version_info.deleted = "+DbConnectionFactory.getDBFalse()+" and contentlet_version_info.deleted = "+DbConnectionFactory.getDBFalse();
+	private static final String MULTI_TREE_QUERY = "select multi_tree.* from multi_tree join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 join container_version_info on container_version_info.identifier = multi_tree.parent2 join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child where multi_tree.child = ? and htmlpage_version_info.deleted = ? and container_version_info.deleted = ? and contentlet_version_info.deleted = ?";
 	/**
 	 * Get multi tree data of a content
 	 * @param indentifier
@@ -325,7 +325,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 		DotConnect dc=new DotConnect();
 		dc.setSQL(MULTI_TREE_QUERY);
 		dc.addParam(id);
-
+		dc.addParam(Boolean.FALSE);
+		dc.addParam(Boolean.FALSE);
+		dc.addParam(Boolean.FALSE);
 		try {
 			res = dc.loadObjectResults();
 		} catch (Exception e) {
@@ -903,9 +905,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 		dc.addParam(id);
 		dc.addParam(id);
 		dc.addParam(id);
-		dc.addParam(DbConnectionFactory.getDBFalse());
-		dc.addParam(DbConnectionFactory.getDBFalse());
-		dc.addParam(DbConnectionFactory.getDBFalse());
+		dc.addParam(Boolean.FALSE);
+		dc.addParam(Boolean.FALSE);
+		dc.addParam(Boolean.FALSE);
 
 		try {
 			res = dc.loadObjectResults();
