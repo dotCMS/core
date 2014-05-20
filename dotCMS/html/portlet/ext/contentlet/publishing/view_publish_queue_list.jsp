@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
@@ -292,11 +293,22 @@
 						String structureName = "";
 						String title = "";
 						String inode = "";
-
-                        if ( assetType.equals( "contentlet" ) ) {
-                            //Searches and returns for a this Identifier a Contentlet using the default language
-                            Contentlet contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
-                            title = contentlet.getTitle();
+						if ( assetType.equals( "contentlet" ) ) {
+							Contentlet contentlet=null;
+							Language currentLanguage = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
+	                        
+                        	if(currentLanguage.getId() != APILocator.getLanguageAPI().getDefaultLanguage().getId()){
+                        		try{
+                        			contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, false, currentLanguage.getId(), user, false);
+                        		}catch(Exception e){
+                        			//Searches and returns for a this Identifier a Contentlet using the default language
+                                	contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
+                        		}
+                        	}else{
+                            	//Searches and returns for a this Identifier a Contentlet using the default language
+                            	contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
+                        	}
+                        	title = contentlet.getTitle();
                             inode = contentlet.getInode();
                             structureName = contentlet.getStructure().getName();
                         %>
@@ -314,7 +326,7 @@
 					    </div>
 
 					<%}catch(Exception e){nastyError=e.getMessage();%>
-						<%= LanguageUtil.get(pageContext, "publisher_No_Title") %>
+						<span style="color:red"><%= LanguageUtil.get(pageContext, "publisher_No_Title") %></span>
 					<%} %>
 
     			</td>
