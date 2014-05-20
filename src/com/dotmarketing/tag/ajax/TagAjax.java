@@ -279,10 +279,13 @@ public class TagAjax {
 	    		}
 	    	}
     	}
-    	if(!(newUserId.equals(userId))){
-    		tag.setUserId(newUserId);
-    	}
-    	else{
+    	if(UtilMethods.isSet(newUserId) && !(newUserId.equals(userId))){
+            try{
+            	TagFactory.updateTag(tag.getTagId(), newUserId);
+            }catch(Exception e){
+            	Logger.error(this, e.getMessage());
+            }
+    	}else{
 		TagFactory.deleteTag(TagFactory.getTag(tagName, userId));
     	}
 		List<Tag> tags = TagFactory.getTagByUser(userId);
