@@ -67,7 +67,14 @@ public class NavTool implements ViewTool {
             return null;
         
         NavResult result=navCache.getNav(host.getIdentifier(), folder.getInode());
-        if(result==null) {
+        
+	        if(result != null) {
+	        	 if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)) {
+	                 Identifier ident=APILocator.getIdentifierAPI().find(folder);
+	        	CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
+	        	 }
+	        }
+	        
             String parentId;
             if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)) {
                 Identifier ident=APILocator.getIdentifierAPI().find(folder);
@@ -109,11 +116,28 @@ public class NavTool implements ViewTool {
                     children.add(nav);
                 }
                 else if(item instanceof HTMLPage) {
+                	final String httpProtocol = "http://";
+                	final String httpsProtocol = "https://";
                     HTMLPage itemPage=(HTMLPage)item;
                     ident=APILocator.getIdentifierAPI().find(itemPage);
+                    HTMLPage page = null;
+                    page = APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+                    String redirectUri = page.getRedirect();
                     NavResult nav=new NavResult(folder.getInode(),host.getIdentifier());
                     nav.setTitle(itemPage.getTitle());
-                    nav.setHref(ident.getURI());
+                    if(UtilMethods.isSet(redirectUri) && !redirectUri.startsWith("/")){
+                        if(redirectUri.startsWith(httpsProtocol) || redirectUri.startsWith(httpProtocol)){
+                      	  nav.setHref(redirectUri);	
+                        }else{
+                      	  	if(page.isHttpsRequired())
+                      	  		nav.setHref(httpsProtocol+redirectUri);	
+                        		else	
+                        			nav.setHref(httpProtocol+redirectUri);
+                        }
+                      	
+                      }else{
+                      	nav.setHref(ident.getURI());
+                      }
                     nav.setOrder(itemPage.getSortOrder());
                     nav.setType("htmlpage");
                     nav.setPermissionId(itemPage.getPermissionId());
@@ -148,7 +172,7 @@ public class NavTool implements ViewTool {
             }
             
             navCache.putNav(host.getIdentifier(), folder.getInode(), result);
-        }
+    
         
         return result;
     }
