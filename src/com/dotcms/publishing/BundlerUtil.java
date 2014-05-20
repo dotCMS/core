@@ -99,7 +99,7 @@ public class BundlerUtil {
      * @param obj Object to serialize
      * @param f   File to write to
      */
-    public static void objectToXML ( Object obj, File f, boolean removeFirst ) {
+     public static void objectToXML ( Object obj, File f, boolean removeFirst ) {
 
         if ( removeFirst && f.exists() )
             f.delete();
@@ -119,25 +119,6 @@ public class BundlerUtil {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
         }
     }
-
-		if ( removeFirst && f.exists() )
-			f.delete();
-		
-		XStream xstream = new XStream(new DomDriver());
-
-		try {
-			if(!f.exists())f.createNewFile();
-			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
-			xstream.toXML(obj, out);
-			out.close();
-			
-			
-		} catch (FileNotFoundException e) {
-			Logger.error(PublisherUtil.class,e.getMessage(),e);
-		}catch (IOException e) {
-			Logger.error(PublisherUtil.class,e.getMessage(),e);
-		}	
-	}
 	
 	
 	/**
