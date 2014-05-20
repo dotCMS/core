@@ -1,12 +1,13 @@
 package com.dotcms.publishing;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
@@ -26,11 +27,11 @@ public class BundlerUtil {
 			throw new DotStateException("publishing config.id is null.  Please set an id before publishing (it will be the folder name under which the bundle will be created)");
 		}
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId()+ File.separator + "bundle.xml";
-		
-		
+
+
 		return new File(bundlePath).exists();
 	}
-	
+
 	/**
 	 * This method takes a config and will create the bundle directory and
 	 * write the bundle.xml file to it
@@ -42,7 +43,7 @@ public class BundlerUtil {
 		dir.mkdirs();
 		return dir;
 	}
-	
+
 	/**
 	 * This method takes a config and will create the bundle directory and
 	 * write the bundle.xml file to it
@@ -51,7 +52,7 @@ public class BundlerUtil {
 	public static File getBundleRoot(PublisherConfig config){
 		return getBundleRoot(config.getId());
 	}
-	
+
 	/**
 	 * write bundle down
 	 * @param config
@@ -107,7 +108,7 @@ public class BundlerUtil {
 
         try {
             if ( !f.exists() ) f.createNewFile();
-            BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream( f ) );
+            BufferedWriter out = new BufferedWriter( new OutputStreamWriter ( new FileOutputStream( f ), "UTF8" ));
             xstream.toXML( obj, out );
             out.close();
 
@@ -142,7 +143,7 @@ public class BundlerUtil {
 				input.close();
 			}
 			catch(Exception e){
-				
+
 			}
 		}
 
