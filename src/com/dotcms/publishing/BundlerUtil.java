@@ -1,12 +1,13 @@
 package com.dotcms.publishing;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
@@ -26,11 +27,11 @@ public class BundlerUtil {
 			throw new DotStateException("publishing config.id is null.  Please set an id before publishing (it will be the folder name under which the bundle will be created)");
 		}
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId()+ File.separator + "bundle.xml";
-		
-		
+
+
 		return new File(bundlePath).exists();
 	}
-	
+
 	/**
 	 * This method takes a config and will create the bundle directory and
 	 * write the bundle.xml file to it
@@ -42,7 +43,7 @@ public class BundlerUtil {
 		dir.mkdirs();
 		return dir;
 	}
-	
+
 	/**
 	 * This method takes a config and will create the bundle directory and
 	 * write the bundle.xml file to it
@@ -51,7 +52,7 @@ public class BundlerUtil {
 	public static File getBundleRoot(PublisherConfig config){
 		return getBundleRoot(config.getId());
 	}
-	
+
 	/**
 	 * write bundle down
 	 * @param config
@@ -96,9 +97,28 @@ public class BundlerUtil {
      * Serialize a given object to xml
 	 *
      * @param obj Object to serialize
-	 * @param f File to write to
-	 */
-	public static void objectToXML(Object obj, File f, boolean removeFirst){
+     * @param f   File to write to
+     */
+    public static void objectToXML ( Object obj, File f, boolean removeFirst ) {
+
+        if ( removeFirst && f.exists() )
+            f.delete();
+
+        XStream xstream = new XStream( new DomDriver() );
+
+        try {
+            if ( !f.exists() ) f.createNewFile();
+            BufferedWriter out = new BufferedWriter( new OutputStreamWriter ( new FileOutputStream( f ), "UTF8" ));
+            xstream.toXML( obj, out );
+            out.close();
+
+
+        } catch ( FileNotFoundException e ) {
+            Logger.error( PublisherUtil.class, e.getMessage(), e );
+        } catch ( IOException e ) {
+            Logger.error( PublisherUtil.class, e.getMessage(), e );
+        }
+    }
 
 		if ( removeFirst && f.exists() )
 			f.delete();
@@ -142,7 +162,7 @@ public class BundlerUtil {
 				input.close();
 			}
 			catch(Exception e){
-				
+
 			}
 		}
 
