@@ -159,6 +159,22 @@
 				}
 
 				deferred = dojo.xhrGet(xhrArgs);
+				
+				var licenseStatus;
+				
+				licxhr = {
+					url : "/api/cluster/licenseRepoStatus",
+					handleAs : "json",
+					sync: true,
+					load : function(data) {
+						licenseStatus = data;
+					},
+					error : function(error) {
+						targetNode.innerHTML = "An unexpected error occurred: " + error;
+					}
+				};
+				
+				dojo.xhrGet(licxhr);
 
 				var canRewire = row==myServerId;
 
@@ -196,6 +212,11 @@
 		            		    	  canRead: nodeStatus.assetsCanRead,
 		            		    	  canWrite: nodeStatus.assetsCanWrite,
 		            		    	  path: nodeStatus.assetsPath,
+		            		      },
+		            		      
+		            		      licenseRepo: {
+		            		    	  total: licenseStatus.total,
+		            		    	  available: licenseStatus.available
 		            		      }
 
 		            		    }
