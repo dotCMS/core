@@ -131,7 +131,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 import org.springframework.beans.BeanUtils;
-import org.apache.lucene.queryParser.ParseException;
 
 /**
  * @author Jason Tesser
