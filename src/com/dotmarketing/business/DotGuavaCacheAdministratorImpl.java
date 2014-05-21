@@ -15,10 +15,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
-import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.Cache;
 import com.dotcms.repackage.guava_11_0_1.com.google.common.cache.CacheBuilder;

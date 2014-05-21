@@ -99,6 +99,27 @@
 			</td>
 		</tr>
 	</table>
+	
+	<hr>
+	
+	<table>
+		<tr>
+			<td style="width:15px;">&nbsp;</td>
+			<td style="width:100%;"><b><%= LanguageUtil.get(pageContext, "configuration_cluster_license_repo") %></b></td>
+			<td style="width:15px;">&nbsp;</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td><%= LanguageUtil.get(pageContext, "Total") %></td>
+			<td align="right">{licenseRepo.total}</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td><%= LanguageUtil.get(pageContext, "Available") %></td>
+			<td align="right">{licenseRepo.available}</td>
+		</tr>
+	</table>
+	
 
 	<% if(rewireable.equalsIgnoreCase("true")) { %>
 

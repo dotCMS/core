@@ -2,6 +2,7 @@ package com.dotmarketing.startup.runonce;
 
 import java.sql.SQLException;
 
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -48,6 +49,7 @@ public class Task01311CreateClusterConfigModel implements StartupTask {
 		try {
 			DotConnect dc=new DotConnect();
 			createPushedAssetsTable(dc);
+			ClusterFactory.initialize();
 		} catch (SQLException e) {
 			throw new DotRuntimeException(e.getMessage(),e);
 		}

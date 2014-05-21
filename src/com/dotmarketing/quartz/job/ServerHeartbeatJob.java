@@ -7,6 +7,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
 
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -21,6 +22,7 @@ public class ServerHeartbeatJob implements StatefulJob {
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 		try {
 			APILocator.getServerAPI().updateHeartbeat();
+			LicenseUtil.updateLicenseHeartbeat();
 
 		} catch (DotDataException e) {
 			Logger.error(getClass(), "Could not get ServerUptime", e);

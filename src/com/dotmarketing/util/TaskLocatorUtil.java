@@ -20,6 +20,7 @@ import com.dotmarketing.fixtask.tasks.FixTask00050FixInodesWithoutContentlets;
 import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
 import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
 import com.dotmarketing.startup.runalways.Task00001LoadSchema;
+import com.dotmarketing.startup.runalways.Task00002ClusterInitialize;
 import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
 import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
@@ -178,6 +179,7 @@ public class TaskLocatorUtil {
     public static List<Class<?>> getStartupRunAlwaysTaskClasses() {
 		List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task00001LoadSchema.class);
+		ret.add(Task00002ClusterInitialize.class);
 		ret.add(Task00003CreateSystemRoles.class);
 		ret.add(Task00004LoadStarter.class);
 		ret.add(Task00005LoadFixassets.class);
