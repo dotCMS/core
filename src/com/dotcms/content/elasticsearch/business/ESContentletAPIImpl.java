@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.queryParser.ParseException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
@@ -83,6 +84,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletAndBinary;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -99,7 +101,11 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.PageServices;
@@ -3817,6 +3823,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 rels.put(crr.getRelationship(), crr.getRecords());
             }
 
+            newContentlet.getMap().put("__disable_workflow__", true);
+            newContentlet.getMap().put("_dont_validate_me", true);
             newContentlet = checkin(newContentlet, rels, parentCats, perAPI.getPermissions(contentlet), user, respectFrontendRoles);
             if(!UtilMethods.isSet(newIdentifier))
             	newIdentifier = newContentlet.getIdentifier();
@@ -3836,6 +3844,40 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	
     	for(Contentlet con : versionsToMarkWorking){
     		APILocator.getVersionableAPI().setWorking(con);
+    	}
+    	
+    	
+    	// https://github.com/dotCMS/dotCMS/issues/5620
+    	// copy the workflow state
+    	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(contentletToCopy);
+    	if(task!=null) {
+    	    WorkflowTask newTask=new WorkflowTask();
+    	    BeanUtils.copyProperties(task, newTask);
+    	    newTask.setId(null);
+    	    newTask.setWebasset(resultContentlet.getIdentifier());
+    	    APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
+    	    
+    	    for(WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {
+    	        WorkflowComment newComment=new WorkflowComment();
+    	        BeanUtils.copyProperties(comment, newComment);
+    	        newComment.setId(null);
+    	        newComment.setWorkflowtaskId(newTask.getId());
+    	        APILocator.getWorkflowAPI().saveComment(newComment);
+    	    }
+    	    
+    	    for(WorkflowHistory history : APILocator.getWorkflowAPI().findWorkflowHistory(task)) {
+    	        WorkflowHistory newHistory=new WorkflowHistory();
+    	        BeanUtils.copyProperties(history, newHistory);
+    	        newHistory.setId(null);
+    	        newHistory.setWorkflowtaskId(newTask.getId());
+    	        APILocator.getWorkflowAPI().saveWorkflowHistory(newHistory);
+    	    }
+    	    
+    	    List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task);
+    	    files.addAll(APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser()));
+    	    for(IFileAsset f : files) {
+    	        APILocator.getWorkflowAPI().attachFileToTask(newTask, f.getInode());
+    	    }
     	}
     	
     	return resultContentlet;
