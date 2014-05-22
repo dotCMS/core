@@ -295,7 +295,7 @@ function processDelete(inode, referer) {
 					<%=modDateFormat.format(template.getModDate())%>
 					<script language="JavaScript">
 						//popup div for the template
-						document.write(getTemplatePopUp('<%=k%>','<%= CTX_PATH %>', '<%=template.getInode()%>','',
+						document.write(getTemplatePopUp('<%=k%>','<%= CTX_PATH %>', '<%=template.getInode()%>', '<%=template.getIdentifier()%>','',
 							'<%=referer%>','<%=(template.isLive()) ? "1" : "0"%>',
 							'<%=(template.isWorking()) ? "1" : "0"%>',
 							'<%=(template.isDeleted()) ? "1" : "0"%>',

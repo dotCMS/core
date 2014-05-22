@@ -306,7 +306,7 @@ function processDelete(inode, referer) {
 				<%=modDateFormat.format(container.getModDate())%>
 				<script language="JavaScript">
 					//popup div for the containers
-					document.write(getContainerPopUp('<%=k%>','<%= CTX_PATH %>', '<%=container.getInode()%>','',
+					document.write(getContainerPopUp('<%=k%>','<%= CTX_PATH %>', '<%=container.getInode()%>', '<%=container.getIdentifier()%>','',
 					   '<%=referer%>','<%=(container.isLive()) ? "1" : "0"%>',
 					   '<%=(container.isWorking()) ? "1" : "0"%>',
 					   '<%=(container.isDeleted()) ? "1" : "0"%>',

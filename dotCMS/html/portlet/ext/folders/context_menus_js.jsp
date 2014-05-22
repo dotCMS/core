@@ -104,7 +104,7 @@ function getFilePopUp(i,ctxPath, objId, parentId, openNodes, referer,fileExt,liv
 
 
 // Container Flyout
-function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+function getContainerPopUp(i,ctxPath, objId, objIden, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
 
 	var strHTML = '';
 	strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
@@ -125,7 +125,7 @@ function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,del
 		}
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objId + '\');">';
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objIden + '\');">';
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 			strHTML += '</div>';
 		}
@@ -133,7 +133,7 @@ function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,del
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise) {
 
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objId + '\');">';
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objIden + '\');">';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 
 
@@ -194,7 +194,7 @@ function getContainerPopUp(i,ctxPath, objId, openNodes, referer,live,working,del
 
 
 // Link Flyout
-function getLinkPopUp(i,ctxPath, objId, parentId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+function getLinkPopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
 		var strHTML = '';
 		strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
 
@@ -221,13 +221,13 @@ function getLinkPopUp(i,ctxPath, objId, parentId, openNodes, referer,live,workin
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
 
-		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objId + '\');">';
+		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objIden + '\');">';
 		     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 		     strHTML += '</div>';
 		}
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise) {
-		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objId + '\');">';
+		     strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objIden + '\');">';
 		     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 		     strHTML += '</div>';
 		}
@@ -281,7 +281,7 @@ function getLinkPopUp(i,ctxPath, objId, parentId, openNodes, referer,live,workin
 }
 
 // Template Flyout
-function getTemplatePopUp(i,ctxPath, objId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
 
 	var strHTML = '';
 	strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
@@ -297,7 +297,7 @@ function getTemplatePopUp(i,ctxPath, objId, openNodes, referer,live,working,dele
 			strHTML += '</div>';
 		}
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objId + '\');">';
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objIden + '\');">';
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 			strHTML += '</div>';
 		}
@@ -305,7 +305,7 @@ function getTemplatePopUp(i,ctxPath, objId, openNodes, referer,live,working,dele
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise) {
 
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objId + '\');">';
+			strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objIden + '\');">';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 			strHTML += '</div>';
 		}
@@ -365,7 +365,7 @@ function getTemplatePopUp(i,ctxPath, objId, openNodes, referer,live,working,dele
 
 
 // HTML Page Flyout
-function getHTMLPagePopUp(i,ctxPath, objId, parentId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+function getHTMLPagePopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
 	var strHTML = '';
 		strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
 
@@ -402,14 +402,14 @@ function getHTMLPagePopUp(i,ctxPath, objId, parentId, openNodes, referer,live,wo
 		}
 
 		if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise && sendingEndpoints) {
-	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objId + '\');">';
+	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="remotePublish(\'' + objIden + '\');">';
 	            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish"))%>';
 	      strHTML += '</div>';
 	    }
 
 
 	    if ((working=="1") && (publish=="1") && (deleted!="1") && enterprise) {
-	        strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objId + '\');">';
+	        strHTML += '<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="addToBundle(\'' + objIden + '\');">';
             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 	        strHTML += '</div>';
 	    }

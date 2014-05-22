@@ -258,7 +258,7 @@ hostId = request.getParameter("host_id");
         </tr>
         <script language="JavaScript">
             //popup div for the htmlpages
-            document.write(getHTMLPagePopUp('<%=k%>', '<%= CTX_PATH %>', '<%=htmlpage.getInode()%>', '0', '', '<%=referer%>', '<%=(htmlpage.isLive()) ? "1" : "0"%>', '<%=(htmlpage.isWorking()) ? "1" : "0"%>', '<%=(htmlpage.isDeleted()) ? "1" : "0"%>', '<%=(htmlpage.isLocked()) ? "1" : "0"%>', '<%=permissions.contains(PermissionAPI.PERMISSION_READ) ? "1" : "0" %>', '<%=permissions.contains(PermissionAPI.PERMISSION_WRITE) ? "1" : "0" %>', '<%=permissions.contains(PermissionAPI.PERMISSION_PUBLISH) ? "1" : "0" %>', '<%=user.getUserId()%>'));
+            document.write(getHTMLPagePopUp('<%=k%>', '<%= CTX_PATH %>', '<%=htmlpage.getInode()%>', '<%=htmlpage.getIdentifier()%>', '0', '', '<%=referer%>', '<%=(htmlpage.isLive()) ? "1" : "0"%>', '<%=(htmlpage.isWorking()) ? "1" : "0"%>', '<%=(htmlpage.isDeleted()) ? "1" : "0"%>', '<%=(htmlpage.isLocked()) ? "1" : "0"%>', '<%=permissions.contains(PermissionAPI.PERMISSION_READ) ? "1" : "0" %>', '<%=permissions.contains(PermissionAPI.PERMISSION_WRITE) ? "1" : "0" %>', '<%=permissions.contains(PermissionAPI.PERMISSION_PUBLISH) ? "1" : "0" %>', '<%=user.getUserId()%>'));
         </script>
     <%} %>
 	<% if (htmlpagesSize ==0) { %>
