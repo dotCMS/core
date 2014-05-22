@@ -264,7 +264,7 @@ function togglePublish(){
 					<%=modDateFormat.format(link.getModDate())%>
 					<script language="JavaScript">
 						//popup div for the links
-						document.write(getLinkPopUp('<%=k%>','<%= CTX_PATH %>', '<%=link.getInode()%>','0','',
+						document.write(getLinkPopUp('<%=k%>','<%= CTX_PATH %>', '<%=link.getInode()%>', '<%=link.getIdentifier()%>','0','',
 							'<%=referer%>','<%=(link.isLive()) ? "1" : "0"%>',
 							'<%=(link.isWorking()) ? "1" : "0"%>',
 							'<%=(link.isDeleted()) ? "1" : "0"%>',
