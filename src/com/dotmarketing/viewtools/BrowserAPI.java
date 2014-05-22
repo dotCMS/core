@@ -360,6 +360,7 @@ public class BrowserAPI {
 					Identifier ident = APILocator.getIdentifierAPI().find(
 							fileAsset.getVersionId());
 
+					fileMap.put("wfMandatoryWorkflow", wfScheme!=null && wfScheme.isMandatory());
 					fileMap.put("permissions", permissions);
 					fileMap.put("mimeType", APILocator.getFileAPI()
 							.getMimeType(fileAsset.getFileName()));
