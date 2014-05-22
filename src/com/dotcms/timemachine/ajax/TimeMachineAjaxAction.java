@@ -205,7 +205,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         req.getSession().removeAttribute("tm_date");
         req.getSession().removeAttribute("tm_lang");
         req.getSession().removeAttribute("tm_host");
-//        req.getSession().removeAttribute("dotcache");
+        req.getSession().removeAttribute("dotcache");
     }
 
     private boolean validateParams(String datestr, String hostIdentifier, String langid) {
