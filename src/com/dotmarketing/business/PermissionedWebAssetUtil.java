@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.queryParser.ParseException;
-
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -96,7 +94,7 @@ public class PermissionedWebAssetUtil {
 		columnsToOrderBy.add(templateTitle);
 
 		List<String> tIds = queryForAssetIds("template, identifier, inode, template_version_info ",
-		        Template.class.getCanonicalName(),
+		        new String[] {Template.class.getCanonicalName(), Template.TEMPLATE_LAYOUTS_CANONICAL_NAME},
 		        "template.inode", 
 		        "identifier.id",
 		        "template.identifier = identifier.id and inode.inode = template.inode and " +
@@ -113,7 +111,7 @@ public class PermissionedWebAssetUtil {
 		if(tIds != null && tIds.size()>0){
 			StringBuilder bob = new StringBuilder();
 			for (String s : tIds) {
-				bob.append("'"+ s +"',");
+				bob.append("'").append(s).append("',");
 			}
 
 			return InodeFactory.getInodesOfClassByConditionAndOrderBy(Template.class, "inode in (" + bob.toString().subSequence(0, bob.toString().length()-1) + ")", dbColSort);
@@ -147,7 +145,7 @@ public class PermissionedWebAssetUtil {
 		columnsToOrderBy.add(structureTitle);
 
 		List<String> tIds = queryForAssetIds("structure, inode",
-		        Structure.class.getCanonicalName(),
+		        new String[] {Structure.class.getCanonicalName()},
 		        "structure.inode", 
 		        "inode.inode",
 		        "inode.inode = structure.inode "
@@ -161,7 +159,7 @@ public class PermissionedWebAssetUtil {
 		if(tIds != null && tIds.size()>0){
 			StringBuilder bob = new StringBuilder();
 			for (String s : tIds) {
-				bob.append("'"+ s +"',");
+				bob.append("'").append(s).append("',");
 			}
 
 			return InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class, "inode in (" + bob.toString().subSequence(0, bob.toString().length()-1) + ")", dbColSort);
@@ -188,7 +186,7 @@ public class PermissionedWebAssetUtil {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private static List<String> queryForAssetIds(String tablesToJoin,String permissionType ,String colToSelect, String colToJoinAssetIdTo, String assetWhereClause, List<ColumnItem> columnsToOrderBy, int offset, int limit, int requiredTypePermission, boolean respectFrontendRoles, User user) throws DotDataException,DotSecurityException {
+	private static List<String> queryForAssetIds(String tablesToJoin,String[] permissionType ,String colToSelect, String colToJoinAssetIdTo, String assetWhereClause, List<ColumnItem> columnsToOrderBy, int offset, int limit, int requiredTypePermission, boolean respectFrontendRoles, User user) throws DotDataException,DotSecurityException {
 		Role anonRole;
 		Role frontEndUserRole;
 		Role adminRole;
@@ -259,34 +257,51 @@ public class PermissionedWebAssetUtil {
 			extraSQLForOffset = "ROW_NUMBER() OVER (ORDER BY "+orderByClause+") AS LINENUM, ";
 		}
 		permissionRefSQL.append("SELECT * FROM (");
-		permissionRefSQL.append("SELECT " + extraSQLForOffset + colToSelect + " as asset_id," + orderBySelect + " ");
+		permissionRefSQL.append("SELECT ").append(extraSQLForOffset).append(colToSelect).append(" as asset_id,").append(orderBySelect).append(" ");
 		permissionRefSQL.append("FROM ");
 		if(!userIsAdmin){
 			permissionRefSQL.append("permission_reference, permission, ");
 		}
-		permissionRefSQL.append(tablesToJoin  + " ");
+		permissionRefSQL.append(tablesToJoin).append(" ");
 		permissionRefSQL.append("WHERE ");
 		if(!userIsAdmin){
 			permissionRefSQL.append("permission_reference.reference_id = permission.inode_id ");
 			permissionRefSQL.append("AND permission.permission_type = permission_reference.permission_type ");
-			permissionRefSQL.append("AND permission_reference.asset_id = " + colToJoinAssetIdTo + " AND ");
+			permissionRefSQL.append("AND permission_reference.asset_id = ").append(colToJoinAssetIdTo).append(" AND ");
 		}
-		permissionRefSQL.append(assetWhereClause + " ");
+		permissionRefSQL.append(assetWhereClause).append(" ");
 		if(!userIsAdmin){
-			permissionRefSQL.append("AND permission.permission_type = '" + permissionType + "' ");
+		    if(permissionType.length==1) {
+		        permissionRefSQL.append("AND permission.permission_type = '").append(permissionType).append("' ");
+		    }
+		    else {
+		        permissionRefSQL.append(" AND (");
+		        boolean first=true;
+		        for(String type : permissionType) {
+		            if(first) {
+		                first=false;
+		            }
+		            else {
+		                permissionRefSQL.append(" OR ");
+		            }
+		            permissionRefSQL.append(" permission.permission_type = '").append(type).append("' ");
+		        }
+		        permissionRefSQL.append(") ");
+		    }
+			
 			permissionRefSQL.append("AND permission.roleid in( ");
 		}
 		StringBuilder individualPermissionSQL = new StringBuilder();
 		if(!userIsAdmin){
-			individualPermissionSQL.append("select " + extraSQLForOffset + colToSelect + " as asset_id, " + orderBySelect + " ");
+			individualPermissionSQL.append("select ").append(extraSQLForOffset).append(colToSelect).append(" as asset_id, ").append(orderBySelect).append(" ");
 			individualPermissionSQL.append("FROM ");
 			individualPermissionSQL.append("permission,");
 
-			individualPermissionSQL.append(tablesToJoin + " WHERE ");
+			individualPermissionSQL.append(tablesToJoin).append(" WHERE ");
 			individualPermissionSQL.append("permission_type = 'individual' ");
-			individualPermissionSQL.append(" and permission.inode_id=" + colToJoinAssetIdTo + " AND ");
+			individualPermissionSQL.append(" and permission.inode_id=").append(colToJoinAssetIdTo).append(" AND ");
 
-			individualPermissionSQL.append(assetWhereClause + " ");
+			individualPermissionSQL.append(assetWhereClause).append(" ");
 			individualPermissionSQL.append(" and roleid in( ");
 			int roleIdCount = 0;
 			for(String roleId : roleIds){
@@ -299,16 +314,16 @@ public class PermissionedWebAssetUtil {
 				roleIdCount++;
 			}
 			if(DbConnectionFactory.isOracle()){
-				permissionRefSQL.append(") and bitand(permission.permission, "+ requiredTypePermission +") > 0 ");
-				individualPermissionSQL.append(") and bitand(permission, "+ requiredTypePermission +") > 0 ");
+				permissionRefSQL.append(") and bitand(permission.permission, ").append(requiredTypePermission).append(") > 0 ");
+				individualPermissionSQL.append(") and bitand(permission, ").append(requiredTypePermission).append(") > 0 ");
 			}else{
-				permissionRefSQL.append(") and (permission.permission & "+ requiredTypePermission +") > 0 ");
-				individualPermissionSQL.append(") and (permission & "+ requiredTypePermission +") > 0 ");
+				permissionRefSQL.append(") and (permission.permission & ").append(requiredTypePermission).append(") > 0 ");
+				individualPermissionSQL.append(") and (permission & ").append(requiredTypePermission).append(") > 0 ");
 			}
 		}
-		permissionRefSQL.append(" group by "+ colToSelect + " ");
+		permissionRefSQL.append(" group by ").append(colToSelect).append(" ");
 		if(UtilMethods.isSet(individualPermissionSQL.toString())){
-			individualPermissionSQL.append(" group by "+ colToSelect + " ");
+			individualPermissionSQL.append(" group by ").append(colToSelect).append(" ");
 		}
 		for(ColumnItem item : columnsToOrderBy){
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL) 
@@ -317,9 +332,9 @@ public class PermissionedWebAssetUtil {
 			}
 
 			orderBySelect = item.getSelectClause(true);
-			permissionRefSQL.append(", "+ orderBySelect + " ");
+			permissionRefSQL.append(", ").append(orderBySelect).append(" ");
 			if(UtilMethods.isSet(individualPermissionSQL.toString())){
-				individualPermissionSQL.append(", "+ orderBySelect + " ");
+				individualPermissionSQL.append(", ").append(orderBySelect).append(" ");
 			}
 		}
 		List<String> idsToReturn = new ArrayList<String>();
