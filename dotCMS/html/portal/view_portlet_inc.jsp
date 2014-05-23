@@ -173,7 +173,7 @@ if(!statePopUp || portletException){%>
 <script type="text/javascript">
 	var shown=false;
 	function showHelp() {
-		var helpUrl = "http://dotcms.com/inline-help/2.0/<%=portlet.getPortletId() %>";
+		var helpUrl = "//dotcms.com/inline-help/2.0/<%=portlet.getPortletId() %>";
         require(["dojo/_base/fx", "dojo/dom", "dojo/window", "dojo/dom-construct","dojo/dom-style"], function(baseFx, dom, win, cons, dstyle) {
         	var vp=win.getBox(win.doc);
         	if(!shown) {
