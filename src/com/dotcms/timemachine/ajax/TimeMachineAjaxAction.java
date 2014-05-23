@@ -55,7 +55,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         }
     }
 
-    
+
 
     private static final ObjectWriter jsonWritter=new ObjectMapper().writerWithDefaultPrettyPrinter();
 
@@ -106,9 +106,9 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             }
         });
         Locale l = PublicCompanyFactory.getDefaultCompany().getLocale();
-        
+
         DateFormat fmtPretty=DateFormat.getDateInstance(DateFormat.MEDIUM, l);
-        
+
         List<Map<String,String>> list=new ArrayList<Map<String,String>>(snaps.size());
         for(Date dd : snaps) {
             Map<String,String> m=new HashMap<String,String>();
@@ -180,16 +180,16 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             req.getSession().setAttribute("tm_lang", langid);
         }
     }
-    
+
     public void startBrowsingFutureDate(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         Map<String, String> map = getURIParams();
         String datestr=map.get("date");
         String hostIdentifier=map.get("hostIdentifier");
         String langid=map.get("langid");
-        
+
         SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
         datestr=Long.toString(sdf.parse(datestr).getTime());
-        
+
         if(!new Date().before(new Date(Long.parseLong(datestr))))
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         else {
@@ -197,13 +197,15 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
                     APILocator.getHostAPI().find(hostIdentifier, getUser(), false));
             req.getSession().setAttribute("tm_date", datestr);
             req.getSession().setAttribute("tm_lang", langid);
-        }   
+            req.getSession().setAttribute("dotcache", "refresh");
+        }
     }
 
     public void stopBrowsing(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         req.getSession().removeAttribute("tm_date");
         req.getSession().removeAttribute("tm_lang");
         req.getSession().removeAttribute("tm_host");
+        req.getSession().removeAttribute("dotcache");
     }
 
     private boolean validateParams(String datestr, String hostIdentifier, String langid) {
@@ -231,7 +233,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
     public void disableJob(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         APILocator.getTimeMachineAPI().removeQuartzJob();
     }
-    
+
     public void saveJobConfig(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         String cronExp=req.getParameter("cronExp");
         String[] hostIdentifiers=req.getParameterValues("snaphost");
@@ -240,7 +242,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         String[] langids=req.getParameterValues("lang");
         Map<String, String> map = getURIParams();
         boolean runnow=map.get("run")!=null;
-        
+
         List<Host> hosts=new ArrayList<Host>();
 
         List<Language> langs=new ArrayList<Language>(langids.length);
@@ -255,9 +257,9 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             langs.add(APILocator.getLanguageAPI().getLanguage(id));
 
 
-        try {        	
+        try {
                APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,allhost,langs, incremental);
-        	
+
         	}catch (Exception ex) {
                Logger.error(this, ex.getMessage(),ex);
                writeError(resp, ex.getCause().getMessage());
