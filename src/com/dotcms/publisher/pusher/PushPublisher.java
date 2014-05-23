@@ -272,7 +272,9 @@ public class PushPublisher extends Publisher {
                 buildAsset = true;
             }
         }
-
+        if(config.getLuceneQueries().size() > 0){
+        	buildAsset = true;
+        }
 
         if ( buildUsers ) {
             list.add( UserBundler.class );
