@@ -86,7 +86,7 @@
 	Role[] roles = (Role[])com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
 
 	//Getting user preferences
-	String codeWidth = "650px";
+	String codeWidth = "647px";
 	String codeHeight = "350px";
 	String preLoopWidth = "650px";
 	String preLoopHeight = "150px";
@@ -244,9 +244,9 @@
 						    </button>
 					    </div>
 					</dd>
-					<dd>
-						<div style="width:650px;height:400px">
-							<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:670px;height:400px;z-index:100; " dolayout="false">
+					<dd>					
+						<div style="width:650px;height:410px">
+							<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:653px;height:420px;overflow-y: hidden; " dolayout="false">					
 							<style>
 							.dijitTabCloseButton {
 								width: 15px;
