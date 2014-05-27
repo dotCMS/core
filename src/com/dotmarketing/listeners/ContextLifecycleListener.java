@@ -67,8 +67,13 @@ public class ContextLifecycleListener implements ServletContextListener {
 		System.setProperty("DOTCMS_LOGGING_HOME", ConfigUtils.getDynamicContentPath() + File.separator + "logs");
 	    String path = null;
 		try {
-			path = Config.CONTEXT_PATH + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j.xml";
-		} catch (Exception e) {
+
+            String contextPath = Config.CONTEXT_PATH;
+            if ( !contextPath.endsWith( File.separator ) ) {
+                contextPath += File.separator;
+            }
+            path = contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j.xml";
+        } catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		}
 
