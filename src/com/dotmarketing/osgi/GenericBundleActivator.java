@@ -38,6 +38,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
+import java.io.File;
 import java.net.URL;
 import java.util.*;
 
@@ -598,8 +599,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
             Class clazz = Class.forName( activatorClass, false, this.getClass().getClassLoader() );
             URL sourceURL = clazz.getProtectionDomain().getCodeSource().getLocation();
 
-            //Restoring to their original state any override class
-            urlOsgiClassLoader.reload( sourceURL, true );
+            //First verify if the source url exist
+            File source = new File( sourceURL.getPath() );
+            if ( source.exists() ) {
+                //Restoring to their original state any override class
+                urlOsgiClassLoader.reload( sourceURL, true );
+            }
 
             /*
             Closes this URLClassLoader, so that it can no longer be used to load
