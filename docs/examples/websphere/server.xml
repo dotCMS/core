@@ -1,0 +1,49 @@
+<server description="dotcms server">
+
+    <jvmEntries
+            verboseModeClass="false"
+            verboseModeGarbageCollection="true"
+            verboseModeJNI="false"
+            runHProf="false"
+            hprofArguments=""
+            debugMode="false"
+            debugArgs=""
+            genericJvmArguments="-Xmx4GB"/>
+
+    <!-- Enable features -->
+    <featureManager>
+        <feature>servlet-3.0</feature>
+        <feature>jsp-2.2</feature>
+        <feature>jndi-1.0</feature>
+        <feature>sessionDatabase-1.0</feature>
+    </featureManager>
+
+    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="8080" httpsPort="9443"/>
+
+    <httpOptions maxKeepAliveRequests="-1"/>
+    <application name="dotcms" context-root="/" type="war" id="dotcms" location="dotcms.war" autoStart="true"/>
+    <applicationMonitor dropinsEnabled="false" updateTrigger="disabled"/>
+    <config updateTrigger="disabled"/>
+    <classloader delegation="parentFirst"/>
+
+    <connectionManager maxPoolSize="100"/>
+
+    <!--<dataSource jndiName="jdbc/dotCMSPool" id="DataSourceSession-1" type="javax.sql.DataSource">
+    <dataSource jndiName="jdbc/dotCMSPool" id="DataSourceSession-1" type="javax.sql.XADataSource">
+        <jdbcDriver libraryRef="h2-lib" javax.sql.DataSource="org.h2.jdbcx.JdbcDataSource"/>
+        <jdbcDriver libraryRef="h2-lib" javax.sql.DataSource="org.h2.Driver" javax.sql.XADataSource="org.h2.jdbcx.JdbcDataSource"/>
+        <properties user="sa" password="sa" url="jdbc:h2:h2_dotcms_data;MVCC=TRUE"/>
+    </dataSource>
+    <library id="h2-lib" name="h2 JDBC Driver">
+        <fileset dir="/opt/IBM/WebSphere/Liberty/lib" includes="h2-1.3.169.jar"/>
+    </library>-->
+
+    <dataSource id="postgresDS" jndiName="jdbc/dotCMSPool" type="javax.sql.XADataSource">
+        <jdbcDriver javax.sql.XADataSource="org.postgresql.xa.PGXADataSource" libraryRef="postgres-lib"/>
+        <properties databaseName="dotcms" serverName="localhost" portNumber="5432" url="jdbc:postgresql://localhost/dotcms" user="postgres" password="postgres" />
+    </dataSource>
+    <library id="postgres-lib">
+        <fileset dir="/opt/IBM/WebSphere/Liberty/lib" includes="postgresql-9.0-801.jdbc3.jar"/>
+    </library>
+
+</server>
