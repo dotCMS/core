@@ -123,9 +123,9 @@
 					<% } %>
 					</th>
 					<th width="1%" nowrap="nowrap" align="center"><%=LanguageUtil.get(pageContext, "edit")%></th>
-					<th><a href="#subscribers" onclick="javascript: sortSubscribersBy('firstname');"><%=LanguageUtil.get(pageContext, "First-Name")%></a></th>
-					<th><a href="#subscribers" onclick="javascript: sortSubscribersBy('lastname');"><%=LanguageUtil.get(pageContext, "Last-Name")%></a></th>
-					<th><a href="#subscribers" onclick="javascript: sortSubscribersBy('emailaddress');"><%=LanguageUtil.get(pageContext, "Email")%></a></th>
+					<th><a href="javascript:void(0);" onclick="sortSubscribersBy('firstname');"><%=LanguageUtil.get(pageContext, "First-Name")%></a></th>
+					<th><a href="javascript:void(0);" onclick="sortSubscribersBy('lastname');"><%=LanguageUtil.get(pageContext, "Last-Name")%></a></th>
+					<th><a href="javascript:void(0);" onclick="sortSubscribersBy('emailaddress');"><%=LanguageUtil.get(pageContext, "Email")%></a></th>
 					<th width="1%" nowrap="nowrap"><%=LanguageUtil.get(pageContext, "Last-Result")%></th>
 				</tr>
 				<tbody id="subscribersTable"></tbody>
