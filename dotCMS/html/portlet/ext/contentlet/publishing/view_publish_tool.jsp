@@ -200,6 +200,7 @@
     }
 
     function showBundleUpload() {
+    	dojo.byId("uploadBundleFile").value="";
         dijit.byId("uploadBundleDiv").show();
 
     }
