@@ -303,7 +303,7 @@ dojo.require("dojox.layout.ContentPane");
 				continue;
 			}
 
-			if((formElements[formElementsIndex].type == "checkbox") && (formElements[formElementsIndex].checked == false)){
+			if((formElements[formElementsIndex].type == "checkbox") && (formElements[formElementsIndex].checked == false)&& (formElements[formElementsIndex].id != "fieldNeverExpire")){
 				continue;
 			}
 

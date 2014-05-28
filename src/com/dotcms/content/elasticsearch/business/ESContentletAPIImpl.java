@@ -3143,6 +3143,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         boolean hasError = false;
         DotContentletValidationException cve = new DotContentletValidationException("Contentlets' fields are not valid");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
+        Structure structure = StructureCache.getStructureByInode(stInode);
         Map<String, Object> conMap = contentlet.getMap();
         for (Field field : fields) {
             Object o = conMap.get(field.getVelocityVarName());
@@ -3203,6 +3204,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                            continue;
                     }
                 }
+                else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
+                	if(!UtilMethods.isSet(o)){
+	                		if(field.getVelocityVarName().equals(structure.getExpireDateVar())){
+	                			if(conMap.get("NeverExpire").equals("NeverExpire")){
+	            				 continue;
+	                			}else{
+	                			  cve.addRequiredField(field);
+	                              hasError = true;
+	                              continue;
+	                		    }
+	                		}else{
+	                			 cve.addRequiredField(field);
+	                             hasError = true;
+	                             continue;
+	                		}
+                		}
+                }	
                 else if( field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) ) {
                     if( cats == null || cats.size() == 0 ) {
                         cve.addRequiredField(field);
