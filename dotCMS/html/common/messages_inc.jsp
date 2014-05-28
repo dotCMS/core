@@ -188,7 +188,12 @@ request.getSession().removeAttribute("com.dotcms.repackage.struts.org.apache.str
 	
 		function hideDotCMSSystemMessage(messageId){
 	
-			var currentY = parseInt(dojo.byId("systemMessagesWrapper" + messageId).style.top);
+			var id = dojo.byId("systemMessagesWrapper" + messageId);
+			if(id == null){
+				return;
+			}
+
+			var currentY = parseInt(id.style.top);
 			occupiedPositions = dojo.filter(occupiedPositions, function (x) {
 				return x != currentY;
 			});
