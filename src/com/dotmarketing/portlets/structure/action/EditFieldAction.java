@@ -537,7 +537,7 @@ public class EditFieldAction extends DotPortletAction {
 				conAPI.cleanHostField(structure, APILocator.getUserAPI().getSystemUser(), false);
 				perAPI.resetChildrenPermissionReferences(structure);
 			}
-
+			StructureFactory.saveStructure(structure);
 			// rebuild contentlets indexes
 			conAPI.reindex(structure);
 			// remove the file from the cache
