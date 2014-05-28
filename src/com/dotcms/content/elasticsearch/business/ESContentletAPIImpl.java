@@ -2434,7 +2434,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 save=true;
                             }
                         }
+    			        if (!contentlet.isLive() && UtilMethods.isSet( st.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set    		               
+			        		if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before( new Date())) {
+			        			throw new DotContentletValidationException( "message.contentlet.expired" );
+	    		            }
+	    		        }
     			        if(save) {
+    			        	
     			            // publish/expire dates changed
     			            APILocator.getIdentifierAPI().save(ident);
 
