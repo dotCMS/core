@@ -5,9 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,18 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.tika.Tika;
-import org.apache.tika.mime.MimeType;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -69,7 +61,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
-import com.google.gson.Gson;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
@@ -322,7 +313,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             
             for(Entry<String,String> entry : m.entrySet()){
                 final String lcasek=entry.getKey().toLowerCase();
-                final String lcasev=entry.getValue().toLowerCase();
+                final String lcasev=entry.getValue()!=null ? entry.getValue().toLowerCase() : "";
                 mlowered.put(lcasek, lcasev);
                 mlowered.put(lcasek + "_dotraw", lcasev);
             }
@@ -342,7 +333,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	        
             return mlowered;
 		} catch (Exception e) {
-			Logger.error(this.getClass(), e.getMessage(), e);
+			//Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotMappingException(e.getMessage(), e);
 		}
 	}

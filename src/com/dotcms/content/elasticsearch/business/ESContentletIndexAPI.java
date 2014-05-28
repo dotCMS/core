@@ -319,27 +319,32 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
             Gson gson=new Gson();
             String mapping=null;
-            if(con.isWorking()) {
-                mapping=gson.toJson(mappingAPI.toMap(con));
-                
-                if(!reindexOnly)
-                    req.add(new IndexRequest(info.working, "content", id)
-                                .source(mapping));
-                if(info.reindex_working!=null)
-                    req.add(new IndexRequest(info.reindex_working, "content", id)
-                                .source(mapping));
-            }
-
-            if(con.isLive()) {
-                if(mapping==null)
+            try {
+                if(con.isWorking()) {
                     mapping=gson.toJson(mappingAPI.toMap(con));
-                
-                if(!reindexOnly)
-                    req.add(new IndexRequest(info.live, "content", id)
-                            .source(mapping));
-                if(info.reindex_live!=null)
-                    req.add(new IndexRequest(info.reindex_live, "content", id)
-                            .source(mapping));
+                    
+                    if(!reindexOnly)
+                        req.add(new IndexRequest(info.working, "content", id)
+                                    .source(mapping));
+                    if(info.reindex_working!=null)
+                        req.add(new IndexRequest(info.reindex_working, "content", id)
+                                    .source(mapping));
+                }
+    
+                if(con.isLive()) {
+                    if(mapping==null)
+                        mapping=gson.toJson(mappingAPI.toMap(con));
+                    
+                    if(!reindexOnly)
+                        req.add(new IndexRequest(info.live, "content", id)
+                                .source(mapping));
+                    if(info.reindex_live!=null)
+                        req.add(new IndexRequest(info.reindex_live, "content", id)
+                                .source(mapping));
+                }
+            }
+            catch(DotMappingException ex) {
+                Logger.error(this, "Can't get a mapping for contentlet with id_lang:"+id+" Content data: "+con.getMap(), ex);
             }
         }
 		
