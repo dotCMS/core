@@ -27,6 +27,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -721,6 +722,19 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 							value = "0";
 						}
 
+					}
+				}
+				if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
+					if(field.getFieldContentlet().startsWith("date")){
+						String fieldNeverExpire = contentletFormData.get("fieldNeverExpire").toString();
+						Structure structure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+						if(field.getVelocityVarName().equals(structure.getExpireDateVar())){
+							if(fieldNeverExpire.equalsIgnoreCase("true")){
+								contentlet.getMap().put("NeverExpire", "NeverExpire");
+							}else{
+								contentlet.getMap().put("NeverExpire", "");
+							}
+						}
 					}
 				}
 
