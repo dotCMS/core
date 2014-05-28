@@ -1556,6 +1556,11 @@ public class ContentletAjax {
 					String errorString = LanguageUtil.get(user,"message.contentlet.invalid.form");
 					saveContentErrors.add(errorString);
 				}
+				
+				if(ve.getMessage().contains("message.contentlet.expired")){
+					String errorString = LanguageUtil.get(user,"message.contentlet.expired");
+					saveContentErrors.add(errorString);
+				}
 			}
 
 		}
