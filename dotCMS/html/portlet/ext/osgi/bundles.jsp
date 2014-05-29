@@ -7,7 +7,6 @@
 <%@page import="java.util.Map"%>
 <%@page import="java.util.HashMap"%>
 <%@page import="org.osgi.framework.Bundle"%>
-<%@ page import="com.dotmarketing.util.OSGIUtil" %>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <%@ page import="com.dotmarketing.business.APILocator" %>
@@ -27,12 +26,50 @@
     List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();
     %>
     var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
+
+    var getBundlesData = function () {
+
+        var xhrArgs = {
+            url: "/api/osgi/getInstalledBundles/ignoreSystemBundles/false/type/json",
+            handleAs: "json",
+            load: function (data) {
+
+                data.forEach(function(bundleData){
+
+                    var htmlContent = "<tr id=\"tr" + bundleData.jarFile + "\">" +
+                            "<td>" + bundleData.symbolicName + "</td>" +
+                            "<td>" + bundleData.state + "</td>" +
+                            "<td>" + bundleData.jarFile + "</td>";
+
+                    htmlContent += "<td>";
+                    if (bundleData.state != <%=Bundle.ACTIVE%>) {
+                        htmlContent += "<a href=\"javascript:bundles.start('" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a>";
+                    }
+                    if (bundleData.state == <%=Bundle.ACTIVE%>) {
+                        htmlContent += "<a href=\"javascript:bundles.stop('" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a>";
+                    }
+                    if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(bundleData.separator + "load" + bundleData.separator) != -1) {
+                        htmlContent += "&nbsp;|&nbsp;<a href=\"javascript:bundles.undeploy('" + bundleData.jarFile + "','" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a>";
+                    }
+                    htmlContent += "</td></tr>";
+
+                    dojo.place(htmlContent, "bundlesTable-body", "after");
+                });
+            },
+            error: function (error) {
+                showDotCMSSystemMessage(error.responseText, true);
+            }
+        };
+        dojo.xhrGet(xhrArgs);
+    };
+
+    dojo.addOnLoad(function () {
+        getBundlesData();
+    });
+
 </script>
 <%
-Bundle[] ba = OSGIUtil.getInstance().getBundleContext().getBundles();
-
-List<String> ignoreBuns =Arrays.asList(new String[]{"org.apache.felix.gogo.shell","org.apache.felix.framework", "org.apache.felix.bundlerepository","org.apache.felix.fileinstall","org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core"});
-
+Bundle[] ba = {};
 
 Map<Integer,String> states = new HashMap<Integer,String>();
 states.put(Bundle.ACTIVE, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Active"));
@@ -104,6 +141,7 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 </div>
 
 <table class="listingTable" style="margin:0 0 25px 0;" id="bundlesTable">
+    <tbody id="bundlesTable-body">
 	<tr>
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Name")%></th>
 		<th><%=LanguageUtil.get(pageContext, "OSGI-State")%></th>
@@ -119,7 +157,6 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
             }
             String jarFile = b.getLocation().contains( separator ) ? b.getLocation().substring( b.getLocation().lastIndexOf( separator ) + 1 ) : "System";
     %>
-		<%if(ignoreBuns.contains(b.getSymbolicName()) ){continue;} %>
 		<% hasBundles = true; %>
 		<tr id="tr<%=jarFile%>">
 			<td><%=b.getSymbolicName()%></td>
@@ -153,6 +190,7 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 			<td colspan="100" align="center"><%=LanguageUtil.get(pageContext, "No-Results-Found")%></td>
 		</tr>
 	<%}%>
+    </tbody>
 </table>
 
 
