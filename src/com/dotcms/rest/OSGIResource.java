@@ -28,7 +28,7 @@ import java.util.*;
 @Path ("/osgi")
 public class OSGIResource extends WebResource {
 
-    List<String> systemBundles = Arrays.asList( "org.apache.felix.gogo.shell", "org.apache.felix.framework", "org.apache.felix.bundlerepository", "org.apache.felix.fileinstall", "org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core" );
+    List<String> systemBundles = Arrays.asList( "org.apache.felix.http.bundle", "org.apache.felix.gogo.shell", "org.apache.felix.framework", "org.apache.felix.bundlerepository", "org.apache.felix.fileinstall", "org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core" );
 
     /**
      * This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method.
