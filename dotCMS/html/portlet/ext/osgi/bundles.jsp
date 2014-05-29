@@ -10,7 +10,7 @@
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <script type="text/javascript">
-    require(["dijit/form/SimpleTextarea", "dijit/Dialog"]);
+    require(["dijit/form/SimpleTextarea", "dijit/Dialog", "dijit/MenuItem"]);
 
     window.states = {};
     states[<%=Bundle.ACTIVE%>]= "<%=LanguageUtil.get(pageContext, "OSGI-Bundles-State-Active")%>";
@@ -170,12 +170,14 @@
                                 }
                                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"javascript:bundles.addToBundlePlugin('" + bundleData.jarFile + "');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
                                 popupMenus += "</div>";
-
-                                popupMenusDiv = document.getElementById("popup_menus");
-                                popupMenusDiv.innerHTML = popupMenus;
                             }
                         }
                     });
+
+                    require(["dojo/html", "dojo/dom"],
+                        function (html, dom) {
+                            html.set(dom.byId("popup_menus"), popupMenus,{parseContent: true});
+                        });
                 } else {
                     var htmlContent = "<tr><td colspan=\"100\" align=\"center\"><%=LanguageUtil.get(pageContext, "No-Results-Found")%></td></tr>";
                     dojo.place(htmlContent, "bundlesTable-body", "after");
