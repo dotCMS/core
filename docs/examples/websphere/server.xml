@@ -24,7 +24,6 @@
     <application name="dotcms" context-root="/" type="war" id="dotcms" location="dotcms.war" autoStart="true"/>
     <applicationMonitor dropinsEnabled="false" updateTrigger="disabled"/>
     <config updateTrigger="disabled"/>
-    <classloader delegation="parentFirst"/>
 
     <connectionManager maxPoolSize="100"/>
 
