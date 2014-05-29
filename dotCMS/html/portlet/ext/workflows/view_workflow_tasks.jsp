@@ -172,86 +172,101 @@
 
 	function doOrderBy (newOrder) {
 
-			dojo.byId("orderBy").value= newOrder;
+		dojo.byId("orderBy").value= newOrder;
 
 
-			var newURL = "";
-			var x  =lastUrlParams.split("&");
-			for(i =0;i<x.length;i++){
-				if(x[i].indexOf("orderBy")<0){
-					newURL+="&" + x[i];
-				}
+		var newURL = "";
+		var x  =lastUrlParams.split("&");
+
+        for (i = 0; i < x.length; i++) {
+            if (x[i].indexOf("orderBy") < 0) {
+
+                if (x[i].length > 0) {
+                    if (x[i].indexOf("&") == 0) {
+                        newURL += x[i];
+                    } else {
+                        newURL += "&" + x[i];
+                    }
+                }
+            }
+        }
+
+		newURL+="&orderBy=" +newOrder;
+
+		refreshTaskList(newURL);
+
+}
 
 
-			}
+var stepStore = new dojo.data.ItemFileReadStore({url:"/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme"});
+var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
+var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
+var daysData= { "identifier" : "d", "label" : "days", "items":
+	[{d:1},{d:2},{d:5},{d:10},{d:15},{d:20},{d:30},{d:40},{d:50},{d:60}]};
+var daysOldStore = new dojo.data.ItemFileReadStore({data:daysData});
 
-			newURL+="&orderBy=" +newOrder;
+var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "assignedTo", includeFake:false});
 
-			refreshTaskList(newURL);
+dojo.ready(function(){
 
-	}
-
-
-	var stepStore = new dojo.data.ItemFileReadStore({url:"/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfStepAjax?cmd=listByScheme"});
-	var assignedToStore = new dotcms.dojo.data.RoleReadStore({nodeId: "assignedTo", jsId:"assignedToStore"});
-	var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
-	var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
-	var daysData= { "identifier" : "d", "label" : "days", "items":
-		[{d:1},{d:2},{d:5},{d:10},{d:15},{d:20},{d:30},{d:40},{d:50},{d:60}]};
-	var daysOldStore = new dojo.data.ItemFileReadStore({data:daysData});
-
-	dojo.ready(function(){
-
-
-	<%if(isAdministrator){%>
-		var assignedTo = new dijit.form.FilteringSelect({
-		    id: "assignedTo",
-		    name: "assignedTo",
-		    store: assignedToStore,
-		    searchDelay:300,
-		    pageSize:20,
-		    required:false,
-		    value:"<%=assignedTo.getId()%>",
-		    onClick:function(){
-		    	if(show4All==false){
-		    		dijit.byId("assignedTo").set("displayedValue","");
-		        	dijit.byId("assignedTo").loadDropDown();
-		    	}
-		    },
-		    onChange:doFilter
+	if(dojo.isIE){
+    	setTimeout(function(){
+        	var randomParam = Math.floor((Math.random()*10000)+1);
+            var myRoleReadStoreURL = myRoleReadStore.url;
+            var dummyVar = new Array();
+            myRoleReadStore.url = myRoleReadStoreURL+"?randomParam="+randomParam;
+            myRoleReadStore.fetch({onComplete: dummyVar});
+        },100);
+    }
 
 
-		},
-		"assignedTo");
-		doFilter();
-	<%}%>
+<%if(isAdministrator){%>
+    var assignedTo = new dijit.form.FilteringSelect({
+        id: "assignedTo",
+        name: "assignedTo",
+        store: myRoleReadStore,
+        searchDelay: 300,
+        pageSize: 30,
+        required: false,
+        value: "<%=assignedTo.getId()%>",
+        onClick:function(){
+        	dijit.byId("assignedTo").set("displayedValue","");
+        	dijit.byId("assignedTo").loadDropDown();
+        },
+        onChange:function(){
+        	doFilter();
+        }
+    },
+    "assignedTo");
+    doFilter();
+<%}%>
 
-		var stepId = new dijit.form.FilteringSelect({
-		    id: "stepId",
-		    name: "stepId",
-		    store: emptyStore,
-		    searchDelay:300,
-		    pageSize:20,
-		    required:false,
-		    onChange:function(){
-		    	doFilter();
-		    }
+	var stepId = new dijit.form.FilteringSelect({
+	    id: "stepId",
+	    name: "stepId",
+	    store: emptyStore,
+	    searchDelay:300,
+	    pageSize:20,
+	    required:false,
+	    onChange:function(){
+	    	doFilter();
+	    }
 
-		},"stepId");
+	},"stepId");
 
-		var olderThanCombo = new dijit.form.ComboBox({
-	        id:"daysold",
-	        name:"daysold",
-	        store:daysOldStore,
-	        required:false,
-	        value:"",
-	        searchAttr:"d"
-	    },"daysold");
+	var olderThanCombo = new dijit.form.ComboBox({
+        id:"daysold",
+        name:"daysold",
+        store:daysOldStore,
+        required:false,
+        value:"",
+        searchAttr:"d"
+    },"daysold");
 
 
-		doFilter();
+	doFilter();
 
-	});
+});
 
 	var emptyData = {"identifier" : "id","label" : "name","items": [{ name: '', id: ''}]};
 
