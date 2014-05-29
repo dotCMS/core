@@ -160,7 +160,7 @@ public class ReindexThread extends Thread {
 						final ArrayList<IndexJournal<String>> recordsToDelete=new ArrayList<IndexJournal<String>>();
 						while(!remoteQ.isEmpty()) {
     					    IndexJournal<String> idx = remoteQ.removeFirst();
-    				        writeDocumentToIndex(bulk,idx);
+					        writeDocumentToIndex(bulk,idx);
     				        recordsToDelete.add(idx);
     				        if(reindexSleepDuringIndex){
 	    				        try {
