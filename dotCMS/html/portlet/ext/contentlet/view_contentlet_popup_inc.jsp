@@ -281,6 +281,9 @@ dojo.ready(function(){
 					    		}
 					        }
 							if(!wysiwygPlain){%>
+								<%if (textValue.contains("<a href=")){
+					        		textValue = textValue.replaceAll("<a href=", "<a target='_blank' href=");
+					        	}%>
 								<textarea style="width:100%;height:500px;"><%=textValue %></textarea>
 							<%}else{ %>
 								<div class="textAreaDiv">
