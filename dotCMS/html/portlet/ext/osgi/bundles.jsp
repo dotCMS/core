@@ -143,6 +143,10 @@
                     var i = 0;
                     data.forEach(function(bundleData){
 
+                        //First we need to destroy any existing widget with the same id
+                        try {dijit.byId("popupTr" + i).destroy(true);} catch (e) {}
+                        try {dijit.byId("tr" + bundleData.jarFile).destroy(true);} catch (e) {}
+
                         var htmlContent = "<tr id=\"tr" + bundleData.jarFile + "\">" +
                                 "<td>" + bundleData.symbolicName + "</td>" +
                                 "<td>" + window.states[bundleData.state] + "</td>" +
