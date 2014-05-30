@@ -146,10 +146,15 @@
 				break;
 			}
 		}
-
+        boolean isWidget = false;
+        ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
+        int structureType = contentletForm.getStructure().getStructureType();
+        if(structureType == 2){
+        	 isWidget = true;
+        }
 %>
 	<div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
-    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea" style="overflow:auto;width:450px;min-height:100px;max-height: 600px"
+    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:450px;min-height:100px;max-height: 600px\""%>
         name="<%=field.getFieldContentlet()%>"
         id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
 <%
@@ -158,7 +163,7 @@
     <br />
     <div style="padding-right:10px;width:475px;float:left;">
     	<div style="float: left;padding-top: 10px; padding-left: 2px;">
-    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>');" />
+    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
         	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
         </div>
         <br /> <br />
