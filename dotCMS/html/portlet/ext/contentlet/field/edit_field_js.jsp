@@ -37,6 +37,7 @@
         border:1px solid #C0C0C0;
         text-overflow: clip;
     	white-space: nowrap;   
+    }
 </style>
 
 <!-- AChecker support -->
