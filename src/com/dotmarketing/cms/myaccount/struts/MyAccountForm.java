@@ -12,7 +12,6 @@ public class MyAccountForm extends ActionForm
 	private static final long serialVersionUID = 1L;
 
 	//Liferay User fields
-	private String userId;
 	private String emailAddress;
 	private String password;
 	private String newPassword;
@@ -694,22 +693,6 @@ public class MyAccountForm extends ActionForm
 	 */
 	public void setTypeAddress(String typeAddress) {
 		this.typeAddress = typeAddress;
-	}
-
-
-	/**
-	 * @return Returns the userId.
-	 */
-	public String getUserId() {
-		return userId;
-	}
-
-
-	/**
-	 * @param userId The userId to set.
-	 */
-	public void setUserId(String userId) {
-		this.userId = userId;
 	}
 
 

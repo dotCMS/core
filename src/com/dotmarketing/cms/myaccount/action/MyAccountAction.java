@@ -72,7 +72,8 @@ public class MyAccountAction extends DispatchAction {
 		}
 
 		MyAccountForm form = (MyAccountForm) lf;
-		String userId = form.getUserId();
+		User user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+		String userId = user.getUserId();
 
 		if (!Validator.validate(request, lf, mapping))
 			return mapping.findForward("myAccountPage");
@@ -82,8 +83,7 @@ public class MyAccountAction extends DispatchAction {
 		HibernateUtil.startTransaction();
 
 		// User user = PublicUserFactory.getUserByEmail(userEmail);
-		User user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
-
+		
 		UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false);
 
 		user.setFirstName(form.getFirstName());
@@ -123,8 +123,10 @@ public class MyAccountAction extends DispatchAction {
 			Tag tempTag = TagFactory.getTagByTagId(tag.getTagId());
 			TagFactory.deleteTagInode(tempTag.getTagName(), userProxy.getInode());
 		}
-		TagFactory.addTag(form.getTags(), userProxy.getUserId(), userProxy.getInode());
-
+		if(tags.size() > 0){
+			TagFactory.addTag(form.getTags(), userProxy.getUserId(), userProxy.getInode());
+		}
+		
 		CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 		List<Category> myUserCategories = categoryAPI.getChildren(userProxy, APILocator.getUserAPI().getSystemUser(), false);
 		for (Object object: myUserCategories) {
@@ -344,14 +346,13 @@ public class MyAccountAction extends DispatchAction {
 		}
 
 		MyAccountForm form = (MyAccountForm) lf;
-		String userId = form.getUserId();
+		User user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+		String userId = user.getUserId();
 
 		if (!Validator.validate(request, lf, mapping))
 			return mapping.findForward("editUserAddressPage");
 
 		// Saving Address Information
-		User user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
-
 		Address address = null;
 		int addrId = 0;
 		try{
@@ -400,9 +401,9 @@ public class MyAccountAction extends DispatchAction {
 		}
 
 		MyAccountForm form = (MyAccountForm) lf;
-		String userId = form.getUserId();
+		User user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+		String userId = user.getUserId();
 		String companyId = Config.getStringProperty("COMPANY_ID");
-		User user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
 		UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false);
 
 		if (!Validator.validate(request, lf, mapping))
@@ -444,9 +445,9 @@ public class MyAccountAction extends DispatchAction {
 		}
 
 		MyAccountForm form = (MyAccountForm) lf;
-		String userId = form.getUserId();
+		User user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+		String userId = user.getUserId();
 		String companyId = Config.getStringProperty("COMPANY_ID");
-		User user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
 		UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false);
 		// ExtUser extUser = (ExtUser) InodeFactory.getChildOfClass(userProxy,
 		// ExtUser.class);
