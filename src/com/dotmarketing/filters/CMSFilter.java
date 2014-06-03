@@ -392,7 +392,7 @@ public class CMSFilter implements Filter {
                 				if(pointer.endsWith("/")){
                 					pointer = pointer.substring(0, pointer.lastIndexOf("/"));
                 				}
-                				if(!pointer.startsWith("/")){
+                				if(!pointer.startsWith("/") && !(pointer.indexOf("http://") != -1 || pointer.indexOf("https://")!=-1)){
                 					pointer = "/" + pointer;
                 				}
                 				String endSlash = pointer.substring(pointer.lastIndexOf("/"));
