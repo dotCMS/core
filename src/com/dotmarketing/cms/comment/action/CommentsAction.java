@@ -164,7 +164,8 @@ public class CommentsAction extends DispatchAction {
 			/* Validate if a CommentsCount field exists in the contentlet structure
 			   if not, then create it and populate it.*/
 
-			if (!InodeUtils.isSet(contentletStructure.getFieldVar("commentscount").getInode())) {
+			field = contentletStructure.getFieldVar("commentscount");
+			if (field==null || !InodeUtils.isSet(field.getInode())) {
 				List<Field> fields = new ArrayList<Field>();
 			    field = new Field("CommentsCount", Field.FieldType.TEXT, Field.DataType.INTEGER, contentletStructure,
 						          false, false, true, Integer.MAX_VALUE, "0", "0", "",true, true, true);
@@ -181,7 +182,7 @@ public class CommentsAction extends DispatchAction {
 			 * is null, then the contentlet has no comments, otherwise increment its value by one
 			 * and set it to the contentlet.
 			 */
-			field = contentletStructure.getFieldVar("commentscount");
+			
 			String velVar = field.getVelocityVarName();
 
 			int comentsCount = -1;
