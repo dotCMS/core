@@ -77,13 +77,14 @@ import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
 import com.dotmarketing.startup.runonce.Task01055CreatePushPublishEnvironmentTable;
 import com.dotmarketing.startup.runonce.Task01305CreateModDateForMissingObjects;
-import com.dotmarketing.startup.runonce.Task01306CreateModDateForFieldIfNeeded;
-import com.dotmarketing.startup.runonce.Task01310AddContentletIdentifierIndex;
-import com.dotmarketing.startup.runonce.Task01311CreateClusterConfigModel;
-import com.dotmarketing.startup.runonce.Task01320PostgresqlIndiciesFK;
-import com.dotmarketing.startup.runonce.Task01325CreateFoundationForNotificationSystem;
-import com.dotmarketing.startup.runonce.Task01330CreateIndicesForVersionTables;
-import com.dotmarketing.startup.runonce.Task01335FixContainerCheckTrigger;
+import com.dotmarketing.startup.runonce.Task01310CreateModDateForFieldIfNeeded;
+import com.dotmarketing.startup.runonce.Task01315AddContentletIdentifierIndex;
+import com.dotmarketing.startup.runonce.Task01320CreateClusterConfigModel;
+import com.dotmarketing.startup.runonce.Task01325PostgresqlIndiciesFK;
+import com.dotmarketing.startup.runonce.Task01330CreateFoundationForNotificationSystem;
+import com.dotmarketing.startup.runonce.Task01335CreateIndicesForVersionTables;
+import com.dotmarketing.startup.runonce.Task01340FixContainerCheckTrigger;
+import com.dotmarketing.startup.runonce.Task01345CreateBundleTablesIfNotExists;
 
 public class TaskLocatorUtil {
 
@@ -163,13 +164,14 @@ public class TaskLocatorUtil {
         ret.add(Task01065IndexOnPublishingQueueAuditStatus.class);
         ret.add(Task01070BundleNameDropUnique.class);
         ret.add(Task01305CreateModDateForMissingObjects.class);
-        ret.add(Task01306CreateModDateForFieldIfNeeded.class);
-        ret.add(Task01310AddContentletIdentifierIndex.class);
-        ret.add(Task01311CreateClusterConfigModel.class);
-        ret.add(Task01320PostgresqlIndiciesFK.class);
-        ret.add(Task01325CreateFoundationForNotificationSystem.class);
-        ret.add(Task01330CreateIndicesForVersionTables.class);
-        ret.add(Task01335FixContainerCheckTrigger.class);
+        ret.add(Task01310CreateModDateForFieldIfNeeded.class);
+        ret.add(Task01315AddContentletIdentifierIndex.class);
+        ret.add(Task01320CreateClusterConfigModel.class);
+        ret.add(Task01325PostgresqlIndiciesFK.class);
+        ret.add(Task01330CreateFoundationForNotificationSystem.class);
+        ret.add(Task01335CreateIndicesForVersionTables.class);
+        ret.add(Task01340FixContainerCheckTrigger.class);
+        ret.add(Task01345CreateBundleTablesIfNotExists.class);
         return ret;
     }
 

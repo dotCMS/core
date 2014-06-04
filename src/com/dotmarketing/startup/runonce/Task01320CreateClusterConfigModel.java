@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 
-public class Task01311CreateClusterConfigModel implements StartupTask {
+public class Task01320CreateClusterConfigModel implements StartupTask {
 
 	private void createPushedAssetsTable(DotConnect dc) throws SQLException, DotDataException {
 		if(DbConnectionFactory.isMsSql()) {

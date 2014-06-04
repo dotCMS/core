@@ -5,7 +5,7 @@ import java.util.List;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
-public class Task01335FixContainerCheckTrigger extends AbstractJDBCStartupTask {
+public class Task01340FixContainerCheckTrigger extends AbstractJDBCStartupTask {
 
 	String createTrigger = "drop trigger check_container_versions;\n" +
 			"CREATE Trigger check_container_versions\n" +
