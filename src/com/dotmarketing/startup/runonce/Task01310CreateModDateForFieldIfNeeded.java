@@ -6,7 +6,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
-public class Task01306CreateModDateForFieldIfNeeded extends AbstractJDBCStartupTask {
+public class Task01310CreateModDateForFieldIfNeeded extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {
