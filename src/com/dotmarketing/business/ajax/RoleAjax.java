@@ -204,9 +204,17 @@ public class RoleAjax {
 		Role role = roleAPI.loadRoleById(roleId);
 
 		User user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-		roleAPI.addRoleToUser(role, user);
+		String error = "";
+		try{
+			roleAPI.addRoleToUser(role, user);
+		}catch(DotStateException dse){
+			error = LanguageUtil.format(request.getLocale(), "can_not_grant_users_check_rights", new String[]{role.getName()},false);
+		}
 
-		return user.toMap();
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("error", error);
+		result.put("user", user.toMap());
+		return result;
 
 	}
 
