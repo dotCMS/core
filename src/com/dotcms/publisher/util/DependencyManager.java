@@ -550,7 +550,8 @@ public class DependencyManager {
 	private void setTemplateDependencies() {
 		try {
 			List<Container> containerList = new ArrayList<Container>();
-
+			FolderAPI folderAPI = APILocator.getFolderAPI();
+			
 			for (String id : templatesSet) {
 				Template wkT = APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
 				Template lvT = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
@@ -570,6 +571,21 @@ public class DependencyManager {
 					// Container dependencies
 					containers.addOrClean( container.getIdentifier(), container.getModDate());
 					containersSet.add(container.getIdentifier());
+				}
+				
+				//Adding theme
+				if(UtilMethods.isSet(wkT.getTheme())){
+					Folder themeFolder = folderAPI.find(wkT.getTheme(), user, false);
+					if(themeFolder != null &&  InodeUtils.isSet(themeFolder.getInode())){
+						Folder parent = APILocator.getFolderAPI().findParentFolder(themeFolder, user, false);
+						if(UtilMethods.isSet(parent)) {
+							folders.addOrClean( parent.getInode(), parent.getModDate());
+							foldersSet.add(parent.getInode());
+						}
+						List<Folder> folderList = new ArrayList<Folder>();
+						folderList.add(themeFolder);
+						setFolderListDependencies(folderList);
+					}
 				}
 			}
 

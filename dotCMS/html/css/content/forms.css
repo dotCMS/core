@@ -164,7 +164,7 @@
 }
 
 button.removeFile, button.browse {
-	padding: 6px !important;
+	padding: 4px !important;
 	width: 100px !important;
 	margin-left: 3px;	
 }
@@ -194,6 +194,7 @@ button.removeFile, button.browse {
 }
 input.imageField , input.fileField {
        width: 300px;
+       height:32px;
        position: relative;
    	   text-align: right;
        -moz-opacity:0 ;
