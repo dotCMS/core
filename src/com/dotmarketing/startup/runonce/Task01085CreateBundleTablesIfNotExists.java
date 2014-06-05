@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 
-public class Task01306CreateBundleTablesIfNotExists extends AbstractJDBCStartupTask {
+public class Task01085CreateBundleTablesIfNotExists extends AbstractJDBCStartupTask {
 
 
     @Override
