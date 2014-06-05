@@ -5,7 +5,7 @@ import java.util.List;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
-public class Task01315AddContentletIdentifierIndex extends AbstractJDBCStartupTask {
+public class Task03010AddContentletIdentifierIndex extends AbstractJDBCStartupTask {
     	
 	private static final String INDEX_SQL = 
 	"CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);\n";
