@@ -72,19 +72,19 @@ import com.dotmarketing.startup.runonce.Task01035FixTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01060CreatePushPublishPushedAssets;
 import com.dotmarketing.startup.runonce.Task01065IndexOnPublishingQueueAuditStatus;
 import com.dotmarketing.startup.runonce.Task01070BundleNameDropUnique;
-import com.dotmarketing.startup.runonce.Task01300CreateContainertStructures;
+import com.dotmarketing.startup.runonce.Task01085CreateBundleTablesIfNotExists;
+import com.dotmarketing.startup.runonce.Task03000CreateContainertStructures;
 import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
 import com.dotmarketing.startup.runonce.Task01055CreatePushPublishEnvironmentTable;
-import com.dotmarketing.startup.runonce.Task01305CreateModDateForMissingObjects;
-import com.dotmarketing.startup.runonce.Task01310CreateModDateForFieldIfNeeded;
-import com.dotmarketing.startup.runonce.Task01315AddContentletIdentifierIndex;
-import com.dotmarketing.startup.runonce.Task01320CreateClusterConfigModel;
-import com.dotmarketing.startup.runonce.Task01325PostgresqlIndiciesFK;
-import com.dotmarketing.startup.runonce.Task01330CreateFoundationForNotificationSystem;
-import com.dotmarketing.startup.runonce.Task01335CreateIndicesForVersionTables;
-import com.dotmarketing.startup.runonce.Task01340FixContainerCheckTrigger;
-import com.dotmarketing.startup.runonce.Task01345CreateBundleTablesIfNotExists;
+import com.dotmarketing.startup.runonce.Task01080CreateModDateForMissingObjects;
+import com.dotmarketing.startup.runonce.Task03005CreateModDateForFieldIfNeeded;
+import com.dotmarketing.startup.runonce.Task03010AddContentletIdentifierIndex;
+import com.dotmarketing.startup.runonce.Task03015CreateClusterConfigModel;
+import com.dotmarketing.startup.runonce.Task03020PostgresqlIndiciesFK;
+import com.dotmarketing.startup.runonce.Task03025CreateFoundationForNotificationSystem;
+import com.dotmarketing.startup.runonce.Task03030CreateIndicesForVersionTables;
+import com.dotmarketing.startup.runonce.Task03035FixContainerCheckTrigger;
 
 public class TaskLocatorUtil {
 
@@ -156,22 +156,22 @@ public class TaskLocatorUtil {
         ret.add(Task01020CreateDefaultWorkflow.class);
         ret.add(Task01030AddSiteSearchAuditTable.class);
         ret.add(Task01035FixTriggerVarLength.class);
-        ret.add(Task01300CreateContainertStructures.class);
+        ret.add(Task03000CreateContainertStructures.class);
         ret.add(Task01045FixUpgradeTriggerVarLength.class);
         ret.add(Task01050AddPushPublishLogger.class);
         ret.add(Task01055CreatePushPublishEnvironmentTable.class);
         ret.add(Task01060CreatePushPublishPushedAssets.class);
         ret.add(Task01065IndexOnPublishingQueueAuditStatus.class);
         ret.add(Task01070BundleNameDropUnique.class);
-        ret.add(Task01305CreateModDateForMissingObjects.class);
-        ret.add(Task01310CreateModDateForFieldIfNeeded.class);
-        ret.add(Task01315AddContentletIdentifierIndex.class);
-        ret.add(Task01320CreateClusterConfigModel.class);
-        ret.add(Task01325PostgresqlIndiciesFK.class);
-        ret.add(Task01330CreateFoundationForNotificationSystem.class);
-        ret.add(Task01335CreateIndicesForVersionTables.class);
-        ret.add(Task01340FixContainerCheckTrigger.class);
-        ret.add(Task01345CreateBundleTablesIfNotExists.class);
+        ret.add(Task01085CreateBundleTablesIfNotExists.class);
+        ret.add(Task01080CreateModDateForMissingObjects.class);
+        ret.add(Task03005CreateModDateForFieldIfNeeded.class);
+        ret.add(Task03010AddContentletIdentifierIndex.class);
+        ret.add(Task03015CreateClusterConfigModel.class);
+        ret.add(Task03020PostgresqlIndiciesFK.class);
+        ret.add(Task03025CreateFoundationForNotificationSystem.class);
+        ret.add(Task03030CreateIndicesForVersionTables.class);
+        ret.add(Task03035FixContainerCheckTrigger.class);
         return ret;
     }
 

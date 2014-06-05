@@ -10,7 +10,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
-public class Task01325PostgresqlIndiciesFK extends AbstractJDBCStartupTask {
+public class Task03020PostgresqlIndiciesFK extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {

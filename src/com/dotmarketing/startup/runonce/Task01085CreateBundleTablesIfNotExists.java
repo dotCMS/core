@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 
-public class Task01345CreateBundleTablesIfNotExists extends AbstractJDBCStartupTask {
+public class Task01085CreateBundleTablesIfNotExists extends AbstractJDBCStartupTask {
 
 
     @Override
@@ -58,13 +58,13 @@ public class Task01345CreateBundleTablesIfNotExists extends AbstractJDBCStartupT
     }
 
     @Override
-    public String getH2Script() {
-        return  "";
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }
+
+	@Override
+	public String getH2Script() {
+		return "";
+	}
 
 }
