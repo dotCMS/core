@@ -889,7 +889,14 @@
 		RoleAjax.addUserToRole(addedUserId, norm(currentRoleId), addUserToRoleCallback);
 	}
 
-	function addUserToRoleCallback (user) {
+	function addUserToRoleCallback (result) {
+		
+		if(result['error'] != ''){
+			showDotCMSErrorMessage(result['error']);
+			return;
+		}
+		
+		var user = result['user'];
 
 		showDotCMSSystemMessage(userGrantedRoleMsg);
 
