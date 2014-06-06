@@ -76,7 +76,8 @@ import com.dotmarketing.startup.runonce.Task01060CreatePushPublishPushedAssets;
 import com.dotmarketing.startup.runonce.Task01065IndexOnPublishingQueueAuditStatus;
 import com.dotmarketing.startup.runonce.Task01070BundleNameDropUnique;
 import com.dotmarketing.startup.runonce.Task01075AddModDateToWorkflowScheme;
-import com.dotmarketing.startup.runonce.Task01305CreateModDateForMissingObjects;
+import com.dotmarketing.startup.runonce.Task01080CreateModDateForMissingObjects;
+import com.dotmarketing.startup.runonce.Task01085CreateBundleTablesIfNotExists;
 
 
 public class TaskLocatorUtil {
@@ -156,7 +157,8 @@ public class TaskLocatorUtil {
         ret.add(Task01065IndexOnPublishingQueueAuditStatus.class);
         ret.add(Task01070BundleNameDropUnique.class);
         ret.add(Task01075AddModDateToWorkflowScheme.class);
-        ret.add(Task01305CreateModDateForMissingObjects.class);
+        ret.add(Task01080CreateModDateForMissingObjects.class);
+        ret.add(Task01085CreateBundleTablesIfNotExists.class);
         return ret;
     }
 

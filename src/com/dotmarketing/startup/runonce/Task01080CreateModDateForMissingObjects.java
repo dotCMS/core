@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 
-public class Task01305CreateModDateForMissingObjects implements StartupTask {
+public class Task01080CreateModDateForMissingObjects implements StartupTask {
 
 	private void addModDate(DotConnect dc) throws SQLException, DotDataException {
 		if(DbConnectionFactory.isMsSql()) {
