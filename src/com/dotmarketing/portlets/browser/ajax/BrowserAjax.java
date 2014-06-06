@@ -485,7 +485,7 @@ public class BrowserAjax {
      */
     public boolean moveFolder ( String inode, String newFolder ) throws Exception {
 
-        HibernateUtil.startTransaction();
+    	HibernateUtil.startTransaction();
 
         try {
             HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -545,54 +545,66 @@ public class BrowserAjax {
 
     public Map<String, Object> renameFile (String inode, String newName) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    	User user = null;
-    	try {
-    		user = com.liferay.portal.util.PortalUtil.getUser(req);
-    	} catch (Exception e) {
-    		Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
-    		throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
-    	}
-
     	HashMap<String, Object> result = new HashMap<String, Object> ();
-    	Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
-    	if(id!=null && id.getAssetType().equals("contentlet")){
-    		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
-    		result.put("lastName", cont.get(FileAssetAPI.FILE_NAME_FIELD));
-    		result.put("extension", UtilMethods.getFileExtension(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)));
-    		result.put("newName", newName);
-    		result.put("inode", inode);
-    		if(!cont.isLocked()){
-    			try{
-    				if(APILocator.getFileAssetAPI().renameFile(cont, newName, user, false)){
-        				result.put("result", 0);
-        			}else{
-        				result.put("result", 1);
-        				result.put("errorReason", "Another file with the same name already exists on this folder");
-        			}
-    			}catch(Exception e){
+
+    	HibernateUtil.startTransaction();
+
+    	try {
+
+    		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+    		User user = null;
+    		try {
+    			user = com.liferay.portal.util.PortalUtil.getUser(req);
+    		} catch (Exception e) {
+    			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
+    			throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
+    		}
+
+
+    		Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
+    		if(id!=null && id.getAssetType().equals("contentlet")){
+    			Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
+    			result.put("lastName", cont.get(FileAssetAPI.FILE_NAME_FIELD));
+    			result.put("extension", UtilMethods.getFileExtension(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)));
+    			result.put("newName", newName);
+    			result.put("inode", inode);
+    			if(!cont.isLocked()){
+    				try{
+    					if(APILocator.getFileAssetAPI().renameFile(cont, newName, user, false)){
+    						result.put("result", 0);
+    					}else{
+    						result.put("result", 1);
+    						result.put("errorReason", "Another file with the same name already exists on this folder");
+    					}
+    				}catch(Exception e){
+    					result.put("result", 1);
+    					result.put("errorReason", e.getLocalizedMessage());
+    				}
+    			}else{
     				result.put("result", 1);
-    				result.put("errorReason", e.getLocalizedMessage());
+    				result.put("errorReason", "The file is locked");
     			}
     		}else{
-    			result.put("result", 1);
-    			result.put("errorReason", "The file is locked");
+    			File file = (File) InodeFactory.getInode(inode, File.class);
+    			result.put("lastName", file.getNameOnly());
+    			result.put("extension", file.getExtension());
+    			result.put("newName", newName);
+    			result.put("inode", inode);
+    			if (APILocator.getFileAPI().renameFile(file, newName, user, false)) {
+    				result.put("result", 0);
+    			} else {
+    				result.put("result", 1);
+    				if (file.isLocked())
+    					result.put("errorReason", "The file is locked");
+    				else
+    					result.put("errorReason", "Another file with the same name already exists on this folder");
+    			}
     		}
-    	}else{
-    		File file = (File) InodeFactory.getInode(inode, File.class);
-    		result.put("lastName", file.getNameOnly());
-    		result.put("extension", file.getExtension());
-    		result.put("newName", newName);
-    		result.put("inode", inode);
-    		if (APILocator.getFileAPI().renameFile(file, newName, user, false)) {
-    			result.put("result", 0);
-    		} else {
-    			result.put("result", 1);
-    			if (file.isLocked())
-    				result.put("errorReason", "The file is locked");
-    			else
-    				result.put("errorReason", "Another file with the same name already exists on this folder");
-    		}
+
+    	} catch ( Exception e ) {
+    		HibernateUtil.rollbackTransaction();
+    	} finally {
+    		HibernateUtil.commitTransaction();
     	}
 
     	return result;
