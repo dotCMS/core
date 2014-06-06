@@ -545,6 +545,8 @@ public class BrowserAjax {
 
     public Map<String, Object> renameFile (String inode, String newName) throws Exception {
 
+    	HashMap<String, Object> result = new HashMap<String, Object> ();
+
     	HibernateUtil.startTransaction();
 
     	try {
@@ -558,7 +560,7 @@ public class BrowserAjax {
     			throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
     		}
 
-    		HashMap<String, Object> result = new HashMap<String, Object> ();
+
     		Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
     		if(id!=null && id.getAssetType().equals("contentlet")){
     			Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
@@ -605,7 +607,7 @@ public class BrowserAjax {
     		HibernateUtil.commitTransaction();
     	}
 
-    	return null;
+    	return result;
     }
 
     /**
