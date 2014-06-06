@@ -469,7 +469,7 @@ dojo.ready(function(){
 						 
 						 <%--   Radio / Select IMAGE --%>
 						 <% if (field.getFieldType().equals(Field.FieldType.RADIO.toString()) ||field.getFieldType().equals(Field.FieldType.SELECT.toString())) { 
-							Object originalValue = String.valueOf(capi.getFieldValue(content, field));
+							Object originalValue = capi.getFieldValue(content, field);
 							String defaultValue = field.getDefaultValue();
 							String radio = field.getFieldContentlet();
 							String values = field.getValues();
@@ -490,6 +490,8 @@ dojo.ready(function(){
 										value = Parameter.getLong((String) value);
 									else if (originalValue instanceof Double) 
 										value = Parameter.getDouble((String) value);
+									else if (originalValue instanceof Float) 
+										value = Parameter.getFloat((String) value);
 									if ((UtilMethods.isSet(originalValue) && value.equals(originalValue)) || (UtilMethods.isSet(defaultValue) && defaultValue.equals(value))){%>
 										<%=name%><br>
 									<%}%> 
