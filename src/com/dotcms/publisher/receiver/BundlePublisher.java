@@ -111,7 +111,8 @@ public class BundlePublisher extends Publisher {
             currentStatusHistory.setPublishStart(new Date());
             detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
             detail.setInfo("Publishing bundle");
-            currentStatusHistory.addOrUpdateEndpoint(config.getGroupId(), config.getEndpoint(), detail);
+            String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
+            currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
 
             auditAPI.updatePublishAuditStatus( bundleFolder, PublishAuditStatus.Status.PUBLISHING_BUNDLE, currentStatusHistory );
         }catch (Exception e) {
@@ -128,6 +129,27 @@ public class BundlePublisher extends Publisher {
             untar( bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName );
         } catch (FileNotFoundException e) {
             throw new DotPublishingException("Cannot extract the selected archive", e);
+        }
+
+        Map<String, String> assetsDetails = null;
+
+        try {
+            //Read the bundle to see what kind of configuration we need to apply
+            String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleFolder;
+            File xml = new File( finalBundlePath + File.separator + "bundle.xml" );
+            PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
+
+            //Get the identifiers on this bundle
+            assetsDetails = new HashMap<String, String>();
+            List<PublishQueueElement> bundlerAssets = readConfig.getAssets();
+
+            if ( bundlerAssets != null && !bundlerAssets.isEmpty() ) {
+                for ( PublishQueueElement asset : bundlerAssets ) {
+                    assetsDetails.put( asset.getAsset(), asset.getType() );
+                }
+            }
+        } catch ( Exception e ) {
+            Logger.error( BundlePublisher.class, "Unable to get assets list from received bundle: " + e.getMessage(), e );
         }
 
         try {
@@ -153,8 +175,10 @@ public class BundlePublisher extends Publisher {
                 detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
                 detail.setInfo("Failed to publish because an error occurred: "+e.getMessage());
                 detail.setStackTrace(ExceptionUtils.getStackTrace(e));
-                currentStatusHistory.addOrUpdateEndpoint(config.getGroupId(), config.getEndpoint(), detail);
+                String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
+                currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
                 currentStatusHistory.setBundleEnd(new Date());
+                currentStatusHistory.setAssets( assetsDetails );
 
                 auditAPI.updatePublishAuditStatus( bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory );
             } catch (DotPublisherException e1) {
@@ -163,32 +187,12 @@ public class BundlePublisher extends Publisher {
             throw new DotPublishingException("Error Publishing: " +  e, e);
         }
 
-        Map<String, String> assetsDetails = null;
-
-        try {
-            //Read the bundle to see what kind of configuration we need to apply
-            String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleFolder;
-            File xml = new File( finalBundlePath + File.separator + "bundle.xml" );
-            PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
-
-            //Get the identifiers on this bundle
-            assetsDetails = new HashMap<String, String>();
-            List<PublishQueueElement> bundlerAssets = readConfig.getAssets();
-
-            if ( bundlerAssets != null && !bundlerAssets.isEmpty() ) {
-                for ( PublishQueueElement asset : bundlerAssets ) {
-                    assetsDetails.put( asset.getAsset(), asset.getType() );
-                }
-            }
-        } catch ( Exception e ) {
-            Logger.error( BundlePublisher.class, "Unable to get assets list from received bundle: " + e.getMessage(), e );
-        }
-
         try {
             //Update audit
             detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
             detail.setInfo("Everything ok");
-            currentStatusHistory.addOrUpdateEndpoint(config.getGroupId(), config.getEndpoint(), detail);
+            String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
+            currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
             currentStatusHistory.setBundleEnd(new Date());
             currentStatusHistory.setAssets( assetsDetails );
             auditAPI.updatePublishAuditStatus( bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory );
