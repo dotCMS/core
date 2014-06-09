@@ -188,10 +188,10 @@ public class Validator {
 
         int at = ea.indexOf('@');
 
-        if ((at > 24) || (at == -1) || (at == 0) ||
+        if ((at > 64) || (at == -1) || (at == 0) ||
 			((at <= eaLength) && (at > eaLength - 5))) {
 
-			// 123456789012345678901234@joe.com
+			// 12345678901234567890123456789012345678901234567890123456789012345@joe.com
 			// joe.com
 			// @joe.com
 			// joe@joe
