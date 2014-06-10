@@ -239,11 +239,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 continue;
             }
             if (f.getFieldType().equals(Field.FieldType.BINARY.toString())) {
-            	java.io.File file = (java.io.File) cont.get(f.getVelocityVarName());
-
-            	if(UtilMethods.isSet(file) && !file.getAbsolutePath().contains("bundle")) {
-            		continue;
-            	}
+            	continue;
             }
 
             if(!APILocator.getFieldAPI().valueSettable(f)){
