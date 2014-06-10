@@ -201,7 +201,7 @@ public class DirectorAction extends DotPortletAction {
 				params.put("struts_action",new String[] {"/ext/htmlpages/edit_htmlpage"});
 				params.put("cmd",new String[] { "edit" });
 				params.put("inode",new String[] { workingHTMLPage.getInode() + "" });
-				params.put("referer",new String[] { referer });
+				params.put("referer",new String[] {UtilMethods.encodeURL(referer)});
 
 				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
 
