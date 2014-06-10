@@ -236,7 +236,7 @@ public class PublisherQueueJob implements StatefulJob {
         		boolean isGroupPublishing = false;
 	        	for(String endpoint: group.keySet()) {
 	        		EndpointDetail detail = group.get(endpoint);
-	        		localHistory.addOrUpdateEndpoint(groupId, endpoint, detail);
+
 	        		if(detail.getStatus() == Status.SUCCESS.getCode())
 	        			isGroupOk = true;
 	        		else if(detail.getStatus() == Status.PUBLISHING_BUNDLE.getCode())
