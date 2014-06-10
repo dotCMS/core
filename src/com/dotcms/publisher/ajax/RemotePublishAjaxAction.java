@@ -505,7 +505,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      */
     @SuppressWarnings ("unchecked")
     private Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
-    	
+
         PushPublisherConfig pconf = new PushPublisherConfig();
         PublisherAPI pubAPI = PublisherAPI.getInstance();
 
@@ -592,7 +592,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			response.sendError(401);
 			return;
 		}
-    	
+
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload(factory);
         @SuppressWarnings("unchecked")
@@ -608,7 +608,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
 		PublishAuditStatus status;
 		try {
-			status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, null, bundleFolder);
+			status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, endpointId, bundleFolder);
 
 	//		Write file on FS
 			FileUtil.writeToFile(bundle, bundlePath+bundleName);
@@ -717,7 +717,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                         bundle=b;
                     }
                 }
-                
+
                 if(bundle==null) {
                     bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
                     APILocator.getBundleAPI().saveBundle( bundle );
@@ -800,7 +800,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             		envsToSendTo.add(e);
             	}
 			}
-            
+
             if(envsToSendTo.isEmpty()) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
