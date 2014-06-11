@@ -313,7 +313,7 @@
 	<td valign="top" width="42%">
 		<b><%= LanguageUtil.get(pageContext, "Tag") %> <a href="#" onmouseover="showHint('hintTag')" onmouseout="hideHint('hintTag')">?</a></b><br>
 		
-		<html:textarea property="tagName" styleId="tagName" style="height:50px; width:150px;" onkeyup="suggestTagsForSearch(this, 'suggestedTagsDiv');" /><br>
+		<html:textarea property="tagName" styleId="tagName" style="height:50px; width:150px;" onblur="clearSuggestTagsForSearch()" onkeyup="suggestTagsForSearch(this, 'suggestedTagsDiv');" /><br>
 	</td>
 	<td valign="top">
 		<b><%= LanguageUtil.get(pageContext, "Suggested-Tags") %></b><br>

@@ -172,7 +172,7 @@
 
 			<dt><%= LanguageUtil.get(pageContext, "Tag-your-new-users-optional") %> <a href="#" id="tip1">?</a></dt>
 			<dd>
-				<textarea id="tagName" name="tagName" cols="20" rows="10" onkeyup="suggestTagsForSearch(this, 'suggestedTagsDiv');" style="height: 100px; width: 300px;" class="tagField"></textarea>
+				<textarea id="tagName" name="tagName" cols="20" rows="10" onblur="clearSuggestTagsForSearch()" onkeyup="suggestTagsForSearch(this, 'suggestedTagsDiv');" style="height: 100px; width: 300px;" class="tagField"></textarea>
 				<div class="callOutBox2 hintBox" style="top:130px;margin-left:320px; _margin-left:20px;">
 					<%= LanguageUtil.get(pageContext, "Suggested-Tags") %>:
 					<span id="suggestedTagsDiv"></span>

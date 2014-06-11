@@ -363,7 +363,7 @@
 							<dd>
 							<% String functionTag = "suggestTagsForSearch(this, '" + field.getFieldContentlet() + "suggestedTagsDiv');";%>
 							<textarea disabled style="height: 100px; width: 250px;font-size:12px; border-color: #CCCCCC; border-style: solid; border-width: 1px; font-family: Verdana, Arial,Helvetica;vertical-align: top;"
-								name="<%=field.getFieldContentlet()%>" id="<%=field.getFieldContentlet()%>" onkeyup="<%= functionTag %>" >
+								name="<%=field.getFieldContentlet()%>" id="<%=field.getFieldContentlet()%>" onblur="clearSuggestTagsForSearch()" onkeyup="<%= functionTag %>" >
 								<%=(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(content, field))?String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field)):"")%>
 							</textarea>
 							</dd>
