@@ -73,22 +73,22 @@ public class BundlePublisherResource extends WebResource {
 			remoteIP = req.getRemoteHost();
 			if(!UtilMethods.isSet(remoteIP))
 				remoteIP = req.getRemoteAddr();
-			
+
 			HibernateUtil.startTransaction();
-			
+
 			PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
-			
+
 			if(!isValidToken(auth_token, remoteIP, mySelf)) {
 				bundle.close();
 				return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
 			}
-			
+
 			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
 			String fileName=fileDetail.getFileName();
 			String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
-			
-			PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(endpointId, groupId, bundleFolder);
-			
+
+			PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(mySelf.getId(), mySelf.getId(), bundleFolder);
+
 			if(bundleName.trim().length()>0) {
 			    // save bundle if it doesn't exists
 			    if(APILocator.getBundleAPI().getBundleById(bundleFolder)!=null) {
@@ -100,17 +100,17 @@ public class BundlePublisherResource extends WebResource {
                     APILocator.getBundleAPI().saveBundle(b);
 			    }
 			}
-			
+
 			//Write file on FS
 			FileUtil.writeToFile(bundle, bundlePath+fileName);
-			
+
 			//Start thread
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 				new Thread(new PublishThread(fileName, groupId, endpointId, status)).start();
 			}
-			
+
 			HibernateUtil.commitTransaction();
-			
+
 			return Response.status(HttpStatus.SC_OK).build();
 		} catch (NumberFormatException e) {
 		    try {
@@ -135,10 +135,10 @@ public class BundlePublisherResource extends WebResource {
                 Logger.error(this, "error close session",e);
             }
 		}
-		
+
 		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
-	
+
     /**
      * Validates a received token
      *
@@ -149,7 +149,7 @@ public class BundlePublisherResource extends WebResource {
      * @throws IOException If fails reading the security token
      */
     private boolean isValidToken ( String token, String remoteIP, PublishingEndPoint mySelf ) throws IOException {
-		
+
 		//My key
         String myKey;
 		if(mySelf != null) {
@@ -157,10 +157,10 @@ public class BundlePublisherResource extends WebResource {
 		} else {
 			return false;
 		}
-		
+
         return token.equals( myKey );
 	}
-	
+
     private String retrieveKeyString ( String token ) throws IOException {
 
 		String key = null;
@@ -172,7 +172,7 @@ public class BundlePublisherResource extends WebResource {
 		} else {
 			key = token;
 		}
-		
+
 		return key;
 	}
 

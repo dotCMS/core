@@ -92,7 +92,7 @@ public class PublisherQueueJob implements StatefulJob {
 						historyPojo = new PublishAuditHistory();
 						//Retriving assets
 						Map<String, String> assets = new HashMap<String, String>();
-						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); 
+						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
 
 						for(PublishQueueElement c : tempBundleContents) {
 							assets.put( c.getAsset(), c.getType());
@@ -200,7 +200,7 @@ public class PublisherQueueJob implements StatefulJob {
 	        		{
 		        		PublishingEndPoint target = endpointAPI.findEndPointById(endpointId);
 
-		        		if(target != null) {
+		        		if(target != null && !target.isSending()) {
 			        		webResource = client.resource(target.toURL()+"/api/auditPublishing");
 
 			        		try {
@@ -236,7 +236,7 @@ public class PublisherQueueJob implements StatefulJob {
         		boolean isGroupPublishing = false;
 	        	for(String endpoint: group.keySet()) {
 	        		EndpointDetail detail = group.get(endpoint);
-	        		localHistory.addOrUpdateEndpoint(groupId, endpoint, detail);
+
 	        		if(detail.getStatus() == Status.SUCCESS.getCode())
 	        			isGroupOk = true;
 	        		else if(detail.getStatus() == Status.PUBLISHING_BUNDLE.getCode())
@@ -257,7 +257,7 @@ public class PublisherQueueJob implements StatefulJob {
 	        			localHistory);
 	        	pubAPI.deleteElementsFromPublishQueueTable(pendingAudit.getBundleId());
         	} else if(localHistory.getNumTries() >= MAX_NUM_TRIES) {
-        	
+
         		List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(pendingAudit.getBundleId());
 				for(Environment environment : environments){
 					APILocator.getPushedAssetsAPI().deletePushedAssets(pendingAudit.getBundleId(), environment.getId());
