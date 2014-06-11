@@ -9,7 +9,7 @@
 <%@ page import="com.dotmarketing.portlets.folders.business.FolderAPI" %>
 <%@ page import="com.dotmarketing.util.*" %>
 <%@ page import="com.dotmarketing.business.Role"%>
-<%@ page import="com.dotmarketing.portlets.links.factories.LinkFactory"%><script>
+<%@ page import="com.dotmarketing.portlets.links.factories.LinkFactory"%>
 <%
 	PermissionAPI perAPI = APILocator.getPermissionAPI();
 	LinkForm linkForm = (LinkForm)request.getAttribute("LinkForm");
@@ -19,7 +19,7 @@
 		link = (Link)LinkFactory.getLinkFromInode(request.getAttribute("inode").toString(),user.getUserId());
 		Identifier identifier = APILocator.getIdentifierAPI().find(link);
 %>
-
+		<script>
 			selectLink('<%=link.getInode()%>','<%=link.getWorkingURL()%>','<%=link.getTitle()%>','<%=link.getTarget()%>','<%=identifier.getInode()%>');
 		</script>
 <%
