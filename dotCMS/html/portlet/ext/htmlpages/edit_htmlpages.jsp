@@ -211,8 +211,8 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 			</dd>
 
 			<dt><%= LanguageUtil.get(pageContext, "Page-URL") %>:</dt>
-			<dd><input type="text" dojoType="dijit.form.TextBox" name="pageUrl" id="pageUrl" value="<%= UtilMethods.isSet(htmlpage.getPageUrl()) ? htmlpage.getPageUrl() : "" %>" /></dd>
-			<dd class="inputCaption">(<%= LanguageUtil.get(pageContext, "page-name") %>)</dd>
+            <dd><input type="text" dojoType="dijit.form.TextBox" name="pageUrl" id="pageUrl" value="<%= UtilMethods.isSet(htmlpage.getPageUrl()) ? UtilMethods.webifyString(htmlpage.getPageUrl()) : "" %>" /></dd>
+            <dd class="inputCaption">(<%= LanguageUtil.get(pageContext, "page-name") %>)</dd>
 
 			<dt><%= LanguageUtil.get(pageContext, "Template") %>:</dt>
 			<dd>
