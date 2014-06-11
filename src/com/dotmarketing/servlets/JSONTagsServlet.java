@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.DeserializationConfig.Feature;
 import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -95,7 +96,7 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 			List<Map<String,Object>> items = new ArrayList<Map<String,Object>>();
 
 			List<Tag> tags = null;
-
+			termFilter = StringEscapeUtils.unescapeJava(termFilter);  
 			if(UtilMethods.isSet(termFilter)){
 				tags = tagAPI.getFilteredTags(termFilter, hostFilter, globalTagsFilter, sort, start, count);
 			}else{
