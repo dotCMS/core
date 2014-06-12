@@ -68,7 +68,7 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 	
 	
 	private Structure createDefaultFileAssetStructure() throws DotDataException{
-		String inode = UUIDGenerator.generateUuid();
+		String inode = "85c1515c-c4f3-463c-bac2-860b8fcacc34";
 		Structure fileAsset = new Structure();
 		fileAsset.setInode(inode);
 		fileAsset.setFixed(true);

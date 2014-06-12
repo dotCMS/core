@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.business;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -66,39 +67,39 @@ public interface WorkFlowFactory {
 
 	public void saveSchemeForStruct(String struc, WorkflowScheme scheme) throws DotDataException;
 
-	public void saveScheme(WorkflowScheme scheme) throws DotDataException;
+	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 
 	public WorkflowScheme findDefaultScheme() throws DotDataException;
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
-	public void saveStep(WorkflowStep step) throws DotDataException;
+	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException;
 
 	public List<WorkflowAction> findActions(WorkflowStep step) throws DotDataException;
 
 	public WorkflowAction findAction(String id) throws DotDataException;
 
-	public void saveAction(WorkflowAction action) throws DotDataException;
+	public void saveAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
 
 	public WorkflowStep findStep(String id) throws DotDataException;
 
-	public void deleteAction(WorkflowAction action) throws DotDataException;
+	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
 
-	public void deleteStep(WorkflowStep step) throws DotDataException;
+	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException;
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException;
 
 	public WorkflowActionClass findActionClass(String id) throws DotDataException;
 
-	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException;
+	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
 
-	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException;
+	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
 
 	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws DotDataException;
 
-	public void saveWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException;
+	public void saveWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException;
 
-	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException;
+	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
 
 	public int countTasks(WorkflowSearcher searcher) throws DotDataException;
 
@@ -122,5 +123,5 @@ public interface WorkFlowFactory {
 
     public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException;
 
-    public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException;
+    public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException;
 }

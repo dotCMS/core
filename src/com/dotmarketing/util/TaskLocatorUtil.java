@@ -78,6 +78,7 @@ import com.dotmarketing.startup.runonce.Task01070BundleNameDropUnique;
 import com.dotmarketing.startup.runonce.Task01075AddModDateToWorkflowScheme;
 import com.dotmarketing.startup.runonce.Task01080CreateModDateForMissingObjects;
 import com.dotmarketing.startup.runonce.Task01085CreateBundleTablesIfNotExists;
+import com.dotmarketing.startup.runonce.Task01090AddWorkflowSchemeUniqueNameContraint;
 
 
 public class TaskLocatorUtil {
@@ -159,6 +160,7 @@ public class TaskLocatorUtil {
         ret.add(Task01075AddModDateToWorkflowScheme.class);
         ret.add(Task01080CreateModDateForMissingObjects.class);
         ret.add(Task01085CreateBundleTablesIfNotExists.class);
+        ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
         return ret;
     }
 
