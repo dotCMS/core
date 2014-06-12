@@ -1,7 +1,6 @@
 <%@ include file="/html/portlet/ext/scheduler/init.jsp" %>
 
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
-<%@page import="com.dotmarketing.quartz.ScheduledTask"%>
 
 <%
 	int pageNumber = 1;
@@ -40,10 +39,11 @@
 				<th><%= LanguageUtil.get(pageContext, "Description") %></th>
 			</tr>
 
-			<% java.util.List lists = (java.util.List) request.getAttribute(com.dotmarketing.util.WebKeys.SCHEDULER_LIST_VIEW);
+			<% Map<String,java.util.List<String>> maplists = (Map<String,java.util.List<String>>) request.getAttribute(com.dotmarketing.util.WebKeys.SCHEDULER_LIST_VIEW);
 			
 				boolean itemShowed = false;
 				String str_style = "";
+				List<String >lists= maplists.get("User Job");
 				for (int k = minIndex; (k < maxIndex) && (k < lists.size()); k++) {
 					
 			     	if(k%2==0){
@@ -52,26 +52,25 @@
 					else{
 					  str_style="class=\"alternate_2\"";
 					}
-					
-					ScheduledTask scheduler = (ScheduledTask) lists.get(k);
-					if (scheduler.getJobGroup().equals("User Job")) {
-					itemShowed = true;
+			     	itemShowed = true;
+			     	try{ 
+			    		JobDetail scheduler = QuartzUtils.getSequentialScheduler().getJobDetail(lists.get(k), "User Job"); 			
 			%>
 				<tr <%= str_style %>>
 					<td>
 					
 						<a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
 						<portlet:param name="struts_action" value="/ext/scheduler/edit_scheduler" />
-						<portlet:param name="name" value="<%= scheduler.getJobName() %>" />
-						<portlet:param name="group" value="<%= scheduler.getJobGroup() %>" />
+						<portlet:param name="name" value="<%= scheduler.getName() %>" />
+						<portlet:param name="group" value="<%= scheduler.getGroup() %>" />
 						<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" /></portlet:actionURL>">
 							<span class="editIcon"></span>
 						</a>
 						
 						<a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
 						<portlet:param name="struts_action" value="/ext/scheduler/edit_scheduler" />
-						<portlet:param name="name" value="<%= scheduler.getJobName() %>" />
-						<portlet:param name="group" value="<%= scheduler.getJobGroup() %>" />
+						<portlet:param name="name" value="<%= scheduler.getName() %>" />
+						<portlet:param name="group" value="<%= scheduler.getGroup() %>" />
 						<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.DELETE %>" />
 						<portlet:param name="referrer" value="<%= referrer %>" /></portlet:actionURL>">
 							<span class="deleteIcon"></span>
@@ -81,18 +80,26 @@
 					<td>
 						<a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
 						<portlet:param name="struts_action" value="/ext/scheduler/edit_scheduler" />
-						<portlet:param name="name" value="<%= scheduler.getJobName() %>" />
-						<portlet:param name="group" value="<%= scheduler.getJobGroup() %>" />
+						<portlet:param name="name" value="<%= scheduler.getName() %>" />
+						<portlet:param name="group" value="<%= scheduler.getGroup() %>" />
 						<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" />
-						</portlet:actionURL>"><%= scheduler.getJobName() %>
+						</portlet:actionURL>"><%= scheduler.getName() %>
 						</a>
 					</td>
 					
 					<td>
-							<%= scheduler.getJobDescription() %>
+							<%= scheduler.getDescription() %>
 					</td>
 				</tr>
-				<% }
+			<% 
+					}catch(Exception e){%>
+					<tr <%= str_style %>>
+					<td><%=lists.get(k)%></td><td class="red"><%=LanguageUtil.get(pageContext, "an-unexpected-error-occurred")+"<br/>"+e.getMessage() %></td>
+					<td><button dojoType="dijit.form.Button" onclick="deleteJobWithError('<%=lists.get(k)%>','User Job')" iconClass="deleteIcon">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>
+									</button>
+					</td></tr>
+					<%} 
 			}%>
 			<% if (!itemShowed) { %>
 				<tr>
@@ -144,36 +151,42 @@
 				itemShowed = false;
 				str_style = "";
 				int r=0;
+				lists= maplists.get("Recurrent Campaign");
 				for (int k = minIndex; (k < maxIndex) && (k < lists.size()); k++) {
-					ScheduledTask scheduler = (ScheduledTask) lists.get(k);
-					if (scheduler.getJobGroup().equals("Recurrent Campaign")) {
-						
-						if(r%2==0){
-						  str_style="class=\"alternate_1\"";
-                              }
-						else{
-						  str_style="class=\"alternate_2\"";
-						}
-						r++;
-						
-						itemShowed = true;
+					if(r%2==0){
+					  str_style="class=\"alternate_1\"";
+	                } else{
+					  str_style="class=\"alternate_2\"";
+					}
+					r++;
+					itemShowed = true;
+			    	try{ 
+			    		JobDetail scheduler = QuartzUtils.getSequentialScheduler().getJobDetail(lists.get(k), "Recurrent Campaign"); 				
 			%>
 				<tr <%= str_style %>>
 					<td>
 
 						<a  href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
 						<portlet:param name="struts_action" value="/ext/scheduler/edit_scheduler" />
-						<portlet:param name="name" value="<%= scheduler.getJobName() %>" />
-						<portlet:param name="group" value="<%= scheduler.getJobGroup() %>" />
+						<portlet:param name="name" value="<%= scheduler.getName() %>" />
+						<portlet:param name="group" value="<%= scheduler.getGroup() %>" />
 						<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" />
-						</portlet:actionURL>"><%= scheduler.getJobDescription() %>
+						</portlet:actionURL>"><%= scheduler.getDescription() %>
 						</a>
 					</td>
 					<td>
-						<%= scheduler.getJobName() %>
+						<%= scheduler.getName() %>
 					</td>
 				</tr>
-				<% }
+				<% }catch(Exception e){%>
+				<tr <%= str_style %>>
+				<td><%=lists.get(k)%></td>
+				<td><span class="red"><%=LanguageUtil.get(pageContext, "an-unexpected-error-occurred")+"<br/>"+e.getMessage() %></span>
+				  <button dojoType="dijit.form.Button" onclick="deleteJobWithError('<%=lists.get(k)%>','Recurrent Campaign')" iconClass="deleteIcon">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>
+				  </button>
+				</td></tr>
+				<%} 
 			}%>
 			<% if (!itemShowed) { %>
 				<tr>
