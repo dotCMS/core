@@ -68,7 +68,7 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 	
 	
 	private Structure createDefaultFileAssetStructure() throws DotDataException{
-		String inode = "85c1515c-c4f3-463c-bac2-860b8fcacc34";
+		String inode = "33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d";
 		Structure fileAsset = new Structure();
 		fileAsset.setInode(inode);
 		fileAsset.setFixed(true);
