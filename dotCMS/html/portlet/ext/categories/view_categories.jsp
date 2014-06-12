@@ -742,6 +742,7 @@ td {font-size: 100%;}
 		if(toBlur.id!="addCatName" &&
 				toBlur.id!="addCatKey" &&
 				toBlur.id!="addCatKeywords" &&
+				toBlur.id!="" &&
 				toBlur.id.indexOf("dijit_form_NumberTextBox")) {
 			toBlur.blur();
 			toFocus.focus();
