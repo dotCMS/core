@@ -148,7 +148,7 @@ public class BundlePublisherResource extends WebResource {
      * @return True if valid
      * @throws IOException If fails reading the security token
      */
-    private boolean isValidToken ( String token, String remoteIP, PublishingEndPoint mySelf ) throws IOException {
+    public static boolean isValidToken ( String token, String remoteIP, PublishingEndPoint mySelf ) throws IOException {
 
 		//My key
         String myKey;
@@ -161,7 +161,7 @@ public class BundlePublisherResource extends WebResource {
         return token.equals( myKey );
 	}
 
-    private String retrieveKeyString ( String token ) throws IOException {
+    public static String retrieveKeyString ( String token ) throws IOException {
 
 		String key = null;
 		if(token.contains(File.separator)) {

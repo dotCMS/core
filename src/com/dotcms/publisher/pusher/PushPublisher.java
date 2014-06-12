@@ -160,7 +160,7 @@ public class PushPublisher extends Publisher {
 	        				detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 	        				detail.setInfo("Everything ok");
 	        			} else {
-	        			
+
 	        				if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
 	        					APILocator.getPushedAssetsAPI().deletePushedAssets(config.getId(), environment.getId());
 	        				}
@@ -234,7 +234,7 @@ public class PushPublisher extends Publisher {
 		}
 	}
 
-	private String retriveKeyString(String token) throws IOException {
+	public static String retriveKeyString(String token) throws IOException {
 		String key = null;
 		if(token.contains(File.separator)) {
 			File tokenFile = new File(token);
