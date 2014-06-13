@@ -1,40 +1,6 @@
 package com.dotcms.rest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-
-import org.apache.commons.httpclient.HttpStatus;
-import org.owasp.esapi.ESAPI;
-
 import com.csvreader.CsvWriter;
-import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
@@ -48,6 +14,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -56,11 +25,32 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.client.urlconnection.HTTPSProperties;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.FormDataParam;
-import com.sun.jersey.multipart.file.FileDataBodyPart;
+import org.apache.commons.httpclient.HttpStatus;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.*;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 
 @Path("/integrity")
 public class IntegrityResource extends WebResource {
+
+    private enum ProcessStatus {
+        PROCESSING, ERROR, FINISHED
+    }
 
 	public enum IntegrityType {
 	    FOLDERS("folders"),
@@ -323,5 +313,375 @@ public class IntegrityResource extends WebResource {
 
 	}
 
+    /**
+     * Initializes the check integrity process against a given server
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/checkIntegrityExample/{params:.*}")
+    @Produces (MediaType.APPLICATION_JSON)
+    public Response checkIntegrityExample ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
+
+        StringBuilder responseMessage = new StringBuilder();
+
+        InitDataObject initData = init( params, true, request, true );
+        Map<String, String> paramsMap = initData.getParamsMap();
+
+        //Validate the parameters
+        final String endpointId = paramsMap.get( "endpoint" );
+        if ( !UtilMethods.isSet( endpointId ) ) {
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
+            responseBuilder.entity( responseMessage.append( "Error: " ).append( "endpoint" ).append( " is a required Field." ) );
+
+            return responseBuilder.build();
+        }
+
+        try {
+
+            final HttpSession session = request.getSession();
+
+            //SOME MAGIC HERE!!!
+            //SOME MAGIC HERE!!!
+            //SOME MAGIC HERE!!!
+            //SOME MAGIC HERE!!!
+
+            session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.PROCESSING );
+
+            //**********************************
+            //**********************************
+            //Mark the process as finised after 2 minutes
+            int delay = 120000;// in ms = two minutes
+            Timer timer = new Timer();
+            timer.schedule( new TimerTask(){
+                public void run() {
+                    session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.FINISHED );
+                }
+            }, delay);
+            //**********************************
+            //**********************************
+
+            //And prepare the response
+            JSONObject jsonResponse = new JSONObject();
+            jsonResponse.put( "success", true );
+            jsonResponse.put( "message", "Initialized integrity checking..." );
+
+            responseMessage.append( jsonResponse.toString() );
+
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error initializing the integrity checking process for End Point server: [" + endpointId + "]", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error initializing the integrity checking process for End Point server: [" + endpointId + "]" );
+            }
+            return response( responseMessage.toString(), true );
+        }
+
+        return response( responseMessage.toString(), false );
+    }
+
+    /**
+     * Method that will verify the status of a check integrity process for a given server
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/checkIntegrityProcessStatus/{params:.*}")
+    @Produces (MediaType.APPLICATION_JSON)
+    public Response checkIntegrityProcessStatus ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
+
+        StringBuilder responseMessage = new StringBuilder();
+
+        InitDataObject initData = init( params, true, request, true );
+        Map<String, String> paramsMap = initData.getParamsMap();
+
+        //Validate the parameters
+        String endpointId = paramsMap.get( "endpoint" );
+        if ( !UtilMethods.isSet( endpointId ) ) {
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
+            responseBuilder.entity( responseMessage.append( "Error: " ).append( "endpoint" ).append( " is a required Field." ) );
+
+            return responseBuilder.build();
+        }
+
+        try {
+            JSONObject jsonResponse = new JSONObject();
+
+            HttpSession session = request.getSession();
+            //Verify if we have something set on the session
+            if ( session.getAttribute( "integrityCheck_" + endpointId ) == null ) {
+                //And prepare the response
+                jsonResponse.put( "success", true );
+                jsonResponse.put( "message", "No checking process found for End point server [" + endpointId + "]" );
+                jsonResponse.put( "status", "nopresent" );
+            } else {
+
+                //Search for the status on session
+                ProcessStatus status = (ProcessStatus) session.getAttribute( "integrityCheck_" + endpointId );
+
+                //And prepare the response
+                jsonResponse.put( "success", true );
+                jsonResponse.put( "endPoint", endpointId );
+                if ( status == ProcessStatus.PROCESSING ) {
+                    jsonResponse.put( "status", "processing" );
+                    jsonResponse.put( "message", "Success" );
+                } else if ( status == ProcessStatus.FINISHED ) {
+                    jsonResponse.put( "status", "finished" );
+                    jsonResponse.put( "message", "Success" );
+                } else {
+                    jsonResponse.put( "status", "error" );
+                    jsonResponse.put( "message", "Error checking the integrity process status for End Point server: [" + endpointId + "]" );
+                }
+            }
+
+            responseMessage.append( jsonResponse.toString() );
+
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error checking the integrity process status for End Point server: [" + endpointId + "]", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error checking the integrity process status for End Point server: [" + endpointId + "]" );
+            }
+            return response( responseMessage.toString(), true );
+        }
+
+        return response( responseMessage.toString(), false );
+    }
+
+    /**
+     * Generates and returns the integrity check results for a given server
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/getIntegrityResult/{params:.*}")
+    @Produces (MediaType.APPLICATION_JSON)
+    public Response getIntegrityResult ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
+
+        StringBuilder responseMessage = new StringBuilder();
+
+        InitDataObject initData = init( params, true, request, true );
+        Map<String, String> paramsMap = initData.getParamsMap();
+
+        //Validate the parameters
+        String endpointId = paramsMap.get( "endpoint" );
+        if ( !UtilMethods.isSet( endpointId ) ) {
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
+            responseBuilder.entity( responseMessage.append( "Error: " ).append( "endpoint" ).append( " is a required Field." ) );
+
+            return responseBuilder.build();
+        }
+
+        try {
+
+            JSONObject jsonResponse = new JSONObject();
+
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //Structures tab data
+            JSONArray tabResponse = new JSONArray();
+            JSONObject errorContent = new JSONObject();
+
+            //Title --> "title":"XXXX YYYYYY"
+            errorContent.put( "title", "Structure Inode error" );//Title of the check
+
+            //Columns names --> "columns":["Column0","Column1","Column2","Column3"]
+            JSONArray columns = new JSONArray();
+            columns.add( "inode" );
+            columns.add( "velocityName" );
+            errorContent.put( "columns", columns.toArray() );
+
+            //Values --> "values":[{"Column0":"value0","Column1":"value1","Column2":"value2","Column3":"value3"},{"Column0":"value0","Column1":"value1","Column2":"value2","Column3":"value3"}]
+            JSONArray values = new JSONArray();
+
+            JSONObject columnsContent = new JSONObject();
+            columnsContent.put( "inode", "6546-5646-56464-54654" );
+            columnsContent.put( "velocityName", "myCustomVarName" );
+            values.put( columnsContent );
+
+            columnsContent = new JSONObject();
+            columnsContent.put( "inode", "6546-5646-YYYYY-XXXXX" );
+            columnsContent.put( "velocityName", "myCustomVarName2" );
+            values.put( columnsContent );
+
+            columnsContent = new JSONObject();
+            columnsContent.put( "inode", "6546-WWWW-YYYYY-XXXXX" );
+            columnsContent.put( "velocityName", "myCustomVarName3" );
+            values.put( columnsContent );
+
+            errorContent.put( "values", values.toArray() );
+
+            tabResponse.add( errorContent );
+            //And prepare the response
+            jsonResponse.put( "structures", tabResponse.toArray() );
+
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //Folders tab data
+            tabResponse = new JSONArray();
+            errorContent = new JSONObject();
+
+            //Title --> "title":"XXXX YYYYYY"
+            errorContent.put( "title", "Folders Inode error" );//Title of the check
+
+            //Columns names --> "columns":["Column0","Column1","Column2","Column3"]
+            columns = new JSONArray();
+            columns.add( "inode" );
+            columns.add( "parent_path" );
+            columns.add( "name" );
+            columns.add( "host" );
+            errorContent.put( "columns", columns.toArray() );
+
+            //Values --> "values":[{"Column0":"value0","Column1":"value1","Column2":"value2","Column3":"value3"},{"Column0":"value0","Column1":"value1","Column2":"value2","Column3":"value3"}]
+            values = new JSONArray();
+
+            columnsContent = new JSONObject();
+            columnsContent.put( "inode", "6546-5646-56464-54654" );
+            columnsContent.put( "parent_path", "/" );
+            columnsContent.put( "name", "myFolder" );
+            columnsContent.put( "host", "demo.dotcms.com" );
+            values.put( columnsContent );
+
+            columnsContent = new JSONObject();
+            columnsContent.put( "inode", "6546-XXXX-56464-YYYY" );
+            columnsContent.put( "parent_path", "/" );
+            columnsContent.put( "name", "myFolder2" );
+            columnsContent.put( "host", "demo.dotcms.com" );
+            values.put( columnsContent );
+
+            errorContent.put( "values", values.toArray() );
+
+            tabResponse.add( errorContent );
+            //And prepare the response
+            jsonResponse.put( "folders", tabResponse.toArray() );
+
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //Workflows tab data
+            tabResponse = new JSONArray();
+            errorContent = new JSONObject();
+
+            //Title --> "title":"XXXX YYYYYY"
+            errorContent.put( "title", "Workflows Inode error" );//Title of the check
+
+            //Columns names --> "columns":["Column0","Column1","Column2","Column3"]
+            columns = new JSONArray();
+            columns.add( "inode" );
+            columns.add( "name" );
+            errorContent.put( "columns", columns.toArray() );
+
+            //Values --> "values":[{"Column0":"value0","Column1":"value1","Column2":"value2","Column3":"value3"},{"Column0":"value0","Column1":"value1","Column2":"value2","Column3":"value3"}]
+            values = new JSONArray();
+
+            columnsContent = new JSONObject();
+            columnsContent.put( "inode", "6546-5646-56464-54654" );
+            columnsContent.put( "name", "customWorflow1" );
+            values.put( columnsContent );
+
+            columnsContent = new JSONObject();
+            columnsContent.put( "inode", "6546-xxxx-yyyyyy-54654" );
+            columnsContent.put( "name", "customWorflow2" );
+            values.put( columnsContent );
+
+            errorContent.put( "values", values.toArray() );
+
+            tabResponse.add( errorContent );
+            //And prepare the response
+            jsonResponse.put( "workflows", tabResponse.toArray() );
+
+            /*
+            ++++++++++++++++++++++++
+            Important just in case of return custom errors
+             */
+            jsonResponse.put( "success", true );
+            jsonResponse.put( "message", "Success" );
+
+            responseMessage.append( jsonResponse.toString() );
+
+            //TODO: Clean up the session?
+            //request.getSession().removeAttribute( "integrityCheck_" + endpointId );
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error generating the integrity result for End Point server: [" + endpointId + "]", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error generating the integrity result for End Point server: [" + endpointId + "]" );
+            }
+            return response( responseMessage.toString(), true );
+        }
+
+        return response( responseMessage.toString(), false );
+    }
+
+    /**
+     * Prepares a Response object with a given response text. The creation depends if it is an error or not.
+     *
+     * @param response
+     * @param error
+     * @return
+     */
+    private Response response ( String response, Boolean error ) {
+        return response( response, error, "application/json" );
+    }
+
+    /**
+     * Prepares a Response object with a given response text. The creation depends if it is an error or not.
+     *
+     * @param response
+     * @param error
+     * @param contentType
+     * @return
+     */
+    private Response response ( String response, Boolean error, String contentType ) {
+
+        Response.ResponseBuilder responseBuilder;
+        if ( error ) {
+            responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+            responseBuilder.entity( response );
+        } else {
+            responseBuilder = Response.ok( response, contentType );
+        }
+
+        return responseBuilder.build();
+    }
+
+    /**
+     * Validates a Collection or string parameters.
+     *
+     * @param paramsMap
+     * @param responseMessage
+     * @param args
+     * @return True if all the params are present, false otherwise
+     * @throws JSONException
+     */
+    private Boolean validate ( Map<String, String> paramsMap, StringBuilder responseMessage, String... args ) throws JSONException {
+
+        for ( String param : args ) {
+
+            //Validate the given param
+            if ( !UtilMethods.isSet( paramsMap.get( param ) ) ) {
+
+                //Prepare a proper response
+                responseMessage.append( "Error: " ).append( param ).append( " is a required Field." );
+                return false;
+            }
+        }
+
+        return true;
+    }
 
 }
