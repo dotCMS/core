@@ -166,6 +166,7 @@ public class TaskLocatorUtil {
         ret.add(Task01070BundleNameDropUnique.class);
         ret.add(Task01085CreateBundleTablesIfNotExists.class);
         ret.add(Task01080CreateModDateForMissingObjects.class);
+        ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
         ret.add(Task03005CreateModDateForFieldIfNeeded.class);
         ret.add(Task03010AddContentletIdentifierIndex.class);
         ret.add(Task03015CreateClusterConfigModel.class);
@@ -173,7 +174,6 @@ public class TaskLocatorUtil {
         ret.add(Task03025CreateFoundationForNotificationSystem.class);
         ret.add(Task03030CreateIndicesForVersionTables.class);
         ret.add(Task03035FixContainerCheckTrigger.class);
-        ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
         return ret;
     }
 
