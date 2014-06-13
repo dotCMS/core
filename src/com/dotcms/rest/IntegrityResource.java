@@ -1,18 +1,48 @@
 package com.dotcms.rest;
 
-import com.csvreader.CsvWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+
+import org.apache.commons.httpclient.HttpStatus;
+
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.publisher.integrity.IntegrityDataGenerator;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
@@ -25,24 +55,6 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.client.urlconnection.HTTPSProperties;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.FormDataParam;
-import org.apache.commons.httpclient.HttpStatus;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.*;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 
 @Path("/integrity")
@@ -52,7 +64,7 @@ public class IntegrityResource extends WebResource {
         PROCESSING, ERROR, FINISHED
     }
 
-	public enum IntegrityType {
+    public enum IntegrityType {
 	    FOLDERS("folders"),
 	    WORKFLOW_SCHEMES("workflow_schemes"),
 	    STRUCTURES("structures");
@@ -76,15 +88,12 @@ public class IntegrityResource extends WebResource {
 	 */
 
 	@POST
-	@Path("/getdata/{params:.*}")
-	@Produces("application/zip")
+	@Path("/generateintegritydata/{params:.*}")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public Response getData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_enc)  {
+	@Produces("text/plain")
+	public Response generateIntegrityData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_enc)  {
 
 //        String auth_token_enc = paramsMap.get("authtoken");
-
-
-
         String remoteIP = null;
 
         try {
@@ -102,63 +111,24 @@ public class IntegrityResource extends WebResource {
         		return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
         	}
 
-        	File dir = new File(ConfigUtils.getIntegrityPath() + File.separator + mySelf.getId());
+        	ServletContext servletContext = request.getSession().getServletContext();
 
-			// if file doesnt exists, then create it
-			if (!dir.exists()) {
-				dir.mkdir();
-			}
+        	if(servletContext.getAttribute("integrityRunning")!=null && ((Boolean) servletContext.getAttribute("integrityRunning"))) {
+        		throw new WebApplicationException(Response.status(HttpStatus.SC_CONFLICT).entity("Already Running").build());
+        	}
 
-        	FileOutputStream fos = new FileOutputStream(ConfigUtils.getIntegrityPath() + File.separator + mySelf.getId() + File.separator + "integrity.zip");
-        	ZipOutputStream zos = new ZipOutputStream(fos);
+        	String transactionId = UUIDGenerator.generateUuid();
+        	servletContext.setAttribute("integrityDataRequestID", transactionId);
 
-        	// create Folders CSV
-        	File foldersCsvFile = createCSV(IntegrityType.FOLDERS);
-        	File structuresCsvFile = createCSV(IntegrityType.STRUCTURES);
-        	File schemesCsvFile = createCSV(IntegrityType.WORKFLOW_SCHEMES);
+        	// start data generation process
+        	IntegrityDataGenerator idg = new IntegrityDataGenerator(mySelf, request.getSession().getServletContext() );
+        	idg.start();
 
-        	addToZipFile(foldersCsvFile.getAbsolutePath(), zos, "folders.csv");
-        	addToZipFile(structuresCsvFile.getAbsolutePath(), zos, "structures.csv");
-        	addToZipFile(schemesCsvFile.getAbsolutePath(), zos, "workflow_schemes.csv");
-
-        	zos.close();
-        	fos.close();
-
-        	foldersCsvFile.delete();
-
-        	StreamingOutput output = new StreamingOutput() {
-        		public void write(OutputStream output) throws IOException, WebApplicationException {
-        			try {
-        				InputStream is = new FileInputStream(ConfigUtils.getIntegrityPath() + File.separator + mySelf.getId() + File.separator + "integrity.zip");
-
-        				byte[] buffer = new byte[1024];
-        				int bytesRead;
-        				//read from is to buffer
-        				while((bytesRead = is.read(buffer)) !=-1){
-        					output.write(buffer, 0, bytesRead);
-        				}
-        				is.close();
-        				//flush OutputStream to write any buffered data to file
-        				output.flush();
-        				output.close();
-
-        			} catch (Exception e) {
-        				throw new WebApplicationException(e);
-        			}
-        		}
-        	};
-
-        	return Response.ok(output).build();
+        	return Response.ok(transactionId).build();
 
         } catch (Exception e) {
         	Logger.error(IntegrityResource.class, "Error caused by remote call of: "+remoteIP);
         	Logger.error(IntegrityResource.class,e.getMessage(),e);
-        } finally {
-        	try {
-        		HibernateUtil.closeSession();
-        	} catch (DotHibernateException e) {
-        		Logger.error(this, "error close session",e);
-        	}
         }
 
 
@@ -166,63 +136,79 @@ public class IntegrityResource extends WebResource {
 
 	}
 
-	private static File createCSV(IntegrityType type) throws Exception {
+	/**
+	 * <p>Returns a zip with data from structures, workflow schemes and folders for integrity check
+	 *
+	 * Usage: /getdata
+	 *
+	 */
 
-		String outputFile = ConfigUtils.getBundlePath() + File.separator + type.getFileName() + ".csv";
-        File csvFile = new File(outputFile);
-
-		try {
-			// use FileWriter constructor that specifies open for appending
-			CsvWriter csvOutput = new CsvWriter(new FileWriter(csvFile, true), '|');
-
-			if(type == IntegrityType.FOLDERS) {
-				IntegrityUtil.writeFoldersCSV(csvOutput);
-			} else if(type == IntegrityType.STRUCTURES) {
-				IntegrityUtil.writeStructuresCSV(csvOutput);
-			}  else if(type == IntegrityType.WORKFLOW_SCHEMES) {
-				IntegrityUtil.writeFoldersCSV(csvOutput);
-			}
-
-			csvOutput.close();
-		} catch (IOException e) {
-			Logger.error(IntegrityResource.class, "Error writing csv: " + type.name(), e);
-			throw new Exception("Error writing csv: " + type.name(), e);
-		} catch (DotDataException e) {
-			Logger.error(IntegrityResource.class, "Error getting data from DB for: " + type.name(), e);
-			throw new Exception("Error getting data from DB for: " + type.name(), e);
-		}
-
-		return csvFile;
-	}
-
-	private static void addToZipFile(String fileName, ZipOutputStream zos, String zipEntryName) throws Exception  {
-
-		System.out.println("Writing '" + fileName + "' to zip file");
+	@POST
+	@Path("/getintegritydata/{params:.*}")
+	@Produces("application/zip")
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	public Response getIntegrityData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_enc, @FormDataParam("TRANSACTION_ID") String transactionId)  {
+		String remoteIP = null;
 
 		try {
 
-			File file = new File(fileName);
-			FileInputStream fis = new FileInputStream(file);
-			ZipEntry zipEntry = new ZipEntry(zipEntryName);
-			zos.putNextEntry(zipEntry);
+			auth_token_enc = URLDecoder.decode(auth_token_enc, "UTF-8");
+			String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+			remoteIP = request.getRemoteHost();
+			if(!UtilMethods.isSet(remoteIP))
+				remoteIP = request.getRemoteAddr();
 
-			byte[] bytes = new byte[1024];
-			int length;
-			while ((length = fis.read(bytes)) >= 0) {
-				zos.write(bytes, 0, length);
+			PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
+			final PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
+
+			if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, mySelf) || !UtilMethods.isSet(transactionId)) {
+				return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
 			}
 
-			zos.closeEntry();
-			fis.close();
+			ServletContext servletContext = request.getSession().getServletContext();
+			if(!UtilMethods.isSet(servletContext.getAttribute("integrityDataRequestID"))
+					|| !((String) servletContext.getAttribute("integrityDataRequestID")).equals(transactionId)) {
+				return Response.status(HttpStatus.SC_NO_CONTENT).build();
+			}
 
-		} catch(FileNotFoundException f){
-			Logger.error(IntegrityResource.class, "Could not find file " + fileName, f);
-			throw new Exception("Could not find file " + fileName, f);
-		} catch (IOException e) {
-			Logger.error(IntegrityResource.class, "Error writing file to zip: " + fileName, e);
-			throw new Exception("Error writing file to zip: " + fileName, e);
+
+			StreamingOutput output = new StreamingOutput() {
+				public void write(OutputStream output) throws IOException, WebApplicationException {
+					InputStream is = new FileInputStream(ConfigUtils.getIntegrityPath() + File.separator + mySelf.getId() + File.separator + "integrity.zip");
+
+					byte[] buffer = new byte[1024];
+					int bytesRead;
+					//read from is to buffer
+					while((bytesRead = is.read(buffer)) !=-1){
+						output.write(buffer, 0, bytesRead);
+					}
+					is.close();
+					//flush OutputStream to write any buffered data to file
+					output.flush();
+					output.close();
+
+				}
+			};
+
+
+
+			return Response.ok(output).build();
+
+		} catch (FileNotFoundException e) {
+			Logger.error(IntegrityResource.class, "No integrity data can be found", e);
+		} catch (Exception e) {
+			Logger.error(IntegrityResource.class, "Error caused by remote call of: "+remoteIP, e);
+		} finally {
+			//
 		}
+
+
+		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
+
+
+
+
 
 
 	@GET
