@@ -118,6 +118,111 @@
 
     }
 
+    function checkIntegrity(identifier) {
+
+        var buttonId = 'checkIntegrityButton' + identifier;
+        var loadingId = 'loadingContent' + identifier;
+
+        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+            domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
+        });
+        dojo.byId(loadingId).show();
+
+        var xhrArgs = {
+            url: "/api/integrity/checkIntegrity/endPoint/" + identifier,
+            handleAs: "json",
+            load: function (data) {
+
+                var isError = false;
+                if (data.success == false || data.success == "false") {
+                    isError = true;
+                }
+
+                if (isError) {
+                    showDotCMSSystemMessage(data.message, isError);
+                    return;
+                }
+
+                //Getting the structures data
+                var structuresData = data.structures;
+                populateTabContent(structuresData, "structuresTabContentDiv");
+
+                //Getting the structures data
+                var foldersData = data.folders;
+                populateTabContent(foldersData, "foldersTabContentDiv");
+
+                //Getting the structures data
+                var workflowsData = data.workflows;
+                populateTabContent(workflowsData, "workflowsTabContentDiv");
+
+                //Display the integrity results dialog
+                dijit.byId('integrityResultsDialog').show();
+
+                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                    domStyle.set(registry.byId(buttonId).domNode, 'display', '');
+                });
+                dojo.byId(loadingId).hide();
+            },
+            error: function (error) {
+                showDotCMSSystemMessage(error.responseText, true);
+
+                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                    domStyle.set(registry.byId(buttonId).domNode, 'display', '');
+                });
+                dojo.byId(loadingId).hide();
+            }
+        };
+        dojo.xhrGet(xhrArgs);
+    }
+
+    function populateTabContent(contentData, id) {
+
+        require(["dojo"], function(dojo){
+            // Empty node's children byId:
+            dojo.empty(id);
+        });
+
+        var htmlContent = "";
+        contentData.forEach(function (checkedData) {
+
+            var title = checkedData.title;
+            var columns = checkedData.columns;
+            var values = checkedData.values;
+
+            htmlContent += '<div class="yui-g portlet-toolbar"><div class="yui-u first">' +
+                    '<span  style="line-height:20px;font-weight: bold;">' + title + '</span>' +
+                    '</div></div>';
+
+            htmlContent += '<table class="listingTable"><tr>';
+            columns.forEach(function (column) {
+                htmlContent += '<th nowrap="nowrap">' + column + "</th>";
+            });
+            htmlContent += '</tr>';
+
+            var altRow = false;
+            values.forEach(function (value) {
+                if (altRow) {
+                    htmlContent += '<tr style="background:#f3f3f3;">';
+                } else {
+                    htmlContent += '<tr>';
+                }
+                altRow=!altRow;
+                columns.forEach(function (column) {
+                    htmlContent += '<td valign="top" nowrap="nowrap">' + value[column] + "</td>";
+                });
+                htmlContent += '</tr>';
+            });
+
+            htmlContent += '</table>';
+        });
+
+        dojo.place(htmlContent, id, "only");
+    }
+
+    function closeIntegrityResultsDialog(){
+        dijit.byId('integrityResultsDialog').hide();
+    }
+
     function deleteEnvironment(identifier) {
 
         if (confirm("<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment_Confirm")%>")) {
@@ -351,16 +456,32 @@
                     <%
                         List<PublishingEndPoint> environmentEndPoints = pepAPI.findSendingEndPointsByEnvironment(environment.getId());
                         boolean hasRow = false;
+                        int i = 0;
                         for(PublishingEndPoint endpoint : environmentEndPoints){
                             if(endpoint.isSending()){
                                 continue;
                             }
                             hasRow=true;%>
 						<div style="padding:10px;border-bottom:1px solid silver;margin-bottom:-1px">
-	                        <div style="float:right">
-		                            <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
-		                                <span class="deleteIcon"></span></a>
-		                    </div>
+	                        <div class="buttonsGroup">
+
+                                <a style="cursor: pointer; float:right" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+                                    <span class="deleteIcon"></span>
+                                </a>
+
+                                <%if(environment.getPushToAll() || i == 0){%>
+                                <div class="integrityCheckActionsGroup" style="float:right">
+                                    <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon">
+                                        <%= LanguageUtil.get(pageContext,"CheckIntegrity") %>
+                                    </button>
+                                    <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
+                                        <font class="bg" size="2"> <b><%= LanguageUtil.get(pageContext, "Loading") %></b> <br />
+                                            <img src="/html/images/icons/processing.gif" /></font>
+                                    </div>
+                                </div>
+                                <%} %>
+
+                            </div>
 		                    <div <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%> style="cursor:pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', '<%=environment.getId()%>', 'false')">
 
 	                            <div >
@@ -372,7 +493,9 @@
 								</div>
 		                    </div>
 	                    </div>
-                    <%}%>
+                    <%
+                            i++;
+                        }%>
 
                     <%if(!hasRow){ %>
                         <div  style="padding:5px;">
@@ -480,4 +603,41 @@
 </div>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--END OF END POINTS--%>
+<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
+
+
+<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
+<%--INTEGRITY RESULTS DIALOG--%>
+<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
+<style type="text/css">
+    #structuresTab,#foldersTab,#workflowsTab {
+        height:450px;
+        width:500px;
+    }
+</style>
+<div id="integrityResultsDialog" dojoAttachPoint="dialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "CheckIntegrity") %>">
+
+    <div id="integrityResultsTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+
+        <div id="structuresTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "structures") %>" >
+            <div id="structuresTabContentDiv"></div>
+        </div>
+
+        <div id="foldersTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "folders") %>" >
+            <div id="foldersTabContentDiv"></div>
+        </div>
+
+        <div id="workflowsTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Workflows") %>" >
+            <div id="workflowsTabContentDiv"></div>
+        </div>
+
+    </div>
+
+    <div class="buttonRow">
+        <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+    </div>
+
+</div>
+<%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
+<%--INTEGRITY RESULTS DIALOG--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
