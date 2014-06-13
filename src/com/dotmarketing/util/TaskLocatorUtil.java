@@ -73,6 +73,7 @@ import com.dotmarketing.startup.runonce.Task01060CreatePushPublishPushedAssets;
 import com.dotmarketing.startup.runonce.Task01065IndexOnPublishingQueueAuditStatus;
 import com.dotmarketing.startup.runonce.Task01070BundleNameDropUnique;
 import com.dotmarketing.startup.runonce.Task01085CreateBundleTablesIfNotExists;
+import com.dotmarketing.startup.runonce.Task01090AddWorkflowSchemeUniqueNameContraint;
 import com.dotmarketing.startup.runonce.Task03000CreateContainertStructures;
 import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
@@ -172,6 +173,7 @@ public class TaskLocatorUtil {
         ret.add(Task03025CreateFoundationForNotificationSystem.class);
         ret.add(Task03030CreateIndicesForVersionTables.class);
         ret.add(Task03035FixContainerCheckTrigger.class);
+        ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
         return ret;
     }
 
