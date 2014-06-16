@@ -21,6 +21,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -210,7 +211,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				try {
 
 					scheme = new WorkflowScheme();
-					scheme.setId(UUIDGenerator.generateUuid());
+					scheme.setId("85c1515c-c4f3-463c-bac2-860b8fcacc34");
 					scheme.setArchived(false);
 					scheme.setCreationDate(new Date());
 					scheme.setMandatory(false);
@@ -327,7 +328,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
-	public void deleteAction(WorkflowAction action) throws DotDataException {
+	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException {
 		String stepId = action.getStepId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION);
@@ -343,7 +344,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
-	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException {
+	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException,AlreadyExistException {
 		String actionId = actionClass.getActionId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
@@ -362,7 +363,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
-	public void deleteActionClassByAction(WorkflowAction action) throws DotDataException, DotSecurityException {
+	public void deleteActionClassByAction(WorkflowAction action) throws DotDataException, DotSecurityException, AlreadyExistException {
 		String actionId = action.getId();
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_BY_ACTION);
@@ -381,7 +382,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.loadResult();
 	}
 
-	public void deleteStep(WorkflowStep step) throws DotDataException {
+	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
 		String schemeId = step.getSchemeId();
 		final DotConnect db = new DotConnect();
 		
@@ -404,7 +405,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		saveScheme(scheme);
 	}
 
-	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException {
+	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
 		db.addParam(actionClass.getId());
@@ -879,7 +880,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
-	public void saveAction(WorkflowAction action) throws DotDataException {
+	public void saveAction(WorkflowAction action) throws DotDataException, AlreadyExistException {
 
 		boolean isNew = true;
 		if (UtilMethods.isSet(action.getId())) {
@@ -939,7 +940,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
-	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException {
+	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
 
 		boolean isNew = true;
 		if (UtilMethods.isSet(actionClass.getId())) {
@@ -1006,7 +1007,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
-	public void saveScheme(WorkflowScheme scheme) throws DotDataException {
+	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException {
 
 		boolean isNew = true;
 		if (UtilMethods.isSet(scheme.getId())) {
@@ -1026,7 +1027,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		final DotConnect db = new DotConnect();
 		try {
+			WorkflowScheme schemeWithSameName = findSchemeByName(scheme.getName());
+			if(UtilMethods.isSet(schemeWithSameName) && UtilMethods.isSet(schemeWithSameName.getId()) && !schemeWithSameName.getId().equals(scheme.getId())){
+				throw new AlreadyExistException("Already exist a scheme with the same name ("+schemeWithSameName.getName()+"). Create different schemes with the same name is not allowed. Please change your workflow scheme name.");
+			}
 			if (isNew) {
+				
 				db.setSQL(sql.INSERT_SCHEME);
 				db.addParam(scheme.getId());
 				db.addParam(scheme.getName());
@@ -1108,7 +1114,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	public void saveStep(WorkflowStep step) throws DotDataException {
+	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
 
 		boolean isNew = true;
 		if (UtilMethods.isSet(step.getId())) {
@@ -1169,7 +1175,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
-	public void saveWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException {
+	public void saveWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException {
 
 		boolean isNew = true;
 		if (UtilMethods.isSet(param.getId())) {
@@ -1363,7 +1369,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     }
 
     @Override
-    public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException {
+    public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException {
         DotConnect db=new DotConnect();
         db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ID);
         db.addParam(param.getId());
