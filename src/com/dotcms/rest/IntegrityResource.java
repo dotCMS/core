@@ -2,13 +2,10 @@ package com.dotcms.rest;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -60,7 +57,7 @@ import com.sun.jersey.multipart.FormDataParam;
 @Path("/integrity")
 public class IntegrityResource extends WebResource {
 
-    private enum ProcessStatus {
+    public enum ProcessStatus {
         PROCESSING, ERROR, FINISHED
     }
 
@@ -98,16 +95,15 @@ public class IntegrityResource extends WebResource {
 
         try {
 
-        	auth_token_enc = URLDecoder.decode(auth_token_enc, "UTF-8");
         	String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
         	remoteIP = request.getRemoteHost();
         	if(!UtilMethods.isSet(remoteIP))
         		remoteIP = request.getRemoteAddr();
 
         	PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
-        	final PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
+        	final PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-        	if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, mySelf)) {
+        	if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, requesterEndPoint)) {
         		return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
         	}
 
@@ -121,7 +117,7 @@ public class IntegrityResource extends WebResource {
         	servletContext.setAttribute("integrityDataRequestID", transactionId);
 
         	// start data generation process
-        	IntegrityDataGenerator idg = new IntegrityDataGenerator(mySelf, request.getSession().getServletContext() );
+        	IntegrityDataGenerator idg = new IntegrityDataGenerator(requesterEndPoint, request.getSession().getServletContext() );
         	idg.start();
 
         	return Response.ok(transactionId).build();
@@ -137,7 +133,10 @@ public class IntegrityResource extends WebResource {
 	}
 
 	/**
-	 * <p>Returns a zip with data from structures, workflow schemes and folders for integrity check
+	 * Checks if the generation of Integrity Data is done.
+	 * If FINISHED, returns a zip with the data
+	 * if PROCESSING, returns HttpStatus.SC_PROCESSING
+	 * if ERROR, returns HttpStatus.SC_INTERNAL_SERVER_ERROR, including the error message
 	 *
 	 * Usage: /getdata
 	 *
@@ -147,63 +146,70 @@ public class IntegrityResource extends WebResource {
 	@Path("/getintegritydata/{params:.*}")
 	@Produces("application/zip")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public Response getIntegrityData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_enc, @FormDataParam("TRANSACTION_ID") String transactionId)  {
+	public Response getIntegrityData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_enc, @FormDataParam("REQUEST_ID") String requestId)  {
 		String remoteIP = null;
 
 		try {
 
-			auth_token_enc = URLDecoder.decode(auth_token_enc, "UTF-8");
 			String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
 			remoteIP = request.getRemoteHost();
 			if(!UtilMethods.isSet(remoteIP))
 				remoteIP = request.getRemoteAddr();
 
 			PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
-			final PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
+			final PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-			if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, mySelf) || !UtilMethods.isSet(transactionId)) {
+			if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, requesterEndPoint) || !UtilMethods.isSet(requestId)) {
 				return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
 			}
 
 			ServletContext servletContext = request.getSession().getServletContext();
 			if(!UtilMethods.isSet(servletContext.getAttribute("integrityDataRequestID"))
-					|| !((String) servletContext.getAttribute("integrityDataRequestID")).equals(transactionId)) {
-				return Response.status(HttpStatus.SC_NO_CONTENT).build();
+					|| !((String) servletContext.getAttribute("integrityDataRequestID")).equals(requestId)) {
+				return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
 			}
 
+			ProcessStatus integrityDataGeneratorStatus = (ProcessStatus) servletContext.getAttribute("integrityDataGenerationStatus");
 
-			StreamingOutput output = new StreamingOutput() {
-				public void write(OutputStream output) throws IOException, WebApplicationException {
-					InputStream is = new FileInputStream(ConfigUtils.getIntegrityPath() + File.separator + mySelf.getId() + File.separator + "integrity.zip");
+			if(UtilMethods.isSet( integrityDataGeneratorStatus )) {
+				switch (integrityDataGeneratorStatus) {
+				case PROCESSING:
+					return Response.status(HttpStatus.SC_PROCESSING).build();
+				case FINISHED:
+					StreamingOutput output = new StreamingOutput() {
+						public void write(OutputStream output) throws IOException, WebApplicationException {
+							InputStream is = new FileInputStream(ConfigUtils.getIntegrityPath() + File.separator + requesterEndPoint.getId() + File.separator + "integrity.zip");
 
-					byte[] buffer = new byte[1024];
-					int bytesRead;
-					//read from is to buffer
-					while((bytesRead = is.read(buffer)) !=-1){
-						output.write(buffer, 0, bytesRead);
-					}
-					is.close();
-					//flush OutputStream to write any buffered data to file
-					output.flush();
-					output.close();
+							byte[] buffer = new byte[1024];
+							int bytesRead;
+							//read from is to buffer
+							while((bytesRead = is.read(buffer)) !=-1){
+								output.write(buffer, 0, bytesRead);
+							}
+							is.close();
+							//flush OutputStream to write any buffered data to file
+							output.flush();
+							output.close();
 
+						}
+					};
+					return Response.ok(output).build();
+
+				case ERROR:
+					return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(servletContext.getAttribute("integrityDataGenerationError")).build();
+
+				default:
+					break;
 				}
-			};
+			}
 
-
-
-			return Response.ok(output).build();
-
-		} catch (FileNotFoundException e) {
-			Logger.error(IntegrityResource.class, "No integrity data can be found", e);
 		} catch (Exception e) {
 			Logger.error(IntegrityResource.class, "Error caused by remote call of: "+remoteIP, e);
-		} finally {
-			//
+			return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
 		}
 
+		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity("Unknown Status").build();
 
-		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
 
 
@@ -220,72 +226,158 @@ public class IntegrityResource extends WebResource {
         Map<String, String> paramsMap = initData.getParamsMap();
         User user = initData.getUser();
 
-        String endpointId = paramsMap.get("endpointid");
+        StringBuilder responseMessage = new StringBuilder();
+        final HttpSession session = request.getSession();
 
-        if(!UtilMethods.isSet(endpointId)) {
-        	return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
+        //Validate the parameters
+        final String endpointId = paramsMap.get( "endpoint" );
+        if ( !UtilMethods.isSet( endpointId ) ) {
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
+            responseBuilder.entity( responseMessage.append( "Error: " ).append( "endpoint" ).append( " is a required Field." ) );
+
+            return responseBuilder.build();
         }
 
         try {
 
         	TrustFactory tFactory = new TrustFactory();
-
         	ClientConfig cc = new DefaultClientConfig();
 
         	if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals("")) {
         		cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
         	}
-        	Client client = Client.create(cc);
+        	final Client client = Client.create(cc);
 
-        	PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
-
-        	String authToken = PushPublisher.retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString()));
-
-        	authToken = URLEncoder.encode(authToken, "UTF-8");
+        	final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
+        	final String authToken = PushPublisher.retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString()));
 
         	FormDataMultiPart form = new FormDataMultiPart();
 			form.field("AUTH_TOKEN",authToken);
 
         	//Sending bundle to endpoint
-        	String u = endpoint.toURL()+"/api/integrity/getdata/";
-
-        	com.sun.jersey.api.client.WebResource resource = client.resource(u);
+        	String url = endpoint.toURL()+"/api/integrity/generateintegritydata/";
+        	com.sun.jersey.api.client.WebResource resource = client.resource(url);
 
         	ClientResponse response =
-        			resource.accept("application/zip").type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
-
-        	System.out.println(response);
+        			resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
 
         	if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) {
+        		final String integrityDataRequestID = response.getEntity(String.class);
 
-        		InputStream zipFile = response.getEntityInputStream();
-        		ZipInputStream zin = new ZipInputStream(zipFile);
+        		Thread integrityDataRequestChecker = new Thread() {
+        			public void run(){
 
-        		ZipEntry ze = null;
+        				FormDataMultiPart form = new FormDataMultiPart();
+        				form.field("AUTH_TOKEN",authToken);
+        				form.field("REQUEST_ID",integrityDataRequestID);
 
-        		File dir = new File(ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId());
+        				String url = endpoint.toURL()+"/api/integrity/getintegritydata/";
+        	        	com.sun.jersey.api.client.WebResource resource = client.resource(url);
 
-    			// if file doesnt exists, then create it
-    			if (!dir.exists()) {
-    				dir.mkdir();
-    			}
+        	        	boolean processing = true;
 
-        		while ((ze = zin.getNextEntry()) != null) {
-        			System.out.println("Unzipping " + ze.getName());
+        	        	while(processing) {
+        	        		ClientResponse response =
+        	        				resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
 
-        			FileOutputStream fout = new FileOutputStream(ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId() + File.separator +ze.getName());
-        			for (int c = zin.read(); c != -1; c = zin.read()) {
-        				fout.write(c);
-        			}
-        			zin.closeEntry();
-        			fout.close();
-        		}
-        		zin.close();
+        	        		if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) {
+        	        			processing = false;
+
+        	        			InputStream zipFile = response.getEntityInputStream();
+        	            		ZipInputStream zin = new ZipInputStream(zipFile);
+
+        	            		ZipEntry ze = null;
+
+        	            		File dir = new File(ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId());
+
+        	        			// if file doesnt exists, then create it
+        	        			if (!dir.exists()) {
+        	        				dir.mkdir();
+        	        			}
+
+        	        			try {
+
+        	        				while ((ze = zin.getNextEntry()) != null) {
+        	        					System.out.println("Unzipping " + ze.getName());
+
+        	        					FileOutputStream fout = new FileOutputStream(ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId() + File.separator +ze.getName());
+        	        					for (int c = zin.read(); c != -1; c = zin.read()) {
+        	        						fout.write(c);
+        	        					}
+        	        					zin.closeEntry();
+        	        					fout.close();
+        	        				}
+        	        				zin.close();
+
+        	        			} catch(IOException e) {
+        	        				Logger.error(IntegrityResource.class, "Error while unzipping Integrity Data", e);
+        	        				throw new RuntimeException("Error while unzipping Integrity Data", e);
+        	        			}
+
+        	        			// set session variable
+        	        			// call IntegrityChecker
+        	        			session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.PROCESSING );
+
+        	        			try {
+        	        				IntegrityUtil.checkFoldersIntegrity(endpointId);
+        	        			} catch(Exception e) {
+        	        				Logger.error(IntegrityResource.class, "Error checking integrity", e);
+        	        				throw new RuntimeException("Error checking integrity", e);
+        	        			}
 
 
+        	        			session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.FINISHED );
 
+
+        	        		} else if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+        	        			processing = false;
+        	        		}
+        	        	}
+
+
+        		    }
+        		};
+
+        		integrityDataRequestChecker.start();
+        		// call integrity checker process
 
         	}
+
+
+        	////////////////////////////// FOR THE INTEGRITY CHECKER
+
+//        	ClientResponse response =
+//        			resource.accept("application/zip").type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
+//
+//        	System.out.println(response);
+//
+//        	if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) {
+//
+//        		InputStream zipFile = response.getEntityInputStream();
+//        		ZipInputStream zin = new ZipInputStream(zipFile);
+//
+//        		ZipEntry ze = null;
+//
+//        		File dir = new File(ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId());
+//
+//    			// if file doesnt exists, then create it
+//    			if (!dir.exists()) {
+//    				dir.mkdir();
+//    			}
+//
+//        		while ((ze = zin.getNextEntry()) != null) {
+//        			System.out.println("Unzipping " + ze.getName());
+//
+//        			FileOutputStream fout = new FileOutputStream(ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId() + File.separator +ze.getName());
+//        			for (int c = zin.read(); c != -1; c = zin.read()) {
+//        				fout.write(c);
+//        			}
+//        			zin.closeEntry();
+//        			fout.close();
+//        		}
+//        		zin.close();
+
+//        	}
 
 
 

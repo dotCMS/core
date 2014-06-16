@@ -15,6 +15,7 @@ import com.csvreader.CsvWriter;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rest.IntegrityResource;
 import com.dotcms.rest.IntegrityResource.IntegrityType;
+import com.dotcms.rest.IntegrityResource.ProcessStatus;
 import com.dotcms.rest.IntegrityUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
@@ -22,11 +23,11 @@ import com.dotmarketing.util.Logger;
 
 public class IntegrityDataGenerator extends Thread {
 
-	private PublishingEndPoint mySelf;
+	private PublishingEndPoint requesterEndPoint;
 	public ServletContext servletContext;
 
 	public IntegrityDataGenerator(PublishingEndPoint mySelf, ServletContext servletContext) {
-		this.mySelf = mySelf;
+		this.requesterEndPoint = mySelf;
 		this.servletContext = servletContext;
 	}
 
@@ -39,19 +40,19 @@ public class IntegrityDataGenerator extends Thread {
 
 		try {
 
-			if(mySelf==null)
+			if(requesterEndPoint==null)
 				throw new Exception("Not valid endpoint provided");
 
-			servletContext.setAttribute("integrityRunning", true);
+			servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.PROCESSING);
 
-			File dir = new File(ConfigUtils.getIntegrityPath() + File.separator + mySelf.getId());
+			File dir = new File(ConfigUtils.getIntegrityPath() + File.separator + requesterEndPoint.getId());
 
 			// if file doesnt exists, then create it
 			if (!dir.exists()) {
 				dir.mkdir();
 			}
 
-			zipFile = new File(ConfigUtils.getIntegrityPath() + File.separator + mySelf.getId() + File.separator + "integrity.zip");
+			zipFile = new File(ConfigUtils.getIntegrityPath() + File.separator + requesterEndPoint.getId() + File.separator + "integrity.zip");
         	FileOutputStream fos = new FileOutputStream(zipFile);
         	ZipOutputStream zos = new ZipOutputStream(fos);
 
@@ -70,7 +71,8 @@ public class IntegrityDataGenerator extends Thread {
 			if(foldersCsvFile!=null && foldersCsvFile.exists())
 				zipFile.delete();
 
-			File errorFile = new File(ConfigUtils.getIntegrityPath() + File.separator + mySelf.getId() + File.separator + "error.dat");
+			servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.ERROR);
+			servletContext.setAttribute("integrityDataGenerationError", e.getMessage());
 
 
 		} finally {
@@ -81,7 +83,7 @@ public class IntegrityDataGenerator extends Thread {
         	if(schemesCsvFile!=null && schemesCsvFile.exists())
         		schemesCsvFile.delete();
 
-        	servletContext.removeAttribute("integrityRunning");
+        	servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.FINISHED);
         }
 	}
 
