@@ -353,13 +353,14 @@
 
             if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
            	    ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
-       		    String expireDateVar = contentletForm.getStructure().getExpireDateVar();
-                if (field.getVelocityVarName().equals(expireDateVar)) {
-                	 if (UtilMethods.isSet( value )) {%>
-                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  name="fieldNeverExpire" id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
-                 <%} else {%>
-                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
-                 <%}%>
+           	   if(contentletForm != null){
+	       		    String expireDateVar = contentletForm.getStructure().getExpireDateVar();
+	                if (field.getVelocityVarName().equals(expireDateVar)) {
+	                	 if (UtilMethods.isSet( value )) {%>
+	                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  name="fieldNeverExpire" id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+	                 <%} else {%>
+	                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+	                 <%}%>
                     <script type="text/javascript">
                     function toggleExpire(velocityVarName) {
                         var never = dijit.byId("fieldNeverExpire").getValue();
@@ -379,6 +380,7 @@
                         });
                     </script>
                 <%}
+           	   }
             }
     } //END DATIME/DATE/TIME Field
 
