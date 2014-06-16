@@ -152,7 +152,25 @@
         if(structureType == 2){
         	 isWidget = true;
         }
+        boolean toggleOn = false;
+        String[] wysiwygsDisabled = new String[0];
+        if(contentletForm != null && UtilMethods.isSet(contentletForm.getDisabledWysiwyg())){
+            wysiwygsDisabled = contentletForm.getDisabledWysiwyg().split(",");
+        }
+        for (String fieldVelocityVarName: wysiwygsDisabled) {
+        	String varName = fieldVelocityVarName;
+        	if (fieldVelocityVarName.replaceAll(com.dotmarketing.util.Constants.TOGGLE_EDITOR_SEPARATOR,"").trim().equals(field.getVelocityVarName())) {
+        		toggleOn = true;
+        	}
+        }
 %>
+<script type="text/javascript">
+        dojo.addOnLoad(function () {
+        	<%if(toggleOn){ %>
+        	aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');
+        	<%} %>
+        });	
+</script>	
 	<div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
     <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:450px;min-height:100px;max-height: 600px\""%>
         name="<%=field.getFieldContentlet()%>"
@@ -163,7 +181,11 @@
     <br />
     <div style="padding-right:10px;width:475px;float:left;">
     	<div style="float: left;padding-top: 10px; padding-left: 2px;">
-    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+ 		<%if(toggleOn){ %>
+    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+    		<%}else{ %>
+    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="false"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+        <%} %>
         	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
         </div>
         <br /> <br />
