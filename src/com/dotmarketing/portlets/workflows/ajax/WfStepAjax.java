@@ -16,8 +16,8 @@ import com.dotcms.repackage.jackson_core_asl_1_9_2.org.codehaus.jackson.JsonGene
 import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.DeserializationConfig.Feature;
 import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.JsonMappingException;
 import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectMapper;
-
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -125,6 +125,9 @@ public class WfStepAjax extends WfBaseAction {
 			wapi.saveStep(step);
 			
 		} catch (DotDataException e) {
+			Logger.error(this.getClass(),e.getMessage(),e);
+			writeError(response, e.getMessage());
+		}catch (AlreadyExistException e) {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			writeError(response, e.getMessage());
 		}
