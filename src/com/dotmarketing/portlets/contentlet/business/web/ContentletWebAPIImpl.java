@@ -725,7 +725,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					}
 				}
 				if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
-					if(field.getFieldContentlet().startsWith("date")){
+					if(field.getFieldContentlet().startsWith("date") && contentletFormData.get("fieldNeverExpire") != null){
 						String fieldNeverExpire = contentletFormData.get("fieldNeverExpire").toString();
 						Structure structure = StructureCache.getStructureByInode(contentlet.getStructureInode());
 						if(field.getVelocityVarName().equals(structure.getExpireDateVar())){
