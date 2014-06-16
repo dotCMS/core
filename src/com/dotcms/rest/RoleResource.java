@@ -79,7 +79,7 @@ public class RoleResource extends WebResource {
 
 				json.append("{id: '").append(r.getId()).append("', ");
 				json.append("$ref: '").append(r.getId()).append("', ");
-				json.append("name: '").append(r.getName()).append("', ");
+				json.append("name: '").append(UtilMethods.javaScriptify(r.getName())).append("', ");
 				json.append("locked: '").append(r.isLocked()).append("', ");
 				json.append(" children:true}");
 
@@ -96,7 +96,7 @@ public class RoleResource extends WebResource {
 			Role role = roleAPI.loadRoleById(roleId);
 			List<String> children = role.getRoleChildren();
 
-			json.append("{ id: '").append(role.getId()).append("', name: '").append(role.getName()).append("', locked: '")
+			json.append("{ id: '").append(role.getId()).append("', name: '").append(UtilMethods.javaScriptify(role.getName())).append("', locked: '")
 			.append(role.isLocked()).append("', children: ").append("[");
 
 			if(children!=null) {
@@ -106,7 +106,7 @@ public class RoleResource extends WebResource {
 					Role r = roleAPI.loadRoleById(childId);
 
 					json.append("{id: '").append(r.getId()).append("', $ref: '").append(r.getId()).append("', name: '")
-					.append(r.getName()).append("', locked: '").append(r.isLocked()).append("', children:true}");
+					.append(UtilMethods.javaScriptify(r.getName())).append("', locked: '").append(r.isLocked()).append("', children:true}");
 
 					if(childCounter+1 < children.size()) {
 						json.append(", ");
@@ -164,18 +164,18 @@ public class RoleResource extends WebResource {
 
 		StringBuilder node = new StringBuilder();
 		node.append("{");
-		node.append("DBFQN: '").append(role.getDBFQN()).append("',");
-		node.append("FQN: '").append(role.getFQN()).append("',");
+		node.append("DBFQN: '").append(UtilMethods.javaScriptify(role.getDBFQN())).append("',");
+		node.append("FQN: '").append(UtilMethods.javaScriptify(role.getFQN())).append("',");
 		node.append("children: [],");
-		node.append("description: '").append(role.getDescription()).append("',");
+		node.append("description: '").append(UtilMethods.javaScriptify(role.getDescription())).append("',");
 		node.append("editLayouts: ").append(role.isEditLayouts()).append(",");
 		node.append("editPermissions: ").append(role.isEditPermissions()).append(",");
 		node.append("editUsers: ").append(role.isEditUsers()).append(",");
 		node.append("id: '").append(role.getId()).append("',");
 		node.append("locked: '").append(role.isLocked()).append("',");
-		node.append("name: '").append(role.getName()).append("',");
+		node.append("name: '").append(UtilMethods.javaScriptify(role.getName())).append("',");
 		node.append("parent: '").append(role.getParent()).append("',");
-		node.append("roleKey: '").append(role.getRoleKey()!=null?role.getRoleKey():"").append("',");
+		node.append("roleKey: '").append(role.getRoleKey()!=null?UtilMethods.javaScriptify(role.getRoleKey()):"").append("',");
 		node.append("system: '").append(role.isSystem()).append("'");
 		node.append("}");
 
@@ -293,7 +293,7 @@ public class RoleResource extends WebResource {
 		}
 		for (String key : map.keySet()) {
 			Role r = roleAPI.loadRoleById(key);
-			json.append("{ id: '").append(r.getId().replace('-', '_')).append("', name: '").append(r.getName())
+			json.append("{ id: '").append(r.getId().replace('-', '_')).append("', name: '").append(UtilMethods.javaScriptify(r.getName()))
 			.append("', locked: ").append(r.isLocked()).append(", children: ").append("[");
 
 			LinkedHashMap<String, Object> children = (LinkedHashMap<String, Object>) map.get(key);
