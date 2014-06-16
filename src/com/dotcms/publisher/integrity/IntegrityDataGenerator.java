@@ -59,11 +59,11 @@ public class IntegrityDataGenerator extends Thread {
         	// create Folders CSV
         	foldersCsvFile = createCSV(IntegrityType.FOLDERS);
         	structuresCsvFile = createCSV(IntegrityType.STRUCTURES);
-        	schemesCsvFile = createCSV(IntegrityType.WORKFLOW_SCHEMES);
+        	schemesCsvFile = createCSV(IntegrityType.SCHEMES);
 
-        	addToZipFile(foldersCsvFile.getAbsolutePath(), zos, "folders.csv");
-        	addToZipFile(structuresCsvFile.getAbsolutePath(), zos, "structures.csv");
-        	addToZipFile(schemesCsvFile.getAbsolutePath(), zos, "workflow_schemes.csv");
+        	addToZipFile(foldersCsvFile.getAbsolutePath(), zos, IntegrityType.FOLDERS.name()+ ".csv");
+        	addToZipFile(structuresCsvFile.getAbsolutePath(), zos, IntegrityType.STRUCTURES.name()+ ".csv");
+        	addToZipFile(schemesCsvFile.getAbsolutePath(), zos, IntegrityType.SCHEMES.name()+ ".csv");
 
         	zos.close();
         	fos.close();
@@ -89,7 +89,7 @@ public class IntegrityDataGenerator extends Thread {
 
 	private static File createCSV(IntegrityType type) throws Exception {
 
-		String outputFile = ConfigUtils.getBundlePath() + File.separator + type.getFileName() + ".csv";
+		String outputFile = ConfigUtils.getBundlePath() + File.separator + type.name() + ".csv";
         File csvFile = new File(outputFile);
 
 		try {
@@ -100,7 +100,7 @@ public class IntegrityDataGenerator extends Thread {
 				IntegrityUtil.writeFoldersCSV(csvOutput);
 			} else if(type == IntegrityType.STRUCTURES) {
 				IntegrityUtil.writeStructuresCSV(csvOutput);
-			}  else if(type == IntegrityType.WORKFLOW_SCHEMES) {
+			}  else if(type == IntegrityType.SCHEMES) {
 				IntegrityUtil.writeFoldersCSV(csvOutput);
 			}
 

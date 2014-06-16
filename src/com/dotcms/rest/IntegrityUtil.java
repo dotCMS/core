@@ -6,9 +6,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 import com.csvreader.CsvReader;
 import com.csvreader.CsvWriter;
+import com.dotcms.rest.IntegrityResource.IntegrityType;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -118,19 +121,26 @@ public class IntegrityUtil {
 
 		try {
 
-			CsvReader folders = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + "folders.csv", '|');
+			CsvReader folders = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.FOLDERS.name() + ".csv", '|');
 			boolean tempCreated = false;
 			DotConnect dc = new DotConnect();
-			String endpointIdforDB = DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)?endpointId.replace("-", "").substring(0, 17):endpointId.replace("-", "");
+			String endpointIdforDB = endpointId.replace("-", "");
+			String tempTableName = IntegrityType.FOLDERS.name() + "_temp_" + endpointIdforDB;
 
-			String createTempTable = "create table folder_temp_" +endpointIdforDB+ " (inode varchar(36) not null, parent_path varchar(255), "
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				tempTableName = tempTableName.substring(0, 29);
+			}
+
+			// lets create a temp table and insert all the records coming from the CSV file
+
+			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, parent_path varchar(255), "
 					+ "asset_name varchar(255), host_identifier varchar(36) not null, primary key (inode) )";
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
 				createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
 			}
 
-			final String INSERT_TEMP_TABLE = "insert into folder_temp_" + endpointIdforDB + " values(?,?,?,?)";
+			final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?)";
 
 			while (folders.readRecord()) {
 
@@ -155,8 +165,177 @@ public class IntegrityUtil {
 
 			folders.close();
 
+			String resultsTableName = IntegrityType.FOLDERS.name() + "_ir_" + endpointIdforDB;
+
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				resultsTableName = resultsTableName.substring(0, 29);
+			}
+
+			// lets compare the data from the CSV to the local db data and leave it in a table
+
+			final String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select iden.parent_path || iden.asset_name as folder, "
+					+ "c.title as host_name, f.inode as local_inode, ft.inode as remote_inode from identifier iden "
+					+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
+					+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+					+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
+
+			dc.executeStatement(CREATE_RESULTS_TABLE);
+
+			// lets drop the temp table
+			dc.executeStatement("drop table " + tempTableName );
+
 		} catch(Exception e) {
 			throw new Exception("Error running the Folders Integrity Check", e);
+		}
+	}
+
+	public static void checkStructuresIntegrity(String endpointId) throws Exception {
+
+		try {
+
+			CsvReader structures = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.STRUCTURES.name() + ".csv", '|');
+			boolean tempCreated = false;
+			DotConnect dc = new DotConnect();
+			String endpointIdforDB = endpointId.replace("-", "");
+			String tempTableName = IntegrityType.STRUCTURES.name() + "_temp_" + endpointIdforDB;
+
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				tempTableName = tempTableName.substring(0, 29);
+			}
+
+			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, velocity_var_name varchar(255), "
+					+ " primary key (inode) )";
+
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
+			}
+
+			final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?)";
+
+			while (structures.readRecord()) {
+
+				if(!tempCreated) {
+					dc.executeStatement(createTempTable);
+					tempCreated = true;
+				}
+
+				//select f.inode, i.parent_path, i.asset_name, i.host_inode
+				String structureInode = structures.get(0);
+				String verVarName = structures.get(1);
+
+				dc.setSQL(INSERT_TEMP_TABLE);
+				dc.addParam(structureInode);
+				dc.addParam(verVarName);
+				dc.loadResult();
+			}
+
+			structures.close();
+
+			String resultsTableName = IntegrityType.STRUCTURES.name() + "_ir_" + endpointIdforDB;
+
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				resultsTableName = resultsTableName.substring(0, 29);
+			}
+
+			// lets compare the data from the CSV to the local db data and leave it in a table
+
+			final String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.velocity_var_name as velocity_name, "
+					+ "s.inode as local_inode, st.inode as remote_inode from structure s "
+					+ "join " + tempTableName + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode";
+
+			dc.executeStatement(CREATE_RESULTS_TABLE);
+
+			// lets drop the temp table
+			dc.executeStatement("drop table " + tempTableName );
+
+
+		} catch(Exception e) {
+			throw new Exception("Error running the Structures Integrity Check", e);
+		}
+	}
+
+	public static void checkWorkflowSchemesIntegrity(String endpointId) throws Exception {
+
+		try {
+
+			CsvReader schemes = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.SCHEMES.name() + ".csv", '|');
+			boolean tempCreated = false;
+			DotConnect dc = new DotConnect();
+			String endpointIdforDB = endpointId.replace("-", "");
+			String tempTableName = IntegrityType.SCHEMES.name() + "_temp_" + endpointIdforDB;
+
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				tempTableName = tempTableName.substring(0, 29);
+			}
+
+			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, name varchar(255), "
+					+ " primary key (inode) )";
+
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
+			}
+
+			final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?)";
+
+			while (schemes.readRecord()) {
+
+				if(!tempCreated) {
+					dc.executeStatement(createTempTable);
+					tempCreated = true;
+				}
+
+				//select f.inode, i.parent_path, i.asset_name, i.host_inode
+				String schemeInode = schemes.get(0);
+				String name = schemes.get(1);
+
+				dc.setSQL(INSERT_TEMP_TABLE);
+				dc.addParam(schemeInode);
+				dc.addParam(name);
+				dc.loadResult();
+			}
+
+			schemes.close();
+
+			String resultsTableName = IntegrityType.SCHEMES.name() + "_ir_" + endpointIdforDB;
+
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				resultsTableName = resultsTableName.substring(0, 29);
+			}
+
+			// lets compare the data from the CSV to the local db data and and create a result table out of it
+
+			final String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.name, s.id as local_inode, wt.inode as remote_inode from workflow_scheme s "
+					+ "join " + tempTableName + " wt on s.name = wt.name and s.id <> wt.inode";
+
+			dc.executeStatement(CREATE_RESULTS_TABLE);
+
+			// lets drop the temp table
+			dc.executeStatement("drop table " + tempTableName );
+
+
+		} catch(Exception e) {
+			throw new Exception("Error running the Workflow Schemes Integrity Check", e);
+		}
+	}
+
+
+	public static List<Map<String, Object>> getIntegrityConflicts(String endpointId, IntegrityType type) throws Exception {
+		try {
+			DotConnect dc = new DotConnect();
+			String endpointIdforDB = endpointId.replace("-", "");
+
+			String resultsTableName = type.name() + "_ir_" + endpointIdforDB;
+
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				resultsTableName = resultsTableName.substring(0, 29);
+			}
+
+			dc.setSQL("select * from " + resultsTableName);
+
+			return dc.loadObjectResults();
+
+		} catch(Exception e) {
+			throw new Exception("Error running the Structures Integrity Check", e);
 		}
 	}
 

@@ -165,7 +165,7 @@
         dojo.byId(loadingId).show();
 
         var xhrArgs = {
-            url: "/api/integrity/checkIntegrityExample/endPoint/" + identifier,
+            url: "/api/integrity/checkintegrity/endpoint/" + identifier,
             handleAs: "json",
             load: function (data) {
 
@@ -703,7 +703,7 @@
 
             </td>
             <td align="center" valign="top" nowrap="nowrap">
-            
+
             <%if(environment.getPushToAll()){%>
             	<%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %>
             <%}else{ %>
