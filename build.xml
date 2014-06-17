@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 
-
 <project name="dotcms.org" default="compile" basedir=".">
     <!-- property name="build.compiler" value="jikes" / -->
 
