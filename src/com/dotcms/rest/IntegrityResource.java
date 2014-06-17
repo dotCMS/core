@@ -47,6 +47,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -65,9 +66,20 @@ public class IntegrityResource extends WebResource {
     }
 
     public enum IntegrityType {
-	    FOLDERS,
-	    SCHEMES,
-	    STRUCTURES;
+	    FOLDERS("push_publish_integrity_folders_conflicts"),
+	    SCHEMES("push_publish_integrity_schemes_conflicts"),
+	    STRUCTURES("push_publish_integrity_structures_conflicts");
+
+	    private String label;
+
+	    IntegrityType(String label) {
+	    	this.label = label;
+	    }
+
+		public String getLabel() {
+			return label;
+		}
+
 	}
 
 	/**
@@ -570,7 +582,7 @@ public class IntegrityResource extends WebResource {
             	tabResponse = new JSONArray();
             	errorContent = new JSONObject();
 
-            	errorContent.put( "title", integrityType.name() + " Inode Conflicts" );//Title of the check
+            	errorContent.put( "title",   LanguageUtil.get( initData.getUser().getLocale(), integrityType.getLabel() )  );//Title of the check
 
             	List<Map<String, Object>> results = IntegrityUtil.getIntegrityConflicts(endpointId, integrityType);
 

@@ -322,8 +322,6 @@
             handleAs: "json",
             load: function (data) {
 
-            	console.log(data)
-
                 var isError = false;
                 if (data.success == false || data.success == "false") {
                     isError = true;
@@ -358,7 +356,6 @@
                 dojo.byId(loadingId).hide();
             },
             error: function (error) {
-            	alert(error)
                 showDotCMSSystemMessage(error.responseText, true);
 
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
@@ -380,7 +377,6 @@
             dojo.empty(id);
         });
 
-        alert('sdf')
         var htmlContent = "";
         contentData.forEach(function (checkedData) {
 
@@ -388,7 +384,7 @@
             var columns = checkedData.columns;
             var values = checkedData.values;
 
-            htmlContent += '<div class="yui-g portlet-toolbar"><div class="yui-u first">' +
+            htmlContent += '<div class="yui-g portlet-toolbar"><div >' +
                     '<span  style="line-height:20px;font-weight: bold;">' + title + '</span>' +
                     '</div></div>';
 
@@ -813,7 +809,8 @@
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <style type="text/css">
     #structuresTab,#foldersTab,#workflowsTab {
-        height:450px;
+        height:100%;
+        min-height:250px;
         width:500px;
     }
 </style>
