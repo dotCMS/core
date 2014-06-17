@@ -228,11 +228,26 @@ public class IntegrityResource extends WebResource {
             return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: endpoint is a required Field.").build();
         }
 
+
+        // return if we already have the data
         try {
-			IntegrityUtil.getIntegrityConflicts(endpointId, IntegrityType.FOLDERS);
-		} catch (Exception e) {
-			Logger.info(IntegrityResource.class, "IntegrityResource");
-		}
+        	if(IntegrityUtil.doesIntegrityConflictsDataExist(endpointId)) {
+        		JSONObject jsonResponse = new JSONObject();
+
+        		jsonResponse.put( "success", true );
+        		jsonResponse.put( "message", "Initialized integrity checking..." );
+
+        		responseMessage.append( jsonResponse.toString() );
+
+        		session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.FINISHED );
+
+        		return response( responseMessage.toString(), false );
+        	}
+        } catch(JSONException e) {
+			Logger.error(IntegrityResource.class, "Error setting return message in JSON response", e);
+		} catch(Exception e) {
+        	Logger.error(IntegrityResource.class, "Error checking existence of integrity data", e);
+        }
 
         try {
 
@@ -546,13 +561,17 @@ public class IntegrityResource extends WebResource {
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //Structures tab data
-            JSONArray tabResponse = new JSONArray();
-            JSONObject errorContent = new JSONObject();
+            JSONArray tabResponse = null;
+            JSONObject errorContent = null;
 
             IntegrityType[] types = IntegrityType.values();
 
             for (IntegrityType integrityType : types) {
+            	tabResponse = new JSONArray();
+            	errorContent = new JSONObject();
+
             	errorContent.put( "title", integrityType.name() + " Inode Conflicts" );//Title of the check
+
             	List<Map<String, Object>> results = IntegrityUtil.getIntegrityConflicts(endpointId, integrityType);
 
             	if(!results.isEmpty()) {
@@ -561,9 +580,9 @@ public class IntegrityResource extends WebResource {
 	            	for (String keyName : results.get(0).keySet()) {
 						columns.add(keyName);
 					}
+	            	errorContent.put( "columns", columns.toArray() );
 
 	            	JSONArray values = new JSONArray();
-
 	            	for (Map<String, Object> result : results) {
 
 	            		JSONObject columnsContent = new JSONObject();
@@ -572,15 +591,18 @@ public class IntegrityResource extends WebResource {
 	            			columnsContent.put("keyName", result.get(keyName));
 						}
 
-	            		values.add(columnsContent);
+	            		values.put(columnsContent);
 					}
 
 	            	errorContent.put( "values", values.toArray() );
+            	} else {
+            		errorContent.put( "columns", new JSONArray().toArray() );
+            		errorContent.put( "values", new JSONArray().toArray() );
             	}
 
             	tabResponse.add( errorContent );
                 //And prepare the response
-                jsonResponse.put( integrityType.name(), tabResponse.toArray() );
+                jsonResponse.put( integrityType.name().toLowerCase(), tabResponse.toArray() );
 			}
 
             /*

@@ -322,6 +322,8 @@
             handleAs: "json",
             load: function (data) {
 
+            	console.log(data)
+
                 var isError = false;
                 if (data.success == false || data.success == "false") {
                     isError = true;
@@ -341,7 +343,7 @@
                 populateTabContent(foldersData, "foldersTabContentDiv");
 
                 //Getting the structures data
-                var workflowsData = data.workflows;
+                var workflowsData = data.schemes;
                 populateTabContent(workflowsData, "workflowsTabContentDiv");
 
                 //Display the integrity results dialog
@@ -356,6 +358,7 @@
                 dojo.byId(loadingId).hide();
             },
             error: function (error) {
+            	alert(error)
                 showDotCMSSystemMessage(error.responseText, true);
 
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
@@ -377,6 +380,7 @@
             dojo.empty(id);
         });
 
+        alert('sdf')
         var htmlContent = "";
         contentData.forEach(function (checkedData) {
 

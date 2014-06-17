@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -337,6 +338,41 @@ public class IntegrityUtil {
 		} catch(Exception e) {
 			throw new Exception("Error running the Structures Integrity Check", e);
 		}
+	}
+
+	public static Boolean doesIntegrityConflictsDataExist(String endpointId) throws Exception {
+
+		String endpointIdforDB = endpointId.replace("-", "");
+		String tableName = IntegrityType.FOLDERS.name() + "_ir_" + endpointIdforDB;
+
+		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+			tableName = tableName.substring(0, 29);
+		}
+
+		tableName = tableName.toLowerCase();
+
+//		final String H2="SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName.toUpperCase()+"' + ";
+
+		DotConnect dc = new DotConnect();
+
+		if(DbConnectionFactory.isOracle()) {
+			dc.setSQL("SELECT COUNT(*) as exist FROM user_tables WHERE table_name='"+tableName+"'");
+			BigDecimal existTable = (BigDecimal)dc.loadObjectResults().get(0).get("exist");
+			return existTable.longValue() != 0;
+		} else if(DbConnectionFactory.isPostgres()) {
+			dc.setSQL("SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName+"' ");
+			long existTable = (Long)dc.loadObjectResults().get(0).get("exist");
+			return existTable != 0;
+		} else if(DbConnectionFactory.isMsSql()) {
+			dc.setSQL("SELECT COUNT(*) as exist FROM sysobjects WHERE name = '"+tableName+"'");
+			int existTable = (Integer)dc.loadObjectResults().get(0).get("exist");
+			return existTable != 0;
+		} else if(DbConnectionFactory.isMySql()) {
+			dc.setSQL("SHOW TABLES LIKE '"+tableName+"'");
+			return !dc.loadObjectResults().isEmpty();
+		}
+
+		return false;
 	}
 
 
