@@ -21,6 +21,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -210,7 +211,15 @@ public class DependencyManager {
         setStructureDependencies();
         setLinkDependencies();
 
-    	contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
+    	if(UtilMethods.isSet(config.getLuceneQueries())){
+        	List<String> contentIds = PublisherUtil.getContentIds( config.getLuceneQueries());
+        	for(String id : contentIds){
+        		List<Contentlet> contentlets = APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false);
+        		for(Contentlet con : contentlets){
+        			contents.add( con.getIdentifier(), con.getModDate()); 
+        		}
+        	}
+        }
         setContentDependencies( config.getLuceneQueries() );
 
 		config.setHostSet(hosts);
