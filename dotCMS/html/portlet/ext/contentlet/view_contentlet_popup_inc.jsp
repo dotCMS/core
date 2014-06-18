@@ -79,9 +79,9 @@ if(detailPage!=null){
 		for(Host h : testTheseHosts){ 
 			if(h.isArchived() || h.isSystemHost()) continue; 
 			// does the host actually have the detail page mapped
-			 Identifier hasPage = APILocator.getIdentifierAPI().find(h, detailId.getPath());
-			 if(hasPage ==null || ! UtilMethods.isSet(hasPage.getId())) continue; 
-			 urlMappedHosts.add(h);
+			Identifier hasPage = APILocator.getIdentifierAPI().find(h, detailId.getPath());
+			if(hasPage ==null || ! UtilMethods.isSet(hasPage.getId())) continue; 
+			urlMappedHosts.add(h);
 		}
 		
 		
@@ -270,14 +270,21 @@ dojo.ready(function(){
 						Preview <br>
 					</td>
 					<td>
-						<%for(Host h : urlMappedHosts){ %>
-							<%String hostUrl =urlMap.replaceAll(hostId, h.getIdentifier());  %>
-							<%if(h.getBinary("hostThumbnail") != null){%>
-								<a href="<%=hostUrl %>" target="_blank"><img src="/contentAsset/image/<%=h.getIdentifier()%>/hostThumbnail/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/"></a>
-							<%}else{ %>
-								<a href="<%=hostUrl %>" target="_blank"><%=h.getHostname() %></a>
+						<div style="overflow:auto;">
+						<%urlMappedHosts = urlMappedHosts.subList(0,((urlMappedHosts.size()>10) ? 10 : urlMappedHosts.size())); %>
+							<%for(Host h : urlMappedHosts){ %>
+								<div style="width:150px;float:left;;border:1px solid silver;margin:4px;padding:10px 0;text-align:center;">
+									<%String hostUrl =urlMap.replaceAll(hostId, h.getIdentifier());  %>
+									<%if(h.getBinary("hostThumbnail") != null){%>
+										<a href="<%=hostUrl %>" target="_blank"><img src="/contentAsset/image/<%=h.getIdentifier()%>/hostThumbnail/filter/Thumbnail/thumbnail_w/75/thumbnail_h/75/"></a><br>
+									<%}else{ %>
+										<a href="<%=hostUrl %>" target="_blank"><img src="/html/images/shim.gif" width="75" height="75" ></a><br>
+									<%} %>
+									<a href="<%=hostUrl %>" target="_blank"><small><%=h.getHostname() %></small></a>
+								</div>
+				
 							<%} %>
-						<%} %>
+						</div>
 					</td>
 				</tr>
 			<%} %>
