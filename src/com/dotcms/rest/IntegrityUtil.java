@@ -707,5 +707,246 @@ public class IntegrityUtil {
 		}
 	}
 
+	public void fixConflicts(String endpointId, IntegrityType type) throws DotDataException {
+		if(type == IntegrityType.FOLDERS) {
+			fixFolders(endpointId);
+		} else if(type == IntegrityType.STRUCTURES) {
+			fixStructures(endpointId);
+		} else if(type == IntegrityType.SCHEMES) {
+			fixSchemes(endpointId);
+		}
+	}
+	 /**
+     * Fixes folders inconsistencies for a given server id
+     *
+     * @param serverId
+     * @throws DotDataException
+     */
+    public void fixFolders ( String serverId ) throws DotDataException {
+
+        DotConnect dc = new DotConnect();
+
+        try {
+
+            String tableName = getResultsTableName( serverId, IntegrityType.FOLDERS );
+
+            //First delete the constrain
+            if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+                dc.executeStatement( "alter table folder drop FOREIGN KEY fkb45d1c6e5fb51eb" );
+            } else {
+                dc.executeStatement( "alter table folder drop constraint fkb45d1c6e5fb51eb" );
+            }
+
+            //Update the folder
+            updateFrom( dc, tableName, "folder", "inode" );
+            //Update the inode
+            updateFrom( dc, tableName, "inode", "inode" );
+            //Update the structure
+            if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+                dc.executeStatement( "UPDATE structure JOIN " + tableName + " ir on structure.folder = ir.local_inode SET structure.folder = ir.remote_inode" );
+            } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
+                updateFrom( dc, tableName, "structure", "folder" );
+            } else {
+                dc.executeStatement( "UPDATE structure SET folder = ir.remote_inode FROM " + tableName + " ir WHERE structure.folder = ir.local_inode" );
+            }
+
+            //permission
+            updateFrom( dc, tableName, "permission", "inode_id" );
+            //permission_reference
+            updateFrom( dc, tableName, "permission_reference", "asset_id" );
+
+        } catch ( SQLException e ) {
+            throw new DotDataException( e.getMessage(), e );
+        } finally {
+            try {
+                //Add back the constrain
+                dc.executeStatement( "alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode (inode)" );
+            } catch ( SQLException e ) {
+                throw new DotDataException( e.getMessage(), e );
+            }
+        }
+    }
+
+    /**
+     * Fixes structures inconsistencies for a given server id
+     *
+     * @param serverId
+     * @throws DotDataException
+     */
+    public void fixStructures ( String serverId ) throws DotDataException {
+
+        DotConnect dc = new DotConnect();
+
+        try {
+
+            String tableName = getResultsTableName( serverId, IntegrityType.STRUCTURES );
+
+            //First delete the constrains
+            if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+                dc.executeStatement( "alter table structure drop FOREIGN KEY fk89d2d735fb51eb" );
+                dc.executeStatement( "alter table contentlet drop FOREIGN KEY fk_structure_inode" );
+                dc.executeStatement( "alter table containers drop FOREIGN KEY structure_fk" );
+            } else {
+                dc.executeStatement( "alter table structure drop constraint fk89d2d735fb51eb" );
+                dc.executeStatement( "alter table contentlet drop constraint fk_structure_inode" );
+                dc.executeStatement( "alter table containers drop constraint structure_fk" );
+            }
+
+            //structure
+            updateFrom( dc, tableName, "structure", "inode" );
+            //inode
+            updateFrom( dc, tableName, "inode", "inode" );
+            //container_structures
+            updateFrom( dc, tableName, "container_structures", "structure_id" );
+            //contentlet
+            updateFrom( dc, tableName, "contentlet", "structure_inode" );
+            //field
+            updateFrom( dc, tableName, "field", "structure_inode" );
+            //containers
+            updateFrom( dc, tableName, "containers", "structure_inode" );
+            //relationship
+            updateFrom( dc, tableName, "relationship", "parent_structure_inode" );
+            updateFrom( dc, tableName, "relationship", "child_structure_inode" );
+            //workflow_scheme_x_structure
+            updateFrom( dc, tableName, "workflow_scheme_x_structure", "structure_id" );
+            //permission
+            updateFrom( dc, tableName, "permission", "inode_id" );
+            //permission_reference
+            updateFrom( dc, tableName, "permission_reference", "asset_id" );
+
+        } catch ( SQLException e ) {
+            throw new DotDataException( e.getMessage(), e );
+        } finally {
+            try {
+                //Add back the constrains
+                dc.executeStatement( "ALTER TABLE structure add constraint fk89d2d735fb51eb foreign key (inode) references inode (inode)" );
+                dc.executeStatement( "ALTER TABLE contentlet add constraint fk_structure_inode foreign key (structure_inode) references structure (inode)" );
+                dc.executeStatement( "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure (inode)" );
+            } catch ( SQLException e ) {
+                throw new DotDataException( e.getMessage(), e );
+            }
+        }
+    }
+
+    /**
+     * Fixes worflow schemes inconsistencies for a given server id
+     *
+     * @param serverId
+     * @throws DotDataException
+     */
+    public void fixSchemes ( String serverId ) throws DotDataException {
+
+        DotConnect dc = new DotConnect();
+
+        try {
+
+            String tableName = getResultsTableName( serverId, IntegrityType.SCHEMES );
+
+            //First delete the constrains
+            if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MSSQL ) ) {
+                dc.executeStatement( "alter table workflow_scheme nocheck constraint all" );
+                dc.executeStatement( "alter table workflow_step nocheck constraint all" );
+            } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
+                enableDisableOracleConstrains( dc, "workflow_step", false );
+                enableDisableOracleConstrains( dc, "workflow_scheme", false );
+            } else if ( !DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+                dc.executeStatement( "ALTER TABLE workflow_step DROP CONSTRAINT workflow_step_scheme_id_fkey" );
+            }
+
+            //workflow_scheme
+            updateFrom( dc, tableName, "workflow_scheme", "id" );
+            //workflow_step
+            updateFrom( dc, tableName, "workflow_step", "scheme_id" );
+            //workflow_scheme_x_structure
+            updateFrom( dc, tableName, "workflow_scheme_x_structure", "scheme_id" );
+
+        } catch ( SQLException e ) {
+            throw new DotDataException( e.getMessage(), e );
+        } finally {
+            try {
+                //Add back the constrains
+                if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MSSQL ) ) {
+                    dc.executeStatement( "alter table workflow_scheme with check check constraint all" );
+                    dc.executeStatement( "alter table workflow_step with check check constraint all" );
+                } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
+                    enableDisableOracleConstrains( dc, "workflow_step", true );
+                    enableDisableOracleConstrains( dc, "workflow_scheme", true );
+                } else if ( !DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+                    dc.executeStatement( "ALTER TABLE workflow_step ADD CONSTRAINT workflow_step_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
+                }
+            } catch ( SQLException e ) {
+                throw new DotDataException( e.getMessage(), e );
+            }
+        }
+    }
+
+    /**
+     * Generates and executes update from queries using the given tables and columns parameters
+     *
+     * @param dotConnect
+     * @param resultsTable
+     * @param updateTable
+     * @param updateColumn
+     * @throws SQLException
+     */
+    private static void updateFrom ( DotConnect dotConnect, String resultsTable, String updateTable, String updateColumn ) throws SQLException {
+
+        if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+            dotConnect.executeStatement( "UPDATE " + updateTable + " JOIN " + resultsTable + " ir on " + updateColumn + " = ir.local_inode SET " + updateColumn + " = ir.remote_inode" );
+        } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
+            dotConnect.executeStatement( "UPDATE " + updateTable +
+                    " SET " + updateColumn + " = (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode)" +
+                    " WHERE exists (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode)" );
+        } else {
+            dotConnect.executeStatement( "UPDATE " + updateTable + " SET " + updateColumn + " = ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode" );
+        }
+    }
+
+    /**
+     * Method that will enable/disable the constrains for a given table on oracle
+     *
+     * @param dotConnect
+     * @param table
+     * @param enable
+     * @throws DotDataException
+     */
+    private static void enableDisableOracleConstrains ( DotConnect dotConnect, String table, boolean enable ) throws DotDataException {
+
+        Connection conn = DbConnectionFactory.getConnection();
+        ResultSet rs = null;
+        PreparedStatement statement = null;
+
+        try {
+
+            //Create the enable/disable constraint query for each constraint in the given table
+            String operation = enable ? "ENABLE" : "DISABLE";
+            statement = conn.prepareStatement( "select 'alter table '||a.owner||'.'||a.table_name|| ' " + operation + " constraint '||a.constraint_name||''" +
+                    " FROM user_constraints a, user_constraints b" +
+                    " WHERE a.constraint_type = 'R'" +
+                    " AND a.r_constraint_name = b.constraint_name" +
+                    " AND a.r_owner  = b.owner" +
+                    " AND b.table_name = '" + table.toUpperCase() + "'" );
+            rs = statement.executeQuery();
+
+            while ( rs.next() ) {
+                //Enable/disable query
+                String constraintQuery = rs.getString( 1 );
+                //Execute the constraint query
+                dotConnect.executeStatement( constraintQuery );
+            }
+
+        } catch ( SQLException e ) {
+            throw new DotDataException( e.getMessage(), e );
+        } finally {
+            try {
+                if ( rs != null ) rs.close();
+            } catch ( Exception e ) {
+            }
+            try {
+                if ( statement != null ) statement.close();
+            } catch ( Exception e ) {
+            }
+        }
+    }
 
 }

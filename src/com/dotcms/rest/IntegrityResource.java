@@ -704,7 +704,7 @@ public class IntegrityResource extends WebResource {
             JSONObject jsonResponse = new JSONObject();
 
             IntegrityUtil integrityUtil = new IntegrityUtil();
-            integrityUtil.discardConflicts(endpointId, IntegrityType.valueOf(type));
+            integrityUtil.discardConflicts(endpointId, IntegrityType.valueOf(type.toUpperCase()));
 
             responseMessage.append( jsonResponse.toString() );
 
@@ -755,7 +755,7 @@ public class IntegrityResource extends WebResource {
         	}
 
             IntegrityUtil integrityUtil = new IntegrityUtil();
-            integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(), IntegrityType.valueOf(type) );
+            integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(), IntegrityType.valueOf(type.toUpperCase()) );
 
 
         } catch ( Exception e ) {
@@ -789,11 +789,12 @@ public class IntegrityResource extends WebResource {
 
         InitDataObject initData = init( params, true, request, true );
         Map<String, String> paramsMap = initData.getParamsMap();
+        JSONObject jsonResponse = new JSONObject();
 
         //Validate the parameters
         String endpointId = paramsMap.get( "endpoint" );
         String type = paramsMap.get( "type" );
-        String whereToFix = paramsMap.get( "whereToFix" );
+        String whereToFix = paramsMap.get( "wheretofix" );
 
         if ( !UtilMethods.isSet( endpointId ) ) {
             return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'endpoint' is a required param." ).build();
@@ -807,17 +808,20 @@ public class IntegrityResource extends WebResource {
         	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'whereToFix' is a required param." ).build();
         }
 
-        JSONObject jsonResponse = new JSONObject();
+
 
         try {
 
             IntegrityUtil integrityUtil = new IntegrityUtil();
 
             if(whereToFix.equals("local")) {
-//
-//              integrityUtil.fixConflicts(endpointId, IntegrityType.valueOf(type));
+
+            	integrityUtil.fixConflicts(endpointId, IntegrityType.valueOf(type.toUpperCase()));
+            	jsonResponse.put( "success", true );
+        		jsonResponse.put( "message", "Conflicts fixed in Local Endpoint" );
+
             } else  if(whereToFix.equals("remote")) {
-            	integrityUtil.generateDataToFixZip(endpointId, IntegrityType.valueOf(type));
+            	integrityUtil.generateDataToFixZip(endpointId, IntegrityType.valueOf(type.toUpperCase()));
 
             	final Client client = getRESTClient();
 
@@ -846,10 +850,14 @@ public class IntegrityResource extends WebResource {
     				jsonResponse.put( "error", true );
             		jsonResponse.put( "message", "Endpoint with id: " + endpointId + " returned server error." );
         		}
+            } else {
+            	jsonResponse.put( "error", true );
+        		jsonResponse.put( "message", "Error: 'whereToFix' has an invalid value.");
+            	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity(jsonResponse.toString() ).build();
             }
 
         } catch ( Exception e ) {
-            Logger.error( this.getClass(), "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]", e );
+            Logger.error( this.getClass(), "Error fixing "+type+" conflicts for End Point server: [" + endpointId + "]", e );
 
             jsonResponse.put( "error", true );
     		jsonResponse.put( "message", "Error fixing conflicts for endpoint: " + endpointId);

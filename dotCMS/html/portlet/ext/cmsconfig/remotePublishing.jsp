@@ -344,7 +344,7 @@
 
                 //Getting the structures data
                 var workflowsData = data.schemes;
-                populateTabContent(workflowsData, "workflows");
+                populateTabContent(workflowsData, "schemes");
 
                 //Display the integrity results dialog
                 selectedEndpointId = identifier;
@@ -432,6 +432,40 @@
 
     function closeIntegrityResultsDialog(){
         dijit.byId('integrityResultsDialog').hide();
+    }
+
+    function fixConflicts(identifier, type) {
+
+
+    	var localFix = dojo.byId("fixLocal_" + type).checked;
+
+    	var whereToFix = localFix?"local":"remote";
+
+        var xhrArgs = {
+            url: "/api/integrity/fixconflicts/endPoint/" + identifier + "/type/" + type + "/whereToFix/" + whereToFix,
+            handleAs: "json",
+            load: function (data) {
+
+                var isError = false;
+                if (data.success == false || data.success == "false") {
+                    isError = true;
+                }
+
+                if (isError) {
+                	showDotCMSSystemMessage(data.message, isError);
+                    return;
+                }
+
+//                 closeIntegrityResultsDialog();
+                showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed")%>", true);
+
+            },
+            error: function (error) {
+                showDotCMSSystemMessage(error.responseText, true);
+            }
+        };
+        console.log(xhrArgs)
+        dojo.xhrGet(xhrArgs);
     }
 
     function discardConflicts(identifier, type) {
@@ -852,7 +886,7 @@
 <%--INTEGRITY RESULTS DIALOG--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <style type="text/css">
-    #structuresTab,#foldersTab,#workflowsTab {
+    #structuresTab,#foldersTab,#schemesTab {
         height:100%;
         min-height:250px;
         width:800px;
@@ -866,10 +900,10 @@
             <div id="structuresTabContentDiv"></div>
 			<div class="buttonRow">
 				<button dojoType="dijit.form.Button" id="structuresFixButton"
-					onClick="closeIntegrityResultsDialog()" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+					onClick="fixConflicts(selectedEndpointId, 'structures')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_fix_conflicts")%></button>
 				<button dojoType="dijit.form.Button" id="structuresDiscardButton"
-					onClick="discardConflicts(selectedEndpointId, 'STRUCTURES')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+					onClick="discardConflicts(selectedEndpointId, 'structures')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_discard_conflicts")%></button>
 				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 			</div>
@@ -879,23 +913,23 @@
             <div id="foldersTabContentDiv" style="height:280px">No Results</div>
 			<div class="buttonRow">
 				<button dojoType="dijit.form.Button" id="foldersFixButton"
-					onClick="closeIntegrityResultsDialog()" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+					onClick="fixConflicts(selectedEndpointId, 'folders')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_fix_conflicts")%></button>
 				<button dojoType="dijit.form.Button" id="foldersDiscardButton"
-					onClick="discardConflicts(selectedEndpointId, 'FOLDERS')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+					onClick="discardConflicts(selectedEndpointId, 'folders')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_discard_conflicts")%></button>
 				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 			</div>
 		</div>
 
-        <div id="workflowsTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Workflows") %>" >
-            <div id="workflowsTabContentDiv"></div>
+        <div id="schemesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Workflows") %>" >
+            <div id="schemesTabContentDiv"></div>
 			<div class="buttonRow">
-				<button dojoType="dijit.form.Button" id="workflowsFixButton"
-					onClick="closeIntegrityResultsDialog()" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+				<button dojoType="dijit.form.Button" id="schemesFixButton"
+					onClick="fixConflicts(selectedEndpointId, 'schemes')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_fix_conflicts")%></button>
-				<button dojoType="dijit.form.Button" id="workflowsDiscardButton"
-					onClick="discardConflicts(selectedEndpointId, 'SCHEMES')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+				<button dojoType="dijit.form.Button" id="schemesDiscardButton"
+					onClick="discardConflicts(selectedEndpointId, 'schemes')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_discard_conflicts")%></button>
 				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 			</div>
