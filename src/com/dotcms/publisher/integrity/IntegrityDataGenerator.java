@@ -95,13 +95,14 @@ public class IntegrityDataGenerator extends Thread {
 		try {
 			// use FileWriter constructor that specifies open for appending
 			CsvWriter csvOutput = new CsvWriter(new FileWriter(csvFile, true), '|');
+			IntegrityUtil integrityUtil = new IntegrityUtil();
 
 			if(type == IntegrityType.FOLDERS) {
-				IntegrityUtil.writeFoldersCSV(csvOutput);
+				integrityUtil.writeFoldersCSV(csvOutput);
 			} else if(type == IntegrityType.STRUCTURES) {
-				IntegrityUtil.writeStructuresCSV(csvOutput);
+				integrityUtil.writeStructuresCSV(csvOutput);
 			}  else if(type == IntegrityType.SCHEMES) {
-				IntegrityUtil.writeFoldersCSV(csvOutput);
+				integrityUtil.writeFoldersCSV(csvOutput);
 			}
 
 			csvOutput.close();

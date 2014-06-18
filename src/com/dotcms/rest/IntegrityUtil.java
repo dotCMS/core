@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ import com.dotmarketing.util.ConfigUtils;
 
 public class IntegrityUtil {
 
-	public static void writeFoldersCSV(CsvWriter writer) throws DotDataException, IOException {
+	public void writeFoldersCSV(CsvWriter writer) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
@@ -54,7 +55,7 @@ public class IntegrityUtil {
 
 	}
 
-	public static void writeStructuresCSV(CsvWriter writer) throws DotDataException, IOException {
+	public void writeStructuresCSV(CsvWriter writer) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
@@ -86,7 +87,7 @@ public class IntegrityUtil {
 
 	}
 
-	public static void writeWorkflowSchemesCSV(CsvWriter writer) throws DotDataException, IOException {
+	public void writeWorkflowSchemesCSV(CsvWriter writer) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
@@ -118,19 +119,14 @@ public class IntegrityUtil {
 
 	}
 
-	public static void checkFoldersIntegrity(String endpointId) throws Exception {
+	public void checkFoldersIntegrity(String endpointId) throws Exception {
 
 		try {
 
 			CsvReader folders = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.FOLDERS.name() + ".csv", '|');
 			boolean tempCreated = false;
 			DotConnect dc = new DotConnect();
-			String endpointIdforDB = endpointId.replace("-", "");
-			String tempTableName = IntegrityType.FOLDERS.name() + "_temp_" + endpointIdforDB;
-
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-				tempTableName = tempTableName.substring(0, 29);
-			}
+			String tempTableName = getTempTableName(endpointId, IntegrityType.FOLDERS);
 
 			// lets create a temp table and insert all the records coming from the CSV file
 
@@ -166,21 +162,27 @@ public class IntegrityUtil {
 
 			folders.close();
 
-			String resultsTableName = IntegrityType.FOLDERS.name() + "_ir_" + endpointIdforDB;
+			String resultsTableName = getResultsTableName(endpointId, IntegrityType.FOLDERS);
 
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-				resultsTableName = resultsTableName.substring(0, 29);
+			// compare the data from the CSV to the local db data and see if we have conflicts
+			dc.setSQL("select iden.parent_path || iden.asset_name as folder, "
+						+ "c.title as host_name, f.inode as local_inode, ft.inode as remote_inode from identifier iden "
+						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
+						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
+
+			List<Map<String,Object>> results = dc.loadObjectResults();
+
+			if(!results.isEmpty()) {
+				// if we have conflicts, lets create a table out of them
+				final String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select iden.parent_path || iden.asset_name as folder, "
+						+ "c.title as host_name, f.inode as local_inode, ft.inode as remote_inode from identifier iden "
+						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
+						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
+
+				dc.executeStatement(CREATE_RESULTS_TABLE);
 			}
-
-			// lets compare the data from the CSV to the local db data and leave it in a table
-
-			final String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select iden.parent_path || iden.asset_name as folder, "
-					+ "c.title as host_name, f.inode as local_inode, ft.inode as remote_inode from identifier iden "
-					+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
-					+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
-					+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
-
-			dc.executeStatement(CREATE_RESULTS_TABLE);
 
 			// lets drop the temp table
 			dc.executeStatement("drop table " + tempTableName );
@@ -190,15 +192,14 @@ public class IntegrityUtil {
 		}
 	}
 
-	public static void checkStructuresIntegrity(String endpointId) throws Exception {
+	public void checkStructuresIntegrity(String endpointId) throws Exception {
 
 		try {
 
 			CsvReader structures = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.STRUCTURES.name() + ".csv", '|');
 			boolean tempCreated = false;
 			DotConnect dc = new DotConnect();
-			String endpointIdforDB = endpointId.replace("-", "");
-			String tempTableName = IntegrityType.STRUCTURES.name() + "_temp_" + endpointIdforDB;
+			String tempTableName = getTempTableName(endpointId, IntegrityType.STRUCTURES);
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
 				tempTableName = tempTableName.substring(0, 29);
@@ -232,19 +233,23 @@ public class IntegrityUtil {
 
 			structures.close();
 
-			String resultsTableName = IntegrityType.STRUCTURES.name() + "_ir_" + endpointIdforDB;
+			String resultsTableName = getResultsTableName(endpointId, IntegrityType.STRUCTURES);
 
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-				resultsTableName = resultsTableName.substring(0, 29);
+			// compare the data from the CSV to the local db data and see if we have conflicts
+			dc.setSQL("select s.velocity_var_name as velocity_name, "
+						+ "s.inode as local_inode, st.inode as remote_inode from structure s "
+						+ "join " + tempTableName + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode");
+
+			List<Map<String,Object>> results = dc.loadObjectResults();
+
+			if(!results.isEmpty()) {
+				// if we have conflicts, lets create a table out of them
+				String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.velocity_var_name as velocity_name, "
+						+ "s.inode as local_inode, st.inode as remote_inode from structure s "
+						+ "join " + tempTableName + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode";
+
+				dc.executeStatement(CREATE_RESULTS_TABLE);
 			}
-
-			// lets compare the data from the CSV to the local db data and leave it in a table
-
-			final String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.velocity_var_name as velocity_name, "
-					+ "s.inode as local_inode, st.inode as remote_inode from structure s "
-					+ "join " + tempTableName + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode";
-
-			dc.executeStatement(CREATE_RESULTS_TABLE);
 
 			// lets drop the temp table
 			dc.executeStatement("drop table " + tempTableName );
@@ -255,19 +260,14 @@ public class IntegrityUtil {
 		}
 	}
 
-	public static void checkWorkflowSchemesIntegrity(String endpointId) throws Exception {
+	public void checkWorkflowSchemesIntegrity(String endpointId) throws Exception {
 
 		try {
 
 			CsvReader schemes = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.SCHEMES.name() + ".csv", '|');
 			boolean tempCreated = false;
 			DotConnect dc = new DotConnect();
-			String endpointIdforDB = endpointId.replace("-", "");
-			String tempTableName = IntegrityType.SCHEMES.name() + "_temp_" + endpointIdforDB;
-
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-				tempTableName = tempTableName.substring(0, 29);
-			}
+			String tempTableName = getTempTableName(endpointId, IntegrityType.SCHEMES);
 
 			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, name varchar(255), "
 					+ " primary key (inode) )";
@@ -297,18 +297,23 @@ public class IntegrityUtil {
 
 			schemes.close();
 
-			String resultsTableName = IntegrityType.SCHEMES.name() + "_ir_" + endpointIdforDB;
+			String resultsTableName = getResultsTableName(endpointId, IntegrityType.SCHEMES);
 
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-				resultsTableName = resultsTableName.substring(0, 29);
+			// compare the data from the CSV to the local db data and see if we have conflicts
+			dc.setSQL("select s.name, s.id as local_inode, wt.inode as remote_inode from workflow_scheme s "
+					+ "join " + tempTableName + " wt on s.name = wt.name and s.id <> wt.inode");
+
+			List<Map<String,Object>> results = dc.loadObjectResults();
+
+
+			if(!results.isEmpty()) {
+				// if we have conflicts, lets create a table out of them
+				String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.name, s.id as local_inode, wt.inode as remote_inode from workflow_scheme s "
+						+ "join " + tempTableName + " wt on s.name = wt.name and s.id <> wt.inode";
+
+				dc.executeStatement(CREATE_RESULTS_TABLE);
+
 			}
-
-			// lets compare the data from the CSV to the local db data and and create a result table out of it
-
-			final String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.name, s.id as local_inode, wt.inode as remote_inode from workflow_scheme s "
-					+ "join " + tempTableName + " wt on s.name = wt.name and s.id <> wt.inode";
-
-			dc.executeStatement(CREATE_RESULTS_TABLE);
 
 			// lets drop the temp table
 			dc.executeStatement("drop table " + tempTableName );
@@ -320,15 +325,18 @@ public class IntegrityUtil {
 	}
 
 
-	public static List<Map<String, Object>> getIntegrityConflicts(String endpointId, IntegrityType type) throws Exception {
+	public List<Map<String, Object>> getIntegrityConflicts(String endpointId, IntegrityType type) throws Exception {
 		try {
 			DotConnect dc = new DotConnect();
-			String endpointIdforDB = endpointId.replace("-", "");
 
-			String resultsTableName = type.name() + "_ir_" + endpointIdforDB;
+			String resultsTableName = getResultsTableName(endpointId, type);
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
 				resultsTableName = resultsTableName.substring(0, 29);
+			}
+
+			if(!doesTableExist(resultsTableName)) {
+				return new ArrayList<Map<String, Object>>();
 			}
 
 			dc.setSQL("select * from " + resultsTableName);
@@ -336,43 +344,76 @@ public class IntegrityUtil {
 			return dc.loadObjectResults();
 
 		} catch(Exception e) {
-			throw new Exception("Error running the Structures Integrity Check", e);
+			throw new Exception("Error running the "+type.name()+" Integrity Check", e);
 		}
 	}
 
-	public static Boolean doesIntegrityConflictsDataExist(String endpointId) throws Exception {
-
+	private String getTempTableName(String endpointId, IntegrityType type) {
 		String endpointIdforDB = endpointId.replace("-", "");
-		String tableName = IntegrityType.FOLDERS.name() + "_ir_" + endpointIdforDB;
+		String resultsTableName = type.name().toLowerCase() + "_temp_" + endpointIdforDB;
 
 		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-			tableName = tableName.substring(0, 29);
+			resultsTableName = resultsTableName.substring(0, 29);
 		}
 
-		tableName = tableName.toLowerCase();
+		return resultsTableName;
+	}
+
+	private String getResultsTableName(String endpointId, IntegrityType type) {
+		String endpointIdforDB = endpointId.replace("-", "");
+		String resultsTableName = type.name().toLowerCase() + "_ir_" + endpointIdforDB;
+
+		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+			resultsTableName = resultsTableName.substring(0, 29);
+		}
+
+		return resultsTableName;
+	}
+
+	public Boolean doesIntegrityConflictsDataExist(String endpointId) throws Exception {
+
+		String folderTable = getResultsTableName(endpointId, IntegrityType.FOLDERS);
+		String structuresTable = getResultsTableName(endpointId, IntegrityType.STRUCTURES);
+		String schemesTable = getResultsTableName(endpointId, IntegrityType.SCHEMES);
 
 //		final String H2="SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName.toUpperCase()+"' + ";
 
+		return doesTableExist(folderTable) || doesTableExist(structuresTable) || doesTableExist(schemesTable);
+
+	}
+
+	private boolean doesTableExist(String tableName) throws DotDataException {
 		DotConnect dc = new DotConnect();
 
 		if(DbConnectionFactory.isOracle()) {
 			dc.setSQL("SELECT COUNT(*) as exist FROM user_tables WHERE table_name='"+tableName+"'");
 			BigDecimal existTable = (BigDecimal)dc.loadObjectResults().get(0).get("exist");
-			return existTable.longValue() != 0;
+			return existTable.longValue() > 0;
 		} else if(DbConnectionFactory.isPostgres()) {
 			dc.setSQL("SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName+"' ");
 			long existTable = (Long)dc.loadObjectResults().get(0).get("exist");
-			return existTable != 0;
+			return existTable > 0;
 		} else if(DbConnectionFactory.isMsSql()) {
 			dc.setSQL("SELECT COUNT(*) as exist FROM sysobjects WHERE name = '"+tableName+"'");
 			int existTable = (Integer)dc.loadObjectResults().get(0).get("exist");
-			return existTable != 0;
+			return existTable > 0;
 		} else if(DbConnectionFactory.isMySql()) {
 			dc.setSQL("SHOW TABLES LIKE '"+tableName+"'");
 			return !dc.loadObjectResults().isEmpty();
 		}
 
 		return false;
+	}
+
+	public void discardConflicts(String endpointId, IntegrityType type) throws Exception {
+		try {
+			DotConnect dc = new DotConnect();
+			String resultsTableName = getResultsTableName(endpointId, type);
+			dc.executeStatement("drop table " + resultsTableName);
+
+		} catch(Exception e) {
+			throw new Exception("Error running the Structures Integrity Check", e);
+		}
 	}
 
 

@@ -24,6 +24,8 @@
 
 <script type="text/javascript">
 
+	var selectedEndpointId;
+
     function goToAddEnvironment() {
         var dialog = new dijit.Dialog({
             id: 'addEnvironment',
@@ -309,13 +311,13 @@
         var resultsButtonId = 'getIntegrityResultsButton' + identifier;
         var loadingId = 'loadingContent' + identifier;
 
-        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-            domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
-        });
-        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-            domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-        });
-        dojo.byId(loadingId).show();
+//         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+//             domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
+//         });
+//         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+//             domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
+//         });
+//         dojo.byId(loadingId).show();
 
         var xhrArgs = {
             url: "/api/integrity/getIntegrityResult/endPoint/" + identifier,
@@ -334,26 +336,27 @@
 
                 //Getting the structures data
                 var structuresData = data.structures;
-                populateTabContent(structuresData, "structuresTabContentDiv");
+                populateTabContent(structuresData, "structures");
 
                 //Getting the structures data
                 var foldersData = data.folders;
-                populateTabContent(foldersData, "foldersTabContentDiv");
+                populateTabContent(foldersData, "folders");
 
                 //Getting the structures data
                 var workflowsData = data.schemes;
-                populateTabContent(workflowsData, "workflowsTabContentDiv");
+                populateTabContent(workflowsData, "workflows");
 
                 //Display the integrity results dialog
+                selectedEndpointId = identifier;
                 dijit.byId('integrityResultsDialog').show();
 
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(buttonId).domNode, 'display', '');
-                });
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-                });
-                dojo.byId(loadingId).hide();
+//                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+//                     domStyle.set(registry.byId(buttonId).domNode, 'display', '');
+//                 });
+//                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+//                     domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
+//                 });
+//                 dojo.byId(loadingId).hide();
             },
             error: function (error) {
                 showDotCMSSystemMessage(error.responseText, true);
@@ -372,9 +375,13 @@
 
     function populateTabContent(contentData, id) {
 
+    	var tabContentDiv = id + "TabContentDiv";
+    	var fixButtonName = id + "FixButton";
+    	var discardButtonName = id + "DiscardButton";
+
         require(["dojo"], function(dojo){
             // Empty node's children byId:
-            dojo.empty(id);
+            dojo.empty(tabContentDiv);
         });
 
         var htmlContent = "";
@@ -388,13 +395,19 @@
                     '<span  style="line-height:20px;font-weight: bold;">' + title + '</span>' +
                     '</div></div>';
 
-            htmlContent += '<table class="listingTable"><tr>';
+            htmlContent += '<div style="height:250px; overflow:auto"><table class="listingTable"><tr>';
             columns.forEach(function (column) {
                 htmlContent += '<th nowrap="nowrap">' + column + "</th>";
             });
             htmlContent += '</tr>';
 
             var altRow = false;
+
+            if(values.length==0) {
+            	dijit.byId(fixButtonName).setAttribute('disabled', true);
+            	dijit.byId(discardButtonName).setAttribute('disabled', true);
+            }
+
             values.forEach(function (value) {
                 if (altRow) {
                     htmlContent += '<tr style="background:#f3f3f3;">';
@@ -411,11 +424,39 @@
             htmlContent += '</table>';
         });
 
-        dojo.place(htmlContent, id, "only");
+        dojo.place(htmlContent, tabContentDiv, "only");
     }
 
     function closeIntegrityResultsDialog(){
         dijit.byId('integrityResultsDialog').hide();
+    }
+
+    function discardConflicts(identifier, type) {
+
+        var xhrArgs = {
+            url: "/api/integrity/discardconflicts/endPoint/" + identifier + "/type/" + type,
+            handleAs: "json",
+            load: function (data) {
+
+                var isError = false;
+                if (data.success == false || data.success == "false") {
+                    isError = true;
+                }
+
+                if (isError) {
+                    showDotCMSSystemMessage(data.message, isError);
+                    return;
+                }
+
+                closeIntegrityResultsDialog();
+                showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_discarded")%>", true);
+
+            },
+            error: function (error) {
+                showDotCMSSystemMessage(error.responseText, true);
+            }
+        };
+        dojo.xhrGet(xhrArgs);
     }
 
     function deleteEnvironment(identifier) {
@@ -811,29 +852,52 @@
     #structuresTab,#foldersTab,#workflowsTab {
         height:100%;
         min-height:250px;
-        width:500px;
+        width:800px;
     }
 </style>
-<div id="integrityResultsDialog" dojoAttachPoint="dialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "CheckIntegrity") %>">
+<div id="integrityResultsDialog" style="width: 850px" dojoAttachPoint="dialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "CheckIntegrity") %>">
 
     <div id="integrityResultsTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
         <div id="structuresTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "structures") %>" >
             <div id="structuresTabContentDiv"></div>
-        </div>
+			<div class="buttonRow">
+				<button dojoType="dijit.form.Button" id="structuresFixButton"
+					onClick="closeIntegrityResultsDialog()" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+					"push_publish_integrity_fix_conflicts")%></button>
+				<button dojoType="dijit.form.Button" id="structuresDiscardButton"
+					onClick="discardConflicts(selectedEndpointId, 'STRUCTURES')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+					"push_publish_integrity_discard_conflicts")%></button>
+				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+			</div>
+		</div>
 
         <div id="foldersTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "folders") %>" >
-            <div id="foldersTabContentDiv"></div>
-        </div>
+            <div id="foldersTabContentDiv" style="height:280px">No Results</div>
+			<div class="buttonRow">
+				<button dojoType="dijit.form.Button" id="foldersFixButton"
+					onClick="closeIntegrityResultsDialog()" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+					"push_publish_integrity_fix_conflicts")%></button>
+				<button dojoType="dijit.form.Button" id="foldersDiscardButton"
+					onClick="discardConflicts(selectedEndpointId, 'FOLDERS')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+					"push_publish_integrity_discard_conflicts")%></button>
+				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+			</div>
+		</div>
 
         <div id="workflowsTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Workflows") %>" >
             <div id="workflowsTabContentDiv"></div>
-        </div>
+			<div class="buttonRow">
+				<button dojoType="dijit.form.Button" id="workflowsFixButton"
+					onClick="closeIntegrityResultsDialog()" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+					"push_publish_integrity_fix_conflicts")%></button>
+				<button dojoType="dijit.form.Button" id="workflowsDiscardButton"
+					onClick="discardConflicts(selectedEndpointId, 'SCHEMES')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+					"push_publish_integrity_discard_conflicts")%></button>
+				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+			</div>
+		</div>
 
-    </div>
-
-    <div class="buttonRow">
-        <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
     </div>
 
 </div>

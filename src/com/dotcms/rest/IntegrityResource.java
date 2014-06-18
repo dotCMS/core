@@ -48,7 +48,6 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.config.ClientConfig;
@@ -229,7 +228,6 @@ public class IntegrityResource extends WebResource {
 		InitDataObject initData = init(params, true, request, true);
 
         Map<String, String> paramsMap = initData.getParamsMap();
-        User user = initData.getUser();
 
         StringBuilder responseMessage = new StringBuilder();
         final HttpSession session = request.getSession();
@@ -243,7 +241,9 @@ public class IntegrityResource extends WebResource {
 
         // return if we already have the data
         try {
-        	if(IntegrityUtil.doesIntegrityConflictsDataExist(endpointId)) {
+        	IntegrityUtil integrityUtil = new IntegrityUtil();
+
+        	if(integrityUtil.doesIntegrityConflictsDataExist(endpointId)) {
         		JSONObject jsonResponse = new JSONObject();
 
         		jsonResponse.put( "success", true );
@@ -345,9 +345,12 @@ public class IntegrityResource extends WebResource {
 
         	        			try {
         	        				HibernateUtil.startTransaction();
-        	        				IntegrityUtil.checkFoldersIntegrity(endpointId);
-        	        				IntegrityUtil.checkStructuresIntegrity(endpointId);
-        	        				IntegrityUtil.checkWorkflowSchemesIntegrity(endpointId);
+
+        	        				IntegrityUtil integrityUtil = new IntegrityUtil();
+        	        				integrityUtil.checkFoldersIntegrity(endpointId);
+        	        				integrityUtil.checkStructuresIntegrity(endpointId);
+        	        				integrityUtil.checkWorkflowSchemesIntegrity(endpointId);
+
         	        				HibernateUtil.commitTransaction();
         	        			} catch(Exception e) {
         	        				session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.ERROR);
@@ -387,7 +390,14 @@ public class IntegrityResource extends WebResource {
             responseMessage.append( jsonResponse.toString() );
 
         } catch(Exception e) {
-        	Logger.error(IntegrityResource.class,e.getMessage(),e);
+        	Logger.error( this.getClass(), "Error initializing the integrity checking process for End Point server: [" + endpointId + "]", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error initializing the integrity checking process for End Point server: [" + endpointId + "]" );
+            }
+            return response( responseMessage.toString(), true );
         }
 
         return response( responseMessage.toString(), false );
@@ -569,6 +579,7 @@ public class IntegrityResource extends WebResource {
         try {
 
             JSONObject jsonResponse = new JSONObject();
+            IntegrityUtil integrityUtil = new IntegrityUtil();
 
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -584,15 +595,31 @@ public class IntegrityResource extends WebResource {
 
             	errorContent.put( "title",   LanguageUtil.get( initData.getUser().getLocale(), integrityType.getLabel() )  );//Title of the check
 
-            	List<Map<String, Object>> results = IntegrityUtil.getIntegrityConflicts(endpointId, integrityType);
+            	List<Map<String, Object>> results = integrityUtil.getIntegrityConflicts(endpointId, integrityType);
+
+            	JSONArray columns = new JSONArray();
+
+            	switch (integrityType) {
+				case STRUCTURES:
+					columns.add("Velocity Name");
+					break;
+				case FOLDERS:
+					columns.add("folder");
+					columns.add("host_name");
+					break;
+				case SCHEMES:
+					columns.add("Name");
+					break;
+				}
+
+            	columns.add("local_inode");
+				columns.add("remote_inode");
+
+            	errorContent.put( "columns", columns.toArray() );
 
             	if(!results.isEmpty()) {
             		// the columns names are the keys in the results
-	            	JSONArray columns = new JSONArray();
-	            	for (String keyName : results.get(0).keySet()) {
-						columns.add(keyName);
-					}
-	            	errorContent.put( "columns", columns.toArray() );
+
 
 	            	JSONArray values = new JSONArray();
 	            	for (Map<String, Object> result : results) {
@@ -600,7 +627,7 @@ public class IntegrityResource extends WebResource {
 	            		JSONObject columnsContent = new JSONObject();
 
 	            		for (String keyName : result.keySet()) {
-	            			columnsContent.put("keyName", result.get(keyName));
+	            			columnsContent.put(keyName, result.get(keyName));
 						}
 
 	            		values.put(columnsContent);
@@ -608,7 +635,6 @@ public class IntegrityResource extends WebResource {
 
 	            	errorContent.put( "values", values.toArray() );
             	} else {
-            		errorContent.put( "columns", new JSONArray().toArray() );
             		errorContent.put( "values", new JSONArray().toArray() );
             	}
 
@@ -635,6 +661,57 @@ public class IntegrityResource extends WebResource {
                 responseMessage.append( e.getMessage() );
             } else {
                 responseMessage.append( "Error generating the integrity result for End Point server: [" + endpointId + "]" );
+            }
+            return response( responseMessage.toString(), true );
+        }
+
+        return response( responseMessage.toString(), false );
+    }
+
+    /**
+     * Method that will discard the conflicts between local node and given endpoint
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/discardconflicts/{params:.*}")
+    @Produces (MediaType.APPLICATION_JSON)
+    public Response discardConflicts ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
+
+        StringBuilder responseMessage = new StringBuilder();
+
+        InitDataObject initData = init( params, true, request, true );
+        Map<String, String> paramsMap = initData.getParamsMap();
+
+        //Validate the parameters
+        String endpointId = paramsMap.get( "endpoint" );
+        String type = paramsMap.get( "type" );
+
+        if ( !UtilMethods.isSet( endpointId ) ) {
+            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
+            responseBuilder.entity( responseMessage.append( "Error: " ).append( "endpoint" ).append( " is a required Field." ) );
+
+            return responseBuilder.build();
+        }
+
+        try {
+            JSONObject jsonResponse = new JSONObject();
+
+            IntegrityUtil integrityUtil = new IntegrityUtil();
+            integrityUtil.discardConflicts(endpointId, IntegrityType.valueOf(type));
+
+            responseMessage.append( jsonResponse.toString() );
+
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]" );
             }
             return response( responseMessage.toString(), true );
         }
@@ -672,31 +749,6 @@ public class IntegrityResource extends WebResource {
         }
 
         return responseBuilder.build();
-    }
-
-    /**
-     * Validates a Collection or string parameters.
-     *
-     * @param paramsMap
-     * @param responseMessage
-     * @param args
-     * @return True if all the params are present, false otherwise
-     * @throws JSONException
-     */
-    private Boolean validate ( Map<String, String> paramsMap, StringBuilder responseMessage, String... args ) throws JSONException {
-
-        for ( String param : args ) {
-
-            //Validate the given param
-            if ( !UtilMethods.isSet( paramsMap.get( param ) ) ) {
-
-                //Prepare a proper response
-                responseMessage.append( "Error: " ).append( param ).append( " is a required Field." );
-                return false;
-            }
-        }
-
-        return true;
     }
 
 }
