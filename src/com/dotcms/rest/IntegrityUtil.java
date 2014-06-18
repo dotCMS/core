@@ -589,6 +589,8 @@ public class IntegrityUtil {
 		// lets generate the tables with the data to be fixed
 		generateDataToFixTable(endpointId, type);
 
+		fixConflicts(endpointId, type);
+
 
 	}
 
