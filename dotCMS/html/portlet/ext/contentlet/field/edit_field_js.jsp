@@ -722,6 +722,11 @@ var cmsfile=null;
 	var textEditor = new Array();
 	var aceTextId = new Array();
 	function aceText(textarea,keyValue,isWidget) {
+		var elementWysiwyg = document.getElementById("disabledWysiwyg");
+		var wysiwygValue = elementWysiwyg.value;
+		var result = "";
+		var toggleEditor = textarea+"<%=com.dotmarketing.util.Constants.TOGGLE_EDITOR_SEPARATOR%>";
+		var wysiwygValueArray = wysiwygValue.split(",");
 		if(document.getElementById('aceTextArea_'+textarea).style.position != 'relative'){
 			document.getElementById('aceTextArea_'+textarea).style.position='relative';
 			textEditor[textarea] = ace.edit('aceTextArea_'+textarea);
@@ -743,6 +748,16 @@ var cmsfile=null;
 			textEditor[textarea].setValue(document.getElementById(textarea).value);
 			textEditor[textarea].clearSelection();
 			enabledCodeAreas[textarea]=true;
+			if(wysiwygValue != ""){
+				for(i = 0;i < wysiwygValueArray.length;i++){
+					var wysiwygFieldVar = trimString(wysiwygValueArray[i]);
+					if((wysiwygFieldVar == textarea) || (wysiwygFieldVar == toggleEditor))
+						continue;
+					else
+						result += wysiwygFieldVar + ",";		
+				}
+			}
+			result += toggleEditor + ",";	
 		} else {
 			var editorText = textEditor[textarea].getValue();
 			if(isWidget == 'true')
@@ -754,9 +769,18 @@ var cmsfile=null;
 			document.getElementById(textarea).value = editorText;
 			textEditor[textarea].setValue("");
 			enabledCodeAreas[textarea]=false;
+			if(wysiwygValue != ""){
+				for(i = 0;i < wysiwygValueArray.length;i++){	
+					var wysiwygFieldVar = trimString(wysiwygValueArray[i]);
+					if((wysiwygFieldVar == textarea) || (wysiwygFieldVar == toggleEditor))
+						continue;
+					else
+						result += wysiwygFieldVar + ",";		
+				}
+			}
 		}
 		dijit.byId("toggleEditor_"+textarea).disabled=false;
+		elementWysiwyg.value = result;
 	}
 </script>
-
 
