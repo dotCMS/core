@@ -2,7 +2,6 @@ package com.dotcms.rest;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -30,7 +27,6 @@ import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.commons.httpclient.HttpStatus;
 
-import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
@@ -120,10 +116,13 @@ public class IntegrityResource extends WebResource {
 	@Produces("text/plain")
 	public Response generateIntegrityData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_enc)  {
 
-//        String auth_token_enc = paramsMap.get("authtoken");
         String remoteIP = null;
-
         try {
+
+        	if ( !UtilMethods.isSet( auth_token_enc ) ) {
+                return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'endpoint' is a required param." ).build();
+            }
+
 
         	String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
         	remoteIP = request.getRemoteHost();
@@ -242,11 +241,6 @@ public class IntegrityResource extends WebResource {
 
 	}
 
-
-
-
-
-
 	@GET
 	@Path("/checkintegrity/{params:.*}")
 	@Produces (MediaType.APPLICATION_JSON)
@@ -255,8 +249,9 @@ public class IntegrityResource extends WebResource {
 
         Map<String, String> paramsMap = initData.getParamsMap();
 
-        StringBuilder responseMessage = new StringBuilder();
         final HttpSession session = request.getSession();
+
+        JSONObject jsonResponse = new JSONObject();
 
         //Validate the parameters
         final String endpointId = paramsMap.get( "endpoint" );
@@ -270,16 +265,13 @@ public class IntegrityResource extends WebResource {
         	IntegrityUtil integrityUtil = new IntegrityUtil();
 
         	if(integrityUtil.doesIntegrityConflictsDataExist(endpointId)) {
-        		JSONObject jsonResponse = new JSONObject();
 
         		jsonResponse.put( "success", true );
-        		jsonResponse.put( "message", "Initialized integrity checking..." );
-
-        		responseMessage.append( jsonResponse.toString() );
+        		jsonResponse.put( "message", "Integrity Checking Initialized..." );
 
         		session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.FINISHED );
 
-        		return response( responseMessage.toString(), false );
+        		return response( jsonResponse.toString(), false );
         	}
         } catch(JSONException e) {
 			Logger.error(IntegrityResource.class, "Error setting return message in JSON response", e);
@@ -328,32 +320,15 @@ public class IntegrityResource extends WebResource {
         	        			processing = false;
 
         	        			InputStream zipFile = response.getEntityInputStream();
-        	            		ZipInputStream zin = new ZipInputStream(zipFile);
 
-        	            		ZipEntry ze = null;
 
-        	            		File dir = new File(ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId());
-
-        	        			// if file doesnt exists, then create it
-        	        			if (!dir.exists()) {
-        	        				dir.mkdir();
-        	        			}
+        	            		String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId();
 
         	        			try {
 
-        	        				while ((ze = zin.getNextEntry()) != null) {
-        	        					System.out.println("Unzipping " + ze.getName());
+        	        				IntegrityUtil.unzipFile(zipFile, outputDir);
 
-        	        					FileOutputStream fout = new FileOutputStream(ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId() + File.separator +ze.getName());
-        	        					for (int c = zin.read(); c != -1; c = zin.read()) {
-        	        						fout.write(c);
-        	        					}
-        	        					zin.closeEntry();
-        	        					fout.close();
-        	        				}
-        	        				zin.close();
-
-        	        			} catch(IOException e) {
+        	        			} catch(Exception e) {
         	        				Logger.error(IntegrityResource.class, "Error while unzipping Integrity Data", e);
         	        				throw new RuntimeException("Error while unzipping Integrity Data", e);
         	        			}
@@ -406,24 +381,23 @@ public class IntegrityResource extends WebResource {
 
         	}
 
-        	JSONObject jsonResponse = new JSONObject();
-            jsonResponse.put( "success", true );
-            jsonResponse.put( "message", "Initialized integrity checking..." );
-
-            responseMessage.append( jsonResponse.toString() );
+        	 jsonResponse.put( "success", true );
+             jsonResponse.put( "message", "Integrity Checking Initialized...");
 
         } catch(Exception e) {
         	Logger.error( this.getClass(), "Error initializing the integrity checking process for End Point server: [" + endpointId + "]", e );
+        	String errorMessage = "";
 
             if ( e.getMessage() != null ) {
-                responseMessage.append( e.getMessage() );
+            	errorMessage  =  e.getMessage();
             } else {
-                responseMessage.append( "Error initializing the integrity checking process for End Point server: [" + endpointId + "]" );
+            	errorMessage = "Error initializing the integrity checking process for End Point server: [" + endpointId + "]";
             }
-            return response( responseMessage.toString(), true );
+            return response( errorMessage, true );
         }
 
-        return response( responseMessage.toString(), false );
+
+        return response( jsonResponse.toString(), false );
 
 	}
 
@@ -749,6 +723,56 @@ public class IntegrityResource extends WebResource {
     }
 
     /**
+     * Method that will fix the conflicts received from remote
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @POST
+	@Path("/fixconflictsfromremote/{params:.*}")
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	@Produces("text/plain")
+    public Response fixConflictsFromRemote ( @Context final HttpServletRequest request,
+    		@FormDataParam("DATA_TO_FIX") InputStream dataToFix, @FormDataParam("AUTH_TOKEN") String auth_token_enc,
+    		@FormDataParam("TYPE") String type ) throws JSONException {
+
+    	String remoteIP = null;
+    	JSONObject jsonResponse = new JSONObject();
+
+    	try {
+    		String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+        	remoteIP = request.getRemoteHost();
+        	if(!UtilMethods.isSet(remoteIP))
+        		remoteIP = request.getRemoteAddr();
+
+        	PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
+        	final PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
+
+        	if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, requesterEndPoint)) {
+        		return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
+        	}
+
+            IntegrityUtil integrityUtil = new IntegrityUtil();
+            integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(), IntegrityType.valueOf(type) );
+
+
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error fixing "+type+" conflicts from remote", e );
+
+            jsonResponse.put( "error", true );
+    		jsonResponse.put( "message", "Error fixing "+type+" conflicts from remote");
+
+            return response( jsonResponse.toString() , true );
+        }
+
+        return response( jsonResponse.toString(), false );
+
+
+
+    }
+    /**
      * Method that will fix the conflicts between local and remote.
      * If param 'whereToFix' == local, the fix will take place in local node
      * If param 'whereToFix' == remote, the fix will take place in remote node
@@ -763,8 +787,6 @@ public class IntegrityResource extends WebResource {
     @Produces (MediaType.APPLICATION_JSON)
     public Response fixConflicts ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
-        StringBuilder responseMessage = new StringBuilder();
-
         InitDataObject initData = init( params, true, request, true );
         Map<String, String> paramsMap = initData.getParamsMap();
 
@@ -774,26 +796,28 @@ public class IntegrityResource extends WebResource {
         String whereToFix = paramsMap.get( "whereToFix" );
 
         if ( !UtilMethods.isSet( endpointId ) ) {
-            return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'endpoint'" ).append( " is a required param." )).build();
+            return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'endpoint' is a required param." ).build();
         }
 
         if ( !UtilMethods.isSet( type ) ) {
-        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'type'" ).append( " is a required param." )).build();
+        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'type' is a required param." ).build();
         }
 
         if ( !UtilMethods.isSet( whereToFix ) ) {
-        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'whereToFix'" ).append( " is a required param." )).build();
+        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'whereToFix' is a required param." ).build();
         }
 
+        JSONObject jsonResponse = new JSONObject();
+
         try {
-            JSONObject jsonResponse = new JSONObject();
+
             IntegrityUtil integrityUtil = new IntegrityUtil();
 
             if(whereToFix.equals("local")) {
 //
 //              integrityUtil.fixConflicts(endpointId, IntegrityType.valueOf(type));
             } else  if(whereToFix.equals("remote")) {
-            	integrityUtil.generateDataToFixZip(endpointId);
+            	integrityUtil.generateDataToFixZip(endpointId, IntegrityType.valueOf(type));
 
             	final Client client = getRESTClient();
 
@@ -806,34 +830,34 @@ public class IntegrityResource extends WebResource {
     					PushPublisher.retriveKeyString(
     							PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
 
-    			form.field("ENDPOINT_ID", endpoint.getId());
-    			form.bodyPart(new FileDataBodyPart("dataToFix", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+    			form.field("TYPE", type);
+    			form.bodyPart(new FileDataBodyPart("DATA_TO_FIX", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 
-    			com.sun.jersey.api.client.WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
+    			String url = endpoint.toURL()+"/api/integrity/fixconflictsfromremote/";
+    			com.sun.jersey.api.client.WebResource resource = client.resource(url);
 
     			ClientResponse response = resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
 
     			if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) {
+    				jsonResponse.put( "success", true );
+            		jsonResponse.put( "message", "Conflicts fixed in Remote Endpoint" );
 
-    			}
-
-
+    			} else {
+    				jsonResponse.put( "error", true );
+            		jsonResponse.put( "message", "Endpoint with id: " + endpointId + " returned server error." );
+        		}
             }
-
-            responseMessage.append( jsonResponse.toString() );
 
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]", e );
 
-            if ( e.getMessage() != null ) {
-                responseMessage.append( e.getMessage() );
-            } else {
-                responseMessage.append( "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]" );
-            }
-            return response( responseMessage.toString(), true );
+            jsonResponse.put( "error", true );
+    		jsonResponse.put( "message", "Error fixing conflicts for endpoint: " + endpointId);
+
+            return response( jsonResponse.toString() , true );
         }
 
-        return response( responseMessage.toString(), false );
+        return response( jsonResponse.toString(), false );
     }
 
 	private Client getRESTClient() {
@@ -867,16 +891,11 @@ public class IntegrityResource extends WebResource {
      * @return
      */
     private Response response ( String response, Boolean error, String contentType ) {
-
-        Response.ResponseBuilder responseBuilder;
         if ( error ) {
-            responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-            responseBuilder.entity( response );
+            return Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR ).entity( response ).build();
         } else {
-            responseBuilder = Response.ok( response, contentType );
+            return Response.ok( response, contentType ).build();
         }
-
-        return responseBuilder.build();
     }
 
 }

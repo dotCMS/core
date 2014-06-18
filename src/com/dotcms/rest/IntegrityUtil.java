@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import com.csvreader.CsvReader;
@@ -29,7 +31,7 @@ import com.dotmarketing.util.UtilMethods;
 
 public class IntegrityUtil {
 
-	public File generateFoldersToCheckCSV(String outputFile) throws DotDataException, IOException {
+	private File generateFoldersToCheckCSV(String outputFile) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
@@ -70,7 +72,7 @@ public class IntegrityUtil {
 
 	}
 
-	public File generateStructuresToCheckCSV(String outputFile) throws DotDataException, IOException {
+	private File generateStructuresToCheckCSV(String outputFile) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
@@ -108,7 +110,7 @@ public class IntegrityUtil {
 
 	}
 
-	public File generateSchemesToCheckCSV(String outputFile) throws DotDataException, IOException {
+	private File generateSchemesToCheckCSV(String outputFile) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
@@ -147,7 +149,7 @@ public class IntegrityUtil {
 
 	}
 
-	public File generateFoldersToFixCSV(String outputFile, String endpointId) throws DotDataException, IOException {
+	private File generateDataToFixCSV(String outputPath, String endpointId, IntegrityType type) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
@@ -155,106 +157,19 @@ public class IntegrityUtil {
 		File csvFile = null;
 
 		try {
+			String outputFile = outputPath + File.separator + type.getDataToFixCSVName();
 			csvFile = new File(outputFile);
 			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 
-			String resultsTable = getResultsTableName(endpointId, IntegrityType.FOLDERS);
+			String resultsTable = getResultsTableName(endpointId, type);
 
-			statement = conn.prepareStatement("select folder, host_name, local_inode, remote_inode from " + resultsTable);
+			statement = conn.prepareStatement("select remote_inode, local_inode from " + resultsTable);
 			rs = statement.executeQuery();
 			int count = 0;
 
 			while (rs.next()) {
-				writer.write(rs.getString("folder"));
-				writer.write(rs.getString("host_name"));
-				writer.write(rs.getString("local_inode"));
 				writer.write(rs.getString("remote_inode"));
-				writer.endRecord();
-				count++;
-
-				if(count==1000) {
-					writer.flush();
-					count = 0;
-				}
-			}
-
-		} catch (SQLException e) {
-			throw new DotDataException(e.getMessage(),e);
-		}finally {
-        	try { if (rs != null) rs.close(); } catch (Exception e) { }
-        	try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
-        	if(writer!=null) writer.close();
-
-        }
-
-		return csvFile;
-
-	}
-
-	public File generateStructuresToFixCSV(String outputFile, String endpointId) throws DotDataException, IOException {
-		Connection conn = DbConnectionFactory.getConnection();
-		ResultSet rs = null;
-		PreparedStatement statement = null;
-		CsvWriter writer = null;
-		File csvFile = null;
-
-		try {
-			csvFile = new File(outputFile);
-			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
-
-			String resultsTable = getResultsTableName(endpointId, IntegrityType.STRUCTURES);
-
-			statement = conn.prepareStatement("select velocity_name, local_inode, remote_inode from " + resultsTable);
-			rs = statement.executeQuery();
-			int count = 0;
-
-			while (rs.next()) {
-				writer.write(rs.getString("velocity_name"));
 				writer.write(rs.getString("local_inode"));
-				writer.write(rs.getString("remote_inode"));
-				writer.endRecord();
-				count++;
-
-				if(count==1000) {
-					writer.flush();
-					count = 0;
-				}
-			}
-
-		} catch (SQLException e) {
-			throw new DotDataException(e.getMessage(),e);
-		}finally {
-        	try { if (rs != null) rs.close(); } catch (Exception e) { }
-        	try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
-        	if(writer!=null) writer.close();
-
-        }
-
-		return csvFile;
-
-	}
-
-	public File generateSchemesToFixCSV(String outputFile, String endpointId) throws DotDataException, IOException {
-		Connection conn = DbConnectionFactory.getConnection();
-		ResultSet rs = null;
-		PreparedStatement statement = null;
-		CsvWriter writer = null;
-		File csvFile = null;
-
-		try {
-			csvFile = new File(outputFile);
-			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
-
-			String resultsTable = getResultsTableName(endpointId, IntegrityType.SCHEMES);
-
-			statement = conn.prepareStatement("select name, local_inode, remote_inode from " + resultsTable);
-			rs = statement.executeQuery();
-			int count = 0;
-
-			while (rs.next()) {
-				writer.write(rs.getString("name"));
-				writer.write(rs.getString("local_inode"));
-				writer.write(rs.getString("remote_inode"));
 				writer.endRecord();
 				count++;
 
@@ -306,6 +221,39 @@ public class IntegrityUtil {
 		}
 	}
 
+	public static void unzipFile(InputStream zipFile, String outputDir) throws Exception {
+		ZipInputStream zin = new ZipInputStream(zipFile);
+
+		ZipEntry ze = null;
+
+		File dir = new File(outputDir);
+
+		// if file doesnt exists, then create it
+		if (!dir.exists()) {
+			dir.mkdir();
+		}
+
+		try {
+
+			while ((ze = zin.getNextEntry()) != null) {
+				System.out.println("Unzipping " + ze.getName());
+
+				FileOutputStream fout = new FileOutputStream(outputDir + File.separator +ze.getName());
+				for (int c = zin.read(); c != -1; c = zin.read()) {
+					fout.write(c);
+				}
+				zin.closeEntry();
+				fout.close();
+			}
+			zin.close();
+
+		} catch(IOException e) {
+			Logger.error(IntegrityResource.class, "Error while unzipping Integrity Data", e);
+			throw new Exception("Error while unzipping Integrity Data", e);
+		}
+
+	}
+
 	public void generateDataToCheckZip(String endpointId) {
 		File foldersToCheckCsvFile = null;
         File structuresToCheckCsvFile = null;
@@ -344,7 +292,7 @@ public class IntegrityUtil {
         	zos.close();
         	fos.close();
 		} catch (Exception e) {
-			if(foldersToCheckCsvFile!=null && foldersToCheckCsvFile.exists())
+			if(zipFile!=null && zipFile.exists())
 				zipFile.delete();
 		} finally {
         	if(foldersToCheckCsvFile!=null && foldersToCheckCsvFile.exists())
@@ -357,10 +305,8 @@ public class IntegrityUtil {
         }
 	}
 
-	public void generateDataToFixZip(String endpointId) {
-		File foldersToFixCsvFile = null;
-        File structuresToFixCsvFile = null;
-        File schemesToFixCsvFile = null;
+	public void generateDataToFixZip(String endpointId, IntegrityType type) {
+		File dataToFixCsvFile = null;
         File zipFile = null;
 
 		try {
@@ -384,27 +330,18 @@ public class IntegrityUtil {
         	// create Folders CSV
         	IntegrityUtil integrityUtil = new IntegrityUtil();
 
-        	foldersToFixCsvFile = integrityUtil.generateFoldersToCheckCSV(outputPath + File.separator + IntegrityType.FOLDERS.getDataToFixCSVName());
-        	structuresToFixCsvFile = integrityUtil.generateStructuresToCheckCSV(outputPath + File.separator + IntegrityType.STRUCTURES.getDataToFixCSVName());
-        	schemesToFixCsvFile = integrityUtil.generateSchemesToCheckCSV(outputPath + File.separator + IntegrityType.SCHEMES.getDataToFixCSVName());
+        	dataToFixCsvFile = integrityUtil.generateDataToFixCSV(outputPath, endpointId, type );
 
-        	addToZipFile(foldersToFixCsvFile.getAbsolutePath(), zos, IntegrityType.FOLDERS.getDataToFixCSVName());
-        	addToZipFile(structuresToFixCsvFile.getAbsolutePath(), zos, IntegrityType.STRUCTURES.getDataToFixCSVName());
-        	addToZipFile(schemesToFixCsvFile.getAbsolutePath(), zos, IntegrityType.SCHEMES.getDataToFixCSVName());
+        	addToZipFile(dataToFixCsvFile.getAbsolutePath(), zos, type.getDataToFixCSVName());
 
         	zos.close();
         	fos.close();
 		} catch (Exception e) {
-			if(foldersToFixCsvFile!=null && foldersToFixCsvFile.exists())
+			if(zipFile!=null && zipFile.exists())
 				zipFile.delete();
 		} finally {
-        	if(foldersToFixCsvFile!=null && foldersToFixCsvFile.exists())
-        		foldersToFixCsvFile.delete();
-        	if(structuresToFixCsvFile!=null && structuresToFixCsvFile.exists())
-        		structuresToFixCsvFile.delete();
-        	if(schemesToFixCsvFile!=null && schemesToFixCsvFile.exists())
-        		schemesToFixCsvFile.delete();
-
+        	if(dataToFixCsvFile!=null && dataToFixCsvFile.exists())
+        		dataToFixCsvFile.delete();
         }
 	}
 
@@ -412,7 +349,7 @@ public class IntegrityUtil {
 
 		try {
 
-			CsvReader folders = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.FOLDERS.name() + ".csv", '|');
+			CsvReader folders = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.FOLDERS.getDataToCheckCSVName(), '|');
 			boolean tempCreated = false;
 			DotConnect dc = new DotConnect();
 			String tempTableName = getTempTableName(endpointId, IntegrityType.FOLDERS);
@@ -471,6 +408,7 @@ public class IntegrityUtil {
 						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
 
 				dc.executeStatement(CREATE_RESULTS_TABLE);
+				dc.executeStatement("alter table " + resultsTableName + " add primary key (local_inode)");
 			}
 
 			// lets drop the temp table
@@ -485,7 +423,7 @@ public class IntegrityUtil {
 
 		try {
 
-			CsvReader structures = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.STRUCTURES.name() + ".csv", '|');
+			CsvReader structures = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.STRUCTURES.getDataToCheckCSVName(), '|');
 			boolean tempCreated = false;
 			DotConnect dc = new DotConnect();
 			String tempTableName = getTempTableName(endpointId, IntegrityType.STRUCTURES);
@@ -538,6 +476,7 @@ public class IntegrityUtil {
 						+ "join " + tempTableName + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode";
 
 				dc.executeStatement(CREATE_RESULTS_TABLE);
+				dc.executeStatement("alter table " + resultsTableName + " add primary key (local_inode)");
 			}
 
 			// lets drop the temp table
@@ -553,7 +492,7 @@ public class IntegrityUtil {
 
 		try {
 
-			CsvReader schemes = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.SCHEMES.name() + ".csv", '|');
+			CsvReader schemes = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.SCHEMES.getDataToCheckCSVName(), '|');
 			boolean tempCreated = false;
 			DotConnect dc = new DotConnect();
 			String tempTableName = getTempTableName(endpointId, IntegrityType.SCHEMES);
@@ -601,6 +540,7 @@ public class IntegrityUtil {
 						+ "join " + tempTableName + " wt on s.name = wt.name and s.id <> wt.inode";
 
 				dc.executeStatement(CREATE_RESULTS_TABLE);
+				dc.executeStatement("alter table " + resultsTableName + " add primary key (local_inode)");
 
 			}
 
@@ -637,7 +577,64 @@ public class IntegrityUtil {
 		}
 	}
 
+	public void fixConflicts(InputStream dataToFix, String endpointId, IntegrityType type) throws Exception {
+
+		String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
+		// lets first unzip the given file
+		unzipFile(dataToFix, outputDir);
+
+		// lets generate the tables with the data to be fixed
+		generateDataToFixTable(endpointId, type);
+
+
+	}
+
+	public void generateDataToFixTable(String endpointId, IntegrityType type) throws Exception {
+
+		try {
+
+			CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + type.getDataToFixCSVName(), '|');
+			boolean resultsCreated = false;
+			DotConnect dc = new DotConnect();
+			String resultsTable = getResultsTableName(endpointId, type);
+
+			// lets create a temp table and insert all the records coming from the CSV file
+
+			String createResultsTable = "create table " + resultsTable + " (local_inode varchar(36) not null, remote_inode varchar(36) not null, "
+					+ "primary key (local_inode) )";
+
+			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
+				createResultsTable=createResultsTable.replaceAll("varchar\\(", "varchar2\\(");
+			}
+
+			final String INSERT_TEMP_TABLE = "insert into " + resultsTable + " values(?,?)";
+
+			while (csvFile.readRecord()) {
+
+				if(!resultsCreated) {
+					dc.executeStatement(createResultsTable);
+					resultsCreated = true;
+				}
+
+				//select f.inode, i.parent_path, i.asset_name, i.host_inode
+				String localInode = csvFile.get(0);
+				String remoteInode = csvFile.get(1);
+
+				dc.setSQL(INSERT_TEMP_TABLE);
+				dc.addParam(localInode);
+				dc.addParam(remoteInode);
+				dc.loadResult();
+			}
+
+		} catch(Exception e) {
+			throw new Exception("Error generating data to fix", e);
+		}
+	}
+
 	private String getTempTableName(String endpointId, IntegrityType type) {
+
+		if(!UtilMethods.isSet(endpointId)) return null;
+
 		String endpointIdforDB = endpointId.replace("-", "");
 		String resultsTableName = type.name().toLowerCase() + "_temp_" + endpointIdforDB;
 
@@ -649,6 +646,9 @@ public class IntegrityUtil {
 	}
 
 	private String getResultsTableName(String endpointId, IntegrityType type) {
+
+		if(!UtilMethods.isSet(endpointId)) return null;
+
 		String endpointIdforDB = endpointId.replace("-", "");
 		String resultsTableName = type.name().toLowerCase() + "_ir_" + endpointIdforDB;
 
