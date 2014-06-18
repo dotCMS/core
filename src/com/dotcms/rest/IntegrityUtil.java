@@ -755,6 +755,8 @@ public class IntegrityUtil {
             //permission_reference
             updateFrom( dc, tableName, "permission_reference", "asset_id" );
 
+            dc.executeStatement("drop table " + tableName);
+
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
         } finally {
@@ -814,6 +816,8 @@ public class IntegrityUtil {
             //permission_reference
             updateFrom( dc, tableName, "permission_reference", "asset_id" );
 
+            dc.executeStatement("drop table " + tableName);
+
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
         } finally {
@@ -859,6 +863,8 @@ public class IntegrityUtil {
             updateFrom( dc, tableName, "workflow_step", "scheme_id" );
             //workflow_scheme_x_structure
             updateFrom( dc, tableName, "workflow_scheme_x_structure", "scheme_id" );
+
+            dc.executeStatement("drop table " + tableName);
 
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
