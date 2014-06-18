@@ -8,23 +8,16 @@
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.beans.Identifier"%>
-
-
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.*"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.*"%>
-
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-
-
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-
 
 <%
 String contentletId = (String) request.getParameter("contentletId");
@@ -63,6 +56,60 @@ catch(DotSecurityException dse) {
     hasPermissions=false;
 }
 
+
+
+// get URLMap Preview links (this can be on one host or many hosts)
+String detailPage = structure.getDetailPage() ;
+String urlMap = null;
+String hostId="REPLACE_ME";
+List<Host> urlMappedHosts = new ArrayList<Host>(); 
+if(detailPage!=null){
+	Identifier detailId = APILocator.getIdentifierAPI().find(detailPage);
+	if(detailId !=null && UtilMethods.isSet(detailId.getId())){
+		List<Host> testTheseHosts = new ArrayList<Host>(); 
+		// if this content is mapped on "all hosts" or to a single host
+		if("SYSTEM_HOST".equals(content.getHost())){
+			testTheseHosts.addAll(APILocator.getHostAPI().findAll(user, false));
+		}
+		else{
+			testTheseHosts.add(APILocator.getHostAPI().find(content.getHost(), user, false));
+		}
+		
+		
+		for(Host h : testTheseHosts){ 
+			if(h.isArchived() || h.isSystemHost()) continue; 
+			// does the host actually have the detail page mapped
+			 Identifier hasPage = APILocator.getIdentifierAPI().find(h, detailId.getPath());
+			 if(hasPage ==null || ! UtilMethods.isSet(hasPage.getId())) continue; 
+			 urlMappedHosts.add(h);
+		}
+		
+		
+		urlMap = capi.getUrlMapForContentlet(content, user, false);
+		
+		if(urlMap.contains("?")){
+			urlMap+="&mainFrame=true&livePage=0&language=" + content.getLanguageId() ;
+		}
+		else{
+			urlMap+="?mainFrame=true&livePage=0&language=" + content.getLanguageId() ;
+		}
+		
+		if(urlMap.contains("host_id=")){
+			hostId=urlMap.substring(urlMap.indexOf("host_id=")+8,urlMap.indexOf("host_id=")+44);
+		}
+		else{
+			urlMap+="&host_id=" + hostId;
+		}
+	}
+}
+ 
+
+
+
+
+
+
+
 if(!hasPermissions) {
     %>
 <div style="padding:20px;text-align: center">
@@ -70,26 +117,25 @@ if(!hasPermissions) {
 </div>
 <%}else {
     
-
-try{
-	Host conHost = APILocator.getHostAPI().find(content.getHost() , user, true);
 	
-	if(!APILocator.getHostAPI().findSystemHost().getIdentifier().equals(conHost.getIdentifier())){
-		conPath = conHost.getHostname();
-		if(!APILocator.getFolderAPI().findSystemFolder().getInode().equals(content.getFolder())){
-			conPath+=id.getPath();
+	try{
+		Host conHost = APILocator.getHostAPI().find(content.getHost() , user, true);
+		
+		if(!APILocator.getHostAPI().findSystemHost().getIdentifier().equals(conHost.getIdentifier())){
+			conPath = conHost.getHostname();
+			if(!APILocator.getFolderAPI().findSystemFolder().getInode().equals(content.getFolder())){
+				conPath+=id.getPath();
+			}
 		}
+		
 	}
-	
-}
-catch(Exception e){
-	Logger.error(this.getClass(), "unable to find host for contentlet"  + content.getIdentifier());
-}
+	catch(Exception e){
+		Logger.error(this.getClass(), "unable to find host for contentlet"  + content.getIdentifier());
+	}
 
 
 
-String content_css = "content_css : \"" + Config.getStringProperty("WYSIWYG_CSS", "/html/css/tiny_mce.css") + "\",";
-
+	String content_css = "content_css : \"" + Config.getStringProperty("WYSIWYG_CSS", "/html/css/tiny_mce.css") + "\",";
 %>
 
 <script language="javascript" type="text/javascript" src="/html/js/tinymce/jscripts/tiny_mce/tiny_mce_gzip.js"></script>
@@ -195,7 +241,7 @@ dojo.ready(function(){
 						<%= lang.getCountry()%> - <%= lang.getLanguage()%>
 					</td>
 				</tr>
-				<%if(conPath != null) {%>
+				<%if(UtilMethods.isSet(conPath)) {%>
 					<tr class="tRow">
 						<td class="fColumn">
 							<%= LanguageUtil.get(pageContext, "Host-Folder") %>
@@ -211,9 +257,31 @@ dojo.ready(function(){
 					</td>
 					<td>
 						<%= com.dotmarketing.util.UtilHTML.getStatusIcons(content) %>
+	
 					</td>
 				</tr>
 			<% }%>
+			
+
+			<% if(urlMap!=null){%>
+				<%session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true"); %>			
+				<tr class="tRow">
+					<td class="fColumn">
+						Preview <br>
+					</td>
+					<td>
+						<%for(Host h : urlMappedHosts){ %>
+							<%String hostUrl =urlMap.replaceAll(hostId, h.getIdentifier());  %>
+							<%if(h.getBinary("hostThumbnail") != null){%>
+								<a href="<%=hostUrl %>" target="_blank"><img src="/contentAsset/image/<%=h.getIdentifier()%>/hostThumbnail/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/"></a>
+							<%}else{ %>
+								<a href="<%=hostUrl %>" target="_blank"><%=h.getHostname() %></a>
+							<%} %>
+						<%} %>
+					</td>
+				</tr>
+			<%} %>
+			
 			
 			
 			
@@ -229,6 +297,7 @@ dojo.ready(function(){
 				*
 				***************************/
 				if(
+						
 					Field.FieldType.HOST_OR_FOLDER.toString().equals(field.getFieldType()) ||
 					Field.FieldType.TAB_DIVIDER.toString().equals(field.getFieldType()) ||
 					Field.FieldType.PERMISSIONS_TAB.toString().equals(field.getFieldType()) ||
