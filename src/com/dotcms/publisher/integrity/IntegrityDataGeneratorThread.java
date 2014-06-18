@@ -5,6 +5,7 @@ import javax.servlet.ServletContext;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rest.IntegrityResource.ProcessStatus;
 import com.dotcms.rest.IntegrityUtil;
+import com.dotmarketing.util.Logger;
 
 public class IntegrityDataGeneratorThread extends Thread {
 
@@ -31,6 +32,7 @@ public class IntegrityDataGeneratorThread extends Thread {
 
 		} catch (Exception e) {
 
+			Logger.error(IntegrityDataGeneratorThread.class, "Error generating data to check", e);
 			servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.ERROR);
 			servletContext.setAttribute("integrityDataGenerationError", e.getMessage());
 

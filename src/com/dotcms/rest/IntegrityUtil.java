@@ -127,7 +127,7 @@ public class IntegrityUtil {
 
 			while (rs.next()) {
 				writer.write(rs.getString("id"));
-				writer.write(rs.getString("workflow_scheme"));
+				writer.write(rs.getString("name"));
 				writer.endRecord();
 				count++;
 
@@ -254,7 +254,7 @@ public class IntegrityUtil {
 
 	}
 
-	public void generateDataToCheckZip(String endpointId) {
+	public void generateDataToCheckZip(String endpointId) throws Exception {
 		File foldersToCheckCsvFile = null;
         File structuresToCheckCsvFile = null;
         File schemesToCheckCsvFile = null;
@@ -292,8 +292,11 @@ public class IntegrityUtil {
         	zos.close();
         	fos.close();
 		} catch (Exception e) {
+
 			if(zipFile!=null && zipFile.exists())
 				zipFile.delete();
+
+			throw new Exception(e);
 		} finally {
         	if(foldersToCheckCsvFile!=null && foldersToCheckCsvFile.exists())
         		foldersToCheckCsvFile.delete();
