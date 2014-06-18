@@ -217,10 +217,11 @@ public class DependencyManager {
         		List<Contentlet> contentlets = APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false);
         		for(Contentlet con : contentlets){
         			contents.add( con.getIdentifier(), con.getModDate()); 
+        			contentsSet.add(con.getIdentifier());
         		}
         	}
         }
-        setContentDependencies( config.getLuceneQueries() );
+        setContentDependencies( );
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -855,7 +856,7 @@ public class DependencyManager {
 	 * @param luceneQueries Queries to get the dependency Contentlets from
 	 * @throws DotBundleException If fails executing the Lucene queries
 	 */
-	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
+	private void setContentDependencies() throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
 			Set<String> cons = new HashSet<String>(contentsSet);
@@ -865,10 +866,6 @@ public class DependencyManager {
 			for(String id : cons){
             	allContents.addAll(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
             }
-
-			for(String luceneQuery: luceneQueries) {
-				allContents.addAll(APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false));
-			}
 
 			processList(allContents);
 
