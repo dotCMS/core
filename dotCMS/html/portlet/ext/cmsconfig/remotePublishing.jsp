@@ -255,7 +255,7 @@
                     //Verify again in 30 seconds
                     setTimeout(function () {
                         checkIntegrityProcessStatus(identifier)
-                    }, 30000);
+                    }, 10000);
                     //Verify again in 30 seconds
 
                 } else if (status == "finished") {//Process finished so show the show results button
@@ -311,13 +311,13 @@
         var resultsButtonId = 'getIntegrityResultsButton' + identifier;
         var loadingId = 'loadingContent' + identifier;
 
-//         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-//             domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
-//         });
-//         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-//             domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-//         });
-//         dojo.byId(loadingId).show();
+        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+            domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
+        });
+        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+            domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
+        });
+        dojo.byId(loadingId).show();
 
         var xhrArgs = {
             url: "/api/integrity/getIntegrityResult/endPoint/" + identifier,
@@ -350,13 +350,13 @@
                 selectedEndpointId = identifier;
                 dijit.byId('integrityResultsDialog').show();
 
-//                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-//                     domStyle.set(registry.byId(buttonId).domNode, 'display', '');
-//                 });
-//                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-//                     domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-//                 });
-//                 dojo.byId(loadingId).hide();
+                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                    domStyle.set(registry.byId(buttonId).domNode, 'display', '');
+                });
+                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                    domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
+                });
+                dojo.byId(loadingId).hide();
             },
             error: function (error) {
                 showDotCMSSystemMessage(error.responseText, true);
@@ -391,9 +391,12 @@
             var columns = checkedData.columns;
             var values = checkedData.values;
 
-            htmlContent += '<div class="yui-g portlet-toolbar"><div >' +
+            htmlContent += '<div class="yui-g portlet-toolbar"><div class="yui-u first">' +
                     '<span  style="line-height:20px;font-weight: bold;">' + title + '</span>' +
-                    '</div></div>';
+                    '</div><div class="yui-u" style="text-align:right;">'
+    				+ '<input type="radio" dojoType="dijit.form.RadioButton" checked="true" value="local"  name="whereToFixRadio_'+id+'" id="fixLocal_'+id+'" ><label for="fixLocal_'+id+'">&nbsp;<%= LanguageUtil.get(pageContext, "push_publish_integrity_fix_local") %></label>&nbsp;'
+    				+ '<input type="radio" dojoType="dijit.form.RadioButton" value="remote" name="whereToFixRadio_'+id+'" id="fixRemote_'+id+'" ><label for="fixRemote_'+id+'">&nbsp;<%= LanguageUtil.get(pageContext, "push_publish_integrity_fix_remote") %></label>&nbsp;'
+    			+ '</div></div>';
 
             htmlContent += '<div style="height:250px; overflow:auto"><table class="listingTable"><tr>';
             columns.forEach(function (column) {

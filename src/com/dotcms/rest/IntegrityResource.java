@@ -30,9 +30,10 @@ import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.commons.httpclient.HttpStatus;
 
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
-import com.dotcms.publisher.integrity.IntegrityDataGenerator;
+import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotmarketing.business.APILocator;
@@ -55,6 +56,7 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.client.urlconnection.HTTPSProperties;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.FormDataParam;
+import com.sun.jersey.multipart.file.FileDataBodyPart;
 
 
 @Path("/integrity")
@@ -65,21 +67,45 @@ public class IntegrityResource extends WebResource {
     }
 
     public enum IntegrityType {
-	    FOLDERS("push_publish_integrity_folders_conflicts"),
-	    SCHEMES("push_publish_integrity_schemes_conflicts"),
-	    STRUCTURES("push_publish_integrity_structures_conflicts");
+	    FOLDERS("push_publish_integrity_folders_conflicts",
+	    		"FoldersToCheck.csv",
+	    		"FoldersToFix.csv"),
+
+	    SCHEMES("push_publish_integrity_schemes_conflicts",
+	    		"SchemesToCheck.csv",
+	    		"SchemesToFix.csv"),
+
+	    STRUCTURES("push_publish_integrity_structures_conflicts",
+	    		"StructuresToCheck.csv",
+	    		"StructuresToFix.csv");
 
 	    private String label;
+	    private String dataToCheckCSVName;
+	    private String dataToFixCSVName;
 
-	    IntegrityType(String label) {
+
+	    IntegrityType(String label,String dataToCheckCSVName,String dataToFixCSVName) {
 	    	this.label = label;
+	    	this.dataToCheckCSVName = dataToCheckCSVName;
+	    	this.dataToFixCSVName = dataToFixCSVName;
 	    }
 
 		public String getLabel() {
 			return label;
 		}
 
+		public String getDataToCheckCSVName() {
+			return dataToCheckCSVName;
+		}
+
+		public String getDataToFixCSVName() {
+			return dataToFixCSVName;
+		}
+
 	}
+
+    public static final String INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME = "DataToCheck.zip";
+    public static final String INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME = "DataToFix.zip";
 
 	/**
 	 * <p>Returns a zip with data from structures, workflow schemes and folders for integrity check
@@ -121,7 +147,7 @@ public class IntegrityResource extends WebResource {
         	servletContext.setAttribute("integrityDataRequestID", transactionId);
 
         	// start data generation process
-        	IntegrityDataGenerator idg = new IntegrityDataGenerator(requesterEndPoint, request.getSession().getServletContext() );
+        	IntegrityDataGeneratorThread idg = new IntegrityDataGeneratorThread(requesterEndPoint, request.getSession().getServletContext() );
         	idg.start();
 
         	return Response.ok(transactionId).build();
@@ -182,7 +208,7 @@ public class IntegrityResource extends WebResource {
 				case FINISHED:
 					StreamingOutput output = new StreamingOutput() {
 						public void write(OutputStream output) throws IOException, WebApplicationException {
-							InputStream is = new FileInputStream(ConfigUtils.getIntegrityPath() + File.separator + requesterEndPoint.getId() + File.separator + "integrity.zip");
+							InputStream is = new FileInputStream(ConfigUtils.getIntegrityPath() + File.separator + requesterEndPoint.getId() + File.separator + INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME);
 
 							byte[] buffer = new byte[1024];
 							int bytesRead;
@@ -263,13 +289,7 @@ public class IntegrityResource extends WebResource {
 
         try {
 
-        	TrustFactory tFactory = new TrustFactory();
-        	ClientConfig cc = new DefaultClientConfig();
-
-        	if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals("")) {
-        		cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
-        	}
-        	final Client client = Client.create(cc);
+        	final Client client = getRESTClient();
 
         	final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
         	final String authToken = PushPublisher.retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString()));
@@ -369,7 +389,10 @@ public class IntegrityResource extends WebResource {
         	        			session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.FINISHED );
 
 
-        	        		} else if(response.getClientResponseStatus()==null || response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+        	        		} else if(response.getClientResponseStatus()==null && response.getStatus()==102) {
+        	        			continue;
+        	        		}
+        	        		else if(response.getClientResponseStatus()==null || response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
         	        			processing = false;
         	        		}
         	        	}
@@ -588,6 +611,7 @@ public class IntegrityResource extends WebResource {
             JSONObject errorContent = null;
 
             IntegrityType[] types = IntegrityType.values();
+            boolean isThereAnyConflict = false;
 
             for (IntegrityType integrityType : types) {
             	tabResponse = new JSONArray();
@@ -601,14 +625,14 @@ public class IntegrityResource extends WebResource {
 
             	switch (integrityType) {
 				case STRUCTURES:
-					columns.add("Velocity Name");
+					columns.add("velocity_name");
 					break;
 				case FOLDERS:
 					columns.add("folder");
 					columns.add("host_name");
 					break;
 				case SCHEMES:
-					columns.add("Name");
+					columns.add("name");
 					break;
 				}
 
@@ -619,7 +643,7 @@ public class IntegrityResource extends WebResource {
 
             	if(!results.isEmpty()) {
             		// the columns names are the keys in the results
-
+            		isThereAnyConflict = isThereAnyConflict || true;
 
 	            	JSONArray values = new JSONArray();
 	            	for (Map<String, Object> result : results) {
@@ -642,6 +666,10 @@ public class IntegrityResource extends WebResource {
                 //And prepare the response
                 jsonResponse.put( integrityType.name().toLowerCase(), tabResponse.toArray() );
 			}
+
+            if(!isThereAnyConflict) {
+            	request.getSession().removeAttribute( "integrityCheck_" + endpointId);
+            }
 
             /*
             ++++++++++++++++++++++++
@@ -691,10 +719,11 @@ public class IntegrityResource extends WebResource {
         String type = paramsMap.get( "type" );
 
         if ( !UtilMethods.isSet( endpointId ) ) {
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
-            responseBuilder.entity( responseMessage.append( "Error: " ).append( "endpoint" ).append( " is a required Field." ) );
+        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'endpoint'" ).append( " is a required param." )).build();
+        }
 
-            return responseBuilder.build();
+        if ( !UtilMethods.isSet( type ) ) {
+        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'type'" ).append( " is a required param." )).build();
         }
 
         try {
@@ -718,6 +747,105 @@ public class IntegrityResource extends WebResource {
 
         return response( responseMessage.toString(), false );
     }
+
+    /**
+     * Method that will fix the conflicts between local and remote.
+     * If param 'whereToFix' == local, the fix will take place in local node
+     * If param 'whereToFix' == remote, the fix will take place in remote node
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/fixconflicts/{params:.*}")
+    @Produces (MediaType.APPLICATION_JSON)
+    public Response fixConflicts ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
+
+        StringBuilder responseMessage = new StringBuilder();
+
+        InitDataObject initData = init( params, true, request, true );
+        Map<String, String> paramsMap = initData.getParamsMap();
+
+        //Validate the parameters
+        String endpointId = paramsMap.get( "endpoint" );
+        String type = paramsMap.get( "type" );
+        String whereToFix = paramsMap.get( "whereToFix" );
+
+        if ( !UtilMethods.isSet( endpointId ) ) {
+            return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'endpoint'" ).append( " is a required param." )).build();
+        }
+
+        if ( !UtilMethods.isSet( type ) ) {
+        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'type'" ).append( " is a required param." )).build();
+        }
+
+        if ( !UtilMethods.isSet( whereToFix ) ) {
+        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'whereToFix'" ).append( " is a required param." )).build();
+        }
+
+        try {
+            JSONObject jsonResponse = new JSONObject();
+            IntegrityUtil integrityUtil = new IntegrityUtil();
+
+            if(whereToFix.equals("local")) {
+//
+//              integrityUtil.fixConflicts(endpointId, IntegrityType.valueOf(type));
+            } else  if(whereToFix.equals("remote")) {
+            	integrityUtil.generateDataToFixZip(endpointId);
+
+            	final Client client = getRESTClient();
+
+            	PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
+            	String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
+            	File bundle = new File(outputPath + File.separator + INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME);
+
+            	FormDataMultiPart form = new FormDataMultiPart();
+    			form.field("AUTH_TOKEN",
+    					PushPublisher.retriveKeyString(
+    							PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
+
+    			form.field("ENDPOINT_ID", endpoint.getId());
+    			form.bodyPart(new FileDataBodyPart("dataToFix", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+
+    			com.sun.jersey.api.client.WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
+
+    			ClientResponse response = resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
+
+    			if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) {
+
+    			}
+
+
+            }
+
+            responseMessage.append( jsonResponse.toString() );
+
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]" );
+            }
+            return response( responseMessage.toString(), true );
+        }
+
+        return response( responseMessage.toString(), false );
+    }
+
+	private Client getRESTClient() {
+		TrustFactory tFactory = new TrustFactory();
+		ClientConfig cc = new DefaultClientConfig();
+
+		if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals("")) {
+			cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
+		}
+		final Client client = Client.create(cc);
+		return client;
+	}
 
     /**
      * Prepares a Response object with a given response text. The creation depends if it is an error or not.

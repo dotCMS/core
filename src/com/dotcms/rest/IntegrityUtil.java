@@ -1,6 +1,10 @@
 package com.dotcms.rest;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -10,6 +14,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import com.csvreader.CsvReader;
 import com.csvreader.CsvWriter;
@@ -18,16 +24,21 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class IntegrityUtil {
 
-	public void writeFoldersCSV(CsvWriter writer) throws DotDataException, IOException {
+	public File generateFoldersToCheckCSV(String outputFile) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
+		CsvWriter writer = null;
+		File csvFile = null;
 
 		try {
-
+			csvFile = new File(outputFile);
+			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 			statement = conn.prepareStatement("select f.inode, i.parent_path, i.asset_name, i.host_inode from folder f join identifier i on f.identifier = i.id ");
 			rs = statement.executeQuery();
 			int count = 0;
@@ -51,17 +62,24 @@ public class IntegrityUtil {
 		}finally {
         	try { if (rs != null) rs.close(); } catch (Exception e) { }
         	try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
+        	if(writer!=null) writer.close();
+
         }
+
+		return csvFile;
 
 	}
 
-	public void writeStructuresCSV(CsvWriter writer) throws DotDataException, IOException {
+	public File generateStructuresToCheckCSV(String outputFile) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
+		CsvWriter writer = null;
+		File csvFile = null;
 
 		try {
-
+			csvFile = new File(outputFile);
+			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 			statement = conn.prepareStatement("select inode, velocity_var_name from structure ");
 			rs = statement.executeQuery();
 			int count = 0;
@@ -83,17 +101,24 @@ public class IntegrityUtil {
 		}finally {
         	try { if (rs != null) rs.close(); } catch (Exception e) { }
         	try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
+        	if(writer!=null) writer.close();
         }
+
+		return csvFile;
 
 	}
 
-	public void writeWorkflowSchemesCSV(CsvWriter writer) throws DotDataException, IOException {
+	public File generateSchemesToCheckCSV(String outputFile) throws DotDataException, IOException {
 		Connection conn = DbConnectionFactory.getConnection();
 		ResultSet rs = null;
 		PreparedStatement statement = null;
+		CsvWriter writer = null;
+		File csvFile = null;
 
 		try {
 
+			csvFile = new File(outputFile);
+			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 			statement = conn.prepareStatement("select id, name from workflow_scheme ");
 			rs = statement.executeQuery();
 			int count = 0;
@@ -115,8 +140,272 @@ public class IntegrityUtil {
 		}finally {
         	try { if (rs != null) rs.close(); } catch (Exception e) { }
         	try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
+        	if(writer!=null) writer.close();
         }
 
+		return csvFile;
+
+	}
+
+	public File generateFoldersToFixCSV(String outputFile, String endpointId) throws DotDataException, IOException {
+		Connection conn = DbConnectionFactory.getConnection();
+		ResultSet rs = null;
+		PreparedStatement statement = null;
+		CsvWriter writer = null;
+		File csvFile = null;
+
+		try {
+			csvFile = new File(outputFile);
+			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
+
+			String resultsTable = getResultsTableName(endpointId, IntegrityType.FOLDERS);
+
+			statement = conn.prepareStatement("select folder, host_name, local_inode, remote_inode from " + resultsTable);
+			rs = statement.executeQuery();
+			int count = 0;
+
+			while (rs.next()) {
+				writer.write(rs.getString("folder"));
+				writer.write(rs.getString("host_name"));
+				writer.write(rs.getString("local_inode"));
+				writer.write(rs.getString("remote_inode"));
+				writer.endRecord();
+				count++;
+
+				if(count==1000) {
+					writer.flush();
+					count = 0;
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new DotDataException(e.getMessage(),e);
+		}finally {
+        	try { if (rs != null) rs.close(); } catch (Exception e) { }
+        	try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
+        	if(writer!=null) writer.close();
+
+        }
+
+		return csvFile;
+
+	}
+
+	public File generateStructuresToFixCSV(String outputFile, String endpointId) throws DotDataException, IOException {
+		Connection conn = DbConnectionFactory.getConnection();
+		ResultSet rs = null;
+		PreparedStatement statement = null;
+		CsvWriter writer = null;
+		File csvFile = null;
+
+		try {
+			csvFile = new File(outputFile);
+			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
+
+			String resultsTable = getResultsTableName(endpointId, IntegrityType.STRUCTURES);
+
+			statement = conn.prepareStatement("select velocity_name, local_inode, remote_inode from " + resultsTable);
+			rs = statement.executeQuery();
+			int count = 0;
+
+			while (rs.next()) {
+				writer.write(rs.getString("velocity_name"));
+				writer.write(rs.getString("local_inode"));
+				writer.write(rs.getString("remote_inode"));
+				writer.endRecord();
+				count++;
+
+				if(count==1000) {
+					writer.flush();
+					count = 0;
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new DotDataException(e.getMessage(),e);
+		}finally {
+        	try { if (rs != null) rs.close(); } catch (Exception e) { }
+        	try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
+        	if(writer!=null) writer.close();
+
+        }
+
+		return csvFile;
+
+	}
+
+	public File generateSchemesToFixCSV(String outputFile, String endpointId) throws DotDataException, IOException {
+		Connection conn = DbConnectionFactory.getConnection();
+		ResultSet rs = null;
+		PreparedStatement statement = null;
+		CsvWriter writer = null;
+		File csvFile = null;
+
+		try {
+			csvFile = new File(outputFile);
+			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
+
+			String resultsTable = getResultsTableName(endpointId, IntegrityType.SCHEMES);
+
+			statement = conn.prepareStatement("select name, local_inode, remote_inode from " + resultsTable);
+			rs = statement.executeQuery();
+			int count = 0;
+
+			while (rs.next()) {
+				writer.write(rs.getString("name"));
+				writer.write(rs.getString("local_inode"));
+				writer.write(rs.getString("remote_inode"));
+				writer.endRecord();
+				count++;
+
+				if(count==1000) {
+					writer.flush();
+					count = 0;
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new DotDataException(e.getMessage(),e);
+		}finally {
+        	try { if (rs != null) rs.close(); } catch (Exception e) { }
+        	try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
+        	if(writer!=null) writer.close();
+
+        }
+
+		return csvFile;
+
+	}
+
+	private static void addToZipFile(String fileName, ZipOutputStream zos, String zipEntryName) throws Exception  {
+
+		System.out.println("Writing '" + fileName + "' to zip file");
+
+		try {
+
+			File file = new File(fileName);
+			FileInputStream fis = new FileInputStream(file);
+			ZipEntry zipEntry = new ZipEntry(zipEntryName);
+			zos.putNextEntry(zipEntry);
+
+			byte[] bytes = new byte[1024];
+			int length;
+			while ((length = fis.read(bytes)) >= 0) {
+				zos.write(bytes, 0, length);
+			}
+
+			zos.closeEntry();
+			fis.close();
+
+		} catch(FileNotFoundException f){
+			Logger.error(IntegrityResource.class, "Could not find file " + fileName, f);
+			throw new Exception("Could not find file " + fileName, f);
+		} catch (IOException e) {
+			Logger.error(IntegrityResource.class, "Error writing file to zip: " + fileName, e);
+			throw new Exception("Error writing file to zip: " + fileName, e);
+		}
+	}
+
+	public void generateDataToCheckZip(String endpointId) {
+		File foldersToCheckCsvFile = null;
+        File structuresToCheckCsvFile = null;
+        File schemesToCheckCsvFile = null;
+        File zipFile = null;
+
+		try {
+
+			if(!UtilMethods.isSet(endpointId))
+				return;
+
+			String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
+
+			File dir = new File(outputPath);
+
+			// if file doesn't exist, create it
+			if (!dir.exists()) {
+				dir.mkdir();
+			}
+
+			zipFile = new File(outputPath + File.separator + IntegrityResource.INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME);
+        	FileOutputStream fos = new FileOutputStream(zipFile);
+        	ZipOutputStream zos = new ZipOutputStream(fos);
+
+        	// create Folders CSV
+        	IntegrityUtil integrityUtil = new IntegrityUtil();
+
+        	foldersToCheckCsvFile = integrityUtil.generateFoldersToCheckCSV(outputPath + File.separator + IntegrityType.FOLDERS.getDataToCheckCSVName());
+        	structuresToCheckCsvFile = integrityUtil.generateStructuresToCheckCSV(outputPath + File.separator + IntegrityType.STRUCTURES.getDataToCheckCSVName());
+        	schemesToCheckCsvFile = integrityUtil.generateSchemesToCheckCSV(outputPath + File.separator + IntegrityType.SCHEMES.getDataToCheckCSVName());
+
+        	addToZipFile(foldersToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.FOLDERS.getDataToCheckCSVName());
+        	addToZipFile(structuresToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.STRUCTURES.getDataToCheckCSVName());
+        	addToZipFile(schemesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.SCHEMES.getDataToCheckCSVName());
+
+        	zos.close();
+        	fos.close();
+		} catch (Exception e) {
+			if(foldersToCheckCsvFile!=null && foldersToCheckCsvFile.exists())
+				zipFile.delete();
+		} finally {
+        	if(foldersToCheckCsvFile!=null && foldersToCheckCsvFile.exists())
+        		foldersToCheckCsvFile.delete();
+        	if(structuresToCheckCsvFile!=null && structuresToCheckCsvFile.exists())
+        		structuresToCheckCsvFile.delete();
+        	if(schemesToCheckCsvFile!=null && schemesToCheckCsvFile.exists())
+        		schemesToCheckCsvFile.delete();
+
+        }
+	}
+
+	public void generateDataToFixZip(String endpointId) {
+		File foldersToFixCsvFile = null;
+        File structuresToFixCsvFile = null;
+        File schemesToFixCsvFile = null;
+        File zipFile = null;
+
+		try {
+
+			if(!UtilMethods.isSet(endpointId))
+				return;
+
+			String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
+
+			File dir = new File(outputPath);
+
+			// if file doesn't exist, create it
+			if (!dir.exists()) {
+				dir.mkdir();
+			}
+
+			zipFile = new File(outputPath + File.separator + IntegrityResource.INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME);
+        	FileOutputStream fos = new FileOutputStream(zipFile);
+        	ZipOutputStream zos = new ZipOutputStream(fos);
+
+        	// create Folders CSV
+        	IntegrityUtil integrityUtil = new IntegrityUtil();
+
+        	foldersToFixCsvFile = integrityUtil.generateFoldersToCheckCSV(outputPath + File.separator + IntegrityType.FOLDERS.getDataToFixCSVName());
+        	structuresToFixCsvFile = integrityUtil.generateStructuresToCheckCSV(outputPath + File.separator + IntegrityType.STRUCTURES.getDataToFixCSVName());
+        	schemesToFixCsvFile = integrityUtil.generateSchemesToCheckCSV(outputPath + File.separator + IntegrityType.SCHEMES.getDataToFixCSVName());
+
+        	addToZipFile(foldersToFixCsvFile.getAbsolutePath(), zos, IntegrityType.FOLDERS.getDataToFixCSVName());
+        	addToZipFile(structuresToFixCsvFile.getAbsolutePath(), zos, IntegrityType.STRUCTURES.getDataToFixCSVName());
+        	addToZipFile(schemesToFixCsvFile.getAbsolutePath(), zos, IntegrityType.SCHEMES.getDataToFixCSVName());
+
+        	zos.close();
+        	fos.close();
+		} catch (Exception e) {
+			if(foldersToFixCsvFile!=null && foldersToFixCsvFile.exists())
+				zipFile.delete();
+		} finally {
+        	if(foldersToFixCsvFile!=null && foldersToFixCsvFile.exists())
+        		foldersToFixCsvFile.delete();
+        	if(structuresToFixCsvFile!=null && structuresToFixCsvFile.exists())
+        		structuresToFixCsvFile.delete();
+        	if(schemesToFixCsvFile!=null && schemesToFixCsvFile.exists())
+        		schemesToFixCsvFile.delete();
+
+        }
 	}
 
 	public void checkFoldersIntegrity(String endpointId) throws Exception {
@@ -404,6 +693,8 @@ public class IntegrityUtil {
 
 		return false;
 	}
+
+//	public void generateRemoteFixData
 
 	public void discardConflicts(String endpointId, IntegrityType type) throws Exception {
 		try {
