@@ -12,8 +12,8 @@
         @import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css";
 	</style>
 
-	<script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js" djConfig="parseOnLoad:true, isDebug:false"></script>
-	<script type="text/javascript" src="<%=dojoPath%>/dojo/dot-dojo.js"></script>
+	<%-- <script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js" djConfig="parseOnLoad:true, isDebug:false"></script>
+	<script type="text/javascript" src="<%=dojoPath%>/dojo/dot-dojo.js"></script> --%>
 	<script type="text/javascript">
 		dojo.require("dijit.form.Button");
 		dojo.require('dijit.layout.TabContainer');
