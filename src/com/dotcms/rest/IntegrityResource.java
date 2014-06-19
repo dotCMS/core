@@ -844,7 +844,10 @@ public class IntegrityResource extends WebResource {
 
     			if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) {
     				jsonResponse.put( "success", true );
-            		jsonResponse.put( "message", "Conflicts fixed in Remote Endpoint" );
+            		jsonResponse.put( "message", "Fix Conflicts Process successfully started at Remote." );
+
+            		integrityUtil.discardConflicts(endpointId, IntegrityType.valueOf(type.toUpperCase()));
+
 
     			} else {
     				jsonResponse.put( "error", true );
