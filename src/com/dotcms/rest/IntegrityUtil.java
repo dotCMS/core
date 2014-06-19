@@ -591,6 +591,8 @@ public class IntegrityUtil {
 
 		fixConflicts(endpointId, type);
 
+		discardConflicts(endpointId, type);
+
 
 	}
 
@@ -705,7 +707,9 @@ public class IntegrityUtil {
 		try {
 			DotConnect dc = new DotConnect();
 			String resultsTableName = getResultsTableName(endpointId, type);
-			dc.executeStatement("drop table " + resultsTableName);
+
+			if(doesTableExist(resultsTableName))
+				dc.executeStatement("drop table " + resultsTableName);
 
 		} catch(Exception e) {
 			throw new Exception("Error running the Structures Integrity Check", e);
@@ -760,15 +764,14 @@ public class IntegrityUtil {
             //permission_reference
             updateFrom( dc, tableName, "permission_reference", "asset_id" );
 
+            dc.executeStatement("drop table " + tableName);
+
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
         } finally {
             try {
                 //Add back the constrain
                 dc.executeStatement( "alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode (inode)" );
-
-                if(tableName!=null && doesTableExist(tableName))
-                	dc.executeStatement("drop table " + tableName);
 
             } catch ( SQLException e ) {
                 throw new DotDataException( e.getMessage(), e );
@@ -836,9 +839,6 @@ public class IntegrityUtil {
                 dc.executeStatement( "ALTER TABLE contentlet add constraint fk_structure_inode foreign key (structure_inode) references structure (inode)" );
                 dc.executeStatement( "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure (inode)" );
 
-                if(tableName!=null && doesTableExist(tableName))
-                	dc.executeStatement("drop table " + tableName);
-
             } catch ( SQLException e ) {
                 throw new DotDataException( e.getMessage(), e );
             }
@@ -876,6 +876,8 @@ public class IntegrityUtil {
             //workflow_scheme_x_structure
             updateFrom( dc, tableName, "workflow_scheme_x_structure", "scheme_id" );
 
+            dc.executeStatement("drop table " + tableName);
+
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
         } finally {
@@ -890,9 +892,6 @@ public class IntegrityUtil {
                 } else if ( !DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
                     dc.executeStatement( "ALTER TABLE workflow_step ADD CONSTRAINT workflow_step_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
                 }
-
-                if(tableName!=null && doesTableExist(tableName))
-                	dc.executeStatement("drop table " + tableName);
 
             } catch ( SQLException e ) {
                 throw new DotDataException( e.getMessage(), e );
