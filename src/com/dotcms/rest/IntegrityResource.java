@@ -7,8 +7,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -237,7 +235,7 @@ public class IntegrityResource extends WebResource {
 			return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
 		}
 
-		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity("Unknown Status").build();
+		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 
 	}
 
@@ -275,8 +273,10 @@ public class IntegrityResource extends WebResource {
         	}
         } catch(JSONException e) {
 			Logger.error(IntegrityResource.class, "Error setting return message in JSON response", e);
+			return response( "Error setting return message in JSON response" , true );
 		} catch(Exception e) {
         	Logger.error(IntegrityResource.class, "Error checking existence of integrity data", e);
+        	return response( "Error checking existence of integrity data" , true );
         }
 
         try {
@@ -386,92 +386,13 @@ public class IntegrityResource extends WebResource {
 
         } catch(Exception e) {
         	Logger.error( this.getClass(), "Error initializing the integrity checking process for End Point server: [" + endpointId + "]", e );
-        	String errorMessage = "";
-
-            if ( e.getMessage() != null ) {
-            	errorMessage  =  e.getMessage();
-            } else {
-            	errorMessage = "Error initializing the integrity checking process for End Point server: [" + endpointId + "]";
-            }
-            return response( errorMessage, true );
+        	return response( "Error initializing the integrity checking process for End Point server: [" + endpointId + "]" , true );
         }
 
 
         return response( jsonResponse.toString(), false );
 
 	}
-
-    /**
-     * Initializes the check integrity process against a given server
-     *
-     * @param request
-     * @param params
-     * @return
-     * @throws JSONException
-     */
-    @GET
-    @Path ("/checkIntegrityExample/{params:.*}")
-    @Produces (MediaType.APPLICATION_JSON)
-    public Response checkIntegrityExample ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
-
-        StringBuilder responseMessage = new StringBuilder();
-
-        InitDataObject initData = init( params, true, request, true );
-        Map<String, String> paramsMap = initData.getParamsMap();
-
-        //Validate the parameters
-        final String endpointId = paramsMap.get( "endpoint" );
-        if ( !UtilMethods.isSet( endpointId ) ) {
-            Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
-            responseBuilder.entity( responseMessage.append( "Error: " ).append( "endpoint" ).append( " is a required Field." ) );
-
-            return responseBuilder.build();
-        }
-
-        try {
-
-            final HttpSession session = request.getSession();
-
-            //SOME MAGIC HERE!!!
-            //SOME MAGIC HERE!!!
-            //SOME MAGIC HERE!!!
-            //SOME MAGIC HERE!!!
-
-            session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.PROCESSING );
-
-            //**********************************
-            //**********************************
-            //Mark the process as finised after 2 minutes
-            int delay = 120000;// in ms = two minutes
-            Timer timer = new Timer();
-            timer.schedule( new TimerTask(){
-                public void run() {
-                    session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.FINISHED );
-                }
-            }, delay);
-            //**********************************
-            //**********************************
-
-            //And prepare the response
-            JSONObject jsonResponse = new JSONObject();
-            jsonResponse.put( "success", true );
-            jsonResponse.put( "message", "Initialized integrity checking..." );
-
-            responseMessage.append( jsonResponse.toString() );
-
-        } catch ( Exception e ) {
-            Logger.error( this.getClass(), "Error initializing the integrity checking process for End Point server: [" + endpointId + "]", e );
-
-            if ( e.getMessage() != null ) {
-                responseMessage.append( e.getMessage() );
-            } else {
-                responseMessage.append( "Error initializing the integrity checking process for End Point server: [" + endpointId + "]" );
-            }
-            return response( responseMessage.toString(), true );
-        }
-
-        return response( responseMessage.toString(), false );
-    }
 
     /**
      * Method that will verify the status of a check integrity process for a given server
@@ -534,13 +455,7 @@ public class IntegrityResource extends WebResource {
 
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error checking the integrity process status for End Point server: [" + endpointId + "]", e );
-
-            if ( e.getMessage() != null ) {
-                responseMessage.append( e.getMessage() );
-            } else {
-                responseMessage.append( "Error checking the integrity process status for End Point server: [" + endpointId + "]" );
-            }
-            return response( responseMessage.toString(), true );
+            return response( "Error checking the integrity process status for End Point server: [" + endpointId + "]" , true );
         }
 
         return response( responseMessage.toString(), false );
@@ -658,13 +573,7 @@ public class IntegrityResource extends WebResource {
             //request.getSession().removeAttribute( "integrityCheck_" + endpointId );
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error generating the integrity result for End Point server: [" + endpointId + "]", e );
-
-            if ( e.getMessage() != null ) {
-                responseMessage.append( e.getMessage() );
-            } else {
-                responseMessage.append( "Error generating the integrity result for End Point server: [" + endpointId + "]" );
-            }
-            return response( responseMessage.toString(), true );
+            return response( "Error generating the integrity result for End Point server: [" + endpointId + "]" , true );
         }
 
         return response( responseMessage.toString(), false );
@@ -710,13 +619,7 @@ public class IntegrityResource extends WebResource {
 
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]", e );
-
-            if ( e.getMessage() != null ) {
-                responseMessage.append( e.getMessage() );
-            } else {
-                responseMessage.append( "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]" );
-            }
-            return response( responseMessage.toString(), true );
+            return response( "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]" , true );
         }
 
         return response( responseMessage.toString(), false );
@@ -760,11 +663,7 @@ public class IntegrityResource extends WebResource {
 
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts from remote", e );
-
-            jsonResponse.put( "error", true );
-    		jsonResponse.put( "message", "Error fixing "+type+" conflicts from remote");
-
-            return response( jsonResponse.toString() , true );
+            return response( "Error fixing "+type+" conflicts from remote" , true );
         }
 
     	jsonResponse.put( "success", true );
@@ -852,22 +751,15 @@ public class IntegrityResource extends WebResource {
 
 
     			} else {
-    				jsonResponse.put( "error", true );
-            		jsonResponse.put( "message", "Endpoint with id: " + endpointId + " returned server error." );
+            		return Response.status( HttpStatus.SC_BAD_REQUEST ).entity("Endpoint with id: " + endpointId + " returned server error." ).build();
         		}
             } else {
-            	jsonResponse.put( "error", true );
-        		jsonResponse.put( "message", "Error: 'whereToFix' has an invalid value.");
-            	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity(jsonResponse.toString() ).build();
+            	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'whereToFix' has an invalid value.").build();
             }
 
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts for End Point server: [" + endpointId + "]", e );
-
-            jsonResponse.put( "error", true );
-    		jsonResponse.put( "message", "Error fixing conflicts for endpoint: " + endpointId);
-
-            return response( jsonResponse.toString() , true );
+            return response( "Error fixing conflicts for endpoint: " + endpointId , true );
         }
 
         return response( jsonResponse.toString(), false );
