@@ -22,6 +22,7 @@ import java.util.zip.ZipOutputStream;
 import com.csvreader.CsvReader;
 import com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource.IntegrityType;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -764,6 +765,8 @@ public class IntegrityUtil {
             //permission_reference
             updateFrom( dc, tableName, "permission_reference", "asset_id" );
 
+//            CacheLocator.getFolderCache().removeFolder(f, id);
+
             dc.executeStatement("drop table " + tableName);
 
         } catch ( SQLException e ) {
@@ -862,11 +865,14 @@ public class IntegrityUtil {
             if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MSSQL ) ) {
                 dc.executeStatement( "alter table workflow_scheme nocheck constraint all" );
                 dc.executeStatement( "alter table workflow_step nocheck constraint all" );
+                dc.executeStatement( "alter table workflow_scheme_x_structure nocheck constraint all" );
             } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
                 enableDisableOracleConstrains( dc, "workflow_step", false );
                 enableDisableOracleConstrains( dc, "workflow_scheme", false );
+                enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", false );
             } else if ( !DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
                 dc.executeStatement( "ALTER TABLE workflow_step DROP CONSTRAINT workflow_step_scheme_id_fkey" );
+                dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey" );
             }
 
             //workflow_scheme
@@ -886,11 +892,14 @@ public class IntegrityUtil {
                 if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MSSQL ) ) {
                     dc.executeStatement( "alter table workflow_scheme with check check constraint all" );
                     dc.executeStatement( "alter table workflow_step with check check constraint all" );
+                    dc.executeStatement( "alter table workflow_scheme_x_structure with check check constraint all" );
                 } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
                     enableDisableOracleConstrains( dc, "workflow_step", true );
                     enableDisableOracleConstrains( dc, "workflow_scheme", true );
+                    enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", true );
                 } else if ( !DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
                     dc.executeStatement( "ALTER TABLE workflow_step ADD CONSTRAINT workflow_step_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
+                    dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
                 }
 
             } catch ( SQLException e ) {
