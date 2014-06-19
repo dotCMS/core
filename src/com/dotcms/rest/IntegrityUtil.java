@@ -808,6 +808,13 @@ public class IntegrityUtil {
                 dc.executeStatement( "alter table contentlet drop constraint fk_structure_inode" );
                 dc.executeStatement( "alter table containers drop constraint structure_fk" );
             }
+            if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MSSQL ) ) {
+                dc.executeStatement( "alter table workflow_scheme_x_structure nocheck constraint all" );
+            } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
+                enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", false );
+            } else if ( !DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+                dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey" );
+            }
 
             //structure
             updateFrom( dc, tableName, "structure", "inode" );
@@ -841,6 +848,13 @@ public class IntegrityUtil {
                 dc.executeStatement( "ALTER TABLE structure add constraint fk89d2d735fb51eb foreign key (inode) references inode (inode)" );
                 dc.executeStatement( "ALTER TABLE contentlet add constraint fk_structure_inode foreign key (structure_inode) references structure (inode)" );
                 dc.executeStatement( "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure (inode)" );
+                if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MSSQL ) ) {
+                    dc.executeStatement( "alter table workflow_scheme_x_structure with check check constraint all" );
+                } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
+                    enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", true );
+                } else if ( !DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
+                    dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
+                }
 
             } catch ( SQLException e ) {
                 throw new DotDataException( e.getMessage(), e );
