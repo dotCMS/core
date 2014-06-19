@@ -615,6 +615,8 @@ public class IntegrityResource extends WebResource {
             IntegrityUtil integrityUtil = new IntegrityUtil();
             integrityUtil.discardConflicts(endpointId, IntegrityType.valueOf(type.toUpperCase()));
 
+            request.getSession().removeAttribute( "integrityCheck_" + endpointId);
+
             responseMessage.append( jsonResponse.toString() );
 
         } catch ( Exception e ) {
