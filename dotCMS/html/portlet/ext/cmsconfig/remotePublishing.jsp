@@ -413,9 +413,9 @@
 
             values.forEach(function (value) {
                 if (altRow) {
-                    htmlContent += '<tr style="background:#f3f3f3;">';
+                    htmlContent += '<tr style="background:#f3f3f3;" class="' + id + '_row">';
                 } else {
-                    htmlContent += '<tr>';
+                    htmlContent += '<tr class="' + id + '_row">';
                 }
                 altRow=!altRow;
                 columns.forEach(function (column) {
@@ -462,12 +462,13 @@
 
 				showDotCMSSystemMessage(message, true);
 
+                //Cleaning up the html tables
+                dojo.query("." + type + "_row").forEach(dojo.destroy);
             },
             error: function (error) {
                 showDotCMSSystemMessage(error.responseText, true);
             }
         };
-        console.log(xhrArgs)
         dojo.xhrGet(xhrArgs);
     }
 
