@@ -767,7 +767,7 @@ public class IntegrityUtil {
                 //Add back the constrain
                 dc.executeStatement( "alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode (inode)" );
 
-                if(tableName!=null)
+                if(tableName!=null && doesTableExist(tableName))
                 	dc.executeStatement("drop table " + tableName);
 
             } catch ( SQLException e ) {
@@ -836,7 +836,7 @@ public class IntegrityUtil {
                 dc.executeStatement( "ALTER TABLE contentlet add constraint fk_structure_inode foreign key (structure_inode) references structure (inode)" );
                 dc.executeStatement( "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure (inode)" );
 
-                if(tableName!=null)
+                if(tableName!=null && doesTableExist(tableName))
                 	dc.executeStatement("drop table " + tableName);
 
             } catch ( SQLException e ) {
@@ -891,7 +891,7 @@ public class IntegrityUtil {
                     dc.executeStatement( "ALTER TABLE workflow_step ADD CONSTRAINT workflow_step_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
                 }
 
-                if(tableName!=null)
+                if(tableName!=null && doesTableExist(tableName))
                 	dc.executeStatement("drop table " + tableName);
 
             } catch ( SQLException e ) {
