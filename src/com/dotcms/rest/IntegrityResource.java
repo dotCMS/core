@@ -767,6 +767,8 @@ public class IntegrityResource extends WebResource {
             return response( jsonResponse.toString() , true );
         }
 
+    	jsonResponse.put( "success", true );
+		jsonResponse.put( "message", "Conflicts fixed in Remote Endpoint" );
         return response( jsonResponse.toString(), false );
 
 
