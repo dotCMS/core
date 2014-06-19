@@ -814,6 +814,7 @@ public class IntegrityUtil {
                 enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", false );
             } else if ( !DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
                 dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey" );
+                dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_structure_id_fkey ");
             }
 
             //structure
@@ -854,6 +855,7 @@ public class IntegrityUtil {
                     enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", true );
                 } else if ( !DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
                     dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
+                    dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_structure_id_fkey FOREIGN KEY (structure_id) REFERENCES structure (inode)" );
                 }
 
             } catch ( SQLException e ) {
