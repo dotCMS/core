@@ -457,7 +457,10 @@
                 }
 
 //                 closeIntegrityResultsDialog();
-                showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed")%>", true);
+				var message = localFix? "<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed_local")%>"
+						: "<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed_remote")%>"
+
+				showDotCMSSystemMessage(message, true);
 
             },
             error: function (error) {
