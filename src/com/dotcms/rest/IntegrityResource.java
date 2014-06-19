@@ -281,6 +281,8 @@ public class IntegrityResource extends WebResource {
 
         try {
 
+        	session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.PROCESSING );
+
         	final Client client = getRESTClient();
 
         	final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
@@ -335,7 +337,6 @@ public class IntegrityResource extends WebResource {
 
         	        			// set session variable
         	        			// call IntegrityChecker
-        	        			session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.PROCESSING );
 
 
         	        			try {
@@ -723,6 +724,8 @@ public class IntegrityResource extends WebResource {
             	jsonResponse.put( "success", true );
         		jsonResponse.put( "message", "Conflicts fixed in Local Endpoint" );
 
+        		request.getSession().removeAttribute( "integrityCheck_" + endpointId);
+
             } else  if(whereToFix.equals("remote")) {
             	integrityUtil.generateDataToFixZip(endpointId, IntegrityType.valueOf(type.toUpperCase()));
 
@@ -750,6 +753,8 @@ public class IntegrityResource extends WebResource {
             		jsonResponse.put( "message", "Fix Conflicts Process successfully started at Remote." );
 
             		integrityUtil.discardConflicts(endpointId, IntegrityType.valueOf(type.toUpperCase()));
+
+            		request.getSession().removeAttribute( "integrityCheck_" + endpointId);
 
 
     			} else {
