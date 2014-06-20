@@ -446,15 +446,19 @@
 
     function fixConflicts(identifier, type) {
 
+        //Displaying the loading dialog
+        dijit.byId('fixingDialog').show();
 
     	var localFix = dojo.byId("fixLocal_" + type).checked;
-
     	var whereToFix = localFix?"local":"remote";
 
         var xhrArgs = {
             url: "/api/integrity/fixconflicts/endPoint/" + identifier + "/type/" + type + "/whereToFix/" + whereToFix,
             handleAs: "json",
             load: function (data) {
+
+                //Hiding the loading dialog
+                dijit.byId('fixingDialog').hide();
 
                 var isError = false;
                 if (data.success == false || data.success == "false") {
@@ -757,7 +761,7 @@
                                     <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
                                         <%= LanguageUtil.get(pageContext,"CheckIntegrity") %>
                                     </button>
-                                    <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
+                                    <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" iconClass="exclamation" style="display: none;">
                                         <%= LanguageUtil.get(pageContext,"Preview-Analysis-Results") %>
                                     </button>
                                     <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
@@ -957,6 +961,11 @@
     </div>
 
 </div>
+
+<div id="fixingDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext,"push_publish_integrity_fixing_conflict")%>" style="display: none;">
+    <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
+</div>
+
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--INTEGRITY RESULTS DIALOG--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
