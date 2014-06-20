@@ -349,7 +349,7 @@ public class IntegrityUtil {
         }
 	}
 
-	public void checkFoldersIntegrity(String endpointId) throws Exception {
+	public Boolean checkFoldersIntegrity(String endpointId) throws Exception {
 
 		try {
 
@@ -418,12 +418,13 @@ public class IntegrityUtil {
 			// lets drop the temp table
 			dc.executeStatement("drop table " + tempTableName );
 
-		} catch(Exception e) {
+            return !results.isEmpty();
+        } catch(Exception e) {
 			throw new Exception("Error running the Folders Integrity Check", e);
 		}
 	}
 
-	public void checkStructuresIntegrity(String endpointId) throws Exception {
+	public Boolean checkStructuresIntegrity(String endpointId) throws Exception {
 
 		try {
 
@@ -486,13 +487,13 @@ public class IntegrityUtil {
 			// lets drop the temp table
 			dc.executeStatement("drop table " + tempTableName );
 
-
+            return !results.isEmpty();
 		} catch(Exception e) {
 			throw new Exception("Error running the Structures Integrity Check", e);
 		}
 	}
 
-	public void checkWorkflowSchemesIntegrity(String endpointId) throws Exception {
+	public Boolean checkWorkflowSchemesIntegrity(String endpointId) throws Exception {
 
 		try {
 
@@ -551,7 +552,7 @@ public class IntegrityUtil {
 			// lets drop the temp table
 			dc.executeStatement("drop table " + tempTableName );
 
-
+            return !results.isEmpty();
 		} catch(Exception e) {
 			throw new Exception("Error running the Workflow Schemes Integrity Check", e);
 		}

@@ -266,7 +266,17 @@
                         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', '');
                     });
                     dojo.byId(loadingId).hide();
-                } else if (status == "error") {//Some error hapened, display the error a buttons to normal
+                } else if (status == "noConflicts") {//We found no conflicts
+                    showDotCMSSystemMessage(data.message, true);
+
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(buttonId).domNode, 'display', '');
+                    });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
+                    });
+                    dojo.byId(loadingId).hide();
+                } else if (status == "error") {//Some error happened,display the error a buttons to normal
                     showDotCMSSystemMessage(data.message, true);
 
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
@@ -742,13 +752,9 @@
 						<div style="padding:10px;border-bottom:1px solid silver;margin-bottom:-1px">
 	                        <div class="buttonsGroup">
 
-                                <a style="cursor: pointer; float:right" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
-                                    <span class="deleteIcon"></span>
-                                </a>
-
                                 <%if(environment.getPushToAll() || i == 0){%>
                                 <div class="integrityCheckActionsGroup" style="float:right" id="group-<%=endpoint.getId()%>">
-                                    <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon">
+                                    <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
                                         <%= LanguageUtil.get(pageContext,"CheckIntegrity") %>
                                     </button>
                                     <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
@@ -762,6 +768,15 @@
                                 <%} %>
 
                             </div>
+
+                            <div style="padding:10px; float: left;">
+                                <div class="buttonsGroup">
+                                    <a style="cursor: pointer; float:right" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+                                        <span class="deleteIcon"></span>
+                                    </a>
+                                </div>
+                            </div>
+
 		                    <div <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%> style="cursor:pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', '<%=environment.getId()%>', 'false')">
 
 	                            <div >
