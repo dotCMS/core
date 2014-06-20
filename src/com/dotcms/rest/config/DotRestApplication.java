@@ -26,6 +26,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(com.dotcms.rest.CMSConfigResource.class);
 					REST_CLASSES.add(com.dotcms.rest.UserResource.class);
 					REST_CLASSES.add(EnvironmentResource.class);
+					REST_CLASSES.add(com.dotcms.rest.IntegrityResource.class);
 				}
 			}
 		}
