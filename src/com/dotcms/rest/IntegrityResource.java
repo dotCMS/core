@@ -23,6 +23,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.model.User;
 import org.apache.commons.httpclient.HttpStatus;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -57,7 +59,7 @@ import com.sun.jersey.multipart.file.FileDataBodyPart;
 public class IntegrityResource extends WebResource {
 
     public enum ProcessStatus {
-        PROCESSING, ERROR, FINISHED
+        PROCESSING, ERROR, FINISHED, NO_CONFLICTS
     }
 
     public enum IntegrityType {
@@ -248,6 +250,7 @@ public class IntegrityResource extends WebResource {
         Map<String, String> paramsMap = initData.getParamsMap();
 
         final HttpSession session = request.getSession();
+        final User loggedUser = initData.getUser();
 
         JSONObject jsonResponse = new JSONObject();
 
@@ -267,7 +270,8 @@ public class IntegrityResource extends WebResource {
         		jsonResponse.put( "success", true );
         		jsonResponse.put( "message", "Integrity Checking Initialized..." );
 
-        		session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.FINISHED );
+                //Setting the process status
+        		setStatus( request, endpointId, ProcessStatus.FINISHED );
 
         		return response( jsonResponse.toString(), false );
         	}
@@ -281,7 +285,8 @@ public class IntegrityResource extends WebResource {
 
         try {
 
-        	session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.PROCESSING );
+            //Setting the process status
+        	setStatus( request, endpointId, ProcessStatus.PROCESSING );
 
         	final Client client = getRESTClient();
 
@@ -331,6 +336,8 @@ public class IntegrityResource extends WebResource {
         	        				IntegrityUtil.unzipFile(zipFile, outputDir);
 
         	        			} catch(Exception e) {
+                                    //Setting the process status
+                                    setStatus( session, endpointId, ProcessStatus.ERROR, null );
         	        				Logger.error(IntegrityResource.class, "Error while unzipping Integrity Data", e);
         	        				throw new RuntimeException("Error while unzipping Integrity Data", e);
         	        			}
@@ -338,19 +345,18 @@ public class IntegrityResource extends WebResource {
         	        			// set session variable
         	        			// call IntegrityChecker
 
-
+                                Boolean foldersConflicts, structuresConflicts, schemesConflicts = false;
         	        			try {
         	        				HibernateUtil.startTransaction();
 
         	        				IntegrityUtil integrityUtil = new IntegrityUtil();
-        	        				integrityUtil.checkFoldersIntegrity(endpointId);
-        	        				integrityUtil.checkStructuresIntegrity(endpointId);
-        	        				integrityUtil.checkWorkflowSchemesIntegrity(endpointId);
+        	        				foldersConflicts = integrityUtil.checkFoldersIntegrity(endpointId);
+                                    structuresConflicts = integrityUtil.checkStructuresIntegrity(endpointId);
+                                    schemesConflicts = integrityUtil.checkWorkflowSchemesIntegrity(endpointId);
 
         	        				HibernateUtil.commitTransaction();
         	        			} catch(Exception e) {
-        	        				session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.ERROR);
-        	        				Logger.error(IntegrityResource.class, "Error checking integrity", e);
+                                    Logger.error(IntegrityResource.class, "Error checking integrity", e);
 
         	        				try {
 										HibernateUtil.rollbackTransaction();
@@ -358,12 +364,24 @@ public class IntegrityResource extends WebResource {
 										Logger.error(IntegrityResource.class, "Error while rolling back transaction", e);
 									}
 
+                                    //Setting the process status
+                                    setStatus( session, endpointId, ProcessStatus.ERROR, null );
         	        				throw new RuntimeException("Error checking integrity", e);
         	        			}
 
-
-        	        			session.setAttribute( "integrityCheck_" + endpointId, ProcessStatus.FINISHED );
-
+                                if ( !foldersConflicts && !structuresConflicts && !schemesConflicts ) {
+                                    String noConflictMessage;
+                                    try {
+                                        noConflictMessage = LanguageUtil.get( loggedUser.getLocale(), "push_publish_integrity_conflicts_not_found" );
+                                    } catch ( LanguageException e ) {
+                                        noConflictMessage = "No Integrity Conflicts found";
+                                    }
+                                    //Setting the process status
+                                    setStatus( session, endpointId, ProcessStatus.NO_CONFLICTS, noConflictMessage );
+                                } else {
+                                    //Setting the process status
+                                    setStatus( session, endpointId, ProcessStatus.FINISHED, null );
+                                }
 
         	        		} else if(response.getClientResponseStatus()==null && response.getStatus()==102) {
         	        			continue;
@@ -386,6 +404,8 @@ public class IntegrityResource extends WebResource {
              jsonResponse.put( "message", "Integrity Checking Initialized...");
 
         } catch(Exception e) {
+            //Setting the process status
+            setStatus( session, endpointId, ProcessStatus.ERROR, null );
         	Logger.error( this.getClass(), "Error initializing the integrity checking process for End Point server: [" + endpointId + "]", e );
         	return response( "Error initializing the integrity checking process for End Point server: [" + endpointId + "]" , true );
         }
@@ -446,9 +466,14 @@ public class IntegrityResource extends WebResource {
                 } else if ( status == ProcessStatus.FINISHED ) {
                     jsonResponse.put( "status", "finished" );
                     jsonResponse.put( "message", "Success" );
+                } else if ( status == ProcessStatus.NO_CONFLICTS ) {
+                    jsonResponse.put( "status", "noConflicts" );
+                    jsonResponse.put( "message", session.getAttribute( "integrityCheck_message_" + endpointId ) );
+                    clearStatus( request, endpointId );
                 } else {
                     jsonResponse.put( "status", "error" );
                     jsonResponse.put( "message", "Error checking the integrity process status for End Point server: [" + endpointId + "]" );
+                    clearStatus( request, endpointId );
                 }
             }
 
@@ -558,7 +583,7 @@ public class IntegrityResource extends WebResource {
 			}
 
             if(!isThereAnyConflict) {
-            	request.getSession().removeAttribute( "integrityCheck_" + endpointId);
+            	clearStatus( request, endpointId );
             }
 
             /*
@@ -569,9 +594,6 @@ public class IntegrityResource extends WebResource {
             jsonResponse.put( "message", "Success" );
 
             responseMessage.append( jsonResponse.toString() );
-
-            //TODO: Clean up the session?
-            //request.getSession().removeAttribute( "integrityCheck_" + endpointId );
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error generating the integrity result for End Point server: [" + endpointId + "]", e );
             return response( "Error generating the integrity result for End Point server: [" + endpointId + "]" , true );
@@ -616,7 +638,7 @@ public class IntegrityResource extends WebResource {
             IntegrityUtil integrityUtil = new IntegrityUtil();
             integrityUtil.discardConflicts(endpointId, IntegrityType.valueOf(type.toUpperCase()));
 
-            request.getSession().removeAttribute( "integrityCheck_" + endpointId);
+            clearStatus( request, endpointId );
 
             responseMessage.append( jsonResponse.toString() );
 
@@ -724,7 +746,7 @@ public class IntegrityResource extends WebResource {
             	jsonResponse.put( "success", true );
         		jsonResponse.put( "message", "Conflicts fixed in Local Endpoint" );
 
-        		request.getSession().removeAttribute( "integrityCheck_" + endpointId);
+        		clearStatus( request, endpointId );
 
             } else  if(whereToFix.equals("remote")) {
             	integrityUtil.generateDataToFixZip(endpointId, IntegrityType.valueOf(type.toUpperCase()));
@@ -754,7 +776,7 @@ public class IntegrityResource extends WebResource {
 
             		integrityUtil.discardConflicts(endpointId, IntegrityType.valueOf(type.toUpperCase()));
 
-            		request.getSession().removeAttribute( "integrityCheck_" + endpointId);
+            		clearStatus( request, endpointId );
 
 
     			} else {
@@ -782,6 +804,67 @@ public class IntegrityResource extends WebResource {
 		final Client client = Client.create(cc);
 		return client;
 	}
+
+    /**
+     * Removes the status for the checking integrity process of a given enpoint from session
+     *
+     * @param request
+     * @param endpointId
+     */
+    private void clearStatus ( HttpServletRequest request, String endpointId ) {
+        clearStatus( request.getSession(), endpointId );
+    }
+
+    /**
+     * Removes the status for the checking integrity process of a given enpoint from session
+     *
+     * @param session
+     * @param endpointId
+     */
+    private void clearStatus ( HttpSession session, String endpointId ) {
+        session.removeAttribute( "integrityCheck_" + endpointId );
+        session.removeAttribute( "integrityCheck_message_" + endpointId );
+    }
+
+    /**
+     * Sets the status for the checking integrity process of a given enpoint in session
+     *
+     * @param request
+     * @param endpointId
+     * @param status
+     */
+    private void setStatus ( HttpServletRequest request, String endpointId, ProcessStatus status ) {
+        setStatus( request, endpointId, status, null );
+    }
+
+    /**
+     * Sets the status for the checking integrity process of a given enpoint in session
+     *
+     * @param request
+     * @param endpointId
+     * @param status
+     * @param message
+     */
+    private void setStatus ( HttpServletRequest request, String endpointId, ProcessStatus status, String message ) {
+        setStatus( request.getSession(), endpointId, status, message );
+    }
+
+    /**
+     * Sets the status for the checking integrity process of a given enpoint in session
+     *
+     * @param session
+     * @param endpointId
+     * @param status
+     * @param message
+     */
+    private void setStatus ( HttpSession session, String endpointId, ProcessStatus status, String message ) {
+        session.setAttribute( "integrityCheck_" + endpointId, status );
+        if ( message != null ) {
+            session.setAttribute( "integrityCheck_message_" + endpointId, message );
+        } else {
+            session.removeAttribute( "integrityCheck_message_" + endpointId );
+        }
+    }
 
     /**
      * Prepares a Response object with a given response text. The creation depends if it is an error or not.
