@@ -22,7 +22,6 @@ import java.util.zip.ZipOutputStream;
 import com.csvreader.CsvReader;
 import com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource.IntegrityType;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -359,8 +358,10 @@ public class IntegrityUtil {
 			String tempTableName = getTempTableName(endpointId, IntegrityType.FOLDERS);
 
 			// lets create a temp table and insert all the records coming from the CSV file
+			String tempKeyword = getTempKeyword();
+			String tablePrefix = getTempTablePrefix();
 
-			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, parent_path varchar(255), "
+			String createTempTable = "create " +tempKeyword+ " table " + tablePrefix + tempTableName + " (inode varchar(36) not null, parent_path varchar(255), "
 					+ "asset_name varchar(255), host_identifier varchar(36) not null, primary key (inode) )";
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
@@ -405,7 +406,7 @@ public class IntegrityUtil {
 
 			if(!results.isEmpty()) {
 				// if we have conflicts, lets create a table out of them
-				final String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select iden.parent_path || iden.asset_name as folder, "
+				final String CREATE_RESULTS_TABLE = "create " +tempKeyword+ " table " + tablePrefix + resultsTableName + " as select iden.parent_path || iden.asset_name as folder, "
 						+ "c.title as host_name, f.inode as local_inode, ft.inode as remote_inode from identifier iden "
 						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
 						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
@@ -433,11 +434,10 @@ public class IntegrityUtil {
 			DotConnect dc = new DotConnect();
 			String tempTableName = getTempTableName(endpointId, IntegrityType.STRUCTURES);
 
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-				tempTableName = tempTableName.substring(0, 29);
-			}
+			String tempKeyword = getTempKeyword();
+			String tablePrefix = getTempTablePrefix();
 
-			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, velocity_var_name varchar(255), "
+			String createTempTable = "create " +tempKeyword+ " table " + tablePrefix + tempTableName + " (inode varchar(36) not null, velocity_var_name varchar(255), "
 					+ " primary key (inode) )";
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
@@ -476,7 +476,7 @@ public class IntegrityUtil {
 
 			if(!results.isEmpty()) {
 				// if we have conflicts, lets create a table out of them
-				String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.velocity_var_name as velocity_name, "
+				String CREATE_RESULTS_TABLE = "create " +tempKeyword+ " table " + tablePrefix + resultsTableName + "  as select s.velocity_var_name as velocity_name, "
 						+ "s.inode as local_inode, st.inode as remote_inode from structure s "
 						+ "join " + tempTableName + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode";
 
@@ -502,7 +502,11 @@ public class IntegrityUtil {
 			DotConnect dc = new DotConnect();
 			String tempTableName = getTempTableName(endpointId, IntegrityType.SCHEMES);
 
-			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, name varchar(255), "
+			String tempKeyword = getTempKeyword();
+			String tablePrefix = getTempTablePrefix();
+
+
+			String createTempTable = "create " +tempKeyword+ " table " + tablePrefix + tempTableName + " (inode varchar(36) not null, name varchar(255), "
 					+ " primary key (inode) )";
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
@@ -541,7 +545,7 @@ public class IntegrityUtil {
 
 			if(!results.isEmpty()) {
 				// if we have conflicts, lets create a table out of them
-				String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.name, s.id as local_inode, wt.inode as remote_inode from workflow_scheme s "
+				final String CREATE_RESULTS_TABLE = "create " +tempKeyword+ " table " + tablePrefix + resultsTableName +  " as select s.name, s.id as local_inode, wt.inode as remote_inode from workflow_scheme s "
 						+ "join " + tempTableName + " wt on s.name = wt.name and s.id <> wt.inode";
 
 				dc.executeStatement(CREATE_RESULTS_TABLE);
@@ -666,6 +670,30 @@ public class IntegrityUtil {
 		}
 
 		return resultsTableName;
+	}
+
+	private String getTempKeyword() {
+
+		String tempKeyword = "temporary";
+
+		if(DbConnectionFactory.isMsSql()) {
+			tempKeyword = "";
+		} else if(DbConnectionFactory.isOracle()) {
+			tempKeyword = "global " + tempKeyword;
+		}
+
+		return tempKeyword;
+	}
+
+	private String getTempTablePrefix() {
+
+		String tempPrefix = "";
+
+		if(DbConnectionFactory.isMsSql()) {
+			tempPrefix = "#";
+		}
+
+		return tempPrefix;
 	}
 
 	public Boolean doesIntegrityConflictsDataExist(String endpointId) throws Exception {
