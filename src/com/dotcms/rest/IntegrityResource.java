@@ -398,14 +398,18 @@ public class IntegrityResource extends WebResource {
         		integrityDataRequestChecker.start();
         		// call integrity checker process
 
-        	} else if(response.getStatus()==401) {
-        		setStatus( session, endpointId, ProcessStatus.ERROR, null );
-        		Logger.error( this.getClass(), "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: " + endpointId );
-        		return response( "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id:" + endpointId , true );
-        	}
+            } else if ( response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED ) {
+                setStatus( session, endpointId, ProcessStatus.ERROR, null );
+                Logger.error( this.getClass(), "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: " + endpointId );
+                return response( "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id:" + endpointId, true );
+            } else {
+                setStatus( session, endpointId, ProcessStatus.ERROR, null );
+                Logger.error( this.getClass(), "Response indicating a " + response.getClientResponseStatus().getReasonPhrase() + " (" + response.getClientResponseStatus().getStatusCode() + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: " + endpointId );
+                return response( "Response indicating a " + response.getClientResponseStatus().getReasonPhrase() + " (" + response.getClientResponseStatus().getStatusCode() + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: " + endpointId, true );
+            }
 
-        	 jsonResponse.put( "success", true );
-             jsonResponse.put( "message", "Integrity Checking Initialized...");
+            jsonResponse.put( "success", true );
+            jsonResponse.put( "message", "Integrity Checking Initialized..." );
 
         } catch(Exception e) {
             //Setting the process status
