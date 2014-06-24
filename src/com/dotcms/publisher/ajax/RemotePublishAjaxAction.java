@@ -36,6 +36,7 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.mapred.lib.Arrays;
 
 import javax.servlet.ServletException;
@@ -334,6 +335,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                     }
                 }
 
+                //Cleaning previous bundle folder and tar file to avoid sending modified data 
+                FileUtils.cleanDirectory(new File(bundlePath));
+                bundleFile.delete();
+                
                 //Now depending of the operation lets add it to the queue job
                 if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
                     publisherAPI.addContentsToPublish( new ArrayList<String>( identifiers ), bundleId, new Date(), getUser() );
