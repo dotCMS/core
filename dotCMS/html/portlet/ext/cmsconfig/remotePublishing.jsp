@@ -212,7 +212,7 @@
     * Verifies the status of a check integrity process for a given server
     * @param identifier
      */
-    function checkIntegrityProcessStatus(identifier) {
+    function checkIntegrityProcessStatus(identifier, callback) {
 
         var buttonId = 'checkIntegrityButton' + identifier;
         var resultsButtonId = 'getIntegrityResultsButton' + identifier;
@@ -295,8 +295,17 @@
                     });
                     dojo.byId(loadingId).hide();
                 }
+
+                if (callback && typeof(callback) === "function") {
+                    callback();
+                }
             },
             error: function (error) {
+
+                if (callback && typeof(callback) === "function") {
+                    callback();
+                }
+
                 showDotCMSSystemMessage(error.responseText, true);
 
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
@@ -440,8 +449,12 @@
         dojo.place(htmlContent, tabContentDiv, "only");
     }
 
-    function closeIntegrityResultsDialog(){
-        dijit.byId('integrityResultsDialog').hide();
+    function closeIntegrityResultsDialog(identifier) {
+        //Verify the status of the current process for this endpoint
+        checkIntegrityProcessStatus(identifier, function () {
+            //Close the dialog
+            dijit.byId('integrityResultsDialog').hide();
+        });
     }
 
     function fixConflicts(identifier, type) {
@@ -470,7 +483,6 @@
                     return;
                 }
 
-//                 closeIntegrityResultsDialog();
 				var message = localFix? "<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed_local")%>"
 						: "<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed_remote")%>"
 
@@ -503,7 +515,7 @@
                     return;
                 }
 
-                closeIntegrityResultsDialog();
+                closeIntegrityResultsDialog(identifier);
                 showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_discarded")%>", true);
 
             },
@@ -928,7 +940,7 @@
 				<button dojoType="dijit.form.Button" id="structuresDiscardButton"
 					onClick="discardConflicts(selectedEndpointId, 'structures')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_discard_conflicts")%></button>
-				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 			</div>
 		</div>
 
@@ -941,7 +953,7 @@
 				<button dojoType="dijit.form.Button" id="foldersDiscardButton"
 					onClick="discardConflicts(selectedEndpointId, 'folders')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_discard_conflicts")%></button>
-				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 			</div>
 		</div>
 
@@ -954,7 +966,7 @@
 				<button dojoType="dijit.form.Button" id="schemesDiscardButton"
 					onClick="discardConflicts(selectedEndpointId, 'schemes')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_discard_conflicts")%></button>
-				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 			</div>
 		</div>
 
