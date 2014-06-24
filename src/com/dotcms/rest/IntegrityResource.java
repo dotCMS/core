@@ -464,7 +464,7 @@ public class IntegrityResource extends WebResource {
                 jsonResponse.put( "success", true );
                 jsonResponse.put( "endPoint", endpointId );
                 if ( status == ProcessStatus.PROCESSING ) {
-                    jsonResponse.put( "status", "finished" );
+                    jsonResponse.put( "status", "processing" );
                     jsonResponse.put( "message", "Success" );
                 } else if ( status == ProcessStatus.FINISHED ) {
                     jsonResponse.put( "status", "finished" );
