@@ -398,6 +398,10 @@ public class IntegrityResource extends WebResource {
         		integrityDataRequestChecker.start();
         		// call integrity checker process
 
+        	} else if(response.getStatus()==401) {
+        		setStatus( session, endpointId, ProcessStatus.ERROR, null );
+        		Logger.error( this.getClass(), "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: " + endpointId );
+        		return response( "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id:" + endpointId , true );
         	}
 
         	 jsonResponse.put( "success", true );
