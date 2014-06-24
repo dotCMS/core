@@ -411,6 +411,11 @@ public class IntegrityUtil {
 						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
 
 				dc.executeStatement(CREATE_RESULTS_TABLE);
+
+				if(DbConnectionFactory.isH2()) {
+					dc.executeStatement("alter table " + resultsTableName + " alter column local_inode varchar(36) not null ");
+				}
+
 				dc.executeStatement("alter table " + resultsTableName + " add primary key (local_inode)");
 			}
 
@@ -480,6 +485,11 @@ public class IntegrityUtil {
 						+ "join " + tempTableName + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode";
 
 				dc.executeStatement(CREATE_RESULTS_TABLE);
+
+				if(DbConnectionFactory.isH2()) {
+					dc.executeStatement("alter table " + resultsTableName + " alter column local_inode varchar(36) not null ");
+				}
+
 				dc.executeStatement("alter table " + resultsTableName + " add primary key (local_inode)");
 			}
 
@@ -544,6 +554,11 @@ public class IntegrityUtil {
 						+ "join " + tempTableName + " wt on s.name = wt.name and s.id <> wt.inode";
 
 				dc.executeStatement(CREATE_RESULTS_TABLE);
+
+				if(DbConnectionFactory.isH2()) {
+					dc.executeStatement("alter table " + resultsTableName + " alter column local_inode varchar(36) not null ");
+				}
+
 				dc.executeStatement("alter table " + resultsTableName + " add primary key (local_inode)");
 
 			}
@@ -697,6 +712,10 @@ public class IntegrityUtil {
 		} else if(DbConnectionFactory.isMySql()) {
 			dc.setSQL("SHOW TABLES LIKE '"+tableName+"'");
 			return !dc.loadObjectResults().isEmpty();
+		} else if(DbConnectionFactory.isH2()) {
+			dc.setSQL("SELECT COUNT(1) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName.toUpperCase()+"' ");
+			long existTable = (Long)dc.loadObjectResults().get(0).get("exist");
+			return existTable > 0;
 		}
 
 		return false;
@@ -752,14 +771,7 @@ public class IntegrityUtil {
             //Update the inode
             updateFrom( dc, tableName, "inode", "inode" );
             //Update the structure
-            if ( DbConnectionFactory.isMySql() ) {
-                dc.executeStatement( "UPDATE structure JOIN " + tableName + " ir on structure.folder = ir.local_inode SET structure.folder = ir.remote_inode" );
-            } else if ( DbConnectionFactory.isOracle()) {
-                updateFrom( dc, tableName, "structure", "folder" );
-            } else {
-                dc.executeStatement( "UPDATE structure SET folder = ir.remote_inode FROM " + tableName + " ir WHERE structure.folder = ir.local_inode" );
-            }
-
+            updateFrom( dc, tableName, "structure", "folder" );
             //permission
             updateFrom( dc, tableName, "permission", "inode_id" );
             //permission_reference
@@ -806,12 +818,13 @@ public class IntegrityUtil {
             } else {
                 dc.executeStatement( "alter table structure drop constraint fk89d2d735fb51eb" );
                 dc.executeStatement( "alter table contentlet drop constraint fk_structure_inode" );
-                dc.executeStatement( "alter table containers drop constraint structure_fk" );
             }
             if ( DbConnectionFactory.isMsSql() ) {
                 dc.executeStatement( "alter table workflow_scheme_x_structure nocheck constraint all" );
             } else if ( DbConnectionFactory.isOracle() ) {
                 enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", false );
+            } else if ( DbConnectionFactory.isH2() ) {
+            	dc.executeStatement( "alter table workflow_scheme_x_structure SET REFERENTIAL_INTEGRITY FALSE" );
             } else if ( !DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey" );
                 dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_structure_id_fkey ");
@@ -827,8 +840,6 @@ public class IntegrityUtil {
             updateFrom( dc, tableName, "contentlet", "structure_inode" );
             //field
             updateFrom( dc, tableName, "field", "structure_inode" );
-            //containers
-            updateFrom( dc, tableName, "containers", "structure_inode" );
             //relationship
             updateFrom( dc, tableName, "relationship", "parent_structure_inode" );
             updateFrom( dc, tableName, "relationship", "child_structure_inode" );
@@ -848,11 +859,13 @@ public class IntegrityUtil {
                 //Add back the constrains
                 dc.executeStatement( "ALTER TABLE structure add constraint fk89d2d735fb51eb foreign key (inode) references inode (inode)" );
                 dc.executeStatement( "ALTER TABLE contentlet add constraint fk_structure_inode foreign key (structure_inode) references structure (inode)" );
-                dc.executeStatement( "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure (inode)" );
+
                 if ( DbConnectionFactory.isMsSql()) {
                     dc.executeStatement( "alter table workflow_scheme_x_structure with check check constraint all" );
                 } else if ( DbConnectionFactory.isOracle() ) {
                     enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", true );
+                } else if ( DbConnectionFactory.isH2() ) {
+                	dc.executeStatement( "alter table workflow_scheme_x_structure SET REFERENTIAL_INTEGRITY TRUE" );
                 } else if ( !DbConnectionFactory.isMySql() ) {
                     dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
                     dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_structure_id_fkey FOREIGN KEY (structure_id) REFERENCES structure (inode)" );
@@ -886,6 +899,10 @@ public class IntegrityUtil {
                 enableDisableOracleConstrains( dc, "workflow_step", false );
                 enableDisableOracleConstrains( dc, "workflow_scheme", false );
                 enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", false );
+            } else if ( DbConnectionFactory.isH2() ) {
+            	dc.executeStatement( "alter table workflow_scheme SET REFERENTIAL_INTEGRITY FALSE" );
+            	dc.executeStatement( "alter table workflow_step SET REFERENTIAL_INTEGRITY FALSE" );
+            	dc.executeStatement( "alter table workflow_scheme_x_structure SET REFERENTIAL_INTEGRITY FALSE" );
             } else if ( !DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "ALTER TABLE workflow_step DROP CONSTRAINT workflow_step_scheme_id_fkey" );
                 dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey" );
@@ -913,7 +930,11 @@ public class IntegrityUtil {
                     enableDisableOracleConstrains( dc, "workflow_step", true );
                     enableDisableOracleConstrains( dc, "workflow_scheme", true );
                     enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", true );
-                } else if ( !DbConnectionFactory.isMySql() ) {
+                } else if ( DbConnectionFactory.isH2() ) {
+                	dc.executeStatement( "alter table workflow_scheme SET REFERENTIAL_INTEGRITY TRUE" );
+                	dc.executeStatement( "alter table workflow_step SET REFERENTIAL_INTEGRITY TRUE" );
+                	dc.executeStatement( "alter table workflow_scheme_x_structure SET REFERENTIAL_INTEGRITY TRUE" );
+                }else if ( !DbConnectionFactory.isMySql() ) {
                     dc.executeStatement( "ALTER TABLE workflow_step ADD CONSTRAINT workflow_step_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
                     dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
                 }
@@ -941,6 +962,9 @@ public class IntegrityUtil {
             dotConnect.executeStatement( "UPDATE " + updateTable +
                     " SET " + updateColumn + " = (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode)" +
                     " WHERE exists (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode)" );
+        } else if ( DbConnectionFactory.isH2() ) {
+        	dotConnect.executeStatement( "UPDATE " + updateTable + " ut SET " + updateColumn + " = (select ir.remote_inode FROM " + resultsTable + " ir WHERE ut." + updateColumn + " = ir.local_inode)"
+        			+ " where exists (select * from " + resultsTable + " ir where ut." + updateColumn + " = ir.local_inode)" );
         } else {
             dotConnect.executeStatement( "UPDATE " + updateTable + " SET " + updateColumn + " = ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode" );
         }
