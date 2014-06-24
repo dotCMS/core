@@ -29,13 +29,13 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItem;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemFactory;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileUploadException;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.hadoop_0_20_3_dev_core.org.apache.hadoop.mapred.lib.Arrays;
 
 import javax.servlet.ServletException;
@@ -340,6 +340,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                     }
                 }
 
+                //Cleaning previous bundle folder and tar file to avoid sending modified data 
+                FileUtils.cleanDirectory(new File(bundlePath));
+                bundleFile.delete();
+                
                 //Now depending of the operation lets add it to the queue job
                 if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
                     publisherAPI.addContentsToPublish( new ArrayList<String>( identifiers ), bundleId, new Date(), getUser() );

@@ -13,8 +13,9 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.exception.ExceptionUtils;
+
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 
@@ -231,6 +232,12 @@ public class BundlePublisher extends Publisher {
         FileOutputStream outputStream = null;
 
         try {
+        	//Clean the bundler folder if exist to clean dirty data
+        	String previousFolderPath = path.replace(fileName, "");
+        	File previousFolder = new File(previousFolderPath);
+        	if(previousFolder.exists()){
+        		FileUtils.cleanDirectory(previousFolder);
+        	}
             // get a stream to tar file
             InputStream gstream = new GZIPInputStream( bundle );
             inputStream = new TarInputStream( gstream );
