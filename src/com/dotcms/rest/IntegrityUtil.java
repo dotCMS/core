@@ -360,9 +360,8 @@ public class IntegrityUtil {
 
 			// lets create a temp table and insert all the records coming from the CSV file
 			String tempKeyword = getTempKeyword();
-			String tablePrefix = getTempTablePrefix();
 
-			String createTempTable = "create " +tempKeyword+ " table " + tablePrefix + tempTableName + " (inode varchar(36) not null, parent_path varchar(255), "
+			String createTempTable = "create " +tempKeyword+ " table " + tempTableName + " (inode varchar(36) not null, parent_path varchar(255), "
 					+ "asset_name varchar(255), host_identifier varchar(36) not null, primary key (inode) )" + (DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":"");
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
@@ -397,8 +396,7 @@ public class IntegrityUtil {
 			String resultsTableName = getResultsTableName(IntegrityType.FOLDERS);
 
 			// compare the data from the CSV to the local db data and see if we have conflicts
-			dc.setSQL("select iden.parent_path || iden.asset_name as folder, "
-						+ "c.title as host_name, f.inode as local_inode, ft.inode as remote_inode from identifier iden "
+			dc.setSQL("select 1 from identifier iden "
 						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
 						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
 						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
@@ -408,7 +406,15 @@ public class IntegrityUtil {
 			if(!results.isEmpty()) {
 				// if we have conflicts, lets create a table out of them
 
-				final String INSERT_INTO_RESULTS_TABLE = "insert into " +resultsTableName+ " select c.title || iden.parent_path || iden.asset_name as folder, "
+				String fullFolder = " c.title || iden.parent_path || iden.asset_name ";
+
+				if(DbConnectionFactory.isMySql()) {
+					fullFolder = " concat(c.title,iden.parent_path,iden.asset_name) ";
+				} else if(DbConnectionFactory.isMsSql()) {
+					fullFolder = " c.title + iden.parent_path + iden.asset_name ";
+				}
+
+				final String INSERT_INTO_RESULTS_TABLE = "insert into " +resultsTableName+ " select " + fullFolder + " as folder, "
 						+ "f.inode as local_inode, ft.inode as remote_inode, '" +endpointId+ "' from identifier iden "
 						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
 						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
@@ -440,9 +446,8 @@ public class IntegrityUtil {
 			String tempTableName = getTempTableName(endpointId, IntegrityType.STRUCTURES);
 
 			String tempKeyword = getTempKeyword();
-			String tablePrefix = getTempTablePrefix();
 
-			String createTempTable = "create " +tempKeyword+ " table " + tablePrefix + tempTableName + " (inode varchar(36) not null, velocity_var_name varchar(255), "
+			String createTempTable = "create " +tempKeyword+ " table " + tempTableName + " (inode varchar(36) not null, velocity_var_name varchar(255), "
 					+ " primary key (inode) )";
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
@@ -504,10 +509,8 @@ public class IntegrityUtil {
 			String tempTableName = getTempTableName(endpointId, IntegrityType.SCHEMES);
 
 			String tempKeyword = getTempKeyword();
-			String tablePrefix = getTempTablePrefix();
 
-
-			String createTempTable = "create " +tempKeyword+ " table " + tablePrefix + tempTableName + " (inode varchar(36) not null, name varchar(255), "
+			String createTempTable = "create " +tempKeyword+ " table " + tempTableName + " (inode varchar(36) not null, name varchar(255), "
 					+ " primary key (inode) )";
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
@@ -658,6 +661,8 @@ public class IntegrityUtil {
 
 		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
 			resultsTableName = resultsTableName.substring(0, 29);
+		} else if(DbConnectionFactory.isMsSql()) {
+			resultsTableName = "#" + resultsTableName;
 		}
 
 		return resultsTableName;
@@ -679,17 +684,6 @@ public class IntegrityUtil {
 		}
 
 		return tempKeyword;
-	}
-
-	private String getTempTablePrefix() {
-
-		String tempPrefix = "";
-
-		if(DbConnectionFactory.isMsSql()) {
-			tempPrefix = "#";
-		}
-
-		return tempPrefix;
 	}
 
 	public Boolean doesIntegrityConflictsDataExist(String endpointId) throws Exception {
@@ -727,7 +721,7 @@ public class IntegrityUtil {
 			dc.setSQL("SELECT COUNT(*) as exist FROM user_tables WHERE table_name='"+tableName.toUpperCase()+"'");
 			BigDecimal existTable = (BigDecimal)dc.loadObjectResults().get(0).get("exist");
 			return existTable.longValue() > 0;
-		} else if(DbConnectionFactory.isPostgres()) {
+		} else if(DbConnectionFactory.isPostgres() || DbConnectionFactory.isMySql()) {
 			dc.setSQL("SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName+"' ");
 			long existTable = (Long)dc.loadObjectResults().get(0).get("exist");
 			return existTable > 0;
@@ -735,9 +729,6 @@ public class IntegrityUtil {
 			dc.setSQL("SELECT COUNT(*) as exist FROM sysobjects WHERE name = '"+tableName+"'");
 			int existTable = (Integer)dc.loadObjectResults().get(0).get("exist");
 			return existTable > 0;
-		} else if(DbConnectionFactory.isMySql()) {
-			dc.setSQL("SHOW TABLES LIKE '"+tableName+"'");
-			return !dc.loadObjectResults().isEmpty();
 		}
 
 		return false;
