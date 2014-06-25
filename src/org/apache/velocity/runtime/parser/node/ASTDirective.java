@@ -29,9 +29,9 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeServices;
+import org.apache.velocity.runtime.directive.BlockMacro;
 import org.apache.velocity.runtime.directive.Directive;
 import org.apache.velocity.runtime.directive.RuntimeMacro;
-import org.apache.velocity.runtime.directive.BlockMacro;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.ExceptionUtils;
@@ -54,11 +54,11 @@ import com.dotmarketing.util.VelocityUtil;
  */
 public class ASTDirective extends SimpleNode
 {
+    private static final long serialVersionUID = -1770606067556493952L;
     private Directive directive = null;
     private String directiveName = "";
     private boolean isDirective;
     private boolean isInitialized;
-    private Parser parser=null;
 
     /**
      * @param id
@@ -75,7 +75,6 @@ public class ASTDirective extends SimpleNode
     public ASTDirective(Parser p, int id)
     {
         super(p, id);
-        parser=p;
     }
 
 
@@ -103,27 +102,27 @@ public class ASTDirective extends SimpleNode
              *  only do things that are not context dependent
              */
     
-            if (parser.isDirective( directiveName ))
+            if (rsvc.getDirective(directiveName) !=null )
             {
                 isDirective = true;
     
                 try
                 {
-                    directive = (Directive) parser.getDirective( directiveName )
+                    directive = (Directive) rsvc.getDirective(directiveName)
                         .getClass().newInstance();
                 } 
                 catch (InstantiationException e)
                 {
                     throw ExceptionUtils.createRuntimeException("Couldn't initialize " +
                             "directive of class " +
-                            parser.getDirective(directiveName).getClass().getName(),
+                            rsvc.getDirective(directiveName).getClass().getName(),
                             e);
                 }
                 catch (IllegalAccessException e)
                 {
                     throw ExceptionUtils.createRuntimeException("Couldn't initialize " +
                             "directive of class " +
-                            parser.getDirective(directiveName).getClass().getName(),
+                            rsvc.getDirective(directiveName).getClass().getName(),
                             e);
                 }
                         
@@ -193,7 +192,6 @@ public class ASTDirective extends SimpleNode
             
             isInitialized = true;
         }
-        parser=null;
            
         return data;
     }

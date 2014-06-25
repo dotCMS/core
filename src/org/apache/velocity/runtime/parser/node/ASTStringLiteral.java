@@ -98,17 +98,17 @@ public class ASTStringLiteral extends SimpleNode
          * has a directive or reference, then we can interpolate. Otherwise,
          * don't bother.
          */
-
+        Token ff=tokens.get(0);
         interpolate = rsvc.getBoolean(
                 RuntimeConstants.INTERPOLATE_STRINGLITERALS, true)
-                && getFirstToken().image.startsWith("\"")
-                && ((getFirstToken().image.indexOf('$') != -1) || (getFirstToken().image
+                && ff.image.startsWith("\"")
+                && ((ff.image.indexOf('$') != -1) || (ff.image
                         .indexOf('#') != -1));
 
         /*
          * get the contents of the string, minus the '/" at each end
          */
-        String img = getFirstToken().image;
+        String img = ff.image;
         
         image = img.substring(1, img.length() - 1);
         
@@ -190,7 +190,7 @@ public class ASTStringLiteral extends SimpleNode
             
             // we really don't need those anymore in this case
             image="";
-            getFirstToken().image="";
+            tokens.get(0).image="";
         }
 
         return data;
@@ -206,9 +206,8 @@ public class ASTStringLiteral extends SimpleNode
      */
     public void adjTokenLineNums(Node node)
     {
-        Token tok = node.getFirstToken();
         // Test against null is probably not neccessary, but just being safe
-        while(tok != null && tok != node.getLastToken())
+        for(Token tok : node.getTokens())
         {
             // If tok is on the first line, then the actual column is 
             // offset by the template column.
@@ -221,7 +220,6 @@ public class ASTStringLiteral extends SimpleNode
             
             tok.beginLine += getLine()- 1;
             tok.endLine += getLine() - 1;
-            tok = tok.next;
         }
     }
 
