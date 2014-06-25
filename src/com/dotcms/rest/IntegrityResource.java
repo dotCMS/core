@@ -699,10 +699,17 @@ public class IntegrityResource extends WebResource {
         	}
 
             IntegrityUtil integrityUtil = new IntegrityUtil();
+            HibernateUtil.startTransaction();
             integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(), IntegrityType.valueOf(type.toUpperCase()) );
+            HibernateUtil.commitTransaction();
 
 
         } catch ( Exception e ) {
+        	try {
+				HibernateUtil.rollbackTransaction();
+			} catch (DotHibernateException e1) {
+				Logger.error(IntegrityResource.class, "Error while rolling back transaction", e);
+			}
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts from remote", e );
             return response( "Error fixing "+type+" conflicts from remote" , true );
         }
