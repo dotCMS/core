@@ -36,9 +36,6 @@ import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
 
-import com.dotmarketing.portlets.contentlet.business.Contentlet;
-import com.dotmarketing.util.Logger;
-
 /**
  *
  */
@@ -152,9 +149,6 @@ public class SimpleNode implements Node, Serializable
         return parent;
     }
     
-    public Node[] getChildren() {
-        return children;
-    }
 
     /**
      * @see org.apache.velocity.runtime.parser.node.Node#jjtAddChild(org.apache.velocity.runtime.parser.node.Node, int)
