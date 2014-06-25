@@ -5,8 +5,8 @@ import java.io.FileReader;
 import java.io.ObjectOutputStream;
 
 import org.apache.velocity.app.VelocityEngine;
-import org.junit.Test;
 
+import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.VelocityUtil;
