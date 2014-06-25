@@ -463,7 +463,7 @@ public class IntegrityResource extends WebResource {
     @GET
     @Path ("/cancelIntegrityProcess/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response cancelIntegrityProcess ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
+    public Response cancelIntegrityProcess ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
         StringBuilder responseMessage = new StringBuilder();
 
@@ -556,8 +556,9 @@ public class IntegrityResource extends WebResource {
      * @param requestId
      * @return
      */
-    @GET
-    @Path ("/cancelIntegrityProcessOnEndpoint/{params:.*}")
+    @POST
+    @Path("/cancelIntegrityProcessOnEndpoint/{params:.*}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces (MediaType.APPLICATION_JSON)
     public Response cancelIntegrityProcessOnEndpoint ( @Context HttpServletRequest request, @FormDataParam ("AUTH_TOKEN") String auth_token_enc, @FormDataParam ("REQUEST_ID") String requestId ) {
 
@@ -1021,6 +1022,7 @@ public class IntegrityResource extends WebResource {
     private void clearStatus ( HttpSession session, String endpointId ) {
         session.removeAttribute( "integrityCheck_" + endpointId );
         session.removeAttribute( "integrityCheck_message_" + endpointId );
+        clearThreadInSession( session, endpointId );
     }
 
     /**
@@ -1070,7 +1072,17 @@ public class IntegrityResource extends WebResource {
      * @param endpointId
      */
     private void clearThreadInSession ( HttpServletRequest request, String endpointId ) {
-        request.getSession().removeAttribute( "integrityThread_" + endpointId );
+        clearThreadInSession( request.getSession(), endpointId );
+    }
+
+    /**
+     * Removes the integrity checking thread from session and a given endpoint id
+     *
+     * @param session
+     * @param endpointId
+     */
+    private void clearThreadInSession ( HttpSession session, String endpointId ) {
+        session.removeAttribute( "integrityThread_" + endpointId );
     }
 
     /**
