@@ -21,6 +21,7 @@ package org.apache.velocity.runtime.parser.node;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -111,11 +112,12 @@ public interface Node extends Renderable
     /**
      * @return The first token.
      */
-    public Token getFirstToken();
+    //public Token getFirstToken();
     /**
      * @return The last token.
      */
-    public Token getLastToken();
+    //public Token getLastToken();
+    public List<Token> getTokens();
     /**
      * @return The NodeType.
      */

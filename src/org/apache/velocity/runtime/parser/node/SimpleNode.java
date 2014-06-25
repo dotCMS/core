@@ -22,6 +22,8 @@ package org.apache.velocity.runtime.parser.node;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.text.StrBuilder;
@@ -31,11 +33,11 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.runtime.parser.Token;
 
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.portlets.contentlet.business.Contentlet;
+import com.dotmarketing.util.Logger;
 
 /**
  *
@@ -67,10 +69,9 @@ public class SimpleNode implements Node, Serializable
     protected boolean invalid = false;
 
     /** */
-    protected Token first;
-
-    /** */
-    protected Token last;
+    private transient Token jjtFirst;    
+    
+    protected List<Token> tokens;
     
     
     protected String templateName;
@@ -100,7 +101,7 @@ public class SimpleNode implements Node, Serializable
      */
     public void jjtOpen()
     {
-        first = parser.getToken(1); // added
+        jjtFirst = parser.getToken(1); // added
     }
 
     /**
@@ -108,34 +109,33 @@ public class SimpleNode implements Node, Serializable
      */
     public void jjtClose()
     {
-        last = parser.getToken(0); // added
+        Token last = parser.getToken(0); // added
         parser = null;
+        
+        tokens=new ArrayList<Token>();
+        Token t=jjtFirst;
+        while(t!=null) {
+            Token n=new Token();
+            n.beginColumn=t.beginColumn; n.endColumn=t.endColumn;
+            n.beginLine=t.beginLine; n.image=t.image;
+            n.kind=t.kind; n.endLine=t.endLine;
+            n.specialToken=t.specialToken;
+            tokens.add(n);
+            
+            if(t==last) {
+                break;
+            }
+            else {
+                t=t.next;
+            }
+        }
+        jjtFirst=null;
     }
-
-    /**
-     * @param t
-     */
-    public void setFirstToken(Token t)
-    {
-        this.first = t;
+    
+    public List<Token> getTokens() {
+        return tokens;
     }
-
-    /**
-     * @see org.apache.velocity.runtime.parser.node.Node#getFirstToken()
-     */
-    public Token getFirstToken()
-    {
-        return first;
-    }
-
-    /**
-     * @see org.apache.velocity.runtime.parser.node.Node#getLastToken()
-     */
-    public Token getLastToken()
-    {
-        return last;
-    }
-
+    
     /**
      * @see org.apache.velocity.runtime.parser.node.Node#jjtSetParent(org.apache.velocity.runtime.parser.node.Node)
      */
@@ -150,6 +150,10 @@ public class SimpleNode implements Node, Serializable
     public Node jjtGetParent()
     {
         return parent;
+    }
+    
+    public Node[] getChildren() {
+        return children;
     }
 
     /**
@@ -269,18 +273,16 @@ public class SimpleNode implements Node, Serializable
     {
         // if we have only one string, just return it and avoid
         // buffer allocation. VELOCITY-606
-        if (first == last)
+        if (tokens.size()==1)
         {
-            return NodeUtils.tokenLiteral(first);
+            return NodeUtils.tokenLiteral(tokens.get(0));
         }
 
-        Token t = first;
-        StrBuilder sb = new StrBuilder(NodeUtils.tokenLiteral(t));
-        while (t != last)
-        {
-            t = t.next;
+        StrBuilder sb = new StrBuilder();
+        for(Token t : tokens) {
             sb.append(NodeUtils.tokenLiteral(t));
         }
+        
         return sb.toString();
     }
 
@@ -390,7 +392,7 @@ public class SimpleNode implements Node, Serializable
      */
     public int getLine()
     {
-        return first.beginLine;
+        return tokens.get(0).beginLine;
     }
 
     /**
@@ -398,7 +400,7 @@ public class SimpleNode implements Node, Serializable
      */
     public int getColumn()
     {
-        return first.beginColumn;
+        return tokens.get(0).beginColumn;
     }
     
     /**
@@ -406,31 +408,21 @@ public class SimpleNode implements Node, Serializable
      */
     public String toString()
     {
-        StrBuilder tokens = new StrBuilder();
+        StrBuilder str = new StrBuilder();
         
-        for (Token t = getFirstToken(); t != null; )
-        {
-            tokens.append("[").append(t.image).append("]");
-            if (t.next != null)
-            {
-                if (t.equals(getLastToken()))
-                {
-                    break;
-                }
-                else
-                {
-                    tokens.append(", ");
-                }
-            }
-            t = t.next;
+        boolean first = true;
+        for(Token t : tokens) {
+            str.append("[").append(t.image).append("]");
+            
+            if(first) first=false; else str.append(", ");
         }
-
+        
         return new ToStringBuilder(this)
             .append("id", getType())
             .append("info", getInfo())
             .append("invalid", isInvalid())
             .append("children", jjtGetNumChildren())
-            .append("tokens", tokens)
+            .append("tokens", str)
             .toString();
     }
 

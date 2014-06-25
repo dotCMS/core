@@ -70,9 +70,8 @@ public class ASTTextblock extends SimpleNode
     public Object init( InternalContextAdapter context, Object data)
     throws TemplateInitException
     {
-        Token t = getFirstToken();
         
-        String text = t.image;
+        String text = tokens.get(0).image;
         
         // t.image is in format: #% <string> %#
         // we must strip away the hash tags

@@ -115,7 +115,7 @@ public class ASTMethod extends SimpleNode
          *  this is about all we can do
          */
 
-        methodName = getFirstToken().image;
+        methodName = tokens.get(0).image;
         paramCount = jjtGetNumChildren() - 1;
         
         RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
