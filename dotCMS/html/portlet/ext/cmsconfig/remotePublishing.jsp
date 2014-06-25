@@ -304,12 +304,19 @@
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                     });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
+                    });
                     dojo.byId(loadingId).hide();
                     return;
                 }
 
                 var status = data.status;
                 if (status == "processing") {//Still processing, check again in 30 seconds
+
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', '');
+                    });
 
                     //Verify again in 30 seconds
                     setTimeout(function () {

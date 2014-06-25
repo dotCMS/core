@@ -415,8 +415,9 @@ public class IntegrityResource extends WebResource {
         		    }
         		};
 
+                //Start the integrity check
         		integrityDataRequestChecker.start();
-        		// call integrity checker process
+                addThreadToSession( session, integrityDataRequestChecker, endpointId, integrityDataRequestID );
 
             } else if ( response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED ) {
                 setStatus( session, endpointId, ProcessStatus.ERROR, null );
@@ -501,12 +502,17 @@ public class IntegrityResource extends WebResource {
                 jsonResponse.put( "endPoint", endpointId );
                 if ( status == ProcessStatus.PROCESSING ) {
 
+                    //Get the thread associated to this endpoint and the integrity request id
+                    Thread runningThread = (Thread) session.getAttribute( "integrityThread_" + endpointId );
+                    String integrityDataRequestId = (String) session.getAttribute( "integrityDataRequest_" + endpointId );
+
                     //Find the registered auth token in order to connect to the end point server
                     PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById( endpointId );
                     String authToken = PushPublisher.retriveKeyString( PublicEncryptionFactory.decryptString( endpoint.getAuthKey().toString() ) );
 
                     FormDataMultiPart form = new FormDataMultiPart();
                     form.field( "AUTH_TOKEN", authToken );
+                    form.field( "REQUEST_ID", integrityDataRequestId );
 
                     //Prepare the connection
                     Client client = getRESTClient();
@@ -522,9 +528,7 @@ public class IntegrityResource extends WebResource {
                         Logger.error( this.getClass(), "Response indicating a " + response.getClientResponseStatus().getReasonPhrase() + " (" + response.getClientResponseStatus().getStatusCode() + ") Error trying to interrupt the running process on the Endpoint [ " + endpointId + "]." );
                     }
 
-                    //Get the thread associated to this enpoint
-                    Thread runningThread = (Thread) session.getAttribute( "integrityThread_" + endpointId );
-                    //Interrupt the process
+                    //Interrupt the Thread process
                     runningThread.interrupt();
 
                     //Remove the thread from the session
@@ -591,10 +595,14 @@ public class IntegrityResource extends WebResource {
             if ( UtilMethods.isSet( integrityDataGeneratorStatus ) ) {
                 switch ( integrityDataGeneratorStatus ) {
                     case PROCESSING:
-                        //Saving the thread on the session context for a later use
+
+                        //Verify if the thread is on the session for this given request id
                         if ( servletContext.getAttribute( "integrityDataGeneratorThread_" + requestId ) != null ) {
+
+                            //If found interrupt the process
                             IntegrityDataGeneratorThread integrityDataGeneratorThread = (IntegrityDataGeneratorThread) servletContext.getAttribute( "integrityDataGeneratorThread_" + requestId );
                             integrityDataGeneratorThread.interrupt();
+                            servletContext.removeAttribute( "integrityDataGeneratorThread_" + requestId );
                         }
                     default:
                         break;
@@ -1083,6 +1091,7 @@ public class IntegrityResource extends WebResource {
      */
     private void clearThreadInSession ( HttpSession session, String endpointId ) {
         session.removeAttribute( "integrityThread_" + endpointId );
+        session.removeAttribute( "integrityDataRequest_" + endpointId );
     }
 
     /**
@@ -1091,9 +1100,10 @@ public class IntegrityResource extends WebResource {
      * @param request
      * @param thread
      * @param endpointId
+     * @param integrityDataRequestID
      */
-    private void addThreadToSession ( HttpServletRequest request, Thread thread, String endpointId ) {
-        addThreadToSession( request.getSession(), thread, endpointId );
+    private void addThreadToSession ( HttpServletRequest request, Thread thread, String endpointId, String integrityDataRequestID ) {
+        addThreadToSession( request.getSession(), thread, endpointId, integrityDataRequestID );
     }
 
     /**
@@ -1102,9 +1112,11 @@ public class IntegrityResource extends WebResource {
      * @param session
      * @param thread
      * @param endpointId
+     * @param integrityDataRequestID
      */
-    private void addThreadToSession ( HttpSession session, Thread thread, String endpointId ) {
+    private void addThreadToSession ( HttpSession session, Thread thread, String endpointId, String integrityDataRequestID ) {
         session.setAttribute( "integrityThread_" + endpointId, thread );
+        session.setAttribute( "integrityDataRequest_" + endpointId, integrityDataRequestID );
     }
 
     /**
