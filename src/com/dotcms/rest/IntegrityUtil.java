@@ -164,7 +164,7 @@ public class IntegrityUtil {
 			String resultsTable = getResultsTableName(type);
 
 			statement = conn.prepareStatement("select remote_inode, local_inode from " + resultsTable + " where endpoint_id = ?");
-			statement.setString(0, endpointId);
+			statement.setString(1, endpointId);
 			rs = statement.executeQuery();
 			int count = 0;
 
@@ -967,7 +967,7 @@ public class IntegrityUtil {
         } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
             dotConnect.executeStatement( "UPDATE " + updateTable +
                     " SET " + updateColumn + " = (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id)" +
-                    " WHERE exists (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and "+endpointId+" = ir.endpoint_id)" );
+                    " WHERE exists (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id)" );
         } else {
             dotConnect.executeStatement( "UPDATE " + updateTable + " SET " + updateColumn + " = ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id" );
         }
