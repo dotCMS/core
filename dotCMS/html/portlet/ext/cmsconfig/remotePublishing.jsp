@@ -857,7 +857,7 @@
 	                        <div class="buttonsGroup">
 
                                 <%if(environment.getPushToAll() || i == 0){%>
-                                <div class="integrityCheckActionsGroup" style="float:right" id="group-<%=endpoint.getId()%>">
+                                <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
                                     <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
                                         <%= LanguageUtil.get(pageContext,"CheckIntegrity") %>
                                     </button>
@@ -868,7 +868,7 @@
                                         <font class="bg" size="2"> <b><%= LanguageUtil.get(pageContext, "Loading") %></b> <br />
                                             <img src="/html/images/icons/processing.gif" /></font>
                                     </div>
-                                    <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="display: none;">
+                                    <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="padding-left:10px; padding-top:5px; display:none;">
                                         <%= LanguageUtil.get(pageContext,"cancel") %>
                                     </button>
                                 </div>
