@@ -409,6 +409,8 @@ public class IntegrityResource extends WebResource {
                                 //Setting the process status
                                 setStatus( session, endpointId, ProcessStatus.CANCELED, null );
                             } else {
+                                setStatus( session, endpointId, ProcessStatus.ERROR, null );
+                                Logger.error( this.getClass(), "Response indicating a " + response.getClientResponseStatus().getReasonPhrase() + " (" + response.getClientResponseStatus().getStatusCode() + ") Error trying to retrieve the Integrity data from the Endpoint [" + endpointId + "]." );
                                 processing = false;
                             }
                         }
@@ -603,6 +605,8 @@ public class IntegrityResource extends WebResource {
                             IntegrityDataGeneratorThread integrityDataGeneratorThread = (IntegrityDataGeneratorThread) servletContext.getAttribute( "integrityDataGeneratorThread_" + requestId );
                             integrityDataGeneratorThread.interrupt();
                             servletContext.removeAttribute( "integrityDataGeneratorThread_" + requestId );
+
+                            return Response.status( HttpStatus.SC_RESET_CONTENT ).entity( "Interrupted checking process on End Point server ( " + remoteIP + ")." ).build();
                         }
                     default:
                         break;
