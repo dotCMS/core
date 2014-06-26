@@ -36,8 +36,8 @@ public class IntegrityDataGeneratorThread extends Thread {
                 //Setting the process status
                 servletContext.setAttribute( "integrityDataGenerationStatus", ProcessStatus.CANCELED );
                 servletContext.setAttribute( "integrityDataGenerationError", e.getMessage() );
-                Logger.error( IntegrityDataGeneratorThread.class, "Interrupted generating data to check.", e );
-                throw new RuntimeException( "Interrupted generating data to check.", e );
+                Logger.debug( IntegrityDataGeneratorThread.class, "Requested interruption of generation of data to check by the user.", e );
+                throw new RuntimeException( "Requested interruption of generation of data to check by the user.", e );
             }
 
 			Logger.error(IntegrityDataGeneratorThread.class, "Error generating data to check", e);

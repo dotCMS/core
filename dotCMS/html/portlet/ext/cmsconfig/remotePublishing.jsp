@@ -137,10 +137,12 @@
                 if (dijit.byId('checkIntegrityButton' + endPointId) == undefined) {
                     setTimeout(function () {
                         //Lets check process status for this end point server
+                        displayLoadingOnly(endPointId);
                         checkIntegrityProcessStatus(endPointId);
                     }, 1000);
                 } else {
                     //Lets check process status for this end point server
+                    displayLoadingOnly(endPointId);
                     checkIntegrityProcessStatus(endPointId);
                 }
             });
@@ -198,6 +200,7 @@
 
                 showDotCMSSystemMessage(data.message, false);
                 //Lets start checking every 30 seconds the status of this integrity check
+                displayLoadingOnly(identifier);
                 checkIntegrityProcessStatus(identifier);
             },
             error: function (error) {
@@ -238,7 +241,10 @@
         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
             domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', '');
         });
-        dojo.byId(loadingId).show();
+        dojo.byId(loadingId).hide();
+
+        //Displaying the loading dialog
+        dijit.byId('processingDialog').show();
 
         var xhrArgs = {
             url: "/api/integrity/cancelIntegrityProcess/endPoint/" + identifier,
@@ -254,7 +260,12 @@
                     showDotCMSSystemMessage(data.message, isError);
                 }
                 //Lets start checking every 30 seconds the status of this integrity check
-                checkIntegrityProcessStatus(identifier);
+                checkIntegrityProcessStatus(identifier, function (status) {
+                    if (status != "processing") {
+                        //Hiding the loading dialog
+                        dijit.byId('processingDialog').hide();
+                    }
+                });
             },
             error: function (error) {
                 showDotCMSSystemMessage(error.responseText, true);
@@ -263,11 +274,7 @@
         dojo.xhrGet(xhrArgs);
     }
 
-    /**
-    * Verifies the status of a check integrity process for a given server
-    * @param identifier
-     */
-    function checkIntegrityProcessStatus(identifier, callback) {
+    var displayLoadingOnly = function (identifier) {
 
         var buttonId = 'checkIntegrityButton' + identifier;
         var resultsButtonId = 'getIntegrityResultsButton' + identifier;
@@ -284,6 +291,18 @@
             domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
         });
         dojo.byId(loadingId).show();
+    };
+
+    /**
+    * Verifies the status of a check integrity process for a given server
+    * @param identifier
+     */
+    function checkIntegrityProcessStatus(identifier, callback) {
+
+        var buttonId = 'checkIntegrityButton' + identifier;
+        var resultsButtonId = 'getIntegrityResultsButton' + identifier;
+        var loadingId = 'loadingContent' + identifier;
+        var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
 
         var xhrArgs = {
             url: "/api/integrity/checkIntegrityProcessStatus/endPoint/" + identifier,
@@ -320,7 +339,7 @@
 
                     //Verify again in 30 seconds
                     setTimeout(function () {
-                        checkIntegrityProcessStatus(identifier)
+                        checkIntegrityProcessStatus(identifier, callback)
                     }, 10000);
                     //Verify again in 30 seconds
 
@@ -362,7 +381,7 @@
                     });
                     dojo.byId(loadingId).hide();
                 } else if (status == "canceled") {//The process was cancelled
-                    //showDotCMSSystemMessage(data.message, true);
+                    showDotCMSSystemMessage(data.message, true);
 
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                         domStyle.set(registry.byId(buttonId).domNode, 'display', '');
@@ -388,7 +407,7 @@
                 }
 
                 if (callback && typeof(callback) === "function") {
-                    callback();
+                    callback(status);
                 }
             },
             error: function (error) {
@@ -866,17 +885,17 @@
                                 <%if(environment.getPushToAll() || i == 0){%>
                                 <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
                                     <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
-                                        <%= LanguageUtil.get(pageContext,"CheckIntegrity") %>
+                                        <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
                                     </button>
                                     <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" iconClass="exclamation" style="display: none;">
-                                        <%= LanguageUtil.get(pageContext,"Preview-Analysis-Results") %>
+                                        <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
                                     </button>
                                     <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
-                                        <font class="bg" size="2"> <b><%= LanguageUtil.get(pageContext, "Loading") %></b> <br />
+                                        <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
                                             <img src="/html/images/icons/processing.gif" /></font>
                                     </div>
                                     <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="padding-left:10px; padding-top:5px; display:none;">
-                                        <%= LanguageUtil.get(pageContext,"cancel") %>
+                                        <%= LanguageUtil.get( pageContext, "cancel" ) %>
                                     </button>
                                 </div>
                                 <%} %>
@@ -1072,6 +1091,9 @@
 
 </div>
 
+<div id="processingDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext,"Processing")%>" style="display: none;">
+    <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="processingLoading" id="processingLoading"></div>
+</div>
 <div id="fixingDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext,"push_publish_integrity_fixing_conflict")%>" style="display: none;">
     <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
 </div>

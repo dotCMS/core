@@ -342,8 +342,8 @@ public class IntegrityResource extends WebResource {
                                     if ( e instanceof InterruptedException ) {
                                         //Setting the process status
                                         setStatus( session, endpointId, ProcessStatus.CANCELED, null );
-                                        Logger.error( IntegrityResource.class, "Interrupted unzipping of Integrity Data by the user.", e );
-                                        throw new RuntimeException( "Interrupted unzipping of Integrity Data by the user.", e );
+                                        Logger.debug( IntegrityResource.class, "Requested interruption of the integrity checking process [unzipping Integrity Data] by the user.", e );
+                                        throw new RuntimeException( "Requested interruption of the integrity checking process [unzipping Integrity Data] by the user.", e );
                                     }
 
                                     //Setting the process status
@@ -377,8 +377,8 @@ public class IntegrityResource extends WebResource {
                                     if ( e instanceof InterruptedException ) {
                                         //Setting the process status
                                         setStatus( session, endpointId, ProcessStatus.CANCELED, null );
-                                        Logger.error( IntegrityResource.class, "Interrupted checking integrity process by the user.", e );
-                                        throw new RuntimeException( "Interrupted checking integrity process by the user.", e );
+                                        Logger.debug( IntegrityResource.class, "Requested interruption of the integrity checking process by the user.", e );
+                                        throw new RuntimeException( "Requested interruption of the integrity checking process by the user.", e );
                                     }
 
                                     Logger.error(IntegrityResource.class, "Error checking integrity", e);
@@ -440,8 +440,8 @@ public class IntegrityResource extends WebResource {
             if ( e instanceof InterruptedException || e.getCause() instanceof InterruptedException ) {
                 //Setting the process status
                 setStatus( session, endpointId, ProcessStatus.CANCELED, null );
-                Logger.error( IntegrityResource.class, "Integrity checking process interrupted by the user.", e );
-                return response( "Integrity checking process interrupted by the user for End Point server: [" + endpointId + "]" , true );
+                Logger.debug( IntegrityResource.class, "Requested interruption of the integrity checking process by the user.", e );
+                return response( "Requested interruption of the integrity checking process by the user for End Point server: [" + endpointId + "]" , true );
             }
 
             //Setting the process status
@@ -525,7 +525,9 @@ public class IntegrityResource extends WebResource {
                     ClientResponse response = resource.type( MediaType.MULTIPART_FORM_DATA ).post( ClientResponse.class, form );
 
                     if ( response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK ) {
-                        //Nothing to do here, even on failures we should continue a interrupt the local thread
+                        //Nothing to do here, we found no process to cancel
+                    } else if ( response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_RESET_CONTENT ) {
+                        //Expected return status if a cancel was made on the end point server
                     } else {
                         Logger.error( this.getClass(), "Response indicating a " + response.getClientResponseStatus().getReasonPhrase() + " (" + response.getClientResponseStatus().getStatusCode() + ") Error trying to interrupt the running process on the Endpoint [ " + endpointId + "]." );
                     }
@@ -537,10 +539,10 @@ public class IntegrityResource extends WebResource {
                     clearThreadInSession( request, endpointId );
 
                     jsonResponse.put( "success", true );
-                    jsonResponse.put( "message", "Success" );
+                    jsonResponse.put( "message", LanguageUtil.get( initData.getUser().getLocale(), "IntegrityCheckingCanceled" ) );
                 } else {
                     jsonResponse.put( "success", false );
-                    jsonResponse.put( "message", "The integrity process for End Point server: [" + endpointId + "] is already stopped." );
+                    jsonResponse.put( "message", "The integrity process for End Point server: [" + endpointId + "] was already stopped." );
                 }
             }
 
@@ -678,7 +680,7 @@ public class IntegrityResource extends WebResource {
                     clearStatus( request, endpointId );
                 } else if ( status == ProcessStatus.CANCELED) {
                     jsonResponse.put( "status", "canceled" );
-                    jsonResponse.put( "message", "Success" );
+                    jsonResponse.put( "message", LanguageUtil.get( initData.getUser().getLocale(), "IntegrityCheckingCanceled" ) );
                     clearStatus( request, endpointId );
                 } else {
                     jsonResponse.put( "status", "error" );
@@ -864,7 +866,9 @@ public class IntegrityResource extends WebResource {
      * Method that will fix the conflicts received from remote
      *
      * @param request
-     * @param params
+     * @param dataToFix
+     * @param auth_token_enc
+     * @param type
      * @return
      * @throws JSONException
      */
