@@ -22,7 +22,6 @@ import java.util.zip.ZipOutputStream;
 import com.csvreader.CsvReader;
 import com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource.IntegrityType;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -162,9 +161,10 @@ public class IntegrityUtil {
 			csvFile = new File(outputFile);
 			writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 
-			String resultsTable = getResultsTableName(endpointId, type);
+			String resultsTable = getResultsTableName(type);
 
-			statement = conn.prepareStatement("select remote_inode, local_inode from " + resultsTable);
+			statement = conn.prepareStatement("select remote_inode, local_inode from " + resultsTable + " where endpoint_id = ?");
+			statement.setString(1, endpointId);
 			rs = statement.executeQuery();
 			int count = 0;
 
@@ -359,9 +359,10 @@ public class IntegrityUtil {
 			String tempTableName = getTempTableName(endpointId, IntegrityType.FOLDERS);
 
 			// lets create a temp table and insert all the records coming from the CSV file
+			String tempKeyword = getTempKeyword();
 
-			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, parent_path varchar(255), "
-					+ "asset_name varchar(255), host_identifier varchar(36) not null, primary key (inode) )";
+			String createTempTable = "create " +tempKeyword+ " table " + tempTableName + " (inode varchar(36) not null, parent_path varchar(255), "
+					+ "asset_name varchar(255), host_identifier varchar(36) not null, primary key (inode) )" + (DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":"");
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
 				createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
@@ -392,11 +393,10 @@ public class IntegrityUtil {
 
 			folders.close();
 
-			String resultsTableName = getResultsTableName(endpointId, IntegrityType.FOLDERS);
+			String resultsTableName = getResultsTableName(IntegrityType.FOLDERS);
 
 			// compare the data from the CSV to the local db data and see if we have conflicts
-			dc.setSQL("select iden.parent_path || iden.asset_name as folder, "
-						+ "c.title as host_name, f.inode as local_inode, ft.inode as remote_inode from identifier iden "
+			dc.setSQL("select 1 from identifier iden "
 						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
 						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
 						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
@@ -405,18 +405,30 @@ public class IntegrityUtil {
 
 			if(!results.isEmpty()) {
 				// if we have conflicts, lets create a table out of them
-				final String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select iden.parent_path || iden.asset_name as folder, "
-						+ "c.title as host_name, f.inode as local_inode, ft.inode as remote_inode from identifier iden "
+
+				String fullFolder = " c.title || iden.parent_path || iden.asset_name ";
+
+				if(DbConnectionFactory.isMySql()) {
+					fullFolder = " concat(c.title,iden.parent_path,iden.asset_name) ";
+				} else if(DbConnectionFactory.isMsSql()) {
+					fullFolder = " c.title + iden.parent_path + iden.asset_name ";
+				}
+
+				final String INSERT_INTO_RESULTS_TABLE = "insert into " +resultsTableName+ " select " + fullFolder + " as folder, "
+						+ "f.inode as local_inode, ft.inode as remote_inode, '" +endpointId+ "' from identifier iden "
 						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
 						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
 						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
 
-				dc.executeStatement(CREATE_RESULTS_TABLE);
-				dc.executeStatement("alter table " + resultsTableName + " add primary key (local_inode)");
+				dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
+
 			}
 
+			dc.setSQL("select * from folders_ir");
+			results = dc.loadObjectResults();
+
 			// lets drop the temp table
-			dc.executeStatement("drop table " + tempTableName );
+//			dc.executeStatement("drop table " + tempTableName );
 
             return !results.isEmpty();
         } catch(Exception e) {
@@ -433,11 +445,9 @@ public class IntegrityUtil {
 			DotConnect dc = new DotConnect();
 			String tempTableName = getTempTableName(endpointId, IntegrityType.STRUCTURES);
 
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-				tempTableName = tempTableName.substring(0, 29);
-			}
+			String tempKeyword = getTempKeyword();
 
-			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, velocity_var_name varchar(255), "
+			String createTempTable = "create " +tempKeyword+ " table " + tempTableName + " (inode varchar(36) not null, velocity_var_name varchar(255), "
 					+ " primary key (inode) )";
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
@@ -465,7 +475,7 @@ public class IntegrityUtil {
 
 			structures.close();
 
-			String resultsTableName = getResultsTableName(endpointId, IntegrityType.STRUCTURES);
+			String resultsTableName = getResultsTableName(IntegrityType.STRUCTURES);
 
 			// compare the data from the CSV to the local db data and see if we have conflicts
 			dc.setSQL("select s.velocity_var_name as velocity_name, "
@@ -476,16 +486,12 @@ public class IntegrityUtil {
 
 			if(!results.isEmpty()) {
 				// if we have conflicts, lets create a table out of them
-				String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.velocity_var_name as velocity_name, "
-						+ "s.inode as local_inode, st.inode as remote_inode from structure s "
+				String INSERT_INTO_RESULTS_TABLE = "insert into " +resultsTableName+ " select s.velocity_var_name as velocity_name, "
+						+ "s.inode as local_inode, st.inode as remote_inode, '" + endpointId + "' from structure s "
 						+ "join " + tempTableName + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode";
 
-				dc.executeStatement(CREATE_RESULTS_TABLE);
-				dc.executeStatement("alter table " + resultsTableName + " add primary key (local_inode)");
+				dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
 			}
-
-			// lets drop the temp table
-			dc.executeStatement("drop table " + tempTableName );
 
             return !results.isEmpty();
 		} catch(Exception e) {
@@ -502,7 +508,9 @@ public class IntegrityUtil {
 			DotConnect dc = new DotConnect();
 			String tempTableName = getTempTableName(endpointId, IntegrityType.SCHEMES);
 
-			String createTempTable = "create table " + tempTableName + " (inode varchar(36) not null, name varchar(255), "
+			String tempKeyword = getTempKeyword();
+
+			String createTempTable = "create " +tempKeyword+ " table " + tempTableName + " (inode varchar(36) not null, name varchar(255), "
 					+ " primary key (inode) )";
 
 			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
@@ -530,7 +538,7 @@ public class IntegrityUtil {
 
 			schemes.close();
 
-			String resultsTableName = getResultsTableName(endpointId, IntegrityType.SCHEMES);
+			String resultsTableName = getResultsTableName(IntegrityType.SCHEMES);
 
 			// compare the data from the CSV to the local db data and see if we have conflicts
 			dc.setSQL("select s.name, s.id as local_inode, wt.inode as remote_inode from workflow_scheme s "
@@ -541,20 +549,41 @@ public class IntegrityUtil {
 
 			if(!results.isEmpty()) {
 				// if we have conflicts, lets create a table out of them
-				String CREATE_RESULTS_TABLE = "create table " + resultsTableName + " as select s.name, s.id as local_inode, wt.inode as remote_inode from workflow_scheme s "
+				final String INSERT_INTO_RESULTS_TABLE = "insert into "+resultsTableName+" select s.name, s.id as local_inode, wt.inode as remote_inode , '" + endpointId + "' from workflow_scheme s "
 						+ "join " + tempTableName + " wt on s.name = wt.name and s.id <> wt.inode";
 
-				dc.executeStatement(CREATE_RESULTS_TABLE);
-				dc.executeStatement("alter table " + resultsTableName + " add primary key (local_inode)");
+				dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
 
 			}
-
-			// lets drop the temp table
-			dc.executeStatement("drop table " + tempTableName );
 
             return !results.isEmpty();
 		} catch(Exception e) {
 			throw new Exception("Error running the Workflow Schemes Integrity Check", e);
+		}
+	}
+
+	public void dropTempTables(String endpointId) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		try {
+
+			if(doesTableExist(getTempTableName(endpointId, IntegrityType.FOLDERS))) {
+				dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.FOLDERS));
+				dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.FOLDERS));
+			}
+
+			if(doesTableExist(getTempTableName(endpointId, IntegrityType.STRUCTURES))) {
+				dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.STRUCTURES));
+				dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.STRUCTURES));
+			}
+
+			if(doesTableExist(getTempTableName(endpointId, IntegrityType.SCHEMES))) {
+				dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.SCHEMES));
+				dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.SCHEMES));
+			}
+
+		} catch (SQLException e) {
+			Logger.error(getClass(), "Error dropping Temp tables");
+			throw new DotDataException("Error dropping Temp tables", e);
 		}
 	}
 
@@ -563,17 +592,14 @@ public class IntegrityUtil {
 		try {
 			DotConnect dc = new DotConnect();
 
-			String resultsTableName = getResultsTableName(endpointId, type);
-
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-				resultsTableName = resultsTableName.substring(0, 29);
-			}
+			String resultsTableName = getResultsTableName(type);
 
 			if(!doesTableExist(resultsTableName)) {
 				return new ArrayList<Map<String, Object>>();
 			}
 
-			dc.setSQL("select * from " + resultsTableName);
+			dc.setSQL("select * from " + resultsTableName + " where endpoint_id = ?");
+			dc.addParam(endpointId);
 
 			return dc.loadObjectResults();
 
@@ -603,27 +629,12 @@ public class IntegrityUtil {
 		try {
 
 			CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + type.getDataToFixCSVName(), '|');
-			boolean resultsCreated = false;
 			DotConnect dc = new DotConnect();
-			String resultsTable = getResultsTableName(endpointId, type);
+			String resultsTable = getResultsTableName(type);
 
-			// lets create a temp table and insert all the records coming from the CSV file
-
-			String createResultsTable = "create table " + resultsTable + " (local_inode varchar(36) not null, remote_inode varchar(36) not null, "
-					+ "primary key (local_inode) )";
-
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-				createResultsTable=createResultsTable.replaceAll("varchar\\(", "varchar2\\(");
-			}
-
-			final String INSERT_TEMP_TABLE = "insert into " + resultsTable + " values(?,?)";
+			final String INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, endpoint_id) values(?,?,?)";
 
 			while (csvFile.readRecord()) {
-
-				if(!resultsCreated) {
-					dc.executeStatement(createResultsTable);
-					resultsCreated = true;
-				}
 
 				//select f.inode, i.parent_path, i.asset_name, i.host_inode
 				String localInode = csvFile.get(0);
@@ -632,6 +643,7 @@ public class IntegrityUtil {
 				dc.setSQL(INSERT_TEMP_TABLE);
 				dc.addParam(localInode);
 				dc.addParam(remoteInode);
+				dc.addParam(endpointId);
 				dc.loadResult();
 			}
 
@@ -649,34 +661,56 @@ public class IntegrityUtil {
 
 		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
 			resultsTableName = resultsTableName.substring(0, 29);
+		} else if(DbConnectionFactory.isMsSql()) {
+			resultsTableName = "#" + resultsTableName;
 		}
 
 		return resultsTableName;
 	}
 
-	private String getResultsTableName(String endpointId, IntegrityType type) {
+	private String getResultsTableName(IntegrityType type) {
 
-		if(!UtilMethods.isSet(endpointId)) return null;
+		return type.name().toLowerCase() + "_ir";
+	}
 
-		String endpointIdforDB = endpointId.replace("-", "");
-		String resultsTableName = type.name().toLowerCase() + "_ir_" + endpointIdforDB;
+	private String getTempKeyword() {
 
-		if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.ORACLE)) {
-			resultsTableName = resultsTableName.substring(0, 29);
+		String tempKeyword = "temporary";
+
+		if(DbConnectionFactory.isMsSql()) {
+			tempKeyword = "";
+		} else if(DbConnectionFactory.isOracle()) {
+			tempKeyword = "global " + tempKeyword;
 		}
 
-		return resultsTableName;
+		return tempKeyword;
 	}
 
 	public Boolean doesIntegrityConflictsDataExist(String endpointId) throws Exception {
 
-		String folderTable = getResultsTableName(endpointId, IntegrityType.FOLDERS);
-		String structuresTable = getResultsTableName(endpointId, IntegrityType.STRUCTURES);
-		String schemesTable = getResultsTableName(endpointId, IntegrityType.SCHEMES);
+		String folderTable = getResultsTableName(IntegrityType.FOLDERS);
+		String structuresTable = getResultsTableName(IntegrityType.STRUCTURES);
+		String schemesTable = getResultsTableName(IntegrityType.SCHEMES);
 
 //		final String H2="SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName.toUpperCase()+"' + ";
 
-		return doesTableExist(folderTable) || doesTableExist(structuresTable) || doesTableExist(schemesTable);
+		DotConnect dc = new DotConnect();
+		dc.setSQL("SELECT 1 FROM " + folderTable+ " where endpoint_id = ?");
+		dc.addParam(endpointId);
+
+		boolean isThereFolderData = !dc.loadObjectResults().isEmpty();
+
+		dc.setSQL("SELECT 1 FROM " + structuresTable+ " where endpoint_id = ?");
+		dc.addParam(endpointId);
+
+		boolean isThereStructureData = !dc.loadObjectResults().isEmpty();
+
+		dc.setSQL("SELECT 1 FROM " + schemesTable+ " where endpoint_id = ?");
+		dc.addParam(endpointId);
+
+		boolean isThereSchemaData = !dc.loadObjectResults().isEmpty();
+
+		return isThereFolderData || isThereStructureData || isThereSchemaData;
 
 	}
 
@@ -684,10 +718,10 @@ public class IntegrityUtil {
 		DotConnect dc = new DotConnect();
 
 		if(DbConnectionFactory.isOracle()) {
-			dc.setSQL("SELECT COUNT(*) as exist FROM user_tables WHERE table_name='"+tableName+"'");
+			dc.setSQL("SELECT COUNT(*) as exist FROM user_tables WHERE table_name='"+tableName.toUpperCase()+"'");
 			BigDecimal existTable = (BigDecimal)dc.loadObjectResults().get(0).get("exist");
 			return existTable.longValue() > 0;
-		} else if(DbConnectionFactory.isPostgres()) {
+		} else if(DbConnectionFactory.isPostgres() || DbConnectionFactory.isMySql()) {
 			dc.setSQL("SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName+"' ");
 			long existTable = (Long)dc.loadObjectResults().get(0).get("exist");
 			return existTable > 0;
@@ -695,9 +729,6 @@ public class IntegrityUtil {
 			dc.setSQL("SELECT COUNT(*) as exist FROM sysobjects WHERE name = '"+tableName+"'");
 			int existTable = (Integer)dc.loadObjectResults().get(0).get("exist");
 			return existTable > 0;
-		} else if(DbConnectionFactory.isMySql()) {
-			dc.setSQL("SHOW TABLES LIKE '"+tableName+"'");
-			return !dc.loadObjectResults().isEmpty();
 		}
 
 		return false;
@@ -705,17 +736,12 @@ public class IntegrityUtil {
 
 //	public void generateRemoteFixData
 
-	public void discardConflicts(String endpointId, IntegrityType type) throws Exception {
-		try {
-			DotConnect dc = new DotConnect();
-			String resultsTableName = getResultsTableName(endpointId, type);
-
-			if(doesTableExist(resultsTableName))
-				dc.executeStatement("drop table " + resultsTableName);
-
-		} catch(Exception e) {
-			throw new Exception("Error running the Structures Integrity Check", e);
-		}
+	public void discardConflicts(String endpointId, IntegrityType type) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		String resultsTableName = getResultsTableName(type);
+		dc.setSQL("delete from " + resultsTableName+ " where endpoint_id = ?");
+		dc.addParam(endpointId);
+		dc.loadResult();
 	}
 
 	public void fixConflicts(String endpointId, IntegrityType type) throws DotDataException {
@@ -736,7 +762,7 @@ public class IntegrityUtil {
     public void fixFolders ( String serverId ) throws DotDataException {
 
         DotConnect dc = new DotConnect();
-        String tableName = getResultsTableName( serverId, IntegrityType.FOLDERS );
+        String tableName = getResultsTableName( IntegrityType.FOLDERS );
 
         try {
 
@@ -749,26 +775,26 @@ public class IntegrityUtil {
             }
 
             //Update the folder
-            updateFrom( dc, tableName, "folder", "inode" );
+            updateFrom( serverId, dc, tableName, "folder", "inode" );
             //Update the inode
-            updateFrom( dc, tableName, "inode", "inode" );
+            updateFrom( serverId, dc, tableName, "inode", "inode" );
             //Update the structure
             if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
                 dc.executeStatement( "UPDATE structure JOIN " + tableName + " ir on structure.folder = ir.local_inode SET structure.folder = ir.remote_inode" );
             } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
-                updateFrom( dc, tableName, "structure", "folder" );
+                updateFrom( serverId, dc, tableName, "structure", "folder" );
             } else {
                 dc.executeStatement( "UPDATE structure SET folder = ir.remote_inode FROM " + tableName + " ir WHERE structure.folder = ir.local_inode" );
             }
 
             //permission
-            updateFrom( dc, tableName, "permission", "inode_id" );
+            updateFrom( serverId, dc, tableName, "permission", "inode_id" );
             //permission_reference
-            updateFrom( dc, tableName, "permission_reference", "asset_id" );
+            updateFrom( serverId, dc, tableName, "permission_reference", "asset_id" );
+
+            discardConflicts(serverId, IntegrityType.FOLDERS);
 
 //            CacheLocator.getFolderCache().removeFolder(f, id);
-
-            dc.executeStatement("drop table " + tableName);
 
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
@@ -794,7 +820,7 @@ public class IntegrityUtil {
     public void fixStructures ( String serverId ) throws DotDataException {
 
         DotConnect dc = new DotConnect();
-        String tableName = getResultsTableName( serverId, IntegrityType.STRUCTURES );
+        String tableName = getResultsTableName( IntegrityType.STRUCTURES );
 
         try {
 
@@ -819,28 +845,28 @@ public class IntegrityUtil {
             }
 
             //structure
-            updateFrom( dc, tableName, "structure", "inode" );
+            updateFrom( serverId, dc, tableName, "structure", "inode" );
             //inode
-            updateFrom( dc, tableName, "inode", "inode" );
+            updateFrom( serverId, dc, tableName, "inode", "inode" );
             //container_structures
-            updateFrom( dc, tableName, "container_structures", "structure_id" );
+            updateFrom( serverId, dc, tableName, "container_structures", "structure_id" );
             //contentlet
-            updateFrom( dc, tableName, "contentlet", "structure_inode" );
+            updateFrom( serverId, dc, tableName, "contentlet", "structure_inode" );
             //field
-            updateFrom( dc, tableName, "field", "structure_inode" );
+            updateFrom( serverId, dc, tableName, "field", "structure_inode" );
             //containers
-            updateFrom( dc, tableName, "containers", "structure_inode" );
+            updateFrom( serverId, dc, tableName, "containers", "structure_inode" );
             //relationship
-            updateFrom( dc, tableName, "relationship", "parent_structure_inode" );
-            updateFrom( dc, tableName, "relationship", "child_structure_inode" );
+            updateFrom( serverId, dc, tableName, "relationship", "parent_structure_inode" );
+            updateFrom( serverId, dc, tableName, "relationship", "child_structure_inode" );
             //workflow_scheme_x_structure
-            updateFrom( dc, tableName, "workflow_scheme_x_structure", "structure_id" );
+            updateFrom( serverId, dc, tableName, "workflow_scheme_x_structure", "structure_id" );
             //permission
-            updateFrom( dc, tableName, "permission", "inode_id" );
+            updateFrom( serverId, dc, tableName, "permission", "inode_id" );
             //permission_reference
-            updateFrom( dc, tableName, "permission_reference", "asset_id" );
+            updateFrom( serverId, dc, tableName, "permission_reference", "asset_id" );
 
-            dc.executeStatement("drop table " + tableName);
+            discardConflicts(serverId, IntegrityType.STRUCTURES);
 
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
@@ -874,7 +900,7 @@ public class IntegrityUtil {
     public void fixSchemes ( String serverId ) throws DotDataException {
 
         DotConnect dc = new DotConnect();
-        String tableName = getResultsTableName( serverId, IntegrityType.SCHEMES );
+        String tableName = getResultsTableName( IntegrityType.SCHEMES );
 
         try {
 
@@ -893,13 +919,13 @@ public class IntegrityUtil {
             }
 
             //workflow_scheme
-            updateFrom( dc, tableName, "workflow_scheme", "id" );
+            updateFrom( serverId, dc, tableName, "workflow_scheme", "id" );
             //workflow_step
-            updateFrom( dc, tableName, "workflow_step", "scheme_id" );
+            updateFrom( serverId, dc, tableName, "workflow_step", "scheme_id" );
             //workflow_scheme_x_structure
-            updateFrom( dc, tableName, "workflow_scheme_x_structure", "scheme_id" );
+            updateFrom( serverId, dc, tableName, "workflow_scheme_x_structure", "scheme_id" );
 
-            dc.executeStatement("drop table " + tableName);
+            discardConflicts(serverId, IntegrityType.SCHEMES);
 
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
@@ -934,16 +960,16 @@ public class IntegrityUtil {
      * @param updateColumn
      * @throws SQLException
      */
-    private static void updateFrom ( DotConnect dotConnect, String resultsTable, String updateTable, String updateColumn ) throws SQLException {
+    private static void updateFrom ( String endpointId, DotConnect dotConnect, String resultsTable, String updateTable, String updateColumn ) throws SQLException {
 
         if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.MYSQL ) ) {
-            dotConnect.executeStatement( "UPDATE " + updateTable + " JOIN " + resultsTable + " ir on " + updateColumn + " = ir.local_inode SET " + updateColumn + " = ir.remote_inode" );
+            dotConnect.executeStatement( "UPDATE " + updateTable + " JOIN " + resultsTable + " ir on " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id  SET " + updateColumn + " = ir.remote_inode" );
         } else if ( DbConnectionFactory.getDBType().equals( DbConnectionFactory.ORACLE ) ) {
             dotConnect.executeStatement( "UPDATE " + updateTable +
-                    " SET " + updateColumn + " = (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode)" +
-                    " WHERE exists (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode)" );
+                    " SET " + updateColumn + " = (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id)" +
+                    " WHERE exists (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id)" );
         } else {
-            dotConnect.executeStatement( "UPDATE " + updateTable + " SET " + updateColumn + " = ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode" );
+            dotConnect.executeStatement( "UPDATE " + updateTable + " SET " + updateColumn + " = ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id" );
         }
     }
 
