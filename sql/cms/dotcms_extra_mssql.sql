@@ -787,3 +787,8 @@ CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 alter table publishing_bundle add force_push tinyint ;
 
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
+
+-- Integrity Checker
+create table folders_ir(folder varchar(255), local_inode varchar(36), remote_inode varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));
+create table structures_ir(velocity_name varchar(255), local_inode varchar(36), remote_inode varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));
+create table schemes_ir(name varchar(255), local_inode varchar(36), remote_inode varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));

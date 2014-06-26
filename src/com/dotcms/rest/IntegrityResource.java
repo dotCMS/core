@@ -25,6 +25,7 @@ import javax.ws.rs.core.StreamingOutput;
 
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
+
 import org.apache.commons.httpclient.HttpStatus;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -35,6 +36,7 @@ import com.dotcms.publisher.util.TrustFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -355,16 +357,21 @@ public class IntegrityResource extends WebResource {
         	        			// set session variable
         	        			// call IntegrityChecker
 
-                                Boolean foldersConflicts, structuresConflicts, schemesConflicts = false;
+                                Boolean foldersConflicts = false;
+                                Boolean structuresConflicts = false;
+                                Boolean schemesConflicts = false;
+
+                                IntegrityUtil integrityUtil = new IntegrityUtil();
         	        			try {
         	        				HibernateUtil.startTransaction();
 
-        	        				IntegrityUtil integrityUtil = new IntegrityUtil();
         	        				foldersConflicts = integrityUtil.checkFoldersIntegrity(endpointId);
                                     structuresConflicts = integrityUtil.checkStructuresIntegrity(endpointId);
                                     schemesConflicts = integrityUtil.checkWorkflowSchemesIntegrity(endpointId);
 
         	        				HibernateUtil.commitTransaction();
+
+
         	        			} catch(Exception e) {
 
         	        				try {
@@ -386,6 +393,12 @@ public class IntegrityResource extends WebResource {
                                     //Setting the process status
                                     setStatus( session, endpointId, ProcessStatus.ERROR, null );
         	        				throw new RuntimeException("Error checking integrity", e);
+        	        			} finally {
+        	        				try {
+										integrityUtil.dropTempTables(endpointId);
+									} catch (DotDataException e) {
+										Logger.error(IntegrityResource.class, "Error while deleting temp tables", e);
+									}
         	        			}
 
                                 if ( !foldersConflicts && !structuresConflicts && !schemesConflicts ) {
@@ -756,7 +769,6 @@ public class IntegrityResource extends WebResource {
 					break;
 				case FOLDERS:
 					columns.add("folder");
-					columns.add("host_name");
 					break;
 				case SCHEMES:
 					columns.add("name");
@@ -897,10 +909,17 @@ public class IntegrityResource extends WebResource {
         	}
 
             IntegrityUtil integrityUtil = new IntegrityUtil();
+            HibernateUtil.startTransaction();
             integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(), IntegrityType.valueOf(type.toUpperCase()) );
+            HibernateUtil.commitTransaction();
 
 
         } catch ( Exception e ) {
+        	try {
+				HibernateUtil.rollbackTransaction();
+			} catch (DotHibernateException e1) {
+				Logger.error(IntegrityResource.class, "Error while rolling back transaction", e);
+			}
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts from remote", e );
             return response( "Error fixing "+type+" conflicts from remote" , true );
         }
