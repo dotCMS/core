@@ -197,6 +197,13 @@
 								maxlength="255" style="width:390px;font-weight:bold;border:1px solid #eeeeee" onkeypress="actionAdmin.doChange()">
 							</td>
 						</tr>
+						<%if(UtilMethods.isSet(actionId)) {%>
+							<tr>
+								<td nowrap="nowrap"><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>:</td>
+								<td nowrap="true"><%=actionId %>
+								</td>
+							</tr>
+						<%} %>
 						<tr>
 							<td  width="100px" ><%=LanguageUtil.get(pageContext, "Save-content")%>: (<%=LanguageUtil.get(pageContext, "Requires-Checkout")%>)</td>
 							<td nowrap="true"><input type="checkbox" name="actionRequiresCheckout"
