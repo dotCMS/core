@@ -110,9 +110,9 @@ public class UploadServletRequest extends HttpServletRequestWrapper {
 				}
 
 				_params.put(fileItem.getFieldName(), fileItems);
-				//if(fileItem.getFileName() != null)
-				//	_params.put(fileItem.getFileName(), new LiferayFileItem[] {fileItem});
-				
+				if(fileItem.getFileName() != null)
+					_params.put(fileItem.getFileName(), new LiferayFileItem[] {fileItem});
+
 			}
 		}
 		catch (FileUploadException fue) {
@@ -131,7 +131,7 @@ public class UploadServletRequest extends HttpServletRequestWrapper {
 	public String getContentType(String name) {
 		if (getFileName(name) == null) {
 			return null;
-        }		
+        }
 		LiferayFileItem[] fileItems = (LiferayFileItem[])_params.get(name);
 
 		if ((fileItems != null) && (fileItems.length > 0)) {
