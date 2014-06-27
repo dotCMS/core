@@ -271,6 +271,9 @@
             },
             error: function (error) {
                 showDotCMSSystemMessage(error.responseText, true);
+
+                //Hiding the loading dialog
+                dijit.byId('processingDialog').hide();
             }
         };
         dojo.xhrGet(xhrArgs);
@@ -612,6 +615,9 @@
             },
             error: function (error) {
                 showDotCMSSystemMessage(error.responseText, true);
+
+                //Hiding the loading dialog
+                dijit.byId('fixingDialog').hide();
             }
         };
         dojo.xhrGet(xhrArgs);
