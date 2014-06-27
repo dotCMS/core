@@ -770,7 +770,6 @@ public class IntegrityUtil {
 
         try {
 
-
             //First delete the constrain
             if ( DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "alter table folder drop FOREIGN KEY fkb45d1c6e5fb51eb" );
@@ -785,7 +784,7 @@ public class IntegrityUtil {
             //Update the structure
             if ( DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "UPDATE structure JOIN " + tableName + " ir on structure.folder = ir.local_inode SET structure.folder = ir.remote_inode" );
-            } else if ( DbConnectionFactory.isOracle() ) {
+            } else if ( DbConnectionFactory.isOracle() || DbConnectionFactory.isH2() ) {
                 updateFrom( serverId, dc, tableName, "structure", "folder" );
             } else {
                 dc.executeStatement( "UPDATE structure SET folder = ir.remote_inode FROM " + tableName + " ir WHERE structure.folder = ir.local_inode" );
@@ -798,8 +797,6 @@ public class IntegrityUtil {
 
             discardConflicts(serverId, IntegrityType.FOLDERS);
 
-//            CacheLocator.getFolderCache().removeFolder(f, id);
-
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
         } finally {
@@ -810,8 +807,6 @@ public class IntegrityUtil {
             } catch ( SQLException e ) {
                 throw new DotDataException( e.getMessage(), e );
             }
-
-
         }
     }
 
@@ -828,16 +823,15 @@ public class IntegrityUtil {
 
         try {
 
-
             //First delete the constrains
             if ( DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "alter table structure drop FOREIGN KEY fk89d2d735fb51eb" );
                 dc.executeStatement( "alter table contentlet drop FOREIGN KEY fk_structure_inode" );
-                dc.executeStatement( "alter table containers drop FOREIGN KEY structure_fk" );
+                //dc.executeStatement( "alter table containers drop FOREIGN KEY structure_fk" );
             } else {
                 dc.executeStatement( "alter table structure drop constraint fk89d2d735fb51eb" );
                 dc.executeStatement( "alter table contentlet drop constraint fk_structure_inode" );
-                dc.executeStatement( "alter table containers drop constraint structure_fk" );
+                //dc.executeStatement( "alter table containers drop constraint structure_fk" );
             }
             if ( DbConnectionFactory.isMsSql() ) {
                 dc.executeStatement( "alter table workflow_scheme_x_structure nocheck constraint all" );
@@ -861,7 +855,7 @@ public class IntegrityUtil {
             //field
             updateFrom( serverId, dc, tableName, "field", "structure_inode" );
             //containers
-            updateFrom( serverId, dc, tableName, "containers", "structure_inode" );
+            //updateFrom( serverId, dc, tableName, "containers", "structure_inode" );
             //relationship
             updateFrom( serverId, dc, tableName, "relationship", "parent_structure_inode" );
             updateFrom( serverId, dc, tableName, "relationship", "child_structure_inode" );
@@ -881,7 +875,7 @@ public class IntegrityUtil {
                 //Add back the constrains
                 dc.executeStatement( "ALTER TABLE structure add constraint fk89d2d735fb51eb foreign key (inode) references inode (inode)" );
                 dc.executeStatement( "ALTER TABLE contentlet add constraint fk_structure_inode foreign key (structure_inode) references structure (inode)" );
-                dc.executeStatement( "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure (inode)" );
+                //dc.executeStatement( "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure (inode)" );
                 if ( DbConnectionFactory.isMsSql() ) {
                     dc.executeStatement( "alter table workflow_scheme_x_structure with check check constraint all" );
                 } else if ( DbConnectionFactory.isOracle() ) {
