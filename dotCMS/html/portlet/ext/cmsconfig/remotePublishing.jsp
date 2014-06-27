@@ -175,6 +175,7 @@
         var xhrArgs = {
             url: "/api/integrity/checkintegrity/endpoint/" + identifier,
             handleAs: "json",
+            preventCache: true,
             load: function (data) {
 
                 var isError = false;
@@ -249,6 +250,7 @@
         var xhrArgs = {
             url: "/api/integrity/cancelIntegrityProcess/endPoint/" + identifier,
             handleAs: "json",
+            preventCache: true,
             load: function (data) {
 
                 var isError = false;
@@ -307,6 +309,7 @@
         var xhrArgs = {
             url: "/api/integrity/checkIntegrityProcessStatus/endPoint/" + identifier,
             handleAs: "json",
+            preventCache: true,
             load: function (data) {
 
                 var isError = false;
@@ -455,6 +458,7 @@
         var xhrArgs = {
             url: "/api/integrity/getIntegrityResult/endPoint/" + identifier,
             handleAs: "json",
+            preventCache: true,
             load: function (data) {
 
                 var isError = false;
@@ -582,6 +586,7 @@
         var xhrArgs = {
             url: "/api/integrity/fixconflicts/endPoint/" + identifier + "/type/" + type + "/whereToFix/" + whereToFix,
             handleAs: "json",
+            preventCache: true,
             load: function (data) {
 
                 //Hiding the loading dialog
@@ -598,7 +603,7 @@
                 }
 
 				var message = localFix? "<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed_local")%>"
-						: "<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed_remote")%>"
+                    : "<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed_remote")%>";
 
 				showDotCMSSystemMessage(message, true);
 
@@ -617,6 +622,7 @@
         var xhrArgs = {
             url: "/api/integrity/discardconflicts/endPoint/" + identifier + "/type/" + type,
             handleAs: "json",
+            preventCache: true,
             load: function (data) {
 
                 var isError = false;
