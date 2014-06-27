@@ -137,10 +137,12 @@
                 if (dijit.byId('checkIntegrityButton' + endPointId) == undefined) {
                     setTimeout(function () {
                         //Lets check process status for this end point server
+                        displayLoadingOnly(endPointId);
                         checkIntegrityProcessStatus(endPointId);
                     }, 1000);
                 } else {
                     //Lets check process status for this end point server
+                    displayLoadingOnly(endPointId);
                     checkIntegrityProcessStatus(endPointId);
                 }
             });
@@ -157,12 +159,16 @@
         var buttonId = 'checkIntegrityButton' + identifier;
         var resultsButtonId = 'getIntegrityResultsButton' + identifier;
         var loadingId = 'loadingContent' + identifier;
+        var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
 
         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
             domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
         });
         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
             domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
+        });
+        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+            domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', '');
         });
         dojo.byId(loadingId).show();
 
@@ -185,12 +191,16 @@
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                     });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
+                    });
                     dojo.byId(loadingId).hide();
                     return;
                 }
 
                 showDotCMSSystemMessage(data.message, false);
                 //Lets start checking every 30 seconds the status of this integrity check
+                displayLoadingOnly(identifier);
                 checkIntegrityProcessStatus(identifier);
             },
             error: function (error) {
@@ -202,6 +212,9 @@
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                     domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                 });
+                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                    domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
+                });
                 dojo.byId(loadingId).hide();
             }
         };
@@ -209,14 +222,15 @@
     }
 
     /**
-    * Verifies the status of a check integrity process for a given server
-    * @param identifier
+     * Verifies the status of a check integrity process for a given server
+     * @param identifier
      */
-    function checkIntegrityProcessStatus(identifier) {
+    function cancelIntegrityCheck(identifier, callback) {
 
         var buttonId = 'checkIntegrityButton' + identifier;
         var resultsButtonId = 'getIntegrityResultsButton' + identifier;
         var loadingId = 'loadingContent' + identifier;
+        var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
 
         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
             domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
@@ -224,7 +238,71 @@
         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
             domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
         });
+        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+            domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', '');
+        });
+        dojo.byId(loadingId).hide();
+
+        //Displaying the loading dialog
+        dijit.byId('processingDialog').show();
+
+        var xhrArgs = {
+            url: "/api/integrity/cancelIntegrityProcess/endPoint/" + identifier,
+            handleAs: "json",
+            load: function (data) {
+
+                var isError = false;
+                if (data.success == false || data.success == "false") {
+                    isError = true;
+                }
+
+                if (isError) {
+                    showDotCMSSystemMessage(data.message, isError);
+                }
+                //Lets start checking every 30 seconds the status of this integrity check
+                checkIntegrityProcessStatus(identifier, function (status) {
+                    if (status != "processing") {
+                        //Hiding the loading dialog
+                        dijit.byId('processingDialog').hide();
+                    }
+                });
+            },
+            error: function (error) {
+                showDotCMSSystemMessage(error.responseText, true);
+            }
+        };
+        dojo.xhrGet(xhrArgs);
+    }
+
+    var displayLoadingOnly = function (identifier) {
+
+        var buttonId = 'checkIntegrityButton' + identifier;
+        var resultsButtonId = 'getIntegrityResultsButton' + identifier;
+        var loadingId = 'loadingContent' + identifier;
+        var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
+
+        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+            domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
+        });
+        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+            domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
+        });
+        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+            domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
+        });
         dojo.byId(loadingId).show();
+    };
+
+    /**
+    * Verifies the status of a check integrity process for a given server
+    * @param identifier
+     */
+    function checkIntegrityProcessStatus(identifier, callback) {
+
+        var buttonId = 'checkIntegrityButton' + identifier;
+        var resultsButtonId = 'getIntegrityResultsButton' + identifier;
+        var loadingId = 'loadingContent' + identifier;
+        var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
 
         var xhrArgs = {
             url: "/api/integrity/checkIntegrityProcessStatus/endPoint/" + identifier,
@@ -245,6 +323,9 @@
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                     });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
+                    });
                     dojo.byId(loadingId).hide();
                     return;
                 }
@@ -252,9 +333,13 @@
                 var status = data.status;
                 if (status == "processing") {//Still processing, check again in 30 seconds
 
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', '');
+                    });
+
                     //Verify again in 30 seconds
                     setTimeout(function () {
-                        checkIntegrityProcessStatus(identifier)
+                        checkIntegrityProcessStatus(identifier, callback)
                     }, 10000);
                     //Verify again in 30 seconds
 
@@ -264,6 +349,9 @@
                     });
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', '');
+                    });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
                     });
                     dojo.byId(loadingId).hide();
                 } else if (status == "noConflicts") {//We found no conflicts
@@ -275,6 +363,9 @@
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                     });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
+                    });
                     dojo.byId(loadingId).hide();
                 } else if (status == "error") {//Some error happened,display the error a buttons to normal
                     showDotCMSSystemMessage(data.message, true);
@@ -285,6 +376,22 @@
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                     });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
+                    });
+                    dojo.byId(loadingId).hide();
+                } else if (status == "canceled") {//The process was cancelled
+                    showDotCMSSystemMessage(data.message, true);
+
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(buttonId).domNode, 'display', '');
+                    });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
+                    });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
+                    });
                     dojo.byId(loadingId).hide();
                 } else {//No process at all, just make sure buttons are in their initial status
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
@@ -293,10 +400,22 @@
                     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                     });
+                    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+                        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
+                    });
                     dojo.byId(loadingId).hide();
+                }
+
+                if (callback && typeof(callback) === "function") {
+                    callback(status);
                 }
             },
             error: function (error) {
+
+                if (callback && typeof(callback) === "function") {
+                    callback();
+                }
+
                 showDotCMSSystemMessage(error.responseText, true);
 
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
@@ -320,12 +439,16 @@
         var buttonId = 'checkIntegrityButton' + identifier;
         var resultsButtonId = 'getIntegrityResultsButton' + identifier;
         var loadingId = 'loadingContent' + identifier;
+        var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
 
         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
             domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
         });
         require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
             domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
+        });
+        require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+            domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
         });
         dojo.byId(loadingId).show();
 
@@ -440,8 +563,12 @@
         dojo.place(htmlContent, tabContentDiv, "only");
     }
 
-    function closeIntegrityResultsDialog(){
-        dijit.byId('integrityResultsDialog').hide();
+    function closeIntegrityResultsDialog(identifier) {
+        //Verify the status of the current process for this endpoint
+        checkIntegrityProcessStatus(identifier, function () {
+            //Close the dialog
+            dijit.byId('integrityResultsDialog').hide();
+        });
     }
 
     function fixConflicts(identifier, type) {
@@ -470,7 +597,6 @@
                     return;
                 }
 
-//                 closeIntegrityResultsDialog();
 				var message = localFix? "<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed_local")%>"
 						: "<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_fixed_remote")%>"
 
@@ -503,7 +629,7 @@
                     return;
                 }
 
-                closeIntegrityResultsDialog();
+                closeIntegrityResultsDialog(identifier);
                 showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_discarded")%>", true);
 
             },
@@ -757,17 +883,20 @@
 	                        <div class="buttonsGroup">
 
                                 <%if(environment.getPushToAll() || i == 0){%>
-                                <div class="integrityCheckActionsGroup" style="float:right" id="group-<%=endpoint.getId()%>">
+                                <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
                                     <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
-                                        <%= LanguageUtil.get(pageContext,"CheckIntegrity") %>
+                                        <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
                                     </button>
                                     <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" iconClass="exclamation" style="display: none;">
-                                        <%= LanguageUtil.get(pageContext,"Preview-Analysis-Results") %>
+                                        <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
                                     </button>
                                     <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
-                                        <font class="bg" size="2"> <b><%= LanguageUtil.get(pageContext, "Loading") %></b> <br />
+                                        <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
                                             <img src="/html/images/icons/processing.gif" /></font>
                                     </div>
+                                    <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="padding-left:10px; padding-top:5px; display:none;">
+                                        <%= LanguageUtil.get( pageContext, "cancel" ) %>
+                                    </button>
                                 </div>
                                 <%} %>
 
@@ -928,7 +1057,7 @@
 				<button dojoType="dijit.form.Button" id="structuresDiscardButton"
 					onClick="discardConflicts(selectedEndpointId, 'structures')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_discard_conflicts")%></button>
-				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 			</div>
 		</div>
 
@@ -941,7 +1070,7 @@
 				<button dojoType="dijit.form.Button" id="foldersDiscardButton"
 					onClick="discardConflicts(selectedEndpointId, 'folders')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_discard_conflicts")%></button>
-				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 			</div>
 		</div>
 
@@ -954,7 +1083,7 @@
 				<button dojoType="dijit.form.Button" id="schemesDiscardButton"
 					onClick="discardConflicts(selectedEndpointId, 'schemes')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
 					"push_publish_integrity_discard_conflicts")%></button>
-				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog()" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+				<button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
 			</div>
 		</div>
 
@@ -962,6 +1091,9 @@
 
 </div>
 
+<div id="processingDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext,"Processing")%>" style="display: none;">
+    <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="processingLoading" id="processingLoading"></div>
+</div>
 <div id="fixingDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext,"push_publish_integrity_fixing_conflict")%>" style="display: none;">
     <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
 </div>
