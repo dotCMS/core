@@ -1,9 +1,9 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="org.osgi.framework.Bundle"%>
+<%@page import="com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.listeners.OsgiFelixListener"%>
-<%@page import="org.apache.felix.main.AutoProcessor"%>
-<%@page import="org.osgi.framework.BundleContext"%>
+<%@page import="com.dotcms.repackage.felix_4_2_1.org.apache.felix.main.AutoProcessor"%>
+<%@page import="com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleContext"%>
 
 <script type="text/javascript" src="/html/portlet/ext/osgi/js.jsp" ></script>
 <div class="portlet-wrapper">

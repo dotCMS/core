@@ -22,16 +22,16 @@ import java.util.Properties;
 import javax.servlet.ServletContextEvent;
 
 import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
-import org.apache.felix.framework.FrameworkFactory;
-import org.apache.felix.framework.util.FelixConstants;
-import org.apache.felix.http.proxy.DispatcherTracker;
-import org.apache.felix.main.AutoProcessor;
-import org.apache.felix.main.Main;
+import com.dotcms.repackage.felix_4_2_1.org.apache.felix.framework.FrameworkFactory;
+import com.dotcms.repackage.felix_4_2_1.org.apache.felix.framework.util.FelixConstants;
+import com.dotcms.repackage.org_apache_felix_http_proxy_2_2_0.org.apache.felix.http.proxy.DispatcherTracker;
+import com.dotcms.repackage.felix_4_2_1.org.apache.felix.main.AutoProcessor;
+import com.dotcms.repackage.felix_4_2_1.org.apache.felix.main.Main;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.launch.Framework;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleActivator;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.ServiceReference;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.launch.Framework;
 
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
@@ -118,7 +118,7 @@ public class OSGIUtil {
 
         // (6) Use the specified bundle cache directory over default.
         if ( cacheDir != null ) {
-            configProps.setProperty( org.osgi.framework.Constants.FRAMEWORK_STORAGE, cacheDir );
+            configProps.setProperty( com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Constants.FRAMEWORK_STORAGE, cacheDir );
         }
 
         // Create host activator;
