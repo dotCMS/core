@@ -22,9 +22,15 @@ import java.util.zip.ZipOutputStream;
 import com.dotcms.repackage.javacsv.com.csvreader.CsvReader;
 import com.dotcms.repackage.javacsv.com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource.IntegrityType;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -736,7 +742,7 @@ public class IntegrityUtil {
 		}
 	}
 
-	public void fixConflicts(String endpointId, IntegrityType type) throws DotDataException {
+	public void fixConflicts(String endpointId, IntegrityType type) throws DotDataException, DotSecurityException {
 		if(type == IntegrityType.FOLDERS) {
 			fixFolders(endpointId);
 		} else if(type == IntegrityType.STRUCTURES) {
@@ -801,8 +807,9 @@ public class IntegrityUtil {
      *
      * @param serverId
      * @throws DotDataException
+     * @throws DotSecurityException
      */
-    public void fixStructures ( String serverId ) throws DotDataException {
+    public void fixStructures ( String serverId ) throws DotDataException, DotSecurityException {
 
         DotConnect dc = new DotConnect();
         String tableName = getResultsTableName( serverId, IntegrityType.STRUCTURES );
@@ -829,6 +836,22 @@ public class IntegrityUtil {
                 dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey" );
                 dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_structure_id_fkey ");
             }
+
+            dc.setSQL("select local_inode from " + tableName + " where endpoint_id = ?");
+            dc.addParam(serverId);
+            List<Map<String,Object>> results = dc.loadObjectResults();
+
+            for (Map<String, Object> result : results) {
+				String structureInode = (String) result.get("local_inode");
+				Structure st = StructureCache.getStructureByInode(structureInode);
+
+				List<Contentlet> contents = APILocator.getContentletAPI().findByStructure(st, APILocator.getUserAPI().getSystemUser(), false, 0, 0);
+				for (Contentlet contentlet : contents) {
+					CacheLocator.getContentletCache().remove(contentlet.getInode());
+				}
+
+				StructureCache.removeStructure(st);
+			}
 
             //structure
             updateFrom( dc, tableName, "structure", "inode" );
