@@ -264,15 +264,18 @@ public class OSGIUtil {
                     bob.append( (name.replace( File.separator, "." ).replace( "/", "." )) + "," + "\n" );
                 }
             }
-            bob.append("org.osgi.framework," +
-        			"org.osgi.service.packageadmin," +
-        			"org.osgi.service.startlevel," +
-        			"org.osgi.service.url," +
-        			"org.osgi.util.tracker," +
-        			"org.osgi.service.http," +
-        			"javax.inject.Qualifier," +
-        			"javax.servlet.resources," +
-        			"javax.servlet;javax.servlet.http;version=2.5");
+
+            bob.append( "com.dotcms.repackage.felix_4_2_1.org.osgi.framework," +
+                    "com.dotcms.repackage.felix_4_2_1.org.osgi.framework.wiring," +
+                    "com.dotcms.repackage.felix_4_2_1.org.osgi.service.packageadmin," +
+                    "com.dotcms.repackage.felix_4_2_1.org.osgi.framework.startlevel," +
+                    "com.dotcms.repackage.felix_4_2_1.org.osgi.service.startlevel," +
+                    "com.dotcms.repackage.felix_4_2_1.org.osgi.service.url," +
+                    "com.dotcms.repackage.felix_4_2_1.org.osgi.util.tracker," +
+                    "com.dotcms.repackage.org_apache_felix_http_bundle_2_2_0.org.osgi.service.http," +
+                    "javax.inject.Qualifier," +
+                    "javax.servlet.resources," +
+                    "javax.servlet;javax.servlet.http;version=2.5" );
 
         	BufferedWriter writer = null;
         	try {

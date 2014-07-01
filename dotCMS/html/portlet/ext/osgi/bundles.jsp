@@ -31,8 +31,13 @@
 <%
 Bundle[] ba = OSGIUtil.getInstance().getBundleContext().getBundles();
 
-List<String> ignoreBuns =Arrays.asList(new String[]{"org.apache.felix.gogo.shell","org.apache.felix.framework", "org.apache.felix.bundlerepository","org.apache.felix.fileinstall","org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core"});
-
+    List<String> ignoreBuns = Arrays.asList( "com.dotcms.repackage.org_apache_felix_gogo_shell_0_10_0.org.apache.felix.gogo.shell",
+            "org.apache.felix.framework",
+            "org.apache.felix.http.bundle",
+            "com.dotcms.repackage.org_apache_felix_bundlerepository_1_6_6.org.apache.felix.bundlerepository",
+            "com.dotcms.repackage.org_apache_felix_fileinstall_3_1_10.org.apache.felix.fileinstall",
+            "com.dotcms.repackage.org_apache_felix_gogo_command_0_12_0.org.apache.felix.gogo.command",
+            "com.dotcms.repackage.org_apache_felix_gogo_runtime_0_10_0.org.apache.felix.gogo.runtime", "org.osgi.core" );
 
 Map<Integer,String> states = new HashMap<Integer,String>();
 states.put(Bundle.ACTIVE, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Active"));
