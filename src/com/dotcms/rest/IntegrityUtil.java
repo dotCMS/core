@@ -405,6 +405,7 @@ public class IntegrityUtil {
 			dc.setSQL("select 1 from identifier iden "
 						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
 						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+						+ "join contentlet_version_info cvi on c.inode = cvi.working_inode "
 						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
 
 			List<Map<String,Object>> results = dc.loadObjectResults();
@@ -424,6 +425,7 @@ public class IntegrityUtil {
 						+ "f.inode as local_inode, ft.inode as remote_inode, '" +endpointId+ "' from identifier iden "
 						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
 						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+						+ "join contentlet_version_info cvi on c.inode = cvi.working_inode "
 						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
 
 				dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
