@@ -12,13 +12,15 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 
 //This interface should have default package access
 public abstract class WorkflowCache implements Cachable{
+
+    public final String defaultKey = "DEFAULT_WORKFLOW_SCHEME";
 	protected static String PRIMARY_GROUP = "WorkflowCache";
 	protected static String TASK_GROUP = "WorkflowTaskCache";
 	protected static String STEP_GROUP = "WorkflowStepCache";
 	protected static String ACTION_GROUP = "WorkflowActionCache";
 	abstract protected WorkflowScheme add(WorkflowScheme scheme);
 
-	abstract protected WorkflowScheme getScheme(String key);
+	public abstract WorkflowScheme getScheme(String key);
 	abstract protected WorkflowStep getStep(String key);
 	abstract protected WorkflowStep getStep(Contentlet con);
 	abstract protected WorkflowTask getTask(Contentlet key);
@@ -32,7 +34,7 @@ public abstract class WorkflowCache implements Cachable{
 	
 	abstract public void clearCache();
 	abstract protected void remove(Contentlet contentlet);
-	abstract protected void remove(WorkflowScheme scheme);
+	public abstract void remove(WorkflowScheme scheme);
 	abstract protected void remove(WorkflowStep step);
 	abstract protected void removeActions(WorkflowStep step);
 	abstract protected void remove(WorkflowTask task) ;
@@ -46,7 +48,7 @@ public abstract class WorkflowCache implements Cachable{
 		CacheLocator.getCacheAdministrator().flushGroup(TASK_GROUP);
 	}
 	abstract protected void clearStepsCache() ;
-	abstract protected WorkflowScheme getDefaultScheme();
+	public abstract WorkflowScheme getDefaultScheme();
 	abstract protected WorkflowScheme addDefaultScheme(WorkflowScheme scheme);
 
 	public String getPrimaryGroup() {
