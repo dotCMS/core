@@ -83,21 +83,21 @@ public class BundlePublisherResource extends WebResource {
 			remoteIP = req.getRemoteHost();
 			if(!UtilMethods.isSet(remoteIP))
 				remoteIP = req.getRemoteAddr();
-			
+
 			HibernateUtil.startTransaction();
-			
+
 			PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
-			
+
 			if(!isValidToken(auth_token, remoteIP, mySelf)) {
 				bundle.close();
                 return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
             }
-			
+
 			String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
 			String fileName=fileDetail.getFileName();
 			String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
 
-            PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, groupId, bundleFolder, true );
+            PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable( mySelf.getId(), mySelf.getId(), bundleFolder, true );
 
             if(bundleName.trim().length()>0) {
 			    // save bundle if it doesn't exists
@@ -111,17 +111,17 @@ public class BundlePublisherResource extends WebResource {
                     APILocator.getBundleAPI().saveBundle(b);
 			    }
 			}
-			
+
 			//Write file on FS
 			FileUtil.writeToFile(bundle, bundlePath+fileName);
-			
+
 			//Start thread
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 				new Thread(new PublishThread(fileName, groupId, endpointId, status)).start();
 			}
-			
+
 			HibernateUtil.commitTransaction();
-			
+
 			return Response.status(HttpStatus.SC_OK).build();
 		} catch (NumberFormatException e) {
 		    try {
@@ -146,10 +146,10 @@ public class BundlePublisherResource extends WebResource {
                 Logger.error(this, "error close session",e);
             }
 		}
-		
+
 		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
-	
+
     /**
      * Validates a received token
      *

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 
@@ -58,7 +59,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 	 */
 	public void saveLayout(Layout layout) throws LayoutNameAlreadyExistsException, DotDataException {
 		Layout oldLayout = lf.findLayoutByName(layout.getName());
-		if(oldLayout != null && !oldLayout.getId().equals(layout.getId()))
+		if(UtilMethods.isSet(oldLayout) && UtilMethods.isSet(oldLayout.getId()) && !oldLayout.getId().equals(layout.getId()))
 			throw new LayoutNameAlreadyExistsException("Layout with name: " + layout.getName() + " already exists in the system, " +
 					"cannot save a new layout using the same name");
 		

@@ -525,7 +525,7 @@ dojo.require("dojo.cookie");
     <div id="admin-site-tools-div">
 		<!-- Updates -->
         <% if (licenseMessage != null) { %>
-            <a class="goEnterpriseLink" href="<%=licenseURL%>"><span class="keyIcon"></span><%=licenseMessage%></a>
+            <a class="goEnterpriseLink" href="<%=licenseURL%>" id="goEnterpriseLink"><span class="keyIcon"></span><%=licenseMessage%></a>
         <% } %>
 
    		<a id="autoUpdaterLink" style="display:none;" class="goEnterpriseLink"  href="javascript: showAutoUpdaterPopUp();"><span class="exclamation-red"></span><%= LanguageUtil.get(pageContext, "Update-available") %></a>

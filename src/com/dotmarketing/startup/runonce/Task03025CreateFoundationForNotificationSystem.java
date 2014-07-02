@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
-public class Task01325CreateFoundationForNotificationSystem extends AbstractJDBCStartupTask {
+public class Task03025CreateFoundationForNotificationSystem extends AbstractJDBCStartupTask {
 
 	@Override
 	public boolean forceRun() {

@@ -32,6 +32,12 @@
         text-overflow: clip;
     	white-space: nowrap;   
     }
+    .widgetAceText{
+    	width:682px;min-height:362px;max-height: 400px;   	
+        border:1px solid #C0C0C0;
+        text-overflow: clip;
+    	white-space: nowrap;   
+    }
 </style>
 
 <!-- AChecker support -->
@@ -715,7 +721,12 @@ var cmsfile=null;
 	
 	var textEditor = new Array();
 	var aceTextId = new Array();
-	function aceText(textarea,keyValue) {
+	function aceText(textarea,keyValue,isWidget) {
+		var elementWysiwyg = document.getElementById("disabledWysiwyg");
+		var wysiwygValue = elementWysiwyg.value;
+		var result = "";
+		var toggleEditor = textarea+"<%=com.dotmarketing.util.Constants.TOGGLE_EDITOR_SEPARATOR%>";
+		var wysiwygValueArray = wysiwygValue.split(",");
 		if(document.getElementById('aceTextArea_'+textarea).style.position != 'relative'){
 			document.getElementById('aceTextArea_'+textarea).style.position='relative';
 			textEditor[textarea] = ace.edit('aceTextArea_'+textarea);
@@ -729,20 +740,47 @@ var cmsfile=null;
 		var aceClass = acetId.className;
 		if (dijit.byId("toggleEditor_"+textarea).checked) {
 			document.getElementById(textarea).style.display = "none";
-			acetId.className = aceClass.replace('classAce', 'aceText');
+			if(isWidget == 'true')
+				acetId.className = aceClass.replace('classAce', 'widgetAceText');
+			else
+				acetId.className = aceClass.replace('classAce', 'aceText');
+
 			textEditor[textarea].setValue(document.getElementById(textarea).value);
 			textEditor[textarea].clearSelection();
 			enabledCodeAreas[textarea]=true;
+			if(wysiwygValue != ""){
+				for(i = 0;i < wysiwygValueArray.length;i++){
+					var wysiwygFieldVar = trimString(wysiwygValueArray[i]);
+					if((wysiwygFieldVar == textarea) || (wysiwygFieldVar == toggleEditor))
+						continue;
+					else
+						result += wysiwygFieldVar + ",";		
+				}
+			}
+			result += toggleEditor + ",";	
 		} else {
 			var editorText = textEditor[textarea].getValue();
-			acetId.className = aceClass.replace('aceText', 'classAce');
+			if(isWidget == 'true')
+				acetId.className = aceClass.replace('widgetAceText', 'classAce');
+			else
+				acetId.className = aceClass.replace('aceText', 'classAce');
+
 			document.getElementById(textarea).style.display = "inline";
 			document.getElementById(textarea).value = editorText;
 			textEditor[textarea].setValue("");
 			enabledCodeAreas[textarea]=false;
+			if(wysiwygValue != ""){
+				for(i = 0;i < wysiwygValueArray.length;i++){	
+					var wysiwygFieldVar = trimString(wysiwygValueArray[i]);
+					if((wysiwygFieldVar == textarea) || (wysiwygFieldVar == toggleEditor))
+						continue;
+					else
+						result += wysiwygFieldVar + ",";		
+				}
+			}
 		}
 		dijit.byId("toggleEditor_"+textarea).disabled=false;
+		elementWysiwyg.value = result;
 	}
 </script>
-
 

@@ -11,11 +11,10 @@ import java.util.StringTokenizer;
 import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
 import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
 import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
-
 import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
-
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.scheduler.struts.SchedulerForm;
@@ -153,7 +152,11 @@ public class EditSchedulerAction extends DotPortletAction {
 
 			}
 			catch (Exception ae) {
-				_handleException(ae, req);
+				try{
+					_forceTodDeleteScheduler(req, res, config, form,user);
+				}catch(Exception a){
+					_handleException(a, req);
+				}
 			}
 			
 			String redirect = req.getParameter("referrer");
@@ -440,6 +443,33 @@ public class EditSchedulerAction extends DotPortletAction {
 		SessionMessages.add(req, "message", "message.Scheduler.delete");
 	}
 	
+	/**
+	 * This method force the job deletion when the job class is not found
+	 */
+	private String update_class_to_delete = "update qrtz_excl_job_details set job_class_name=? where job_name=? and job_group=?";
+	private void _forceTodDeleteScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form , User user) throws Exception {
+		SchedulerForm schedulerForm = (SchedulerForm) form;
+		if (UtilMethods.isSet(schedulerForm.getJobGroup())){
+			DotConnect dc = new DotConnect();
+			dc.setSQL(update_class_to_delete);
+			dc.addParam("com.dotmarketing.quartz.job.TimeMachineJob");
+			dc.addParam(schedulerForm.getJobName());
+			dc.addParam(schedulerForm.getJobGroup());
+			dc.loadResult();
+			
+			QuartzUtils.removeJob(schedulerForm.getJobName(), schedulerForm.getJobGroup());
+		}else{
+			DotConnect dc = new DotConnect();
+			dc.setSQL(update_class_to_delete);
+			dc.addParam("com.dotmarketing.quartz.job.TimeMachineJob");
+			dc.addParam(req.getParameter("name"));
+			dc.addParam(req.getParameter("group"));
+			dc.loadResult();
+			
+			QuartzUtils.removeJob(req.getParameter("name"), req.getParameter("group"));
+		}
+		SessionMessages.add(req, "message", "message.Scheduler.delete");
+	}
 	private void _populateForm(ActionForm form, CronScheduledTask scheduler) {
 		try {
 			BeanUtils.copyProperties(form, scheduler);

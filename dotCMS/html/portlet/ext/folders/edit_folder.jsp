@@ -60,7 +60,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 				return false;
 			}
 			else if (document.getElementById("titleField").value.indexOf(" ")>-1) {
-				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
+				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.no.space.in.url")) %>');
 				return false;
 			}
 		}
