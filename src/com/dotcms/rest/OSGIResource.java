@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
@@ -15,7 +16,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import org.osgi.framework.Bundle;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -28,7 +28,16 @@ import java.util.*;
 @Path ("/osgi")
 public class OSGIResource extends WebResource {
 
-    List<String> systemBundles = Arrays.asList( "org.apache.felix.http.bundle", "org.apache.felix.gogo.shell", "org.apache.felix.framework", "org.apache.felix.bundlerepository", "org.apache.felix.fileinstall", "org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core" );
+    List<String> systemBundles = Arrays.asList(
+            "org.apache.felix.http.bundle",
+            "com.dotcms.repackage.org_apache_felix_gogo_shell_0_10_0.org.apache.felix.gogo.shell",
+            "org.apache.felix.framework",
+            "com.dotcms.repackage.org_apache_felix_bundlerepository_1_6_6.org.apache.felix.bundlerepository",
+            "com.dotcms.repackage.org_apache_felix_fileinstall_3_1_10.org.apache.felix.fileinstall",
+            "com.dotcms.repackage.org_apache_felix_gogo_command_0_12_0.org.apache.felix.gogo.command",
+            "com.dotcms.repackage.org_apache_felix_gogo_runtime_0_10_0.org.apache.felix.gogo.runtime",
+            "org.osgi.core"
+    );
 
     /**
      * This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method.

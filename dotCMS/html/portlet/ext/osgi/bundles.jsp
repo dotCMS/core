@@ -1,12 +1,12 @@
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 <%@page import="java.util.List"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="org.osgi.framework.Bundle"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
+<%@ page import="com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle" %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <script type="text/javascript">
