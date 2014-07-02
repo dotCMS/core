@@ -31,6 +31,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.business.WorkflowCache;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -946,6 +948,26 @@ public class IntegrityUtil {
             } else if ( !DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "ALTER TABLE workflow_step DROP CONSTRAINT workflow_step_scheme_id_fkey" );
                 dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey" );
+            }
+
+            //Delete the schemes cache
+            dc.setSQL( "SELECT local_inode FROM " + tableName + " WHERE endpoint_id = ?" );
+            dc.addParam( serverId );
+            List<Map<String, Object>> results = dc.loadObjectResults();
+            for ( Map<String, Object> result : results ) {
+
+                String workflowInode = (String) result.get( "local_inode" );
+
+                WorkflowCache workflowCache = CacheLocator.getWorkFlowCache();
+                //Verify if the workflow is the default one
+                WorkflowScheme defaultScheme = workflowCache.getDefaultScheme();
+                if ( defaultScheme != null && defaultScheme.getId().equals( workflowInode ) ) {
+                    CacheLocator.getCacheAdministrator().remove( workflowCache.defaultKey, workflowCache.getPrimaryGroup() );
+                } else {
+                    //Clear the cache
+                    WorkflowScheme scheme = workflowCache.getScheme( workflowInode );
+                    workflowCache.remove( scheme );
+                }
             }
 
             //workflow_scheme
