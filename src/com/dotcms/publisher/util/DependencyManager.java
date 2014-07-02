@@ -210,8 +210,17 @@ public class DependencyManager {
         setStructureDependencies();
         setLinkDependencies();
 
-    	contents.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
-        setContentDependencies( config.getLuceneQueries() );
+        if(UtilMethods.isSet(config.getLuceneQueries())){
+        	List<String> contentIds = PublisherUtil.getContentIds( config.getLuceneQueries());
+        	for(String id : contentIds){
+        		List<Contentlet> contentlets = APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false);
+        		for(Contentlet con : contentlets){
+        			contents.add( con.getIdentifier(), con.getModDate()); 
+        			contentsSet.add(con.getIdentifier());
+        		}
+        	}
+        }
+        setContentDependencies();
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -550,7 +559,8 @@ public class DependencyManager {
 	private void setTemplateDependencies() {
 		try {
 			List<Container> containerList = new ArrayList<Container>();
-
+			FolderAPI folderAPI = APILocator.getFolderAPI();
+			
 			for (String id : templatesSet) {
 				Template wkT = APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
 				Template lvT = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
@@ -570,6 +580,21 @@ public class DependencyManager {
 					// Container dependencies
 					containers.addOrClean( container.getIdentifier(), container.getModDate());
 					containersSet.add(container.getIdentifier());
+				}
+				
+				//Adding theme
+				if(UtilMethods.isSet(wkT.getTheme())){
+					Folder themeFolder = folderAPI.find(wkT.getTheme(), user, false);
+					if(themeFolder != null &&  InodeUtils.isSet(themeFolder.getInode())){
+						Folder parent = APILocator.getFolderAPI().findParentFolder(themeFolder, user, false);
+						if(UtilMethods.isSet(parent)) {
+							folders.addOrClean( parent.getInode(), parent.getModDate());
+							foldersSet.add(parent.getInode());
+						}
+						List<Folder> folderList = new ArrayList<Folder>();
+						folderList.add(themeFolder);
+						setFolderListDependencies(folderList);
+					}
 				}
 			}
 
@@ -830,7 +855,7 @@ public class DependencyManager {
 	 * @param luceneQueries Queries to get the dependency Contentlets from
 	 * @throws DotBundleException If fails executing the Lucene queries
 	 */
-	private void setContentDependencies(List<String> luceneQueries) throws DotBundleException {
+	private void setContentDependencies() throws DotBundleException {
 		try {
 		    // we need to process contents already taken as dependency
 			Set<String> cons = new HashSet<String>(contentsSet);
@@ -840,10 +865,6 @@ public class DependencyManager {
 			for(String id : cons){
             	allContents.addAll(APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false));
             }
-
-			for(String luceneQuery: luceneQueries) {
-				allContents.addAll(APILocator.getContentletAPI().search(luceneQuery, 0, 0, "moddate", user, false));
-			}
 
 			processList(allContents);
 

@@ -263,7 +263,7 @@ public class EditFolderAction extends DotPortletAction {
 		
 		try {
 		
-			if (InodeUtils.isSet(f.getInode()) && !folderForm.getName().equals(f.getName())) {
+			if (InodeUtils.isSet(f.getInode()) && !folderForm.getName().equalsIgnoreCase(f.getName())) {
 				if (!folderAPI.renameFolder(f,folderForm.getName(),user,false)) {
 					// For messages to be displayed on messages page
 					SessionMessages.add(req, "message", "message.folder.alreadyexists");
@@ -357,7 +357,7 @@ public class EditFolderAction extends DotPortletAction {
 					Identifier ident=APILocator.getIdentifierAPI().find(f);
 					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 				}
-					
+				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(f.getIdentifier());
 				// For messages to be displayed on messages page
 				SessionMessages.add(req, "message", "message.folder.save");
 				return true;

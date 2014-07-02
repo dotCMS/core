@@ -172,7 +172,10 @@ public class PublishFactory {
 				
 				
 			}
-			//writes the template to a live directory under velocity folder
+
+            //Clean-up the cache for this template
+            CacheLocator.getTemplateCache().remove( webAsset.getInode() );
+            //writes the template to a live directory under velocity folder
 			TemplateServices.invalidate((Template)webAsset);
 
 		}

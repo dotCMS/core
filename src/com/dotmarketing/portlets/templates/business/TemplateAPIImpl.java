@@ -507,4 +507,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan,"template");
     }
+    
+    public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
+    	templateFactory.updateThemeWithoutVersioning(templateInode, theme);
+    }
 }

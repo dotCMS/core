@@ -197,5 +197,14 @@ public interface TemplateAPI {
     public Template find(String inode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 
     public Template copy(Template sourceTemplate, User user)throws DotDataException, DotSecurityException ;
+    
+	/**
+	 *
+	 * Updates the template's theme without creating new version.
+	 * @param templateInode
+	 * @param theme
+	 *
+	 */
+    public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException;
 
 }

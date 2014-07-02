@@ -904,7 +904,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		String newPath=ident.getParentPath()+newName;
 		Host host = APILocator.getHostAPI().find(folder.getHostId(),user,respectFrontEndPermissions);
 		Folder nFolder=findFolderByPath(newPath, host);
-		if(UtilMethods.isSet(nFolder.getInode()))
+		if(UtilMethods.isSet(nFolder.getInode()) && !folder.getIdentifier().equals(nFolder.getIdentifier()))
 			return false;
 
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);

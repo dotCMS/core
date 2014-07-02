@@ -29,13 +29,13 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItem;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileItemFactory;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.FileUploadException;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import com.dotcms.repackage.commons_fileupload_1_2.org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.hadoop_0_20_3_dev_core.org.apache.hadoop.mapred.lib.Arrays;
 
 import javax.servlet.ServletException;
@@ -340,6 +340,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                     }
                 }
 
+                //Cleaning previous bundle folder and tar file to avoid sending modified data 
+                FileUtils.cleanDirectory(new File(bundlePath));
+                bundleFile.delete();
+                
                 //Now depending of the operation lets add it to the queue job
                 if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
                     publisherAPI.addContentsToPublish( new ArrayList<String>( identifiers ), bundleId, new Date(), getUser() );
@@ -511,7 +515,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      */
     @SuppressWarnings ("unchecked")
     private Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
-    	
+
         PushPublisherConfig pconf = new PushPublisherConfig();
         PublisherAPI pubAPI = PublisherAPI.getInstance();
 
@@ -598,7 +602,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			response.sendError(401);
 			return;
 		}
-    	
+
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload( factory );
         @SuppressWarnings ("unchecked")
@@ -614,7 +618,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
         PublishAuditStatus status;
         try {
-            status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, null, bundleFolder );
+            status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, endpointId, bundleFolder );
 
             // Write file on FS
             FileUtil.writeToFile( bundle, bundlePath + bundleName );
@@ -723,7 +727,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                         bundle=b;
                     }
                 }
-                
+
                 if(bundle==null) {
                     bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
                     APILocator.getBundleAPI().saveBundle( bundle );
@@ -806,7 +810,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             		envsToSendTo.add(e);
             	}
 			}
-            
+
             if(envsToSendTo.isEmpty()) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;

@@ -1,9 +1,91 @@
+<%@page import="com.liferay.portal.util.PortalUtil"%>
+<%@page import="java.util.Calendar"%>
+<%@page import="com.dotmarketing.util.WebKeys"%>
+<%@page import="com.liferay.portal.model.User"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.Layout"%>
+<%@page import="java.util.List"%>
 <%
 String error=null;
 String message=null;
+String newLicenseMessage="";
+String newLicenseURL="";
 if (request.getMethod().equalsIgnoreCase("POST") ) {
 	error=LicenseUtil.processForm(request);
 	
+	boolean isCommunity = ("100".equals(System
+            .getProperty("dotcms_level")));
+    newLicenseURL = "http://www.dotcms.com/buy-now";
+    List<Layout> layoutListForLicenseManager=null;
+    try {
+        if (isCommunity) {
+
+            layoutListForLicenseManager=APILocator.getLayoutAPI().loadLayoutsForUser(PortalUtil.getUser(request));
+            for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
+                List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
+                if (portletIdsForLicenseManager.contains("EXT_LICENSE_MANAGER")) {
+                    newLicenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=EXT_LICENSE_MANAGER&p_p_action=0";
+                    newLicenseMessage = LanguageUtil.get(pageContext, "Try-Enterprise-Now") + "!" ;
+                    break;
+                }
+            }
+
+        } else {
+            boolean isPerpetual = new Boolean(System
+                    .getProperty("dotcms_license_perpetual"));
+            boolean isTrial = true;
+            try{
+                isTrial = (System.getProperty("dotcms_license_client_name").toLowerCase().indexOf("trial") >-1);
+            }
+            catch(Exception e){}
+            Date td = new Date();
+            Date ed = new Date(Long.parseLong(System
+                    .getProperty("dotcms_valid_until")));
+
+            Calendar start = Calendar.getInstance();
+            Calendar end = Calendar.getInstance();
+            start.setTime(td);
+            start.set(Calendar.HOUR, 0);
+            start.set(Calendar.MINUTE, 0);
+            start.set(Calendar.SECOND, 0);
+            start.set(Calendar.MILLISECOND, 0);
+            end.setTime(ed);
+            long milliseconds1 = start.getTimeInMillis();
+            long milliseconds2 = end.getTimeInMillis();
+            long diff = milliseconds2 - milliseconds1;
+            long diffDays = diff / (24 * 60 * 60 * 1000);
+            if (!isPerpetual && isTrial) {
+                if (diffDays > 1) {
+                	newLicenseMessage = LanguageUtil.format(pageContext, "days-remaining-Purchase-now",diffDays,false);
+                    newLicenseURL = "http://dotcms.com/buy-now";
+                }
+                if (diffDays == 1) {
+                	newLicenseMessage = LanguageUtil.format(pageContext, "day-remaining-Purchase-now",diffDays,false);
+                    newLicenseURL = "http://dotcms.com/buy-now";
+                }
+                if (diffDays < 1) {
+                	newLicenseMessage = LanguageUtil.get(pageContext,"Trial-Expired-Purchase-Now");
+                    newLicenseURL = "http://dotcms.com/buy-now";
+                }
+
+            }else if (!isPerpetual) {
+                if (diffDays > 1 && diffDays < 30) {
+                	newLicenseMessage = LanguageUtil.format(pageContext, "Subscription-expires-in-days",diffDays,false);
+                    newLicenseURL = "http://dotcms.com/renew-now";
+                }
+                if (diffDays == 1) {
+                	newLicenseMessage = LanguageUtil.format(pageContext, "Subscription-expires-in-day",diffDays,false);
+                    newLicenseURL = "http://dotcms.com/renew-now";
+                }
+                if (diffDays < 1) {
+                	newLicenseMessage = LanguageUtil.get(pageContext,"Subscription-Expired-Renew-Now");
+                    newLicenseURL = "http://dotcms.com/buy-now";
+                }
+            }
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
 
 }
 
@@ -49,7 +131,16 @@ if(!UtilMethods.isSet(licenseFormStr)){
 
 <%if(UtilMethods.isSet(error)){ %>
 	showDotCMSSystemMessage("<%=error %>");
-<%} %>
+<%} if(request.getMethod().equalsIgnoreCase("POST")){ %>
+	var newLicenseMesssage = "<%=newLicenseMessage%>";
+	var newLicenseURL = "<%=newLicenseURL%>";
+	if(newLicenseMesssage != ""){
+		dojo.attr('goEnterpriseLink','href',newLicenseURL);
+		dojo.attr('goEnterpriseLink','innerHTML',newLicenseMesssage);
+	}else{
+		dojo.style("goEnterpriseLink",{display:"none"});
+	}
+<%}%>
 
 	function showRequestLicense(){
 
