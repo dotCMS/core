@@ -974,12 +974,15 @@ public class IntegrityResource extends WebResource {
             IntegrityUtil integrityUtil = new IntegrityUtil();
 
             if(whereToFix.equals("local")) {
+            	HibernateUtil.startTransaction();
 
             	integrityUtil.fixConflicts(endpointId, IntegrityType.valueOf(type.toUpperCase()));
             	jsonResponse.put( "success", true );
         		jsonResponse.put( "message", "Conflicts fixed in Local Endpoint" );
 
         		clearStatus( request, endpointId );
+
+        		HibernateUtil.commitTransaction();
 
             } else  if(whereToFix.equals("remote")) {
             	integrityUtil.generateDataToFixZip(endpointId, IntegrityType.valueOf(type.toUpperCase()));
@@ -1020,6 +1023,11 @@ public class IntegrityResource extends WebResource {
             }
 
         } catch ( Exception e ) {
+        	try {
+				HibernateUtil.rollbackTransaction();
+			} catch (DotHibernateException e1) {
+				Logger.error(IntegrityResource.class, "Error while rolling back transaction", e);
+			}
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts for End Point server: [" + endpointId + "]", e );
             return response( "Error fixing conflicts for endpoint: " + endpointId , true );
         }
