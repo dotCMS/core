@@ -86,6 +86,7 @@ import com.dotmarketing.startup.runonce.Task03020PostgresqlIndiciesFK;
 import com.dotmarketing.startup.runonce.Task03025CreateFoundationForNotificationSystem;
 import com.dotmarketing.startup.runonce.Task03030CreateIndicesForVersionTables;
 import com.dotmarketing.startup.runonce.Task03035FixContainerCheckTrigger;
+import com.dotmarketing.startup.runonce.Task03040AddIndexesToStructureFields;
 
 public class TaskLocatorUtil {
 
@@ -174,6 +175,7 @@ public class TaskLocatorUtil {
         ret.add(Task03025CreateFoundationForNotificationSystem.class);
         ret.add(Task03030CreateIndicesForVersionTables.class);
         ret.add(Task03035FixContainerCheckTrigger.class);
+        ret.add(Task03040AddIndexesToStructureFields.class);
         return ret;
     }
 
