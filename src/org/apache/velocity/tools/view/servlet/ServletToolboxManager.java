@@ -43,7 +43,7 @@ import org.apache.velocity.tools.view.XMLToolboxManager;
 import org.apache.velocity.tools.view.context.ToolboxContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.servlet.ServletToolboxRuleSet;
-import org.osgi.framework.BundleContext;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleContext;
 
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.Config;
