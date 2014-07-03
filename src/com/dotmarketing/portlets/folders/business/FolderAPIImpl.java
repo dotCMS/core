@@ -713,7 +713,13 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + user + " does not have permission to read " + parent.getName());
 		}
 
-		List list = ffac.getChildrenClass(parent, Contentlet.class);
+		List<Contentlet> list = new ArrayList<Contentlet>();
+
+		List<Treeable> fatList = ffac.getChildrenClass(parent, com.dotmarketing.portlets.contentlet.business.Contentlet.class);
+		for (Treeable treeable : fatList) {
+			list.add(FactoryLocator.getContentletFactory().convertFatContentletToContentlet((com.dotmarketing.portlets.contentlet.business.Contentlet)treeable));
+		}
+
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 	public  List<Structure> getStructures(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
