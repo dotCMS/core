@@ -781,21 +781,19 @@ public class IntegrityUtil {
 
         try {
 
-        	// lets update in the index all contents under each folder with the new folders inodes
+        	 // lets remove from the index all the content under each conflicted folder
 
-        	dc.setSQL("select local_inode, remote_inode from " + tableName + " where endpoint_id = ?");
+        	dc.setSQL("select local_inode from " + tableName + " where endpoint_id = ?");
             dc.addParam(serverId);
             List<Map<String,Object>> results = dc.loadObjectResults();
 
             for (Map<String, Object> result : results) {
             	String oldFolderInode = (String) result.get("local_inode");
-				String newFolderInode = (String) result.get("remote_inode");
 				Folder folder = APILocator.getFolderAPI().find(oldFolderInode, APILocator.getUserAPI().getSystemUser(), false);
 
 				List<Contentlet> contents = APILocator.getContentletAPI().findContentletsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
 				for (Contentlet contentlet : contents) {
-					contentlet.setFolder(newFolderInode);
-					APILocator.getContentletIndexAPI().addContentToIndex(contentlet);;
+					APILocator.getContentletIndexAPI().removeContentFromIndex(contentlet);
 				}
 
 			}
@@ -824,6 +822,20 @@ public class IntegrityUtil {
             updateFrom( serverId, dc, tableName, "permission", "inode_id" );
             //permission_reference
             updateFrom( serverId, dc, tableName, "permission_reference", "asset_id" );
+
+            // lets reindex all the content under each fixed folder
+
+        	dc.setSQL("select remote_inode from " + tableName + " where endpoint_id = ?");
+            dc.addParam(serverId);
+            results = dc.loadObjectResults();
+
+            for (Map<String, Object> result : results) {
+            	String newFolderInode = (String) result.get("remote_inode");
+				Folder folder = APILocator.getFolderAPI().find(newFolderInode, APILocator.getUserAPI().getSystemUser(), false);
+
+				APILocator.getContentletAPI().refreshContentUnderFolder(folder);
+
+			}
 
             discardConflicts(serverId, IntegrityType.FOLDERS);
 
