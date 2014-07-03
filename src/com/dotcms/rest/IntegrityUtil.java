@@ -30,6 +30,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowCache;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -771,13 +772,33 @@ public class IntegrityUtil {
      *
      * @param serverId
      * @throws DotDataException
+     * @throws DotSecurityException
      */
-    public void fixFolders ( String serverId ) throws DotDataException {
+    public void fixFolders ( String serverId ) throws DotDataException, DotSecurityException {
 
         DotConnect dc = new DotConnect();
         String tableName = getResultsTableName( IntegrityType.FOLDERS );
 
         try {
+
+        	// lets update in the index all contents under each folder with the new folders inodes
+
+        	dc.setSQL("select local_inode, remote_inode from " + tableName + " where endpoint_id = ?");
+            dc.addParam(serverId);
+            List<Map<String,Object>> results = dc.loadObjectResults();
+
+            for (Map<String, Object> result : results) {
+            	String oldFolderInode = (String) result.get("local_inode");
+				String newFolderInode = (String) result.get("remote_inode");
+				Folder folder = APILocator.getFolderAPI().find(oldFolderInode, APILocator.getUserAPI().getSystemUser(), false);
+
+				List<Contentlet> contents = APILocator.getContentletAPI().findContentletsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
+				for (Contentlet contentlet : contents) {
+					contentlet.setFolder(newFolderInode);
+					APILocator.getContentletIndexAPI().addContentToIndex(contentlet);;
+				}
+
+			}
 
             //First delete the constrain
             if ( DbConnectionFactory.isMySql() ) {
