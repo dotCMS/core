@@ -831,16 +831,11 @@ public class IntegrityUtil {
             	String newFolderInode = (String) result.get("remote_inode");
 				Folder folder = APILocator.getFolderAPI().find(newFolderInode, APILocator.getUserAPI().getSystemUser(), false);
 
-				List<Contentlet> contents = APILocator.getFolderAPI().getContent(folder, APILocator.getUserAPI().getSystemUser(), false);
-				for (Contentlet contentlet : contents) {
-					APILocator.getContentletIndexAPI().addContentToIndex(contentlet);
-				}
+				APILocator.getContentletAPI().refreshContentUnderFolder(folder);
 
 			}
 
             discardConflicts(serverId, IntegrityType.FOLDERS);
-
-//            CacheLocator.getFolderCache().removeFolder(f, id);
 
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
