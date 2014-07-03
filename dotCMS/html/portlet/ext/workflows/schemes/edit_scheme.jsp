@@ -73,9 +73,14 @@
 				<%} %>
 				<tr>
 					<td align="right"><%=LanguageUtil.get(pageContext, "Mandatory")%>:</td>
-					<td><input type="checkbox" name="schemeMandatory"
-						id="schemeMandatory" dojoType="dijit.form.CheckBox" value="true"
-						<%=(scheme.isMandatory()) ? "checked='true'" : ""%> onClick="schemeAdmin.toggleInitialAction">
+					<td>
+						<%if(firstStep !=null){ %>
+							<input type="checkbox" name="schemeMandatory"
+							id="schemeMandatory" dojoType="dijit.form.CheckBox" value="true"
+							<%=(firstStep !=null) ? "disabled ='false'" : "disabled ='true'"%> onClick="schemeAdmin.toggleInitialAction">
+						<%}else{ %>
+								<%=LanguageUtil.get(pageContext, "Add-Workflow-Step") %>
+						<%} %>	
 					</td>
 				</tr>
 				
@@ -84,7 +89,7 @@
 					<tr <%=(!scheme.isMandatory()) ? "style='display:none;'" : ""%> id="forceInitialAction">
 						<td nowrap="true" align="right"><%=LanguageUtil.get(pageContext, "Default-Initial-Action")%>:</td>
 						<td>
-							<%if(actions !=  null) {%>
+							<%if(!actions.isEmpty()) {%>
 								<select name="schemeEntryAction" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 									<option value=""><%=LanguageUtil.get(pageContext, "None") %></option>
 									<%for(WorkflowAction action : actions){ %>
