@@ -656,7 +656,7 @@ public class IntegrityUtil {
 			String INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, endpoint_id) values(?,?,?)";
 
 			if(type==IntegrityType.FOLDERS) {
-				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?)";
+				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)";
 			}
 
 			while (csvFile.readRecord()) {
