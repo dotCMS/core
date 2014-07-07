@@ -1633,6 +1633,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 Tree treeToDelete = TreeFactory.getTree(tree);
                 TreeFactory.deleteTree(tree);
+                refresh( relatedContent );
             }
         }
     }
