@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
@@ -10,12 +11,15 @@ import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
 import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -58,6 +62,23 @@ public class OSGIResource extends WebResource {
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
+        //Verify if the user have access to the OSGI portlet
+        User currentUser = initData.getUser();
+        try {
+            if ( currentUser == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "OSGI_MANAGER", currentUser ) ) {
+                return responseResource.responseError( "User does not have access to the Dynamic Plugins Portlet", HttpStatus.SC_UNAUTHORIZED );
+            }
+        } catch ( DotDataException e ) {
+            Logger.error( this.getClass(), "Error validating User access to the Dynamic Plugins Portlet.", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error validating User access to the Dynamic Plugins Portlet." );
+            }
+            return responseResource.responseError( responseMessage.toString() );
+        }
+
         /*
         This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method. However,
         since the Framework is a very dynamic environment, bundles can be installed or uninstalled at anytime.
@@ -86,7 +107,7 @@ public class OSGIResource extends WebResource {
 
                     //Getting the jar file name
                     String separator = File.separator;
-                    if (bundle.getLocation().contains( "/" )) {
+                    if ( bundle.getLocation().contains( "/" ) ) {
                         separator = "/";
                     }
                     String jarFile = bundle.getLocation().contains( separator ) ? bundle.getLocation().substring( bundle.getLocation().lastIndexOf( separator ) + 1 ) : "System";
@@ -126,7 +147,7 @@ public class OSGIResource extends WebResource {
 
                     //Getting the jar file name
                     String separator = File.separator;
-                    if (bundle.getLocation().contains( "/" )) {
+                    if ( bundle.getLocation().contains( "/" ) ) {
                         separator = "/";
                     }
                     String jarFile = bundle.getLocation().contains( separator ) ? bundle.getLocation().substring( bundle.getLocation().lastIndexOf( separator ) + 1 ) : "System";
