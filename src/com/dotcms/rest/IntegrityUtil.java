@@ -388,7 +388,7 @@ public class IntegrityUtil {
                 createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
             }
 
-            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?)";
+            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?)";
 
             while (folders.readRecord()) {
 
@@ -450,9 +450,6 @@ public class IntegrityUtil {
 
             dc.setSQL("select * from folders_ir");
             results = dc.loadObjectResults();
-
-            // lets drop the temp table
-//			dc.executeStatement("drop table " + tempTableName );
 
             return !results.isEmpty();
         } catch(Exception e) {
@@ -793,6 +790,7 @@ public class IntegrityUtil {
     /**
 
      * Fixes folders inconsistencies for a given server id
+     * Fixing a folder means updating it's inode and identifier with the ones received from the other end
      *
      * @param serverId
      * @throws DotDataException
