@@ -32,7 +32,9 @@ public class UnpublishContentActionlet extends WorkFlowActionlet {
 	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 		try {
 
-			APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
+			if(processor.getContentlet().isLive()){
+				APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
+			}
 
 		} catch (Exception e) {
 			Logger.error(this.getClass(),e.getMessage(),e);
