@@ -22,11 +22,14 @@ import java.util.zip.ZipOutputStream;
 import com.dotcms.repackage.javacsv.com.csvreader.CsvReader;
 import com.dotcms.repackage.javacsv.com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource.IntegrityType;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -50,12 +53,13 @@ public class IntegrityUtil {
         try {
             csvFile = new File(outputFile);
             writer = new CsvWriter(new FileWriter(csvFile, true), '|');
-            statement = conn.prepareStatement("select f.inode, i.parent_path, i.asset_name, i.host_inode from folder f join identifier i on f.identifier = i.id ");
-            rs = statement.executeQuery();
+            statement = conn.prepareStatement("select f.inode, f.identifier, i.parent_path, i.asset_name, i.host_inode from folder f join identifier i on f.identifier = i.id ");
+			rs = statement.executeQuery();
             int count = 0;
 
             while (rs.next()) {
                 writer.write(rs.getString("inode"));
+                writer.write(rs.getString("identifier"));
                 writer.write(rs.getString("parent_path"));
                 writer.write(rs.getString("asset_name"));
                 writer.write(rs.getString("host_inode"));
@@ -172,7 +176,12 @@ public class IntegrityUtil {
 
             String resultsTable = getResultsTableName(type);
 
-            statement = conn.prepareStatement("select remote_inode, local_inode from " + resultsTable + " where endpoint_id = ?");
+            if(type==IntegrityType.FOLDERS) {
+				statement = conn.prepareStatement("select remote_inode, local_inode, remote_identifier, local_identifier from " + resultsTable + " where endpoint_id = ?");
+			} else {
+				statement = conn.prepareStatement("select remote_inode, local_inode from " + resultsTable + " where endpoint_id = ?");
+			}
+
             statement.setString(1, endpointId);
             rs = statement.executeQuery();
             int count = 0;
@@ -180,6 +189,8 @@ public class IntegrityUtil {
             while (rs.next()) {
                 writer.write(rs.getString("remote_inode"));
                 writer.write(rs.getString("local_inode"));
+                writer.write(rs.getString("remote_identifier"));
+				writer.write(rs.getString("local_identifier"));
                 writer.endRecord();
                 count++;
 
@@ -370,7 +381,7 @@ public class IntegrityUtil {
             // lets create a temp table and insert all the records coming from the CSV file
             String tempKeyword = getTempKeyword();
 
-            String createTempTable = "create " +tempKeyword+ " table " + tempTableName + " (inode varchar(36) not null, parent_path varchar(255), "
+            String createTempTable = "create " +tempKeyword+ " table " + tempTableName + " (inode varchar(36) not null, identifier varchar(36) not null,parent_path varchar(255), "
                     + "asset_name varchar(255), host_identifier varchar(36) not null, primary key (inode) )" + (DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":"");
 
             if(DbConnectionFactory.isOracle()) {
@@ -386,18 +397,19 @@ public class IntegrityUtil {
                     tempCreated = true;
                 }
 
-                //select f.inode, i.parent_path, i.asset_name, i.host_inode
                 String folderInode = folders.get(0);
-                String parentPath = folders.get(1);
-                String assetName = folders.get(2);
-                String hostIdentifier = folders.get(3);
+				String folderIdentifier = folders.get(1);
+				String parentPath = folders.get(2);
+				String assetName = folders.get(3);
+				String hostIdentifier = folders.get(4);
 
-                dc.setSQL(INSERT_TEMP_TABLE);
-                dc.addParam(folderInode);
-                dc.addParam(parentPath);
-                dc.addParam(assetName);
-                dc.addParam(hostIdentifier);
-                dc.loadResult();
+				dc.setSQL(INSERT_TEMP_TABLE);
+				dc.addParam(folderInode);
+				dc.addParam(folderIdentifier);
+				dc.addParam(parentPath);
+				dc.addParam(assetName);
+				dc.addParam(hostIdentifier);
+				dc.loadResult();
             }
 
             folders.close();
@@ -425,11 +437,12 @@ public class IntegrityUtil {
                 }
 
                 final String INSERT_INTO_RESULTS_TABLE = "insert into " +resultsTableName+ " select " + fullFolder + " as folder, "
-                        + "f.inode as local_inode, ft.inode as remote_inode, '" +endpointId+ "' from identifier iden "
-                        + "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
-                        + "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
-                        + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
-                        + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
+						+ "f.inode as local_inode, ft.inode as remote_inode, f.identifier as local_identifier, ft.identifier as remote_identifier, "
+						+ "'" +endpointId+ "' from identifier iden "
+						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
+						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+						+ "join contentlet_version_info cvi on c.inode = cvi.working_inode "
+						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
 
                 dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
 
@@ -643,20 +656,31 @@ public class IntegrityUtil {
             DotConnect dc = new DotConnect();
             String resultsTable = getResultsTableName(type);
 
-            final String INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, endpoint_id) values(?,?,?)";
+            String INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, endpoint_id) values(?,?,?)";
 
-            while (csvFile.readRecord()) {
+			if(type==IntegrityType.FOLDERS) {
+				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)";
+			}
 
-                //select f.inode, i.parent_path, i.asset_name, i.host_inode
-                String localInode = csvFile.get(0);
-                String remoteInode = csvFile.get(1);
+			while (csvFile.readRecord()) {
 
-                dc.setSQL(INSERT_TEMP_TABLE);
-                dc.addParam(localInode);
-                dc.addParam(remoteInode);
-                dc.addParam(endpointId);
-                dc.loadResult();
-            }
+				//select f.inode, i.parent_path, i.asset_name, i.host_inode
+				String localInode = csvFile.get(0);
+				String remoteInode = csvFile.get(1);
+				dc.setSQL(INSERT_TEMP_TABLE);
+				dc.addParam(localInode);
+				dc.addParam(remoteInode);
+
+				if(type==IntegrityType.FOLDERS) {
+					String localIdentifier = csvFile.get(2);
+					String remoteIdentifier = csvFile.get(3);
+					dc.addParam(localIdentifier);
+					dc.addParam(remoteIdentifier);
+				}
+
+				dc.addParam(endpointId);
+				dc.loadResult();
+			}
 
         } catch(Exception e) {
             throw new Exception("Error generating data to fix", e);
@@ -794,21 +818,39 @@ public class IntegrityUtil {
 				List<Contentlet> contents = APILocator.getContentletAPI().findContentletsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
 				for (Contentlet contentlet : contents) {
 					APILocator.getContentletIndexAPI().removeContentFromIndex(contentlet);
+					CacheLocator.getContentletCache().remove(contentlet.getInode());
 				}
+
+				Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+				CacheLocator.getFolderCache().removeFolder(folder, folderIdentifier);
+
+				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderIdentifier.getId());
 
 			}
 
             //First delete the constrain
             if ( DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "alter table folder drop FOREIGN KEY fkb45d1c6e5fb51eb" );
+                // identifier fk
+                dc.executeStatement( "alter table folder drop FOREIGN KEY folder_identifier_fk" );
             } else {
                 dc.executeStatement( "alter table folder drop constraint fkb45d1c6e5fb51eb" );
+                // identifier fk
+                dc.executeStatement("alter table folder drop constraint folder_identifier_fk");
+
             }
 
-            //Update the folder
+            //Update the folder's inode
             updateFrom( serverId, dc, tableName, "folder", "inode" );
-            //Update the inode
+            //Update the inode record
             updateFrom( serverId, dc, tableName, "inode", "inode" );
+
+            //Update the folder's identifier
+            updateIdentifierFrom( serverId, dc, tableName, "folder", "identifier" );
+            //Update the identifier record
+            updateIdentifierFrom( serverId, dc, tableName, "identifier", "id" );
+
+
             //Update the structure
             if ( DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "UPDATE structure JOIN " + tableName + " ir on structure.folder = ir.local_inode SET structure.folder = ir.remote_inode" );
@@ -831,9 +873,17 @@ public class IntegrityUtil {
 
             for (Map<String, Object> result : results) {
             	String newFolderInode = (String) result.get("remote_inode");
-				Folder folder = APILocator.getFolderAPI().find(newFolderInode, APILocator.getUserAPI().getSystemUser(), false);
+				final Folder folder = APILocator.getFolderAPI().find(newFolderInode, APILocator.getUserAPI().getSystemUser(), false);
 
-				APILocator.getContentletAPI().refreshContentUnderFolder(folder);
+				HibernateUtil.addCommitListener(new Runnable() {
+                    public void run() {
+                    	try {
+                    		APILocator.getContentletAPI().refreshContentUnderFolder(folder);
+						} catch (DotStateException e) {
+							Logger.error(this,"Error while reindexing content under folder with inode: " + folder.getInode(),e);
+						}
+                    }
+                });
 
 			}
 
@@ -845,6 +895,8 @@ public class IntegrityUtil {
             try {
                 //Add back the constrain
                 dc.executeStatement( "alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode (inode)" );
+
+                dc.executeStatement( "alter table folder add constraint folder_identifier_fk foreign key (identifier) references identifier (id)" );
 
             } catch ( SQLException e ) {
                 throw new DotDataException( e.getMessage(), e );
@@ -914,7 +966,6 @@ public class IntegrityUtil {
             //field
             updateFrom( serverId, dc, tableName, "field", "structure_inode" );
             //containers
-            //updateFrom( serverId, dc, tableName, "containers", "structure_inode" );
             //relationship
             updateFrom( serverId, dc, tableName, "relationship", "parent_structure_inode" );
             updateFrom( serverId, dc, tableName, "relationship", "child_structure_inode" );
@@ -934,7 +985,6 @@ public class IntegrityUtil {
                 //Add back the constrains
                 dc.executeStatement( "ALTER TABLE structure add constraint fk89d2d735fb51eb foreign key (inode) references inode (inode)" );
                 dc.executeStatement( "ALTER TABLE contentlet add constraint fk_structure_inode foreign key (structure_inode) references structure (inode)" );
-                //dc.executeStatement( "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure (inode)" );
                 if ( DbConnectionFactory.isMsSql() ) {
                     dc.executeStatement( "alter table workflow_scheme_x_structure with check check constraint all" );
                 } else if ( DbConnectionFactory.isOracle() ) {
@@ -1063,6 +1113,19 @@ public class IntegrityUtil {
                     + " WHERE exists (SELECT * from " + resultsTable + " ir where ut." + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id)" );
         } else {
             dotConnect.executeStatement( "UPDATE " + updateTable + " SET " + updateColumn + " = ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id" );
+        }
+    }
+
+    private static void updateIdentifierFrom ( String endpointId, DotConnect dotConnect, String resultsTable, String updateTable, String updateColumn ) throws SQLException {
+
+        if ( DbConnectionFactory.isMySql() ) {
+            dotConnect.executeStatement( "UPDATE " + updateTable + " JOIN " + resultsTable + " ir on " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id  SET " + updateColumn + " = ir.remote_identifier" );
+        } else if ( DbConnectionFactory.isOracle() ) {
+            dotConnect.executeStatement( "UPDATE " + updateTable +
+                    " SET " + updateColumn + " = (SELECT ir.remote_identifier FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id)" +
+                    " WHERE exists (SELECT ir.remote_identifier FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id)" );
+        } else {
+            dotConnect.executeStatement( "UPDATE " + updateTable + " SET " + updateColumn + " = ir.remote_identifier FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id" );
         }
     }
 
