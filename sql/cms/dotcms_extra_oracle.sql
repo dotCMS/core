@@ -920,6 +920,6 @@ alter table publishing_bundle add force_push number(1,0) ;
 
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
-create table folders_ir(folder varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
+create table folders_ir(folder varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
 create table structures_ir(velocity_name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
 create table schemes_ir(name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
