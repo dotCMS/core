@@ -800,6 +800,8 @@ public class IntegrityUtil {
 
         DotConnect dc = new DotConnect();
         String tableName = getResultsTableName( IntegrityType.FOLDERS );
+        boolean firstContraintDeleted = false;
+        boolean secondConstraintDeleted = false;
 
         try {
 
@@ -811,30 +813,38 @@ public class IntegrityUtil {
 
             for (Map<String, Object> result : results) {
             	String oldFolderInode = (String) result.get("local_inode");
-				Folder folder = APILocator.getFolderAPI().find(oldFolderInode, APILocator.getUserAPI().getSystemUser(), false);
 
-				List<Contentlet> contents = APILocator.getContentletAPI().findContentletsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
-				for (Contentlet contentlet : contents) {
-					APILocator.getContentletIndexAPI().removeContentFromIndex(contentlet);
-					CacheLocator.getContentletCache().remove(contentlet.getInode());
-				}
+            	try {
+            		Folder folder = APILocator.getFolderAPI().find(oldFolderInode, APILocator.getUserAPI().getSystemUser(), false);
 
-				Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-				CacheLocator.getFolderCache().removeFolder(folder, folderIdentifier);
+            		List<Contentlet> contents = APILocator.getContentletAPI().findContentletsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
+            		for (Contentlet contentlet : contents) {
+            			APILocator.getContentletIndexAPI().removeContentFromIndex(contentlet);
+            			CacheLocator.getContentletCache().remove(contentlet.getInode());
+            		}
 
-				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderIdentifier.getId());
+            		Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+            		CacheLocator.getFolderCache().removeFolder(folder, folderIdentifier);
 
+            		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderIdentifier.getId());
+            	} catch (DotDataException e) {
+            		Logger.info(getClass(), "Folder not found. inode: " + oldFolderInode);
+            	}
 			}
 
             //First delete the constrain
             if ( DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "alter table folder drop FOREIGN KEY fkb45d1c6e5fb51eb" );
+                firstContraintDeleted = true;
                 // identifier fk
                 dc.executeStatement( "alter table folder drop FOREIGN KEY folder_identifier_fk" );
+                secondConstraintDeleted = true;
             } else {
                 dc.executeStatement( "alter table folder drop constraint fkb45d1c6e5fb51eb" );
+                firstContraintDeleted = true;
                 // identifier fk
                 dc.executeStatement("alter table folder drop constraint folder_identifier_fk");
+                secondConstraintDeleted = true;
 
             }
 
@@ -871,17 +881,22 @@ public class IntegrityUtil {
 
             for (Map<String, Object> result : results) {
             	String newFolderInode = (String) result.get("remote_inode");
-				final Folder folder = APILocator.getFolderAPI().find(newFolderInode, APILocator.getUserAPI().getSystemUser(), false);
+            	try {
+            		final Folder folder = APILocator.getFolderAPI().find(newFolderInode, APILocator.getUserAPI().getSystemUser(), false);
 
-				HibernateUtil.addCommitListener(new Runnable() {
-                    public void run() {
-                    	try {
-                    		APILocator.getContentletAPI().refreshContentUnderFolder(folder);
-						} catch (DotStateException e) {
-							Logger.error(this,"Error while reindexing content under folder with inode: " + folder.getInode(),e);
-						}
-                    }
-                });
+            		HibernateUtil.addCommitListener(new Runnable() {
+            			public void run() {
+            				try {
+            					APILocator.getContentletAPI().refreshContentUnderFolder(folder);
+            				} catch (DotStateException e) {
+            					Logger.error(this,"Error while reindexing content under folder with inode: " + folder.getInode(),e);
+            				}
+            			}
+            		});
+
+            	} catch (DotDataException e) {
+            		Logger.info(getClass(), "Folder not found. inode: " + newFolderInode);
+            	}
 
 			}
 
@@ -892,9 +907,11 @@ public class IntegrityUtil {
         } finally {
             try {
                 //Add back the constrain
-                dc.executeStatement( "alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode (inode)" );
+            	if(firstContraintDeleted)
+            		dc.executeStatement( "alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode (inode)" );
 
-                dc.executeStatement( "alter table folder add constraint folder_identifier_fk foreign key (identifier) references identifier (id)" );
+            	if(secondConstraintDeleted)
+            		dc.executeStatement( "alter table folder add constraint folder_identifier_fk foreign key (identifier) references identifier (id)" );
 
             } catch ( SQLException e ) {
                 throw new DotDataException( e.getMessage(), e );
