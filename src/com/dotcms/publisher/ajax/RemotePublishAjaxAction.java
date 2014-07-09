@@ -187,7 +187,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
                 List<String> assetsIds = Arrays.asList( _assetsIds );
 
-                ids = getIdsToPush( assetsIds, _contentFilterDate, dateFormat );
+                ids = getIdsToPush( assetsIds, null, _contentFilterDate, dateFormat );
             }
 
             //Response map with the status of the addContents operation (error messages and counts )
@@ -752,7 +752,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
                 List<String> assetsIds = Arrays.asList( _assetsIds );
 
-                ids = getIdsToPush( assetsIds, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
+                ids = getIdsToPush( assetsIds,bundle.getId(), _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
             }
 
             Map<String, Object> responseMap = publisherAPI.saveBundleAssets( ids, bundle.getId(), getUser() );
@@ -861,10 +861,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
     /**
      * Returns the list of ids the user is trying to remote publish.
      */
-    private List<String> getIdsToPush ( List<String> assetIds, String _contentFilterDate, SimpleDateFormat dateFormat )
+    private List<String> getIdsToPush ( List<String> assetIds, String bundleId, String _contentFilterDate, SimpleDateFormat dateFormat )
             throws ParseException, DotDataException {
 
-        List<String> ids = new ArrayList<String>();
+    	List<String> ids = new ArrayList<String>();
 
         for ( String _assetId : assetIds ) {
 
@@ -883,16 +883,24 @@ public class RemotePublishAjaxAction extends AjaxAction {
                         List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
                         if ( usersIds != null ) {
                             for ( String id : usersIds ) {
-                                ids.add( "user_" + id );
+                            	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle("user_" + id, bundleId)){
+                            		ids.add( "user_" + id );
+                            	}
                             }
                         }
                     } else {
-                        ids.add( _assetId );
+                    	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(_assetId, bundleId)){
+                    		ids.add( _assetId );
+                    	}
                     }
                 } else if ( _assetId.equals( "CAT" ) ) {
-                    ids.add( _assetId );
+                	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(_assetId, bundleId)){
+                		ids.add( _assetId );
+                	}
                 } else if ( _assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
-                    ids.add( _assetId );
+                	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(_assetId, bundleId)){
+                		ids.add( _assetId );
+                	}
                 } else {
                     // if the asset is a folder put the inode instead of the identifier
                     try {
@@ -906,17 +914,23 @@ public class RemotePublishAjaxAction extends AjaxAction {
                         }
 
                         if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
-                            ids.add( _assetId );
+                        	if(!isAssetInBundle(_assetId, bundleId)){
+                        		ids.add( _assetId );
+                        	}
                         } else {
                             // if the asset is not a folder and has identifier, put it, if not, put the inode
                             Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
                             if ( !ids.contains( iden.getId() ) ) {//Multiples languages have the same identifier
-                                ids.add( iden.getId() );
+                            	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(iden.getId(), bundleId)){
+                            		ids.add( iden.getId() );
+                            	}
                             }
                         }
 
                     } catch ( DotStateException e ) {
-                        ids.add( _assetId );
+                    	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(_assetId, bundleId)){
+                    		ids.add( _assetId );
+                    	}
                     }
                 }
             }
@@ -924,6 +938,28 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
 
         return ids;
+    }
+    
+    /**
+     * Validate if the asset is already included in the bundle
+     * @param assetId Asset identifier
+     * @param bundleId Bundle Id
+     * @return true if the asset is already included.
+     */
+    private boolean isAssetInBundle(String assetId, String bundleId){
+    	PublisherAPI publisherAPI = PublisherAPI.getInstance();
+		try {
+			List<PublishQueueElement> assets = publisherAPI.getQueueElementsByAsset(assetId);
+			for(PublishQueueElement element :  assets){
+				if(element.getBundleId().equals(bundleId)){
+					return true;
+				}
+			}
+		} catch (DotPublisherException e) {
+			Logger.error(RemotePublishAjaxAction.class, e.getMessage());
+		}
+		
+    	return false;
     }
 
 }
