@@ -175,8 +175,7 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 			} else {
 				this.thumbnailSize = thumbSize;
 			}
-	        this.thumbnailImage.src = "/resize_image?id=" + fileInfo.identifier + 
-	        	"&w=" + this.thumbnailSize + "&rand=" + Math.random();
+	        this.thumbnailImage.src = "/contentAsset/image/" + fileInfo.identifier + "/fileAsset/filter/Thumbnail/thumbnail_w/" +  this.thumbnailSize + "/rand/" + Math.random();
 	        this.thumbnailSizeSlider.attr('value', this.thumbnailSize);
 	        dojo.style(this.thumbnailWrapper, { display : "" });		
 		} else {
@@ -214,8 +213,7 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 	
 	_changeThumbnailSize: function (newValue) {
 		this.thumbnailSize = newValue;
-	    this.thumbnailImage.src = "/resize_image?id=" + this.value + 
-	    	"&w=" + newValue + "&rand=" + Math.random();
+	    this.thumbnailImage.src = "/contentAsset/image/" + this.value + "/fileAsset/filter/Thumbnail/thumbnail_w/" + newValue + "/rand/" + Math.random();
 		dojo.cookie(this.id + '-thumbsize', new String(newValue));
 	},
 	
