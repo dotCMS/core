@@ -840,8 +840,10 @@ public class IntegrityUtil {
                 secondConstraintDeleted = true;
             } else {
                 dc.executeStatement( "alter table folder drop constraint fkb45d1c6e5fb51eb" );
+                firstContraintDeleted = true;
                 // identifier fk
                 dc.executeStatement("alter table folder drop constraint folder_identifier_fk");
+                secondConstraintDeleted = true;
             }
 
             //Update the folder's inode
