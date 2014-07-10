@@ -83,7 +83,7 @@ public class FileAssetAjax {
 			fos = new FileOutputStream(fileData);
 			fos.write(newText.getBytes());
 		} catch(Exception e) {
-			Logger.error(getClass(), e.getMessage(), e);
+			Logger.error(getClass(), "Error writing to file", e);
 		}finally {
 			if (fos != null)
 				fos.close();
