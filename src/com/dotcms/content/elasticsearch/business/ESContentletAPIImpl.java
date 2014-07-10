@@ -2273,7 +2273,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             			+ java.io.File.separator + oldInode);
                 }
 
-
+                java.io.File tmpDir = null;
+                if(UtilMethods.isSet(oldInode)) {
+                	tmpDir = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+            			+ java.io.File.separator + oldInode.charAt(0)
+            			+ java.io.File.separator + oldInode.charAt(1)
+            			+ java.io.File.separator + oldInode);
+                }
 
 
 
@@ -2317,7 +2323,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  oldFileName);
 
 			                		// do we have an inline edited file, if so use that
-					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+					                java.io.File editedFile = new java.io.File(tmpDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
 				                    if(editedFile.exists()){
 				                    	incomingFile = editedFile;
 				                    }
@@ -3725,9 +3731,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
     	//GIT-4362 copying all versions of a content
     	versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), user, respectFrontendRoles));
-    	
+
     	for(Contentlet contentlet : versionsToCopy){
-        	
+
         	boolean isContentletLive = false;
         	boolean isContentletWorking = false;
 
@@ -3834,20 +3840,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(isContentletLive)
             	APILocator.getVersionableAPI().setLive(newContentlet);
- 
+
             if(isContentletWorking)
             	versionsToMarkWorking.add(newContentlet);
-            
+
 
             if(contentlet.getInode().equals(contentletToCopy.getInode()))
             	resultContentlet = newContentlet;
     	}
-    	
+
     	for(Contentlet con : versionsToMarkWorking){
     		APILocator.getVersionableAPI().setWorking(con);
     	}
-    	
-    	
+
+
     	// https://github.com/dotCMS/dotCMS/issues/5620
     	// copy the workflow state
     	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(contentletToCopy);
@@ -3857,7 +3863,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	    newTask.setId(null);
     	    newTask.setWebasset(resultContentlet.getIdentifier());
     	    APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
-    	    
+
     	    for(WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {
     	        WorkflowComment newComment=new WorkflowComment();
     	        BeanUtils.copyProperties(comment, newComment);
@@ -3865,7 +3871,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	        newComment.setWorkflowtaskId(newTask.getId());
     	        APILocator.getWorkflowAPI().saveComment(newComment);
     	    }
-    	    
+
     	    for(WorkflowHistory history : APILocator.getWorkflowAPI().findWorkflowHistory(task)) {
     	        WorkflowHistory newHistory=new WorkflowHistory();
     	        BeanUtils.copyProperties(history, newHistory);
@@ -3873,14 +3879,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	        newHistory.setWorkflowtaskId(newTask.getId());
     	        APILocator.getWorkflowAPI().saveWorkflowHistory(newHistory);
     	    }
-    	    
+
     	    List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task);
     	    files.addAll(APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser()));
     	    for(IFileAsset f : files) {
     	        APILocator.getWorkflowAPI().attachFileToTask(newTask, f.getInode());
     	    }
     	}
-    	
+
     	return resultContentlet;
     }
 
