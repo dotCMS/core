@@ -83,7 +83,7 @@ goto setArgs
 :doneSetArgs
 
 rem Executing Tomcat
-cd %CATALINA_HOME%\bin
+cd %CATALINA_HOME%\webapps\ROOT
 call "%EXECUTABLE%" start %CMD_LINE_ARGS%
 cd "%CURRENT_DIR%"
 
