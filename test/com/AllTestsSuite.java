@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
 import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
+import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
 import com.dotmarketing.portlets.structure.business.URLMapTest;
@@ -46,7 +47,7 @@ import com.dotmarketing.webdav.WebDavTest;
  */
 @RunWith (Suite.class)
 @Suite.SuiteClasses ({
-    //LinkCheckerAPITest.class,
+    LinkCheckerAPITest.class,
     TemplateAPITest.class,
     HTMLPageAPITest.class,
     CategoryAPITest.class,
