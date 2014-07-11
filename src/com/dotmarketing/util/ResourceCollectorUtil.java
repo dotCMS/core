@@ -29,21 +29,12 @@ public class ResourceCollectorUtil{
         final String classPath = System.getProperty("java.class.path", ".");
         boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
-        String codeSourcePath;
-
-        ProtectionDomain protectionDomain = ResourceCollectorUtil.class.getProtectionDomain();
-        if ( protectionDomain == null || protectionDomain.getCodeSource() == null ) {
-
-            //On some apps servers the protection domain can be not available
-            String contextPath = Config.CONTEXT_PATH;
-            if ( !contextPath.endsWith( File.separator ) ) {
-                contextPath += File.separator;
-            }
-            codeSourcePath = contextPath + "WEB-INF" + File.separator;
-
-        } else {
-            codeSourcePath = protectionDomain.getCodeSource().getLocation().getPath();
+        //Getting the context path
+        String contextPath = Config.CONTEXT_PATH;
+        if ( !contextPath.endsWith( File.separator ) ) {
+            contextPath += File.separator;
         }
+        String codeSourcePath = contextPath + "WEB-INF" + File.separator;
 
         if(isWindows){
         	try {
