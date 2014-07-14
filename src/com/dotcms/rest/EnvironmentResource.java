@@ -40,7 +40,7 @@ public class EnvironmentResource extends WebResource {
 	@Produces("application/json")
 	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException {
 
-		InitDataObject initData = init(params, true, request, true);
+		InitDataObject initData = init(params, true, request, true, "9");
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
