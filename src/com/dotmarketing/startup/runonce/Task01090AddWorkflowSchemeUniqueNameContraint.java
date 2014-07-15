@@ -1,11 +1,9 @@
 package com.dotmarketing.startup.runonce;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
@@ -15,11 +13,10 @@ public class Task01090AddWorkflowSchemeUniqueNameContraint implements StartupTas
 
 	final private String WORKFLOW_SCHEME_CONSTRAINT = "alter table workflow_scheme add constraint unique_workflow_scheme_name unique (name)";
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
-		Connection conn = null;
 		DotConnect dc = new DotConnect();
 		  try {
-			conn = DbConnectionFactory.getConnection();
-			dc.executeStatement(WORKFLOW_SCHEME_CONSTRAINT, conn);
+			DbConnectionFactory.getConnection().setAutoCommit(true);
+			dc.executeStatement(WORKFLOW_SCHEME_CONSTRAINT);
 			 
 		} catch (SQLException e) {
 			Logger.error(this, e.getMessage()+". Create different schemes with the same name is not allowed. Please change the workflow scheme names duplicates.",e);
