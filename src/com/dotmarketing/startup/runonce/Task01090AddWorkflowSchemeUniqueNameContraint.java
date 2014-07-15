@@ -17,17 +17,14 @@ public class Task01090AddWorkflowSchemeUniqueNameContraint implements StartupTas
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		Connection conn = null;
 		DotConnect dc = new DotConnect();
-		HibernateUtil.startTransaction();
 		  try {
 			conn = DbConnectionFactory.getConnection();
 			dc.executeStatement(WORKFLOW_SCHEME_CONSTRAINT, conn);
 			 
 		} catch (SQLException e) {
 			HibernateUtil.rollbackTransaction();
-			Logger.error(this, e.getMessage()+". Create different schemes with the same name is not allowed. Please change the workflow scheme names duplicates.");
-			e.printStackTrace();
+			Logger.error(this, e.getMessage()+". Create different schemes with the same name is not allowed. Please change the workflow scheme names duplicates.",e);
 		}
-		HibernateUtil.commitTransaction();
 	}
 
 	public boolean forceRun() {
