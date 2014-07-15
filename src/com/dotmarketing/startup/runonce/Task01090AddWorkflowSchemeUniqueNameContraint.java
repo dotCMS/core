@@ -22,7 +22,6 @@ public class Task01090AddWorkflowSchemeUniqueNameContraint implements StartupTas
 			dc.executeStatement(WORKFLOW_SCHEME_CONSTRAINT, conn);
 			 
 		} catch (SQLException e) {
-			HibernateUtil.rollbackTransaction();
 			Logger.error(this, e.getMessage()+". Create different schemes with the same name is not allowed. Please change the workflow scheme names duplicates.",e);
 		}
 	}
