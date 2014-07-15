@@ -13,7 +13,7 @@ import com.dotmarketing.util.Logger;
 
 public class Task01090AddWorkflowSchemeUniqueNameContraint implements StartupTask{
 
-	final private String WORKFLOW_SCHEME_CONSTRAINT = "alter table workflow_scheme add constraint unique_workflow_scheme_name unique (name);";
+	final private String WORKFLOW_SCHEME_CONSTRAINT = "alter table workflow_scheme add constraint unique_workflow_scheme_name unique (name)";
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		Connection conn = null;
 		DotConnect dc = new DotConnect();
