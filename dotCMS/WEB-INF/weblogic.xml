@@ -8,8 +8,6 @@
     <container-descriptor>
         <prefer-application-packages>
             <package-name>org.xmlpull.*</package-name>
-            <package-name>org.osgi.*</package-name>
-            <package-name>org.apache.felix.*</package-name>
         </prefer-application-packages>
     </container-descriptor>
 
