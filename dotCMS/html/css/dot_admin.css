@@ -614,7 +614,7 @@ table.sTypeTable.sTypeItem{text-transform: uppercase;white-space: nowrap;min-wid
 .errorMessages ul, .errorMessages ul li{list-style:disc; list-style-position:outside;margin:0 0 3px 0;}
 
 /* loading message for content search */
-.messageZone{position:fixed;z-index:9999 !important;left:50%;top:40%;margin-left:-75px;width:150px;padding: 20px;color:#fff;background:rgba(0,0,0,0.8);-moz-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-border-radius: 8px;-khtml-border-radius: 8px;-moz-border-radius: 8px; border-radius: 8px;}
+.messageZone{position:fixed;z-index:9999 !important;left:50%;top:30%;margin-left:-75px;width:150px;padding: 20px;color:#fff;background:rgba(0,0,0,0.8);-moz-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);box-shadow:3px 3px 5px rgba(0, 0, 0, 0.2);-webkit-border-radius: 8px;-khtml-border-radius: 8px;-moz-border-radius: 8px; border-radius: 8px;}
 .loadingIcon{background: url(/html/images/icons/ajax-loader.gif) no-repeat left center;padding:0 5px 0 3px;height:20px; vertical-align:middle;display:inline-block;width:16px;height:16px;}
 
 .typeCCol{white-space:nowrap;width:100%;text-align:left;}

@@ -146,10 +146,33 @@
 				break;
 			}
 		}
-
+        boolean isWidget = false;
+        ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
+        int structureType = contentletForm.getStructure().getStructureType();
+        if(structureType == 2){
+        	 isWidget = true;
+        }
+        boolean toggleOn = false;
+        String[] wysiwygsDisabled = new String[0];
+        if(contentletForm != null && UtilMethods.isSet(contentletForm.getDisabledWysiwyg())){
+            wysiwygsDisabled = contentletForm.getDisabledWysiwyg().split(",");
+        }
+        for (String fieldVelocityVarName: wysiwygsDisabled) {
+        	String varName = fieldVelocityVarName;
+        	if (fieldVelocityVarName.replaceAll(com.dotmarketing.util.Constants.TOGGLE_EDITOR_SEPARATOR,"").trim().equals(field.getVelocityVarName())) {
+        		toggleOn = true;
+        	}
+        }
 %>
+<script type="text/javascript">
+        dojo.addOnLoad(function () {
+        	<%if(toggleOn){ %>
+        	aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');
+        	<%} %>
+        });	
+</script>	
 	<div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
-    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea" style="overflow:auto;width:450px;min-height:100px;max-height: 600px"
+    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:450px;min-height:100px;max-height: 600px\""%>
         name="<%=field.getFieldContentlet()%>"
         id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
 <%
@@ -158,7 +181,11 @@
     <br />
     <div style="padding-right:10px;width:475px;float:left;">
     	<div style="float: left;padding-top: 10px; padding-left: 2px;">
-    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>');" />
+ 		<%if(toggleOn){ %>
+    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+    		<%}else{ %>
+    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="false"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+        <%} %>
         	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
         </div>
         <br /> <br />
@@ -348,13 +375,14 @@
 
             if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
            	    ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
-       		    String expireDateVar = contentletForm.getStructure().getExpireDateVar();
-                if (field.getVelocityVarName().equals(expireDateVar)) {
-                	 if (UtilMethods.isSet( value )) {%>
-                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  name="fieldNeverExpire" id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
-                 <%} else {%>
-                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
-                 <%}%>
+           	   if(contentletForm != null){
+	       		    String expireDateVar = contentletForm.getStructure().getExpireDateVar();
+	                if (field.getVelocityVarName().equals(expireDateVar)) {
+	                	 if (UtilMethods.isSet( value )) {%>
+	                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  name="fieldNeverExpire" id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+	                 <%} else {%>
+	                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+	                 <%}%>
                     <script type="text/javascript">
                     function toggleExpire(velocityVarName) {
                         var never = dijit.byId("fieldNeverExpire").getValue();
@@ -374,6 +402,7 @@
                         });
                     </script>
                 <%}
+           	   }
             }
     } //END DATIME/DATE/TIME Field
 
@@ -576,7 +605,7 @@
  <!-- display -->
     <div id="<%=field.getVelocityVarName()%>Wrapper">
         <div style="float:left;">
-            <textarea dojoType="dijit.form.Textarea" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" onkeyup="<%= tagJSFunction %>" <%=field.isReadOnly()?"readonly=\"readonly\"":"" %>  style="width:300px;min-height:100px;"><%=textValue%></textarea>
+            <textarea dojoType="dijit.form.Textarea" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" onblur="clearSuggestTagsForSearch()" onkeyup="<%= tagJSFunction %>" <%=field.isReadOnly()?"readonly=\"readonly\"":"" %>  style="width:300px;min-height:100px;"><%=textValue%></textarea>
         </div>
         <div class="suggestedTagsWrapper" id="<%=field.getVelocityVarName()%>suggestedTagsWrapper" style="display:none;">
             <div class="suggestHeading"><%= LanguageUtil.get(pageContext, "Suggested-Tags") %></div>

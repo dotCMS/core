@@ -643,7 +643,7 @@ int periodData = dAPI.checkPeriodData(0,0);
 						         <!-- display -->
 						           <div id="<%=f.getVelocityVarName()%>Wrapper">
 						             <div style="float:left;">
-						                <textarea dojoType="dijit.form.Textarea" name="<%=f.getFieldContentlet()%>" id="<%=f.getVelocityVarName()%>" onkeyup="<%= tagJSFunction %>" style="width:250px;min-height:100px;"><%=textValue%></textarea>
+						                <textarea dojoType="dijit.form.Textarea" name="<%=f.getFieldContentlet()%>" id="<%=f.getVelocityVarName()%>" onblur="clearSuggestTagsForSearch()" onkeyup="<%= tagJSFunction %>" style="width:250px;min-height:100px;"><%=textValue%></textarea>
 						             </div>
 						             <div class="suggestedTagsWrapper" id="<%=f.getVelocityVarName()%>suggestedTagsWrapper">
 						                <%= LanguageUtil.get(pageContext, "Suggested-Tags") %>:<br />
