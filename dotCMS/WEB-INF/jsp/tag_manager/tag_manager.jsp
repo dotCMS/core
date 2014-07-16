@@ -145,7 +145,7 @@ td {font-size: 100%;}
 		if(params==null) params = '';
 
 		tagStore = new dojox.data.QueryReadStore({
-			url : '/JSONTags'+params
+			url : '/JSONTags'+ convertStringToUnicode(params) 
 		});
 	}
 
@@ -438,7 +438,21 @@ td {font-size: 100%;}
 			dojo.io.iframe.setSrc(iframe, "/JSONTags?tagname="+filter+"&global="+globalCheck+"&action=download", true);
 		}
 
-
+		function convertStringToUnicode(name) {
+			  var unicodeString = '';
+		 	   for (var i=0; i < name.length; i++) {
+		 			  if(name.charCodeAt(i) > 128){
+		 			 var str = name.charCodeAt(i).toString(16).toUpperCase();
+					 	 while(str.length < 4)
+					        str = "0" + str;
+						  unicodeString += "\\u" + str;
+		 			  }else{
+			          unicodeString += name[i];
+		 			  }
+				   }
+		 	  return unicodeString;
+	  	}
+		
    </script>
 <div class="portlet-wrapper">
 <jsp:include page="/html/portlet/ext/browser/sub_nav.jsp"></jsp:include>

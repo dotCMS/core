@@ -140,7 +140,7 @@
 					</tr>
 				    <%
 
-
+                }
 	                for(String key : groupMap.keySet()) {
 	                    EndpointDetail ed =  groupMap.get(key);
 	                    String serverName = key;
@@ -158,7 +158,7 @@
 				    </tr>
 				    <%}
 
-			    }%>
+			    %>
     		<%}%>
     <%}else{%>
     <tr>

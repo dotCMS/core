@@ -2646,6 +2646,8 @@ alter table structure alter folder set default 'SYSTEM_FOLDER';
 alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
 alter table structure alter column velocity_var_name set not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
+create index idx_structure_host on structure (host);
+create index idx_structure_folder on structure (folder);
 
 CREATE OR REPLACE FUNCTION structure_host_folder_check() RETURNS trigger AS '
 DECLARE
@@ -3031,6 +3033,7 @@ create table workflow_scheme(
 	entry_action_id varchar(36),
 	mod_date timestamp
 );
+alter table workflow_scheme add constraint unique_workflow_scheme_name unique (name);
 
 create table workflow_step(
 	id varchar(36) primary key,
