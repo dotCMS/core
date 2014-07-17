@@ -178,9 +178,13 @@ public class InitServlet extends HttpServlet {
         new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "live").mkdirs();
         new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "working").mkdirs();
 
-        // deletes all menues that have been generated
-        RefreshMenus.deleteMenus();
-        CacheLocator.getNavToolCache().clearCache();
+
+        
+        if(Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE_NAVTOOL", false)){
+            // deletes all menues that have been generated
+            RefreshMenus.deleteMenus();
+        	CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache");
+        }
 
 
         // maps all virtual links in memory

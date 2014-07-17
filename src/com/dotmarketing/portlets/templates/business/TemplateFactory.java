@@ -55,6 +55,14 @@ public interface TemplateFactory {
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException;
-
+	
+	/**
+	 *
+	 * Updates the template's theme without creating new version.
+	 * @param templateInode
+	 * @param theme
+	 *
+	 */
+   public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException;
 
 }

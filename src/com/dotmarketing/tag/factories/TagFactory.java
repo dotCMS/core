@@ -636,6 +636,7 @@ public class TagFactory {
         }
 
         newTag.setUserId( userId );
+        updateTag(newTag.getTagId(), userId);
 
         // returning tag
         return newTag;
@@ -801,6 +802,16 @@ public class TagFactory {
 			HibernateUtil.saveOrUpdate(tag);
     	}
 
+	}
+	
+	public static void updateTag(String tagId, String newUserId) throws Exception  {
+
+		Tag tag = getTagByTagId(tagId);
+
+    	if(UtilMethods.isSet(tag.getTagId())){
+			tag.setUserId(newUserId);
+			HibernateUtil.saveOrUpdate(tag);
+    	}
 	}
 
 	public static void updateTag(String tagId, String tagName, boolean updateTagReference, String hostId) throws Exception  {

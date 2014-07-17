@@ -16,18 +16,20 @@ public class WorkflowWrapper {
 	private List<WorkflowStep> steps;
 	private List<WorkflowAction> actions;
 	private Map<WorkflowAction, List<Role>> actionRoles;
+	private Map<String, String> actionNextAssignRolekeyMap;
 	private List<WorkflowActionClass> actionClasses;
 	private List<WorkflowActionClassParameter> actionClassParams;
 	private Operation operation;
 
 	public WorkflowWrapper(WorkflowScheme scheme, List<WorkflowStep> steps, List<WorkflowAction> actions, Map<WorkflowAction,
-			List<Role>> actionRoles, List<WorkflowActionClass> actionClasses, List<WorkflowActionClassParameter> actionClassParams) {
+			List<Role>> actionRoles, List<WorkflowActionClass> actionClasses, List<WorkflowActionClassParameter> actionClassParams, Map<String, String> actionNextAssignRolekeyMap) {
 		this.scheme = scheme;
 		this.steps = steps;
 		this.actions = actions;
 		this.actionRoles = actionRoles;
 		this.actionClasses = actionClasses;
 		this.actionClassParams = actionClassParams;
+		this.actionNextAssignRolekeyMap = actionNextAssignRolekeyMap;
 	}
 
 
@@ -86,6 +88,17 @@ public class WorkflowWrapper {
 	public void setActionClassParams(
 			List<WorkflowActionClassParameter> actionClassParams) {
 		this.actionClassParams = actionClassParams;
+	}
+
+
+	public Map<String, String> getActionNextAssignRolekeyMap() {
+		return actionNextAssignRolekeyMap;
+	}
+
+
+	public void setActionsNextAssignRolekeyMap(
+			Map<String, String> actionNextAssignRolekeyMap) {
+		this.actionNextAssignRolekeyMap = actionNextAssignRolekeyMap;
 	}
 
 

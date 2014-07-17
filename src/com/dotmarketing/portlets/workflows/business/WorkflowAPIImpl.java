@@ -21,6 +21,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -62,7 +63,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
 import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Arrays;
 import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
 
@@ -204,8 +204,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
-	public void saveScheme(WorkflowScheme scheme) throws DotDataException {
-
+	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException {
+		
 		wfac.saveScheme(scheme);
 
 	}
@@ -230,7 +230,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return wfac.findSteps(scheme);
 	}
 
-	public void saveStep(WorkflowStep step) throws DotDataException {
+	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
 
 		if (!UtilMethods.isSet(step.getName()) || !UtilMethods.isSet(step.getSchemeId())) {
 			throw new DotStateException("Step name and Scheme are required");
@@ -293,7 +293,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return wfac.getCountContentletsReferencingStep(step);
 	}
 	
-	public void reorderStep(WorkflowStep step, int order) throws DotDataException {
+	public void reorderStep(WorkflowStep step, int order) throws DotDataException, AlreadyExistException {
 		WorkflowScheme scheme = findScheme(step.getSchemeId());
 		List<WorkflowStep> steps = null;
 
@@ -485,7 +485,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 
 
-	public void reorderAction(WorkflowAction action, int order) throws DotDataException {
+	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException {
 
 
 
@@ -550,7 +550,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
-	private void saveAction(WorkflowAction action) throws DotDataException {
+	private void saveAction(WorkflowAction action) throws DotDataException, AlreadyExistException {
 		wfac.saveAction(action);
 	}
 
@@ -558,7 +558,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return wfac.findStep(id);
 	}
 
-	public void deleteAction(WorkflowAction action) throws DotDataException {
+	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException {
 
 		List<WorkflowActionClass> l = findActionClasses(action);
 		if(l!=null && l.size()>0){
@@ -663,11 +663,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return wfac.findActionClass(id);
 	}
 
-	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException {
+	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
 		wfac.deleteActionClass(actionClass);
 	}
 
-	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException {
+	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
 		wfac.saveActionClass(actionClass);
 	}
 
@@ -943,7 +943,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@Override
-	public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException {
+	public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException {
 		wfac.deleteWorkflowActionClassParameter(param);
 
 	}

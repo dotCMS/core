@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -24,7 +25,7 @@ public class ResourceCollectorUtil{
     /**
      * for all elements of java.class.path get a Collection of resources Pattern
      * pattern = Pattern.compile(".*"); gets all resources
-     * 
+     *
      * @param pattern
      *            the pattern to match
      * @return the resources in the order they are found
@@ -50,7 +51,7 @@ public class ResourceCollectorUtil{
         	classPathElements = new ArrayList(Arrays.asList(classPath.split(";")));
         else
         	classPathElements = new ArrayList(Arrays.asList(classPath.split(":")));
-        
+
         classPathElements.add(classesPath);
         File dir = new File(libPath);
         if(dir.exists() && dir.isDirectory()){
@@ -83,11 +84,18 @@ public class ResourceCollectorUtil{
         final File file,
         final Pattern pattern){
         final Set<String> retval = new HashSet<String>();
+
+        if(file==null) return retval;
+
         ZipFile zf;
         try{
             zf = new ZipFile(file);
         } catch(final ZipException e){
+        	Logger.error(ResourceCollectorUtil.class, "Problem while creating ZipFile for file: " + file.getName());
             throw new Error(e);
+        }  catch(final FileNotFoundException e){
+        	Logger.error(ResourceCollectorUtil.class, e.getMessage());
+        	return retval;
         } catch(final IOException e){
             throw new Error(e);
         }
@@ -140,4 +148,4 @@ public class ResourceCollectorUtil{
         return retval;
     }
 
-}  
+}

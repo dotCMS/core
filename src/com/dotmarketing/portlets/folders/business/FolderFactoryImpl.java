@@ -506,7 +506,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		//Content Files
 		List<FileAsset> faConts = APILocator.getFileAssetAPI().findFileAssetsByFolder(source, APILocator.getUserAPI().getSystemUser(), false);
 		for(FileAsset fa : faConts){
-			if(fa.isWorking()){
+			if(fa.isWorking() && !fa.isArchived()){
 				Contentlet cont = APILocator.getContentletAPI().find(fa.getInode(), APILocator.getUserAPI().getSystemUser(), false);
 				APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
 				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
@@ -904,7 +904,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		String newPath=ident.getParentPath()+newName;
 		Host host = APILocator.getHostAPI().find(folder.getHostId(),user,respectFrontEndPermissions);
 		Folder nFolder=findFolderByPath(newPath, host);
-		if(UtilMethods.isSet(nFolder.getInode()))
+		if(UtilMethods.isSet(nFolder.getInode()) && !folder.getIdentifier().equals(nFolder.getIdentifier()))
 			return false;
 
 		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);

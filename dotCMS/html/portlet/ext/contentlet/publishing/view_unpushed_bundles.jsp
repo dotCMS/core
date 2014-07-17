@@ -86,7 +86,7 @@
 					<tr>
 						<th width="100%" onclick="goToEditBundle('<%=bundle.getId()%>')" style="cursor:pointer">
 
-							<b><%=bundle.getName()%></b>
+							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b>
 						</th>
 						<th align="right" nowrap="nowrap">
 						
@@ -189,7 +189,3 @@
 
 
 </div>
-
-
-
-

@@ -40,7 +40,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 
 /**
- * 
+ *
  * @author will & david (2005)
  */
 public class HibernateUtil {
@@ -62,13 +62,13 @@ public class HibernateUtil {
 	private static Mappings mappings;
 
 	private static final boolean useCache = true;
-	
+
 	private static final ThreadLocal< Map<String,Runnable> > commitListeners=new ThreadLocal<Map<String,Runnable>>() {
 	    protected java.util.Map<String,Runnable> initialValue() {
 	        return new HashMap<String,Runnable>();
 	    }
 	};
-	
+
 	private static final ThreadLocal< List<Runnable> > rollbackListeners=new ThreadLocal<List<Runnable>>() {
         protected java.util.List<Runnable> initialValue() {
             return new ArrayList<Runnable>();
@@ -95,7 +95,7 @@ public class HibernateUtil {
 		if (sessionFactory == null) {
 			buildSessionFactory();
 		}
-		return dialect;	
+		return dialect;
 	}
 	public int getCount() throws DotHibernateException {
 		try{
@@ -126,7 +126,7 @@ public class HibernateUtil {
 		query.setLong(t, g);
 		t++;
 	}
-	
+
 	public void setParam(Long g) {
 		query.setLong(t, g);
 		t++;
@@ -146,7 +146,7 @@ public class HibernateUtil {
 		query.setInteger(t, g);
 		t++;
 	}
-	
+
 	public void setParam(java.util.Date g) {
 		query.setTimestamp(t, g);
 		t++;
@@ -156,7 +156,7 @@ public class HibernateUtil {
 		query.setBoolean(t, g);
 		t++;
 	}
-	
+
 	public void setParam(Boolean g) {
 		query.setBoolean(t, g);
 		t++;
@@ -166,7 +166,7 @@ public class HibernateUtil {
 		query.setDouble(t, g);
 		t++;
 	}
-	
+
 	public void setParam(Double g) {
 		query.setDouble(t, g);
 		t++;
@@ -176,7 +176,7 @@ public class HibernateUtil {
 		query.setFloat(t, g);
 		t++;
 	}
-	
+
 	public void setParam(Float g) {
 		query.setFloat(t, g);
 		t++;
@@ -224,7 +224,7 @@ public class HibernateUtil {
 	 * hibernate delete object
 	 */
 	public static void delete(String sql) throws DotHibernateException {
-		try{	
+		try{
 			Session session = getSession();
 			session.delete(sql);
 		}catch (Exception e) {
@@ -243,7 +243,7 @@ public class HibernateUtil {
 
     public static Object load(Class c, Serializable key)  throws DotHibernateException{
     	Session session = getSession();
-    	try{        	    		
+    	try{
             return (Object) session.load(c, key);
 		}catch (Exception e) {
 			try
@@ -251,10 +251,10 @@ public class HibernateUtil {
 				/*
 				 * DOTCMS-1398
 				 * when we try to find an object that doesn't exist the session become "dirty" cause:
-				 * 
+				 *
 				 * "Like all Hibernate exceptions, this exception is considered unrecoverable."
 				 *  http://hibernate.bluemars.net/hib_docs/v3/api/org/hibernate/ObjectNotFoundException.html
-				 *  
+				 *
 				 *  and we have to close the session, cause it can't be used anymore.
 				 */
 				session.close();
@@ -292,7 +292,7 @@ public class HibernateUtil {
 			return l;
         } catch ( ObjectNotFoundException e ) {
             Logger.warn(this, "---------- DotHibernate: error on list ---------------", e);
-			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback 
+			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback
 			 * when we are doing a search and the object is not found. this make some other operation
 			 * to rollback when this is not required
 			 **/
@@ -319,7 +319,7 @@ public class HibernateUtil {
 			return session.load(thisClass, new Long(id));
         } catch ( ObjectNotFoundException e ) {
             Logger.debug(this, "---------- DotHibernate: error on load ---------------", e);
-			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback 
+			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback
 			 * when we are doing a search and the object is not found. this make some other operation
 			 * to rollback when this is not required
 			 **/
@@ -357,8 +357,8 @@ public class HibernateUtil {
 			return session.load(thisClass, id);
         } catch ( ObjectNotFoundException e ) {
             Logger.debug(this, "---------- DotHibernate: error on load ---------------", e);
-			
-			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback 
+
+			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback
 			 * when we are doing a search and the object is not found. this make some other operation
 			 * to rollback when this is not required
 			 **/
@@ -399,14 +399,14 @@ public class HibernateUtil {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return The object loaded from the query or null if no object matches the query
 	 * @throws DotHibernateException
 	 */
 	public Object load() throws DotHibernateException{
 		getSession();
 		Object obj;
-		
+
 		try {
 			if (maxResults > 0) {
 				query.setMaxResults(maxResults);
@@ -425,7 +425,7 @@ public class HibernateUtil {
 			}
         } catch ( ObjectNotFoundException e ) {
             Logger.warn(this, "---------- DotHibernate: can't load- no results from query---------------", e);
-			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback 
+			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback
 			 * when we are doing a search and the object is not found. this make some other operation
 			 * to rollback when this is not required
 			 **/
@@ -450,7 +450,7 @@ public class HibernateUtil {
 			for (int i = 0; i < this.query.getNamedParameters().length; i++) {
 				sb.append("param " + i + " = " + query.getNamedParameters()[i]);
 			}
-			
+
 		return sb.toString();
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to set Query ", e);
@@ -490,6 +490,7 @@ public class HibernateUtil {
 		    forceDirtyObject.set(obj);
 			Session session = getSession();
 			session.update(obj);
+			session.flush();
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to update Object to Hibernate Session ", e);
 		}
@@ -501,18 +502,18 @@ public class HibernateUtil {
 	// Session management methods
 
 	protected static ThreadLocal forceDirtyObject=new ThreadLocal();
-	
+
 	protected static class NoDirtyFlushInterceptor implements Interceptor {
-        
+
         protected final static int[] EMPTY=new int[0];
-        
+
         public int[] findDirty(Object entity, Serializable id, Object[] currentState, Object[] previousState, String[] propertyNames,Type[] types) {
             if(forceDirtyObject.get() == entity)
                 return null;
             else
                 return EMPTY;
         }
-        
+
         public Object instantiate(Class entityClass, Serializable id) throws CallbackException { return null; }
         public Boolean isUnsaved(Object arg0) { return null; }
         public void onDelete(Object arg0, Serializable arg1, Object[] arg2, String[] arg3, Type[] arg4) throws CallbackException { }
@@ -522,7 +523,7 @@ public class HibernateUtil {
         public void postFlush(Iterator arg0) throws CallbackException { }
         public void preFlush(Iterator arg0) throws CallbackException { }
     }
-	
+
 	private static void buildSessionFactory() throws DotHibernateException{
 		try {
 			// Initialize the Hibernate environment
@@ -534,7 +535,7 @@ public class HibernateUtil {
 			#################################
 			*/
 			Configuration cfg = new Configuration().configure();
-			
+
 			if (DbConnectionFactory.isMySql()) {
 				//http://jira.dotmarketing.net/browse/DOTCMS-4937
 				cfg.setNamingStrategy(new LowercaseNamingStrategy());
@@ -563,28 +564,28 @@ public class HibernateUtil {
                 getPluginsHBM("Id",cfg);
                 cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.hibernate2.net.sf.hibernate.dialect.HSQLDialect");
 			}
-			
+
 			cfg.setInterceptor(new NoDirtyFlushInterceptor());
-			
+
 			mappings = cfg.createMappings();
 			sessionFactory = cfg.buildSessionFactory();
 			dialect = cfg.getProperty("hibernate.dialect");
-			
+
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to build Session Factory ", e);
 		}
 	}
-	
-	
-	
+
+
+
 	private static void getPluginsHBM(String type,Configuration cfg) {
 		Logger.debug(HibernateUtil.class, "Loading Hibernate Mappings from plugins ");
 		PluginAPI pAPI=APILocator.getPluginAPI();
-		
+
 		File pluginDir=pAPI.getPluginJarDir();
 		if (pluginDir==null) {
 		return;
-		}		
+		}
 		File[] plugins=pluginDir.listFiles(new FilenameFilter(){
 
 			public boolean accept(File dir, String name) {
@@ -593,7 +594,7 @@ public class HibernateUtil {
 				}
 				return false;
 			}
-			
+
 		});
 		for (File plugin:plugins) {
 			try {
@@ -617,7 +618,7 @@ public class HibernateUtil {
 		}
 		Logger.debug(HibernateUtil.class, "Done loading Hibernate Mappings from plugins ");
 	}
-	
+
 
 	/**
 	 * Attempts to find a session associated with the Thread. If there isn't a
@@ -629,7 +630,7 @@ public class HibernateUtil {
 				buildSessionFactory();
 			}
 			Session session = (Session) sessionHolder.get();
-	
+
 			if (session == null) {
 					session = sessionFactory.openSession(DbConnectionFactory.getConnection());
 			} else {
@@ -654,7 +655,7 @@ public class HibernateUtil {
     				session = null;
     				try{
     					session = sessionFactory.openSession(DbConnectionFactory.getConnection());
-    					
+
     				}
     				catch (Exception ex) {
     					Logger.error(HibernateUtil.class,ex.getMessage() );
@@ -669,12 +670,12 @@ public class HibernateUtil {
 			throw new DotHibernateException("Unable to get Hibernate Session ", e);
 		}
 	}
-	
+
 	public static void addCommitListener(Runnable listener) throws DotHibernateException {
 	    addCommitListener(UUIDGenerator.generateUuid(),listener);
 	}
-	
-	public static void addCommitListener(String tag, Runnable listener) throws DotHibernateException { 
+
+	public static void addCommitListener(String tag, Runnable listener) throws DotHibernateException {
 	    try {
     	    if(getSession().connection().getAutoCommit())
     	        listener.run();
@@ -687,7 +688,7 @@ public class HibernateUtil {
 	        throw new DotHibernateException(ex.getMessage(),ex);
 	    }
 	}
-	
+
 	public static void addRollbackListener(Runnable listener) throws DotHibernateException{
         try {
             if(getSession().connection().getAutoCommit())
@@ -702,7 +703,7 @@ public class HibernateUtil {
 
 	static class RunnablesExecutor extends Thread {
 		private List<Runnable> runnables;
-		
+
 		public RunnablesExecutor(List<Runnable> runnables) {
 			this.runnables = runnables;
 		}
@@ -712,14 +713,14 @@ public class HibernateUtil {
 			}
 		}
 	}
-	
+
 	public static void closeSession()  throws DotHibernateException{
 		try{
 			// if there is nothing to close
 			if (sessionHolder.get() == null)
 				return;
 			Session session = getSession();
-	
+
 			if (session != null) {
 					session.flush();
 					if (!session.connection().getAutoCommit()) {
@@ -752,7 +753,7 @@ public class HibernateUtil {
 
 		/*
 		 * Transactions are now used by default
-		 * 
+		 *
 		 */
 			getSession().connection().setAutoCommit(false);
 			rollbackListeners.get().clear();
@@ -773,7 +774,7 @@ public class HibernateUtil {
 		sessionCleanupAndRollback();
 
 	}
-	
+
 	public static boolean startLocalTransactionIfNeeded() throws DotDataException{
     	boolean startTransaction = false;
 
@@ -825,7 +826,7 @@ public class HibernateUtil {
 			Logger.error(HibernateUtil.class, "---------- DotHibernate: error on rollbackTransaction ---------------\n"+ ex);
 			// throw new DotRuntimeException(ex.toString());
 		}
-		
+
 		if(rollbackListeners.get().size()>0) {
             List<Runnable> r = new ArrayList<Runnable>(rollbackListeners.get());
             rollbackListeners.get().clear();
@@ -833,7 +834,7 @@ public class HibernateUtil {
             t.run();
         }
 	}
-	
+
     public static Savepoint setSavepoint() throws DotHibernateException {
     	Connection conn;
 		try {
@@ -859,7 +860,7 @@ public class HibernateUtil {
 		}
 
 	}
-    
+
 	public static void saveWithPrimaryKey(Object obj, Serializable id)  throws DotHibernateException{
 		try{
 			Session session = getSession();
@@ -873,12 +874,12 @@ public class HibernateUtil {
 			throw new DotHibernateException("Unable to flush Hibernate Session ", e);
 		}
 	}
-	
+
     public void setDate(java.util.Date g) {
         query.setDate(t, g);
         t++;
     }
-	
+
     public static void evict(Object obj) throws DotHibernateException{
         Session session = getSession();
         try {

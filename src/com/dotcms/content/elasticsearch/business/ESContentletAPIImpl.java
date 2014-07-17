@@ -87,6 +87,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletAndBinary;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -103,7 +104,11 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.PageServices;
@@ -124,6 +129,8 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import org.springframework.beans.BeanUtils;
 
 /**
  * @author Jason Tesser
@@ -2298,7 +2305,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             			+ java.io.File.separator + oldInode);
                 }
 
-
+                java.io.File tmpDir = null;
+                if(UtilMethods.isSet(oldInode)) {
+                	tmpDir = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+                			+ java.io.File.separator + oldInode.charAt(0)
+                			+ java.io.File.separator + oldInode.charAt(1)
+                			+ java.io.File.separator + oldInode);
+                }
 
 
 
@@ -2342,8 +2355,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  oldFileName);
 
 			                		// do we have an inline edited file, if so use that
-					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
-				                    if(editedFile.exists()){
+			                		java.io.File editedFile = new java.io.File(tmpDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+			                		if(editedFile.exists()){
 				                    	incomingFile = editedFile;
 				                    }
 			                	}
@@ -2427,7 +2440,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 save=true;
                             }
                         }
+    			        if (!contentlet.isLive() && UtilMethods.isSet( st.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
+			        		if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before( new Date())) {
+			        			throw new DotContentletValidationException( "message.contentlet.expired" );
+	    		            }
+	    		        }
     			        if(save) {
+
     			            // publish/expire dates changed
     			            APILocator.getIdentifierAPI().save(ident);
 
@@ -3136,6 +3155,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         boolean hasError = false;
         DotContentletValidationException cve = new DotContentletValidationException("Contentlets' fields are not valid");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
+        Structure structure = StructureCache.getStructureByInode(stInode);
         Map<String, Object> conMap = contentlet.getMap();
         for (Field field : fields) {
             Object o = conMap.get(field.getVelocityVarName());
@@ -3195,6 +3215,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                            hasError = true;
                            continue;
                     }
+                }
+                else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
+                	if(!UtilMethods.isSet(o) && structure.getExpireDateVar() != null){
+	                		if(field.getVelocityVarName().equals(structure.getExpireDateVar())){
+	                			if(conMap.get("NeverExpire").equals("NeverExpire")){
+	            				 continue;
+	                			}else{
+	                			  cve.addRequiredField(field);
+	                              hasError = true;
+	                              continue;
+	                		    }
+	                		}else{
+	                			 cve.addRequiredField(field);
+	                             hasError = true;
+	                             continue;
+	                		}
+                		}
                 }
                 else if( field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) ) {
                     if( cats == null || cats.size() == 0 ) {
@@ -3882,9 +3919,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	            }
             }
 
-            newContentlet.getMap().put("_dont_validate_me",contentletToCopy.getMap().get("_dont_validate_me"));
-            newContentlet.getMap().put("__disable_workflow__",contentletToCopy.getMap().get("__disable_workflow__"));
-
+            newContentlet.getMap().put("__disable_workflow__", true);
+            newContentlet.getMap().put("_dont_validate_me", true);
             newContentlet = checkin(newContentlet, rels, parentCats, perAPI.getPermissions(contentlet), user, respectFrontendRoles);
             if(!UtilMethods.isSet(newIdentifier))
             	newIdentifier = newContentlet.getIdentifier();
@@ -3904,6 +3940,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     	for(Contentlet con : versionsToMarkWorking){
     		APILocator.getVersionableAPI().setWorking(con);
+    	}
+
+    	// https://github.com/dotCMS/dotCMS/issues/5620
+    	// copy the workflow state
+    	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(contentletToCopy);
+    	if(task!=null) {
+    	    WorkflowTask newTask=new WorkflowTask();
+    	    BeanUtils.copyProperties(task, newTask);
+    	    newTask.setId(null);
+    	    newTask.setWebasset(resultContentlet.getIdentifier());
+    	    APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
+
+    	    for(WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {
+    	        WorkflowComment newComment=new WorkflowComment();
+    	        BeanUtils.copyProperties(comment, newComment);
+    	        newComment.setId(null);
+    	        newComment.setWorkflowtaskId(newTask.getId());
+    	        APILocator.getWorkflowAPI().saveComment(newComment);
+    	    }
+
+    	    for(WorkflowHistory history : APILocator.getWorkflowAPI().findWorkflowHistory(task)) {
+    	        WorkflowHistory newHistory=new WorkflowHistory();
+    	        BeanUtils.copyProperties(history, newHistory);
+    	        newHistory.setId(null);
+    	        newHistory.setWorkflowtaskId(newTask.getId());
+    	        APILocator.getWorkflowAPI().saveWorkflowHistory(newHistory);
+    	    }
+
+    	    List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task);
+    	    files.addAll(APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser()));
+    	    for(IFileAsset f : files) {
+    	        APILocator.getWorkflowAPI().attachFileToTask(newTask, f.getInode());
+    	    }
     	}
 
     	return resultContentlet;

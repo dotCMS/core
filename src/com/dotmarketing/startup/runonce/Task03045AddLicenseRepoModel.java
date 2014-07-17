@@ -7,7 +7,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 
-public class Task01340AddLicenseRepoModel extends AbstractJDBCStartupTask {
+public class Task03045AddLicenseRepoModel extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {

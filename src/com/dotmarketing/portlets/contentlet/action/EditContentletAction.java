@@ -2263,7 +2263,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							HibernateUtil.startTransaction();
 							try{
 								conAPI.archive(contentlet, user, false);
-								ActivityLogger.logInfo(this.getClass(), "Archieve contentlet action", " User " + user.getFirstName() + " Archieved content titled '" + contentlet.getTitle()
+								ActivityLogger.logInfo(this.getClass(), "Archive contentlet action", " User " + user.getFirstName() + " Archived content titled '" + contentlet.getTitle()
 										+ "' ", currentHost);
 								HibernateUtil.commitTransaction();
 							}catch (DotContentletStateException e) {
@@ -2491,7 +2491,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							HibernateUtil.startTransaction();
 							try{
 								conAPI.unarchive(contentlet, user, false);
-								ActivityLogger.logInfo(this.getClass(), "Unarchieve contentlet action", " User " + user.getFirstName() + " Unarchieved content titled '" + contentlet.getTitle()
+								ActivityLogger.logInfo(this.getClass(), "Unarchive contentlet action", " User " + user.getFirstName() + " Unarchived content titled '" + contentlet.getTitle()
 										+ "' ", currentHost);
 								HibernateUtil.commitTransaction();
 							}catch (DotContentletStateException e) {

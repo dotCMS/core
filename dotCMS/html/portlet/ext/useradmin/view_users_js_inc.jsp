@@ -459,7 +459,9 @@
 			else {
 				showDotCMSErrorMessage(sameUserIdAlreadyRegisteredErrorMsg);
 			}
-		} else {
+		}else if(exception.javaClassName == 'com.dotmarketing.exception.DotDataException'){
+			showDotCMSErrorMessage(exception.message);
+		}else {
 			alert("Server error: " + exception);
 		}
 

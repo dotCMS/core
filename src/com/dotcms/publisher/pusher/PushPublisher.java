@@ -160,6 +160,10 @@ public class PushPublisher extends Publisher {
 	        				detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 	        				detail.setInfo("Everything ok");
 	        			} else {
+	        				
+	        				if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
+		        				APILocator.getPushedAssetsAPI().deletePushedAssets(config.getId(), environment.getId());
+		        			}
 	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 	        				detail.setInfo(
 	        						"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
@@ -268,7 +272,9 @@ public class PushPublisher extends Publisher {
                 buildAsset = true;
             }
         }
-
+        if(config.getLuceneQueries().size() > 0){
+        	buildAsset = true;
+        }
 
         if ( buildUsers ) {
             list.add( UserBundler.class );

@@ -12,7 +12,7 @@ import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 
-public class Task01300CreateContainertStructures implements StartupTask{
+public class Task03000CreateContainertStructures implements StartupTask{
 
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 

@@ -435,4 +435,20 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		return newTemplate;
 	}
+	
+	/**
+	 *
+	 * Updates the template's theme without creating new version.
+	 * @param templateInode
+	 * @param theme
+	 *
+	 */
+   public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
+	   Template templateToUpdate = find(templateInode);
+	   templateToUpdate.setTheme(theme);
+       HibernateUtil.saveOrUpdate(templateToUpdate);
+       templateCache.add(templateToUpdate.getInode(), templateToUpdate);
+       TemplateServices.invalidate(templateToUpdate, true);
+   };
+
 }

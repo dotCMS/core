@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
-public class Task01330CreateIndicesForVersionTables extends AbstractJDBCStartupTask {
+public class Task03030CreateIndicesForVersionTables extends AbstractJDBCStartupTask {
 
 	String createIndices = "create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts);\n"+
     		"create index idx_container_vi_version_ts on container_version_info(version_ts);\n"+

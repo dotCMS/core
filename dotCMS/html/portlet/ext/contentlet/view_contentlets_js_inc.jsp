@@ -591,7 +591,7 @@
                         dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
                         var result="<table style='width:210px;' border=\"0\">";
                         result = result + "<tr><td style='padding:0px;'>";
-                        result = result +"<textarea onchange=\"setTimeout(doSearch, 500);\" value=\""+value+"\" dojoType=\"dijit.form.Textarea\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" cols=\"20\" rows=\"2\" onkeyup=\"suggestTagsForSearch(this,'"+ selectedStruct+"."+ fieldContentlet + "suggestedTagsDiv');\" style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; font-family: Verdana, Arial,Helvetica; font-size: 11px; height: 50px; width: 160px;\"></textarea><br/><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span></td></tr>";
+                        result = result +"<textarea onchange=\"setTimeout(doSearch, 500);\" value=\""+value+"\" dojoType=\"dijit.form.Textarea\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" cols=\"20\" rows=\"2\" onblur=\"clearSuggestTagsForSearch();\" onkeyup=\"suggestTagsForSearch(this,'"+ selectedStruct+"."+ fieldContentlet + "suggestedTagsDiv');\" style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; font-family: Verdana, Arial,Helvetica; font-size: 11px; height: 50px; width: 160px;\"></textarea><br/><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span></td></tr>";
                         result = result + "<tr><td valign=\"top\" style='padding:0px;'>";
                         result = result + "<div id=\"" + selectedStruct+"." + fieldContentlet + "suggestedTagsDiv\" style=\"height: 50px; font-size:10px;font-color:gray; width: 146px; border:1px solid #ccc;overflow: auto;\"></div><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Suggested-Tags") %></span><br></td></tr></table>";
 
@@ -741,14 +741,14 @@
                                 fieldsValues[fieldsValues.length] = folderValue;
                         }
                 }
-                
+
 				var allField = dijit.byId("allFieldTB").getValue();
 				if (allField != undefined && allField.length>0 ) {
 
                         fieldsValues[fieldsValues.length] = "_all";
                         fieldsValues[fieldsValues.length] = allField + "*";
 				}
-				
+
                 for (var j = 0; j < currentStructureFields.length; j++) {
                         var field = currentStructureFields[j];
             var fieldId = selectedStruct+"."+field["fieldVelocityVarName"] + "Field";
@@ -1479,7 +1479,8 @@
             }
                 var categoriesValues = new Array ();
                 var form = document.getElementById("search_form");
-                var categories = form.categories;
+                var categories = document.getElementsByName("categories");
+
                 if (categories != null) {
                         if (categories.options != null) {
                                 var opts = categories.options;
@@ -1502,6 +1503,7 @@
                                 }
                         }
                 }
+
                 if (page == null)
                         currentPage = 1;
                 else

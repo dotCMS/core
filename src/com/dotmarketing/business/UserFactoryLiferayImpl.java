@@ -248,7 +248,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			return u;
 		} catch (PortalException e) {
 			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException("saving a user failed", e);
+			throw new DotDataException(e.getMessage(), e);
 		} catch (SystemException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException("saving a user failed", e);
