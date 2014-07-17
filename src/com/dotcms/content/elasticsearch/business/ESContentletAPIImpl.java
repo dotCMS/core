@@ -3454,10 +3454,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         cve.addRequiredRelationship(rel, cons);
                     }
                     for(Contentlet con : cons){
-                        if(!con.getStructureInode().equalsIgnoreCase(rel.getChildStructureInode())){
-                            hasError = true;
-                            cve.addInvalidContentRelationship(rel, cons);
-                        }
+                    	 try {
+                    		 	List<Contentlet> relatedCon = getRelatedContent(con, rel, APILocator.getUserAPI().getSystemUser(), true);                         
+                    		 	if(rel.getCardinality()==0 && relatedCon.size()>0) {
+                    		 		hasError = true;
+                    		 		cve.addBadCardinalityRelationship(rel, cons);
+                    		 	}
+                    		 	if(!con.getStructureInode().equalsIgnoreCase(rel.getChildStructureInode())){
+                    		 		hasError = true;
+                    		 		cve.addInvalidContentRelationship(rel, cons);
+                    		 	}
+                    	 }                	 
+                    	 catch (DotSecurityException e) {
+                    		 Logger.error(this,"Unable to get system user",e);
+                    	 }
+                    	 catch (DotDataException e) {
+							 Logger.error(this,"Unable to get system user",e);
+                    	 }
                     }
                 }else if(rel.getChildStructureInode().equalsIgnoreCase(stInode)){
                     if(rel.isParentRequired() && cons.isEmpty()){
