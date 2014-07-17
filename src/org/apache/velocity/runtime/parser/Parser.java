@@ -951,7 +951,7 @@ public class Parser/*@bgen(jjtree)*/implements ParserTreeConstants, ParserConsta
 
             // Add the macro name so that we can peform escape processing
             // on defined macros
-            String macroName = jjtn000.jjtGetChild(0).getFirstToken().image;
+            String macroName = jjtn000.jjtGetChild(0).getTokens().get(0).image;
             macroNames.put(macroName, macroName);
         }
 
