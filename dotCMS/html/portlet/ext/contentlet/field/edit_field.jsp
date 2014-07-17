@@ -605,7 +605,7 @@
  <!-- display -->
     <div id="<%=field.getVelocityVarName()%>Wrapper">
         <div style="float:left;">
-            <textarea dojoType="dijit.form.Textarea" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" onblur="clearSuggestTagsForSearch()" onkeyup="<%= tagJSFunction %>" <%=field.isReadOnly()?"readonly=\"readonly\"":"" %>  style="width:300px;min-height:100px;"><%=textValue%></textarea>
+            <textarea dojoType="dijit.form.Textarea" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" onkeyup="<%= tagJSFunction %>" <%=field.isReadOnly()?"readonly=\"readonly\"":"" %>  style="width:300px;min-height:100px;"><%=textValue%></textarea>
         </div>
         <div class="suggestedTagsWrapper" id="<%=field.getVelocityVarName()%>suggestedTagsWrapper" style="display:none;">
             <div class="suggestHeading"><%= LanguageUtil.get(pageContext, "Suggested-Tags") %></div>
