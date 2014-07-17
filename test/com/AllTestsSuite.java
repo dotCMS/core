@@ -1,5 +1,8 @@
 package com;
 
+
+import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
+
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
@@ -28,6 +31,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
 import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
+import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
 import com.dotmarketing.portlets.structure.business.URLMapTest;
@@ -46,7 +50,7 @@ import com.dotmarketing.webdav.WebDavTest;
  */
 @RunWith (Suite.class)
 @Suite.SuiteClasses ({
-    //LinkCheckerAPITest.class,
+    LinkCheckerAPITest.class,
     TemplateAPITest.class,
     HTMLPageAPITest.class,
     CategoryAPITest.class,
@@ -83,7 +87,8 @@ import com.dotmarketing.webdav.WebDavTest;
     ESContentFactoryImplTest.class,
     HibernateUtilTest.class,
     WorkflowAPITest.class,
-    ContentletAjaxTest.class
+    ContentletAjaxTest.class,
+    SimpleNodeTest.class
 })
 public class AllTestsSuite {
 

@@ -35,7 +35,7 @@ public class WidgetResource extends WebResource {
 
 	@GET
 	@Path("/{params:.*}")
-	@Produces(MediaType.TEXT_PLAIN)
+	@Produces("text/plain; charset=UTF-8")
 	public Response getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws ResourceNotFoundException, ParseErrorException, Exception {
 
         InitDataObject initData = init(params, true, request, false);

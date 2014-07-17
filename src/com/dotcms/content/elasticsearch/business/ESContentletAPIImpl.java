@@ -642,6 +642,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             catch(Exception e){
                 Logger.error(this.getClass(), "Cannot publish related HTML Pages.  Fail");
+                Logger.debug(this.getClass(), "Cannot publish related HTML Pages.  Fail", e);
             }
 
         }
@@ -1156,6 +1157,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				PublisherAPI.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier());
 			} catch (DotPublisherException e) {
 				Logger.error(getClass(), "Error deleting Contentlet from Publishing Queue. Identifier:  " + contentlet.getIdentifier());
+				Logger.debug(getClass(), "Error deleting Contentlet from Publishing Queue. Identifier:  " + contentlet.getIdentifier(), e);
 			}
 		}
 
@@ -2232,6 +2234,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     				                host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
     				            }catch(Exception e){
     				                Logger.error(this, "Unable to get contentlet host");
+    				                Logger.debug(this, "Unable to get contentlet host", e);
     				            }
     				            if(host.getIdentifier().equals(Host.SYSTEM_HOST))
     				                hostId = Host.SYSTEM_HOST;
@@ -2305,7 +2308,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             			+ java.io.File.separator + oldInode);
                 }
 
-
+                java.io.File tmpDir = null;
+                if(UtilMethods.isSet(oldInode)) {
+                	tmpDir = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+                			+ java.io.File.separator + oldInode.charAt(0)
+                			+ java.io.File.separator + oldInode.charAt(1)
+                			+ java.io.File.separator + oldInode);
+                }
 
 
 
@@ -2349,8 +2358,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		oldFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator +  oldFileName);
 
 			                		// do we have an inline edited file, if so use that
-					                java.io.File editedFile = new java.io.File(oldDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
-				                    if(editedFile.exists()){
+			                		java.io.File editedFile = new java.io.File(tmpDir.getAbsolutePath()  + java.io.File.separator + velocityVarNm + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+			                		if(editedFile.exists()){
 				                    	incomingFile = editedFile;
 				                    }
 			                	}
@@ -2434,13 +2443,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 save=true;
                             }
                         }
-    			        if (!contentlet.isLive() && UtilMethods.isSet( st.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set    		               
+    			        if (!contentlet.isLive() && UtilMethods.isSet( st.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
 			        		if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before( new Date())) {
 			        			throw new DotContentletValidationException( "message.contentlet.expired" );
 	    		            }
 	    		        }
     			        if(save) {
-    			        	
+
     			            // publish/expire dates changed
     			            APILocator.getIdentifierAPI().save(ident);
 
@@ -2596,6 +2605,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	}
             	Logger.error(this, e.getMessage());
 				Logger.error(this, e.toString());
+				Logger.debug(this, e.getMessage(), e);
 				if(e instanceof DotDataException)
 					throw (DotDataException)e;
 				if(e instanceof DotSecurityException)
@@ -3226,7 +3236,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	                             continue;
 	                		}
                 		}
-                }	
+                }
                 else if( field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) ) {
                     if( cats == null || cats.size() == 0 ) {
                         cve.addRequiredField(field);
@@ -3448,10 +3458,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         cve.addRequiredRelationship(rel, cons);
                     }
                     for(Contentlet con : cons){
-                        if(!con.getStructureInode().equalsIgnoreCase(rel.getChildStructureInode())){
-                            hasError = true;
-                            cve.addInvalidContentRelationship(rel, cons);
-                        }
+                    	 try {
+                    		 	List<Contentlet> relatedCon = getRelatedContent(con, rel, APILocator.getUserAPI().getSystemUser(), true);                         
+                    		 	if(rel.getCardinality()==0 && relatedCon.size()>0) {
+                    		 		hasError = true;
+                    		 		cve.addBadCardinalityRelationship(rel, cons);
+                    		 	}
+                    		 	if(!con.getStructureInode().equalsIgnoreCase(rel.getChildStructureInode())){
+                    		 		hasError = true;
+                    		 		cve.addInvalidContentRelationship(rel, cons);
+                    		 	}
+                    	 }                	 
+                    	 catch (DotSecurityException e) {
+                    		 Logger.error(this,"Unable to get system user",e);
+                    	 }
+                    	 catch (DotDataException e) {
+							 Logger.error(this,"Unable to get system user",e);
+                    	 }
                     }
                 }else if(rel.getChildStructureInode().equalsIgnoreCase(stInode)){
                     if(rel.isParentRequired() && cons.isEmpty()){
@@ -3741,6 +3764,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }catch(Exception e){
             Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName );
+            Logger.debug(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName, e);
             throw new DotDataException("File System error.");
         }
         return binaryFile;
@@ -3934,8 +3958,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     	for(Contentlet con : versionsToMarkWorking){
     		APILocator.getVersionableAPI().setWorking(con);
-    	}    	
-    	
+    	}
+
     	// https://github.com/dotCMS/dotCMS/issues/5620
     	// copy the workflow state
     	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(contentletToCopy);
@@ -3945,7 +3969,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	    newTask.setId(null);
     	    newTask.setWebasset(resultContentlet.getIdentifier());
     	    APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
-    	    
+
     	    for(WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {
     	        WorkflowComment newComment=new WorkflowComment();
     	        BeanUtils.copyProperties(comment, newComment);
@@ -3953,7 +3977,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	        newComment.setWorkflowtaskId(newTask.getId());
     	        APILocator.getWorkflowAPI().saveComment(newComment);
     	    }
-    	    
+
     	    for(WorkflowHistory history : APILocator.getWorkflowAPI().findWorkflowHistory(task)) {
     	        WorkflowHistory newHistory=new WorkflowHistory();
     	        BeanUtils.copyProperties(history, newHistory);
@@ -3961,14 +3985,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	        newHistory.setWorkflowtaskId(newTask.getId());
     	        APILocator.getWorkflowAPI().saveWorkflowHistory(newHistory);
     	    }
-    	    
+
     	    List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task);
     	    files.addAll(APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser()));
     	    for(IFileAsset f : files) {
     	        APILocator.getWorkflowAPI().attachFileToTask(newTask, f.getInode());
     	    }
     	}
-    	
+
     	return resultContentlet;
     }
 

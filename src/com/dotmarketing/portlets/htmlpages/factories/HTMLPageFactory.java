@@ -429,6 +429,7 @@ public class HTMLPageFactory {
             newIdent = APILocator.getIdentifierAPI().createNew( newHTMLPage, host );
         }
         newHTMLPage.setIdentifier( newIdent.getId() );
+        HibernateUtil.saveOrUpdate( newHTMLPage );
 
         WorkingCache.removeAssetFromCache( newHTMLPage );
         WorkingCache.addToWorkingAssetToCache( newHTMLPage );
