@@ -552,7 +552,7 @@ public class UserLocalManagerImpl implements UserLocalManager {
 		}
 
 		if (!Validator.isEmailAddress(emailAddress)) {
-			throw new UserEmailAddressException();
+			throw new UserEmailAddressException("Please enter a valid Email Address");
 		}
 		else {
 			try {
@@ -623,7 +623,7 @@ public class UserLocalManagerImpl implements UserLocalManager {
 		User user = UserUtil.findByPrimaryKey(userId);
 
 		if (!Validator.isEmailAddress(emailAddress)) {
-			throw new UserEmailAddressException();
+			throw new UserEmailAddressException("Please enter a valid Email Address");
 		}
 		else {
 			try {

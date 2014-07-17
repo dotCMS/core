@@ -80,7 +80,7 @@ public class CMSConfigResource extends WebResource {
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
-        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size", "homeURL" ) ) {
+        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 

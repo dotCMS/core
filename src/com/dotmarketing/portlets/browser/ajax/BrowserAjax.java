@@ -499,11 +499,11 @@ public class BrowserAjax {
     public String moveFolder ( String inode, String newFolder ) throws Exception {
 
         HibernateUtil.startTransaction();
-        
+
         Locale requestLocale = WebContextFactory.get().getHttpServletRequest().getLocale();
         String successString = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-moved"));
         String errorString = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Failed-to-move-another-folder-with-the-same-name-already-exists-in-the-destination"));
-        
+
         try {
             HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
             User user = getUser( req );
@@ -563,58 +563,70 @@ public class BrowserAjax {
 
     public Map<String, Object> renameFile (String inode, String newName) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    	User user = null;
-    	try {
-    		user = com.liferay.portal.util.PortalUtil.getUser(req);
-    	} catch (Exception e) {
-    		Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
-    		throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
-    	}
-
     	HashMap<String, Object> result = new HashMap<String, Object> ();
-    	Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
-    	if(id!=null && id.getAssetType().equals("contentlet")){
-    		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
-    		String lName = (String) cont.get(FileAssetAPI.FILE_NAME_FIELD);
-    		result.put("lastName", lName.substring(0, lName.lastIndexOf(".")));
-    		result.put("extension", UtilMethods.getFileExtension(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)));
-    		result.put("newName", newName);
-    		result.put("inode", inode);
-    		if(!cont.isLocked()){
-    			try{
-    				if(APILocator.getFileAssetAPI().renameFile(cont, newName, user, false)){
-        				result.put("result", 0);
-        			}else{
-        				result.put("result", 1);
-        				result.put("errorReason", "Another file with the same name already exists on this folder");
-        			}
-    			}catch(Exception e){
+
+    	HibernateUtil.startTransaction();
+
+    	try {
+
+    		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+    		User user = null;
+    		try {
+    			user = com.liferay.portal.util.PortalUtil.getUser(req);
+    		} catch (Exception e) {
+    			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
+    			throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
+    		}
+
+    		Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
+    		if(id!=null && id.getAssetType().equals("contentlet")){
+    			Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
+    			String lName = (String) cont.get(FileAssetAPI.FILE_NAME_FIELD);
+    			result.put("lastName", lName.substring(0, lName.lastIndexOf(".")));
+    			result.put("extension", UtilMethods.getFileExtension(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)));
+    			result.put("newName", newName);
+    			result.put("inode", inode);
+    			if(!cont.isLocked()){
+    				try{
+    					if(APILocator.getFileAssetAPI().renameFile(cont, newName, user, false)){
+    						result.put("result", 0);
+    					}else{
+    						result.put("result", 1);
+    						result.put("errorReason", "Another file with the same name already exists on this folder");
+    					}
+    				}catch(Exception e){
+    					result.put("result", 1);
+    					result.put("errorReason", e.getLocalizedMessage());
+    				}
+    			}else{
     				result.put("result", 1);
-    				result.put("errorReason", e.getLocalizedMessage());
+    				result.put("errorReason", "The file is locked");
     			}
     		}else{
-    			result.put("result", 1);
-    			result.put("errorReason", "The file is locked");
+    			File file = (File) InodeFactory.getInode(inode, File.class);
+    			result.put("lastName", file.getNameOnly());
+    			result.put("extension", file.getExtension());
+    			result.put("newName", newName);
+    			result.put("inode", inode);
+    			if (APILocator.getFileAPI().renameFile(file, newName, user, false)) {
+    				result.put("result", 0);
+    			} else {
+    				result.put("result", 1);
+    				if (file.isLocked())
+    					result.put("errorReason", "The file is locked");
+    				else
+    					result.put("errorReason", "Another file with the same name already exists on this folder");
+    			}
     		}
-    	}else{
-    		File file = (File) InodeFactory.getInode(inode, File.class);
-    		result.put("lastName", file.getNameOnly());
-    		result.put("extension", file.getExtension());
-    		result.put("newName", newName);
-    		result.put("inode", inode);
-    		if (APILocator.getFileAPI().renameFile(file, newName, user, false)) {
-    			result.put("result", 0);
-    		} else {
-    			result.put("result", 1);
-    			if (file.isLocked())
-    				result.put("errorReason", "The file is locked");
-    			else
-    				result.put("errorReason", "Another file with the same name already exists on this folder");
-    		}
+
+    	} catch ( Exception e ) {
+    		HibernateUtil.rollbackTransaction();
+    	} finally {
+    		HibernateUtil.commitTransaction();
     	}
 
     	return result;
+
     }
 
     /**
@@ -629,10 +641,10 @@ public class BrowserAjax {
 		try{
 			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 			User user = getUser( req );
-	
+
 			//Contentlet file identifier
 			Identifier id = APILocator.getIdentifierAPI().findFromInode( inode );
-	
+
 			// gets folder parent
 			Folder parent = null;
 			try {
@@ -640,12 +652,12 @@ public class BrowserAjax {
 			} catch ( Exception ignored ) {
 				//Probably what we have here is a host
 			}
-	
+
 			Host host = null;
 			if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
 				host = APILocator.getHostAPI().find( newFolder, user, false );
 			}
-	
+
 			// Checking permissions
 			String permissionsError = "File-failed-to-copy-check-you-have-the-required-permissions";
 			if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ) {
@@ -655,33 +667,33 @@ public class BrowserAjax {
 			} else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
 				return permissionsError;
 			}
-	
+
 			if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
-	
+
 				//Getting the contentlet file
 				Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
-	
+
 				if ( parent != null ) {
-	
+
 					FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet( cont );
 					if ( UtilMethods.isSet( fileAsset.getFileName() ) && !folderAPI.matchFilter( parent, fileAsset.getFileName() ) ) {
 						return "message.file_asset.error.filename.filters";
 					}
 				}
-	
+
 				if ( parent != null ) {
 					APILocator.getContentletAPI().copyContentlet( cont, parent, user, false );
 				} else {
 					APILocator.getContentletAPI().copyContentlet( cont, host, user, false );
 				}
-	
+
 				// issues/1788
 				// issues/1967
-	
+
 				Folder srcFolder = APILocator.getFolderAPI().find(cont.getFolder(),user,false);
 				refreshIndex(null, parent, user, host, srcFolder );
-	
-	
+
+
 				return "File-copied";
 			}
 
@@ -690,12 +702,12 @@ public class BrowserAjax {
             if ( UtilMethods.isSet( file.getFileName() ) && (parent != null && !folderAPI.matchFilter( parent, file.getFileName() )) ) {
                 return "message.file_asset.error.filename.filters";
             }
-    
+
             // Checking permissions
             if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
                 return "File-failed-to-copy-check-you-have-the-required-permissions";
             }
-    
+
             if ( parent != null ) {
                 APILocator.getFileAPI().copyFile( file, parent, user, false );
             } else {

@@ -60,7 +60,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 				return false;
 			}
 			else if (document.getElementById("titleField").value.indexOf(" ")>-1) {
-				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
+				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.no.space.in.url")) %>');
 				return false;
 			}
 		}
@@ -220,7 +220,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 			<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
 		</div>
 
-		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_push_history") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
+		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_push_history") %>" onShow="hideEditButtonsRow();">
 			<div>
 			<%
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, folder);

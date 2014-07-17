@@ -22,20 +22,21 @@
 
 package com.dotmarketing.portlets.scheduler.action;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import javax.servlet.jsp.PageContext;
 
 import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
 import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
 import com.dotcms.repackage.portlet.javax.portlet.WindowState;
-import javax.servlet.jsp.PageContext;
-
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.PortletAction;
@@ -58,15 +59,30 @@ public class ViewSchedulersAction extends PortletAction {
         Logger.debug(this, "Running ViewSchedulersAction!!!!");
 
 		try {
-			List<ScheduledTask> list = QuartzUtils.getStandardScheduledTasks("User Job");
+			String group = "User Job";
+			String group2 = "Recurrent Campaign";
+			Map<String,List<String>> results = new HashMap<String,List<String>>();
+			List<String> list = new ArrayList<String>();
+			String[] tasks =  QuartzUtils.getStandardScheduler().getJobNames(group);
+			for(String task : tasks){
+				list.add(task);
+			}
+			results.put(group, list);
+			
+			List<String> list2 = new ArrayList<String>();
+			String[] tasks2 =  QuartzUtils.getStandardScheduler().getJobNames(group2);
+			for(String task : tasks2){
+				list2.add(task);
+			}
+			results.put(group2, list2);
 			
 			if (req.getWindowState().equals(WindowState.NORMAL)) {
-				req.setAttribute(WebKeys.SCHEDULER_VIEW_PORTLET, list);
+				req.setAttribute(WebKeys.SCHEDULER_VIEW_PORTLET, results);
 		        Logger.debug(this, "Going to: portlet.ext.scheduler.view");
 				return mapping.findForward("portlet.ext.scheduler.view");
 			}
 			else {
-				req.setAttribute(WebKeys.SCHEDULER_LIST_VIEW, list);
+				req.setAttribute(WebKeys.SCHEDULER_LIST_VIEW, results);
 		        Logger.debug(this, "Going to: portlet.ext.scheduler.view_schedulers");
 				return mapping.findForward("portlet.ext.scheduler.view_schedulers");
 			}

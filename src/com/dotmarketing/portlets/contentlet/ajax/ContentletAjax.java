@@ -1047,10 +1047,10 @@ public class ContentletAjax {
 			counters.put("hasNext", perPage < hits.size());
 
 		// Data to show in the bottom content listing page
-		String luceneQueryToShow2= luceneQuery.toString();
+		String luceneQueryToShow2= luceneQuery.toString();		
 		luceneQueryToShow2=luceneQueryToShow2.replaceAll("\\+languageId:[0-9]*\\*?","").replaceAll("\\+deleted:[a-zA-Z]*","")
-			.replaceAll("\\+working:[a-zA-Z]*","").trim();
-		String luceneQueryToShow= luceneQuery.toString();
+			.replaceAll("\\+working:[a-zA-Z]*","").replaceAll("\\s+", " ").trim();
+		String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
 		counters.put("luceneQueryRaw", luceneQueryToShow);
 		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","${esc.quote}"));
 		counters.put("sortByUF", orderBy);
@@ -1271,7 +1271,12 @@ public class ContentletAjax {
 			if(elementName.equalsIgnoreCase("hostId")){
 				callbackData.put("hostOrFolder",true);
 			}
-			//http://jira.dotmarketing.net/browse/DOTCMS-3463
+			
+			if(elementName.startsWith("text")){
+				elementValue = elementValue.toString().trim();
+			}
+			
+			//http://jira.dotmarketing.net/browse/DOTCMS-3463			
 			if(elementName.startsWith("binary")){
 				String binaryFileValue = (String) elementValue;
 				File binaryFile = null;
@@ -1556,6 +1561,11 @@ public class ContentletAjax {
 					String errorString = LanguageUtil.get(user,"message.contentlet.invalid.form");
 					saveContentErrors.add(errorString);
 				}
+				
+				if(ve.getMessage().contains("message.contentlet.expired")){
+					String errorString = LanguageUtil.get(user,"message.contentlet.expired");
+					saveContentErrors.add(errorString);
+				}
 			}
 
 		}
@@ -1659,6 +1669,17 @@ public class ContentletAjax {
 				}
 				tempBinaryImageInodes.clear();
 			}
+
+			// if we are canceling the edition of a host, let's restore the default one for the site browser
+
+			Contentlet content = conAPI.find(workingContentletInode, user, false);
+			Structure structure = content.getStructure();
+
+			if(structure!= null && UtilMethods.isSet(structure.getInode()) && structure.getVelocityVarName().equals("Host")) {
+				Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
+				ses.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,defaultHost.getIdentifier() );
+			}
+
 		}
 		catch(Exception ae){
 			Logger.debug(this, "Error trying to cancelContentEdit");

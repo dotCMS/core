@@ -272,7 +272,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         }
 
         ver.setLiveInode( null );
-        vfac.saveContentletVersionInfo( ver );
+        vfac.saveContentletVersionInfo( ver, true );
     }
 
     public void setDeleted(Versionable ver, boolean deleted) throws DotDataException, DotStateException, DotSecurityException {
@@ -285,7 +285,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
             info.setDeleted(deleted);
-            vfac.saveContentletVersionInfo(info);
+            vfac.saveContentletVersionInfo(info, true);
         }
         else {
             VersionInfo info = vfac.getVersionInfo(ver.getVersionId());
@@ -326,7 +326,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             }
 
             info.setLiveInode( versionable.getInode() );
-            vfac.saveContentletVersionInfo( info );
+            vfac.saveContentletVersionInfo( info, true );
         } else {
             VersionInfo info = vfac.getVersionInfo( versionable.getVersionId() );
             if ( !UtilMethods.isSet( info.getIdentifier() ) ) {
@@ -350,7 +350,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                 info.setLocked(user.getUserId());
             else
                 info.unLock();
-            vfac.saveContentletVersionInfo(info);
+            vfac.saveContentletVersionInfo(info, false);
         }
         else {
             VersionInfo info = vfac.getVersionInfo(ver.getVersionId());
@@ -377,7 +377,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             }
             else {
                 info.setWorkingInode(versionable.getInode());
-                vfac.saveContentletVersionInfo(info);
+                vfac.saveContentletVersionInfo(info, true);
             }
         }
         else {
@@ -449,14 +449,14 @@ public class VersionableAPIImpl implements VersionableAPI {
 	public void saveContentletVersionInfo( ContentletVersionInfo cvInfo) throws DotDataException, DotStateException {
 		ContentletVersionInfo info = vfac.findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
 		if(info == null){
-			vfac.saveContentletVersionInfo(cvInfo);
+			vfac.saveContentletVersionInfo(cvInfo, true);
 		}else{
 			info.setDeleted(cvInfo.isDeleted());
 			info.setLiveInode(cvInfo.getLiveInode());
 			info.setLockedBy(cvInfo.getLockedBy());
 			info.setLockedOn(cvInfo.getLockedOn());
 			info.setWorkingInode(cvInfo.getWorkingInode());
-			vfac.saveContentletVersionInfo(info);
+			vfac.saveContentletVersionInfo(info, true);
 		}
 	}
 

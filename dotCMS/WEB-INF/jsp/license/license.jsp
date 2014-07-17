@@ -9,10 +9,10 @@
 <%
 String error=null;
 String message=null;
+String newLicenseMessage="";
+String newLicenseURL="";
 if (request.getMethod().equalsIgnoreCase("POST") ) {
     error=LicenseUtil.processForm(request);
-    
-
 }
 
 

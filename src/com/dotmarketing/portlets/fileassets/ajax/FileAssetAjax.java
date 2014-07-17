@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
 import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -18,13 +17,14 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 public class FileAssetAjax {
-	
+
 	protected FileAPI fileAPI;
 	protected UserWebAPI userAPI;
 
@@ -56,8 +56,8 @@ public class FileAssetAjax {
 		return map;
 
 	}
-	
-	
+
+
 	public void saveFileText(String contentletInode, String newText) throws PortalException, SystemException,
 	DotDataException, DotSecurityException, IOException {
 		WebContext ctx = WebContextFactory.get();
@@ -66,21 +66,29 @@ public class FileAssetAjax {
 		boolean respectFrontendRoles = userAPI.isLoggedToFrontend(req);
 		Contentlet cont  = APILocator.getContentletAPI().find(contentletInode, user, respectFrontendRoles);
 		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
-		
-		java.io.File fileData =  new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + contentletInode.charAt(0)
+
+		java.io.File tempDir =  new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + contentletInode.charAt(0)
 					+ java.io.File.separator + contentletInode.charAt(1) + java.io.File.separator + contentletInode
-					+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + fa.getFileAsset().getName());
+					+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD);
+
+		if(!tempDir.exists())
+			tempDir.mkdirs();
+
+		java.io.File fileData = new java.io.File(tempDir.getAbsoluteFile() + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + fa.getFileAsset().getName());
+
 		fileData.deleteOnExit();
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(fileData);
 			fos.write(newText.getBytes());
-		} finally {
+		} catch(Exception e) {
+			Logger.error(getClass(), "Error writing to file", e);
+		}finally {
 			if (fos != null)
 				fos.close();
 		}
 	}
-	
+
 	public void removeTempFile(String contInode)throws PortalException, SystemException,
 	DotDataException, DotSecurityException, IOException{
 		WebContext ctx = WebContextFactory.get();

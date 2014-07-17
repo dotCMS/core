@@ -76,6 +76,9 @@ public class TagAjax {
 	    				hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 	    				host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 	    			}
+	    			tagAPI.addTagInode(tagName, 
+	    					APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode(),
+	    					hostId);
 
 	    			if(host!=null && host.getIdentifier()!=null && host.getIdentifier().equals(Host.SYSTEM_HOST))
 	    				tagStorageForHost = Host.SYSTEM_HOST;
@@ -280,10 +283,13 @@ public class TagAjax {
 	    	}
     	}
     	if(!(newUserId.equals(userId))){
-    		tag.setUserId(newUserId);
-    	}
-    	else{
-		TagFactory.deleteTag(TagFactory.getTag(tagName, userId));
+            try{
+            	TagFactory.updateTag(tag.getTagId(), newUserId);
+            }catch(Exception e){
+            	Logger.error(this, e.getMessage());
+            }
+    	}else{
+    		TagFactory.deleteTag(TagFactory.getTag(tagName, userId));
     	}
 		List<Tag> tags = TagFactory.getTagByUser(userId);
 		Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();

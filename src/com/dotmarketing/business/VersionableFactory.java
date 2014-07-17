@@ -36,7 +36,7 @@ public abstract class VersionableFactory {
 	 */
 	protected abstract ContentletVersionInfo findContentletVersionInfoInDB(String identifier, long lang) throws DotDataException, DotStateException;
 
-	protected abstract void saveContentletVersionInfo(ContentletVersionInfo cvInfo) throws DotDataException, DotStateException;
+	protected abstract void saveContentletVersionInfo(ContentletVersionInfo cvInfo, boolean updateVersionTS) throws DotDataException, DotStateException;
 
 	protected abstract VersionInfo createVersionInfo(Identifier identifier, String workingInode) throws DotStateException, DotDataException;
 

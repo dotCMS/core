@@ -145,21 +145,26 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		var htmlstr = "<dl>";
 		htmlstr += "<dt><b>Content Type:</b></dt>";
 		htmlstr += "<dd>";
-		dojo.require("dijit.form.FilteringSelect");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' onChange='displayStructure(this.value)'  id='structuresSelect+"+this.dialogCounter+"' required='false' name='structuresSelect+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.structureInode+"'>";
+		if(this.containerStructures.length > 1){
+			dojo.require("dijit.form.FilteringSelect");
+			htmlstr += "<select dojoType='dijit.form.FilteringSelect' onChange='displayStructure(this.value)'  id='structuresSelect+"+this.dialogCounter+"' required='false' name='structuresSelect+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.structureInode+"'>";
 
-		var defaultValue = "";
+			var defaultValue = "";
 
-		for (var i = 0; i < this.containerStructures.length; i++) {
+			for (var i = 0; i < this.containerStructures.length; i++) {
 
-			if(i==0) {
-				defaultValue = this.containerStructures[i].inode;
+				if(i==0) {
+					defaultValue = this.containerStructures[i].inode;
+				}
+				htmlstr += "<option  value='"+this.containerStructures[i].inode+"'";
+				htmlstr += ">"+this.containerStructures[i].name+"</option>"
 			}
-			htmlstr += "<option  value='"+this.containerStructures[i].inode+"'";
-			htmlstr += ">"+this.containerStructures[i].name+"</option>"
-		}
 
-		htmlstr += "</select>";
+			htmlstr += "</select>";
+		}else{
+			htmlstr += this.containerStructures[0].name;
+			this.displayStructureFields(this.containerStructures[0].inode);
+		}
 		htmlstr += "</dd>";
 		htmlstr += "</dl>";
 		dojo.place(htmlstr,this.structures_select);
@@ -173,7 +178,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	_fillLanguages: function(data) {
 		if(dijit.byId('langcombo+'+this.dialogCounter)){
 			window.console.log("destroying:langcombo+" + this.dialogCounter)
-			dijit.byId('langcombo+'+this.dialogCounter).destroy();			
+			dijit.byId('langcombo+'+this.dialogCounter).destroy();
 		}
 		this.availableLanguages = data;
 		this.search_languages_table.innerHTML = "";
@@ -419,7 +424,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		var form = this.search_form;
 		form.categories = null;
 		if(form.categories != null){
-        	var tempChildNodesLength = form.categories.childNodes.length; 
+        	var tempChildNodesLength = form.categories.childNodes.length;
         	for(var i = 0; i < tempChildNodesLength; i++){
         		form.categories.removeChild(form.categories.childNodes[0]);
         	}
@@ -607,7 +612,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		var categoriesValues = new Array ();
 		var form = this.search_form;
-		var categories = form.categories;
+		var categories = document.getElementsByName("categories");
+
 		if (categories != null) {
 			if (categories.options != null) {
 				var opts = categories.options;
@@ -709,7 +715,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		cell.setAttribute("class","beta");
 		cell.setAttribute("className","beta");
 		cell.setAttribute("width","5%");
-		
+
 		var cell = row.insertCell (row.cells.length);
 		cell.setAttribute("class","beta");
 		cell.setAttribute("className","beta");
@@ -737,7 +743,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			} else {
 				cell.innerHTML = this._selectButton(cellData);
 			}
-			
+
 			for(var l = 0; l < this.availableLanguages.length; l++){
 				if(this.availableLanguages[l]['id'] == cellData['languageId']){
 					var cell = row.insertCell (row.cells.length);

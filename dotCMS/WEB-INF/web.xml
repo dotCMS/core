@@ -894,6 +894,14 @@
 		<extension>xsl</extension>
 		<mime-type>application/xml</mime-type>
 	</mime-mapping>
+	<mime-mapping>
+		<extension>sass</extension>
+		<mime-type>text/plain</mime-type>
+	</mime-mapping>
+	<mime-mapping>
+		<extension>less</extension>
+		<mime-type>text/plain</mime-type>
+	</mime-mapping>
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 		<welcome-file>index.jsp</welcome-file>
