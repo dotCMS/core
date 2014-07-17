@@ -6,6 +6,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -15,16 +16,18 @@ import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
 import com.dotcms.repackage.jersey_1_12.com.sun.jersey.core.header.FormDataContentDisposition;
 import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.FormDataParam;
-
 import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
 
 import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.*;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+import com.dotcms.rest.exception.SecurityException;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,7 +70,7 @@ public class CMSConfigResource extends WebResource {
                                            @FormParam ("size") String size,
                                            @FormParam ("homeURL") String homeURL ) throws IOException, JSONException {
 
-        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true, "9" );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "portalURL", portalURL );
@@ -143,7 +146,7 @@ public class CMSConfigResource extends WebResource {
                                             @FormParam ("languageId") String languageId,
                                             @FormParam ("timeZoneId") String timeZoneId ) throws IOException, JSONException {
 
-        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true, "9" );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "languageId", languageId );
@@ -205,7 +208,7 @@ public class CMSConfigResource extends WebResource {
                                               @FormParam ("user") String user, @FormParam ("password") String password,
                                               @FormParam ("authType") String authType ) throws IOException, JSONException {
 
-        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true, "9" );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "authType", authType );
@@ -273,7 +276,7 @@ public class CMSConfigResource extends WebResource {
                                       @FormDataParam ("logoFile") File logoFile,
                                       @FormDataParam ("logoFile") FormDataContentDisposition logoDetail ) throws IOException, JSONException {
 
-        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true , "9");
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -333,7 +336,7 @@ public class CMSConfigResource extends WebResource {
                                         @FormParam ("type") String type,
                                         @FormParam ("callback") String callback ) throws JSONException, IOException {
 
-        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true, "9" );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "environment", environment );
@@ -412,7 +415,7 @@ public class CMSConfigResource extends WebResource {
                                      @FormParam ("type") String type,
                                      @FormParam ("callback") String callback ) throws JSONException, IOException {
 
-        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true );
+        InitDataObject initData = init( "user/" + user + "/password/" + password, true, request, true , "9");
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "endPoint", endPoint );
