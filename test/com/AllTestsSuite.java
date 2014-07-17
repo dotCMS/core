@@ -1,5 +1,9 @@
 package com;
 
+import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
@@ -8,6 +12,7 @@ import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.business.RoleAPITest;
+import com.dotmarketing.plugin.PluginMergerTest;
 import com.dotmarketing.portlets.categories.business.CategoryAPITest;
 import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
@@ -15,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
 import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
-import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
 import com.dotmarketing.portlets.structure.business.URLMapTest;
@@ -23,11 +27,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
 import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
 import com.dotmarketing.portlets.templates.business.TemplateAPITest;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest;
-import com.dotmarketing.plugin.PluginMergerTest;
 import com.dotmarketing.webdav.WebDavTest;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 
 /**
  * Created by Jonathan Gamba.
@@ -61,7 +61,8 @@ import org.junit.runners.Suite;
     RoleAPITest.class,
     FolderAPITest.class,
     HostAPITest.class,
-    WorkflowSearcherTest.class
+    WorkflowSearcherTest.class,
+    SimpleNodeTest.class
 })
 public class AllTestsSuite {
 

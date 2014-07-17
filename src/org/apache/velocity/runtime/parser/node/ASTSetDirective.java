@@ -21,6 +21,7 @@ package org.apache.velocity.runtime.parser.node;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 
 import org.apache.velocity.app.event.EventHandlerUtil;
 import org.apache.velocity.context.InternalContextAdapter;
@@ -30,6 +31,7 @@ import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.Parser;
+import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.util.introspection.Info;
 
 import com.dotmarketing.util.Logger;
@@ -122,7 +124,7 @@ public class ASTSetDirective extends SimpleNode
             /*
              *  grab this now.  No need to redo each time
              */
-            leftReference = left.getFirstToken().image.substring(1);
+            leftReference = left.getTokens().get(0).image.substring(1);
         
             isInitialized = true;
         }
@@ -175,7 +177,8 @@ public class ASTSetDirective extends SimpleNode
                 String rightReference = null;
                 if (right instanceof ASTExpression)
                 {
-                    rightReference = ((ASTExpression) right).getLastToken().image;
+                    List<Token> tt=right.getTokens();
+                    rightReference = tt.get(tt.size()-1).image;
                 }
                 EventHandlerUtil.invalidSetMethod(rsvc, context, leftReference, rightReference, uberInfo);
                 
@@ -188,7 +191,8 @@ public class ASTSetDirective extends SimpleNode
             String rightReference = null;
             if (right instanceof ASTExpression)
             {
-                rightReference = ((ASTExpression) right).getLastToken().image;
+                List<Token> tt=right.getTokens();
+                rightReference = tt.get(tt.size()-1).image;
             }
             EventHandlerUtil.invalidSetMethod(rsvc, context, leftReference, rightReference, uberInfo);
 
