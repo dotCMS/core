@@ -62,7 +62,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         try {
             String sql = "insert into dist_reindex_journal(inode_to_index,ident_to_index, priority, dist_action, time_entered) " +
                   " select distinct identifier,identifier," + REINDEX_JOURNAL_PRIORITY_NEWINDEX +"," + REINDEX_ACTION_REINDEX_OBJECT + ", " + TIMESTAMPSQL +
-                  " from contentlet where inode is not null and identifier is not null";
+                  " from contentlet_version_info where identifier is not null";
             dc.setSQL(sql);
             dc.loadResult();
         } catch (Exception e) {

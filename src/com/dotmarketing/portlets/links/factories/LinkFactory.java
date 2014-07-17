@@ -384,6 +384,7 @@ public class LinkFactory {
         }
 
         newLink.setIdentifier( newIdent.getId() );
+        HibernateUtil.saveOrUpdate( newLink );
 
         APILocator.getVersionableAPI().setWorking( newLink );
         if ( currentLink.isLive() ) {

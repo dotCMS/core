@@ -216,7 +216,9 @@ public class SubmitContentAction extends DispatchAction{
 					if(!parameterName.equals("dispatch") && !parameterName.equals("captcha") && !parameterName.equals("options") && !parameterName.equals("structure") && !parameterName.equals("userId") && !parameterName.equals("referrer")){
 						if(!SubmitContentUtil.imageOrFileParam(st, parameterName) && !UtilMethods.isImage(parameterName)){
 							for(String val : vals){
-								paramsBuff.append("&").append(parameterName).append("=").append(encoder.encode(val));
+								if(val.length() < 512) {
+									paramsBuff.append("&").append(parameterName).append("=").append(encoder.encode(val));
+								}
 							}
 						}
 					}

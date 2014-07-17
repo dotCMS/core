@@ -1271,7 +1271,12 @@ public class ContentletAjax {
 			if(elementName.equalsIgnoreCase("hostId")){
 				callbackData.put("hostOrFolder",true);
 			}
-			//http://jira.dotmarketing.net/browse/DOTCMS-3463
+			
+			if(elementName.startsWith("text")){
+				elementValue = elementValue.toString().trim();
+			}
+			
+			//http://jira.dotmarketing.net/browse/DOTCMS-3463			
 			if(elementName.startsWith("binary")){
 				String binaryFileValue = (String) elementValue;
 				File binaryFile = null;
