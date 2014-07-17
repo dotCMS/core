@@ -1,22 +1,26 @@
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
-<%@page import="java.util.Arrays"%>
-<%@page import="java.util.ArrayList"%>
 <%@page import="java.util.List"%>
-<%@page import="java.io.File"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="java.util.Map"%>
-<%@page import="java.util.HashMap"%>
-<%@page import="org.osgi.framework.Bundle"%>
-<%@ page import="com.dotmarketing.util.OSGIUtil" %>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
+<%@ page import="com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle" %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <script type="text/javascript">
-    require(["dijit/form/SimpleTextarea"]);
+    require(["dijit/form/SimpleTextarea", "dijit/Dialog", "dijit/MenuItem"]);
+
+    window.states = {};
+    states[<%=Bundle.ACTIVE%>]= "<%=LanguageUtil.get(pageContext, "OSGI-Bundles-State-Active")%>";
+    states[<%=Bundle.INSTALLED%>]= "<%=LanguageUtil.get(pageContext, "OSGI-Bundles-State-Installed")%>";
+    states[<%=Bundle.RESOLVED%>]= "<%=LanguageUtil.get(pageContext, "OSGI-Bundles-State-Resolved")%>";
+    states[<%=Bundle.STARTING%>]= "<%=LanguageUtil.get(pageContext, "OSGI-Bundles-State-Starting")%>";
+    states[<%=Bundle.STOPPING%>]= "<%=LanguageUtil.get(pageContext, "OSGI-Bundles-State-Stopping")%>";
+    states[<%=Bundle.UNINSTALLED%>]= "<%=LanguageUtil.get(pageContext, "OSGI-Bundles-State-Uninstalled")%>";
+    states[<%=Bundle.START_TRANSIENT%>]= "<%=LanguageUtil.get(pageContext, "OSGI-Bundles-State-StartTransient")%>";
+    states[<%=Bundle.STOP_TRANSIENT%>]= "<%=LanguageUtil.get(pageContext, "OSGI-Bundles-State-StopTransient")%>";
 
     var popupMenusDiv;
     var popupMenus = "";
@@ -27,23 +31,8 @@
     List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();
     %>
     var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
+
 </script>
-<%
-Bundle[] ba = OSGIUtil.getInstance().getBundleContext().getBundles();
-
-List<String> ignoreBuns =Arrays.asList(new String[]{"org.apache.felix.gogo.shell","org.apache.felix.framework", "org.apache.felix.bundlerepository","org.apache.felix.fileinstall","org.apache.felix.gogo.command", "org.apache.felix.gogo.runtime", "org.osgi.core"});
-
-
-Map<Integer,String> states = new HashMap<Integer,String>();
-states.put(Bundle.ACTIVE, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Active"));
-states.put(Bundle.INSTALLED, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Installed"));
-states.put(Bundle.RESOLVED, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Resolved"));
-states.put(Bundle.STARTING, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Starting"));
-states.put(Bundle.STOPPING, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Stopping"));
-states.put(Bundle.UNINSTALLED, LanguageUtil.get(pageContext, "OSGI-Bundles-State-Uninstalled"));
-states.put(Bundle.START_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-State-StartTransient"));
-states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-State-StopTransient"));
-%>
 
 <div class="buttonBoxLeft">
 	<div dojoType="dojo.data.ItemFileReadStore" jsId="test" url="/html/portlet/ext/osgi/available_bundles_json.jsp"></div>
@@ -104,55 +93,17 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 </div>
 
 <table class="listingTable" style="margin:0 0 25px 0;" id="bundlesTable">
+    <tbody id="bundlesTable-body">
 	<tr>
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Name")%></th>
 		<th><%=LanguageUtil.get(pageContext, "OSGI-State")%></th>
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Jar")%></th>
 		<th><%=LanguageUtil.get(pageContext, "OSGI-Actions")%></th>
 	</tr>
-	<%boolean hasBundles = false; %>
-	<%  int i = 0;
-        for(Bundle b : ba){
-            String separator = File.separator;
-            if (b.getLocation().contains( "/" )) {
-                separator = "/";
-            }
-            String jarFile = b.getLocation().contains( separator ) ? b.getLocation().substring( b.getLocation().lastIndexOf( separator ) + 1 ) : "System";
-    %>
-		<%if(ignoreBuns.contains(b.getSymbolicName()) ){continue;} %>
-		<% hasBundles = true; %>
-		<tr id="tr<%=jarFile%>">
-			<td><%=b.getSymbolicName()%></td>
-			<td><%=states.get(b.getState())%></td>
-			<td><%=jarFile%></td>
-			<td>
-				<%if(b.getState() != Bundle.ACTIVE){ %><a href="javascript:bundles.start('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a><% } %>
-				<%if(b.getState() == Bundle.ACTIVE){ %><a href="javascript:bundles.stop('<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a><% } %>
-				<%if(b.getLocation().contains(separator) && b.getLocation().contains(separator + "load" + separator)){ %>&nbsp;|&nbsp;<a href="javascript:bundles.undeploy('<%=b.getLocation().substring(b.getLocation().lastIndexOf(separator) + 1)%>', '<%= b.getBundleId() %>')"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a><%} %>
-			</td>
-		</tr>
-        <script type="text/javascript">
-
-            <%if(b.getLocation().contains(separator) && b.getLocation().contains(separator + "load" + separator)){ %>
-                if(enterprise) {
-                    popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i++%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=jarFile%>\">";
-                    if (sendingEndpoints) {
-                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"javascript:bundles.remotePublishBundle('<%=jarFile%>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
-                    }
-                    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"javascript:bundles.addToBundlePlugin('<%=jarFile%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
-                    popupMenus += "</div>";
-
-                    popupMenusDiv = document.getElementById("popup_menus");
-                    popupMenusDiv.innerHTML = popupMenus;
-                }
-            <%} %>
-        </script>
-	<%}%>
-	<%if(!hasBundles){ %>
-		<tr>
-			<td colspan="100" align="center"><%=LanguageUtil.get(pageContext, "No-Results-Found")%></td>
-		</tr>
-	<%}%>
+    <tr id="loading-row">
+        <td colspan="100" align="center"><%=LanguageUtil.get(pageContext, "Loading")%>...</td>
+    </tr>
+    </tbody>
 </table>
 
 
@@ -174,3 +125,93 @@ states.put(Bundle.STOP_TRANSIENT, LanguageUtil.get(pageContext, "OSGI-Bundles-St
 	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
 	<input name="forcePush" id=forcePush type="hidden" value="">
 </form>
+
+<script type="application/javascript">
+
+    var getBundlesData = function () {
+
+        //Displays the loading dialog
+        try {dijit.byId('savingOSGIDialog').show();} catch (e) {}
+
+        var xhrArgs = {
+            url: "/api/osgi/getInstalledBundles/ignoreSystemBundles/true/type/json",
+            handleAs: "json",
+            load: function (data) {
+
+                if (data.length > 0) {
+
+                    var i = 0;
+                    data.forEach(function(bundleData){
+
+                        //First we need to destroy any existing widget with the same id
+                        try {dijit.byId("popupTr" + i).destroy(true);} catch (e) {}
+                        try {dijit.byId("tr" + bundleData.jarFile).destroy(true);} catch (e) {}
+
+                        var htmlContent = "<tr id=\"tr" + bundleData.jarFile + "\">" +
+                                "<td>" + bundleData.symbolicName + "</td>" +
+                                "<td>" + window.states[bundleData.state] + "</td>" +
+                                "<td>" + bundleData.jarFile + "</td>";
+
+                        htmlContent += "<td>";
+                        if (bundleData.state != <%=Bundle.ACTIVE%>) {
+                            htmlContent += "<a href=\"javascript:bundles.start('" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a>";
+                        }
+                        if (bundleData.state == <%=Bundle.ACTIVE%>) {
+                            htmlContent += "<a href=\"javascript:bundles.stop('" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a>";
+                        }
+                        if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(bundleData.separator + "load" + bundleData.separator) != -1) {
+                            htmlContent += "&nbsp;|&nbsp;<a href=\"javascript:bundles.undeploy('" + bundleData.jarFile + "','" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a>";
+                        }
+                        htmlContent += "</td></tr>";
+
+                        dojo.place(htmlContent, "bundlesTable-body", "after");
+
+                        if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(bundleData.separator + "load" + bundleData.separator) != -1) {
+                            if(enterprise) {
+                                popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr" + (i++) +"\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr" + bundleData.jarFile + "\">";
+                                if (sendingEndpoints) {
+                                    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"javascript:bundles.remotePublishBundle('" + bundleData.jarFile + "');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+                                }
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"javascript:bundles.addToBundlePlugin('" + bundleData.jarFile + "');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
+                                popupMenus += "</div>";
+                            }
+                        }
+                    });
+
+                    require(["dojo/html", "dojo/dom"],
+                        function (html, dom) {
+                            html.set(dom.byId("popup_menus"), popupMenus,{parseContent: true});
+                        });
+                } else {
+                    var htmlContent = "<tr><td colspan=\"100\" align=\"center\"><%=LanguageUtil.get(pageContext, "No-Results-Found")%></td></tr>";
+                    dojo.place(htmlContent, "bundlesTable-body", "after");
+                }
+
+                //Hiddes the loading dialog
+                try {dijit.byId('savingOSGIDialog').hide();} catch (e) {}
+                dojo.byId("loading-row").hide();
+            },
+            error: function (error) {
+
+                //Hiddes the loading dialog
+                try {dijit.byId('savingOSGIDialog').hide();} catch (e) {}
+                dojo.byId("loading-row").hide();
+
+                showDotCMSSystemMessage(error.responseText, true);
+            }
+        };
+        dojo.xhrGet(xhrArgs);
+    };
+
+    dojo.addOnLoad(function () {
+
+        if (dijit.byId('savingOSGIDialog') == undefined) {
+            setTimeout(function () {
+                getBundlesData()
+            }, 1000);
+        } else {
+            getBundlesData();
+        }
+    });
+
+</script>
