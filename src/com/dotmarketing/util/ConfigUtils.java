@@ -59,6 +59,14 @@ public class ConfigUtils {
 		return path;
 	}
 
+	public static String getIntegrityPath() {
+		String path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "integrity";
+		File pathDir=new File(path);
+		if(!pathDir.exists())
+		    pathDir.mkdirs();
+		return path;
+	}
+
 
 	public static String getTimeMachinePath(){
 

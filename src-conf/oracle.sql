@@ -3409,3 +3409,7 @@ create index idx_link_vi_version_ts on link_version_info(version_ts);
 -- container multiple structures
 create index idx_container_id on container_structures(container_id);
 alter table container_structures add constraint FK_cs_container_id foreign key (container_id) references identifier(id);
+
+create table folders_ir(folder varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
+create table structures_ir(velocity_name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
+create table schemes_ir(name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
