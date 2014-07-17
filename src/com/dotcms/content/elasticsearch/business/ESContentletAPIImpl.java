@@ -642,6 +642,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             catch(Exception e){
                 Logger.error(this.getClass(), "Cannot publish related HTML Pages.  Fail");
+                Logger.debug(this.getClass(), "Cannot publish related HTML Pages.  Fail", e);
             }
 
         }
@@ -1156,6 +1157,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				PublisherAPI.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier());
 			} catch (DotPublisherException e) {
 				Logger.error(getClass(), "Error deleting Contentlet from Publishing Queue. Identifier:  " + contentlet.getIdentifier());
+				Logger.debug(getClass(), "Error deleting Contentlet from Publishing Queue. Identifier:  " + contentlet.getIdentifier(), e);
 			}
 		}
 
@@ -2232,6 +2234,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     				                host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
     				            }catch(Exception e){
     				                Logger.error(this, "Unable to get contentlet host");
+    				                Logger.debug(this, "Unable to get contentlet host", e);
     				            }
     				            if(host.getIdentifier().equals(Host.SYSTEM_HOST))
     				                hostId = Host.SYSTEM_HOST;
@@ -2602,6 +2605,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	}
             	Logger.error(this, e.getMessage());
 				Logger.error(this, e.toString());
+				Logger.debug(this, e.getMessage(), e);
 				if(e instanceof DotDataException)
 					throw (DotDataException)e;
 				if(e instanceof DotSecurityException)
@@ -3760,6 +3764,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }catch(Exception e){
             Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName );
+            Logger.debug(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName, e);
             throw new DotDataException("File System error.");
         }
         return binaryFile;
