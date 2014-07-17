@@ -104,8 +104,8 @@
   		margin: 0;
 	}
 	
-	.averageRatingTable td {
-		width: 16px;  cursor: pointer; cursor: hand; padding: 0; margin: 0; background-repeat: no-repeat;
+	.averageRatingTable td {		
+		width: 16px; display:inline-block; cursor: pointer; cursor: hand; padding: 0; margin: 0; background-repeat: no-repeat;
     }
 </style>
 #end
@@ -121,8 +121,9 @@
 		<td id="id_${content.inode}_rating_$ratingIdx" 
 			onmouseover="doStarOver_id_$contentInode(${ratingNumber})" 
 			onmouseout="doStarOut_id_$contentInode()"
-			onclick="rateThis_id_$contentInode(${ratingNumber})" title="Rate this $ratingNumber star out of ${rating.maxRatingValue}" 
-			style="width: 16px;  cursor: pointer; cursor: hand; padding: 0; margin: 0; background-repeat: no-repeat;">&nbsp;</td>
+			onclick="rateThis_id_$contentInode(${ratingNumber})" title="Rate this $ratingNumber star out of ${rating.maxRatingValue}"			
+			style="width: 16px; display:inline-block; cursor: pointer; cursor: hand; padding: 0; margin: 0; background-repeat: no-repeat;">&nbsp;</td>
+			
 		#end
 	</tr>
 	</tbody>
