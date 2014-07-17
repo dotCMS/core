@@ -651,7 +651,7 @@ table.sTypeTable.sTypeItem{text-transform: uppercase;white-space: nowrap;min-wid
 .dmundra .dijitHostOpened {-moz-background-clip:border;-moz-background-inline-policy:continuous;-moz-background-origin:padding;background:transparent url(/html/images/icons/globe-green.png) no-repeat scroll 0 0;}
 
 /* Role selector */
-.dijitRolesSelectTreeWrapper {max-height: 250px;overflow: auto;position:absolute;z-index: 10000;background: white;border: 1px solid #ADADAD;padding: 7px;float: none;}
+.dijitRolesSelectTreeWrapper {overflow: auto;position:absolute;z-index: 10000;background: white;border: 1px solid #ADADAD;padding: 7px;float: none;}
 
 /* File Browser Dialog */
 .filterBox{padding:8px 10px 8px 10px;}
