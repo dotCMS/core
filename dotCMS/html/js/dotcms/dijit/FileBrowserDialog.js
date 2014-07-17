@@ -79,6 +79,8 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	_initialized: false,
 	addFileTitle: 'Upload a file',
 	allowFileUpload: true,
+	sortBy: "title",
+	sortByDesc: false,
 
 	postCreate: function () {
 
@@ -225,7 +227,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this._removeRows(this.thumbnailsTableBody);
 
 		BrowserAjax.getFolderContent(this._norm(this.currentFolder.id), this._currentOffset, this._maxNumberOfAssets, this._currentFilter, this.mimeTypes,
-			this.fileExtensions, false, true, this.onlyFiles, "title", false, true, dojo.hitch(this, this._selectFolderCallback));
+			this.fileExtensions, false, true, this.onlyFiles, this.sortBy, this.sortByDesc, true, dojo.hitch(this, this._selectFolderCallback));
 
 	},
 
