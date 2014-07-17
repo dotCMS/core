@@ -84,6 +84,38 @@ public class WebResource {
 
 	protected InitDataObject init(String params, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser) throws SecurityException {
 
+		return init(params, authenticate, request, rejectWhenNoUser, null);
+	}
+
+	/**
+	 *
+	 * <p>1) Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenException.
+	 * <p>2) If 1) does not throw an exception, returns an {@link InitDataObject} with:
+	 *
+	 * <br>a) a <code>Map</code> with the keys and values extracted from <code>params</code>.
+	 *
+	 *<br><br>if <code>authenticate</code> is set to <code>true</code>:
+	 * <br>b) , an authenticated {@link User}, if found.
+	 * If no User can be retrieved, and <code>rejectWhenNoUser</code> is <code>true</code>, it will throw an exception,
+	 * otherwise returns <code>null</code>.
+	 *
+	 * <br><br>There are five ways to get the User. They are executed in the specified order. When found, the remaining ways won't be executed.
+	 * <br>1) Using username and password contained in <code>params</code>.
+	 * <br>2) Using username and password in Base64 contained in the <code>request</code> HEADER parameter DOTAUTH.
+	 * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
+	 * <br>4) From the session. It first tries to get the Backend logged in user. If no user found, tries to get the Frontend logged in user.
+	 *
+	 *
+	 * @param params a string containing the URL parameters in the /key/value form
+	 * @param authenticate
+	 * @param request
+	 * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
+	 * @param requiredPortlet portlet name which the user needs to have access to
+	 * @return an initDataObject with the resulting <code>Map</code>
+	 */
+
+	protected InitDataObject init(String params, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
+
 		checkForceSSL(request);
 
 		InitDataObject initData = new InitDataObject();
@@ -95,6 +127,18 @@ public class WebResource {
 		User user = null;
 
 		user = authenticateUser(paramsMap, request, rejectWhenNoUser);
+
+		if(UtilMethods.isSet(requiredPortlet)) {
+
+			try {
+				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(requiredPortlet, user)){
+					throw new SecurityException("User does not have access to required Portlet", Response.Status.UNAUTHORIZED);
+				}
+			} catch (DotDataException e) {
+				throw new SecurityException("User does not have access to required Portlet", Response.Status.UNAUTHORIZED);
+			}
+
+		}
 
 		initData.setParamsMap(paramsMap);
 		initData.setUser(user);

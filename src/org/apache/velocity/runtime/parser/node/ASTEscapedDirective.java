@@ -69,7 +69,7 @@ public class ASTEscapedDirective extends SimpleNode
     public boolean render(InternalContextAdapter context, Writer writer)
         throws IOException
     {
-        writer.write(getFirstToken().image);
+        writer.write(tokens.get(0).image);
         return true;
     }
 

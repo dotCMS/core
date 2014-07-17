@@ -275,7 +275,7 @@
 		<listener-class>com.dotmarketing.listeners.OsgiFelixListener</listener-class>
 	</listener>
     <listener>
-        <listener-class>org.apache.felix.http.proxy.ProxyListener</listener-class>
+        <listener-class>com.dotcms.repackage.org_apache_felix_http_proxy_2_2_0.org.apache.felix.http.proxy.ProxyListener</listener-class>
     </listener>
     <listener>
 		<listener-class>com.dotcms.repackage.chemistry_opencmis_server_bindings_0_8_0.org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
@@ -623,7 +623,7 @@
 	</servlet>
     <servlet>
         <servlet-name>proxy</servlet-name>
-        <!--<servlet-class>org.apache.felix.http.proxy.ProxyServlet</servlet-class>-->
+        <!--<servlet-class>com.dotcms.repackage.org_apache_felix_http_proxy_2_2_0.org.apache.felix.http.proxy.ProxyServlet</servlet-class>-->
         <servlet-class>com.dotmarketing.osgi.OSGIProxyServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>

@@ -28,16 +28,17 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
-import org.apache.felix.http.proxy.DispatcherTracker;
+import com.dotcms.repackage.org_apache_felix_http_proxy_2_2_0.org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleActivator;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
+import java.io.File;
 import java.net.URL;
 import java.util.*;
 
@@ -598,8 +599,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
             Class clazz = Class.forName( activatorClass, false, this.getClass().getClassLoader() );
             URL sourceURL = clazz.getProtectionDomain().getCodeSource().getLocation();
 
-            //Restoring to their original state any override class
-            urlOsgiClassLoader.reload( sourceURL, true );
+            //First verify if the source url exist
+            File source = new File( sourceURL.getPath() );
+            if ( source.exists() ) {
+                //Restoring to their original state any override class
+                urlOsgiClassLoader.reload( sourceURL, true );
+            }
 
             /*
             Closes this URLClassLoader, so that it can no longer be used to load

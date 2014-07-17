@@ -1,5 +1,8 @@
 package com;
 
+
+import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
+
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
@@ -84,7 +87,8 @@ import com.dotmarketing.webdav.WebDavTest;
     ESContentFactoryImplTest.class,
     HibernateUtilTest.class,
     WorkflowAPITest.class,
-    ContentletAjaxTest.class
+    ContentletAjaxTest.class,
+    SimpleNodeTest.class
 })
 public class AllTestsSuite {
 

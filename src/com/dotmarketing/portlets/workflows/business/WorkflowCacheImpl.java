@@ -15,7 +15,7 @@ import com.dotmarketing.util.UtilMethods;
 
 //This interface should have default package access
 public class WorkflowCacheImpl extends WorkflowCache {
-	final String defaultKey = "DEFAULT_WORKFLOW_SCHEME";
+
 	private DotCacheAdministrator cache;
 
 	public WorkflowCacheImpl() {
@@ -50,7 +50,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		
 	}
 
-	protected WorkflowScheme getScheme(String key) {
+	public WorkflowScheme getScheme(String key) {
 
 		WorkflowScheme scheme = null;
 		try {
@@ -80,7 +80,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	}
 	
 	
-	protected void remove(WorkflowScheme scheme) {
+	public void remove(WorkflowScheme scheme) {
 		if (scheme != null && UtilMethods.isSet(scheme)) {
 			cache.remove(scheme.getId(), getPrimaryGroup());
 		}
@@ -108,7 +108,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 			cache.remove(contentlet.getIdentifier(), TASK_GROUP);
 		}
 	}
-	protected WorkflowScheme getDefaultScheme() {
+	public WorkflowScheme getDefaultScheme() {
 		return getScheme(defaultKey);
 	}
 
