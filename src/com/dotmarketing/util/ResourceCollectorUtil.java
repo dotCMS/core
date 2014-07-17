@@ -5,13 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.security.ProtectionDomain;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -26,8 +21,6 @@ public class ResourceCollectorUtil{
      * for all elements of java.class.path get a Collection of resources Pattern
      * pattern = Pattern.compile(".*"); gets all resources
      *
-     * @param pattern
-     *            the pattern to match
      * @return the resources in the order they are found
      */
     public static Collection<String> getResources(){
@@ -35,7 +28,14 @@ public class ResourceCollectorUtil{
         final Set<String> retval = new HashSet<String>();
         final String classPath = System.getProperty("java.class.path", ".");
         boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
-        String codeSourcePath = ResourceCollectorUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+        //Getting the context path
+        String contextPath = Config.CONTEXT_PATH;
+        if ( !contextPath.endsWith( File.separator ) ) {
+            contextPath += File.separator;
+        }
+        String codeSourcePath = contextPath + "WEB-INF" + File.separator;
+
         if(isWindows){
         	try {
 				codeSourcePath = new File(URLDecoder.decode(codeSourcePath, "UTF-8")).getPath();

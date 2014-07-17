@@ -1,0 +1,189 @@
+package com.dotcms.rest;
+
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.OSGIUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.util.*;
+
+/**
+ * @author Jonathan Gamba
+ *         Date: 28/05/14
+ */
+@Path ("/osgi")
+public class OSGIResource extends WebResource {
+
+    List<String> systemBundles = Arrays.asList(
+            "org.apache.felix.http.bundle",
+            "com.dotcms.repackage.org_apache_felix_gogo_shell_0_10_0.org.apache.felix.gogo.shell",
+            "org.apache.felix.framework",
+            "com.dotcms.repackage.org_apache_felix_bundlerepository_1_6_6.org.apache.felix.bundlerepository",
+            "com.dotcms.repackage.org_apache_felix_fileinstall_3_1_10.org.apache.felix.fileinstall",
+            "com.dotcms.repackage.org_apache_felix_gogo_command_0_12_0.org.apache.felix.gogo.command",
+            "com.dotcms.repackage.org_apache_felix_gogo_runtime_0_10_0.org.apache.felix.gogo.runtime",
+            "org.osgi.core"
+    );
+
+    /**
+     * This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method.
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/getInstalledBundles/{params:.*}")
+    @Produces (MediaType.APPLICATION_JSON)
+    public Response getInstalledBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
+
+        InitDataObject initData = init( params, true, request, true );
+
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        StringBuilder responseMessage = new StringBuilder();
+
+        //Verify if the user have access to the OSGI portlet
+        User currentUser = initData.getUser();
+        try {
+            if ( currentUser == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "OSGI_MANAGER", currentUser ) ) {
+                return responseResource.responseError( "User does not have access to the Dynamic Plugins Portlet", HttpStatus.SC_UNAUTHORIZED );
+            }
+        } catch ( DotDataException e ) {
+            Logger.error( this.getClass(), "Error validating User access to the Dynamic Plugins Portlet.", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error validating User access to the Dynamic Plugins Portlet." );
+            }
+            return responseResource.responseError( responseMessage.toString() );
+        }
+
+        /*
+        This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method. However,
+        since the Framework is a very dynamic environment, bundles can be installed or uninstalled at anytime.
+         */
+        Bundle[] installedBundles = OSGIUtil.getInstance().getBundleContext().getBundles();
+
+        //Read the parameters
+        String ignoreSystemBundlesParam = initData.getParamsMap().get( "ignoresystembundles" );
+        String type = initData.getParamsMap().get( RESTParams.TYPE.getValue() );
+        Boolean ignoreSystemBundles = false;
+        if ( UtilMethods.isSet( ignoreSystemBundlesParam ) && ignoreSystemBundlesParam.equalsIgnoreCase( "true" ) ) {
+            ignoreSystemBundles = true;
+        }
+
+        try {
+
+            //And prepare the response
+            if ( UtilMethods.isSet( type ) && type.equalsIgnoreCase( "xml" ) ) {
+
+                ArrayList<Map> bundlesArray = new ArrayList<Map>();
+                for ( Bundle bundle : installedBundles ) {
+
+                    if ( ignoreSystemBundles && systemBundles.contains( bundle.getSymbolicName() ) ) {
+                        continue;
+                    }
+
+                    //Getting the jar file name
+                    String separator = File.separator;
+                    if ( bundle.getLocation().contains( "/" ) ) {
+                        separator = "/";
+                    }
+                    String jarFile = bundle.getLocation().contains( separator ) ? bundle.getLocation().substring( bundle.getLocation().lastIndexOf( separator ) + 1 ) : "System";
+
+                    //Build the version string
+                    String version = bundle.getVersion().getMajor() + "." + bundle.getVersion().getMinor() + "." + bundle.getVersion().getMicro();
+
+                    //Reading and setting bundle information
+                    Map<String, Object> mapResponse = new HashMap<String, Object>();
+                    mapResponse.put( "bundleId", bundle.getBundleId() );
+                    mapResponse.put( "symbolicName", bundle.getSymbolicName() );
+                    mapResponse.put( "location", bundle.getLocation() );
+                    mapResponse.put( "jarFile", jarFile );
+                    mapResponse.put( "state", bundle.getState() );
+                    mapResponse.put( "version", version );
+                    mapResponse.put( "separator", separator );
+
+                    bundlesArray.add( mapResponse );
+                }
+
+                XStream xstream = new XStream( new DomDriver() );
+                xstream.alias( "response", ArrayList.class );
+
+                StringBuilder xmlBuilder = new StringBuilder();
+                xmlBuilder.append( "<?xml version=\"1.0\" encoding='UTF-8'?>" );
+                xmlBuilder.append( xstream.toXML( bundlesArray ) );
+
+                responseMessage.append( xmlBuilder );
+            } else {
+
+                JSONArray bundlesArray = new JSONArray();
+                for ( Bundle bundle : installedBundles ) {
+
+                    if ( ignoreSystemBundles && systemBundles.contains( bundle.getSymbolicName() ) ) {
+                        continue;
+                    }
+
+                    //Getting the jar file name
+                    String separator = File.separator;
+                    if ( bundle.getLocation().contains( "/" ) ) {
+                        separator = "/";
+                    }
+                    String jarFile = bundle.getLocation().contains( separator ) ? bundle.getLocation().substring( bundle.getLocation().lastIndexOf( separator ) + 1 ) : "System";
+
+                    //Build the version string
+                    String version = bundle.getVersion().getMajor() + "." + bundle.getVersion().getMinor() + "." + bundle.getVersion().getMicro();
+
+                    //Reading and setting bundle information
+                    JSONObject jsonResponse = new JSONObject();
+                    jsonResponse.put( "bundleId", bundle.getBundleId() );
+                    jsonResponse.put( "symbolicName", bundle.getSymbolicName() );
+                    jsonResponse.put( "location", bundle.getLocation() );
+                    jsonResponse.put( "jarFile", jarFile );
+                    jsonResponse.put( "state", bundle.getState() );
+                    jsonResponse.put( "version", version );
+                    jsonResponse.put( "separator", separator );
+
+                    bundlesArray.add( jsonResponse );
+                }
+
+                responseMessage.append( bundlesArray.toString() );
+            }
+
+
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error getting installed OSGI bundles.", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error getting installed OSGI bundles." );
+            }
+            return responseResource.responseError( responseMessage.toString() );
+        }
+
+        return responseResource.response( responseMessage.toString() );
+    }
+
+}

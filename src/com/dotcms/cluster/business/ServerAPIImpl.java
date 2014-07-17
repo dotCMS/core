@@ -14,6 +14,7 @@ import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -59,8 +60,16 @@ public class ServerAPIImpl implements ServerAPI {
 	}
 
 	public  void writeServerIdToDisk(String serverId) throws IOException {
-		String realPath = Config.CONTEXT.getRealPath("dotsecure") + java.io.File.separator + "server_id.dat";
-		File serverFile = new File(realPath);
+
+        String dynamicContentPath = ConfigUtils.getDynamicContentPath();
+
+        String realPath;
+        if ( dynamicContentPath.endsWith( File.separator ) ) {
+            realPath = ConfigUtils.getDynamicContentPath() + "server_id.dat";
+        } else {
+            realPath = ConfigUtils.getDynamicContentPath() + File.separator + "server_id.dat";
+        }
+        File serverFile = new File(realPath);
 
 		if(serverFile.exists())
 			serverFile.delete();

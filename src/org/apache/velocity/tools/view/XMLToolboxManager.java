@@ -21,7 +21,6 @@ package org.apache.velocity.tools.view;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +30,6 @@ import com.dotcms.repackage.commons_digester.org.apache.commons.digester.RuleSet
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.context.ToolboxContext;
-import org.osgi.framework.BundleContext;
-
-import com.dotmarketing.osgi.HostActivator;
-
 
 /**
  * A ToolboxManager for loading a toolbox from xml.

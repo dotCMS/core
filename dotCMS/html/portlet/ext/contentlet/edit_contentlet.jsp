@@ -177,7 +177,7 @@ var editButtonRow="editContentletButtonRow";
 	<input name="whereToSend" id="whereToSend" type="hidden" value="">
 
 	<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
-	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image"  dojoType="dotcms.dijit.FileBrowserDialog"></div>
+	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image" sortBy="modDate" sortByDesc="true" dojoType="dotcms.dijit.FileBrowserDialog"></div>
 	<div dojoAttachPoint="cmsFileBrowserFile" currentView="list" jsId="cmsFileBrowserFile" onFileSelected="addFileCallback" dojoType="dotcms.dijit.FileBrowserDialog"></div>
 
 	<% if(structure.getStructureType() == Structure.STRUCTURE_TYPE_CONTENT){ %>

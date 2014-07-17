@@ -75,7 +75,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getCacheClusterStatus ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false );
+        InitDataObject initData = init( params, true, request, false, "NetworkPortlet" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
         JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
@@ -114,7 +114,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getNodesInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false );
+        InitDataObject initData = init( params, true, request, false, "NetworkPortlet" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         ServerAPI serverAPI = APILocator.getServerAPI();
         List<Server> servers = serverAPI.getAllServers();
@@ -227,7 +227,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getESClusterStatus ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false );
+        InitDataObject initData = init( params, true, request, false, "NetworkPortlet" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
         AdminClient client=null;
@@ -275,7 +275,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false );
+        InitDataObject initData = init( params, true, request, false, "NetworkPortlet" );
 
         Map<String, String> paramsMap = initData.getParamsMap();
 		String serverId = paramsMap.get("id");
@@ -410,7 +410,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getESConfigProperties ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false );
+        InitDataObject initData = init( params, true, request, false, "NetworkPortlet" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
 //        Iterator<String> keys = DotConfig.getKeys();
@@ -448,7 +448,8 @@ public class ClusterResource extends WebResource {
     @Path ("/wirenode/{params:.*}")
     @Produces ("application/json")
     public Response wireNode ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
-        InitDataObject initData = init( params, true, request, true ); 
+        InitDataObject initData = init( params, true, request, true, "NetworkPortlet" ); 
+
         JSONObject jsonNode = new JSONObject();
 
         if(request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {

@@ -74,6 +74,7 @@ import com.dotmarketing.startup.runonce.Task01065IndexOnPublishingQueueAuditStat
 import com.dotmarketing.startup.runonce.Task01070BundleNameDropUnique;
 import com.dotmarketing.startup.runonce.Task01085CreateBundleTablesIfNotExists;
 import com.dotmarketing.startup.runonce.Task01090AddWorkflowSchemeUniqueNameContraint;
+import com.dotmarketing.startup.runonce.Task01095CreateIntegrityCheckerResultTables;
 import com.dotmarketing.startup.runonce.Task03000CreateContainertStructures;
 import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
@@ -88,6 +89,7 @@ import com.dotmarketing.startup.runonce.Task03030CreateIndicesForVersionTables;
 import com.dotmarketing.startup.runonce.Task03035FixContainerCheckTrigger;
 import com.dotmarketing.startup.runonce.Task03040AddIndexesToStructureFields;
 import com.dotmarketing.startup.runonce.Task03045AddLicenseRepoModel;
+
 
 public class TaskLocatorUtil {
 
@@ -169,6 +171,7 @@ public class TaskLocatorUtil {
         ret.add(Task01085CreateBundleTablesIfNotExists.class);
         ret.add(Task01080CreateModDateForMissingObjects.class);
         ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
+        ret.add(Task01095CreateIntegrityCheckerResultTables.class);
         ret.add(Task03005CreateModDateForFieldIfNeeded.class);
         ret.add(Task03010AddContentletIdentifierIndex.class);
         ret.add(Task03015CreateClusterConfigModel.class);

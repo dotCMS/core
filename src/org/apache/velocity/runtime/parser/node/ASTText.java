@@ -65,7 +65,7 @@ public class ASTText extends SimpleNode
     public Object init( InternalContextAdapter context, Object data)
     throws TemplateInitException
     {
-        Token t = getFirstToken();
+        Token t = tokens.get(0);
 
         String text = NodeUtils.tokenLiteral( t );
 
