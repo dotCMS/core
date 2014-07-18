@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -228,6 +229,11 @@ public class BrowserAPI {
 				}
 				files.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(parent, "", !showWorking, showWorking, user, false));
 			}
+
+			//remove duplicated legacy files from list. See issue 5943
+		HashSet<Versionable> tempFilesListToSet = new HashSet<Versionable>(files);
+		files.clear();
+		files.addAll(tempFilesListToSet)
 
 		} catch (Exception e2) {
 			Logger.error(this, "Could not load files : ", e2);
