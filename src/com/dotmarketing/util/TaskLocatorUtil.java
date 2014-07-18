@@ -80,6 +80,7 @@ import com.dotmarketing.startup.runonce.Task01080CreateModDateForMissingObjects;
 import com.dotmarketing.startup.runonce.Task01085CreateBundleTablesIfNotExists;
 import com.dotmarketing.startup.runonce.Task01090AddWorkflowSchemeUniqueNameContraint;
 import com.dotmarketing.startup.runonce.Task01095CreateIntegrityCheckerResultTables;
+import com.dotmarketing.startup.runonce.Task01096CreateContainerStructuresTable;
 
 
 public class TaskLocatorUtil {
@@ -163,6 +164,7 @@ public class TaskLocatorUtil {
         ret.add(Task01085CreateBundleTablesIfNotExists.class);
         ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
         ret.add(Task01095CreateIntegrityCheckerResultTables.class);
+        ret.add(Task01096CreateContainerStructuresTable.class);
         return ret;
     }
 
