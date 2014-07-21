@@ -588,6 +588,7 @@ var cmsfile=null;
 		if(key===''){
 			 alert('<%= LanguageUtil.get(pageContext, "empty-key") %>');
 		}else{
+		key = key.trim();
 		var value = dijit.byId(fieldValueId+'_value').value;
 		var table = document.getElementById(fieldId+'_kvtable');
 		var row = document.getElementById(fieldId+'_'+key);
