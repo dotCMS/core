@@ -55,8 +55,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 	public void init(Object obj) {
 
-        ViewContext context = (ViewContext) obj;
-		this.request = context.getRequest();
+                ViewContext context = (ViewContext) obj;
 		ctx = context.getVelocityContext();
 	
 	}
@@ -678,6 +677,5 @@ public class DotCMSMacroWebAPI implements ViewTool {
 			Logger.warn(this.getClass(), "Scripting called with error" + e);
 			return false;	
 		}
-    return true;
 	}
 }
