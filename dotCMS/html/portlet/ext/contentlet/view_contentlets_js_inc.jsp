@@ -1469,6 +1469,11 @@
                 	fieldsValues[fieldsValues.length] = "languageId";
                 	fieldsValues[fieldsValues.length] = getSelectedLanguageId();
                 }
+                
+                if(getSelectedLanguageId() == ""){
+                        dijit.byId('language_id').focus() ;
+                        return false;
+                }
 
                 // if we have an identifier
             if(isInodeSet(document.getElementById("Identifier").value)){
