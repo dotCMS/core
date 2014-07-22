@@ -3,19 +3,17 @@ package com.dotmarketing.common.reindex;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.ActionListener;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.bulk.BulkRequestBuilder;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.bulk.BulkResponse;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
-
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -266,7 +264,7 @@ public class ReindexThread extends Thread {
                 conn=DbConnectionFactory.getDataSource().getConnection();
             }*/
             if(DbConnectionFactory.isMySql())
-                lock="lock table dist_reindex_journal write, contentlet read, identifier read, indicies write";
+                lock="lock table dist_reindex_journal write, contentlet_version_info read, identifier read, indicies write";
             else if(DbConnectionFactory.isMsSql())
                 lock="SELECT * FROM dist_reindex_journal WITH (TABLOCKX)";
             else if(DbConnectionFactory.isOracle())
