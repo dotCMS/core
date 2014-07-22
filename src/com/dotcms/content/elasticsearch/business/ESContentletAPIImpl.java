@@ -1614,7 +1614,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         cons = perAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 
         boolean contentSelected;
-        Tree tree;
+        ArrayList<Contentlet> contentletList = new ArrayList<Contentlet>(1);
+
         for (Contentlet relatedContent: cons) {
             contentSelected = false;
 
@@ -1626,16 +1627,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             if (!contentSelected) {
-                if (related.isHasParent()) {
-                    tree = TreeFactory.getTree(contentlet.getIdentifier(), relatedContent.getIdentifier(), related.getRelationship().getRelationTypeValue());
-                } else {
-                    tree = TreeFactory.getTree(relatedContent.getIdentifier(), contentlet.getIdentifier(), related.getRelationship().getRelationTypeValue());
-                }
-                Tree treeToDelete = TreeFactory.getTree(tree);
-                TreeFactory.deleteTree(tree);
-                refresh( relatedContent );
+                // DOTCMS-5118: Delete relationship in the style of ContentletAjax, which works.
+                contentletList.add(relatedContent);
+                RelationshipFactory.deleteRelationships(contentlet, related.getRelationship(), contentletList);
+
+                //if relatedContent is related as new content, there exists the below relation which also needs to be deleted.
+                contentletList.set(0, contentlet);
+                RelationshipFactory.deleteRelationships(relatedContent, related.getRelationship(), contentletList);
+                refresh(relatedContent);
             }
+
         }
+        refresh(contentlet);
+
     }
 
     public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> records, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
