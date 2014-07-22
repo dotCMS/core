@@ -175,7 +175,7 @@
 	</tool>
 	<tool>
 		<key>macro</key>
-		<scope>application</scope>
+		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.DotCMSMacroWebAPI</class>
 	</tool>
 	<tool>

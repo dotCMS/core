@@ -11,6 +11,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.beans.Host;
@@ -47,8 +50,14 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	private static final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
 	private BrowserAPI browser = new BrowserAPI();
+    Context ctx;
+	private InternalContextAdapterImpl ica;
 
 	public void init(Object obj) {
+
+        ViewContext context = (ViewContext) obj;
+		this.request = context.getRequest();
+		ctx = context.getVelocityContext();
 	
 	}
 
@@ -654,6 +663,21 @@ public class DotCMSMacroWebAPI implements ViewTool {
 			Logger.warn(this.getClass(), "Scripting called and ENABLE_SCRIPTING set to false");
 			return false;
 		}
-		return true;
+        try{
+            ica = new InternalContextAdapterImpl(ctx);
+            String fieldResourceName = ica.getCurrentTemplateName();
+            String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
+
+            Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
+
+            User mu = userAPI.loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), true);
+            Role scripting =APILocator.getRoleAPI().loadRoleByKey("Scripting Developer");
+            return APILocator.getRoleAPI().doesUserHaveRole(mu, scripting);
+		}
+		catch(Exception e){
+			Logger.warn(this.getClass(), "Scripting called with error" + e);
+			return false;	
+		}
+    return true;
 	}
 }
