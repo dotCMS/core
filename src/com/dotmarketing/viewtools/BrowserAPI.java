@@ -233,7 +233,7 @@ public class BrowserAPI {
 			//remove duplicated legacy files from list. See issue 5943
 		HashSet<Versionable> tempFilesListToSet = new HashSet<Versionable>(files);
 		files.clear();
-		files.addAll(tempFilesListToSet)
+		files.addAll(tempFilesListToSet);
 
 		} catch (Exception e2) {
 			Logger.error(this, "Could not load files : ", e2);
