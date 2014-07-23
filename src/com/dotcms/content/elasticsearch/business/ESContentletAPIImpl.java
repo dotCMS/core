@@ -114,10 +114,12 @@ import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -313,10 +315,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotSecurityException("User does not have permission to publish contentlet with inode " + contentlet.getInode());
             }
         }
+
+        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+
+		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+
+
+        ActivityLogger.logInfo(getClass(), "Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
         canLock(contentlet, user);
-
-
-
 
         String syncMe = (UtilMethods.isSet(contentlet.getIdentifier()))  ? contentlet.getIdentifier() : UUIDGenerator.generateUuid()  ;
 
@@ -336,6 +350,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
         }
+
+
     }
 
     /* Not needed anymore
@@ -3459,7 +3475,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     for(Contentlet con : cons){
                     	 try {
-                    		 	List<Contentlet> relatedCon = getRelatedContent(con, rel, APILocator.getUserAPI().getSystemUser(), true);                         
+                    		 	List<Contentlet> relatedCon = getRelatedContent(con, rel, APILocator.getUserAPI().getSystemUser(), true);
                     		 	if(rel.getCardinality()==0 && relatedCon.size()>0) {
                     		 		hasError = true;
                     		 		cve.addBadCardinalityRelationship(rel, cons);
@@ -3468,7 +3484,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     		 		hasError = true;
                     		 		cve.addInvalidContentRelationship(rel, cons);
                     		 	}
-                    	 }                	 
+                    	 }
                     	 catch (DotSecurityException e) {
                     		 Logger.error(this,"Unable to get system user",e);
                     	 }
