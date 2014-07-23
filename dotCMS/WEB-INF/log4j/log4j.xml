@@ -123,7 +123,7 @@
             </layout>
     </appender>
 
-    <appender name="USERS_ACTIVITY" class="com.dotcms.repackage.log4j_appenders_1_0.org.apache.log4j.appender.RollingNewFileAppender">
+    <appender name="USERS_ACTIVITY" class="com.dotcms.repackage.tika_app_1_3.org.apache.log4j.RollingFileAppender">
             <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-userActivity.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
