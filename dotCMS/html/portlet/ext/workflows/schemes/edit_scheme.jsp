@@ -77,7 +77,8 @@
 						<%if(firstStep !=null){ %>
 							<input type="checkbox" name="schemeMandatory"
 							id="schemeMandatory" dojoType="dijit.form.CheckBox" value="true"
-							<%=(firstStep !=null) ? "disabled ='false'" : "disabled ='true'"%> onClick="schemeAdmin.toggleInitialAction">
+							<%=(firstStep !=null) ? "disabled ='false'" : "disabled ='true'"%> onClick="schemeAdmin.toggleInitialAction"
+							<%=(scheme.isMandatory()) ? "checked='true'" : ""%>>
 						<%}else{ %>
 								<%=LanguageUtil.get(pageContext, "Add-Workflow-Step") %>
 						<%} %>	
