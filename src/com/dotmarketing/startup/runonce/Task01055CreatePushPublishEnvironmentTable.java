@@ -101,7 +101,6 @@ public class Task01055CreatePushPublishEnvironmentTable implements StartupTask {
 		}else if(DbConnectionFactory.isOracle()) {
 			dc.executeStatement(ORACLE_DROP_QUEUE_SEQ);
 			dc.executeStatement(ORACLE_CREATE_QUEUE_TABLE);
-			dc.executeStatement(ORACLE_DROP_QUEUE_SEQ);
 			dc.executeStatement(ORACLE_CREATE_QUEUE_SEQ);
 			dc.executeStatement(ORACLE_CREATE_QUEUE_TRIG);
 		}else if(DbConnectionFactory.isMySql()) {
