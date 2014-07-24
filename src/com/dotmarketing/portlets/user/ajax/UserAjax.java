@@ -99,77 +99,130 @@ public class UserAjax {
 
 	public String addUser (String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		UserAPI uAPI = APILocator.getUserAPI();
+		User modUser = getUser();
+		String date = DateUtil.getCurrentDate();
 
-		User user = uAPI.createUser(userId, email);
-		user.setFirstName(firstName);
-		user.setLastName(lastName);
-		user.setPassword(Encryptor.digest(password));
-		uAPI.save(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 
-		return user.getUserId();
+		try {
+
+			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+			WebContext ctx = WebContextFactory.get();
+			HttpServletRequest request = ctx.getHttpServletRequest();
+			UserAPI uAPI = APILocator.getUserAPI();
+
+			User user = uAPI.createUser(userId, email);
+			user.setFirstName(firstName);
+			user.setLastName(lastName);
+			user.setPassword(Encryptor.digest(password));
+			uAPI.save(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+
+			ActivityLogger.logInfo(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
+			return user.getUserId();
+
+		} catch(DotDataException | DotStateException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			throw e;
+		}
 
 	}
 
 	public String updateUser (String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException,
 		DotDataException, DotSecurityException {
 
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		UserAPI uAPI = APILocator.getUserAPI();
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
-		UserProxyAPI upAPI = APILocator.getUserProxyAPI();
-		User userToSave;
-		User loggedInUser = uWebAPI.getLoggedInUser(request);
+		User modUser = getUser();
+		String date = DateUtil.getCurrentDate();
+
+		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 
 		try {
-			userToSave = (User)uAPI.loadUserById(userId,uAPI.getSystemUser(),false).clone();
-			userToSave.setModified(false);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			return null;
-		}
-		userToSave.setFirstName(firstName);
-		userToSave.setLastName(lastName);
-		if(email != null)
-			userToSave.setEmailAddress(email);
-		if(password != null) {
-			userToSave.setPassword(Encryptor.digest(password));
-		}
 
-		if(userToSave.getUserId().equalsIgnoreCase(loggedInUser.getUserId())){
-			uAPI.save(userToSave, uAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
-		}else if(perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,uAPI.getSystemUser(), false), PermissionAPI.PERMISSION_EDIT,loggedInUser, false)){
-			uAPI.save(userToSave, loggedInUser, !uWebAPI.isLoggedToBackend(request));
-		}else{
-			throw new DotSecurityException("User doesn't have permission to save the user which is trying to be saved");
+			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+			WebContext ctx = WebContextFactory.get();
+			HttpServletRequest request = ctx.getHttpServletRequest();
+			UserAPI uAPI = APILocator.getUserAPI();
+			PermissionAPI perAPI = APILocator.getPermissionAPI();
+			UserProxyAPI upAPI = APILocator.getUserProxyAPI();
+			User userToSave;
+			User loggedInUser = uWebAPI.getLoggedInUser(request);
+
+			try {
+				userToSave = (User)uAPI.loadUserById(userId,uAPI.getSystemUser(),false).clone();
+				userToSave.setModified(false);
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(), e);
+				return null;
+			}
+			userToSave.setFirstName(firstName);
+			userToSave.setLastName(lastName);
+			if(email != null)
+				userToSave.setEmailAddress(email);
+			if(password != null) {
+				userToSave.setPassword(Encryptor.digest(password));
+			}
+
+			if(userToSave.getUserId().equalsIgnoreCase(loggedInUser.getUserId())){
+				uAPI.save(userToSave, uAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
+			}else if(perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,uAPI.getSystemUser(), false), PermissionAPI.PERMISSION_EDIT,loggedInUser, false)){
+				uAPI.save(userToSave, loggedInUser, !uWebAPI.isLoggedToBackend(request));
+			}else{
+				throw new DotSecurityException("User doesn't have permission to save the user which is trying to be saved");
+			}
+
+			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
+
+			return userToSave.getUserId();
+
+		} catch(DotDataException | DotStateException e) {
+			ActivityLogger.logInfo(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			throw e;
 		}
-		return userToSave.getUserId();
 
 	}
 
-	public boolean deleteUser (String userId) throws DotHibernateException {
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		UserAPI uAPI = APILocator.getUserAPI();
+	public boolean deleteUser (String userId) throws DotHibernateException, PortalException, SystemException {
+		User modUser = getUser();
+		String date = DateUtil.getCurrentDate();
 
-		User user;
+		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
 		try {
-			HibernateUtil.startTransaction();
-			user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
-			APILocator.getContentletAPI().removeUserReferences(userId);
-			uAPI.delete(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-			HibernateUtil.commitTransaction();
-		} catch (Exception e) {
-			HibernateUtil.rollbackTransaction();
-			Logger.error(this, e.getMessage(), e);
-			return false;
+
+			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+			WebContext ctx = WebContextFactory.get();
+			HttpServletRequest request = ctx.getHttpServletRequest();
+			UserAPI uAPI = APILocator.getUserAPI();
+
+			User user;
+			try {
+				HibernateUtil.startTransaction();
+				user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
+				APILocator.getContentletAPI().removeUserReferences(userId);
+				uAPI.delete(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+				HibernateUtil.commitTransaction();
+			} catch (Exception e) {
+				HibernateUtil.rollbackTransaction();
+				Logger.error(this, e.getMessage(), e);
+				return false;
+			}
+
+		} catch(DotDataException | DotStateException e) {
+			ActivityLogger.logInfo(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			throw e;
 		}
+
+		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 
 		return true;
 	}
@@ -265,11 +318,7 @@ public class UserAjax {
 				if(r.isEditUsers()) {
 					try {
 						roleAPI.removeRoleFromUser(r, user);
-					} catch(DotDataException e) {
-						ActivityLogger.logInfo(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-						AdminLogger.log(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-						throw e;
-					} catch(DotStateException e) {
+					} catch(DotDataException | DotStateException e) {
 						ActivityLogger.logInfo(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
 						AdminLogger.log(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
 						throw e;

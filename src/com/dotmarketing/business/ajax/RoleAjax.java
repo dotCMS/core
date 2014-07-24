@@ -248,13 +248,9 @@ public class RoleAjax {
 
 		try {
 			role = roleAPI.save(role);
-		} catch(DotDataException e) {
+		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
 			AdminLogger.log(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
-			throw e;
-		} catch(DotStateException e) {
-			ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + "; "+ "User:" + user.getUserId());
-			AdminLogger.log(getClass(), "Error Adding Role", "Date: " + date + "; "+ "User:" + user.getUserId());
 			throw e;
 		}
 
@@ -292,13 +288,9 @@ public class RoleAjax {
 
 		try {
 			role = roleAPI.save(role);
-		} catch(DotDataException e) {
+		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Modifying Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 			AdminLogger.log(getClass(), "Error Modifying Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-			throw e;
-		} catch(DotStateException e) {
-			ActivityLogger.logInfo(getClass(), "Error Modifying Role", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-			AdminLogger.log(getClass(), "Error Modifying Role", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 			throw e;
 		}
 
@@ -324,13 +316,9 @@ public class RoleAjax {
 
 		try {
 			roleAPI.delete(role);
-		} catch(DotDataException e) {
+		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Deleting Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 			AdminLogger.log(getClass(), "Error Deleting Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-			throw e;
-		} catch(DotStateException e) {
-			ActivityLogger.logInfo(getClass(), "Error Deleting Role", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-			AdminLogger.log(getClass(), "Error Deleting Role", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 			throw e;
 		}
 
