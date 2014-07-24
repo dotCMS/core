@@ -117,6 +117,7 @@ public class TaskLocatorUtil {
         ret.add(Task03030CreateIndicesForVersionTables.class);
         ret.add(Task03035FixContainerCheckTrigger.class);
         ret.add(Task03040AddIndexesToStructureFields.class);
+        ret.add(Task03045TagnameTypeChangeMSSQL.class);
         return ret;
     }
 
