@@ -67,7 +67,7 @@ public class LinkCheckerAjaxAction extends AjaxAction {
         SimpleDateFormat df=new SimpleDateFormat("MM/dd/yyyy hh:mm a");
         try {
             for(InvalidLink link : APILocator.getLinkCheckerAPI().findAllByStructure(structureInode, offset, pageSize)) {
-                Contentlet con = APILocator.getContentletAPI().find(link.getInode(), getUser(), false);
+                Contentlet con = APILocator.getContentletAPI().find(link.getInode(), APILocator.getUserAPI().getSystemUser(), false);
                 User modUser=APILocator.getUserAPI().loadUserById(con.getModUser());
                 Field field=FieldsCache.getField(link.getField()); 
                 Structure st=StructureCache.getStructureByInode(field.getStructureInode());
