@@ -1,3 +1,4 @@
+<%@page import="java.util.Map"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -106,6 +107,10 @@ function doPaste(){
 
     });    
 <% } %>
+
+function doUploadLicensePack() {
+	dojo.byId("licensePackForm").submit();
+}
 
 </script>
 
@@ -236,7 +241,7 @@ function doPaste(){
             </div>
         </form>
 
-        <form id="licensePackForm" action="<%= com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"EXT_LICENSE_MANAGER") %>" method="post" onsubmit="return false;">
+        <form id="licensePackForm" action="<%= com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"EXT_LICENSE_MANAGER") %>" method="post" onsubmit="return false;" enctype='multipart/form-data'>
             <div id="loadpack" style="margin:auto;width:600px;padding:20px;padding-top:0px;display:none;" >
                <dl>
                 <dt>
@@ -251,6 +256,22 @@ function doPaste(){
             </div>
         </form>
 
+<% if(LicenseUtil.getLicenseRepoTotal()>0) { %>
+    <table border=1>
+       <tr> 
+         <th>Serial</th>
+         <th>Server ID</th>
+         <th>Last Ping</th> 
+       </tr>
+	<% for(Map<String,Object> lic : LicenseUtil.getLicenseRepoList()) { %>
+	   <tr>
+	     <td> <%= lic.get("id") %> </td>
+	     <td> <%= lic.get("serverid")==null ? "available" : lic.get("serverid") %> </td>
+	     <td> <%= lic.get("lastping") %> </td>
+	   </tr>
+    <% } %>
+    </table>
+<% } %>
     </div>
 </div>  
 
