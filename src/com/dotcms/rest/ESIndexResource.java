@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Consumes;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.DELETE;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
@@ -18,10 +19,8 @@ import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response.Status;
-
 import com.dotcms.repackage.myspell.org.dts.spell.utils.FileUtils;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.status.IndexStatus;
-
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -31,6 +30,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
@@ -119,21 +119,29 @@ public class ESIndexResource extends WebResource {
     }
     
     public static void activateIndex(String indexName) throws DotDataException {
+    	AdminLogger.log(ESIndexResource.class, "activateIndex", "Trying to activate index: " + indexName);
+    	
         if(indexName.startsWith(SiteSearchAPI.ES_SITE_SEARCH_NAME)){
             APILocator.getSiteSearchAPI().activateIndex(indexName);
         }
         else{
             APILocator.getContentletIndexAPI().activateIndex(indexName);
         }
+        
+        AdminLogger.log(ESIndexResource.class, "activateIndex", "Index activated: " + indexName);
     }
     
     public static void deactivateIndex(String indexName) throws DotDataException, IOException {
+    	AdminLogger.log(ESIndexResource.class, "deactivateIndex", "Trying to deactivate index: " + indexName);
+    	
         if(indexName.startsWith(SiteSearchAPI.ES_SITE_SEARCH_NAME)){
             APILocator.getSiteSearchAPI().deactivateIndex(indexName);
         }
         else{
             APILocator.getContentletIndexAPI().deactivateIndex(indexName);
         }
+        
+        AdminLogger.log(ESIndexResource.class, "deactivateIndex", "Index deactivated: " + indexName);
     }
     
     public static long indexDocumentCount(String indexName) {
