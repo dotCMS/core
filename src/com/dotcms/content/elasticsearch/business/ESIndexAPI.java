@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import com.dotmarketing.util.*;
 import org.apache.tools.zip.ZipEntry;
 import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectMapper;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.ElasticSearchException;
@@ -66,15 +67,13 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-public class ESIndexAPI {
-	private  final String MAPPING_MARKER = "mapping=";
 
+public class ESIndexAPI {
+
+    private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+
 	private  ESClient esclient = new ESClient();
 	private  ESContentletIndexAPI iapi = new ESContentletIndexAPI();
 
@@ -117,6 +116,8 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 */
 	public  File backupIndex(String index, File toFile) throws IOException {
+		
+		AdminLogger.log(this.getClass(), "backupIndex", "Trying to backup index: " + index);
 
 	    boolean indexExists = indexExists(index);
         if (!indexExists) {
@@ -175,6 +176,7 @@ public class ESIndexAPI {
 			if (bw != null) {
 				bw.close();
 			}
+			AdminLogger.log(this.getClass(), "backupIndex", "Back up for index: " + index + " done.");
 		}
 	}
 
@@ -199,15 +201,22 @@ public class ESIndexAPI {
 			Logger.error(this.getClass(), "Failed to delete a null ES index");
 			return true;
 		}
+
 		try {
+            AdminLogger.log(this.getClass(), "delete", "Trying to delete index: " + indexName);
+
 			IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 			DeleteIndexRequest req = new DeleteIndexRequest(indexName);
 			DeleteIndexResponse res = iac.delete(req).actionGet();
-			return res.isAcknowledged();
+
+            AdminLogger.log(this.getClass(), "delete", "Index: " + indexName + " deleted.");
+
+            return res.isAcknowledged();
 		} catch (Exception e) {
 			throw new ElasticSearchException(e.getMessage());
 		}
 	}
+
 	/**
 	 * Restores an index from a backup file
 	 * @param backupFile
@@ -215,6 +224,9 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 */
 	public  void restoreIndex(File backupFile, String index) throws IOException {
+
+        AdminLogger.log(this.getClass(), "restoreIndex", "Trying to restore index: " + index);
+
 		BufferedReader br = null;
 
 		boolean indexExists = indexExists(index);
@@ -305,8 +317,11 @@ public class ESIndexAPI {
             ArrayList<String> list=new ArrayList<String>();
             list.add(index);
             iapi.optimize(list);
+
+            AdminLogger.log(this.getClass(), "restoreIndex", "Index restored: " + index);
 		}
 	}
+
 	/**
 	 * List of all indicies
 	 * @return
@@ -316,6 +331,7 @@ public class ESIndexAPI {
 		Map<String, IndexStatus> indices = client.admin().indices().status(new IndicesStatusRequest()).actionGet().getIndices();
 		return indices.keySet();
 	}
+
 	/**
 	 *
 	 * @param indexName
@@ -324,6 +340,7 @@ public class ESIndexAPI {
 	public  boolean indexExists(String indexName) {
 		return listIndices().contains(indexName.toLowerCase());
 	}
+
 	/**
 	 * Creates an index with default settings
 	 * @param indexName
@@ -348,7 +365,6 @@ public class ESIndexAPI {
 		return createIndex(indexName, null, shards);
 	}
 
-
 	/**
 	 * deletes and recreates an index
 	 * @param indexName
@@ -360,7 +376,10 @@ public class ESIndexAPI {
 		if(indexName == null || !indexExists(indexName)){
 			throw new DotStateException("Index" + indexName + " does not exist");
 		}
-		Map<String, ClusterIndexHealth> map = getClusterHealth();
+
+        AdminLogger.log(this.getClass(), "clearIndex", "Trying to clear index: " + indexName);
+
+        Map<String, ClusterIndexHealth> map = getClusterHealth();
 		ClusterIndexHealth cih = map.get(indexName);
 		int shards = cih.getNumberOfShards();
 		int replicas = cih.getNumberOfReplicas();
@@ -391,6 +410,8 @@ public class ESIndexAPI {
 		if(replicas > 0){
 			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 		}
+
+        AdminLogger.log(this.getClass(), "clearIndex", "Index: " + indexName + " cleared");
 	}
 
 	/**
@@ -432,9 +453,6 @@ public class ESIndexAPI {
         )).actionGet();
     }
 
-
-
-
     /**
      * Creates a new index.  If settings is null, the getDefaultIndexSettings() will be applied,
      * if shards <1, then the default # of shards will be set
@@ -447,7 +465,10 @@ public class ESIndexAPI {
      */
 	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards) throws ElasticSearchException, IOException {
 
-		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
+		AdminLogger.log(this.getClass(), "createIndex",
+                "Trying to create index: " + indexName + " with shards: " + shards);
+
+        IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 
 		if(shards <1){
 			try{
@@ -474,18 +495,22 @@ public class ESIndexAPI {
 
         // create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
+        CreateIndexResponse createIndexResponse = cirb.execute().actionGet();
 
-		return cirb.execute().actionGet();
+        AdminLogger.log(this.getClass(), "createIndex",
+                "Index created: " + indexName + " with shards: " + shards);
 
+		return createIndexResponse;
 	}
-
-
-
-
 
 	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticSearchException, IOException {
 
-		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
+		//Seems like the method is not longer used
+		// but I still will add the log just in case
+        AdminLogger.log(this.getClass(), "createIndex",
+                "Trying to create index: " + indexName + " with shards: " + shards);
+
+        IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 
 		if(shards <1){
 			try{
@@ -511,12 +536,11 @@ public class ESIndexAPI {
         // create actual index
 		iac.prepareCreate(indexName).setSettings(settings).addMapping(type, mapping).execute();
 
+        AdminLogger.log(this.getClass(), "createIndex",
+                "Index created: " + indexName + " with shards: " + shards);
+
 		return null;
-
 	}
-
-
-
 
 	/**
 	 * Returns the json (String) for
@@ -557,6 +581,7 @@ public class ESIndexAPI {
 
         return map;
     }
+
 	/**
 	 * This method will update the number of
 	 * replicas on a given index
@@ -566,7 +591,9 @@ public class ESIndexAPI {
 	 */
     public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
 
-		Map<String,ClusterIndexHealth> idxs = getClusterHealth();
+    	AdminLogger.log(this.getClass(), "updateReplicas", "Trying to update replicas to index: " + indexName);
+    	
+    	Map<String,ClusterIndexHealth> idxs = getClusterHealth();
 		ClusterIndexHealth health = idxs.get( indexName);
 		if(health ==null){
 			return;
@@ -584,9 +611,9 @@ public class ESIndexAPI {
 			usrb.setSettings(newSettings);
 			usrb.execute().actionGet();
 		}
+		
+		AdminLogger.log(this.getClass(), "updateReplicas", "Replicas updated to index: " + indexName);
     }
-
-
 
     public void putToIndex(String idx, String json, String id){
 	   try{
@@ -659,13 +686,21 @@ public class ESIndexAPI {
     }
 
     public void closeIndex(String indexName) {
+    	AdminLogger.log(this.getClass(), "closeIndex", "Trying to close index: " + indexName);
+    	
         Client client=new ESClient().getClient();
         client.admin().indices().close(new CloseIndexRequest(indexName)).actionGet();
+        
+        AdminLogger.log(this.getClass(), "closeIndex", "Index: " + indexName + " closed");
     }
 
     public void openIndex(String indexName) {
+    	AdminLogger.log(this.getClass(), "openIndex", "Trying to open index: " + indexName);
+    	
         Client client=new ESClient().getClient();
         client.admin().indices().open(new OpenIndexRequest(indexName)).actionGet();
+        
+        AdminLogger.log(this.getClass(), "openIndex", "Index: " + indexName + " opened");
     }
 
     public List<String> getClosedIndexes() {
