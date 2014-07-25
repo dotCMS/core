@@ -1135,7 +1135,7 @@ public class IntegrityUtil {
 
         if ( DbConnectionFactory.isMySql() ) {
             dotConnect.executeStatement( "UPDATE " + updateTable + " JOIN " + resultsTable + " ir on " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id  SET " + updateColumn + " = ir.remote_identifier" );
-        } else if ( DbConnectionFactory.isOracle() ) {
+        } else if ( DbConnectionFactory.isOracle() || DbConnectionFactory.isH2() ) {
             dotConnect.executeStatement( "UPDATE " + updateTable +
                     " SET " + updateColumn + " = (SELECT ir.remote_identifier FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id)" +
                     " WHERE exists (SELECT ir.remote_identifier FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id)" );
