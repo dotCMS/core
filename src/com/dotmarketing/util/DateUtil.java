@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -22,7 +23,7 @@ public class DateUtil {
 	/**
 	 * This method allows you to add to a java.util.Date returning a Date
 	 * instead of void like the Calendar does
-	 * 
+	 *
 	 * @param date
 	 *            The date to modify
 	 * @param calendarField
@@ -40,7 +41,7 @@ public class DateUtil {
 
 	/**
 	 * This method will set the time on a date to 00:00:00
-	 * 
+	 *
 	 * @param date
 	 * @return Date
 	 */
@@ -56,7 +57,7 @@ public class DateUtil {
 
 	/**
 	 * This method will set the time on a date to 23:59:59
-	 * 
+	 *
 	 * @param date
 	 * @return Date
 	 */
@@ -72,7 +73,7 @@ public class DateUtil {
 
 	/**
 	 * This method will return the diff between to dates
-	 * 
+	 *
 	 * @param from
 	 *            Date
 	 * @param to
@@ -119,7 +120,7 @@ public class DateUtil {
 	/**
 	 * This method try to parse a string into a Date object using an array with
 	 * the valid formats
-	 * 
+	 *
 	 * @param date
 	 *            the string to be parsed
 	 * @param formats
@@ -167,20 +168,20 @@ public class DateUtil {
 				sinceMessage = LanguageUtil.get(locale, "more-than-a-year-ago");
 			} else if (1 < diffDates.get(DateUtil.DIFF_MONTHS)) {
 				sinceMessage = LanguageUtil.format(locale, "x-months-ago", diffDates.get(DateUtil.DIFF_MONTHS), false);
-			
+
 			} else if (1 == diffDates.get(DateUtil.DIFF_MONTHS)) {
 				sinceMessage = LanguageUtil.get(locale, "last-month");
-			
+
 			} else if (13 < diffDates.get(DateUtil.DIFF_DAYS)) {
-				sinceMessage =  
+				sinceMessage =
 						LanguageUtil.format(locale, "x-weeks-ago", new Double(Math.floor(diffDates.get(DateUtil.DIFF_DAYS) / 7)).intValue());
-			
+
 			} else if (6 < diffDates.get(DateUtil.DIFF_DAYS)) {
 				sinceMessage = LanguageUtil.get(locale, "last-week");
-				
+
 			} else if (1 < diffDates.get(DateUtil.DIFF_DAYS)) {
 				sinceMessage = LanguageUtil.format(locale, "x-days-ago",diffDates.get(DateUtil.DIFF_DAYS) );
-			
+
 			} else if (23 < diffDates.get(DateUtil.DIFF_HOURS)) {
 				sinceMessage = LanguageUtil.get(locale, "yesterday");
 			} else if (1 < diffDates.get(DateUtil.DIFF_HOURS)) {
@@ -217,6 +218,13 @@ public class DateUtil {
 
 	public static String prettyDateSinceWithDate(Date date) {
 		return prettyDateSinceWithDate(date, null);
+	}
+
+	public static String getCurrentDate() {
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		Date now = Calendar.getInstance().getTime();
+		String date = df.format(now);
+		return date;
 	}
 
 }

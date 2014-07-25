@@ -263,7 +263,7 @@ public class UserAPIImpl implements UserAPI {
         user.setPasswordReset(GetterUtil.getBoolean(
                 PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
         save(user, currentUser, respectFrontEndRoles);
-        
+
     }
 
 
