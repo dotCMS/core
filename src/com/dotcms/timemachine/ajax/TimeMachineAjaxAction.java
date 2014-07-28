@@ -18,12 +18,15 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectMapper;
 import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectWriter;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -231,7 +234,22 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
     }
 
     public void disableJob(HttpServletRequest req, HttpServletResponse resp) throws Exception {
-        APILocator.getTimeMachineAPI().removeQuartzJob();
+    	String date = DateUtil.getCurrentDate();
+
+    	ActivityLogger.logInfo(getClass(), "Deleting Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+    	AdminLogger.log(getClass(), "Deleting Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+
+    	try {
+    		APILocator.getTimeMachineAPI().removeQuartzJob();
+    	} catch(DotRuntimeException e) {
+    		ActivityLogger.logInfo(getClass(), "Error Deleting Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+        	AdminLogger.log(getClass(), "Error Deleting Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+    		throw e;
+    	}
+
+    	ActivityLogger.logInfo(getClass(), "Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+    	AdminLogger.log(getClass(), "Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+
     }
 
     public void saveJobConfig(HttpServletRequest req, HttpServletResponse resp) throws Exception {
@@ -242,6 +260,10 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         String[] langids=req.getParameterValues("lang");
         Map<String, String> map = getURIParams();
         boolean runnow=map.get("run")!=null;
+        String date = DateUtil.getCurrentDate();
+
+        ActivityLogger.logInfo(getClass(), "Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+        AdminLogger.log(getClass(), "Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
 
         List<Host> hosts=new ArrayList<Host>();
 
@@ -258,13 +280,18 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
 
 
         try {
-               APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,allhost,langs, incremental);
+        	APILocator.getTimeMachineAPI().setQuartzJobConfig(cronExp,hosts,allhost,langs, incremental);
 
-        	}catch (Exception ex) {
-               Logger.error(this, ex.getMessage(),ex);
-               writeError(resp, ex.getCause().getMessage());
-               return;
-        	}
+        }catch (Exception ex) {
+        	Logger.error(this, ex.getMessage(),ex);
+        	ActivityLogger.logInfo(getClass(), "Error Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+            AdminLogger.log(getClass(), "Error Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+        	writeError(resp, ex.getCause().getMessage());
+        	return;
+        }
+
+        ActivityLogger.logInfo(getClass(), "Job Modified", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+        AdminLogger.log(getClass(), "Job Modified", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
 
         if(runnow) {
             final List<Host> dhosts=hosts;
@@ -273,6 +300,10 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             new Thread() {
                 public void run() {
                     APILocator.getTimeMachineAPI().startTimeMachine(dhosts, dlangs,inc);
+                    String date = DateUtil.getCurrentDate();
+                    ActivityLogger.logInfo(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+                    AdminLogger.log(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+
                 }
             }.start();
         }

@@ -43,8 +43,8 @@ public class ResourceCollectorUtil{
 				Logger.error(ResourceCollectorUtil.class, e.getMessage());
 			}
         }
-        String libPath = codeSourcePath.substring(0, codeSourcePath.indexOf("WEB-INF" + File.separator)) + "WEB-INF" + File.separator + "lib";
-        String classesPath = codeSourcePath.substring(0, codeSourcePath.indexOf("WEB-INF" + File.separator)) + "WEB-INF" + File.separator + "classes";
+        String libPath = codeSourcePath.substring(0, codeSourcePath.indexOf("WEB-INF")) + File.separator + "WEB-INF" + File.separator + "lib";
+        String classesPath = codeSourcePath.substring(0, codeSourcePath.indexOf("WEB-INF"))  + File.separator + "WEB-INF" + File.separator + "classes";
 //        String libPath = Config.CONTEXT_PATH + "WEB-INF" + File.separator + "lib";
         List<String> classPathElements = new ArrayList<String>();
         if(isWindows)
