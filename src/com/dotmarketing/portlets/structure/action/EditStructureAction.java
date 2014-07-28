@@ -4,39 +4,29 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import java.net.URLDecoder;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
 import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
 import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
 import com.dotcms.repackage.portlet.javax.portlet.WindowState;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.PageContext;
-
-import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -45,11 +35,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.StructureForm;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
@@ -66,7 +53,6 @@ import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
@@ -243,6 +229,9 @@ public class EditStructureAction extends DotPortletAction {
 	private void _saveStructure(ActionForm form, ActionRequest req, ActionResponse res) {
 		try {
 			boolean newStructure = false;
+			boolean publishChanged = false;
+			boolean expireChanged = false;
+			
 			StructureForm structureForm = (StructureForm) form;
 			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
 
@@ -345,6 +334,27 @@ public class EditStructureAction extends DotPortletAction {
 					}
 				}
 			}
+			
+			//Checks if Publish was updated
+			if (UtilMethods.isSet(structure.getPublishDateVar()) &&
+					UtilMethods.isSet(structureForm.getPublishDateVar())){
+				
+				if (!structure.getPublishDateVar().equals(structureForm.getPublishDateVar())){
+					publishChanged = true;
+				}
+			}else{
+				publishChanged = true;
+			}
+			//Checks if Expire was updated
+			if (UtilMethods.isSet(structure.getExpireDateVar()) &&
+					UtilMethods.isSet(structureForm.getExpireDateVar())){
+				
+				if (!structure.getExpireDateVar().equals(structureForm.getExpireDateVar())){
+					expireChanged = true;
+				}
+			}else{
+				expireChanged = true;
+			}
 
 			BeanUtils.copyProperties(structure, structureForm);
 
@@ -404,6 +414,36 @@ public class EditStructureAction extends DotPortletAction {
 				structure.setSystem(true);
 			}
 			StructureFactory.saveStructure(structure);
+			
+			//If structure is modified and Publish/Expire were updated
+			//have to check if all the content has the same info in Identifiers 
+			if(!newStructure && (publishChanged || expireChanged)){
+				List<Contentlet> contents = conAPI.findByStructure(structure, _getUser(req), false, 0, 0);
+				
+				//For each of the contentlets with that structure
+				for(Contentlet contentlet : contents){
+					Identifier identifier= APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+					
+					//Check if the new Publish Date Var is not null
+					if(UtilMethods.isSet(structure.getPublishDateVar())){
+						//Sets the identifier SysPublishDate to the new Structure/Content Publish Date Var
+						identifier.setSysPublishDate(contentlet.getDateProperty(structure.getPublishDateVar()));
+					}else{
+						identifier.setSysPublishDate(null);
+					}
+					
+					//Check if the new Expire Date Var is not null
+					if(UtilMethods.isSet(structure.getExpireDateVar())){
+						//Sets the identifier SysExpireDate to the new Structure/Content Expire Date Var
+						identifier.setSysExpireDate(contentlet.getDateProperty(structure.getExpireDateVar()));
+					}else{
+						identifier.setSysExpireDate(null);
+					}	
+					
+					APILocator.getIdentifierAPI().save(identifier);
+				}
+			}
+			
 			structureForm.setUrlMapPattern(structure.getUrlMapPattern());
 
 			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
