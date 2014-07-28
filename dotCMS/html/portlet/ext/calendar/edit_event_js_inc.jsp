@@ -276,12 +276,14 @@ function saveEvent(isAutoSave){
 		//If the End Date Selected is before Start Date
 		if(startDateD > endDateD) {
 
-			//Sets the Start Date = End Date
-			startDateDate.setValue(endDateD);
+			//Validates End Date exists
+			if(endDateD){
+				//Sets the Start Date = End Date
+				startDateDate.setValue(endDateD);
+			}
 
-			//Validates that End Time exists
+			//Validates End Time exists
 			if(endDateTime.value.getHours()){
-				
 				//Sets the Start Time = End Time
 				startDateTime.setValue(new Date(0,0,0,endDateTime.value.getHours(),endDateTime.value.getMinutes(),00));			
 				updateDate('<%=startDateField.getVelocityVarName()%>');
