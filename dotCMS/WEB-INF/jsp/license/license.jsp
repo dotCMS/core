@@ -72,7 +72,6 @@ function doShowHideRequest(){
 
     dojo.style("pasteMe", "display", "none");
     dojo.style("licensedata", "display", "none");
-    dojo.style("loadpack", "display", "none");
     
     
     if(dijit.byId("pasteRadio").checked){
@@ -81,10 +80,6 @@ function doShowHideRequest(){
     else if(dijit.byId("reqcodeRadio").checked) {
         dojo.style("licensedata", "display", "");
     }
-    else if(dijit.byId("loadLicensePack").checked) {
-        dojo.style("loadpack", "display", "");
-    }
-
 }
 
 function doPaste(){
@@ -108,9 +103,6 @@ function doPaste(){
     });    
 <% } %>
 
-function doUploadLicensePack() {
-	dojo.byId("licensePackForm").submit();
-}
 
 </script>
 
@@ -189,16 +181,12 @@ function doUploadLicensePack() {
                     <%if(isCommunity){ %>
                         <dt><%= LanguageUtil.get(pageContext, "I-want-to") %>:</dt>
                         <dd>
-                            
+
                             <input onChange="doShowHideRequest()" type="radio" checked="false" name="iwantTo" id="reqcodeRadio"  dojoType="dijit.form.RadioButton" value="request_code">
                             <label for="reqcodeRadio"><%= LanguageUtil.get(pageContext, "request-code-for-support-portal") %></label><br/>
 
-
                             <input onChange="doShowHideRequest()"  type="radio" name="iwantTo" id="pasteRadio"  dojoType="dijit.form.RadioButton" value="paste_license">
-                            <label for="pasteRadio"><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></label><br/>
-
-                            <input onChange="doShowHideRequest()" type="radio" checked="false" name="iwantTo" id="loadLicensePack"  dojoType="dijit.form.RadioButton" value="load_license_pack">
-                            <label for="loadLicensePack"><%= LanguageUtil.get(pageContext, "load-license-pack") %></label>
+                            <label for="pasteRadio"><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></label><br/>                            
 
                         </dd>
                     <%} else { %>
@@ -241,37 +229,75 @@ function doUploadLicensePack() {
             </div>
         </form>
 
-        <form id="licensePackForm" action="<%= com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"EXT_LICENSE_MANAGER") %>" method="post" onsubmit="return false;" enctype='multipart/form-data'>
-            <div id="loadpack" style="margin:auto;width:600px;padding:20px;padding-top:0px;display:none;" >
-               <dl>
-                <dt>
-                <dd>
-                    <input type="file" name="file" accept=".zip"/> 
-                    <button type="submit" dojoType="dijit.form.Button" iconClass="keyIcon" value="upload" onClick="doUploadLicensePack()">
-                        <%=LanguageUtil.get(pageContext,"upload-license-pack")%>
-                    </button>
-                <dd>
-                </dt>
-               <dl>
-            </div>
-        </form>
-
+<div style="margin:auto;width:500px;padding-top:30px;">
+<h1> License Repository </h1>
+<br/>
 <% if(LicenseUtil.getLicenseRepoTotal()>0) { %>
-    <table border=1>
-       <tr> 
+    <script type="text/javascript" >
+    	dojo.ready(function() {
+    		loadRepo();
+    	});
+    	
+    	function loadRepo() {
+    		dojo.empty("repotableBody");
+    		dojo.xhrGet({
+    			url: "/api/license/all/",
+    			handleAs: "json",
+    			load: function(data) {
+    				dojo.forEach(data, function(lic) {
+    					var row=dojo.create("tr",null,dojo.byId("repotableBody"));
+    					dojo.create("td",{ innerHTML: lic.id}, row);
+    					dojo.create("td",{ innerHTML: lic.serverid}, row);
+    					dojo.create("td",{ innerHTML: lic.lastping}, row);
+    					
+    					new dijit.form.Button({
+    						label: "delete",
+    						onClick: function() {
+        						dojo.xhrDelete({
+        							url: "/api/license/delete/id/"+lic.id+"/",
+        							load: loadRepo
+        						});
+        					}
+    					}).placeAt(dojo.create("td",null,row));
+    					
+    				});
+    			}
+    		});
+    	}
+    </script>
+
+    <table id="repotable" border=1>
+       
+       <thead>
+         <tr>
          <th>Serial</th>
          <th>Server ID</th>
-         <th>Last Ping</th> 
-       </tr>
-	<% for(Map<String,Object> lic : LicenseUtil.getLicenseRepoList()) { %>
-	   <tr>
-	     <td> <%= lic.get("id") %> </td>
-	     <td> <%= lic.get("serverid")==null ? "available" : lic.get("serverid") %> </td>
-	     <td> <%= lic.get("lastping") %> </td>
-	   </tr>
-    <% } %>
+         <th>Last Ping</th>
+         <th>&nbsp;</th>
+         </tr>
+       </thead>
+       <tbody id="repotableBody">
+	
+       </tbody>
     </table>
+    <button dojoType="dijit.form.Button" onClick="loadRepo()">Refresh</button>
 <% } %>
+    <% if(!isCommunity) { %>
+          <script type="text/javascript">
+          	function doPackUpload() { 
+          		dojo.byId('uploadPackForm').submit();
+          		return true;
+          	}
+          </script>
+          <div id="uploadPackDiv">
+           <form method="POST" action="/api/license/upload/" encType="multipart/form-data" id="uploadPackForm">
+              <label for="file">Upload License Pack</label>
+              <input type="file" name="file" accept="application/zip"/>
+              <button dojoType="dijit.form.Button" name="btnSubmit" onClick="doPackUpload()">Upload</button>
+           </form>
+           </div>
+    <% } %>
+    </div>
     </div>
 </div>  
 
