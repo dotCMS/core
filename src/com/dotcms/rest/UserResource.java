@@ -7,11 +7,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
@@ -28,6 +31,7 @@ public class UserResource extends WebResource {
 	 * <br>The user node contains: userId, firstName, lastName, roleId.
 	 *
 	 * Usage: /getloggedinuser
+	 * @throws JSONException 
 	 *
 	 */
 
@@ -35,7 +39,7 @@ public class UserResource extends WebResource {
 	@Path("/getloggedinuser/{params:.*}")
 	@Produces("application/json")
 	public Response getLoggedInUser(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException,
-			DotRuntimeException, PortalException, SystemException {
+			DotRuntimeException, PortalException, SystemException, JSONException {
 
         InitDataObject initData = init( params, true, request, true );
 
@@ -44,21 +48,23 @@ public class UserResource extends WebResource {
 
 		User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 
-        if ( user == null ) {
-            return responseResource.response( "{}" );
+		//Using JSONObject instead of manually creating the json object
+		JSONObject jsonLoggedUserObject = new JSONObject();
+		
+		if ( user == null ) {
+            //return responseResource.response( "{}" );
+			return responseResource.response(jsonLoggedUserObject.toString());
         }
 
 		Role myRole  = APILocator.getRoleAPI().getUserRole(user);
 
-		StringBuilder node = new StringBuilder();
-		node.append("{");
-		node.append("userId: '").append(user.getUserId()).append("',");
-		node.append("firstName: '").append(UtilMethods.escapeSingleQuotes(user.getFirstName())).append("',");
-		node.append("lastName: '").append(UtilMethods.escapeSingleQuotes(user.getLastName())).append("',");
-		node.append("roleId: '").append(myRole.getId()).append("'");
-		node.append("}");
+		//Adding logged user information to the object
+		jsonLoggedUserObject.put("userId", user.getUserId());
+		jsonLoggedUserObject.put("firstName", UtilMethods.escapeSingleQuotes(user.getFirstName()));
+		jsonLoggedUserObject.put("lastName", UtilMethods.escapeSingleQuotes(user.getLastName()));
+		jsonLoggedUserObject.put("roleId", myRole.getId());
 
-        return responseResource.response( node.toString() );
+        return responseResource.response(jsonLoggedUserObject.toString());
 	}
 
 }
