@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
@@ -38,6 +39,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -3444,5 +3446,14 @@ public class UtilMethods {
             map.put(ee, req.getParameter(ee));
         }
         return map;
+    }
+
+    public static boolean isPortFree(int pp) {
+        try (Socket ignored = new Socket("localhost", pp)) {
+            return false;
+        } catch (IOException ignored) {
+            return true;
+        }
+
     }
 }
