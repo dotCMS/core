@@ -114,10 +114,12 @@ import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -289,53 +291,79 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException {
-        if(contentlet.getInode().equals(""))
-            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
-            Logger.debug(PublishFactory.class, "publishAsset: user = " + user.getEmailAddress() + ", don't have permissions to publish: " + contentlet.getInode());
 
-            //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
+    	String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+ 		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+ 		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+ 		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
 
-            List<Role> roles = perAPI.getRoles(contentlet.getPermissionId(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-            Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
-            boolean isCMSOwner = false;
-            if(roles.size() > 0){
-                for (Role role : roles) {
-                    if(role == cmsOwner){
-                        isCMSOwner = true;
-                        break;
-                    }
-                }
-                if(!isCMSOwner){
-                    throw new DotSecurityException("User does not have permission to publish contentlet with inode " + contentlet.getInode());
-                }
-            }else{
-                throw new DotSecurityException("User does not have permission to publish contentlet with inode " + contentlet.getInode());
-            }
+ 		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+ 		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+ 		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+ 		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+
+
+        ActivityLogger.logInfo(getClass(), "Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
+         		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
+        try {
+
+        	if(contentlet.getInode().equals(""))
+        		throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+        	if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
+        		Logger.debug(PublishFactory.class, "publishAsset: user = " + user.getEmailAddress() + ", don't have permissions to publish: " + contentlet.getInode());
+
+        		//If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
+
+        		List<Role> roles = perAPI.getRoles(contentlet.getPermissionId(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+        		Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        		boolean isCMSOwner = false;
+        		if(roles.size() > 0){
+        			for (Role role : roles) {
+        				if(role == cmsOwner){
+        					isCMSOwner = true;
+        					break;
+        				}
+        			}
+        			if(!isCMSOwner){
+        				throw new DotSecurityException("User does not have permission to publish contentlet with inode " + contentlet.getInode());
+        			}
+        		}else{
+        			throw new DotSecurityException("User does not have permission to publish contentlet with inode " + contentlet.getInode());
+        		}
+        	}
+
+        	canLock(contentlet, user);
+
+        	String syncMe = (UtilMethods.isSet(contentlet.getIdentifier()))  ? contentlet.getIdentifier() : UUIDGenerator.generateUuid()  ;
+
+        	synchronized (syncMe.intern()) {
+
+        		Logger.debug(this, "*****I'm a Contentlet -- Publishing");
+
+        		//Set contentlet to live and unlocked
+        		APILocator.getVersionableAPI().setLive(contentlet);
+        		//APILocator.getVersionableAPI().setLocked(contentlet.getIdentifier(), false, user);
+
+        		publishAssociated(contentlet, false);
+
+        		if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+        			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+        			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        		}
+
+        	}
+
+        } catch(DotDataException | DotStateException | DotSecurityException e) {
+        	ActivityLogger.logInfo(getClass(), "Error Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
+        			+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+        	throw e;
         }
-        canLock(contentlet, user);
+
+        ActivityLogger.logInfo(getClass(), "Content Published", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
 
 
-
-
-        String syncMe = (UtilMethods.isSet(contentlet.getIdentifier()))  ? contentlet.getIdentifier() : UUIDGenerator.generateUuid()  ;
-
-        synchronized (syncMe.intern()) {
-
-            Logger.debug(this, "*****I'm a Contentlet -- Publishing");
-
-            //Set contentlet to live and unlocked
-            APILocator.getVersionableAPI().setLive(contentlet);
-            //APILocator.getVersionableAPI().setLocked(contentlet.getIdentifier(), false, user);
-
-            publishAssociated(contentlet, false);
-
-            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-                CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
-            }
-
-        }
     }
 
     /* Not needed anymore
@@ -920,13 +948,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentlet == null){
             throw new DotContentletStateException("The contentlet cannot Be null");
         }
-        canLock(contentlet, user);
 
-        if(contentlet.isLocked() ){
-            // persists the webasset
-            APILocator.getVersionableAPI().setLocked(contentlet, false, user);
-            indexAPI.addContentToIndex(contentlet);
+        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+
+		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+
+
+        ActivityLogger.logInfo(getClass(), "Unlocking Content", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
+        try {
+        	canLock(contentlet, user);
+
+            if(contentlet.isLocked() ){
+                // persists the webasset
+                APILocator.getVersionableAPI().setLocked(contentlet, false, user);
+                indexAPI.addContentToIndex(contentlet);
+            }
+
+        } catch(DotDataException | DotStateException| DotSecurityException e) {
+        	ActivityLogger.logInfo(getClass(), "Error Unlocking Content", "StartDate: " +contentPushPublishDate+ "; "
+        			+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+        	throw e;
         }
+
+        ActivityLogger.logInfo(getClass(), "Content Unlocked", "StartDate: " +contentPushPublishDate+ "; "
+    			+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
     }
 
     public Identifier getRelatedIdentifier(Contentlet contentlet,String relationshipType, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
@@ -999,13 +1052,61 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void delete(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
-        delete(contentlets, user, respectFrontendRoles);
+
+        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+
+		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+
+
+        ActivityLogger.logInfo(getClass(), "Deleting Content", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+        try {
+        	delete(contentlets, user, respectFrontendRoles);
+        } catch(DotDataException | DotSecurityException e) {
+        	ActivityLogger.logInfo(getClass(), "Error Deleting Content", "StartDate: " +contentPushPublishDate+ "; "
+        			+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+        	throw e;
+        }
+
+        ActivityLogger.logInfo(getClass(), "Content Deleted", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
     }
 
     public void delete(Contentlet contentlet, User user,boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException {
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
-        delete(contentlets, user, respectFrontendRoles, allVersions);
+
+        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+
+		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+
+
+        ActivityLogger.logInfo(getClass(), "Deleting Content", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+        try {
+        	delete(contentlets, user, respectFrontendRoles, allVersions);
+        } catch(DotDataException | DotSecurityException e) {
+        	ActivityLogger.logInfo(getClass(), "Error Deleting Content", "StartDate: " +contentPushPublishDate+ "; "
+        			+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+        	throw e;
+        }
+
+        ActivityLogger.logInfo(getClass(), "Content Deleted", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
     }
 
     public void delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -1312,62 +1413,90 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public void archive(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
-        if(contentlet.getInode().equals(""))
-            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
-            throw new DotSecurityException("User does not have permission to edit the contentlet");
+
+    	String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+
+		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+
+
+        ActivityLogger.logInfo(getClass(), "Archiving Content", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
+
+        try {
+
+        	if(contentlet.getInode().equals(""))
+        		throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+        	if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
+        		throw new DotSecurityException("User does not have permission to edit the contentlet");
+        	}
+        	Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
+        	Contentlet liveContentlet = null;
+        	try{
+        		liveContentlet = findContentletByIdentifier(contentlet.getIdentifier(), true, contentlet.getLanguageId(), user, respectFrontendRoles);
+        	}catch (DotContentletStateException ce) {
+        		Logger.debug(this,"No live contentlet found for identifier = " + contentlet.getIdentifier());
+        	}
+
+
+
+
+        	canLock(contentlet, user);
+        	User modUser = null;
+
+        	try{
+        		modUser = APILocator.getUserAPI().loadUserById(workingContentlet.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
+        	}catch(Exception ex){
+        		if(ex instanceof NoSuchUserException){
+        			modUser = APILocator.getUserAPI().getSystemUser();
+        		}
+        	}
+
+        	if(modUser != null){
+        		workingContentlet.setModUser(modUser.getUserId());
+        	}
+
+
+        	if (user == null || !workingContentlet.isLocked() || workingContentlet.getModUser().equals(user.getUserId())) {
+
+        		if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
+        			APILocator.getVersionableAPI().removeLive(liveContentlet.getIdentifier(), liveContentlet.getLanguageId());
+        			indexAPI.removeContentFromLiveIndex(liveContentlet);
+        		}
+
+        		// sets deleted to true
+        		APILocator.getVersionableAPI().setDeleted(workingContentlet, true);
+
+        		// Updating lucene index
+        		indexAPI.addContentToIndex(workingContentlet);
+
+        		if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+        			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+        			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), false);
+        		}
+
+        		ContentletServices.invalidate(contentlet);
+        		ContentletMapServices.invalidate(contentlet);
+        		publishRelatedHtmlPages(contentlet);
+        	}else{
+        		throw new DotContentletStateException("Contentlet is locked: Unable to archive");
+        	}
+
+        } catch(DotDataException | DotStateException| DotSecurityException e) {
+        	ActivityLogger.logInfo(getClass(), "Error Archiving Content", "StartDate: " +contentPushPublishDate+ "; "
+        			+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+        	throw e;
         }
-        Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
-        Contentlet liveContentlet = null;
-        try{
-            liveContentlet = findContentletByIdentifier(contentlet.getIdentifier(), true, contentlet.getLanguageId(), user, respectFrontendRoles);
-        }catch (DotContentletStateException ce) {
-            Logger.debug(this,"No live contentlet found for identifier = " + contentlet.getIdentifier());
-        }
 
-
-
-        canLock(contentlet, user);
-        User modUser = null;
-
-        try{
-            modUser = APILocator.getUserAPI().loadUserById(workingContentlet.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
-        }catch(Exception ex){
-            if(ex instanceof NoSuchUserException){
-                modUser = APILocator.getUserAPI().getSystemUser();
-            }
-        }
-
-        if(modUser != null){
-            workingContentlet.setModUser(modUser.getUserId());
-        }
-
-
-        if (user == null || !workingContentlet.isLocked() || workingContentlet.getModUser().equals(user.getUserId())) {
-
-            if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
-                APILocator.getVersionableAPI().removeLive(liveContentlet.getIdentifier(), liveContentlet.getLanguageId());
-                indexAPI.removeContentFromLiveIndex(liveContentlet);
-            }
-
-            // sets deleted to true
-            APILocator.getVersionableAPI().setDeleted(workingContentlet, true);
-
-            // Updating lucene index
-            indexAPI.addContentToIndex(workingContentlet);
-
-            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-                CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
-                CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), false);
-            }
-
-            ContentletServices.invalidate(contentlet);
-            ContentletMapServices.invalidate(contentlet);
-            publishRelatedHtmlPages(contentlet);
-        }else{
-            throw new DotContentletStateException("Contentlet is locked: Unable to archive");
-        }
+        ActivityLogger.logInfo(getClass(), "Content Archived", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
     }
 
     public void archive(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
@@ -1389,18 +1518,44 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentlet == null){
             throw new DotContentletStateException("The contentlet cannot Be null");
         }
-        if(contentlet.getInode().equals(""))
-            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)){
-            throw new DotSecurityException("User cannot edit Contentlet");
-        }
 
 
-        canLock(contentlet, user);
+        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
 
-        // persists the webasset
-        APILocator.getVersionableAPI().setLocked(contentlet, true, user);
-        indexAPI.addContentToIndex(contentlet);
+		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+
+		ActivityLogger.logInfo(getClass(), "Locking Content", "StartDate: " +contentPushPublishDate+ "; "
+				+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
+
+		try {
+
+			if(contentlet.getInode().equals(""))
+				throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+			if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)){
+				throw new DotSecurityException("User cannot edit Contentlet");
+			}
+
+			canLock(contentlet, user);
+
+			// persists the webasset
+			APILocator.getVersionableAPI().setLocked(contentlet, true, user);
+			indexAPI.addContentToIndex(contentlet);
+
+		} catch(DotDataException | DotStateException| DotSecurityException e) {
+			ActivityLogger.logInfo(getClass(), "Error Locking Content", "StartDate: " +contentPushPublishDate+ "; "
+					+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+			throw e;
+		}
+
+        ActivityLogger.logInfo(getClass(), "Content Locked", "StartDate: " +contentPushPublishDate+ "; "
+    			+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
     }
 
     //public void removeContentletFromIndex(String contentletIdentifier) throws DotDataException{
@@ -1525,21 +1680,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())){
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }
-        canLock(contentlet, user);
 
-        APILocator.getVersionableAPI().removeLive(contentlet.getIdentifier(), contentlet.getLanguageId());
+        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+        String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
 
-        indexAPI.addContentToIndex(contentlet);
-        indexAPI.removeContentFromLiveIndex(contentlet);
+		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
 
-        if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-            Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-            CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+
+        ActivityLogger.logInfo(getClass(), "Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
+        try {
+        	canLock(contentlet, user);
+
+        	APILocator.getVersionableAPI().removeLive(contentlet.getIdentifier(), contentlet.getLanguageId());
+
+        	indexAPI.addContentToIndex(contentlet);
+        	indexAPI.removeContentFromLiveIndex(contentlet);
+
+        	if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+        		Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+        		CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        	}
+
+        	ContentletServices.unpublishContentletFile(contentlet);
+        	ContentletMapServices.unpublishContentletMapFile(contentlet);
+        	publishRelatedHtmlPages(contentlet);
+
+
+        } catch(DotDataException | DotStateException| DotSecurityException e) {
+        	ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
+        			+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+        	throw e;
         }
 
-        ContentletServices.unpublishContentletFile(contentlet);
-        ContentletMapServices.unpublishContentletMapFile(contentlet);
-        publishRelatedHtmlPages(contentlet);
+        ActivityLogger.logInfo(getClass(), "Content Unpublished", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
 
     }
 
@@ -1558,34 +1740,62 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public void unarchive(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
-        if(contentlet.getInode().equals(""))
-            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
-            throw new DotSecurityException("User cannot unpublish Contentlet");
+
+    	String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+
+		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+
+
+        ActivityLogger.logInfo(getClass(), "Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
+        try {
+
+        	if(contentlet.getInode().equals(""))
+        		throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+        	if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
+        		throw new DotSecurityException("User cannot unpublish Contentlet");
+        	}
+        	Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
+        	Contentlet liveContentlet = null;
+        	canLock(contentlet, user);
+        	try{
+        		liveContentlet = findContentletByIdentifier(contentlet.getIdentifier(), true, contentlet.getLanguageId(), user, respectFrontendRoles);
+        	}catch (DotContentletStateException ce) {
+        		Logger.debug(this,"No live contentlet found for identifier = " + contentlet.getIdentifier());
+        	}
+        	if(liveContentlet != null && liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()) && !workingContentlet.isArchived())
+        		throw new DotContentletStateException("Contentlet is unarchivable");
+
+        	APILocator.getVersionableAPI().setDeleted(workingContentlet, false);
+
+        	indexAPI.addContentToIndex(workingContentlet);
+
+        	// we don't want to reindex this twice when it is the same version
+        	if(liveContentlet!=null && UtilMethods.isSet(liveContentlet.getInode())
+        			&& !liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()))
+        		indexAPI.addContentToIndex(liveContentlet);
+
+        	ContentletServices.invalidate(contentlet);
+        	ContentletMapServices.invalidate(contentlet);
+        	publishRelatedHtmlPages(contentlet);
+
+        } catch(DotDataException | DotStateException| DotSecurityException e) {
+        	ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
+        			+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+        	throw e;
         }
-        Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
-        Contentlet liveContentlet = null;
-        canLock(contentlet, user);
-        try{
-            liveContentlet = findContentletByIdentifier(contentlet.getIdentifier(), true, contentlet.getLanguageId(), user, respectFrontendRoles);
-        }catch (DotContentletStateException ce) {
-            Logger.debug(this,"No live contentlet found for identifier = " + contentlet.getIdentifier());
-        }
-        if(liveContentlet != null && liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()) && !workingContentlet.isArchived())
-            throw new DotContentletStateException("Contentlet is unarchivable");
 
-        APILocator.getVersionableAPI().setDeleted(workingContentlet, false);
+        ActivityLogger.logInfo(getClass(), "Content Unarchived", "StartDate: " +contentPushPublishDate+ "; "
+        		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
 
-        indexAPI.addContentToIndex(workingContentlet);
 
-        // we don't want to reindex this twice when it is the same version
-        if(liveContentlet!=null && UtilMethods.isSet(liveContentlet.getInode())
-                && !liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()))
-            indexAPI.addContentToIndex(liveContentlet);
-
-        ContentletServices.invalidate(contentlet);
-        ContentletMapServices.invalidate(contentlet);
-        publishRelatedHtmlPages(contentlet);
     }
 
     public void unarchive(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
@@ -1631,7 +1841,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         cons = perAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 
         boolean contentSelected;
-        Tree tree;
+        ArrayList<Contentlet> contentletList = new ArrayList<Contentlet>(1);
+
         for (Contentlet relatedContent: cons) {
             contentSelected = false;
 
@@ -1643,16 +1854,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             if (!contentSelected) {
-                if (related.isHasParent()) {
-                    tree = TreeFactory.getTree(contentlet.getIdentifier(), relatedContent.getIdentifier(), related.getRelationship().getRelationTypeValue());
-                } else {
-                    tree = TreeFactory.getTree(relatedContent.getIdentifier(), contentlet.getIdentifier(), related.getRelationship().getRelationTypeValue());
-                }
-                Tree treeToDelete = TreeFactory.getTree(tree);
-                TreeFactory.deleteTree(tree);
+                // DOTCMS-5118: Delete relationship in the style of ContentletAjax, which works.
+                contentletList.add(relatedContent);
+                RelationshipFactory.deleteRelationships(contentlet, related.getRelationship(), contentletList);
+
+                //if relatedContent is related as new content, there exists the below relation which also needs to be deleted.
+                contentletList.set(0, contentlet);
+                RelationshipFactory.deleteRelationships(relatedContent, related.getRelationship(), contentletList);
                 refresh(relatedContent);
             }
+
         }
+        refresh(contentlet);
+
     }
 
     public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> records, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
@@ -2022,6 +2236,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             User user, boolean respectFrontendRoles, boolean createNewVersion) throws DotDataException, DotSecurityException, DotContentletStateException,
             DotContentletValidationException {
 
+    	String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+ 		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+ 		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+ 		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+
+ 		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+ 		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
+ 		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+ 		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+
+
+        ActivityLogger.logInfo(getClass(), "Saving Content", "StartDate: " +contentPushPublishDate+ "; "
+         		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
+
+
         String syncMe = (UtilMethods.isSet(contentlet.getIdentifier())) ? contentlet.getIdentifier() : UUIDGenerator.generateUuid();
 
         synchronized (syncMe) {
@@ -2154,10 +2383,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
 				// Keep the 5 properties BEFORE store the contentlet on DB.
-				String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-				String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-				String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-				String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+				contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+				contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+				contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+				contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
 				String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
 				String contentWhereToSend = contentlet.getStringProperty("whereToSend");
 				String forcePush = contentlet.getStringProperty("forcePush");
@@ -2623,6 +2852,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         } // end syncronized block
+
+        ActivityLogger.logInfo(getClass(), "Content Saved", "StartDate: " +contentPushPublishDate+ "; "
+         		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier());
 
 
         return contentlet;
@@ -3459,7 +3691,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     for(Contentlet con : cons){
                     	 try {
-                    		 	List<Contentlet> relatedCon = getRelatedContent(con, rel, APILocator.getUserAPI().getSystemUser(), true);                         
+                    		 	List<Contentlet> relatedCon = getRelatedContent(con, rel, APILocator.getUserAPI().getSystemUser(), true);
                     		 	if(rel.getCardinality()==0 && relatedCon.size()>0) {
                     		 		hasError = true;
                     		 		cve.addBadCardinalityRelationship(rel, cons);
@@ -3468,7 +3700,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     		 		hasError = true;
                     		 		cve.addInvalidContentRelationship(rel, cons);
                     		 	}
-                    	 }                	 
+                    	 }
                     	 catch (DotSecurityException e) {
                     		 Logger.error(this,"Unable to get system user",e);
                     	 }
