@@ -1,16 +1,16 @@
 package com.dotcms.cmis;
 
-import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertNotNull;
-import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.junit.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.junit.org.junit.Assert.assertNotNull;
+import static com.dotcms.repackage.junit.org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.math.BigInteger;
 import java.util.List;
 
-import com.dotcms.repackage.chemistry_opencmis_commons_api_0_8_0.org.apache.chemistry.opencmis.commons.data.ObjectList;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
+import com.dotcms.repackage.chemistry_opencmis_commons_api.org.apache.chemistry.opencmis.commons.data.ObjectList;
+import com.dotcms.repackage.junit.org.junit.Test;
 
 import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotmarketing.beans.Host;

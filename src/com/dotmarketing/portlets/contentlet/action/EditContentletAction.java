@@ -24,7 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.CollectionUtils;
+import com.dotcms.repackage.commons_collections.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;

@@ -389,7 +389,7 @@ public class EditReportAction extends DotPortletAction {
 				rp.setDescription(jrPar.getDescription());
 				rp.setClassType(jrPar.getValueClassName());
 				try {
-					Object o = new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval(jrPar
+					Object o = new com.dotcms.repackage.bsh.bsh.Interpreter().eval(jrPar
 							.getDefaultValueExpression().getText());
 					if (o instanceof Date) {
 						o = ((Date) o).getTime();

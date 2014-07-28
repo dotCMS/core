@@ -7,9 +7,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.junit_4_8_1.org.junit.AfterClass;
-import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
+import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.junit.org.junit.AfterClass;
+import com.dotcms.repackage.junit.org.junit.BeforeClass;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;

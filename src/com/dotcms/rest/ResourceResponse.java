@@ -2,11 +2,11 @@ package com.dotcms.rest;
 
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
-import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpStatus;
 
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.CacheControl;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+import com.dotcms.repackage.jersey.javax.ws.rs.core.CacheControl;
+import com.dotcms.repackage.jersey.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
 import java.util.Map;
 
 /**

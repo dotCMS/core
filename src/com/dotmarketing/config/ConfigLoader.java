@@ -3,13 +3,13 @@ package com.dotmarketing.config;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.ParserConfigurationException;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.SAXParser;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.SAXParserFactory;
+import com.dotcms.repackage.tika_app.javax.xml.parsers.ParserConfigurationException;
+import com.dotcms.repackage.tika_app.javax.xml.parsers.SAXParser;
+import com.dotcms.repackage.tika_app.javax.xml.parsers.SAXParserFactory;
 
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.helpers.DefaultHandler;
+import com.dotcms.repackage.tika_app.org.xml.sax.Attributes;
+import com.dotcms.repackage.tika_app.org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app.org.xml.sax.helpers.DefaultHandler;
 
 import com.dotmarketing.util.Logger;
 

@@ -17,9 +17,9 @@ package com.dotmarketing.util.diff.html.dom;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.helpers.DefaultHandler;
+import com.dotcms.repackage.tika_app.org.xml.sax.Attributes;
+import com.dotcms.repackage.tika_app.org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app.org.xml.sax.helpers.DefaultHandler;
 
 public class DomTreeBuilder extends DefaultHandler implements DomTree {
 

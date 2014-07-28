@@ -32,13 +32,13 @@ import java.util.Map;
 
 import com.dotcms.repackage.portlet.javax.portlet.PortletPreferences;
 
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentException;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentFactory;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.OutputFormat;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.SAXReader;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.XMLWriter;
+import com.dotcms.repackage.tika_app.org.dom4j.Document;
+import com.dotcms.repackage.tika_app.org.dom4j.DocumentException;
+import com.dotcms.repackage.tika_app.org.dom4j.DocumentFactory;
+import com.dotcms.repackage.tika_app.org.dom4j.Element;
+import com.dotcms.repackage.tika_app.org.dom4j.io.OutputFormat;
+import com.dotcms.repackage.tika_app.org.dom4j.io.SAXReader;
+import com.dotcms.repackage.tika_app.org.dom4j.io.XMLWriter;
 
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;

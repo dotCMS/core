@@ -15,10 +15,10 @@
  */
 package com.dotmarketing.util.diff.helper;
 
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Locator;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.Attributes;
+import com.dotcms.repackage.tika_app.org.xml.sax.ContentHandler;
+import com.dotcms.repackage.tika_app.org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app.org.xml.sax.Locator;
+import com.dotcms.repackage.tika_app.org.xml.sax.Attributes;
 
 class MergeCharacterEventsHandler implements ContentHandler {
     private ContentHandler consumer;

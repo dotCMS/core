@@ -5,11 +5,11 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-import com.dotcms.repackage.drools_core_3_0_5.org.drools.RuleBase;
-import com.dotcms.repackage.drools_core_3_0_5.org.drools.RuleBaseFactory;
-import com.dotcms.repackage.drools_core_3_0_5.org.drools.WorkingMemory;
-import com.dotcms.repackage.drools_compiler_3_0_5.org.drools.compiler.PackageBuilder;
-import com.dotcms.repackage.drools_core_3_0_5.org.drools.rule.Package;
+import com.dotcms.repackage.drools_core.org.drools.RuleBase;
+import com.dotcms.repackage.drools_core.org.drools.RuleBaseFactory;
+import com.dotcms.repackage.drools_core.org.drools.WorkingMemory;
+import com.dotcms.repackage.drools_compiler.org.drools.compiler.PackageBuilder;
+import com.dotcms.repackage.drools_core.org.drools.rule.Package;
 
 public class JBossRulesUtils {
 	private static RuleBase XMLRuleBase;

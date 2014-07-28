@@ -3,13 +3,13 @@ package com.dotmarketing.util.ups;
 import java.io.StringReader;
 import java.util.Vector;
 
-import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilder;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.parsers.DocumentBuilderFactory;
+import com.dotcms.repackage.tika_app.javax.xml.parsers.DocumentBuilder;
+import com.dotcms.repackage.tika_app.javax.xml.parsers.DocumentBuilderFactory;
 
-import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.Document;
-import com.dotcms.repackage.tika_app_1_3.org.w3c.dom.NodeList;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.InputSource;
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.SAXException;
+import com.dotcms.repackage.tika_app.org.w3c.dom.Document;
+import com.dotcms.repackage.tika_app.org.w3c.dom.NodeList;
+import com.dotcms.repackage.tika_app.org.xml.sax.InputSource;
+import com.dotcms.repackage.tika_app.org.xml.sax.SAXException;
 
 import com.dotmarketing.util.Logger;
 

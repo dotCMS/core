@@ -7,7 +7,7 @@ import com.dotcms.rest.EnvironmentResource;
 import com.dotcms.rest.NetworkPortlet;
 import com.dotcms.rest.RestExamplePortlet;
 
-public class DotRestApplication extends com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Application {
+public class DotRestApplication extends com.dotcms.repackage.jersey.javax.ws.rs.core.Application {
 	protected static Set<Class<?>> REST_CLASSES = null;
 
 	@Override

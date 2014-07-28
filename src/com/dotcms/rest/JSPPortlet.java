@@ -26,12 +26,12 @@ import java.io.IOException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+import com.dotcms.repackage.jersey.javax.ws.rs.GET;
+import com.dotcms.repackage.jersey.javax.ws.rs.Path;
+import com.dotcms.repackage.jersey.javax.ws.rs.PathParam;
+import com.dotcms.repackage.jersey.javax.ws.rs.Produces;
+import com.dotcms.repackage.jersey.javax.ws.rs.core.Context;
+import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;

@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.map.LRUMap;
+import com.dotcms.repackage.commons_collections.org.apache.commons.collections.map.LRUMap;
 import org.h2.jdbcx.JdbcConnectionPool;
 import com.dotcms.repackage.jbosscache_core.org.jboss.cache.CacheException;
 import com.dotcms.repackage.jbosscache_core.org.jboss.cache.CacheSPI;

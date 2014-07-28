@@ -1,6 +1,6 @@
 package com.dotcms.autoupdater;
 
-import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
+import com.dotcms.repackage.tika_app.org.apache.log4j.Logger;
 import com.liferay.util.FileUtil;
 
 import java.io.File;

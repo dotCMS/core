@@ -30,7 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
 
-import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.hibernate.net.sf.hibernate.HibernateException;
 
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
@@ -92,9 +92,9 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
-import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.mapper.Mapper;
+import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.xstream.com.thoughtworks.xstream.mapper.Mapper;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -575,9 +575,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 				//http://jira.dotmarketing.net/browse/DOTCMS-6059
 				if(clazz.equals(DashboardSummary404.class) || clazz.equals(DashboardUserPreferences.class)){
-					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate2.net.sf.hibernate.collection.Set.class, java.util.Set.class);
-					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate2.net.sf.hibernate.collection.List.class, java.util.List.class);
-					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate2.net.sf.hibernate.collection.Map.class, java.util.Map.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate.net.sf.hibernate.collection.Set.class, java.util.Set.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate.net.sf.hibernate.collection.List.class, java.util.List.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate.net.sf.hibernate.collection.Map.class, java.util.Map.class);
 					Mapper mapper = _xstream.getMapper();
 					_xstream.registerConverter(new HibernateCollectionConverter(mapper));
 					_xstream.registerConverter(new HibernateMapConverter(mapper));

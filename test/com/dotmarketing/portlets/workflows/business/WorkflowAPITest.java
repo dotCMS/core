@@ -9,9 +9,9 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.TestBase;
-import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Assert;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
+import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.junit.org.junit.Assert;
+import com.dotcms.repackage.junit.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;

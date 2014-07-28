@@ -25,7 +25,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.SystemUtils;
+import com.dotcms.repackage.commons_lang.org.apache.commons.lang.SystemUtils;
 import com.dotcms.repackage.elasticsearch.org.apache.lucene.search.BooleanQuery;
 import org.quartz.SchedulerException;
 

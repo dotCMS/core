@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.structure.ajax;
 
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.dwr.org.directwebremoting.WebContext;
+import com.dotcms.repackage.dwr.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;

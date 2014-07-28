@@ -12,8 +12,8 @@ import java.io.OutputStreamWriter;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream_1_4_4.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class BundlerUtil {
 

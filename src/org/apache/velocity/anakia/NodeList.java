@@ -28,16 +28,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import com.dotcms.repackage.tika_app_1_3.org.jdom.Attribute;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.CDATA;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.Comment;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.DocType;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.Document;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.EntityRef;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.ProcessingInstruction;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.Text;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.output.XMLOutputter;
+import com.dotcms.repackage.tika_app.org.jdom.Attribute;
+import com.dotcms.repackage.tika_app.org.jdom.CDATA;
+import com.dotcms.repackage.tika_app.org.jdom.Comment;
+import com.dotcms.repackage.tika_app.org.jdom.DocType;
+import com.dotcms.repackage.tika_app.org.jdom.Document;
+import com.dotcms.repackage.tika_app.org.jdom.Element;
+import com.dotcms.repackage.tika_app.org.jdom.EntityRef;
+import com.dotcms.repackage.tika_app.org.jdom.ProcessingInstruction;
+import com.dotcms.repackage.tika_app.org.jdom.Text;
+import com.dotcms.repackage.tika_app.org.jdom.output.XMLOutputter;
 
 /**
  * Provides a class for wrapping a list of JDOM objects primarily for use in template
