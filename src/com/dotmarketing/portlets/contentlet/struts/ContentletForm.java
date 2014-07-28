@@ -12,8 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils;
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.HashCodeBuilder;
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.commons_lang.org.apache.commons.lang.builder.HashCodeBuilder;
+import com.dotcms.repackage.commons_lang.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;

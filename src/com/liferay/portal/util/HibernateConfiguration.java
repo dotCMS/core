@@ -24,8 +24,8 @@ package com.liferay.portal.util;
 
 import java.io.InputStream;
 
-import com.dotcms.repackage.hibernate2.net.sf.hibernate.cfg.Configuration;
-import com.dotcms.repackage.hibernate2.net.sf.hibernate.mapping.Table;
+import com.dotcms.repackage.hibernate.net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.hibernate.net.sf.hibernate.mapping.Table;
 
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.LowercaseNamingStrategy;

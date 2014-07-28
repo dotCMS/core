@@ -45,10 +45,10 @@ import org.apache.commons.logging.LogFactory;
 import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionServlet;
 import com.dotcms.repackage.struts.org.apache.struts.tiles.TilesUtilImpl;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentException;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.SAXReader;
+import com.dotcms.repackage.tika_app.org.dom4j.Document;
+import com.dotcms.repackage.tika_app.org.dom4j.DocumentException;
+import com.dotcms.repackage.tika_app.org.dom4j.Element;
+import com.dotcms.repackage.tika_app.org.dom4j.io.SAXReader;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ClusterFactory;

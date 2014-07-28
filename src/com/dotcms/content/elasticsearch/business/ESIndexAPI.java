@@ -24,7 +24,7 @@ import java.util.zip.ZipOutputStream;
 
 import com.dotmarketing.util.*;
 import org.apache.tools.zip.ZipEntry;
-import com.dotcms.repackage.jackson_mapper_asl_1_9_2.org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.jackson_mapper_asl.org.codehaus.jackson.map.ObjectMapper;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.ElasticSearchException;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.ActionFuture;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;

@@ -5,10 +5,10 @@ import java.net.URL;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Assert;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
+import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.junit.org.junit.Assert;
+import com.dotcms.repackage.junit.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;

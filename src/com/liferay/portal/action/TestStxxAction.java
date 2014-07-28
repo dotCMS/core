@@ -30,8 +30,8 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.Document;
-import com.dotcms.repackage.tika_app_1_3.org.jdom.Element;
+import com.dotcms.repackage.tika_app.org.jdom.Document;
+import com.dotcms.repackage.tika_app.org.jdom.Element;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.CompanyLocalManagerUtil;

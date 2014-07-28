@@ -13,7 +13,7 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
-import com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.Captcha;
+import com.dotcms.repackage.simplecaptcha.nl.captcha.Captcha;
 
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -54,7 +54,7 @@ public class AudioCaptchaServlet extends HttpServlet {
 		AudioInputStream challenge = null;
 		try {
 
-			//String captchaSession =  (String) .getAttribute(com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);	
+			//String captchaSession =  (String) .getAttribute(com.dotcms.repackage.simplecaptcha.nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);
 			Captcha captcha = (Captcha) request.getSession().getAttribute(Captcha.NAME);
 			String captchaSession=captcha!=null ? captcha.getAnswer() : null;
 			if(UtilMethods.isSet(captchaSession)){

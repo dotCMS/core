@@ -1,11 +1,11 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+import com.dotcms.repackage.jersey.javax.ws.rs.GET;
+import com.dotcms.repackage.jersey.javax.ws.rs.Path;
+import com.dotcms.repackage.jersey.javax.ws.rs.PathParam;
+import com.dotcms.repackage.jersey.javax.ws.rs.Produces;
+import com.dotcms.repackage.jersey.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
 
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;

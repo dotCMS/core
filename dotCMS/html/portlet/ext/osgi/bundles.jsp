@@ -6,7 +6,7 @@
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
-<%@ page import="com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle" %>
+<%@ page import="com.dotcms.repackage.felix.org.osgi.framework.Bundle" %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <script type="text/javascript">

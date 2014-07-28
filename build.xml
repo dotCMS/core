@@ -84,9 +84,9 @@
         <pathelement location="${java.home}/../lib/tools.jar"/>
 
         <fileset dir="../../${target.root}/WEB-INF/lib">
-            <include name="dotcms-ant-tooling.jar" />
-            <include name="dotcms-commons-lang-2.4.jar" />
-            <include name="dotcms-tika-app-1.3.jar" />
+            <include name="dot.ant-tooling_ukv.jar" />
+            <include name="dot.commons-lang_2.4.jar" />
+            <include name="dot.tika-app_1.3.jar" />
         </fileset>
     </path>
     <path id="ant-files-classpath">
@@ -94,9 +94,9 @@
         <pathelement location="${java.home}/../lib/tools.jar"/>
 
         <fileset dir="${lib.app}">
-            <include name="dotcms-ant-tooling.jar" />
-            <include name="dotcms-commons-lang-2.4.jar" />
-            <include name="dotcms-tika-app-1.3.jar" />
+            <include name="dot.ant-tooling_ukv.jar" />
+            <include name="dot.commons-lang_2.4.jar" />
+            <include name="dot.tika-app_1.3.jar" />
         </fileset>
     </path>
 

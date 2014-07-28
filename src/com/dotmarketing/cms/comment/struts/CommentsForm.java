@@ -5,7 +5,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.Captcha;
+import com.dotcms.repackage.simplecaptcha.nl.captcha.Captcha;
 
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionError;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;

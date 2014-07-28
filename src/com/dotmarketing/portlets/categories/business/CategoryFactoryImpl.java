@@ -10,7 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.hibernate2.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.hibernate.net.sf.hibernate.ObjectNotFoundException;
 
 import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
 

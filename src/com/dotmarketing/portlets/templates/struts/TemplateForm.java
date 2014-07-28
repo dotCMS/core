@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.templates.struts;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.commons_lang.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;

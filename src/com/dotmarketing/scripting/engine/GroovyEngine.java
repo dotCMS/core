@@ -15,10 +15,10 @@
  */
 package com.dotmarketing.scripting.engine;
 
-import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.Closure;
-import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.GroovyClassLoader;
-import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.GroovyObject;
-import com.dotcms.repackage.groovy_all_1_7_0.groovy.lang.GroovyShell;
+import com.dotcms.repackage.groovy_all.groovy.lang.Closure;
+import com.dotcms.repackage.groovy_all.groovy.lang.GroovyClassLoader;
+import com.dotcms.repackage.groovy_all.groovy.lang.GroovyObject;
+import com.dotcms.repackage.groovy_all.groovy.lang.GroovyShell;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;

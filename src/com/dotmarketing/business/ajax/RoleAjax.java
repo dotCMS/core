@@ -11,8 +11,8 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.dwr.org.directwebremoting.WebContext;
+import com.dotcms.repackage.dwr.org.directwebremoting.WebContextFactory;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -61,7 +61,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 
-import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.backport_util_concurrent.edu.emory.mathcs.backport.java.util.Collections;
 
 public class RoleAjax {
 

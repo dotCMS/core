@@ -17,12 +17,12 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
-import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.ConnectTimeoutException;
-import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.params.HttpConnectionParams;
-import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.protocol.ControllerThreadSocketFactory;
-import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
-import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
+import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.ConnectTimeoutException;
+import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.params.HttpConnectionParams;
+import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.protocol.ControllerThreadSocketFactory;
+import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import com.dotcms.repackage.tika_app.org.apache.log4j.Logger;
 import com.dotcms.autoupdater.AuthSSLInitializationError;
 import com.dotcms.autoupdater.AuthSSLX509TrustManager;
 import com.dotcms.autoupdater.Messages;

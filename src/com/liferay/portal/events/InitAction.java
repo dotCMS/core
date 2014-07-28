@@ -30,14 +30,14 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Level;
-import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.LogManager;
-import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
-import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.helpers.NullEnumeration;
-import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.xml.DOMConfigurator;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.SAXReader;
+import com.dotcms.repackage.tika_app.org.apache.log4j.Level;
+import com.dotcms.repackage.tika_app.org.apache.log4j.LogManager;
+import com.dotcms.repackage.tika_app.org.apache.log4j.Logger;
+import com.dotcms.repackage.tika_app.org.apache.log4j.helpers.NullEnumeration;
+import com.dotcms.repackage.tika_app.org.apache.log4j.xml.DOMConfigurator;
+import com.dotcms.repackage.tika_app.org.dom4j.Document;
+import com.dotcms.repackage.tika_app.org.dom4j.Element;
+import com.dotcms.repackage.tika_app.org.dom4j.io.SAXReader;
 
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.struts.SimpleAction;

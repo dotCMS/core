@@ -11,9 +11,9 @@ import java.util.Map;
 
 import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils;
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.EqualsBuilder;
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.HashCodeBuilder;
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.commons_lang.org.apache.commons.lang.builder.EqualsBuilder;
+import com.dotcms.repackage.commons_lang.org.apache.commons.lang.builder.HashCodeBuilder;
+import com.dotcms.repackage.commons_lang.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;

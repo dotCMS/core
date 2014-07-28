@@ -17,16 +17,16 @@ package com.dotmarketing.util.diff;
 
 import java.io.IOException;
 
-import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.Templates;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.TransformerConfigurationException;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.TransformerFactory;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.TransformerFactoryConfigurationError;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.sax.SAXResult;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.sax.SAXTransformerFactory;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.sax.TransformerHandler;
-import com.dotcms.repackage.tika_app_1_3.javax.xml.transform.stream.StreamSource;
+import com.dotcms.repackage.tika_app.javax.xml.transform.Templates;
+import com.dotcms.repackage.tika_app.javax.xml.transform.TransformerConfigurationException;
+import com.dotcms.repackage.tika_app.javax.xml.transform.TransformerFactory;
+import com.dotcms.repackage.tika_app.javax.xml.transform.TransformerFactoryConfigurationError;
+import com.dotcms.repackage.tika_app.javax.xml.transform.sax.SAXResult;
+import com.dotcms.repackage.tika_app.javax.xml.transform.sax.SAXTransformerFactory;
+import com.dotcms.repackage.tika_app.javax.xml.transform.sax.TransformerHandler;
+import com.dotcms.repackage.tika_app.javax.xml.transform.stream.StreamSource;
 
-import com.dotcms.repackage.tika_app_1_3.org.xml.sax.ContentHandler;
+import com.dotcms.repackage.tika_app.org.xml.sax.ContentHandler;
 
 import com.dotmarketing.util.Logger;
 

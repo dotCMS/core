@@ -14,9 +14,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
+import com.dotcms.repackage.dwr.org.directwebremoting.WebContext;
 
-import com.dotcms.repackage.dwr_3rc2modified.uk.ltd.getahead.dwr.WebContextFactory;
+import com.dotcms.repackage.dwr.uk.ltd.getahead.dwr.WebContextFactory;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

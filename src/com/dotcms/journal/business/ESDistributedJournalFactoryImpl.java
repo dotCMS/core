@@ -28,7 +28,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.backport_util_concurrent.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactory<T> {
 

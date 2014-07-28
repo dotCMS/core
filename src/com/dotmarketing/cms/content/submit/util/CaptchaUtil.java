@@ -3,7 +3,7 @@ package com.dotmarketing.cms.content.submit.util;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.Captcha;
+import com.dotcms.repackage.simplecaptcha.nl.captcha.Captcha;
 
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;

@@ -26,8 +26,8 @@ import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
 
-import com.dotcms.repackage.antlr_3_1_2.antlr.Utils;
-import com.dotcms.repackage.bsh_2_0b4.bsh.util.Util;
+import com.dotcms.repackage.antlr.antlr.Utils;
+import com.dotcms.repackage.bsh.bsh.util.Util;
 
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;

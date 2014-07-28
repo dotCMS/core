@@ -15,8 +15,8 @@ import com.dotcms.repackage.portlet.javax.portlet.WindowState;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.commons_collections_3_2.org.apache.commons.collections.CollectionUtils;
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.commons_collections.org.apache.commons.collections.CollectionUtils;
+import com.dotcms.repackage.dwr.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
