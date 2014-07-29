@@ -64,7 +64,7 @@ import org.apache.velocity.util.introspection.ChainableUberspector;
 import org.apache.velocity.util.introspection.Introspector;
 import org.apache.velocity.util.introspection.LinkingUberspector;
 import org.apache.velocity.util.introspection.Uberspect;
-import org.github.jamm.MemoryMeter;
+import com.dotcms.repackage.jamm.org.github.jamm.MemoryMeter;
 
 import com.dotmarketing.util.Logger;
 

@@ -1,7 +1,7 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotcms.repackage.guava.com.google.common.cache.Cache"%>
-<%@page import="org.github.jamm.MemoryMeter"%>
+<%@page import="com.dotcms.repackage.jamm.org.github.jamm.MemoryMeter"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.repackage.guava.com.google.common.cache.CacheStats"%>
