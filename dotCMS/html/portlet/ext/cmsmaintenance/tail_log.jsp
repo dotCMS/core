@@ -105,8 +105,11 @@
 		}
 
 
-		<%if(request.getParameter("fileName")!= null){%>
-		dijit.byId("fileName").attr("displayedValue","<%=com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName")).replace(logPath + File.separator, "")%>");
+		<%if(request.getParameter("fileName")!= null){
+			String selectedFileNameStr = com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName")).replace(logPath + File.separator, "");
+			selectedFileNameStr = selectedFileNameStr.replace("\\", "\\\\");
+		%>
+		dijit.byId("fileName").attr("displayedValue","<%=selectedFileNameStr%>");
 		<%}%>
 
 	});
