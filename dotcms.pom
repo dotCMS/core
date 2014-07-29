@@ -1,0 +1,1238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.dotcms</groupId>
+    <artifactId>dotcms</artifactId>
+    <name>dotcms</name>
+    <version>3.0</version>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.abdera-client</artifactId>
+            <version>0.4.0-incubating_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.abdera-core</artifactId>
+            <version>0.4.0-incubating_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.abdera-extensions-html</artifactId>
+            <version>0.4.0-incubating_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.abdera-extensions-json</artifactId>
+            <version>0.4.0-incubating_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.abdera-extensions-main</artifactId>
+            <version>0.4.0-incubating_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.abdera-i18n</artifactId>
+            <version>0.4.0-incubating_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.abdera-parser</artifactId>
+            <version>0.4.0-incubating_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.abdera-server</artifactId>
+            <version>0.4.0-incubating_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>ant-tooling</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.antlr</artifactId>
+            <version>3.1.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.apache-solr-core</artifactId>
+            <version>1.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.apache-solr-solrj</artifactId>
+            <version>1.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.asm</artifactId>
+            <version>3.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.axiom-api</artifactId>
+            <version>1.2.5_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.axiom-impl</artifactId>
+            <version>1.2.5_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.backport-util-concurrent</artifactId>
+            <version>3.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.bsf</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>bsh</artifactId>
+            <version>2.0b4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.cactus.integration.ant</artifactId>
+            <version>1.8.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.cargo-ant</artifactId>
+            <version>0.9_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.cargo-core-uberjar</artifactId>
+            <version>0.9_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.castor</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.cglib-nodep</artifactId>
+            <version>2.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.chemistry-commons</artifactId>
+            <version>0.5-SNAPSHOT_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.chemistry-opencmis-commons-api</artifactId>
+            <version>0.8.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.chemistry-opencmis-commons-impl</artifactId>
+            <version>0.8.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.chemistry-opencmis-server-bindings</artifactId>
+            <version>0.8.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.chemistry-opencmis-server-support</artifactId>
+            <version>0.8.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.chemistry-opencmis-test-util</artifactId>
+            <version>0.8.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.com.dotmarketing.jhlabs.images.filters</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-beanutils</artifactId>
+            <version>1.6.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-cli</artifactId>
+            <version>1.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-collections</artifactId>
+            <version>3.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-configuration</artifactId>
+            <version>1.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-dbcp</artifactId>
+            <version>1.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-digester</artifactId>
+            <version>1.7_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-fileupload</artifactId>
+            <version>1.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-httpclient</artifactId>
+            <version>3.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-io</artifactId>
+            <version>2.0.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-jci-core</artifactId>
+            <version>1.0-406301_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-jci-eclipse</artifactId>
+            <version>3.2.0.666_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-lang</artifactId>
+            <version>2.4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-net</artifactId>
+            <version>1.4.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-pool</artifactId>
+            <version>1.5.4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-validator</artifactId>
+            <version>1.1.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.compression-filter</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.concurrent</artifactId>
+            <version>1.3.4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.core-renderer-modified</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.cos</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.counter-ejb</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.daisydiff</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.dnsjava</artifactId>
+            <version>2.0.8_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.drools-compiler</artifactId>
+            <version>3.0.5_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.drools-core</artifactId>
+            <version>3.0.5_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.drools-decisiontables</artifactId>
+            <version>3.0.5_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.drools-jsr94</artifactId>
+            <version>3.0.5_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.dwr</artifactId>
+            <version>3rc2modified_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.ehcache</artifactId>
+            <version>1.6.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.elasticsearch</artifactId>
+            <version>0.90.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.esapi</artifactId>
+            <version>2.0.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.felix</artifactId>
+            <version>4.2.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.fileupload-ext</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.fop</artifactId>
+            <version>0.20.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.gif89</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.google</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.groovy-all</artifactId>
+            <version>1.7.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.guava</artifactId>
+            <version>11.0.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.hadoop-dev-tools</artifactId>
+            <version>0.20.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.hadoop-dev-core</artifactId>
+            <version>0.20.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.hibernate</artifactId>
+            <version>2.1.7_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.httpbridge</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.httpclient</artifactId>
+            <version>4.2.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.httpcore</artifactId>
+            <version>4.2.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.icu4j</artifactId>
+            <version>4.0.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.iText</artifactId>
+            <version>2.1.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jackson-core-asl</artifactId>
+            <version>1.9.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jackson-jaxrs</artifactId>
+            <version>1.9.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jackson-mapper-asl</artifactId>
+            <version>1.9.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jackson-xc</artifactId>
+            <version>1.9.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jamm</artifactId>
+            <version>0.2.5_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jarjar</artifactId>
+            <version>1.4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jasperreports</artifactId>
+            <version>3.5.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.javacsv</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jaxen</artifactId>
+            <version>1.1.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jazzy-core</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jboss-common-core</artifactId>
+            <version>2.2.3.GA_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jboss-logging-spi</artifactId>
+            <version>2.0.5.GA_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jbosscache-core</artifactId>
+            <version>3.2.5.GA_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jcaptcha-mod</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jempbox</artifactId>
+            <version>1.6.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jep</artifactId>
+            <version>2.4.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jersey-client</artifactId>
+            <version>1.12_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jersey-core</artifactId>
+            <version>1.12_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jersey-json</artifactId>
+            <version>1.12_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jersey-multipart</artifactId>
+            <version>1.12_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jersey-server</artifactId>
+            <version>1.12_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jersey-servlet</artifactId>
+            <version>1.12_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jettison</artifactId>
+            <version>1.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jfreechart</artifactId>
+            <version>1.0.13_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jgroups</artifactId>
+            <version>2.12.2.Final_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jid3lib</artifactId>
+            <version>0.5.4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.JLinkPointTxn</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.js-14</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.json-jspellchecker-dep</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.json</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jsoup</artifactId>
+            <version>1.6.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jstl</artifactId>
+            <version>1.0.5_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jta</artifactId>
+            <version>1.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.junit</artifactId>
+            <version>4.8.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jxl</artifactId>
+            <version>2.6_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.jython</artifactId>
+            <version>2.2.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.ldap</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lesscss</artifactId>
+            <version>1.5.1-SNAPSHOT_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.log4j-appenders</artifactId>
+            <version>1.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-analyzers-common</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-codecs</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-core</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-highlighter</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-join</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-memory</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-queries</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-queryparser</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-sandbox</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.lucene-suggest</artifactId>
+            <version>4.4.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.mail-ejb</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.milton-api</artifactId>
+            <version>1.8.1.4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.milton-servlet</artifactId>
+            <version>1.8.1.4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.mime-util</artifactId>
+            <version>2.1.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.mimepull</artifactId>
+            <version>1.6_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.mockito-all</artifactId>
+            <version>1.9.5_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.msnm</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.myspell</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.nekohtml</artifactId>
+            <version>1.9.17_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.odmg</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.apache.felix.bundlerepository</artifactId>
+            <version>1.6.6_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.apache.felix.fileinstall</artifactId>
+            <version>3.1.10_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.apache.felix.gogo.command</artifactId>
+            <version>0.12.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.apache.felix.gogo.runtime</artifactId>
+            <version>0.10.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.apache.felix.gogo.shell</artifactId>
+            <version>0.10.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.apache.felix.http.bundle</artifactId>
+            <version>2.2.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.apache.felix.http.proxy</artifactId>
+            <version>2.2.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.eclipse.mylyn.wikitext.confluence.core</artifactId>
+            <version>1.8.0.I20120918-1109_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.eclipse.mylyn.wikitext.core</artifactId>
+            <version>1.8.0.I20120918-1109_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.eclipse.mylyn.wikitext.mediawiki.core</artifactId>
+            <version>1.8.0.I20120918-1109_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.eclipse.mylyn.wikitext.textile.core</artifactId>
+            <version>1.8.0.I20120918-1109_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.eclipse.mylyn.wikitext.tracwiki.core</artifactId>
+            <version>1.8.0.I20120918-1109_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.org.eclipse.mylyn.wikitext.twiki.core</artifactId>
+            <version>1.8.0.I20120918-1109_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>oro</artifactId>
+            <version>2.0.8_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.platform</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.portlet</artifactId>
+            <version>1.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.quartz-all</artifactId>
+            <version>1.8.6_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.quercus</artifactId>
+            <version>3.0.15_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.resin-util</artifactId>
+            <version>3.1.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>rhino</artifactId>
+            <version>1.7R4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.secure-filter</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.simplecaptcha</artifactId>
+            <version>1.2.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.slf4j-api</artifactId>
+            <version>1.6.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.slf4j-jcl</artifactId>
+            <version>1.6.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.snappy-java</artifactId>
+            <version>1.0.4.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.sslext</artifactId>
+            <version>1.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.struts</artifactId>
+            <version>1.2.4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.stxx</artifactId>
+            <version>1.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.tagsoup</artifactId>
+            <version>1.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.Tidy</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.tika-app</artifactId>
+            <version>1.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.trove</artifactId>
+            <version>1.0.2_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.twitter4j-core</artifactId>
+            <version>3.0.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.urlrewritefilter</artifactId>
+            <version>4.0.3_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.util-taglib</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.Verisign</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.wbmp</artifactId>
+            <version>ukv_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.werken-xpath</artifactId>
+            <version>0.9.4_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.xalan</artifactId>
+            <version>2.7.0_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.xmlpull</artifactId>
+            <version>1.1.3.1_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.xpp3-min</artifactId>
+            <version>1.1.4c_1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.xstream</artifactId>
+            <version>1.4.4_1</version>
+        </dependency>
+
+        <!--+++++++++++++++++++++++++++++++++++++++++++++-->
+        <!--Dependencies not modified by dotcms-->
+        <!--+++++++++++++++++++++++++++++++++++++++++++++-->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-asm</artifactId>
+            <version>3.1.0.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>3.1.0.RELEASE</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>3.1.0.RELEASE</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>aopalliance</groupId>
+                    <artifactId>aopalliance</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-aop</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-context-support</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>3.1.0.RELEASE</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
+            <version>3.1.0.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>3.1.0.RELEASE</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>aopalliance</groupId>
+                    <artifactId>aopalliance</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-aop</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>3.1.0.RELEASE</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>aopalliance</groupId>
+                    <artifactId>aopalliance</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-aop</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>3.1.0.RELEASE</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>aopalliance</groupId>
+                    <artifactId>aopalliance</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-aop</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>3.1.0.RELEASE</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-context-support</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.nanoko.libs</groupId>
+            <artifactId>compass-gems</artifactId>
+            <version>0.12.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jruby</groupId>
+            <artifactId>jruby-complete</artifactId>
+            <version>1.7.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.3.176</version>
+        </dependency>
+        <!--+++++++++++++++++++++++++++++++++++++++++++++-->
+        <!--Dependencies not modified by dotcms-->
+        <!--+++++++++++++++++++++++++++++++++++++++++++++-->
+
+        <!--<dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>ant-tooling</artifactId>
+            <version>1.0</version>
+        </dependency>-->
+        <!--<dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.ant-tooling</artifactId>
+            <version>ukv.1</version>
+        </dependency>-->
+
+        <!--<dependency>
+			<groupId>com.dotcms.lib</groupId>
+			<artifactId>dotcms_ant</artifactId>
+			<version>2.5.1</version>
+		</dependency>-->
+
+        <!--<dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>ee</artifactId>
+            <version>2.5.3</version>
+        </dependency>-->
+        <!--<dependency>
+			<groupId>com.dotcms.lib</groupId>
+			<artifactId>ee</artifactId>
+			<version>3.0</version>
+		</dependency>-->
+
+	</dependencies>
+</project>
