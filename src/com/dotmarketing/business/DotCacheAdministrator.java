@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.dotcms.repackage.jgroups.org.jgroups.JChannel;
+import com.dotcms.repackage.org.jgroups.JChannel;
 
 
 /**

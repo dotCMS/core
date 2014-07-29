@@ -1,6 +1,6 @@
 package com.dotcms.content.elasticsearch.util;
-import static com.dotcms.repackage.elasticsearch.org.elasticsearch.node.NodeBuilder.nodeBuilder;
-import static com.dotcms.repackage.elasticsearch.org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static com.dotcms.repackage.org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import static com.dotcms.repackage.org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -18,11 +18,11 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.common.settings.ImmutableSettings;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.node.Node;
+import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
+import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
+import com.dotcms.repackage.org.elasticsearch.client.Client;
+import com.dotcms.repackage.org.elasticsearch.common.settings.ImmutableSettings;
+import com.dotcms.repackage.org.elasticsearch.node.Node;
 import com.dotcms.elasticsearch.script.RelationshipSortOrderScriptFactory;
 import com.liferay.util.FileUtil;
 

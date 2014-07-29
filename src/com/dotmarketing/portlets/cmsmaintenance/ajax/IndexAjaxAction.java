@@ -15,13 +15,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.FileItem;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.FileItemFactory;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.FileUploadException;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.servlet.ServletFileUpload;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.status.IndexStatus;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
+import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.elasticsearch.action.admin.indices.status.IndexStatus;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;

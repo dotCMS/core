@@ -18,23 +18,23 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.dotcms.repackage.jersey.javax.ws.rs.Consumes;
-import com.dotcms.repackage.jersey.javax.ws.rs.GET;
-import com.dotcms.repackage.jersey.javax.ws.rs.PUT;
-import com.dotcms.repackage.jersey.javax.ws.rs.Path;
-import com.dotcms.repackage.jersey.javax.ws.rs.PathParam;
-import com.dotcms.repackage.jersey.javax.ws.rs.Produces;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Context;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Response.Status;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.jettison.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.jettison.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.jettison.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -62,16 +62,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.jersey.com.sun.jersey.core.header.ContentDisposition;
-import com.dotcms.repackage.jersey.com.sun.jersey.multipart.BodyPart;
-import com.dotcms.repackage.jersey.com.sun.jersey.multipart.FormDataMultiPart;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.converters.Converter;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.converters.MarshallingContext;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.converters.UnmarshallingContext;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.HierarchicalStreamReader;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.com.sun.jersey.core.header.ContentDisposition;
+import com.dotcms.repackage.com.sun.jersey.multipart.BodyPart;
+import com.dotcms.repackage.com.sun.jersey.multipart.FormDataMultiPart;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.converters.Converter;
+import com.dotcms.repackage.com.thoughtworks.xstream.converters.MarshallingContext;
+import com.dotcms.repackage.com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 @Path("/content")
 public class ContentResource extends WebResource {

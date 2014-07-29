@@ -5,10 +5,10 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.jsoup.org.jsoup.Jsoup;
-import com.dotcms.repackage.jsoup.org.jsoup.nodes.Document;
-import com.dotcms.repackage.jsoup.org.jsoup.nodes.Element;
-import com.dotcms.repackage.jsoup.org.jsoup.select.Elements;
+import com.dotcms.repackage.org.jsoup.Jsoup;
+import com.dotcms.repackage.org.jsoup.nodes.Document;
+import com.dotcms.repackage.org.jsoup.nodes.Element;
+import com.dotcms.repackage.org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.List;

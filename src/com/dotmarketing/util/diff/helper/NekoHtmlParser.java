@@ -17,13 +17,13 @@ package com.dotmarketing.util.diff.helper;
 
 import java.io.IOException;
 
-import com.dotcms.repackage.tika_app.org.cyberneko.html.parsers.SAXParser;
-import com.dotcms.repackage.tika_app.org.xml.sax.Attributes;
-import com.dotcms.repackage.tika_app.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.tika_app.org.xml.sax.InputSource;
-import com.dotcms.repackage.tika_app.org.xml.sax.Locator;
-import com.dotcms.repackage.tika_app.org.xml.sax.SAXException;
-import com.dotcms.repackage.tika_app.org.xml.sax.helpers.AttributesImpl;
+import com.dotcms.repackage.org.cyberneko.html.parsers.SAXParser;
+import com.dotcms.repackage.org.xml.sax.Attributes;
+import com.dotcms.repackage.org.xml.sax.ContentHandler;
+import com.dotcms.repackage.org.xml.sax.InputSource;
+import com.dotcms.repackage.org.xml.sax.Locator;
+import com.dotcms.repackage.org.xml.sax.SAXException;
+import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Parses HTML files using the Neko HTML parser. Puts all elements and attribute

@@ -1,10 +1,10 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="com.dotcms.repackage.guava.com.google.common.cache.Cache"%>
-<%@page import="com.dotcms.repackage.jamm.org.github.jamm.MemoryMeter"%>
+<%@page import="com.dotcms.repackage.com.google.common.cache.Cache"%>
+<%@page import="com.dotcms.repackage.org.github.jamm.MemoryMeter"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotcms.repackage.guava.com.google.common.cache.CacheStats"%>
+<%@page import="com.dotcms.repackage.com.google.common.cache.CacheStats"%>
 <%@page import="com.dotmarketing.business.DotGuavaCacheAdministratorImpl"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
@@ -202,7 +202,7 @@ MemoryMeter meter = new MemoryMeter();
 	          				<%= UtilMethods.prettyMemory( meter.measureDeep(stats)) %> 
 	         
 	                	<%}catch(Exception e){ %>
-	                		Set Jamm at statup, e.g. -javaagent:./dotCMS/WEB-INF/lib/jamm-0.2.5.jar
+	                		Set Jamm at statup, e.g. -javaagent:./dotCMS/WEB-INF/lib/dot.jamm_0.2.5.jar
 	                	<%} %>
                 	 </td>
                 <%} %>       

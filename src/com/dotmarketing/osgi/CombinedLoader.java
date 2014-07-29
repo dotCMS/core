@@ -1,6 +1,6 @@
 package com.dotmarketing.osgi;
 
-import com.dotcms.repackage.felix.org.apache.felix.framework.BundleWiringImpl;
+import com.dotcms.repackage.org.apache.felix.framework.BundleWiringImpl;
 
 import java.io.IOException;
 import java.net.URL;

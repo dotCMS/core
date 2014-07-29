@@ -31,8 +31,8 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 
-import com.dotcms.repackage.commons_collections.org.apache.commons.collections.ExtendedProperties;
-import com.dotcms.repackage.commons_lang.org.apache.commons.lang.text.StrBuilder;
+import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.event.EventCartridge;
 import org.apache.velocity.app.event.EventHandler;
@@ -64,7 +64,7 @@ import org.apache.velocity.util.introspection.ChainableUberspector;
 import org.apache.velocity.util.introspection.Introspector;
 import org.apache.velocity.util.introspection.LinkingUberspector;
 import org.apache.velocity.util.introspection.Uberspect;
-import com.dotcms.repackage.jamm.org.github.jamm.MemoryMeter;
+import com.dotcms.repackage.org.github.jamm.MemoryMeter;
 
 import com.dotmarketing.util.Logger;
 

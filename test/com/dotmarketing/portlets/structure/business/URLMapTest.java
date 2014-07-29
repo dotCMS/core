@@ -13,11 +13,11 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.junit.org.junit.After;
-import com.dotcms.repackage.junit.org.junit.Assert;
-import com.dotcms.repackage.junit.org.junit.Before;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.junit.After;
+import com.dotcms.repackage.org.junit.Assert;
+import com.dotcms.repackage.org.junit.Before;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotcms.publisher.business.PublisherAPIImpl;

@@ -1,14 +1,14 @@
 package com.dotmarketing.listeners;
 
-import com.dotcms.repackage.tika_app.org.dom4j.Document;
-import com.dotcms.repackage.tika_app.org.dom4j.DocumentHelper;
-import com.dotcms.repackage.tika_app.org.dom4j.Element;
-import com.dotcms.repackage.tika_app.org.dom4j.io.OutputFormat;
-import com.dotcms.repackage.tika_app.org.dom4j.io.XMLWriter;
-import com.dotcms.repackage.junit.org.junit.runner.Description;
-import com.dotcms.repackage.junit.org.junit.runner.Result;
-import com.dotcms.repackage.junit.org.junit.runner.notification.Failure;
-import com.dotcms.repackage.junit.org.junit.runner.notification.RunListener;
+import com.dotcms.repackage.org.dom4j.Document;
+import com.dotcms.repackage.org.dom4j.DocumentHelper;
+import com.dotcms.repackage.org.dom4j.Element;
+import com.dotcms.repackage.org.dom4j.io.OutputFormat;
+import com.dotcms.repackage.org.dom4j.io.XMLWriter;
+import com.dotcms.repackage.org.junit.runner.Description;
+import com.dotcms.repackage.org.junit.runner.Result;
+import com.dotcms.repackage.org.junit.runner.notification.Failure;
+import com.dotcms.repackage.org.junit.runner.notification.RunListener;
 
 import javax.servlet.http.HttpServletResponse;
 

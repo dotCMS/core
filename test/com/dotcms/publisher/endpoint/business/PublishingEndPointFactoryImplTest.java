@@ -1,7 +1,7 @@
 package com.dotcms.publisher.endpoint.business;
 
-import com.dotcms.repackage.junit.org.junit.Before;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.Before;
+import com.dotcms.repackage.org.junit.Test;
 
 import static com.dotcms.repackage.jgroups.org.jgroups.util.Util.assertFalse;
 import static com.dotcms.repackage.junit.org.junit.Assert.assertNotNull;

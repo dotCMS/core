@@ -22,7 +22,7 @@
 
 package com.liferay.portlet;
 
-import com.dotcms.repackage.portlet.javax.portlet.PortletMode;
+import com.dotcms.repackage.javax.portlet.PortletMode;
 
 /**
  * <a href="LiferayPortletMode.java.html"><b><i>View Source</i></b></a>

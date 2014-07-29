@@ -28,7 +28,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
-import com.dotcms.repackage.commons_collections.org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;

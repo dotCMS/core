@@ -11,11 +11,11 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.junit.junit.framework.Assert;
+import com.dotcms.repackage.junit.framework.Assert;
 
-import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Permission;
@@ -34,7 +34,7 @@ import com.ettrema.httpclient.File;
 import com.ettrema.httpclient.Folder;
 import com.ettrema.httpclient.Host;
 import com.ettrema.httpclient.Resource;
-import com.dotcms.repackage.icu4j.com.ibm.icu.util.Calendar;
+import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
 

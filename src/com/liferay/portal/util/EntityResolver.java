@@ -24,7 +24,7 @@ package com.liferay.portal.util;
 
 import java.io.InputStream;
 
-import com.dotcms.repackage.tika_app.org.xml.sax.InputSource;
+import com.dotcms.repackage.org.xml.sax.InputSource;
 
 import com.liferay.util.KeyValuePair;
 
@@ -35,7 +35,7 @@ import com.liferay.util.KeyValuePair;
  * @version $Revision: 1.7 $
  *
  */
-public class EntityResolver implements com.dotcms.repackage.tika_app.org.xml.sax.EntityResolver {
+public class EntityResolver implements com.dotcms.repackage.org.xml.sax.EntityResolver {
 
 	public static KeyValuePair[] IDS = {
 		new KeyValuePair(

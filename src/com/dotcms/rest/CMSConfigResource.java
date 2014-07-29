@@ -17,16 +17,16 @@ import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.jersey.com.sun.jersey.core.header.FormDataContentDisposition;
-import com.dotcms.repackage.jersey.com.sun.jersey.multipart.FormDataParam;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
+import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.jersey.javax.ws.rs.*;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Context;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.exception.SecurityException;
 
 import java.io.File;

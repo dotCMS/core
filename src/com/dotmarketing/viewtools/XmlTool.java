@@ -30,12 +30,12 @@ import java.util.Map;
 
 import org.apache.velocity.tools.generic.ValueParser;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import com.dotcms.repackage.tika_app.org.dom4j.Attribute;
-import com.dotcms.repackage.tika_app.org.dom4j.Document;
-import com.dotcms.repackage.tika_app.org.dom4j.DocumentHelper;
-import com.dotcms.repackage.tika_app.org.dom4j.Element;
-import com.dotcms.repackage.tika_app.org.dom4j.Node;
-import com.dotcms.repackage.tika_app.org.dom4j.io.SAXReader;
+import com.dotcms.repackage.org.dom4j.Attribute;
+import com.dotcms.repackage.org.dom4j.Document;
+import com.dotcms.repackage.org.dom4j.DocumentHelper;
+import com.dotcms.repackage.org.dom4j.Element;
+import com.dotcms.repackage.org.dom4j.Node;
+import com.dotcms.repackage.org.dom4j.io.SAXReader;
 
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.viewtools.cache.XmlToolCache;

@@ -19,8 +19,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import com.dotcms.repackage.javacsv.com.csvreader.CsvReader;
-import com.dotcms.repackage.javacsv.com.csvreader.CsvWriter;
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource.IntegrityType;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;

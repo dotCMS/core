@@ -28,10 +28,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-import com.dotcms.repackage.tika_app.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.tika_app.org.apache.tika.Tika;
+import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.apache.tika.Tika;
 
 import java.io.File;
 import java.io.FileInputStream;

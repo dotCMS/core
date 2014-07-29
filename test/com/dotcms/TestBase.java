@@ -2,8 +2,8 @@ package com.dotcms;
 
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotcms.repackage.hibernate.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.junit.org.junit.After;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.org.junit.After;
 
 import java.sql.SQLException;
 

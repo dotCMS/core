@@ -27,10 +27,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import com.dotcms.repackage.commons_collections.org.apache.commons.collections.map.LRUMap;
+import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 
-import com.dotcms.repackage.concurrent.EDU.oswego.cs.dl.util.concurrent.SyncMap;
-import com.dotcms.repackage.concurrent.EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.dotcms.repackage.EDU.oswego.cs.dl.util.concurrent.SyncMap;
+import com.dotcms.repackage.EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Image;

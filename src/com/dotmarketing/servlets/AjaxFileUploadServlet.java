@@ -16,16 +16,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.FileItem;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.FileItemFactory;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
+import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 
-import com.dotcms.repackage.fileupload_ext.com.missiondata.fileupload.MonitoredDiskFileItemFactory;
+import com.dotcms.repackage.com.missiondata.fileupload.MonitoredDiskFileItemFactory;
 
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserLocalManagerUtil;

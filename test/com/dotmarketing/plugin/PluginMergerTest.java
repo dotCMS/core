@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.plugin.util.PluginFileMerger;

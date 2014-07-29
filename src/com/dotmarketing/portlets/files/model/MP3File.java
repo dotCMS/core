@@ -7,9 +7,9 @@ package com.dotmarketing.portlets.files.model;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
-import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.jid3lib.org.farng.mp3.AbstractMP3Tag;
-import com.dotcms.repackage.jid3lib.org.farng.mp3.TagException;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.farng.mp3.AbstractMP3Tag;
+import com.dotcms.repackage.org.farng.mp3.TagException;
 
 import com.dotmarketing.business.APILocator;
 
@@ -65,7 +65,7 @@ public class MP3File extends File {
 		BeanUtils.copyProperties(this, file);
 
 		java.io.File ioFile = APILocator.getFileAPI().getAssetIOFile(file);
-		com.dotcms.repackage.jid3lib.org.farng.mp3.MP3File mp3 = new com.dotcms.repackage.jid3lib.org.farng.mp3.MP3File(ioFile);
+		com.dotcms.repackage.org.farng.mp3.MP3File mp3 = new com.dotcms.repackage.org.farng.mp3.MP3File(ioFile);
 
 		if (ioFile.length() > 0 && mp3.getBitRate() > 0) {
 			duration = (long) ((double) ioFile.length() / ((double) mp3.getBitRate() / 8.0));

@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.dotcms.repackage.junit.org.junit.Assert;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.Assert;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 

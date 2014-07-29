@@ -1,7 +1,7 @@
 package com.dotcms.autoupdater;
 
-import com.dotcms.repackage.tika_app.org.apache.log4j.Level;
-import com.dotcms.repackage.tika_app.org.apache.log4j.Logger;
+import com.dotcms.repackage.org.apache.log4j.Level;
+import com.dotcms.repackage.org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;

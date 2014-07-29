@@ -2,8 +2,8 @@ package com.dotmarketing.viewtools.cache;
 
 import java.util.Date;
 
-import com.dotcms.repackage.tika_app.org.bouncycastle.crypto.digests.SHA1Digest;
-import com.dotcms.repackage.tika_app.org.bouncycastle.util.encoders.Base64;
+import com.dotcms.repackage.org.bouncycastle.crypto.digests.SHA1Digest;
+import com.dotcms.repackage.org.bouncycastle.util.encoders.Base64;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;

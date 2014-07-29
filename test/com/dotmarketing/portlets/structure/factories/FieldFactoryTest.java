@@ -6,7 +6,7 @@ import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.Test;
 
 import java.util.Collection;
 import java.util.Date;

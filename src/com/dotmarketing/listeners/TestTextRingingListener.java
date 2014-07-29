@@ -1,9 +1,9 @@
 package com.dotmarketing.listeners;
 
-import com.dotcms.repackage.junit.org.junit.runner.Description;
-import com.dotcms.repackage.junit.org.junit.runner.Result;
-import com.dotcms.repackage.junit.org.junit.runner.notification.Failure;
-import com.dotcms.repackage.junit.org.junit.runner.notification.RunListener;
+import com.dotcms.repackage.org.junit.runner.Description;
+import com.dotcms.repackage.org.junit.runner.Result;
+import com.dotcms.repackage.org.junit.runner.notification.Failure;
+import com.dotcms.repackage.org.junit.runner.notification.RunListener;
 
 import javax.servlet.http.HttpServletResponse;
 import java.text.NumberFormat;

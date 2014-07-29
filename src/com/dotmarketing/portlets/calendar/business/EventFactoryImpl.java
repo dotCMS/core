@@ -35,7 +35,7 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import com.dotcms.repackage.backport_util_concurrent.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class EventFactoryImpl extends EventFactory {
 

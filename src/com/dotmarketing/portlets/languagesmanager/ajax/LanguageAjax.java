@@ -10,8 +10,8 @@ import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.dwr.org.directwebremoting.WebContext;
-import com.dotcms.repackage.dwr.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -29,7 +29,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
-import com.dotcms.repackage.backport_util_concurrent.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class LanguageAjax {
 

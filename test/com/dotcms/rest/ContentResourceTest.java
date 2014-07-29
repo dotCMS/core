@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.jettison.org.codehaus.jettison.json.JSONObject;
-import com.dotcms.repackage.junit.org.junit.Assert;
-import com.dotcms.repackage.junit.org.junit.Before;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.org.junit.Assert;
+import com.dotcms.repackage.org.junit.Before;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
@@ -48,17 +48,17 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotcms.repackage.icu4j.com.ibm.icu.util.Calendar;
+import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.jersey.com.sun.jersey.api.client.Client;
-import com.dotcms.repackage.jersey.com.sun.jersey.api.client.ClientResponse;
-import com.dotcms.repackage.jersey.com.sun.jersey.api.client.WebResource;
-import com.dotcms.repackage.jersey.com.sun.jersey.core.util.Base64;
-import com.dotcms.repackage.jersey.com.sun.jersey.multipart.BodyPart;
-import com.dotcms.repackage.jersey.com.sun.jersey.multipart.MultiPart;
-import com.dotcms.repackage.jersey.com.sun.jersey.multipart.file.StreamDataBodyPart;
+import com.dotcms.repackage.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
+import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
+import com.dotcms.repackage.com.sun.jersey.core.util.Base64;
+import com.dotcms.repackage.com.sun.jersey.multipart.BodyPart;
+import com.dotcms.repackage.com.sun.jersey.multipart.MultiPart;
+import com.dotcms.repackage.com.sun.jersey.multipart.file.StreamDataBodyPart;
 
-import com.dotcms.repackage.backport_util_concurrent.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ContentResourceTest extends TestBase {
     Client client;

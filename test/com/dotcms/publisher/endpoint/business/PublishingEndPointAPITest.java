@@ -12,9 +12,9 @@ import com.dotcms.TestBase;
 import com.dotcms.publisher.endpoint.bean.*;
 import static com.dotcms.repackage.junit.org.junit.Assert.assertTrue;
 import static com.dotcms.repackage.junit.org.junit.Assert.assertFalse;
-import com.dotcms.repackage.junit.org.junit.BeforeClass;
-import com.dotcms.repackage.junit.org.junit.AfterClass;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.AfterClass;
+import com.dotcms.repackage.org.junit.Test;
 
 /**
  * @author brent griffin

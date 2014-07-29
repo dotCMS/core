@@ -5,12 +5,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.methods.EntityEnclosingMethod;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.tika_app.org.jdom.Document;
-import com.dotcms.repackage.tika_app.org.jdom.JDOMException;
-import com.dotcms.repackage.slf4j_api.org.slf4j.Logger;
-import com.dotcms.repackage.slf4j_api.org.slf4j.LoggerFactory;
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.jdom.Document;
+import com.dotcms.repackage.org.jdom.JDOMException;
+import com.dotcms.repackage.org.slf4j.Logger;
+import com.dotcms.repackage.org.slf4j.LoggerFactory;
 
 /**
  *

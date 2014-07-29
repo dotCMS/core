@@ -26,8 +26,8 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
  * @author jasontesser

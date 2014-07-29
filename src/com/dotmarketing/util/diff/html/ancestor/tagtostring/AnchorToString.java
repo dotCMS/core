@@ -20,8 +20,8 @@ import java.util.ResourceBundle;
 import com.dotmarketing.util.diff.html.ancestor.ChangeText;
 import com.dotmarketing.util.diff.html.ancestor.TagChangeSematic;
 import com.dotmarketing.util.diff.html.dom.TagNode;
-import com.dotcms.repackage.tika_app.org.xml.sax.Attributes;
-import com.dotcms.repackage.tika_app.org.xml.sax.helpers.AttributesImpl;
+import com.dotcms.repackage.org.xml.sax.Attributes;
+import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
 
 public class AnchorToString extends TagToString {
 

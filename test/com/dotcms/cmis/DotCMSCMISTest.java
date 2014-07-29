@@ -9,8 +9,8 @@ import java.io.FileWriter;
 import java.math.BigInteger;
 import java.util.List;
 
-import com.dotcms.repackage.chemistry_opencmis_commons_api.org.apache.chemistry.opencmis.commons.data.ObjectList;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.data.ObjectList;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotmarketing.beans.Host;

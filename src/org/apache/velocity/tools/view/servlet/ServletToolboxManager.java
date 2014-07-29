@@ -32,8 +32,8 @@ import java.util.ArrayList;
 import javax.servlet.http.HttpSession;
 import javax.servlet.ServletContext;
 
-import com.dotcms.repackage.commons_digester.org.apache.commons.digester.Digester;
-import com.dotcms.repackage.commons_digester.org.apache.commons.digester.RuleSet;
+import com.dotcms.repackage.org.apache.commons.digester.Digester;
+import com.dotcms.repackage.org.apache.commons.digester.RuleSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.DataInfo;
@@ -43,7 +43,7 @@ import org.apache.velocity.tools.view.XMLToolboxManager;
 import org.apache.velocity.tools.view.context.ToolboxContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.servlet.ServletToolboxRuleSet;
-import com.dotcms.repackage.felix.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.Config;

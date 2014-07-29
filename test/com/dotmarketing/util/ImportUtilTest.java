@@ -1,10 +1,10 @@
 package com.dotmarketing.util;
 
 import com.dotcms.TestBase;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.javacsv.com.csvreader.CsvReader;
-import com.dotcms.repackage.junit.org.junit.BeforeClass;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;

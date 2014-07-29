@@ -27,8 +27,8 @@ package org.tinymce.spellchecker;
 */
 
 
-import com.dotcms.repackage.myspell.org.dts.spell.SpellChecker;
-import com.dotcms.repackage.myspell.org.dts.spell.dictionary.SpellDictionary;
+import com.dotcms.repackage.org.dts.spell.SpellChecker;
+import com.dotcms.repackage.org.dts.spell.dictionary.SpellDictionary;
 
 import java.io.File;
 import java.io.IOException;
@@ -120,7 +120,7 @@ public class JMySpellCheckerServlet extends TinyMCESpellCheckerServlet {
 
         SpellDictionary dict = null;
         try {
-            dict = new com.dotcms.repackage.myspell.org.dts.spell.dictionary.openoffice.OpenOfficeSpellDictionary(new ZipFile(dictionaryFile));
+            dict = new com.dotcms.repackage.org.dts.spell.dictionary.openoffice.OpenOfficeSpellDictionary(new ZipFile(dictionaryFile));
         } catch (IOException e) {
             throw new SpellCheckException("Failed to load dictionary for language" + lang, e);
         }

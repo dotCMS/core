@@ -25,9 +25,9 @@ package com.liferay.util.xml.descriptor;
 import java.util.Comparator;
 import java.util.List;
 
-import com.dotcms.repackage.tika_app.org.dom4j.Attribute;
-import com.dotcms.repackage.tika_app.org.dom4j.Document;
-import com.dotcms.repackage.tika_app.org.dom4j.Element;
+import com.dotcms.repackage.org.dom4j.Attribute;
+import com.dotcms.repackage.org.dom4j.Document;
+import com.dotcms.repackage.org.dom4j.Element;
 
 import com.liferay.util.xml.AttributeComparator;
 import com.liferay.util.xml.ElementComparator;

@@ -26,9 +26,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.tika_app.javax.xml.parsers.DocumentBuilder;
-import com.dotcms.repackage.tika_app.javax.xml.parsers.DocumentBuilderFactory;
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.javax.xml.parsers.DocumentBuilder;
+import com.dotcms.repackage.javax.xml.parsers.DocumentBuilderFactory;
+import com.dotcms.repackage.org.apache.struts.Globals;
 
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -37,14 +37,14 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.tools.view.context.ChainedContext;
 
-import com.dotcms.repackage.tika_app.org.w3c.dom.Document;
-import com.dotcms.repackage.tika_app.org.w3c.dom.Node;
-import com.dotcms.repackage.tika_app.org.w3c.dom.NodeList;
-import com.dotcms.repackage.tidy.org.w3c.tidy.Tidy;
-import com.dotcms.repackage.core_renderer_modified.org.xhtmlrenderer.pdf.ITextRenderer;
-import com.dotcms.repackage.esapi.org.owasp.esapi.ESAPI;
-import com.dotcms.repackage.tika_app.org.xml.sax.EntityResolver;
-import com.dotcms.repackage.tika_app.org.xml.sax.InputSource;
+import com.dotcms.repackage.org.w3c.dom.Document;
+import com.dotcms.repackage.org.w3c.dom.Node;
+import com.dotcms.repackage.org.w3c.dom.NodeList;
+import com.dotcms.repackage.org.w3c.tidy.Tidy;
+import com.dotcms.repackage.org.xhtmlrenderer.pdf.ITextRenderer;
+import com.dotcms.repackage.org.owasp.esapi.ESAPI;
+import com.dotcms.repackage.org.xml.sax.EntityResolver;
+import com.dotcms.repackage.org.xml.sax.InputSource;
 import com.dotmarketing.beans.BrowserSniffer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -78,7 +78,7 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
-import com.dotcms.repackage.itext.com.lowagie.text.DocumentException;
+import com.dotcms.repackage.com.lowagie.text.DocumentException;
 
 /**
  * @author Jason Tesser

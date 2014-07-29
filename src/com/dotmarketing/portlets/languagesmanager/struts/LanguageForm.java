@@ -6,9 +6,9 @@ package com.dotmarketing.portlets.languagesmanager.struts;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.struts.org.apache.struts.validator.ValidatorForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 
 import com.liferay.portal.util.Constants;
 

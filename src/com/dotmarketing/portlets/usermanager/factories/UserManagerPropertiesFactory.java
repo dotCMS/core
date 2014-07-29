@@ -10,17 +10,17 @@ import java.nio.channels.NonWritableChannelException;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
-import com.dotcms.repackage.portlet.javax.portlet.PortletRequest;
-import com.dotcms.repackage.portlet.javax.portlet.PortletResponse;
-import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
-import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.PortletRequest;
+import com.dotcms.repackage.javax.portlet.PortletResponse;
+import com.dotcms.repackage.javax.portlet.RenderRequest;
+import com.dotcms.repackage.javax.portlet.RenderResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Config;

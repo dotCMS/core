@@ -31,8 +31,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class FixTask00021CheckOrphanedAssets implements FixTask {
 	

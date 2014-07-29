@@ -53,10 +53,10 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Application;
+import com.dotcms.repackage.javax.ws.rs.core.Application;
 
 import com.dotmarketing.business.DotStateException;
-import com.dotcms.repackage.jersey.com.sun.jersey.spi.container.servlet.ServletContainer;
+import com.dotcms.repackage.com.sun.jersey.spi.container.servlet.ServletContainer;
 
 
 

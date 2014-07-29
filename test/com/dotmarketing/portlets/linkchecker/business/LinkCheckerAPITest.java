@@ -8,9 +8,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import com.dotcms.repackage.junit.org.junit.AfterClass;
-import com.dotcms.repackage.junit.org.junit.BeforeClass;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.AfterClass;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.ContainerStructure;

@@ -12,10 +12,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.jackson_core_asl.org.codehaus.jackson.JsonGenerationException;
-import com.dotcms.repackage.jackson_mapper_asl.org.codehaus.jackson.map.DeserializationConfig.Feature;
-import com.dotcms.repackage.jackson_mapper_asl.org.codehaus.jackson.map.JsonMappingException;
-import com.dotcms.repackage.jackson_mapper_asl.org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.org.codehaus.jackson.JsonGenerationException;
+import com.dotcms.repackage.org.codehaus.jackson.map.DeserializationConfig.Feature;
+import com.dotcms.repackage.org.codehaus.jackson.map.JsonMappingException;
+import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;

@@ -4,15 +4,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.Header;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.methods.EntityEnclosingMethod;
-import com.dotcms.repackage.tika_app.org.jdom.Document;
-import com.dotcms.repackage.tika_app.org.jdom.Element;
-import com.dotcms.repackage.tika_app.org.jdom.JDOMException;
-import com.dotcms.repackage.tika_app.org.jdom.Namespace;
+import com.dotcms.repackage.org.apache.commons.httpclient.Header;
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import com.dotcms.repackage.org.jdom.Document;
+import com.dotcms.repackage.org.jdom.Element;
+import com.dotcms.repackage.org.jdom.JDOMException;
+import com.dotcms.repackage.org.jdom.Namespace;
 
-import com.dotcms.repackage.slf4j_api.org.slf4j.Logger;
-import com.dotcms.repackage.slf4j_api.org.slf4j.LoggerFactory;
+import com.dotcms.repackage.org.slf4j.Logger;
+import com.dotcms.repackage.org.slf4j.LoggerFactory;
 
 /**
  *

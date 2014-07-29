@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.commons_lang.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
 
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;

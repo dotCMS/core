@@ -22,7 +22,7 @@
 
 package com.liferay.util.xml;
 
-import com.dotcms.repackage.tika_app.org.dom4j.Element;
+import com.dotcms.repackage.org.dom4j.Element;
 
 import com.liferay.util.xml.descriptor.XMLDescriptor;
 

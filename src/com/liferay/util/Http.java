@@ -33,21 +33,21 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.RenderRequest;
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.Cookie;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.Header;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HostConfiguration;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpClient;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpMethod;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpState;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.SimpleHttpConnectionManager;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.URI;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.cookie.CookiePolicy;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.methods.GetMethod;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.methods.PostMethod;
+import com.dotcms.repackage.org.apache.commons.httpclient.Cookie;
+import com.dotcms.repackage.org.apache.commons.httpclient.Header;
+import com.dotcms.repackage.org.apache.commons.httpclient.HostConfiguration;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpClient;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpMethod;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpState;
+import com.dotcms.repackage.org.apache.commons.httpclient.SimpleHttpConnectionManager;
+import com.dotcms.repackage.org.apache.commons.httpclient.URI;
+import com.dotcms.repackage.org.apache.commons.httpclient.cookie.CookiePolicy;
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.GetMethod;
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.PostMethod;
 
 import com.dotmarketing.util.Logger;
 
