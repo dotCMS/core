@@ -22,8 +22,8 @@
 
 package com.liferay.util.xml.descriptor;
 
-import com.dotcms.repackage.tika_app.org.dom4j.Document;
-import com.dotcms.repackage.tika_app.org.dom4j.Element;
+import com.dotcms.repackage.org.dom4j.Document;
+import com.dotcms.repackage.org.dom4j.Element;
 
 /**
  * <a href="XMLDescriptor.java.html"><b><i>View Source</i></b></a>

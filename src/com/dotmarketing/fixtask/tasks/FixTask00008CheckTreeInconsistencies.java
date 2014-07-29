@@ -24,8 +24,8 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 
 public class FixTask00008CheckTreeInconsistencies  implements FixTask {

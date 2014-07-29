@@ -1,16 +1,16 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.felix.org.osgi.framework.Bundle;
-import com.dotcms.repackage.jersey.javax.ws.rs.GET;
-import com.dotcms.repackage.jersey.javax.ws.rs.Path;
-import com.dotcms.repackage.jersey.javax.ws.rs.PathParam;
-import com.dotcms.repackage.jersey.javax.ws.rs.Produces;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Context;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.osgi.framework.Bundle;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -34,12 +34,12 @@ public class OSGIResource extends WebResource {
 
     List<String> systemBundles = Arrays.asList(
             "org.apache.felix.http.bundle",
-            "com.dotcms.repackage.org_apache_felix_gogo_shell.org.apache.felix.gogo.shell",
+            "com.dotcms.repackage.org.apache.felix.gogo.shell",
             "org.apache.felix.framework",
-            "com.dotcms.repackage.org_apache_felix_bundlerepository.org.apache.felix.bundlerepository",
-            "com.dotcms.repackage.org_apache_felix_fileinstall.org.apache.felix.fileinstall",
-            "com.dotcms.repackage.org_apache_felix_gogo_command.org.apache.felix.gogo.command",
-            "com.dotcms.repackage.org_apache_felix_gogo_runtime.org.apache.felix.gogo.runtime",
+            "com.dotcms.repackage.org.apache.felix.bundlerepository",
+            "com.dotcms.repackage.org.apache.felix.fileinstall",
+            "com.dotcms.repackage.org.apache.felix.gogo.command",
+            "com.dotcms.repackage.org.apache.felix.gogo.runtime",
             "org.osgi.core"
     );
 

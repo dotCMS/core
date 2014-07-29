@@ -2,15 +2,15 @@ package com.dotmarketing.util;
 
 import java.io.IOException;
 
-import com.dotcms.repackage.dnsjava.org.xbill.DNS.DClass;
-import com.dotcms.repackage.dnsjava.org.xbill.DNS.ExtendedResolver;
-import com.dotcms.repackage.dnsjava.org.xbill.DNS.Message;
-import com.dotcms.repackage.dnsjava.org.xbill.DNS.Name;
-import com.dotcms.repackage.dnsjava.org.xbill.DNS.Record;
-import com.dotcms.repackage.dnsjava.org.xbill.DNS.Resolver;
-import com.dotcms.repackage.dnsjava.org.xbill.DNS.ReverseMap;
-import com.dotcms.repackage.dnsjava.org.xbill.DNS.Section;
-import com.dotcms.repackage.dnsjava.org.xbill.DNS.Type;
+import com.dotcms.repackage.org.xbill.DNS.DClass;
+import com.dotcms.repackage.org.xbill.DNS.ExtendedResolver;
+import com.dotcms.repackage.org.xbill.DNS.Message;
+import com.dotcms.repackage.org.xbill.DNS.Name;
+import com.dotcms.repackage.org.xbill.DNS.Record;
+import com.dotcms.repackage.org.xbill.DNS.Resolver;
+import com.dotcms.repackage.org.xbill.DNS.ReverseMap;
+import com.dotcms.repackage.org.xbill.DNS.Section;
+import com.dotcms.repackage.org.xbill.DNS.Type;
 
 public class DNSUtil {
 	public static String reverseDns(String hostIp) throws IOException {

@@ -26,18 +26,18 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
-import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
-import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
-import com.dotcms.repackage.portlet.javax.portlet.WindowState;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.RenderRequest;
+import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionAsset;
@@ -77,7 +77,7 @@ public class ViewReportsAction extends DotPortletAction {
 	
 	/*
 	 * Render View Report Portlet
-	 * @see com.liferay.portal.struts.PortletAction#render(com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping, com.dotcms.repackage.struts.org.apache.struts.action.ActionForm, com.dotcms.repackage.portlet.javax.portlet.PortletConfig, com.dotcms.repackage.portlet.javax.portlet.RenderRequest, com.dotcms.repackage.portlet.javax.portlet.RenderResponse)
+	 * @see com.liferay.portal.struts.PortletAction#render(com.dotcms.repackage.org.apache.struts.action.ActionMapping, com.dotcms.repackage.org.apache.struts.action.ActionForm, com.dotcms.repackage.javax.portlet.PortletConfig, com.dotcms.repackage.javax.portlet.RenderRequest, com.dotcms.repackage.javax.portlet.RenderResponse)
 	 */
 	public ActionForward render(
 			ActionMapping mapping, ActionForm form, PortletConfig config,
@@ -169,7 +169,7 @@ public class ViewReportsAction extends DotPortletAction {
 	
 	/*
 	 * Process View Portlet requested actions
-	 * @see com.liferay.portal.struts.PortletAction#processAction(com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping, com.dotcms.repackage.struts.org.apache.struts.action.ActionForm, com.dotcms.repackage.portlet.javax.portlet.PortletConfig, com.dotcms.repackage.portlet.javax.portlet.ActionRequest, com.dotcms.repackage.portlet.javax.portlet.ActionResponse)
+	 * @see com.liferay.portal.struts.PortletAction#processAction(com.dotcms.repackage.org.apache.struts.action.ActionMapping, com.dotcms.repackage.org.apache.struts.action.ActionForm, com.dotcms.repackage.javax.portlet.PortletConfig, com.dotcms.repackage.javax.portlet.ActionRequest, com.dotcms.repackage.javax.portlet.ActionResponse)
 	 */
 	@Override
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res)throws DotHibernateException  {

@@ -1,10 +1,10 @@
 package com.dotmarketing.osgi.tuckey;
 
-import com.dotcms.repackage.felix.org.osgi.framework.BundleContext;
-import com.dotcms.repackage.felix.org.osgi.framework.ServiceReference;
-import com.dotcms.repackage.org_apache_felix_http_bundle.org.apache.felix.http.api.ExtHttpService;
-import com.dotcms.repackage.urlrewritefilter.org.tuckey.web.filters.urlrewrite.Condition;
-import com.dotcms.repackage.urlrewritefilter.org.tuckey.web.filters.urlrewrite.NormalRule;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.osgi.framework.ServiceReference;
+import com.dotcms.repackage.org.apache.felix.http.api.ExtHttpService;
+import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.Condition;
+import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.NormalRule;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.osgi.GenericBundleActivator;
 

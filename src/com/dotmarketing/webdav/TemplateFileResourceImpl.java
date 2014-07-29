@@ -12,19 +12,19 @@ import java.net.URLEncoder;
 import java.util.Date;
 import java.util.Map;
 
-import com.dotcms.repackage.milton.com.bradmcevoy.http.Auth;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.CollectionResource;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.FileItem;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.FileResource;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.HttpManager;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.LockInfo;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.LockResult;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.LockTimeout;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.LockToken;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.LockableResource;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.Range;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.Request;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.Resource;
+import com.dotcms.repackage.com.bradmcevoy.http.Auth;
+import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.com.bradmcevoy.http.FileItem;
+import com.dotcms.repackage.com.bradmcevoy.http.FileResource;
+import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
+import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
+import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
+import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
+import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
+import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
+import com.dotcms.repackage.com.bradmcevoy.http.Range;
+import com.dotcms.repackage.com.bradmcevoy.http.Request;
+import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -134,7 +134,7 @@ public class TemplateFileResourceImpl implements FileResource, LockableResource 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.dotcms.repackage.milton.com.bradmcevoy.http.PutableResource#createNew(java.lang.String,
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.PutableResource#createNew(java.lang.String,
 	 * java.io.InputStream, java.lang.Long, java.lang.String)
 	 */
 	public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException,

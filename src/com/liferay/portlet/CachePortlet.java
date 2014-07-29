@@ -26,15 +26,15 @@ import java.io.IOException;
 import java.net.URLClassLoader;
 import java.util.Map;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
-import com.dotcms.repackage.portlet.javax.portlet.Portlet;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
-import com.dotcms.repackage.portlet.javax.portlet.PortletContext;
-import com.dotcms.repackage.portlet.javax.portlet.PortletException;
-import com.dotcms.repackage.portlet.javax.portlet.PortletSession;
-import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
-import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.Portlet;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.PortletContext;
+import com.dotcms.repackage.javax.portlet.PortletException;
+import com.dotcms.repackage.javax.portlet.PortletSession;
+import com.dotcms.repackage.javax.portlet.RenderRequest;
+import com.dotcms.repackage.javax.portlet.RenderResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotmarketing.business.Layout;

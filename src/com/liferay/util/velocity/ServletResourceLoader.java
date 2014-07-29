@@ -26,7 +26,7 @@ import java.io.InputStream;
 
 import javax.servlet.ServletContext;
 
-import com.dotcms.repackage.commons_collections.org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.FileResourceLoader;

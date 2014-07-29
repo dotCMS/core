@@ -10,7 +10,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.dwr.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 
 import com.dotcms.listeners.SessionMonitor;
 import com.dotmarketing.business.APILocator;

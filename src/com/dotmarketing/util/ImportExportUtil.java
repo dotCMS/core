@@ -30,10 +30,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 
-import com.dotcms.repackage.hibernate.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.hibernate.net.sf.hibernate.persister.AbstractEntityPersister;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 
-import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
@@ -59,7 +59,7 @@ import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 
 
 /**

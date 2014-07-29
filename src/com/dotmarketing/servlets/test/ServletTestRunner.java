@@ -5,10 +5,10 @@ import com.dotmarketing.listeners.TestXmlRingingListener;
 import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;
 
-import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.dotcms.repackage.junit.org.junit.runner.JUnitCore;
+import com.dotcms.repackage.org.junit.runner.JUnitCore;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

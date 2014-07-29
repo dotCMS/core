@@ -1,24 +1,24 @@
 package com.ettrema.httpclient;
 
-import com.dotcms.repackage.milton.com.bradmcevoy.http.Range;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.exceptions.BadRequestException;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.exceptions.ConflictException;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.dotcms.repackage.milton.com.bradmcevoy.http.exceptions.NotFoundException;
-import com.dotcms.repackage.milton.com.ettrema.common.LogUtils;
+import com.dotcms.repackage.com.bradmcevoy.http.Range;
+import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
+import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
+import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
+import com.dotcms.repackage.com.ettrema.common.LogUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpClient;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpMethodBase;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.methods.GetMethod;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.methods.PutMethod;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.methods.RequestEntity;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.params.HttpMethodParams;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.slf4j_api.org.slf4j.Logger;
-import com.dotcms.repackage.slf4j_api.org.slf4j.LoggerFactory;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpClient;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpMethodBase;
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.GetMethod;
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.InputStreamRequestEntity;
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.PutMethod;
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.RequestEntity;
+import com.dotcms.repackage.org.apache.commons.httpclient.params.HttpMethodParams;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.slf4j.Logger;
+import com.dotcms.repackage.org.slf4j.LoggerFactory;
 
 /**
  *
@@ -53,7 +53,7 @@ public class TransferService {
             in = m.getResponseBodyAsStream();
             nin = new NotifyingFileInputStream(in, m.getResponseContentLength(), url, listener);
             receiver.receive(nin);
-        } catch (com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.HttpException ex) {
+        } catch (com.dotcms.repackage.org.apache.commons.httpclient.HttpException ex) {
             m.abort();
             throw new GenericHttpException(ex.getReasonCode(), url);
         } catch (Utils.CancelledException ex) {

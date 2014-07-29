@@ -25,8 +25,8 @@ package com.liferay.util;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.filefilter.TrueFileFilter;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.*;
 import java.math.BigDecimal;

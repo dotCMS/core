@@ -7,14 +7,14 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.tika_app.org.jdom.Element;
-import com.dotcms.repackage.tika_app.org.jdom.JDOMException;
-import com.dotcms.repackage.tika_app.org.jdom.Namespace;
-import com.dotcms.repackage.tika_app.org.jdom.filter.ElementFilter;
-import com.dotcms.repackage.tika_app.org.jdom.input.SAXBuilder;
-import com.dotcms.repackage.slf4j_api.org.slf4j.Logger;
-import com.dotcms.repackage.slf4j_api.org.slf4j.LoggerFactory;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.jdom.Element;
+import com.dotcms.repackage.org.jdom.JDOMException;
+import com.dotcms.repackage.org.jdom.Namespace;
+import com.dotcms.repackage.org.jdom.filter.ElementFilter;
+import com.dotcms.repackage.org.jdom.input.SAXBuilder;
+import com.dotcms.repackage.org.slf4j.Logger;
+import com.dotcms.repackage.org.slf4j.LoggerFactory;
 
 
 
@@ -82,7 +82,7 @@ public class RespUtils {
         return list;
     }    
     
-    public static  com.dotcms.repackage.tika_app.org.jdom.Document getJDomDocument(InputStream in) throws JDOMException {
+    public static  com.dotcms.repackage.org.jdom.Document getJDomDocument(InputStream in) throws JDOMException {
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		try {
 			IOUtils.copy(in, bout);

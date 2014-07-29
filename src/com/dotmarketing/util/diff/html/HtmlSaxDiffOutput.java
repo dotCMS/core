@@ -22,9 +22,9 @@ import com.dotmarketing.util.diff.html.dom.TextNode;
 import com.dotmarketing.util.diff.html.modification.Modification;
 import com.dotmarketing.util.diff.html.modification.ModificationType;
 import com.dotmarketing.util.diff.output.DiffOutput;
-import com.dotcms.repackage.tika_app.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.tika_app.org.xml.sax.SAXException;
-import com.dotcms.repackage.tika_app.org.xml.sax.helpers.AttributesImpl;
+import com.dotcms.repackage.org.xml.sax.ContentHandler;
+import com.dotcms.repackage.org.xml.sax.SAXException;
+import com.dotcms.repackage.org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Takes a branch root and creates an HTML file for it.

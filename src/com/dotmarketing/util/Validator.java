@@ -4,12 +4,12 @@
  */
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 
 import com.liferay.portlet.ActionRequestImpl;
 
@@ -26,7 +26,7 @@ public class Validator {
 
         ActionRequestImpl reqImpl = (ActionRequestImpl) request;
         HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-        com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors errors = form.validate(mapping, httpReq);
+        com.dotcms.repackage.org.apache.struts.action.ActionErrors errors = form.validate(mapping, httpReq);
 
         if ((errors != null) && !errors.isEmpty()) {
             
@@ -42,7 +42,7 @@ public class Validator {
             return false;
         }
 
-        com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors errors = form.validate(mapping, httpReq);
+        com.dotcms.repackage.org.apache.struts.action.ActionErrors errors = form.validate(mapping, httpReq);
 
         if ((errors != null) && !errors.isEmpty()) {
             

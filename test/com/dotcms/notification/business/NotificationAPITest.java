@@ -9,7 +9,7 @@ import java.util.UUID;
 import com.dotcms.TestBase;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.business.APILocator;
 import com.liferay.portal.model.User;
 import com.dotmarketing.db.HibernateUtil;

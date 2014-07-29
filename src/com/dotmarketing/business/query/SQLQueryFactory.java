@@ -4,16 +4,16 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.antlr.org.antlr.runtime.ANTLRInputStream;
-import com.dotcms.repackage.antlr.org.antlr.runtime.CharStream;
-import com.dotcms.repackage.antlr.org.antlr.runtime.CommonTokenStream;
-import com.dotcms.repackage.antlr.org.antlr.runtime.RecognitionException;
-import com.dotcms.repackage.antlr.org.antlr.runtime.TokenSource;
-import com.dotcms.repackage.antlr.org.antlr.runtime.TokenStream;
-import com.dotcms.repackage.antlr.org.antlr.runtime.tree.CommonTree;
-import com.dotcms.repackage.antlr.org.antlr.runtime.tree.CommonTreeNodeStream;
-import com.dotcms.repackage.chemistry_commons.org.apache.chemistry.cmissql.CmisSqlLexer;
-import com.dotcms.repackage.chemistry_commons.org.apache.chemistry.cmissql.CmisSqlParser;
+import com.dotcms.repackage.org.antlr.runtime.ANTLRInputStream;
+import com.dotcms.repackage.org.antlr.runtime.CharStream;
+import com.dotcms.repackage.org.antlr.runtime.CommonTokenStream;
+import com.dotcms.repackage.org.antlr.runtime.RecognitionException;
+import com.dotcms.repackage.org.antlr.runtime.TokenSource;
+import com.dotcms.repackage.org.antlr.runtime.TokenStream;
+import com.dotcms.repackage.org.antlr.runtime.tree.CommonTree;
+import com.dotcms.repackage.org.antlr.runtime.tree.CommonTreeNodeStream;
+import com.dotcms.repackage.org.apache.chemistry.cmissql.CmisSqlLexer;
+import com.dotcms.repackage.org.apache.chemistry.cmissql.CmisSqlParser;
 
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotRuntimeException;

@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.zip.GZIPOutputStream;
 
-import com.dotcms.repackage.tika_app.org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import com.dotcms.repackage.tika_app.org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 
 import com.dotmarketing.util.Logger;
 

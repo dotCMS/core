@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.dotcms.repackage.jersey.javax.ws.rs.HttpMethod;
+import com.dotcms.repackage.javax.ws.rs.HttpMethod;
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

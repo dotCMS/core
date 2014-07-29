@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

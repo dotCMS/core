@@ -5,7 +5,7 @@ import static com.dotcms.repackage.junit.org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.ContainerStructure;

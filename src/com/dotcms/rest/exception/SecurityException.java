@@ -1,7 +1,7 @@
 package com.dotcms.rest.exception;
 
-import com.dotcms.repackage.jersey.javax.ws.rs.WebApplicationException;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 
 import com.dotmarketing.util.UtilMethods;
 

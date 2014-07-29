@@ -22,9 +22,9 @@
 
 package com.liferay.portlet.admin.action;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
@@ -32,8 +32,8 @@ import javax.servlet.jsp.PageContext;
 import com.liferay.portlet.ActionRequestImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 
 import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.auth.PrincipalException;

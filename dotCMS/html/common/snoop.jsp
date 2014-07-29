@@ -2,7 +2,7 @@
 	<%@ page import="javax.servlet.http.HttpUtils,java.util.Enumeration" %>
 
 
-<%@page import="com.dotcms.repackage.portlet.javax.portlet.RenderRequest"%>
+<%@page import="com.dotcms.repackage.javax.portlet.RenderRequest"%>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <H2>Context information</H2>

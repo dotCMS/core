@@ -3,11 +3,11 @@ package com.dotmarketing.db;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.junit.junit.framework.Assert;
-import com.dotcms.repackage.junit.org.junit.After;
-import com.dotcms.repackage.junit.org.junit.Before;
-import com.dotcms.repackage.junit.org.junit.BeforeClass;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.junit.framework.Assert;
+import com.dotcms.repackage.org.junit.After;
+import com.dotcms.repackage.org.junit.Before;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

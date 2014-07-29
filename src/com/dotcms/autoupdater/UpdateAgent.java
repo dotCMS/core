@@ -1,9 +1,9 @@
 package com.dotcms.autoupdater;
 
-import com.dotcms.repackage.commons_cli.org.apache.commons.cli.*;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.*;
-import com.dotcms.repackage.commons_httpclient.org.apache.commons.httpclient.methods.PostMethod;
-import com.dotcms.repackage.tika_app.org.apache.log4j.*;
+import com.dotcms.repackage.org.apache.commons.cli.*;
+import com.dotcms.repackage.org.apache.commons.httpclient.*;
+import com.dotcms.repackage.org.apache.commons.httpclient.methods.PostMethod;
+import com.dotcms.repackage.org.apache.log4j.*;
 
 import java.io.*;
 import java.net.MalformedURLException;

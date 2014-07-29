@@ -22,8 +22,8 @@
 
 package com.liferay.util;
 
-import com.dotcms.repackage.esapi.org.owasp.esapi.ESAPI;
-import com.dotcms.repackage.esapi.org.owasp.esapi.errors.EncodingException;
+import com.dotcms.repackage.org.owasp.esapi.ESAPI;
+import com.dotcms.repackage.org.owasp.esapi.errors.EncodingException;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 

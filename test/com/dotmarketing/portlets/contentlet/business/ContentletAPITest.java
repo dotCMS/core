@@ -25,11 +25,11 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.commons_lang.org.apache.commons.lang.time.FastDateFormat;
-import com.dotcms.repackage.junit.org.junit.Assert;
-import com.dotcms.repackage.junit.org.junit.Ignore;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.org.junit.Assert;
+import com.dotcms.repackage.org.junit.Ignore;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;

@@ -6,8 +6,8 @@ import static com.dotcms.repackage.junit.org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;

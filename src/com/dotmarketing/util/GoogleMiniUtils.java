@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import com.dotcms.repackage.tika_app.javax.xml.parsers.DocumentBuilder;
-import com.dotcms.repackage.tika_app.javax.xml.parsers.DocumentBuilderFactory;
+import com.dotcms.repackage.javax.xml.parsers.DocumentBuilder;
+import com.dotcms.repackage.javax.xml.parsers.DocumentBuilderFactory;
 
-import com.dotcms.repackage.tika_app.org.w3c.dom.Document;
-import com.dotcms.repackage.tika_app.org.w3c.dom.Element;
-import com.dotcms.repackage.tika_app.org.w3c.dom.NodeList;
+import com.dotcms.repackage.org.w3c.dom.Document;
+import com.dotcms.repackage.org.w3c.dom.Element;
+import com.dotcms.repackage.org.w3c.dom.NodeList;
 
 import com.dotmarketing.beans.GoogleMiniSearch;
 import com.dotmarketing.beans.GoogleMiniSearchResult;

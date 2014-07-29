@@ -12,12 +12,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
-import com.dotcms.repackage.tika_app.org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.input.ReaderInputStream;
-import com.dotcms.repackage.tika_app.org.apache.tika.Tika;
-import com.dotcms.repackage.tika_app.org.apache.tika.io.TikaInputStream;
-import com.dotcms.repackage.tika_app.org.apache.tika.metadata.Metadata;
+import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.apache.commons.io.input.ReaderInputStream;
+import com.dotcms.repackage.org.apache.tika.Tika;
+import com.dotcms.repackage.org.apache.tika.io.TikaInputStream;
+import com.dotcms.repackage.org.apache.tika.metadata.Metadata;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;

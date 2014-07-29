@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.common.db.DotConnect;

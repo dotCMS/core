@@ -1,12 +1,12 @@
 package com.dotmarketing.osgi;
 
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.struts.org.apache.struts.config.ActionConfig;
-import com.dotcms.repackage.struts.org.apache.struts.config.ForwardConfig;
-import com.dotcms.repackage.struts.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.urlrewritefilter.org.tuckey.web.filters.urlrewrite.NormalRule;
-import com.dotcms.repackage.urlrewritefilter.org.tuckey.web.filters.urlrewrite.Rule;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.config.ActionConfig;
+import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.NormalRule;
+import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.Rule;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -28,14 +28,14 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
-import com.dotcms.repackage.org_apache_felix_http_proxy.org.apache.felix.http.proxy.DispatcherTracker;
+import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import com.dotcms.repackage.felix.org.osgi.framework.Bundle;
-import com.dotcms.repackage.felix.org.osgi.framework.BundleActivator;
-import com.dotcms.repackage.felix.org.osgi.framework.BundleContext;
-import com.dotcms.repackage.felix.org.osgi.framework.ServiceReference;
+import com.dotcms.repackage.org.osgi.framework.Bundle;
+import com.dotcms.repackage.org.osgi.framework.BundleActivator;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
 import java.io.File;
@@ -735,7 +735,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 //PK
                 PortletPK id = portlet.getPrimaryKey();
                 //Cache key
-                String scpId = PortalUtil.class.getName() + "." + com.dotcms.repackage.portlet.javax.portlet.Portlet.class.getName();
+                String scpId = PortalUtil.class.getName() + "." + com.dotcms.repackage.javax.portlet.Portlet.class.getName();
                 if ( !portlet.isWARFile() ) {
                     scpId += "." + company.getCompanyId();
                 }

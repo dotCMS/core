@@ -1,7 +1,7 @@
 package com.dotmarketing.business;
 
-import com.dotcms.repackage.junit.org.junit.Assert;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.Assert;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;

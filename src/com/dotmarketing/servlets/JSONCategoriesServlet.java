@@ -15,8 +15,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.jackson_mapper_asl.org.codehaus.jackson.map.DeserializationConfig.Feature;
-import com.dotcms.repackage.jackson_mapper_asl.org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.org.codehaus.jackson.map.DeserializationConfig.Feature;
+import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;

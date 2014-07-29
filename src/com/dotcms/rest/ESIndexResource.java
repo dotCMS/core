@@ -8,19 +8,19 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.jersey.javax.ws.rs.Consumes;
-import com.dotcms.repackage.jersey.javax.ws.rs.DELETE;
-import com.dotcms.repackage.jersey.javax.ws.rs.GET;
-import com.dotcms.repackage.jersey.javax.ws.rs.PUT;
-import com.dotcms.repackage.jersey.javax.ws.rs.Path;
-import com.dotcms.repackage.jersey.javax.ws.rs.PathParam;
-import com.dotcms.repackage.jersey.javax.ws.rs.Produces;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Context;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Response.Status;
-import com.dotcms.repackage.myspell.org.dts.spell.utils.FileUtils;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.indices.status.IndexStatus;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
+import com.dotcms.repackage.org.elasticsearch.action.admin.indices.status.IndexStatus;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -34,9 +34,9 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.tika_app.com.google.gson.Gson;
-import com.dotcms.repackage.jersey.com.sun.jersey.core.header.FormDataContentDisposition;
-import com.dotcms.repackage.jersey.com.sun.jersey.multipart.FormDataParam;
+import com.dotcms.repackage.com.google.gson.Gson;
+import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
+import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
 
 @Path("/esindex")
 public class ESIndexResource extends WebResource {

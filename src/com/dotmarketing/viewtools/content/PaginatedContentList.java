@@ -1,6 +1,6 @@
 package com.dotmarketing.viewtools.content;
 
-import com.dotcms.repackage.commons_lang.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.util.PaginatedArrayList;
 

@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.dotcms.repackage.junit.org.junit.*;
+import com.dotcms.repackage.org.junit.*;
 import org.quartz.SimpleTrigger;
 
 import com.dotcms.enterprise.HostAssetsJobProxy;

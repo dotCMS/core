@@ -36,7 +36,7 @@ import org.apache.velocity.runtime.resource.ContentResource;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.exception.ParseErrorException;
 
-import com.dotcms.repackage.commons_collections.org.apache.commons.collections.ExtendedProperties;
+import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 
 /**
  * This is the Runtime system for Velocity. It is the

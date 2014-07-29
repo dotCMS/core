@@ -10,9 +10,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.hibernate.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 
-import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;

@@ -21,8 +21,8 @@ package org.apache.velocity.runtime.parser.node;
 
 import java.lang.reflect.InvocationTargetException;
 
-import com.dotcms.repackage.commons_lang.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.commons_lang.org.apache.commons.lang.text.StrBuilder;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.util.introspection.Introspector;
 

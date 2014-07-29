@@ -1,15 +1,15 @@
 package com.dotmarketing.osgi;
 
-import com.dotcms.repackage.commons_io.org.apache.commons.io.FilenameUtils;
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
-import com.dotcms.repackage.struts.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.struts.org.apache.struts.config.impl.ModuleConfigImpl;
+import com.dotcms.repackage.org.apache.commons.io.FilenameUtils;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.impl.ModuleConfigImpl;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.FileUtil;
-import com.dotcms.repackage.org_apache_felix_http_bundle.org.apache.felix.http.api.ExtHttpService;
-import com.dotcms.repackage.felix.org.osgi.framework.BundleContext;
-import com.dotcms.repackage.felix.org.osgi.framework.ServiceReference;
+import com.dotcms.repackage.org.apache.felix.http.api.ExtHttpService;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.osgi.framework.ServiceReference;
 
 import javax.servlet.ServletContext;
 import java.io.File;

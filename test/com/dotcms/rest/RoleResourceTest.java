@@ -6,8 +6,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.junit.org.junit.Before;
-import com.dotcms.repackage.junit.org.junit.Test;
+import com.dotcms.repackage.org.junit.Before;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;
@@ -18,8 +18,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.dotcms.repackage.jersey.com.sun.jersey.api.client.Client;
-import com.dotcms.repackage.jersey.com.sun.jersey.api.client.WebResource;
+import com.dotcms.repackage.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
 
 public class RoleResourceTest extends TestBase  {
 

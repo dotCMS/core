@@ -62,7 +62,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 
-import com.dotcms.repackage.backport_util_concurrent.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 /**
  *

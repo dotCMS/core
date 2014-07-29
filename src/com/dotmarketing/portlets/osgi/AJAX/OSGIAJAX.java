@@ -1,17 +1,17 @@
 package com.dotmarketing.portlets.osgi.AJAX;
 
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.FileItemFactory;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.FileItemIterator;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.FileItemStream;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.FileUploadException;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import com.dotcms.repackage.commons_fileupload.org.apache.commons.fileupload.servlet.ServletFileUpload;
-import com.dotcms.repackage.commons_io.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItemIterator;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItemStream;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
+import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.liferay.util.FileUtil;
-import com.dotcms.repackage.felix.org.osgi.framework.Bundle;
-import com.dotcms.repackage.felix.org.osgi.framework.BundleException;
+import com.dotcms.repackage.org.osgi.framework.Bundle;
+import com.dotcms.repackage.org.osgi.framework.BundleException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

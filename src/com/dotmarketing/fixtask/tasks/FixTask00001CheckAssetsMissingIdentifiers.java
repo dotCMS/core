@@ -13,7 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.hibernate.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Inode;
@@ -28,8 +28,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 
 public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
@@ -131,7 +131,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 					if(o instanceof Inode){
 						Inode i = (Inode)o;
 						String type = i.getType();
-						String tableName = ((com.dotcms.repackage.hibernate.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+						String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
 						MaintenanceUtil.cleanInodeTableData(tableName, type);
 						//FixAssetsProcessStatus.addAError();
 					}
@@ -153,7 +153,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 					if(o instanceof Inode){
 						Inode i = (Inode)o;
 						String type = i.getType();
-						String tableName = ((com.dotcms.repackage.hibernate.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+						String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
 						MaintenanceUtil.removeOphanedInodes(tableName, type);
 						
 					}

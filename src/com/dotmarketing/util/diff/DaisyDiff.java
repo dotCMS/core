@@ -26,11 +26,11 @@ import com.dotmarketing.util.diff.html.dom.DomTreeBuilder;
 import com.dotmarketing.util.diff.tag.TagComparator;
 import com.dotmarketing.util.diff.tag.TagDiffer;
 import com.dotmarketing.util.diff.tag.TagSaxDiffOutput;
-import com.dotcms.repackage.tika_app.org.xml.sax.ContentHandler;
-import com.dotcms.repackage.tika_app.org.xml.sax.InputSource;
-import com.dotcms.repackage.tika_app.org.xml.sax.SAXException;
-import com.dotcms.repackage.tika_app.org.xml.sax.XMLReader;
-import com.dotcms.repackage.tika_app.org.xml.sax.helpers.XMLReaderFactory;
+import com.dotcms.repackage.org.xml.sax.ContentHandler;
+import com.dotcms.repackage.org.xml.sax.InputSource;
+import com.dotcms.repackage.org.xml.sax.SAXException;
+import com.dotcms.repackage.org.xml.sax.XMLReader;
+import com.dotcms.repackage.org.xml.sax.helpers.XMLReaderFactory;
 
 public class DaisyDiff {
 

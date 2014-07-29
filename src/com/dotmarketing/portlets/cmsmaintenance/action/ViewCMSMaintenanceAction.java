@@ -19,22 +19,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipOutputStream;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
-import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
-import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
-import com.dotcms.repackage.portlet.javax.portlet.WindowState;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.RenderRequest;
+import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.javax.portlet.WindowState;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
 
-import com.dotcms.repackage.hibernate.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForward;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
@@ -92,9 +92,9 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.xstream.com.thoughtworks.xstream.mapper.Mapper;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -575,9 +575,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 				//http://jira.dotmarketing.net/browse/DOTCMS-6059
 				if(clazz.equals(DashboardSummary404.class) || clazz.equals(DashboardUserPreferences.class)){
-					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate.net.sf.hibernate.collection.Set.class, java.util.Set.class);
-					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate.net.sf.hibernate.collection.List.class, java.util.List.class);
-					_xstream.addDefaultImplementation(com.dotcms.repackage.hibernate.net.sf.hibernate.collection.Map.class, java.util.Map.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.net.sf.hibernate.collection.Set.class, java.util.Set.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.net.sf.hibernate.collection.List.class, java.util.List.class);
+					_xstream.addDefaultImplementation(com.dotcms.repackage.net.sf.hibernate.collection.Map.class, java.util.Map.class);
 					Mapper mapper = _xstream.getMapper();
 					_xstream.registerConverter(new HibernateCollectionConverter(mapper));
 					_xstream.registerConverter(new HibernateMapConverter(mapper));

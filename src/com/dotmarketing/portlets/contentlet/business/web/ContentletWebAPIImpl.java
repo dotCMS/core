@@ -11,12 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.dotcms.repackage.portlet.javax.portlet.WindowState;
+import com.dotcms.repackage.javax.portlet.WindowState;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.commons_collections.org.apache.commons.collections.CollectionUtils;
-import com.dotcms.repackage.dwr.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;

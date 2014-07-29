@@ -16,20 +16,20 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
-import com.dotcms.repackage.portlet.javax.portlet.WindowState;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.commons_collections.org.apache.commons.collections.CollectionUtils;
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionErrors;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

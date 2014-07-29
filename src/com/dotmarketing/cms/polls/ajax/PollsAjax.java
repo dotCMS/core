@@ -3,13 +3,13 @@ package com.dotmarketing.cms.polls.ajax;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.dwr.uk.ltd.getahead.dwr.WebContextFactory;
+import com.dotcms.repackage.uk.ltd.getahead.dwr.WebContextFactory;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.polls.business.PollsAPI;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.PollsWebAPI;
-import com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.polls.model.PollsQuestion;
 import com.liferay.util.servlet.SessionMessages;

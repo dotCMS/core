@@ -15,8 +15,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.dwr.org.directwebremoting.WebContext;
-import com.dotcms.repackage.dwr.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;

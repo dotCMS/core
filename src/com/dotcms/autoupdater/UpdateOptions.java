@@ -1,8 +1,8 @@
 package com.dotcms.autoupdater;
 
-import com.dotcms.repackage.commons_cli.org.apache.commons.cli.Option;
-import com.dotcms.repackage.commons_cli.org.apache.commons.cli.OptionGroup;
-import com.dotcms.repackage.commons_cli.org.apache.commons.cli.Options;
+import com.dotcms.repackage.org.apache.commons.cli.Option;
+import com.dotcms.repackage.org.apache.commons.cli.OptionGroup;
+import com.dotcms.repackage.org.apache.commons.cli.Options;
 
 import java.io.File;
 import java.io.IOException;

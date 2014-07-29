@@ -6,7 +6,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.dwr.uk.ltd.getahead.dwr.WebContextFactory;
+import com.dotcms.repackage.uk.ltd.getahead.dwr.WebContextFactory;
 
 import com.dotmarketing.beans.Rating;
 import com.dotmarketing.cms.rating.api.RatingAPI;

@@ -14,9 +14,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.jackson_mapper_asl.org.codehaus.jackson.map.DeserializationConfig.Feature;
-import com.dotcms.repackage.jackson_mapper_asl.org.codehaus.jackson.map.ObjectMapper;
-import com.dotcms.repackage.commons_lang.org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.repackage.org.codehaus.jackson.map.DeserializationConfig.Feature;
+import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
 <%@page import="com.liferay.portal.util.Constants"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="org.quartz.CronTrigger"%>

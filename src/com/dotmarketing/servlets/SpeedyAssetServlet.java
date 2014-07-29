@@ -38,7 +38,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.guava.com.google.common.io.Files;
+import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.util.DownloadUtil;
 import com.dotcms.util.DownloadUtil.ThreadLocalHTTPDate;
 import com.liferay.portal.PortalException;

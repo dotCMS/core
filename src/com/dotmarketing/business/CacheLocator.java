@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.dotcms.repackage.jgroups.org.jgroups.JChannel;
+import com.dotcms.repackage.org.jgroups.JChannel;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.csspreproc.CSSCache;

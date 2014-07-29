@@ -32,19 +32,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import com.dotcms.repackage.portlet.javax.portlet.PortalContext;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
-import com.dotcms.repackage.portlet.javax.portlet.PortletContext;
-import com.dotcms.repackage.portlet.javax.portlet.PortletMode;
-import com.dotcms.repackage.portlet.javax.portlet.PortletPreferences;
-import com.dotcms.repackage.portlet.javax.portlet.PortletSession;
-import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
-import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
-import com.dotcms.repackage.portlet.javax.portlet.WindowState;
+import com.dotcms.repackage.javax.portlet.PortalContext;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.PortletContext;
+import com.dotcms.repackage.javax.portlet.PortletMode;
+import com.dotcms.repackage.javax.portlet.PortletPreferences;
+import com.dotcms.repackage.javax.portlet.PortletSession;
+import com.dotcms.repackage.javax.portlet.RenderRequest;
+import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.Globals;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Portlet;

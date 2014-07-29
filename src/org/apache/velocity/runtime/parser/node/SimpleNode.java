@@ -25,8 +25,8 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.commons_lang.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotcms.repackage.commons_lang.org.apache.commons.lang.text.StrBuilder;
+import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;

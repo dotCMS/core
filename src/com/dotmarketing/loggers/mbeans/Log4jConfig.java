@@ -1,6 +1,6 @@
 package com.dotmarketing.loggers.mbeans;
 
-import com.dotcms.repackage.tika_app.org.apache.log4j.Level;
+import com.dotcms.repackage.org.apache.log4j.Level;
 
 import com.dotmarketing.util.Logger;
 

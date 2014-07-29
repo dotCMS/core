@@ -3,10 +3,10 @@ package com.dotmarketing.util;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.simplecaptcha.nl.captcha.Captcha;
+import com.dotcms.repackage.nl.captcha.Captcha;
 
-import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.CaptchaServiceException;
-import com.dotcms.repackage.jcaptcha_mod.com.octo.captcha.service.sound.SoundCaptchaService;
+import com.dotcms.repackage.com.octo.captcha.service.CaptchaServiceException;
+import com.dotcms.repackage.com.octo.captcha.service.sound.SoundCaptchaService;
 
 /**
  * This util validate the captcha value

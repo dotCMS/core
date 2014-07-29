@@ -5,9 +5,9 @@ import java.util.Set;
 
 import org.apache.jasper.JasperException;
 import org.apache.jasper.JspC;
-import com.dotcms.repackage.tika_app.org.apache.log4j.ConsoleAppender;
-import com.dotcms.repackage.tika_app.org.apache.log4j.Logger;
-import com.dotcms.repackage.tika_app.org.apache.log4j.PatternLayout;
+import com.dotcms.repackage.org.apache.log4j.ConsoleAppender;
+import com.dotcms.repackage.org.apache.log4j.Logger;
+import com.dotcms.repackage.org.apache.log4j.PatternLayout;
 
 public class DotJasperTask extends JspC {
 
