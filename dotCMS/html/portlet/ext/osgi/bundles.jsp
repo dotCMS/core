@@ -7,6 +7,9 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle" %>
+<%        
+	request.setAttribute("requiredPortletAccess", "OSGI_MANAGER"); 
+%>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <script type="text/javascript">
