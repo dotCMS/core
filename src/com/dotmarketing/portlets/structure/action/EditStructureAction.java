@@ -41,6 +41,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.StructureForm;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
@@ -61,17 +62,16 @@ import com.liferay.util.servlet.SessionMessages;
 
 public class EditStructureAction extends DotPortletAction {
 
+	/**
+	 * API objects 
+	 */
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
-
 	private WidgetAPI wAPI = APILocator.getWidgetAPI();
-
 	private FormAPI fAPI = APILocator.getFormAPI();
-
 	private HostAPI hostAPI = APILocator.getHostAPI();
-
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
-
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
+	
 	private final String[] reservedStructureNames = { "Host", "Folder", "File", "HTML Page", "Menu Link", "Virtual Link", "Container", "Template", "User" };
 
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
@@ -343,7 +343,10 @@ public class EditStructureAction extends DotPortletAction {
 					publishChanged = true;
 				}
 			}else{
-				publishChanged = true;
+				if(structure.getPublishDateVar() != null ||
+						structureForm.getPublishDateVar() != null)
+					
+					publishChanged = true;
 			}
 			//Checks if Expire was updated
 			if (UtilMethods.isSet(structure.getExpireDateVar()) &&
@@ -353,7 +356,10 @@ public class EditStructureAction extends DotPortletAction {
 					expireChanged = true;
 				}
 			}else{
-				expireChanged = true;
+				if(structure.getExpireDateVar() != null ||
+						structureForm.getExpireDateVar() != null)
+					
+					expireChanged = true;
 			}
 
 			BeanUtils.copyProperties(structure, structureForm);
@@ -418,30 +424,7 @@ public class EditStructureAction extends DotPortletAction {
 			//If structure is modified and Publish/Expire were updated
 			//have to check if all the content has the same info in Identifiers 
 			if(!newStructure && (publishChanged || expireChanged)){
-				List<Contentlet> contents = conAPI.findByStructure(structure, _getUser(req), false, 0, 0);
-				
-				//For each of the contentlets with that structure
-				for(Contentlet contentlet : contents){
-					Identifier identifier= APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-					
-					//Check if the new Publish Date Var is not null
-					if(UtilMethods.isSet(structure.getPublishDateVar())){
-						//Sets the identifier SysPublishDate to the new Structure/Content Publish Date Var
-						identifier.setSysPublishDate(contentlet.getDateProperty(structure.getPublishDateVar()));
-					}else{
-						identifier.setSysPublishDate(null);
-					}
-					
-					//Check if the new Expire Date Var is not null
-					if(UtilMethods.isSet(structure.getExpireDateVar())){
-						//Sets the identifier SysExpireDate to the new Structure/Content Expire Date Var
-						identifier.setSysExpireDate(contentlet.getDateProperty(structure.getExpireDateVar()));
-					}else{
-						identifier.setSysExpireDate(null);
-					}	
-					
-					APILocator.getIdentifierAPI().save(identifier);
-				}
+				IdentifierDateJob.triggerJobImmediately(structure, _getUser(req));	
 			}
 			
 			structureForm.setUrlMapPattern(structure.getUrlMapPattern());
