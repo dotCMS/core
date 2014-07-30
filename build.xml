@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="dotcms.org" default="compile" basedir="." xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+<project name="dotcms.org" default="compile" basedir=".">
     <!-- property name="build.compiler" value="jikes" / -->
 
     <!-- Load version props -->
@@ -78,34 +78,15 @@
         <pathelement path="${build.classes}" />
     </path>
 
-    <!--Resolve dependencies using maven-->
-    <path id="maven-ant-tasks.classpath" path="libs/buildlibs/maven-ant-tasks-2.1.3.jar" />
-    <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
-             uri="antlib:org.apache.maven.artifact.ant"
-             classpathref="maven-ant-tasks.classpath" />
-    <target name="resolve" description="--> retrieve dependencies with maven">
-        <!-- Resolve dependencies -->
-        <artifact:dependencies filesetId="dependency.fileset">
-            <pom file="dotcms.pom" />
-        </artifact:dependencies>
-        <!-- Copy all dependencies to the correct location. -->
-        <copy todir="${lib.app}">
-            <fileset refid="dependency.fileset" />
-            <!-- This mapper strips off all leading directory information -->
-            <mapper type="flatten" />
-        </copy>
-    </target>
-    <!--Resolve dependencies using maven-->
-
     <!-- classpath only used for plugins no other task should use it because it locks the jar files -->
     <path id="ant-files-classpath-custom">
 
         <pathelement location="${java.home}/../lib/tools.jar"/>
 
         <fileset dir="../../${target.root}/WEB-INF/lib">
-            <include name="dot.ant-tooling_ukv.jar" />
-            <include name="dot.commons-lang_2.4.jar" />
-            <include name="dot.tika-app_1.3.jar" />
+            <include name="dot.ant-tooling-ukv_*.jar" />
+            <include name="dot.commons-lang-2.4_*.jar" />
+            <include name="dot.tika-app-1.3_*.jar" />
         </fileset>
     </path>
     <path id="ant-files-classpath">
@@ -113,9 +94,9 @@
         <pathelement location="${java.home}/../lib/tools.jar"/>
 
         <fileset dir="${lib.app}">
-            <include name="dot.ant-tooling_ukv.jar" />
-            <include name="dot.commons-lang_2.4.jar" />
-            <include name="dot.tika-app_1.3.jar" />
+            <include name="dot.ant-tooling-ukv_*.jar" />
+            <include name="dot.commons-lang-2.4_*.jar" />
+            <include name="dot.tika-app-1.3_*.jar" />
         </fileset>
     </path>
 
