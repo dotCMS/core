@@ -60,7 +60,7 @@
 
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>ant-tooling</artifactId>
+            <artifactId>dot.ant-tooling</artifactId>
             <version>ukv_1</version>
         </dependency>
 
@@ -114,7 +114,7 @@
 
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>bsh</artifactId>
+            <artifactId>dot.bsh</artifactId>
             <version>2.0b4_1</version>
         </dependency>
 
@@ -247,7 +247,7 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-jci-core</artifactId>
-            <version>1.0-406301_1</version>
+            <version>1.0.406301_1</version>
         </dependency>
 
         <dependency>
@@ -488,12 +488,6 @@
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jamm</artifactId>
             <version>0.2.5_1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.jarjar</artifactId>
-            <version>1.4_1</version>
         </dependency>
 
         <dependency>
@@ -894,7 +888,7 @@
 
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>oro</artifactId>
+            <artifactId>dot.oro</artifactId>
             <version>2.0.8_1</version>
         </dependency>
 
@@ -930,7 +924,7 @@
 
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>rhino</artifactId>
+            <artifactId>dot.rhino</artifactId>
             <version>1.7R4_1</version>
         </dependency>
 
