@@ -159,9 +159,20 @@
 		   href = href + "<portlet:param name='referer' value='<%=referer%>' />";
 		<%}%>
 		href = href + "</portlet:actionURL>";
-
-		document.forms[0].action = href;
-		document.forms[0].submit();
+		
+		if((document.getElementById('publishDateVarHidden') && document.getElementsByName('publishDateVar')[0] &&
+				document.getElementsByName('publishDateVar')[0].value != document.getElementById('publishDateVarHidden').value) ||
+			(document.getElementById('expireDateVarHidden') && document.getElementsByName('expireDateVar')[0] &&
+				document.getElementsByName('expireDateVar')[0].value != document.getElementById('expireDateVarHidden').value)){
+			
+			if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.update.dates")) %>')) {
+				document.forms[0].action = href;
+				document.forms[0].submit();	
+			}
+		}else{
+			document.forms[0].action = href;
+			document.forms[0].submit();
+		}		
 	}
 
 	function addNewField(event)
@@ -810,13 +821,18 @@ function disableFormFields(){
 
 
 			                    <dd>
-			                    <%if(dateFields.size() > 0){ %>
+			                    <%String publishDateVarHidden = "";
+			                    if(dateFields.size() > 0){ %>
 				                       <select id="publishDateVar" name="publishDateVar" dojoType="dijit.form.FilteringSelect">
 				                         <option value=""></option>
 				                         <% String current=(UtilMethods.isSet(structure.getPublishDateVar())) ? structure.getPublishDateVar() : "--";
 				                            for(Field f : dateFields) {%>
 				                            <option value="<%= f.getVelocityVarName() %>"
-				                                     <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>>
+				                                     <% 
+				                                     if(current.equals(f.getVelocityVarName())) {
+				                                    	 publishDateVarHidden = f.getVelocityVarName();
+				                                     	%>selected="true"<%
+                                     				}%>>
 				                              <%=f.getFieldName() %>
 				                            </option>
 				                         <% } %>
@@ -824,18 +840,24 @@ function disableFormFields(){
 			                       <%}else{ %>
 			                       		<i><%= LanguageUtil.get(pageContext, "No-Date-Fields-Defined") %></i>
 			                     <%} %>
+			                    <input type="hidden" id="publishDateVarHidden" value="<%= publishDateVarHidden %>">
 			                    </dd>
 
 
 		                    <dt><%= LanguageUtil.get(pageContext, "Expire-Date-Field") %>:</dt>
 		                    <dd>
-			                    <%if(dateFields.size() > 0){ %>
+			                    <%String expireDateVarHidden = "";
+			                    if(dateFields.size() > 0){ %>
 			                       <select id="expireDateVar" name="expireDateVar" dojoType="dijit.form.FilteringSelect">
 			                         <option value=""></option>
 			                       <%  String  current=(UtilMethods.isSet(structure.getExpireDateVar())) ? structure.getExpireDateVar() : "--";
 			                           for(Field f : dateFields) {%>
 			                            <option value="<%= f.getVelocityVarName() %>"
-			                              <% if(current.equals(f.getVelocityVarName())) {%>selected="true"<%}%>>
+			                              <% 
+			                              	if(current.equals(f.getVelocityVarName())) {
+			                              		expireDateVarHidden = f.getVelocityVarName();
+			                              		%>selected="true"<%
+                              				}%>>
 			                              <%=f.getFieldName() %>
 			                            </option>
 			                         <% } %>
@@ -843,6 +865,7 @@ function disableFormFields(){
 			                       <%}else{ %>
 			                       		<i><%= LanguageUtil.get(pageContext, "No-Date-Fields-Defined") %></i>
 			                     <%} %>
+			                     <input type="hidden" id="expireDateVarHidden" value="<%= expireDateVarHidden %>">
 		                    </dd>
 
 		                </div>
