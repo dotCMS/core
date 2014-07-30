@@ -189,8 +189,12 @@ public class IntegrityUtil {
             while (rs.next()) {
                 writer.write(rs.getString("remote_inode"));
                 writer.write(rs.getString("local_inode"));
-                writer.write(rs.getString("remote_identifier"));
-				writer.write(rs.getString("local_identifier"));
+
+                if(type==IntegrityType.FOLDERS) {
+                	writer.write(rs.getString("remote_identifier"));
+                	writer.write(rs.getString("local_identifier"));
+                }
+
                 writer.endRecord();
                 count++;
 
@@ -361,6 +365,7 @@ public class IntegrityUtil {
             zos.close();
             fos.close();
         } catch (Exception e) {
+        	Logger.error(getClass(), "Error generating fix for remote", e);
             if(zipFile!=null && zipFile.exists())
                 zipFile.delete();
         } finally {
