@@ -589,7 +589,11 @@ var cmsfile=null;
 			 alert('<%= LanguageUtil.get(pageContext, "empty-key") %>');
 		}else{
 		key = key.trim();
+		//escape double quotes	
+		key = key.replace('"', '&#x22');
 		var value = dijit.byId(fieldValueId+'_value').value;
+		//escape double quotes
+		value = value.replace('"', '&#x22');
 		var table = document.getElementById(fieldId+'_kvtable');
 		var row = document.getElementById(fieldId+'_'+key);
 		var trs = table.getElementsByTagName('tr');
