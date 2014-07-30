@@ -837,6 +837,10 @@ public class IntegrityUtil {
             	}
 			}
 
+            if(DbConnectionFactory.isMsSql()) {
+    			dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
+        	}
+
             //First delete the constrain
             if ( DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "alter table folder drop FOREIGN KEY fkb45d1c6e5fb51eb" );
@@ -938,6 +942,10 @@ public class IntegrityUtil {
 
         try {
 
+        	if(DbConnectionFactory.isMsSql()) {
+    			dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
+        	}
+
             //First delete the constrains
             if ( DbConnectionFactory.isMySql() ) {
                 dc.executeStatement( "alter table structure drop FOREIGN KEY fk89d2d735fb51eb" );
@@ -1034,6 +1042,10 @@ public class IntegrityUtil {
         String tableName = getResultsTableName( IntegrityType.SCHEMES );
 
         try {
+
+        	if(DbConnectionFactory.isMsSql()) {
+    			dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
+        	}
 
             //First delete the constrains
             if ( DbConnectionFactory.isMsSql() ) {
