@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="java.util.Map"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="java.util.List"%>
@@ -161,7 +162,7 @@ function doPaste(){
                             </dd>
                         <%}%>
                         <dt><%= LanguageUtil.get(pageContext, "licensed-to") %></dt>
-                        <dd><%=  UtilMethods.isSet(LicenseUtil.getClientName()) ? UtilMethods.isSet(LicenseUtil.getClientName()) : "No License Found" %></dd>
+                        <dd><%=  UtilMethods.isSet(LicenseUtil.getClientName()) ? LicenseUtil.getClientName() : "No License Found" %></dd>
                         <dt><%= LanguageUtil.get(pageContext, "license-type") %></dt>
                         <dd><%= LicenseUtil.getLevelName() %></dd>
                         <dt><%= LanguageUtil.get(pageContext, "license-serial") %></dt>
@@ -238,6 +239,8 @@ function doPaste(){
     		loadRepo();
     	});
     	
+    	var currentServerId='<%= APILocator.getServerAPI().readServerId() %>';
+    	
     	function loadRepo() {
     		dojo.empty("repotableBody");
     		dojo.xhrGet({
@@ -247,8 +250,9 @@ function doPaste(){
     				dojo.forEach(data, function(lic) {
     					var row=dojo.create("tr",null,dojo.byId("repotableBody"));
     					dojo.create("td",{ innerHTML: lic.id}, row);
-    					dojo.create("td",{ innerHTML: lic.serverid}, row);
-    					dojo.create("td",{ innerHTML: lic.lastping}, row);
+    					dojo.create("td",{ innerHTML: lic.serverid==="" ? "Available" : 
+    						 (lic.serverid===currentServerId ? '<strong>'+lic.serverid+'</strong>' : lic.serverid)}, row);
+    					dojo.create("td",{ innerHTML: lic.serverid!=="" ? lic.lastping : ""}, row);
     					
     					new dijit.form.Button({
     						label: "delete",
