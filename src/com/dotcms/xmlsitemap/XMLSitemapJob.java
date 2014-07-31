@@ -197,7 +197,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 				/* adding host url */
 				stringbuf = "<url><loc>"
-						+ XMLUtils.xmlEscape("http://www." + host.getHostname()
+						+ XMLUtils.xmlEscape("http://" + host.getHostname()
 								+ "/") + "</loc><lastmod>"
 						+ modifiedDateStringValue
 						+ "</lastmod><changefreq>daily</changefreq></url>\n";
@@ -267,7 +267,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 						try {
 							if (usePermalinks) {
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname()
 												+ "/permalink/"
 												+ contenlet.getIdentifier()
@@ -329,14 +329,14 @@ public class XMLSitemapJob implements Job, StatefulJob {
 												+ "], uri [" + uri + "]");
 
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname() + uri)
 										+ "</loc><lastmod>"
 										+ modifiedDateStringValue
 										+ "</lastmod><changefreq>daily</changefreq></url>\n";
 							} else {
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname()
 												+ pageIdentifier.getURI()
 												+ "?id="
@@ -414,7 +414,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							Logger.warn(this, "Folder Page Configuration " + page.getURI());
 							if (page.isLive() && !page.isDeleted()) {
 								String indexPageConfiguration = "/index."+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-								String pathToPageUrl = XMLUtils.xmlEscape("http://www."+ host.getHostname() + page.getURI());
+								String pathToPageUrl = XMLUtils.xmlEscape("http://"+ host.getHostname() + page.getURI());
 
 								if (pathToPageUrl.endsWith(indexPageConfiguration)) {
 									pathToPageUrl = pathToPageUrl.replace(indexPageConfiguration, "");
@@ -432,7 +432,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							com.dotmarketing.portlets.files.model.File file = (com.dotmarketing.portlets.files.model.File) itemChild;
 							if (file.isLive() && !file.isDeleted()) {
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname()
 												+ file.getURI())
 										+ "</loc><lastmod>"
@@ -446,7 +446,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							if (fileContent.isLive() && !fileContent.isArchived()) {
 								Identifier identifier = APILocator.getIdentifierAPI().find(fileContent);
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname()
 												+ UtilMethods.encodeURIComponent(identifier.getParentPath()+fileContent.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))
 										+ "</loc><lastmod>"
@@ -520,14 +520,14 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		if ((id != null) && InodeUtils.isSet(id.getInode())) {
 			stringbuf = "<url><loc>"
 					+ XMLUtils
-							.xmlEscape("http://www."
+							.xmlEscape("http://"
 									+ host.getHostname()
 									+ folderIdent.getURI())
 					+ "</loc><lastmod>" + modifiedDateStringValue
 					+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
 			Logger.warn(this, "Writing the XMLConfiguration for Folder[" + XMLUtils
-							.xmlEscape("http://www."
+							.xmlEscape("http://"
 									+ host.getHostname()
 									+ folderIdent.getURI()) + "]"
 			);
@@ -553,7 +553,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					} else {
 						stringbuf = "<url><loc>"
 								+ XMLUtils
-										.xmlEscape("http://www."
+										.xmlEscape("http://"
 												+ host.getHostname()
 												+ childChild2Ident.getURI())
 								+ "</loc><lastmod>"
@@ -561,7 +561,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 								+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
 						Logger.warn(this, "Writing the XMLConfiguration Second Level Check for [" + XMLUtils
-										.xmlEscape("http://www."
+										.xmlEscape("http://"
 												+ host.getHostname()
 												+ childChild2Ident.getURI()) + "]");
 
@@ -589,7 +589,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					if (page2.isLive() && !page2.isDeleted()) {
 						String indexPageConfiguration = "/index."+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 
-						String pathToPageUrl = XMLUtils.xmlEscape("http://www." + host.getHostname() + childChild2Ident.getURI());
+						String pathToPageUrl = XMLUtils.xmlEscape("http://" + host.getHostname() + childChild2Ident.getURI());
 
 						if (pathToPageUrl.endsWith(indexPageConfiguration) && isIndexPageAlreadyConfigured) {
 							Logger.warn(this, "Index Page is already configured, skipping the process [" + pathToPageUrl + "]");
@@ -612,7 +612,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							.getIdentifier());
 					if (file2.isLive() && !file2.isDeleted()) {
 						stringbuf = "<url><loc>"
-								+ XMLUtils.xmlEscape("http://www."
+								+ XMLUtils.xmlEscape("http://"
 										+ host.getHostname()
 										+ childChild2Ident.getURI() + "/"
 										+ file2.getFileName())
@@ -627,7 +627,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					if (fileContent.isLive() && !fileContent.isArchived()) {
 						Identifier identifier = APILocator.getIdentifierAPI().find(fileContent);
 						stringbuf = "<url><loc>"
-								+ XMLUtils.xmlEscape("http://www."
+								+ XMLUtils.xmlEscape("http://"
 										+ host.getHostname()
 										+ UtilMethods.encodeURIComponent(identifier.getParentPath()+fileContent.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))
 								+ "</loc><lastmod>"
