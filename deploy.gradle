@@ -1,0 +1,79 @@
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=false -Pfile=/home/jonathan/Dropbox/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0.jar
+//File Name: XYZ_version.jar --> Release
+//File Name: XYZ_version_identifier2.jar --Snapshot
+
+apply plugin:'maven'
+apply plugin: 'application'
+
+import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
+
+repositories {
+    maven {
+        url "http://repo.dotcms.com/artifactory/libs-release"
+    }
+}
+//Import and apply the dependencies from the dependencies scripts
+apply from: "$rootDir/dependencies.gradle"
+
+ext {
+    releaseRepository = "http://repo.dotcms.com/artifactory/libs-release-local"
+    snapshotRepository = "http://repo.dotcms.com/artifactory/libs-snapshot-local"
+    repositoryUrl = snapshotRepository
+
+    groupId = "$groupId"
+    fileToUpload = "$file"
+    release = "$release"
+
+    username = 'user.name'
+    password = 'XYZ'
+}
+
+File toUpload
+
+artifacts{
+    toUpload = file(new File(fileToUpload))
+    def extension = toUpload.name.substring(toUpload.name.lastIndexOf(".") + 1,toUpload.name.length())
+    def fileName = toUpload.name.replace("." + extension, "")
+
+    archives new DefaultPublishArtifact(fileName, extension, extension, null, new Date(), toUpload)
+}
+
+uploadArchives(){
+    repositories {
+        mavenDeployer {
+
+            def fileName = toUpload.name.replace(".jar", "")
+            def nameArray = fileName.split("_")
+            def artifactId = nameArray[0]
+            def version = nameArray[1]
+            if (nameArray.length > 2) {
+                version += "_" + nameArray[2]
+            }
+
+            //Verify if we are releasing or just creating a snapshot
+            if (release == "true") {
+                repositoryUrl = releaseRepository
+            }
+
+            addFilter(fileName) {artifact, file ->
+                artifact.name == fileName
+            }
+
+            //Setting the properties for the pom and artifactory
+            pom(fileName).artifactId = artifactId
+            pom(fileName).version = version
+            pom(fileName).groupId = groupId
+
+            //Some feedback
+            println " --> Preparing to upload: " + fileName
+            println "\tgroupId: " + groupId
+            println "\tartifactId: " + artifactId
+            println "\tversion: " + version
+
+            repository(url: repositoryUrl) {
+                authentication(userName: username, password: password)
+            }
+        }
+
+    }
+}
