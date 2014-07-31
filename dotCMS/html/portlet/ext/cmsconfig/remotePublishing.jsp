@@ -585,6 +585,8 @@ function fixConflicts(identifier, type) {
 
     var localFix = dojo.byId("fixLocal_" + type).checked;
     var whereToFix = localFix?"local":"remote";
+    var fixButtonName = type + "FixButton";
+    var discardButtonName = type + "DiscardButton";
 
     var xhrArgs = {
         url: "/api/integrity/fixconflicts/endPoint/" + identifier + "/type/" + type + "/whereToFix/" + whereToFix,
@@ -610,6 +612,9 @@ function fixConflicts(identifier, type) {
 
             showDotCMSSystemMessage(message, true);
 
+            dijit.byId(fixButtonName).setAttribute('disabled', true);
+            dijit.byId(discardButtonName).setAttribute('disabled', true);
+
             //Cleaning up the html tables
             dojo.query("." + type + "_row").forEach(dojo.destroy);
         },
@@ -624,6 +629,9 @@ function fixConflicts(identifier, type) {
 }
 
 function discardConflicts(identifier, type) {
+
+	var fixButtonName = type + "FixButton";
+    var discardButtonName = type + "DiscardButton";
 
     var xhrArgs = {
         url: "/api/integrity/discardconflicts/endPoint/" + identifier + "/type/" + type,
@@ -643,6 +651,10 @@ function discardConflicts(identifier, type) {
 
             closeIntegrityResultsDialog(identifier);
             showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_discarded")%>", true);
+
+            dijit.byId(fixButtonName).setAttribute('disabled', true);
+            dijit.byId(discardButtonName).setAttribute('disabled', true);
+
 
         },
         error: function (error) {
