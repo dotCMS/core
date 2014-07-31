@@ -118,6 +118,7 @@ public class TaskLocatorUtil {
         ret.add(Task03035FixContainerCheckTrigger.class);
         ret.add(Task03040AddIndexesToStructureFields.class);
         ret.add(Task03045TagnameTypeChangeMSSQL.class);
+        ret.add(Task03050updateFormTabName.class);
         return ret;
     }
 
