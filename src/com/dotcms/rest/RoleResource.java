@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -8,8 +7,12 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
@@ -17,6 +20,7 @@ import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.CacheControl;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,12 +58,13 @@ public class RoleResource extends WebResource {
 	 * @throws DotStateException
 	 * @throws DotDataException
 	 * @throws DotSecurityException
+	 * @throws JSONException 
 	 */
 
 	@GET
 	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
-	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException {
+	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = init(params, true, request, true);
 
@@ -70,62 +75,68 @@ public class RoleResource extends WebResource {
 		String roleId = paramsMap.get("id");
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-		StringBuilder json = new StringBuilder();
+		
+		CacheControl cc = new CacheControl();
+        cc.setNoCache( true );
 
 		if(!UtilMethods.isSet(roleId) || roleId.equals("root")) {  // Loads Root Roles
-			json.append("[ { id: 'root', name: 'Roles', top: true, children: ").append("[");
-			int rolesCounter = 0;
+			JSONArray jsonRoles = new JSONArray();
+			JSONObject jsonRoleObject = new JSONObject();
+			jsonRoleObject.put("id", "root");
+			jsonRoleObject.put("name", "Roles");
+			jsonRoleObject.put("top", "true");
+			
 			List<Role> rootRoles = roleAPI.findRootRoles();
-
+			JSONArray jsonChildren = new JSONArray();
 
 			for(Role r : rootRoles) {
-
-				json.append("{id: '").append(r.getId()).append("', ");
-				json.append("$ref: '").append(r.getId()).append("', ");
-				json.append("name: '").append(UtilMethods.javaScriptify(r.getName())).append("', ");
-				json.append("locked: '").append(r.isLocked()).append("', ");
-				json.append(" children:true}");
-
-				if(rolesCounter+1 < rootRoles.size()) {
-					json.append(", ");
-				}
-
-				rolesCounter++;
+				JSONObject jsonRoleChildObject = new JSONObject();
+				jsonRoleChildObject.put("id", r.getId());
+				jsonRoleChildObject.put("$ref", r.getId());
+				jsonRoleChildObject.put("name", UtilMethods.javaScriptify(r.getName()));
+				jsonRoleChildObject.put("locked", r.isLocked());
+				jsonRoleChildObject.put("children", true);
+				
+				jsonChildren.add(jsonRoleChildObject);
 			}
-
-			json.append("]").append(" } ]");
-
+			//In order to add a JsonArray to a JsonObject
+			//we need to specify that is an object (API bug)
+			jsonRoleObject.put("children", (Object)jsonChildren);
+			jsonRoles.add(jsonRoleObject);
+			
+			return responseResource.response(jsonRoles.toString(), cc);
+			
 		} else {  // Loads Children Roles of given Role ID
 			Role role = roleAPI.loadRoleById(roleId);
+			
+			JSONObject jsonRoleObject = new JSONObject();
+			jsonRoleObject.put("id", role.getId());
+			jsonRoleObject.put("name", UtilMethods.javaScriptify(role.getName()));
+			jsonRoleObject.put("locked", role.isLocked());
+
+			JSONArray jsonChildren = new JSONArray();
+			
 			List<String> children = role.getRoleChildren();
-
-			json.append("{ id: '").append(role.getId()).append("', name: '").append(UtilMethods.javaScriptify(role.getName())).append("', locked: '")
-			.append(role.isLocked()).append("', children: ").append("[");
-
-			if(children!=null) {
-
-				int childCounter = 0;
+			if(children != null) {
 				for(String childId : children) {
 					Role r = roleAPI.loadRoleById(childId);
 
-					json.append("{id: '").append(r.getId()).append("', $ref: '").append(r.getId()).append("', name: '")
-					.append(UtilMethods.javaScriptify(r.getName())).append("', locked: '").append(r.isLocked()).append("', children:true}");
-
-					if(childCounter+1 < children.size()) {
-						json.append(", ");
-					}
-
-					childCounter++;
-				}
+					JSONObject jsonRoleChildObject = new JSONObject();
+					jsonRoleChildObject.put("id", r.getId());
+					jsonRoleChildObject.put("$ref", r.getId());
+					jsonRoleChildObject.put("name", UtilMethods.javaScriptify(r.getName()));
+					jsonRoleChildObject.put("locked", r.isLocked());
+					jsonRoleChildObject.put("children", true);
+					
+					jsonChildren.add(jsonRoleChildObject);
+				}					
 			}
-
-			json.append("]").append(" }");
-
+			//In order to add a JsonArray to a JsonObject
+			//we need to specify that is an object (API bug)
+			jsonRoleObject.put("children", (Object)jsonChildren);
+			
+			return responseResource.response(jsonRoleObject.toString(), cc);
 		}
-
-        CacheControl cc = new CacheControl();
-        cc.setNoCache( true );
-        return responseResource.response( json.toString(), cc );
     }
 
 	/**
@@ -144,12 +155,13 @@ public class RoleResource extends WebResource {
 	 * @param params a string containing the URL parameters
 	 * @return
 	 * @throws DotDataException
+	 * @throws JSONException 
 	 */
 
 	@GET
 	@Path("/loadbyid/{params:.*}")
 	@Produces("application/json")
-	public Response loadById(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException {
+	public Response loadById(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, JSONException {
 		InitDataObject initData = init(params, true, request, true);
 
         //Creating an utility response object
@@ -159,30 +171,32 @@ public class RoleResource extends WebResource {
 		String roleId = paramsMap.get("id");
 
 		if(!UtilMethods.isSet(roleId) || roleId.equalsIgnoreCase("root")) {
-            return responseResource.response( "{id:'0', name: 'Root Role'}" );
+			JSONObject jsonRoleObject = new JSONObject();
+			jsonRoleObject.put("id", 0);
+			jsonRoleObject.put("name", "Root Role");
+
+            return responseResource.response(jsonRoleObject.toString());
 		}
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
 
-		StringBuilder node = new StringBuilder();
-		node.append("{");
-		node.append("DBFQN: '").append(UtilMethods.javaScriptify(role.getDBFQN())).append("',");
-		node.append("FQN: '").append(UtilMethods.javaScriptify(role.getFQN())).append("',");
-		node.append("children: [],");
-		node.append("description: '").append(UtilMethods.javaScriptify(role.getDescription())).append("',");
-		node.append("editLayouts: ").append(role.isEditLayouts()).append(",");
-		node.append("editPermissions: ").append(role.isEditPermissions()).append(",");
-		node.append("editUsers: ").append(role.isEditUsers()).append(",");
-		node.append("id: '").append(role.getId()).append("',");
-		node.append("locked: '").append(role.isLocked()).append("',");
-		node.append("name: '").append(UtilMethods.javaScriptify(role.getName())).append("',");
-		node.append("parent: '").append(role.getParent()).append("',");
-		node.append("roleKey: '").append(role.getRoleKey()!=null?UtilMethods.javaScriptify(role.getRoleKey()):"").append("',");
-		node.append("system: '").append(role.isSystem()).append("'");
-		node.append("}");
+		JSONObject jsonRoleObject = new JSONObject();
+		jsonRoleObject.put("DBFQN", UtilMethods.javaScriptify(role.getDBFQN()));
+		jsonRoleObject.put("FQN", UtilMethods.javaScriptify(role.getFQN()));
+		jsonRoleObject.put("children", (Object)new JSONArray());
+		jsonRoleObject.put("description", UtilMethods.javaScriptify(role.getDescription()));
+		jsonRoleObject.put("editLayouts", role.isEditLayouts());
+		jsonRoleObject.put("editPermissions", role.isEditPermissions());
+		jsonRoleObject.put("editUsers", role.isEditUsers());
+		jsonRoleObject.put("id", role.getId());
+		jsonRoleObject.put("locked", role.isLocked());
+		jsonRoleObject.put("name", UtilMethods.javaScriptify(role.getName()));
+		jsonRoleObject.put("parent", role.getParent());
+		jsonRoleObject.put("roleKey", role.getRoleKey()!=null?UtilMethods.javaScriptify(role.getRoleKey()):"");
+		jsonRoleObject.put("system", role.isSystem());
 
-        return responseResource.response( node.toString() );
+        return responseResource.response(jsonRoleObject.toString());
     }
 
 	/**
@@ -204,13 +218,14 @@ public class RoleResource extends WebResource {
 	 * @param params
 	 * @return
 	 * @throws DotDataException
+	 * @throws JSONException 
 	 */
 
 	@GET
 	@Path("/loadbyname/{params:.*}")
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
-	public Response loadByName(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException {
+	public Response loadByName(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, JSONException {
 		InitDataObject initData = init(params, true, request, true);
 
         //Creating an utility response object
@@ -220,7 +235,6 @@ public class RoleResource extends WebResource {
 		String name = paramsMap.get("name");
 
 		if(!UtilMethods.isSet(name)) {
-            //return "";
             responseResource.response( "" );//FIXME: Should return a proper error....
         }
 
@@ -229,7 +243,6 @@ public class RoleResource extends WebResource {
 		List<Role> roles = roleAPI.findRolesByNameFilter(name, -1, -1);
 
 		LinkedHashMap<String, Object> resultTree = new LinkedHashMap<String, Object>();
-
 
 		for (Role r : roles) {
 
@@ -258,11 +271,23 @@ public class RoleResource extends WebResource {
 			}
 
 		}
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("identifier", "id");
+		jsonObject.put("label", "name");
+		
+		JSONArray jsonItems = new JSONArray();
+		
+		JSONObject jsonItemsObject = new JSONObject();
+		jsonItemsObject.put("id", "root");
+		jsonItemsObject.put("name", "Roles");
+		jsonItemsObject.put("top", true);
+		jsonItemsObject.put("children", (Object)buildFilteredJsonTree(resultTree));
+		
+		jsonItems.add(jsonItemsObject);
+		
+		jsonObject.put("items", (Object)jsonItems);
 
-		// build the resulting Json Tree
-		String json = buildFilteredJsonTree(resultTree);
-        return responseResource.response( "{ identifier: 'id', label: 'name', items: [ { id: 'root', name: 'Roles', top: true, " +
-                "children: [" + json + "] } ] }" );
+        return responseResource.response(jsonObject.toString());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -291,28 +316,27 @@ public class RoleResource extends WebResource {
 	}
 
 	@SuppressWarnings("unchecked")
-	private String buildFilteredJsonTree(LinkedHashMap<String, Object> map) throws DotDataException {
-		StringBuilder json = new StringBuilder();
+	private JSONArray buildFilteredJsonTree(LinkedHashMap<String, Object> map) throws DotDataException, JSONException {
+		JSONArray jsonChildren = new JSONArray();
+		
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
-		if(map==null) {
-			return "";
+		if(map != null) {
+			for (String key : map.keySet()) {
+				Role r = roleAPI.loadRoleById(key);
+				
+				JSONObject jsonObject = new JSONObject();
+				jsonObject.put("id", r.getId().replace('-', '_'));
+				jsonObject.put("name", UtilMethods.javaScriptify(r.getName()));
+				jsonObject.put("locked", r.isLocked());
+				
+				LinkedHashMap<String, Object> children = (LinkedHashMap<String, Object>) map.get(key);
+				
+				jsonObject.put("children", (Object)buildFilteredJsonTree(children));
+				jsonChildren.add(jsonObject);
+			}
 		}
-		for (String key : map.keySet()) {
-			Role r = roleAPI.loadRoleById(key);
-			json.append("{ id: '").append(r.getId().replace('-', '_')).append("', name: '").append(UtilMethods.javaScriptify(r.getName()))
-			.append("', locked: ").append(r.isLocked()).append(", children: ").append("[");
-
-			LinkedHashMap<String, Object> children = (LinkedHashMap<String, Object>) map.get(key);
-			json.append(buildFilteredJsonTree(children));
-
-			json.append("]},");
-		}
-
-		String jsonStr = json.toString();
-		// removing comma after last item
-		return jsonStr.length()>0?jsonStr.substring(0, jsonStr.length()-1):jsonStr;
+		return jsonChildren;
 	}
-
 
 }
