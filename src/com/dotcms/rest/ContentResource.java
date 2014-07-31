@@ -18,8 +18,10 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Consumes;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
+import com.dotcms.repackage.jersey_1_12.javax.ws.rs.POST;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PUT;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
@@ -28,14 +30,12 @@ import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response.Status;
-
 import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.jettison_1_1.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.jettison_1_1.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.jettison_1_1.org.codehaus.jettison.json.JSONObject;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -410,6 +410,20 @@ public class ContentResource extends WebResource {
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPUT(@Context HttpServletRequest request, @Context HttpServletResponse response,
 			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException {
+		return multipartPUTandPOST(request, response, multipart, params);
+	}
+	
+	@POST
+	@Path("/{params:.*}")
+	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	public Response multipartPOST(@Context HttpServletRequest request, @Context HttpServletResponse response,
+			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException {
+		return multipartPUTandPOST(request, response, multipart, params);
+	}
+	
+	private Response multipartPUTandPOST(@Context HttpServletRequest request, @Context HttpServletResponse response,
+			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException{
 		InitDataObject init=init(params,true,request,false);
 		User user=init.getUser();
 
@@ -498,6 +512,18 @@ public class ContentResource extends WebResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes({MediaType.APPLICATION_JSON,MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_XML})
 	public Response singlePUT(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
+		return singlePUTandPOST(request, response, params);
+	}
+	
+	@POST
+	@Path("/{params:.*}")
+	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes({MediaType.APPLICATION_JSON,MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_XML})
+	public Response singlePOST(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
+		return singlePUTandPOST(request, response, params);
+	}
+	
+	private Response singlePUTandPOST(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
 		InitDataObject init=init(params,true,request,false);
 
 		Contentlet contentlet=new Contentlet();
@@ -529,15 +555,6 @@ public class ContentResource extends WebResource {
 
 		return saveContent(contentlet,init);
 	}
-
-	/*
-    @PATCH
-    @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
-    @Consumes({MediaType.APPLICATION_JSON,MediaType.APPLICATION_XML,MediaType.APPLICATION_FORM_URLENCODED})
-    public Response singlePatch(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
-        return Response.ok().build();
-    }*/
 
 	protected Response saveContent(Contentlet contentlet, InitDataObject init) throws URISyntaxException {
 		boolean live = init.getParamsMap().containsKey("publish");
