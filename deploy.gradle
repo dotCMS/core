@@ -1,10 +1,10 @@
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/dotcms_3.0_90b270e.jar
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/dotcms_3.0_90b270e.jar
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/ee_3.0_5114fd9.jar
-//File Name: XYZ_version.jar --> Release
-//File Name: XYZ_version_identifier2.jar --Snapshot
 
-apply plugin:'maven'
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/dotcms_3.0.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/dotcms_3.0.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/ee_3.0.jar
+//File Name: XYZ_version.jar
+
+apply plugin: 'maven'
 apply plugin: 'application'
 
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
@@ -24,18 +24,18 @@ ext {
     fileToUpload = "$file"
 
     releaseUpload = "false"
-    if ( project.hasProperty('release')) {
+    if (project.hasProperty('release')) {
         releaseUpload = "$release"
     }
 
     //true if we want to add all the dotcms dependencies to the generated pom file
     useDependencies = "false"
-    if ( project.hasProperty('includeDependencies')) {
+    if (project.hasProperty('includeDependencies')) {
         useDependencies = "$includeDependencies"
     }
 
-    username = '$user'
-    password = '$password'
+    username = "$username"
+    password = "$password"
 }
 
 //We will only apply the dependencies for the dotcms_version.jar, adding these dependencies affects the creation of the pom file for this artifact
@@ -46,15 +46,15 @@ if (useDependencies == "true") {
 
 File toUpload
 
-artifacts{
+artifacts {
     toUpload = file(new File(fileToUpload))
-    def extension = toUpload.name.substring(toUpload.name.lastIndexOf(".") + 1,toUpload.name.length())
+    def extension = toUpload.name.substring(toUpload.name.lastIndexOf(".") + 1, toUpload.name.length())
     def fileName = toUpload.name.replace("." + extension, "")
 
     archives new DefaultPublishArtifact(fileName, extension, extension, null, new Date(), toUpload)
 }
 
-uploadArchives(){
+uploadArchives() {
     repositories {
         mavenDeployer {
 
@@ -63,14 +63,14 @@ uploadArchives(){
                 isRelease = true
             }
 
-            //XYZ_version.jar --> Release
-            //XYZ_version_identifier2.jar --Snapshot
-            def fileName = toUpload.name.replace(".jar", "")
+            def extension = toUpload.name.substring(toUpload.name.lastIndexOf(".") + 1, toUpload.name.length())
+            def fileName = toUpload.name.replace("." + extension, "")
             def nameArray = fileName.split("_")
             def artifactId = nameArray[0]
             def version = nameArray[1]
-            if (nameArray.length > 2 && !isRelease) {//If is a release we don't need the second identifier
-                version += "_" + nameArray[2]
+            //Required for artifactory in order to upload it to the snapshots repo, without it the upload fails
+            if (!isRelease) {
+                version += "-SNAPSHOT"
             }
 
             //Verify if we are releasing or just creating a snapshot
@@ -78,7 +78,7 @@ uploadArchives(){
                 repositoryUrl = releaseRepository
             }
 
-            addFilter(fileName) {artifact, file ->
+            addFilter(fileName) { artifact, file ->
                 artifact.name == fileName
             }
 

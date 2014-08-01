@@ -8,9 +8,8 @@ configurations {
 apply from: "$rootDir/dependencies.gradle"
 
 repositories {
-    maven {
-        url "http://repo.dotcms.com/artifactory/libs-release"
-    }
+    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
 task copyToLib(type: Copy) {
