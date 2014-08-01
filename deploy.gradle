@@ -10,9 +10,8 @@ apply plugin: 'application'
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
 
 repositories {
-    maven {
-        url "http://repo.dotcms.com/artifactory/libs-release"
-    }
+    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
 ext {
