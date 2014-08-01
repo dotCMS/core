@@ -91,6 +91,7 @@ import com.dotmarketing.startup.runonce.Task03035FixContainerCheckTrigger;
 import com.dotmarketing.startup.runonce.Task03040AddIndexesToStructureFields;
 import com.dotmarketing.startup.runonce.Task03042AddLicenseRepoModel;
 import com.dotmarketing.startup.runonce.Task03045TagnameTypeChangeMSSQL;
+import com.dotmarketing.startup.runonce.Task03050updateFormTabName;
 
 
 public class TaskLocatorUtil {
