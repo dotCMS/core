@@ -1,4 +1,5 @@
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=false -Pusername=userName -Ppassword=XYZ -Pfile=/home/jonathan/Dropbox/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=false -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/dotcms_3.0_90b270e.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=false -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/ee_3.0_5114fd9.jar
 //File Name: XYZ_version.jar --> Release
 //File Name: XYZ_version_identifier2.jar --Snapshot
 
@@ -12,8 +13,6 @@ repositories {
         url "http://repo.dotcms.com/artifactory/libs-release"
     }
 }
-//Import and apply the dependencies from the dependencies scripts
-apply from: "$rootDir/dependencies.gradle"
 
 ext {
     releaseRepository = "http://repo.dotcms.com/artifactory/libs-release-local"
@@ -26,6 +25,12 @@ ext {
 
     username = '$user'
     password = '$password'
+}
+
+//We will only apply the dependencies for the dotcms_version.jar, adding these dependencies affects the creation of the pom file for this artifact
+if (fileToUpload.indexOf("dotcms_") != -1) {
+    //Import and apply the dependencies from the dependencies scripts
+    apply from: "$rootDir/dependencies.gradle"
 }
 
 File toUpload
@@ -42,16 +47,23 @@ uploadArchives(){
     repositories {
         mavenDeployer {
 
+            def isRelease = false
+            if (release == "true") {
+                isRelease = true
+            }
+
+            //XYZ_version.jar --> Release
+            //XYZ_version_identifier2.jar --Snapshot
             def fileName = toUpload.name.replace(".jar", "")
             def nameArray = fileName.split("_")
             def artifactId = nameArray[0]
             def version = nameArray[1]
-            if (nameArray.length > 2) {
+            if (nameArray.length > 2 && !isRelease) {//If is a release we don't need the second identifier
                 version += "_" + nameArray[2]
             }
 
             //Verify if we are releasing or just creating a snapshot
-            if (release == "true") {
+            if (isRelease) {
                 repositoryUrl = releaseRepository
             }
 
@@ -69,6 +81,7 @@ uploadArchives(){
             println "\tgroupId: " + groupId
             println "\tartifactId: " + artifactId
             println "\tversion: " + version
+            println "\trepository: " + repositoryUrl
 
             repository(url: repositoryUrl) {
                 authentication(userName: username, password: password)
