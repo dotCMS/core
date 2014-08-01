@@ -1,4 +1,4 @@
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=false -Pfile=/home/jonathan/Dropbox/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=false -Pusername=userName -Ppassword=XYZ -Pfile=/home/jonathan/Dropbox/Projects/dotCMS/repository/git/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0.jar
 //File Name: XYZ_version.jar --> Release
 //File Name: XYZ_version_identifier2.jar --Snapshot
 
@@ -24,8 +24,8 @@ ext {
     fileToUpload = "$file"
     release = "$release"
 
-    username = 'user.name'
-    password = 'XYZ'
+    username = '$user'
+    password = '$password'
 }
 
 File toUpload
