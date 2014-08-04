@@ -1,6 +1,7 @@
 configurations {
     compile
     antLibs
+    ext.dotcmsFolder = "dotCMS"
     ext.libsFolder = "dotCMS/WEB-INF/lib"
     ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
 }
@@ -28,8 +29,14 @@ task copyToLib(type: Copy) {
         exclude '**/dot.org.apache.felix.bundlerepository*.jar'
         exclude '**/dot.org.apache.felix.fileinstall*.jar'
         exclude '**/dot.org.apache.felix.gogo.*.jar'
+        exclude '**/*.zip'
 
         into configurations.libsFolder
+    }
+    from(configurations.compile) {
+        include '**/starter*.zip'
+        into configurations.dotcmsFolder
+        rename ( /starter(.+)\.zip/, "starter.zip" )
     }
 }
 

@@ -202,7 +202,7 @@ MemoryMeter meter = new MemoryMeter();
 	          				<%= UtilMethods.prettyMemory( meter.measureDeep(stats)) %> 
 	         
 	                	<%}catch(Exception e){ %>
-	                		Set Jamm at statup, e.g. -javaagent:./dotCMS/WEB-INF/lib/dot.jamm_0.2.5.jar
+	                		Set Jamm at statup, e.g. -javaagent:./dotCMS/WEB-INF/lib/dot.jamm-0.2.5_1.jar
 	                	<%} %>
                 	 </td>
                 <%} %>       

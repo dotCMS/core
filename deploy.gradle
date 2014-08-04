@@ -1,8 +1,18 @@
 
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/dotcms_3.0.jar
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/dotcms_3.0.jar
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=userName -Ppassword=XYZ -Pfile=/file/path/ee_3.0.jar
-//File Name: XYZ_version.jar
+//dotcms jar
+//File Name: dotcms_version_hash.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
+
+//Enterprise jar
+//File Name: ee_hash.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
+
+//starter zip
+//File Name: starter_hash.jar
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_6ed320c.zip
+//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_6ed320c.zip
 
 apply plugin: 'maven'
 apply plugin: 'application'
@@ -67,6 +77,9 @@ uploadArchives() {
             def nameArray = fileName.split("_")
             def artifactId = nameArray[0]
             def version = nameArray[1]
+            if (nameArray.length > 2 && !isRelease) {//If is a release we don't need a second identifier
+                version += "_" + nameArray[2]
+            }
             //Required for artifactory in order to upload it to the snapshots repo, without it the upload fails
             if (!isRelease) {
                 version += "-SNAPSHOT"
