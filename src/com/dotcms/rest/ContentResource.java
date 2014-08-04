@@ -8,6 +8,7 @@ import java.net.URLDecoder;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,6 +19,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Consumes;
 import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
@@ -410,7 +412,7 @@ public class ContentResource extends WebResource {
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPUT(@Context HttpServletRequest request, @Context HttpServletResponse response,
 			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException {
-		return multipartPUTandPOST(request, response, multipart, params);
+		return multipartPUTandPOST(request, response, multipart, params, "PUT");
 	}
 	
 	@POST
@@ -419,16 +421,18 @@ public class ContentResource extends WebResource {
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPOST(@Context HttpServletRequest request, @Context HttpServletResponse response,
 			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException {
-		return multipartPUTandPOST(request, response, multipart, params);
+		return multipartPUTandPOST(request, response, multipart, params, "POST");
 	}
 	
-	private Response multipartPUTandPOST(@Context HttpServletRequest request, @Context HttpServletResponse response,
-			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException{
+	private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
+			FormDataMultiPart multipart, String params, String method) throws URISyntaxException{
+		
 		InitDataObject init=init(params,true,request,false);
 		User user=init.getUser();
-
 		Contentlet contentlet=new Contentlet();
-
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		
 		for(BodyPart part : multipart.getBodyParts()) {
 			ContentDisposition cd=part.getContentDisposition();
 			String name=cd!=null && cd.getParameters().containsKey("name") ? cd.getParameters().get("name") : "";
@@ -474,6 +478,18 @@ public class ContentResource extends WebResource {
 					return responseBuilder.build();
 				}
 			}
+			else if(part.getMediaType().equals(MediaType.TEXT_PLAIN_TYPE)) {
+				try {
+					map.put(name, part.getEntityAs(String.class));
+					processMap( contentlet, map );
+				} catch (Exception e) {
+					Logger.error( this.getClass(), "Error processing Plain Tex", e );
+
+					Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+					responseBuilder.entity( e.getMessage() );
+					return responseBuilder.build();
+				}
+			}
 			else if(part.getContentDisposition()!=null) {
 				InputStream input=part.getEntityAs(InputStream.class);
 				String filename=part.getContentDisposition().getFileName();
@@ -502,7 +518,7 @@ public class ContentResource extends WebResource {
 					return responseBuilder.build();
 				}
 			}
-		}
+		}		
 
 		return saveContent(contentlet,init);
 	}
@@ -512,7 +528,7 @@ public class ContentResource extends WebResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes({MediaType.APPLICATION_JSON,MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_XML})
 	public Response singlePUT(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
-		return singlePUTandPOST(request, response, params);
+		return singlePUTandPOST(request, response, params, "PUT");
 	}
 	
 	@POST
@@ -520,10 +536,10 @@ public class ContentResource extends WebResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes({MediaType.APPLICATION_JSON,MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_XML})
 	public Response singlePOST(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
-		return singlePUTandPOST(request, response, params);
+		return singlePUTandPOST(request, response, params, "POST");
 	}
 	
-	private Response singlePUTandPOST(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws URISyntaxException {
+	private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response, String params, String method) throws URISyntaxException {
 		InitDataObject init=init(params,true,request,false);
 
 		Contentlet contentlet=new Contentlet();
@@ -535,7 +551,13 @@ public class ContentResource extends WebResource {
 				processXML(contentlet, request.getInputStream());
 			}
 			else if(request.getContentType().startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
-				processForm(contentlet, request.getInputStream());
+				if(method.equals("PUT")){
+					processForm(contentlet, request.getInputStream());
+				}
+				else if(method.equals("POST")){
+					processFormPost(contentlet, request, false);
+				}
+				
 			}
 		} catch ( JSONException e ) {
 
@@ -758,6 +780,32 @@ public class ContentResource extends WebResource {
 				map.put( key, value );
 			}
 		}
+		processMap( contentlet, map );
+	}
+	
+	protected void processFormPost ( Contentlet contentlet, HttpServletRequest request, boolean multiPart) throws Exception {
+
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		if(multiPart){
+			ArrayList<Part> partList = new ArrayList<Part>(request.getParts());
+			
+			for(Part part : partList){
+				String partName = part.getName();
+				String partValue = part.getHeader(partName);
+				map.put( partName, partValue );
+			}
+			
+		}else{
+			Enumeration<String> parameterNames = request.getParameterNames();
+
+			while (parameterNames.hasMoreElements()) {
+				String paramName = parameterNames.nextElement();
+				String paramValue = request.getParameter(paramName);
+				map.put( paramName, paramValue );
+			}	
+		}
+		
 		processMap( contentlet, map );
 	}
 
