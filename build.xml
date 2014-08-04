@@ -49,6 +49,10 @@
     <property name="jboss7.home" value="${jboss7.install.location}"/>
     <property name="jboss7.version" value="${jboss7.install.version}"/>
 
+    <tstamp>
+        <format property="TODAY_FORMATTED" pattern="MMM dd, yyyy"/>
+    </tstamp>
+
     <path id="build-classpath">
         <pathelement path="${build.classes}" />
     </path>
@@ -112,6 +116,28 @@
         <mkdir dir="${build.lib}" />
     </target>
 
+    <available file=".git" type="dir" property="git.present"/>
+    <target name="git.revision" description="Store git revision in ${repository.version}" if="git.present">
+
+        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
+            <arg value="describe"/>
+            <arg value="--always"/>
+            <arg value="HEAD"/>
+        </exec>
+        <condition property="repository.version" value="${git.revision}" else="unknown">
+            <and>
+                <isset property="git.revision"/>
+                <length string="${git.revision}" trim="yes" length="0" when="greater"/>
+            </and>
+        </condition>
+
+        <propertyfile file="${src.dir}/com/liferay/portal/util/build.properties">
+            <entry key="dotcms.release.build" value="${repository.version}"/>
+            <entry key="dotcms.release.date" value="${TODAY_FORMATTED}"/>
+        </propertyfile>
+
+    </target>
+
     <target name="clean-tinymce-gz" description="Removes all generated .gz pre-compressed files by tinymce_gzip.jsp">
         <delete>
             <fileset dir="dotCMS/html/js/tinymce/jscripts/tiny_mce/" includes="*.gz"/>
@@ -164,7 +190,7 @@
     </target>
 
 
-    <target name="jar" depends="compile" description="Generates dotcms.jar in the 'lib' directory.">
+    <target name="jar" depends="git.revision, compile" description="Generates dotcms.jar in the 'lib' directory.">
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
