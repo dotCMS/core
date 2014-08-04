@@ -431,129 +431,91 @@ public class ContentResource extends WebResource {
 		User user=init.getUser();
 		Contentlet contentlet=new Contentlet();
 		
-		if(method.equals("POST")){
-			
-			Map<String, Object> map = new HashMap<String, Object>();
-			for(BodyPart part : multipart.getBodyParts()) {
-				
-				ContentDisposition contentDisposition = part.getContentDisposition();
-				String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name") ? contentDisposition.getParameters().get("name") : "";
-				
-				if(part.getMediaType().equals(MediaType.TEXT_PLAIN_TYPE)) {
-					try {
-						map.put(name, part.getEntityAs(String.class));
-						processMap( contentlet, map );
-					} catch (Exception e) {
-						Logger.error( this.getClass(), "Error processing Plain Tex", e );
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		for(BodyPart part : multipart.getBodyParts()) {
+			ContentDisposition cd=part.getContentDisposition();
+			String name=cd!=null && cd.getParameters().containsKey("name") ? cd.getParameters().get("name") : "";
 
-						Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-						responseBuilder.entity( e.getMessage() );
-						return responseBuilder.build();
-					}
-				}
-				else if(part.getContentDisposition()!=null) {
-					InputStream input=part.getEntityAs(InputStream.class);
-					String filename=part.getContentDisposition().getFileName();
-					java.io.File tmp=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
-							+ java.io.File.separator + user.getUserId()
-							+ java.io.File.separator + System.currentTimeMillis()
-							+ java.io.File.separator + filename);
-					if(tmp.exists())
-						tmp.delete();
-					try {
-						FileUtils.copyInputStreamToFile(input, tmp);
+			if(part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
+				try {
+					processJSON(contentlet,part.getEntityAs(InputStream.class));
+				} catch (JSONException e) {
 
-						for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
-							// filling binarys in order. as they come / as field order says
-							if(ff.getFieldContentlet().startsWith("binary") && contentlet.getBinary(ff.getVelocityVarName())==null) {
-								contentlet.setBinary(ff.getVelocityVarName(), tmp);
-								break;
-							}
-						}
-					} catch (IOException e) {
+					Logger.error( this.getClass(), "Error processing JSON for Stream", e );
 
-						Logger.error( this.getClass(), "Error processing Stream", e );
+					Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
+					responseBuilder.entity( e.getMessage() );
+					return responseBuilder.build();
+				} catch (IOException e) {
 
-						Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-						responseBuilder.entity( e.getMessage() );
-						return responseBuilder.build();
-					}
+					Logger.error( this.getClass(), "Error processing Stream", e );
+
+					Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+					responseBuilder.entity( e.getMessage() );
+					return responseBuilder.build();
 				}
 			}
-		
-		}else{//if method is PUT
-			for(BodyPart part : multipart.getBodyParts()) {
-				ContentDisposition cd=part.getContentDisposition();
-				String name=cd!=null && cd.getParameters().containsKey("name") ? cd.getParameters().get("name") : "";
+			else if(part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
+				try {
+					processXML(contentlet, part.getEntityAs(InputStream.class));
+				} catch (Exception e) {
+					Logger.error( this.getClass(), "Error processing Stream", e );
 
-				if(part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
-					try {
-						processJSON(contentlet,part.getEntityAs(InputStream.class));
-					} catch (JSONException e) {
-
-						Logger.error( this.getClass(), "Error processing JSON for Stream", e );
-
-						Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_BAD_REQUEST );
-						responseBuilder.entity( e.getMessage() );
-						return responseBuilder.build();
-					} catch (IOException e) {
-
-						Logger.error( this.getClass(), "Error processing Stream", e );
-
-						Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-						responseBuilder.entity( e.getMessage() );
-						return responseBuilder.build();
-					}
+					Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+					responseBuilder.entity( e.getMessage() );
+					return responseBuilder.build();
 				}
-				else if(part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
-					try {
-						processXML(contentlet, part.getEntityAs(InputStream.class));
-					} catch (Exception e) {
-						Logger.error( this.getClass(), "Error processing Stream", e );
+			}
+			else if(part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE) || name.equals("urlencoded")) {
+				try {
+					processForm(contentlet, part.getEntityAs(InputStream.class));
+				} catch (Exception e) {
+					Logger.error( this.getClass(), "Error processing Stream", e );
 
-						Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-						responseBuilder.entity( e.getMessage() );
-						return responseBuilder.build();
-					}
+					Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+					responseBuilder.entity( e.getMessage() );
+					return responseBuilder.build();
 				}
-				else if(part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE) || name.equals("urlencoded")) {
-					try {
-						processForm(contentlet, part.getEntityAs(InputStream.class));
-					} catch (Exception e) {
-						Logger.error( this.getClass(), "Error processing Stream", e );
+			}
+			else if(part.getMediaType().equals(MediaType.TEXT_PLAIN_TYPE)) {
+				try {
+					map.put(name, part.getEntityAs(String.class));
+					processMap( contentlet, map );
+				} catch (Exception e) {
+					Logger.error( this.getClass(), "Error processing Plain Tex", e );
 
-						Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-						responseBuilder.entity( e.getMessage() );
-						return responseBuilder.build();
-					}
+					Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+					responseBuilder.entity( e.getMessage() );
+					return responseBuilder.build();
 				}
-				else if(part.getContentDisposition()!=null) {
-					InputStream input=part.getEntityAs(InputStream.class);
-					String filename=part.getContentDisposition().getFileName();
-					java.io.File tmp=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
-							+ java.io.File.separator + user.getUserId()
-							+ java.io.File.separator + System.currentTimeMillis()
-							+ java.io.File.separator + filename);
-					if(tmp.exists())
-						tmp.delete();
-					try {
-						FileUtils.copyInputStreamToFile(input, tmp);
+			}
+			else if(part.getContentDisposition()!=null) {
+				InputStream input=part.getEntityAs(InputStream.class);
+				String filename=part.getContentDisposition().getFileName();
+				java.io.File tmp=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+						+ java.io.File.separator + user.getUserId()
+						+ java.io.File.separator + System.currentTimeMillis()
+						+ java.io.File.separator + filename);
+				if(tmp.exists())
+					tmp.delete();
+				try {
+					FileUtils.copyInputStreamToFile(input, tmp);
 
-						for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
-							// filling binarys in order. as they come / as field order says
-							if(ff.getFieldContentlet().startsWith("binary") && contentlet.getBinary(ff.getVelocityVarName())==null) {
-								contentlet.setBinary(ff.getVelocityVarName(), tmp);
-								break;
-							}
+					for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
+						// filling binarys in order. as they come / as field order says
+						if(ff.getFieldContentlet().startsWith("binary") && contentlet.getBinary(ff.getVelocityVarName())==null) {
+							contentlet.setBinary(ff.getVelocityVarName(), tmp);
+							break;
 						}
-					} catch (IOException e) {
-
-						Logger.error( this.getClass(), "Error processing Stream", e );
-
-						Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
-						responseBuilder.entity( e.getMessage() );
-						return responseBuilder.build();
 					}
+				} catch (IOException e) {
+
+					Logger.error( this.getClass(), "Error processing Stream", e );
+
+					Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+					responseBuilder.entity( e.getMessage() );
+					return responseBuilder.build();
 				}
 			}
 		}		
