@@ -198,7 +198,7 @@
         <copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
         <copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" />
+        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" basedir="${build.classes}" />
     </target>
 
     <target name="jar-with-tests" depends="compile, compile-tests" description="Generates dotcms.jar in the 'lib' directory includind tests classes.">
@@ -209,7 +209,7 @@
         <copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
         <copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" />
+        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" basedir="${build.classes}" />
     </target>
 
     <!-- Configure the directory into which the web application is built -->
@@ -255,7 +255,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -264,7 +264,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -273,7 +273,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -282,7 +282,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -295,7 +295,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <antcall target="deploy-plugins" />
     </target>
 
