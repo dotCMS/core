@@ -230,6 +230,7 @@ function doPaste(){
             </div>
         </form>
 
+<% if(!isCommunity) { %>
 <div style="margin:auto;width:500px;padding-top:30px;">
 <h1> License Repository </h1>
 <br/>
@@ -286,7 +287,7 @@ function doPaste(){
     </table>
     <button dojoType="dijit.form.Button" onClick="loadRepo()">Refresh</button>
 <% } %>
-    <% if(!isCommunity) { %>
+    
           <script type="text/javascript">
           	function doPackUpload() { 
           		dojo.byId('uploadPackForm').submit();
@@ -300,8 +301,9 @@ function doPaste(){
               <button dojoType="dijit.form.Button" name="btnSubmit" onClick="doPackUpload()">Upload</button>
            </form>
            </div>
-    <% } %>
+    
     </div>
+<% } %>
     </div>
 </div>  
 
