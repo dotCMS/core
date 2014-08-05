@@ -7,12 +7,19 @@ When the file is uploaded as a release will be uploaded to the libs-release-loca
  otherwise it will be treated as a snapshot and uploaded to the libs-snapshot-local (http://repo.dotcms.com/artifactory/libs-snapshot-local)
 
 Script options:
-    groupId: Repository group id -> Required
-    file: File to upload -> Required
-    release: (true/false) - true if is a release upload, false if is a snapshot -> Default false
-    includeDependencies: (true/false) - If upload given file including the complete set of dependencies in the file pom (required for the dotcms jar) -> Default false
+    groupId: Repository group id
+        -> Required
+    file: File to upload
+        -> Required
+    release: (true/false) - true if is a release upload, false if is a snapshot
+        -> Default false
+    includeDependencies: (true/false) - If upload given file including the complete set of dependencies in the file pom (required for the dotcms jar).
+        The set of dependencies is given by the dependencies.gradle script
+        -> Default false
     username: user name of the user with upload privileges
+        -> Required
     password: password of the user with upload privileges
+        -> Required
 
 Examples of use:
 
