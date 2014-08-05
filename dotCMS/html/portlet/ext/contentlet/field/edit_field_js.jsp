@@ -582,6 +582,10 @@ var cmsfile=null;
 		}
 	}
 
+	function replaceAll(find, replace, str) {
+  		return str.replace(new RegExp(find, 'g'), replace);
+	}
+
 	function addKVPair(fieldId, fieldValueId){
 		var node = dojo.byId(fieldId+'_kvtable');
 		var key = dijit.byId(fieldValueId+'_key').value;
@@ -590,10 +594,10 @@ var cmsfile=null;
 		}else{
 		key = key.trim();
 		//escape double quotes	
-		key = key.replace('"', '&#x22');
+		key = replaceAll('"', '&#x22;', key);
 		var value = dijit.byId(fieldValueId+'_value').value;
 		//escape double quotes
-		value = value.replace('"', '&#x22');
+		value = replaceAll('"', '&#x22;', value);
 		var table = document.getElementById(fieldId+'_kvtable');
 		var row = document.getElementById(fieldId+'_'+key);
 		var trs = table.getElementsByTagName('tr');
@@ -709,6 +713,8 @@ var cmsfile=null;
 					var rowId = table.rows[i].id;
 					var key = document.getElementById(rowId+'_k').value;
 					var value = document.getElementById(rowId+'_v').value;
+					key = replaceAll('"', '&#x22;', key);
+					value = replaceAll('"', '&#x22;', value);
 					jsonStr+= '"' + key + '"' + ":" + '"' + value + '"' + (i!=rowCount-1?",":"");
 				}
 			 jsonStr+="}";
