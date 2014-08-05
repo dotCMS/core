@@ -1368,7 +1368,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         try {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_SCHEME_NAME);
-            db.addParam(schemaName);
+            db.addParam((schemaName != null ? schemaName.trim() : ""));
             List<WorkflowScheme> list = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
             scheme = list.size()>0 ? (WorkflowScheme)list.get(0) : null;
         } catch (final Exception e) {
