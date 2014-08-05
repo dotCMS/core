@@ -1,18 +1,41 @@
 
-//dotcms jar
-//File Name: dotcms_version_hash.jar
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
+/*
 
-//Enterprise jar
-//File Name: ee_hash.jar
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
+Script that will upload a given file as released or as a snapshot:
 
-//starter zip
-//File Name: starter_timestamp.zip -> starter_20140805.zip
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
-//gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
+When the file is uploaded as a release will be uploaded to the libs-release-local repository (http://repo.dotcms.com/artifactory/libs-release-local)
+ otherwise it will be treated as a snapshot and uploaded to the libs-snapshot-local (http://repo.dotcms.com/artifactory/libs-snapshot-local)
+
+Script options:
+    groupId: Repository group id -> Required
+    file: File to upload -> Required
+    release: (true/false) - true if is a release upload, false if is a snapshot -> Default false
+    includeDependencies: (true/false) - If upload given file including the complete set of dependencies in the file pom (required for the dotcms jar) -> Default false
+    username: user name of the user with upload privileges
+    password: password of the user with upload privileges
+
+Examples of use:
+
+     dotcms jar:
+        Name convention: dotcms_version_hash.jar -> dotcms_3.0_a434224.jar
+        As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
+        As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
+
+     Enterprise jar
+        Name convention: ee_hash.jar -> ee_6536e59.jar
+        As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
+        As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
+
+     starter zip
+        Name convention: starter_timestamp.zip -> starter_20140805.zip
+        As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
+        As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
+
+NOTE:
+    For a known gradle bug we can not use the default snapshot behaviour and right now each snapshot have to be an artifact:
+        http://issues.gradle.org/browse/GRADLE-2784
+        http://forums.gradle.org/gradle/topics/using_a_specific_snapshot_version_of_an_artifact
+*/
 
 apply plugin: 'maven'
 apply plugin: 'application'
