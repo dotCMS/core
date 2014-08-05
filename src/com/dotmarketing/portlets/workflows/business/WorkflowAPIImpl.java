@@ -753,12 +753,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if(actionClasses != null){
 			for(WorkflowActionClass actionClass : actionClasses){
 				WorkFlowActionlet actionlet= actionClass.getActionlet();
-				Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
-				actionlet.executePreAction(processor, params);
-				//if we should stop processing further actionlets
-				if(actionlet.stopProcessing()){
-					break;
+				//Validate the actionlet exists and the OSGI is installed and running. 
+				if(UtilMethods.isSet(actionlet)){
+					Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+					actionlet.executePreAction(processor, params);
+					//if we should stop processing further actionlets
+					if(actionlet.stopProcessing()){
+						break;
+					}
+				}else {
+					throw new DotWorkflowException("Actionlet: " + actionClass.getName() + " is null. Check if the Plugin is installed and running.");
 				}
+				
 			}
 		}
 

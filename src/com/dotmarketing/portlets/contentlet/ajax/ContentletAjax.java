@@ -1003,7 +1003,8 @@ public class ContentletAjax {
 
 	                List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
 	                for(WorkflowActionClass actionlet : actionlets){
-	                	if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
+	                	if(actionlet.getActionlet() != null 
+	                			&& actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
 	                		hasPushPublishActionlet = true;
 	                	}
 	                }
