@@ -188,10 +188,17 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 			try {
 				/**
-				 * remove all the existing sitemaps generated in the XMLSitemap
-				 * folder for the host specified
+				 * mark all the existing sitemaps generated in the XMLSitemap
+				 * folder for the host specified to be removed upon creating new ones
 				 */
-				cleanHostFromSitemapFiles(host);
+				List<Object> oldSiteMapsToDel = new ArrayList<Object>();
+
+				Folder folder = folderAPI.findFolderByPath(XML_SITEMAPS_FOLDER, host, systemUser, false);
+
+				if (InodeUtils.isSet(folder.getIdentifier())) {
+					oldSiteMapsToDel.addAll(fileAPI.getFolderFiles(folder, false, systemUser, true));
+					oldSiteMapsToDel.addAll(conAPI.findContentletsByFolder(folder, systemUser, false));
+				}
 
 				hostFilesCounter.put(host.getHostname(), sitemapCounter);
 
@@ -459,6 +466,8 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					}
 
 				}
+				
+				cleanOldSitemapFiles(oldSiteMapsToDel);
 
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
@@ -678,7 +687,8 @@ public class XMLSitemapJob implements Job, StatefulJob {
 			/******* Begin Generate compressed file *****************************/
 			String dateCounter = Calendar.getInstance().get(Calendar.MONTH)
 									+""+Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
-									+""+Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+									+""+Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+									+""+Calendar.getInstance().get(Calendar.MINUTE);
 			String sitemapName = Config.getStringProperty("org.dotcms.XMLSitemap.SITEMAP_XML_GZ_FILENAME","XMLSitemapGenerated")
 					+ dateCounter + counter + ".xml.gz";
 			compressedFile = new File(sitemapName);
@@ -780,22 +790,14 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	 * @param host
 	 * @throws Exception
 	 */
-	@SuppressWarnings("unchecked")
-	private void cleanHostFromSitemapFiles(Host host) throws Exception {
+	private void cleanOldSitemapFiles(List<Object> siteMapsToDel) throws Exception {
 
 		try{
-			Folder folder = folderAPI.findFolderByPath(XML_SITEMAPS_FOLDER, host,
-					systemUser, false);
-
-			if (InodeUtils.isSet(folder.getIdentifier())) {
-				List<com.dotmarketing.portlets.files.model.File> files = fileAPI
-						.getFolderFiles(folder, false, systemUser, true);
-				for (com.dotmarketing.portlets.files.model.File file : files) {
-					fileAPI.delete(file, systemUser, true);
-				}
-				List<Contentlet> consToDel = conAPI.findContentletsByFolder(folder, systemUser, false);
-				for(Contentlet con : consToDel){
-					conAPI.delete(con, systemUser, false);
+			for(Object siteMap : siteMapsToDel){
+				if(siteMap instanceof com.dotmarketing.portlets.files.model.File){
+					fileAPI.delete((com.dotmarketing.portlets.files.model.File)siteMap, systemUser, true);
+				}else if(siteMap instanceof Contentlet){
+					conAPI.delete((Contentlet)siteMap, systemUser, false);
 				}
 			}
 		}
