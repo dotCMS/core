@@ -1,11 +1,11 @@
 package com.dotmarketing.business;
 
 import com.dotcms.cluster.business.ServerFactory;
-import com.dotcms.cluster.business.ServerFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
 import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
+import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
 import com.dotcms.notifications.business.NotificationFactory;
