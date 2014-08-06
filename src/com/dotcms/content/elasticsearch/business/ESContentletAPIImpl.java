@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.tools.ant.taskdefs.condition.IsSet;
 import org.springframework.beans.BeanUtils;
 
 import com.dotcms.content.business.DotMappingException;

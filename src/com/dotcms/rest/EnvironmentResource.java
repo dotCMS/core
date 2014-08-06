@@ -15,6 +15,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -82,7 +83,7 @@ public class EnvironmentResource extends WebResource {
 			JSONObject environmentBundle = new JSONObject();
 			environmentBundle.put( "id", e.getId() );
 			//Escape name for cases like: dotcms's
-			environmentBundle.put( "name", StringEscapeUtils.unescapeJava(e.getName()));
+			environmentBundle.put( "name", StringEscapeUtils.unescapeJava( e.getName() ));
 			
 			jsonEnvironments.add(environmentBundle);
 		}

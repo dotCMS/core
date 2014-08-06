@@ -14,6 +14,8 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.elasticsearch.action.ActionFuture;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
