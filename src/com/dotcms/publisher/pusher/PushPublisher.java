@@ -11,6 +11,7 @@ import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
@@ -309,7 +310,7 @@ public class PushPublisher extends Publisher {
             list.add( WorkflowBundler.class );
             list.add( LanguageBundler.class );
         }
-
+        list.add( BundleXMLAsc.class );
         return list;
 
     }

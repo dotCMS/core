@@ -12,9 +12,10 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
-import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.ActionFuture;
 import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -447,7 +448,8 @@ public class ClusterResource extends WebResource {
     @Path ("/wirenode/{params:.*}")
     @Produces ("application/json")
     public Response wireNode ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
-        InitDataObject initData = init( params, true, request, false, "NetworkPortlet" ); // TODO rejectWhenNoUser has to be true
+        InitDataObject initData = init( params, true, request, true, "NetworkPortlet" ); 
+
         JSONObject jsonNode = new JSONObject();
 
         if(request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
@@ -481,6 +483,17 @@ public class ClusterResource extends WebResource {
 
     }
 
-
+    @GET
+    @Path("/licenseRepoStatus")
+    @Produces("application/json")
+    public Response getLicenseRepoStatus(@Context HttpServletRequest request, @PathParam ("params") String params) throws DotDataException, JSONException {
+        init( params, true, request, true );
+        
+        JSONObject json=new JSONObject();
+        json.put("total", LicenseUtil.getLicenseRepoTotal());
+        json.put("available", LicenseUtil.getLicenseRepoAvailableCount());
+        
+        return Response.ok(json.toString()).build();
+    }
 
 }

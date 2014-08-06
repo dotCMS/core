@@ -305,8 +305,8 @@ public class StartupTasksExecutor {
 
 				}
 			}
-			if(runOnce.size() > 0)
-				ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
+			//if(runOnce.size() > 0)
+				//ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
 			
 		} catch (Exception e) {
 			HibernateUtil.rollbackTransaction();

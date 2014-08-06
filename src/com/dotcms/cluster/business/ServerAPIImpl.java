@@ -11,9 +11,9 @@ import java.util.Date;
 import java.util.List;
 
 import com.dotcms.cluster.bean.Server;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -35,7 +35,7 @@ public class ServerAPIImpl implements ServerAPI {
 	}
 
 	public String readServerId() {
-		String realPath = Config.CONTEXT.getRealPath("dotsecure") + java.io.File.separator + "server_id.dat";
+		String realPath = ConfigUtils.getDynamicContentPath() + java.io.File.separator + "server_id.dat";
 		BufferedReader br = null;
 		String serverId = null;
 		try {
@@ -82,7 +82,7 @@ public class ServerAPIImpl implements ServerAPI {
 	}
 
 	public  void writeHeartBeatToDisk(String serverId) throws IOException {
-		String realPath = Config.getStringProperty("ASSET_REAL_PATH", Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")))
+		String realPath = APILocator.getFileAPI().getRealAssetPath()
     			+ java.io.File.separator + "server" + java.io.File.separator + serverId;
 		File serverDir = new File(realPath);
 
