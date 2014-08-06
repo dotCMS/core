@@ -70,7 +70,7 @@ public class XMLSitemapServlet extends HttpServlet {
 						if (itemChild.isWorking() && !itemChild.isArchived()) {
 							Identifier identifier = APILocator.getIdentifierAPI().find(itemChild);
 							sitemapIndex.append("<sitemap>");
-							sitemapIndex.append("<loc>"+ XMLUtils.xmlEscape("http://www."
+							sitemapIndex.append("<loc>"+ XMLUtils.xmlEscape("http://"
 									+ host.getHostname()
 									+ UtilMethods.encodeURIComponent(identifier.getParentPath()+itemChild.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))
 							+ "</loc>");

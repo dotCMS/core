@@ -20,13 +20,79 @@ import com.dotmarketing.fixtask.tasks.FixTask00050FixInodesWithoutContentlets;
 import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
 import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
 import com.dotmarketing.startup.runalways.Task00001LoadSchema;
+import com.dotmarketing.startup.runalways.Task00009ClusterInitialize;
 import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
 import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
 import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
 import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
 import com.dotmarketing.startup.runalways.Task00008CreateDefaultWorkflowScheme;
-import com.dotmarketing.startup.runonce.*;
+import com.dotmarketing.startup.runonce.Task00760AddContentletStructureInodeIndex;
+import com.dotmarketing.startup.runonce.Task00765AddUserForeignKeys;
+import com.dotmarketing.startup.runonce.Task00766AddFieldVariableTable;
+import com.dotmarketing.startup.runonce.Task00767FieldVariableValueTypeChange;
+import com.dotmarketing.startup.runonce.Task00768CreateTagStorageFieldOnHostStructure;
+import com.dotmarketing.startup.runonce.Task00769UpdateTagDataModel;
+import com.dotmarketing.startup.runonce.Task00775DropUnusedTables;
+import com.dotmarketing.startup.runonce.Task00780UUIDTypeChange;
+import com.dotmarketing.startup.runonce.Task00782CleanDataInconsistencies;
+import com.dotmarketing.startup.runonce.Task00785DataModelChanges;
+import com.dotmarketing.startup.runonce.Task00790DataModelChangesForWebAssets;
+import com.dotmarketing.startup.runonce.Task00795LiveWorkingToIdentifier;
+import com.dotmarketing.startup.runonce.Task00800CreateTemplateContainers;
+import com.dotmarketing.startup.runonce.Task00805AddRenameFolderProcedure;
+import com.dotmarketing.startup.runonce.Task00810FilesAsContentChanges;
+import com.dotmarketing.startup.runonce.Task00815WorkFlowTablesChanges;
+import com.dotmarketing.startup.runonce.Task00820CreateNewWorkFlowTables;
+import com.dotmarketing.startup.runonce.Task00825UpdateLoadRecordsToIndex;
+import com.dotmarketing.startup.runonce.Task00835CreateIndiciesTables;
+import com.dotmarketing.startup.runonce.Task00840FixContentletVersionInfo;
+import com.dotmarketing.startup.runonce.Task00845ChangeLockedOnToTimeStamp;
+import com.dotmarketing.startup.runonce.Task00850DropOldFilesConstraintInWorkflow;
+import com.dotmarketing.startup.runonce.Task00855FixRenameFolder;
+import com.dotmarketing.startup.runonce.Task00860ExtendServerIdsMSSQL;
+import com.dotmarketing.startup.runonce.Task00865AddTimestampToVersionTables;
+import com.dotmarketing.startup.runonce.Task00900CreateLogConsoleTable;
+import com.dotmarketing.startup.runonce.Task00905FixAddFolderAfterDelete;
+import com.dotmarketing.startup.runonce.Task00910AddEscalationFields;
+import com.dotmarketing.startup.runonce.Task00920AddContentletVersionSystemHost;
+import com.dotmarketing.startup.runonce.Task00922FixdotfolderpathMSSQL;
+import com.dotmarketing.startup.runonce.Task00925UserIdTypeChange;
+import com.dotmarketing.startup.runonce.Task00930AddIdentifierIndex;
+import com.dotmarketing.startup.runonce.Task00935LogConsoleTableData;
+import com.dotmarketing.startup.runonce.Task00940AlterTemplateTable;
+import com.dotmarketing.startup.runonce.Task00945AddTableContentPublishing;
+import com.dotmarketing.startup.runonce.Task00950AddTablePublishingEndpoint;
+import com.dotmarketing.startup.runonce.Task01000LinkChequerTable;
+import com.dotmarketing.startup.runonce.Task01005TemplateThemeField;
+import com.dotmarketing.startup.runonce.Task01015AddPublishExpireDateToIdentifier;
+import com.dotmarketing.startup.runonce.Task01016AddStructureExpireFields;
+import com.dotmarketing.startup.runonce.Task01020CreateDefaultWorkflow;
+import com.dotmarketing.startup.runonce.Task01030AddSiteSearchAuditTable;
+import com.dotmarketing.startup.runonce.Task01035FixTriggerVarLength;
+import com.dotmarketing.startup.runonce.Task01060CreatePushPublishPushedAssets;
+import com.dotmarketing.startup.runonce.Task01065IndexOnPublishingQueueAuditStatus;
+import com.dotmarketing.startup.runonce.Task01070BundleNameDropUnique;
+import com.dotmarketing.startup.runonce.Task01085CreateBundleTablesIfNotExists;
+import com.dotmarketing.startup.runonce.Task01090AddWorkflowSchemeUniqueNameContraint;
+import com.dotmarketing.startup.runonce.Task01095CreateIntegrityCheckerResultTables;
+import com.dotmarketing.startup.runonce.Task03000CreateContainertStructures;
+import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
+import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
+import com.dotmarketing.startup.runonce.Task01055CreatePushPublishEnvironmentTable;
+import com.dotmarketing.startup.runonce.Task01080CreateModDateForMissingObjects;
+import com.dotmarketing.startup.runonce.Task03005CreateModDateForFieldIfNeeded;
+import com.dotmarketing.startup.runonce.Task03010AddContentletIdentifierIndex;
+import com.dotmarketing.startup.runonce.Task03015CreateClusterConfigModel;
+import com.dotmarketing.startup.runonce.Task03020PostgresqlIndiciesFK;
+import com.dotmarketing.startup.runonce.Task03025CreateFoundationForNotificationSystem;
+import com.dotmarketing.startup.runonce.Task03030CreateIndicesForVersionTables;
+import com.dotmarketing.startup.runonce.Task03035FixContainerCheckTrigger;
+import com.dotmarketing.startup.runonce.Task03040AddIndexesToStructureFields;
+import com.dotmarketing.startup.runonce.Task03042AddLicenseRepoModel;
+import com.dotmarketing.startup.runonce.Task03045TagnameTypeChangeMSSQL;
+import com.dotmarketing.startup.runonce.Task03050updateFormTabName;
+
 
 public class TaskLocatorUtil {
 
@@ -117,7 +183,9 @@ public class TaskLocatorUtil {
         ret.add(Task03030CreateIndicesForVersionTables.class);
         ret.add(Task03035FixContainerCheckTrigger.class);
         ret.add(Task03040AddIndexesToStructureFields.class);
+        ret.add(Task03042AddLicenseRepoModel.class);
         ret.add(Task03045TagnameTypeChangeMSSQL.class);
+        ret.add(Task03050updateFormTabName.class);
         return ret;
     }
 
@@ -130,6 +198,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00006CreateSystemLayout.class);
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
 		ret.add(Task00008CreateDefaultWorkflowScheme.class);
+		ret.add(Task00009ClusterInitialize.class);
 		return ret;
 	}
 

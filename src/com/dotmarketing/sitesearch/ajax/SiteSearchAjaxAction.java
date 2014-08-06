@@ -23,6 +23,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -133,7 +136,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		}
 		String taskName = ((String[]) map.get("QUARTZ_JOB_NAME"))[0];
 		String taskPreviousName = map.get("OLD_QUARTZ_JOB_NAME")!=null ? ((String[]) map.get("OLD_QUARTZ_JOB_NAME"))[0] : "";
-		
+
 		if(UtilMethods.isSet(taskPreviousName) && !taskName.equals(taskPreviousName)){
 			try {
 				APILocator.getSiteSearchAPI().deleteTask(taskPreviousName);
@@ -147,6 +150,9 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		try {
 			if(config.runNow()){
 				APILocator.getSiteSearchAPI().executeTaskNow(config);
+				 String date = DateUtil.getCurrentDate();
+                 ActivityLogger.logInfo(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
+                 AdminLogger.log(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
 			}
 			else{
 				APILocator.getSiteSearchAPI().scheduleTask(config);
@@ -185,12 +191,20 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 
 
 	public void deleteJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
+		String date = DateUtil.getCurrentDate();
+
 		try {
 			Map<String, String> map = getURIParams();
 			String taskName = URLDecoder.decode(map.get("taskName"), "UTF-8");
+
 			APILocator.getSiteSearchAPI().deleteTask(taskName);
+
+			ActivityLogger.logInfo(getClass(), "Job Deleted", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
+            AdminLogger.log(getClass(), "Job Deleted", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
 		} catch (Exception e) {
 			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
+            ActivityLogger.logInfo(getClass(), "Error Deleting Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
+            AdminLogger.log(getClass(), "Error Deleting Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
 			writeError(response, e.getMessage());
 
 		}

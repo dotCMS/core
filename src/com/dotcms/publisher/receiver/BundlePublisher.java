@@ -44,7 +44,7 @@ public class BundlePublisher extends Publisher {
             throw new RuntimeException( "need an enterprise licence to run this" );
         }
         handlers = new ArrayList<IHandler>();
-
+        handlers.add(new BundleXMLascHandler( config ));
         //The order is really important
         /**
          * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244

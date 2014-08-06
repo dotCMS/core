@@ -52,6 +52,9 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.CascadePermissionsJob;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -377,7 +380,7 @@ public class RoleAjax {
 		for(Portlet p: portlets) {
 			if(portletAPI.canAddPortletToLayout(p)) {
 				Map<String, Object> portletMap = new HashMap<String, Object>();
-				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + p.getPortletId());
+				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.portlet.javax.portlet.title." + p.getPortletId());
 				portletMap.put("title", portletTitle);
 				portletMap.put("id", p.getPortletId());
 				listOfPortletsInfo.add(portletMap);
@@ -688,7 +691,7 @@ public class RoleAjax {
 		List<String> portletTitles = new ArrayList<String>();
 		if(portletIds != null) {
 			for(String id: portletIds) {
-				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + id);
+				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.portlet.javax.portlet.title." + id);
 				portletTitles.add(portletTitle);
 			}
 		}

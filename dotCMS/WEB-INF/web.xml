@@ -899,6 +899,10 @@
 		<mime-type>text/plain</mime-type>
 	</mime-mapping>
 	<mime-mapping>
+        <extension>scss</extension>
+        <mime-type>text/plain</mime-type>
+    </mime-mapping>
+	<mime-mapping>
 		<extension>less</extension>
 		<mime-type>text/plain</mime-type>
 	</mime-mapping>

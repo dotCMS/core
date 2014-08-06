@@ -16,9 +16,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 
+import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
@@ -34,7 +38,7 @@ public class StructureResource extends WebResource {
 	public Response getStructuresWithWYSIWYGFields(@Context HttpServletRequest request, @Context HttpServletResponse response,
                                                    @PathParam("path") String path, @QueryParam("name") String name,
                                                    @PathParam ("type") String type,
-                                                   @PathParam ("callback") String callback) throws DotStateException, DotDataException, DotSecurityException {
+                                                   @PathParam ("callback") String callback) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put( "type", type );
@@ -84,41 +88,28 @@ public class StructureResource extends WebResource {
 			if(specificStructure != null)
 				structures.add(specificStructure);
 		}
-
-		boolean bInitialStruct = true;
-		StringBuilder structureDataStore = new StringBuilder("");
-		String EOL = System.getProperty("line.separator");
-		if(inodeFilter.isEmpty()) {
-			structureDataStore.append("[");
-			structureDataStore.append(EOL);
-		}
+		
+		JSONArray jsonStructures = new JSONArray();
+		JSONObject jsonStructureObject = new JSONObject();
+		
 		int structCount = 0;
 		for(Structure st: structures)
 		{
 			if(!inodeFilter.isEmpty() || (!range.isEmpty() && structCount >= beginItem && structCount <= endItem)){
-				if(bInitialStruct)
-					bInitialStruct = false;
-				else
-				{
-					structureDataStore.append(",");
-					structureDataStore.append(EOL);
-				}
-				structureDataStore.append("{id: \"");
-				structureDataStore.append(st.getInode());
-				structureDataStore.append("\", name: \"");
-				structureDataStore.append(st.getName());
-				structureDataStore.append("\"}");
+				jsonStructureObject = new JSONObject();
+				jsonStructureObject.put("id", st.getInode());
+				jsonStructureObject.put("name", st.getName());
 			}
-			structCount++;
+			if(inodeFilter.isEmpty()){
+				jsonStructures.add(jsonStructureObject);
+			}else{
+				return responseResource.response(jsonStructureObject.toString());
+			}
 		}
-		if(inodeFilter.isEmpty()) {
-			structureDataStore.append(EOL);
-			structureDataStore.append("]");
-			if(!range.isEmpty()){
-				response.addHeader("Content-Range", "items " + beginItem + "-" + Math.min(endItem, structCount -1) + "/" + structCount);
-			}
+		if(inodeFilter.isEmpty() && !range.isEmpty()) {
+			response.addHeader("Content-Range", "items " + beginItem + "-" + Math.min(endItem, structCount -1) + "/" + structCount);
 		}
 
-        return responseResource.response( structureDataStore.toString() );
+        return responseResource.response(jsonStructures.toString());
     }
 }

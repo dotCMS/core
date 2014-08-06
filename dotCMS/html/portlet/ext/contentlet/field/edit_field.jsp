@@ -961,8 +961,8 @@
 	           str_style = "class=\"dojoDndItem alternate_2\"";
 	         }
 	         %>
-	        <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%=key%>" />
-			<input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= UtilMethods.escapeHTMLSpecialChars((String)keyValueMap.get(key)) %>" />
+	        <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%= key %>" />
+			<input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= keyValueMap.get(key) %>" />
 	        <tr id="<%=field.getFieldContentlet()+"_"+key%>" <%=str_style %>>
 			    <td style="width:20px">
 			    <%if(!field.isReadOnly()){ %>
@@ -970,7 +970,7 @@
 			     <%} %>
 			    </td>
 				<td><span><%= key %></span></td>
-				<td><span><%=  UtilMethods.escapeHTMLSpecialChars((String)keyValueMap.get(key)) %></span></td>
+				<td><span><%= keyValueMap.get(key) %></span></td>
 			</tr>
 	      <%k++;}
 	   }%>

@@ -188,16 +188,23 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 			try {
 				/**
-				 * remove all the existing sitemaps generated in the XMLSitemap
-				 * folder for the host specified
+				 * mark all the existing sitemaps generated in the XMLSitemap
+				 * folder for the host specified to be removed upon creating new ones
 				 */
-				cleanHostFromSitemapFiles(host);
+				List<Object> oldSiteMapsToDel = new ArrayList<Object>();
+
+				Folder folder = folderAPI.findFolderByPath(XML_SITEMAPS_FOLDER, host, systemUser, false);
+
+				if (InodeUtils.isSet(folder.getIdentifier())) {
+					oldSiteMapsToDel.addAll(fileAPI.getFolderFiles(folder, false, systemUser, true));
+					oldSiteMapsToDel.addAll(conAPI.findContentletsByFolder(folder, systemUser, false));
+				}
 
 				hostFilesCounter.put(host.getHostname(), sitemapCounter);
 
 				/* adding host url */
 				stringbuf = "<url><loc>"
-						+ XMLUtils.xmlEscape("http://www." + host.getHostname()
+						+ XMLUtils.xmlEscape("http://" + host.getHostname()
 								+ "/") + "</loc><lastmod>"
 						+ modifiedDateStringValue
 						+ "</lastmod><changefreq>daily</changefreq></url>\n";
@@ -267,7 +274,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 						try {
 							if (usePermalinks) {
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname()
 												+ "/permalink/"
 												+ contenlet.getIdentifier()
@@ -329,14 +336,14 @@ public class XMLSitemapJob implements Job, StatefulJob {
 												+ "], uri [" + uri + "]");
 
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname() + uri)
 										+ "</loc><lastmod>"
 										+ modifiedDateStringValue
 										+ "</lastmod><changefreq>daily</changefreq></url>\n";
 							} else {
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname()
 												+ pageIdentifier.getURI()
 												+ "?id="
@@ -414,7 +421,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							Logger.warn(this, "Folder Page Configuration " + page.getURI());
 							if (page.isLive() && !page.isDeleted()) {
 								String indexPageConfiguration = "/index."+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-								String pathToPageUrl = XMLUtils.xmlEscape("http://www."+ host.getHostname() + page.getURI());
+								String pathToPageUrl = XMLUtils.xmlEscape("http://"+ host.getHostname() + page.getURI());
 
 								if (pathToPageUrl.endsWith(indexPageConfiguration)) {
 									pathToPageUrl = pathToPageUrl.replace(indexPageConfiguration, "");
@@ -432,7 +439,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							com.dotmarketing.portlets.files.model.File file = (com.dotmarketing.portlets.files.model.File) itemChild;
 							if (file.isLive() && !file.isDeleted()) {
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname()
 												+ file.getURI())
 										+ "</loc><lastmod>"
@@ -446,7 +453,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							if (fileContent.isLive() && !fileContent.isArchived()) {
 								Identifier identifier = APILocator.getIdentifierAPI().find(fileContent);
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://www."
+										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname()
 												+ UtilMethods.encodeURIComponent(identifier.getParentPath()+fileContent.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))
 										+ "</loc><lastmod>"
@@ -459,6 +466,8 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					}
 
 				}
+				
+				cleanOldSitemapFiles(oldSiteMapsToDel);
 
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
@@ -520,14 +529,14 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		if ((id != null) && InodeUtils.isSet(id.getInode())) {
 			stringbuf = "<url><loc>"
 					+ XMLUtils
-							.xmlEscape("http://www."
+							.xmlEscape("http://"
 									+ host.getHostname()
 									+ folderIdent.getURI())
 					+ "</loc><lastmod>" + modifiedDateStringValue
 					+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
 			Logger.warn(this, "Writing the XMLConfiguration for Folder[" + XMLUtils
-							.xmlEscape("http://www."
+							.xmlEscape("http://"
 									+ host.getHostname()
 									+ folderIdent.getURI()) + "]"
 			);
@@ -553,7 +562,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					} else {
 						stringbuf = "<url><loc>"
 								+ XMLUtils
-										.xmlEscape("http://www."
+										.xmlEscape("http://"
 												+ host.getHostname()
 												+ childChild2Ident.getURI())
 								+ "</loc><lastmod>"
@@ -561,7 +570,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 								+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
 						Logger.warn(this, "Writing the XMLConfiguration Second Level Check for [" + XMLUtils
-										.xmlEscape("http://www."
+										.xmlEscape("http://"
 												+ host.getHostname()
 												+ childChild2Ident.getURI()) + "]");
 
@@ -589,7 +598,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					if (page2.isLive() && !page2.isDeleted()) {
 						String indexPageConfiguration = "/index."+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 
-						String pathToPageUrl = XMLUtils.xmlEscape("http://www." + host.getHostname() + childChild2Ident.getURI());
+						String pathToPageUrl = XMLUtils.xmlEscape("http://" + host.getHostname() + childChild2Ident.getURI());
 
 						if (pathToPageUrl.endsWith(indexPageConfiguration) && isIndexPageAlreadyConfigured) {
 							Logger.warn(this, "Index Page is already configured, skipping the process [" + pathToPageUrl + "]");
@@ -612,7 +621,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							.getIdentifier());
 					if (file2.isLive() && !file2.isDeleted()) {
 						stringbuf = "<url><loc>"
-								+ XMLUtils.xmlEscape("http://www."
+								+ XMLUtils.xmlEscape("http://"
 										+ host.getHostname()
 										+ childChild2Ident.getURI() + "/"
 										+ file2.getFileName())
@@ -627,7 +636,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					if (fileContent.isLive() && !fileContent.isArchived()) {
 						Identifier identifier = APILocator.getIdentifierAPI().find(fileContent);
 						stringbuf = "<url><loc>"
-								+ XMLUtils.xmlEscape("http://www."
+								+ XMLUtils.xmlEscape("http://"
 										+ host.getHostname()
 										+ UtilMethods.encodeURIComponent(identifier.getParentPath()+fileContent.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))
 								+ "</loc><lastmod>"
@@ -678,7 +687,8 @@ public class XMLSitemapJob implements Job, StatefulJob {
 			/******* Begin Generate compressed file *****************************/
 			String dateCounter = Calendar.getInstance().get(Calendar.MONTH)
 									+""+Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
-									+""+Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+									+""+Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+									+""+Calendar.getInstance().get(Calendar.MINUTE);
 			String sitemapName = Config.getStringProperty("org.dotcms.XMLSitemap.SITEMAP_XML_GZ_FILENAME","XMLSitemapGenerated")
 					+ dateCounter + counter + ".xml.gz";
 			compressedFile = new File(sitemapName);
@@ -780,22 +790,14 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	 * @param host
 	 * @throws Exception
 	 */
-	@SuppressWarnings("unchecked")
-	private void cleanHostFromSitemapFiles(Host host) throws Exception {
+	private void cleanOldSitemapFiles(List<Object> siteMapsToDel) throws Exception {
 
 		try{
-			Folder folder = folderAPI.findFolderByPath(XML_SITEMAPS_FOLDER, host,
-					systemUser, false);
-
-			if (InodeUtils.isSet(folder.getIdentifier())) {
-				List<com.dotmarketing.portlets.files.model.File> files = fileAPI
-						.getFolderFiles(folder, false, systemUser, true);
-				for (com.dotmarketing.portlets.files.model.File file : files) {
-					fileAPI.delete(file, systemUser, true);
-				}
-				List<Contentlet> consToDel = conAPI.findContentletsByFolder(folder, systemUser, false);
-				for(Contentlet con : consToDel){
-					conAPI.delete(con, systemUser, false);
+			for(Object siteMap : siteMapsToDel){
+				if(siteMap instanceof com.dotmarketing.portlets.files.model.File){
+					fileAPI.delete((com.dotmarketing.portlets.files.model.File)siteMap, systemUser, true);
+				}else if(siteMap instanceof Contentlet){
+					conAPI.delete((Contentlet)siteMap, systemUser, false);
 				}
 			}
 		}
