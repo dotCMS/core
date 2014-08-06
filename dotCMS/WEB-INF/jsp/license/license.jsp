@@ -164,7 +164,7 @@ function doPaste(){
                         <dt><%= LanguageUtil.get(pageContext, "licensed-to") %></dt>
                         <dd><%=  UtilMethods.isSet(LicenseUtil.getClientName()) ? LicenseUtil.getClientName() : "No License Found" %></dd>
                         <dt><%= LanguageUtil.get(pageContext, "license-type") %></dt>
-                        <dd><%= LicenseUtil.getLevelName() %></dd>
+                        <dd><%= LicenseUtil.getLicenseType() %></dd>
                         <dt><%= LanguageUtil.get(pageContext, "license-serial") %></dt>
                         <dd><%= LicenseUtil.getSerial() %></dd>
                     <% } %>

@@ -30,7 +30,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -42,8 +41,9 @@ import org.apache.velocity.tools.view.context.ChainedContext;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
-import com.dotmarketing.beans.ContainerStructure;
+import com.dotcms.repackage.struts.org.apache.struts.Globals;
 import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -352,175 +352,182 @@ public abstract class VelocityServlet extends HttpServlet {
 	}
 
 	public void doLiveMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
+	    LicenseUtil.startLiveMode();
+	    try {
 
-		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-		uri = UtilMethods.cleanURI(uri);
-
-		Host host = hostWebAPI.getCurrentHost(request);
-
-		// Map with all identifier inodes for a given uri.
-		//
-
-		// Checking the path is really live using the livecache
-		String cachedUri = LiveCache.getPathFromCache(uri, host);
-
-		// if we still have nothing, check live cache first (which has a 404 cache )
-		if (cachedUri == null) {
-			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
-		}
-
-		// now  we check identifier cache first (which DOES NOT have a 404 cache )
-		Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
-		if(ident ==null && ident.getInode() == null){
-			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
-		}
-		response.setContentType(CHARSET);
-
-		request.setAttribute("idInode", String.valueOf(ident.getInode()));
-		Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + ident.getInode());
-
-		/*
-		 * JIRA http://jira.dotmarketing.net/browse/DOTCMS-4659
-		//Set long lived cookie regardless of who this is */
-		String _dotCMSID = UtilMethods.getCookieValue(request.getCookies(),
-				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
-
-		if (!UtilMethods.isSet(_dotCMSID)) {
-			// create unique generator engine
-			Cookie idCookie = CookieUtil.createCookie();
-			response.addCookie(idCookie);
-		}
-
-		com.liferay.portal.model.User user = null;
-		HttpSession session = request.getSession(false);
-		try {
-			if(session!=null)
-				user = (com.liferay.portal.model.User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
-		} catch (Exception nsue) {
-			Logger.warn(this, "Exception trying to getUser: " + nsue.getMessage(), nsue);
-		}
-
-		boolean signedIn = false;
-
-		if (user != null) {
-			signedIn = true;
-		}
-
-
-		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
-
-		HTMLPage page = null;
-		try {
-			// we get the page and check permissions below
-			page = APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-		} catch (Exception e) {
-			Logger.error(HTMLPageWebAPI.class, "unable to load live version of page: " + ident.getInode() + " because " + e.getMessage());
-			return;
-		}
-
-		// Check if the page is visible by a CMS Anonymous role
-		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_READ, user, true)) {
-			// this page is protected. not anonymous access
-
-			/*******************************************************************
-			 * If we need to redirect someone somewhere to login before seeing a
-			 * page, we need to edit the /portal/401.jsp page to sendRedirect
-			 * the user to the proper login page. We are not using the
-			 * REDIRECT_TO_LOGIN variable in the config any longer.
-			 ******************************************************************/
-			if (!signedIn) {
-				// No need for the below LAST_PATH attribute on the front end
-				// http://jira.dotmarketing.net/browse/DOTCMS-2675
-				// request.getSession().setAttribute(WebKeys.LAST_PATH,
-				// new ObjectValuePair(uri, request.getParameterMap()));
-				request.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, uri);
-
-				Logger.debug(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: Page doesn't have anonymous access" + uri);
-
-				Logger.debug(VelocityServlet.class, "401 URI = " + uri);
-
-				Logger.debug(VelocityServlet.class, "Unauthorized URI = " + uri);
-				response.sendError(401, "The requested page/file is unauthorized");
-				return;
-
-			} else if (!permissionAPI.getReadRoles(ident).contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
-				// user is logged in need to check user permissions
-				Logger.debug(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: User signed in");
-
-				// check user permissions on this asset
-				if (!permissionAPI.doesUserHavePermission(ident, PERMISSION_READ, user, true)) {
-					// the user doesn't have permissions to see this page
-					// go to unauthorized page
-					Logger.warn(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: Page doesn't have any access for this user");
-					response.sendError(403, "The requested page/file is forbidden");
-					return;
-				}
-			}
-		}
-
-		Logger.debug(VelocityServlet.class, "Recording the ClickStream");
-		if(Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
-			if (user != null) {
-				UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,
-						APILocator.getUserAPI().getSystemUser(), false);
-				if (!userProxy.isNoclicktracking()) {
-					ClickstreamFactory.addRequest((HttpServletRequest) request, ((HttpServletResponse) response), host);
-				}
-			} else {
-				ClickstreamFactory.addRequest((HttpServletRequest) request, ((HttpServletResponse) response), host);
-			}
-		}
-
-		// Begin Page Caching
-		boolean buildCache = false;
-		String key = getPageCacheKey(request);
-		if (key != null) {
-
-			String cachedPage = CacheLocator.getBlockDirectiveCache().get(key, (int) page.getCacheTTL());
-
-			if (cachedPage == null || "refresh".equals(request.getParameter("dotcache"))
-					|| "refresh".equals(request.getAttribute("dotcache"))
-					|| "refresh".equals(request.getSession().getAttribute("dotcache"))) {
-				// build cached response
-				buildCache = true;
-			} else {
-				// have cached response and are not refreshing, send it
-				response.getWriter().write(cachedPage);
-				return;
-			}
-		}
-
-		Writer out = (buildCache) ? new StringWriter(4096) : new VelocityFilterWriter(response.getWriter());
-
-		//get the context from the requst if possible
-		Context context = VelocityUtil.getWebContext(request, response);
-
-		request.setAttribute("velocityContext", context);
-		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + ident.getInode());
-
-
-
-		try {
-
-			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
-
-		} catch (ParseErrorException e) {
-			// out.append(e.getMessage());
-		}
-
-		context = null;
-		if (buildCache) {
-			String trimmedPage = out.toString().trim();
-			response.getWriter().write(trimmedPage);
-			response.getWriter().close();
-			synchronized (key) {
-				//CacheLocator.getBlockDirectiveCache().clearCache();
-				CacheLocator.getHTMLPageCache().remove(page);
-				CacheLocator.getBlockDirectiveCache().add(getPageCacheKey(request), trimmedPage, (int) page.getCacheTTL());
-			}
-		} else {
-			out.close();
-		}
+    		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
+    		uri = UtilMethods.cleanURI(uri);
+    
+    		Host host = hostWebAPI.getCurrentHost(request);
+    
+    		// Map with all identifier inodes for a given uri.
+    		//
+    
+    		// Checking the path is really live using the livecache
+    		String cachedUri = LiveCache.getPathFromCache(uri, host);
+    
+    		// if we still have nothing, check live cache first (which has a 404 cache )
+    		if (cachedUri == null) {
+    			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
+    		}
+    
+    		// now  we check identifier cache first (which DOES NOT have a 404 cache )
+    		Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
+    		if(ident ==null && ident.getInode() == null){
+    			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
+    		}
+    		response.setContentType(CHARSET);
+    
+    		request.setAttribute("idInode", String.valueOf(ident.getInode()));
+    		Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + ident.getInode());
+    
+    		/*
+    		 * JIRA http://jira.dotmarketing.net/browse/DOTCMS-4659
+    		//Set long lived cookie regardless of who this is */
+    		String _dotCMSID = UtilMethods.getCookieValue(request.getCookies(),
+    				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
+    
+    		if (!UtilMethods.isSet(_dotCMSID)) {
+    			// create unique generator engine
+    			Cookie idCookie = CookieUtil.createCookie();
+    			response.addCookie(idCookie);
+    		}
+    
+    		com.liferay.portal.model.User user = null;
+    		HttpSession session = request.getSession(false);
+    		try {
+    			if(session!=null)
+    				user = (com.liferay.portal.model.User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+    		} catch (Exception nsue) {
+    			Logger.warn(this, "Exception trying to getUser: " + nsue.getMessage(), nsue);
+    		}
+    
+    		boolean signedIn = false;
+    
+    		if (user != null) {
+    			signedIn = true;
+    		}
+    
+    
+    		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
+    
+    		HTMLPage page = null;
+    		try {
+    			// we get the page and check permissions below
+    			page = APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+    		} catch (Exception e) {
+    			Logger.error(HTMLPageWebAPI.class, "unable to load live version of page: " + ident.getInode() + " because " + e.getMessage());
+    			return;
+    		}
+    
+    		// Check if the page is visible by a CMS Anonymous role
+    		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_READ, user, true)) {
+    			// this page is protected. not anonymous access
+    
+    			/*******************************************************************
+    			 * If we need to redirect someone somewhere to login before seeing a
+    			 * page, we need to edit the /portal/401.jsp page to sendRedirect
+    			 * the user to the proper login page. We are not using the
+    			 * REDIRECT_TO_LOGIN variable in the config any longer.
+    			 ******************************************************************/
+    			if (!signedIn) {
+    				// No need for the below LAST_PATH attribute on the front end
+    				// http://jira.dotmarketing.net/browse/DOTCMS-2675
+    				// request.getSession().setAttribute(WebKeys.LAST_PATH,
+    				// new ObjectValuePair(uri, request.getParameterMap()));
+    				request.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, uri);
+    
+    				Logger.debug(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: Page doesn't have anonymous access" + uri);
+    
+    				Logger.debug(VelocityServlet.class, "401 URI = " + uri);
+    
+    				Logger.debug(VelocityServlet.class, "Unauthorized URI = " + uri);
+    				response.sendError(401, "The requested page/file is unauthorized");
+    				return;
+    
+    			} else if (!permissionAPI.getReadRoles(ident).contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
+    				// user is logged in need to check user permissions
+    				Logger.debug(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: User signed in");
+    
+    				// check user permissions on this asset
+    				if (!permissionAPI.doesUserHavePermission(ident, PERMISSION_READ, user, true)) {
+    					// the user doesn't have permissions to see this page
+    					// go to unauthorized page
+    					Logger.warn(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: Page doesn't have any access for this user");
+    					response.sendError(403, "The requested page/file is forbidden");
+    					return;
+    				}
+    			}
+    		}
+    
+    		Logger.debug(VelocityServlet.class, "Recording the ClickStream");
+    		if(Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
+    			if (user != null) {
+    				UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,
+    						APILocator.getUserAPI().getSystemUser(), false);
+    				if (!userProxy.isNoclicktracking()) {
+    					ClickstreamFactory.addRequest((HttpServletRequest) request, ((HttpServletResponse) response), host);
+    				}
+    			} else {
+    				ClickstreamFactory.addRequest((HttpServletRequest) request, ((HttpServletResponse) response), host);
+    			}
+    		}
+    
+    		// Begin Page Caching
+    		boolean buildCache = false;
+    		String key = getPageCacheKey(request);
+    		if (key != null) {
+    
+    			String cachedPage = CacheLocator.getBlockDirectiveCache().get(key, (int) page.getCacheTTL());
+    
+    			if (cachedPage == null || "refresh".equals(request.getParameter("dotcache"))
+    					|| "refresh".equals(request.getAttribute("dotcache"))
+    					|| "refresh".equals(request.getSession().getAttribute("dotcache"))) {
+    				// build cached response
+    				buildCache = true;
+    			} else {
+    				// have cached response and are not refreshing, send it
+    				response.getWriter().write(cachedPage);
+    				return;
+    			}
+    		}
+    
+    		Writer out = (buildCache) ? new StringWriter(4096) : new VelocityFilterWriter(response.getWriter());
+    
+    		//get the context from the requst if possible
+    		Context context = VelocityUtil.getWebContext(request, response);
+    
+    		request.setAttribute("velocityContext", context);
+    		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + ident.getInode());
+    
+    
+    
+    		try {
+    
+    			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
+    
+    		} catch (ParseErrorException e) {
+    			// out.append(e.getMessage());
+    		}
+    
+    		context = null;
+    		if (buildCache) {
+    			String trimmedPage = out.toString().trim();
+    			response.getWriter().write(trimmedPage);
+    			response.getWriter().close();
+    			synchronized (key) {
+    				//CacheLocator.getBlockDirectiveCache().clearCache();
+    				CacheLocator.getHTMLPageCache().remove(page);
+    				CacheLocator.getBlockDirectiveCache().add(getPageCacheKey(request), trimmedPage, (int) page.getCacheTTL());
+    			}
+    		} else {
+    			out.close();
+    		}
+		
+	    }
+	    finally {
+	        LicenseUtil.stopLiveMode();
+	    }
 
 	}
 
