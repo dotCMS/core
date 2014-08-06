@@ -52,13 +52,6 @@ public class InitServlet extends HttpServlet {
 			if(Config.CONTEXT ==null){
 				Config.CONTEXT = this.getServletContext();
 			}
-			try{
-				ClusterThreadProxy.loadLevel();
-			}
-			catch(ArrayIndexOutOfBoundsException aiobe){
-				Logger.info(this.getClass(), "No valid license found");
-			}
-
 			
 			//initial system cache
 			//http://jira.dotmarketing.net/browse/DOTCMS-1873

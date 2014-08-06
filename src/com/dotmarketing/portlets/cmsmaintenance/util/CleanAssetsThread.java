@@ -147,44 +147,46 @@ public class CleanAssetsThread extends Thread {
                 if(dir.isDirectory()) {
                     for(File ff : dir.listFiles()) {
                         processStatus.setCurrentFiles(++current);
-                        if(ff.isDirectory()) {
-                            // binary file for a contentlet
-                            if(processBinary) {
-                                String inode=ff.getName();
-                                try {
-                                    Contentlet cont=APILocator.getContentletAPI().find(inode, systemUser,false);
-                                    if(cont==null || !UtilMethods.isSet(cont.getIdentifier())) {
-                                        Logger.info(this, "deleting orphan binary content "+ff.getAbsolutePath());
+                        if(!ff.getName().endsWith(".donotdelete.dat")) {
+                            if(ff.isDirectory()) {
+                                // binary file for a contentlet
+                                if(processBinary) {
+                                    String inode=ff.getName();
+                                    try {
+                                        Contentlet cont=APILocator.getContentletAPI().find(inode, systemUser,false);
+                                        if(cont==null || !UtilMethods.isSet(cont.getIdentifier())) {
+                                            Logger.info(this, "deleting orphan binary content "+ff.getAbsolutePath());
+                                            if(FileUtils.deleteQuietly(ff))
+                                                processStatus.setDeleted(++deleted);
+                                        }
+                                    }
+                                    catch(Exception ex) {
+                                        Logger.warn(this, ex.getMessage(), ex);
+                                    }
+                                }
+                            }
+                            else {
+                                // is a file_asset
+                                if(processFiles) {
+                                    String inode=ff.getName();
+                                    // maybe a thumbnail
+                                    if(inode.indexOf('_')!=-1)
+                                        inode=inode.substring(0,inode.indexOf('_'));
+                                    // remove extension if any
+                                    if(inode.indexOf('.')!=-1)
+                                        inode=inode.substring(0,inode.indexOf('.'));
+                                    com.dotmarketing.portlets.files.model.File file = null;
+                                    try {
+                                        file = APILocator.getFileAPI().find(inode, systemUser, false);
+                                    }
+                                    catch(Exception ex) {
+                                        Logger.warn(this, ex.getMessage(), ex);
+                                    }
+                                    if(file==null || !UtilMethods.isSet(file.getIdentifier())) {
+                                        Logger.info(this, "deleting orphan file_asset "+ff.getAbsolutePath());
                                         if(FileUtils.deleteQuietly(ff))
                                             processStatus.setDeleted(++deleted);
                                     }
-                                }
-                                catch(Exception ex) {
-                                    Logger.warn(this, ex.getMessage(), ex);
-                                }
-                            }
-                        }
-                        else {
-                            // is a file_asset
-                            if(processFiles) {
-                                String inode=ff.getName();
-                                // maybe a thumbnail
-                                if(inode.indexOf('_')!=-1)
-                                    inode=inode.substring(0,inode.indexOf('_'));
-                                // remove extension if any
-                                if(inode.indexOf('.')!=-1)
-                                    inode=inode.substring(0,inode.indexOf('.'));
-                                com.dotmarketing.portlets.files.model.File file = null;
-                                try {
-                                    file = APILocator.getFileAPI().find(inode, systemUser, false);
-                                }
-                                catch(Exception ex) {
-                                    Logger.warn(this, ex.getMessage(), ex);
-                                }
-                                if(file==null || !UtilMethods.isSet(file.getIdentifier())) {
-                                    Logger.info(this, "deleting orphan file_asset "+ff.getAbsolutePath());
-                                    if(FileUtils.deleteQuietly(ff))
-                                        processStatus.setDeleted(++deleted);
                                 }
                             }
                         }

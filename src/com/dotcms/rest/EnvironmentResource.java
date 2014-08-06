@@ -20,6 +20,9 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 
@@ -32,13 +35,14 @@ public class EnvironmentResource extends WebResource {
 	 * <br>Each Environment node contains: id, name.
 	 *
 	 * Usage: /loadenvironments/{roleid}
+	 * @throws JSONException 
 	 *
 	 */
 
 	@GET
 	@Path("/loadenvironments/{params:.*}")
 	@Produces("application/json")
-	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException {
+	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
 
 		InitDataObject initData = init(params, true, request, true, "9");
 
@@ -47,14 +51,15 @@ public class EnvironmentResource extends WebResource {
 
 		String roleId = initData.getParamsMap().get("roleid");
 
-		StringBuilder json = new StringBuilder();
-
-		json.append("[");
-
-		json.append("{id: '0', ");
-		json.append("name: '' }, ");
-
-		int environmentCounter = 0;
+		//Using JsonArray instead of manually creating the json object
+		JSONArray jsonEnvironments = new JSONArray();
+		
+		//First objects is expected to be blank
+		JSONObject jsonEnvironmentFirst = new JSONObject();
+		jsonEnvironmentFirst.put( "id", "0" );
+		jsonEnvironmentFirst.put( "name", "");
+		
+		jsonEnvironments.add(jsonEnvironmentFirst);
 
 		Role role = APILocator.getRoleAPI().loadRoleById(roleId);
 		User user = APILocator.getUserAPI().loadUserById(role.getRoleKey());
@@ -71,24 +76,20 @@ public class EnvironmentResource extends WebResource {
 			for(Role r: roles)
 				environments.addAll(APILocator.getEnvironmentAPI().findEnvironmentsByRole(r.getId()));
 
+		//For each env, create one json and add it to the array
 		for(Environment e : environments) {
-
-			json.append("{id: '").append(e.getId()).append("', ");
-			json.append("name: '").append(e.getName()).append("' } ");
-
-			if(environmentCounter+1 < environments.size()) {
-				json.append(", ");
-			}
-
-			environmentCounter++;
+			
+			JSONObject environmentBundle = new JSONObject();
+			environmentBundle.put( "id", e.getId() );
+			//Escape name for cases like: dotcms's
+			environmentBundle.put( "name", StringEscapeUtils.unescapeJava(e.getName()));
+			
+			jsonEnvironments.add(environmentBundle);
 		}
-
-		json.append("]");
 
 		CacheControl cc = new CacheControl();
 		cc.setNoCache(true);
-		return Response.ok(json.toString(), MediaType.APPLICATION_JSON_TYPE).cacheControl(cc).build();
-
+		return Response.ok(jsonEnvironments.toString(), MediaType.APPLICATION_JSON_TYPE).cacheControl(cc).build();
 	}
 
 }

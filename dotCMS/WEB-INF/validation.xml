@@ -426,7 +426,7 @@
 				<arg0 key="message.structure.name" />
 			</field>
 			<field property="detailPage" depends="validwhen">
-				<arg0 key="structure.required.detailpage.when.urlmap"/>
+				<arg0 key="Detail-Page"/>
 		        <var>
 		          <var-name>test</var-name>
 		          <var-value>((urlMapPattern == null) or (*this* != null))</var-value>

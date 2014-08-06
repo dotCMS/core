@@ -519,7 +519,7 @@ dojo.ready(function(){
 							<!-- display -->
 							<% String inode = String.valueOf(capi.getFieldValue(content, field));
 							if(InodeUtils.isSet(inode)){%>
-								<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/thumbnail?id=<%=inode %>" width="100" height="100" border="1">
+								<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/contentAsset/image/<%= inode %>/fileAsset/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100" border="1">
 							<% }else{ %>
 								<%=LanguageUtil.get(pageContext, "No-Image-configured")  %>
 							<%} %>

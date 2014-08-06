@@ -56,3 +56,5 @@ ant.importBuild 'build.xml'
 task wrapper(type: Wrapper) {
     gradleVersion = '1.11'
 }
+
+defaultTasks 'help', 'tasks'

@@ -826,7 +826,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. structure id
 	 */
 	private final String insertContentReferencesByStructureSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() ?
+		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
 				"select ":
 		 DbConnectionFactory.isOracle()?

@@ -10,7 +10,6 @@ import java.util.Map;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
-import com.dotcms.cluster.business.ClusterFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -24,6 +23,7 @@ import com.dotcms.repackage.org.elasticsearch.client.Client;
 import com.dotcms.repackage.org.elasticsearch.common.settings.ImmutableSettings;
 import com.dotcms.repackage.org.elasticsearch.node.Node;
 import com.dotcms.elasticsearch.script.RelationshipSortOrderScriptFactory;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.liferay.util.FileUtil;
 
 public class ESClient {

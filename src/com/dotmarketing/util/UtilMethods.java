@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
@@ -3444,5 +3445,14 @@ public class UtilMethods {
             map.put(ee, req.getParameter(ee));
         }
         return map;
+    }
+
+    public static boolean isPortFree(int pp) {
+        try (Socket ignored = new Socket("localhost", pp)) {
+            return false;
+        } catch (IOException ignored) {
+            return true;
+        }
+
     }
 }
