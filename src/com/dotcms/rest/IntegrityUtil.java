@@ -779,15 +779,10 @@ public class IntegrityUtil {
     }
 
     public void discardConflicts(String endpointId, IntegrityType type) throws DotDataException {
-    	discardConflicts(endpointId, type, null);
-    }
-
-
-    public void discardConflicts(String endpointId, IntegrityType type, Connection conn) throws DotDataException {
         DotConnect dc = new DotConnect();
         String resultsTableName = getResultsTableName(type);
         try {
-			dc.executeStatement("delete from " + resultsTableName+ " where endpoint_id = '" + endpointId + "'", conn);
+			dc.executeStatement("delete from " + resultsTableName+ " where endpoint_id = '" + endpointId + "'");
 		} catch (SQLException e) {
 			throw new DotDataException(e.getMessage(), e);
 		}
@@ -850,8 +845,6 @@ public class IntegrityUtil {
 
                     // 1.1) Insert dummy temp row on INODE table
             		dc.executeStatement("insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ");
-
-
 
             		Structure fileAssetSt = StructureCache.getStructureByVelocityVarName("FileAsset");
 
@@ -1006,226 +999,6 @@ public class IntegrityUtil {
         }
     }
 
-    public void fixFoldersOLD ( String serverId ) throws DotDataException, DotSecurityException {
-
-        DotConnect dc = new DotConnect();
-        String tableName = getResultsTableName( IntegrityType.FOLDERS );
-        boolean firstContraintDeleted = false;
-        boolean secondConstraintDeleted = false;
-        Connection conn = null;
-
-        try {
-
-        	 // lets remove from the index all the content under each conflicted folder
-
-        	dc.setSQL("select local_inode, remote_inode from " + tableName + " where endpoint_id = ?");
-            dc.addParam(serverId);
-            List<Map<String,Object>> results = dc.loadObjectResults();
-
-            for (Map<String, Object> result : results) {
-            	String oldFolderInode = (String) result.get("local_inode");
-            	String newFolderInode = (String) result.get("remote_inode");
-            	String oldFolderIdentifier = (String) result.get("local_identifier");
-            	String newFolderIdentifier = (String) result.get("remote_identifier");
-
-            	try {
-            		Folder folder = APILocator.getFolderAPI().find(oldFolderInode, APILocator.getUserAPI().getSystemUser(), false);
-
-            		List<Contentlet> contents = APILocator.getContentletAPI().findContentletsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
-            		for (Contentlet contentlet : contents) {
-            			APILocator.getContentletIndexAPI().removeContentFromIndex(contentlet);
-            			CacheLocator.getContentletCache().remove(contentlet.getInode());
-            		}
-
-            		Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-            		CacheLocator.getFolderCache().removeFolder(folder, folderIdentifier);
-
-            		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderIdentifier.getId());
-
-
-            		// THIS IS THE NEW CODE
-
-                    // 1) Insert dummy temp row on INODE and IDENTIFIER tables
-            		dc.executeStatement("insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ");
-            		dc.executeStatement("insert into identifier values ('TEMP_IDENTIFIER', '/System folder', 'DUMMY_ASSET_NAME', 'SYSTEM_HOST', "
-            				+ "'folder') ");
-
-            		// 2) Update references to the new dummies temps
-            		dc.executeStatement("update folder set inode = 'TEMP_INODE', identifier = 'TEMP_IDENTIFIER' where inode = '" +oldFolderInode + "'");
-
-            		// 3.1) delete old INODE row
-
-            		dc.setSQL("select * from inode where inode = ?");
-            		dc.addParam(oldFolderInode);
-            		Map<String, Object> oldInodeRow = dc.loadObjectResults().get(0);
-            		String owner = (String) oldInodeRow.get("owner");
-            		Date idate = (Date) oldInodeRow.get("idate");
-            		String type = (String) oldInodeRow.get("type");
-
-            		dc.executeStatement("delete from inode where inode = '" + oldFolderInode + "'");
-
-            		// 3.2) delete old IDENTIFIER row
-
-            		dc.setSQL("select * from identifier where id = ?");
-            		dc.addParam(oldFolderIdentifier);
-            		Map<String, Object> oldIdentifierRow = dc.loadObjectResults().get(0);
-            		String parentPath = (String) oldIdentifierRow.get("parent_path");
-            		String assetName = (String) oldIdentifierRow.get("asset_name");
-            		String hostId = (String) oldIdentifierRow.get("host_inode");
-            		String assetType = (String) oldIdentifierRow.get("asset_type");
-            		Date syspublishDate = (Date) oldIdentifierRow.get("syspublish_date");
-            		Date sysexpireDate = (Date) oldIdentifierRow.get("sysexpire_date");
-
-            		dc.executeStatement("delete from identifier where id = '" + oldFolderIdentifier + "'");
-
-
-            		// 4.1) insert real new INODE row
-            		dc.setSQL("insert into inode values (?, ?, ?, ?) ");
-            		dc.addParam(newFolderInode);
-            		dc.addParam(owner);
-            		dc.addParam(idate);
-            		dc.addParam(type);
-            		dc.loadResult();
-
-            		// 4.2) insert real new IDENTIFIER row
-            		dc.setSQL("insert into identifier values (?, ?, ?, ?, ?, ?, ?) ");
-            		dc.addParam(newFolderIdentifier);
-            		dc.addParam(parentPath);
-            		dc.addParam(assetName);
-            		dc.addParam(hostId);
-            		dc.addParam(assetType);
-            		dc.addParam(syspublishDate);
-            		dc.addParam(sysexpireDate);
-            		dc.loadResult();
-
-            		// 5) update references to the new real row
-            		dc.executeStatement("update folder set inode = '"+newFolderInode+"', identifier = '"+newFolderIdentifier+"' where inode = 'TEMP_INODE'");
-
-            		// 6) delete dummy temp
-            		dc.executeStatement("delete from inode where inode = 'TEMP_INODE'");
-            		dc.executeStatement("delete from identifier where id = 'TEMP_IDENTIFIER'");
-
-
-            		// update structure reference
-            		dc.executeStatement("update structure set folder = '"+newFolderInode+"' where folder = '"+oldFolderInode+"'");
-            		dc.executeStatement("update permission set inode_id = '"+newFolderInode+"' where inode_id = '"+oldFolderInode+"'");
-            		dc.executeStatement("update permission_reference set asset_id = '"+newFolderInode+"' where asset_id = '"+oldFolderInode+"'");
-
-
-            	} catch (DotDataException e) {
-            		Logger.info(getClass(), "Folder not found. inode: " + oldFolderInode);
-            	}
-			}
-
-            if(DbConnectionFactory.isMsSql()) {
-            	conn = DbConnectionFactory.getDataSource().getConnection();
-                conn.setAutoCommit(false);
-    			dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;", conn);
-        	}
-
-            //First delete the constrain
-            if ( DbConnectionFactory.isMySql() ) {
-                dc.executeStatement( "alter table folder drop FOREIGN KEY fkb45d1c6e5fb51eb" );
-                firstContraintDeleted = true;
-                // identifier fk
-                dc.executeStatement( "alter table folder drop FOREIGN KEY folder_identifier_fk" );
-                secondConstraintDeleted = true;
-            } else {
-                dc.executeStatement( "alter table folder drop constraint fkb45d1c6e5fb51eb", conn );
-                firstContraintDeleted = true;
-                // identifier fk
-                dc.executeStatement("alter table folder drop constraint folder_identifier_fk", conn);
-                secondConstraintDeleted = true;
-
-            }
-
-
-            //Update the folder's inode
-            updateFrom( serverId, dc, tableName, "folder", "inode", conn );
-            //Update the inode record
-            updateFrom( serverId, dc, tableName, "inode", "inode", conn );
-
-            //Update the folder's identifier
-            updateIdentifierFrom( serverId, dc, tableName, "folder", "identifier", conn );
-            //Update the identifier record
-            updateIdentifierFrom( serverId, dc, tableName, "identifier", "id", conn );
-
-
-            //Update the structure
-            if ( DbConnectionFactory.isMySql() ) {
-                dc.executeStatement( "UPDATE structure JOIN " + tableName + " ir on structure.folder = ir.local_inode SET structure.folder = ir.remote_inode" );
-            } else if ( DbConnectionFactory.isOracle() || DbConnectionFactory.isH2() ) {
-                updateFrom( serverId, dc, tableName, "structure", "folder", conn );
-            } else {
-                dc.executeStatement( "UPDATE structure SET folder = ir.remote_inode FROM " + tableName + " ir WHERE structure.folder = ir.local_inode", conn );
-            }
-
-            //permission
-            updateFrom( serverId, dc, tableName, "permission", "inode_id", conn );
-            //permission_reference
-            updateFrom( serverId, dc, tableName, "permission_reference", "asset_id", conn );
-
-            // lets reindex all the content under each fixed folder
-
-        	dc.setSQL("select remote_inode from " + tableName + " where endpoint_id = ?");
-            dc.addParam(serverId);
-            results = dc.loadObjectResults();
-
-            for (Map<String, Object> result : results) {
-            	final String newFolderInode = (String) result.get("remote_inode");
-            	try {
-
-
-            		HibernateUtil.addCommitListener(new Runnable() {
-            			public void run() {
-            				Folder folder = null;
-							try {
-								folder = APILocator.getFolderAPI().find(newFolderInode, APILocator.getUserAPI().getSystemUser(), false);
-            					APILocator.getContentletAPI().refreshContentUnderFolder(folder);
-            				} catch (DotStateException | DotDataException | DotSecurityException e) {
-            					Logger.error(this,"Error while reindexing content under folder with inode: " + folder!=null?folder.getInode():"null",e);
-            				}
-            			}
-            		});
-
-            	} catch (DotDataException e) {
-            		Logger.info(getClass(), "Folder not found. inode: " + newFolderInode);
-            	}
-
-			}
-
-            discardConflicts(serverId, IntegrityType.FOLDERS, conn);
-
-        } catch ( SQLException e ) {
-        	if(conn!=null) {
-        		try {
-        			conn.rollback();
-        		} catch (SQLException e1) {
-        			throw new DotDataException(e1.getMessage(), e1);
-        		}
-        	}
-            throw new DotDataException( e.getMessage(), e );
-        } finally {
-            try {
-                //restore the constraints
-            	if(firstContraintDeleted) {
-            		dc.executeStatement( "alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode (inode)", conn );
-            	}
-
-            	if(secondConstraintDeleted) {
-            		dc.executeStatement( "alter table folder add constraint folder_identifier_fk foreign key (identifier) references identifier (id)", conn );
-            	}
-
-            	if(conn!=null) {
-            		conn.commit();
-            		conn.close();
-            	}
-
-            } catch ( SQLException e ) {
-                throw new DotDataException( e.getMessage(), e );
-            }
-        }
-    }
 
     /**
      * Fixes structures inconsistencies for a given server id
@@ -1241,38 +1014,15 @@ public class IntegrityUtil {
 
         try {
 
-        	if(DbConnectionFactory.isMsSql()) {
-    			dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
-        	}
-
-            //First delete the constrains
-            if ( DbConnectionFactory.isMySql() ) {
-                dc.executeStatement( "alter table structure drop FOREIGN KEY fk89d2d735fb51eb" );
-                dc.executeStatement( "alter table contentlet drop FOREIGN KEY fk_structure_inode" );
-                //dc.executeStatement( "alter table containers drop FOREIGN KEY structure_fk" );
-            } else {
-                dc.executeStatement( "alter table structure drop constraint fk89d2d735fb51eb" );
-                dc.executeStatement( "alter table contentlet drop constraint fk_structure_inode" );
-                //dc.executeStatement( "alter table containers drop constraint structure_fk" );
-            }
-            if ( DbConnectionFactory.isMsSql() ) {
-                dc.executeStatement( "alter table workflow_scheme_x_structure nocheck constraint all" );
-            } else if ( DbConnectionFactory.isOracle() ) {
-                enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", false );
-            } else if ( DbConnectionFactory.isH2() ) {
-                dc.executeStatement( "alter table workflow_scheme_x_structure SET REFERENTIAL_INTEGRITY FALSE" );
-            } else if ( !DbConnectionFactory.isMySql() ) {
-                dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey" );
-                dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_structure_id_fkey ");
-            }
-
-            dc.setSQL("select local_inode from " + tableName + " where endpoint_id = ?");
+            dc.setSQL("select local_inode, remote_inode from " + tableName + " where endpoint_id = ?");
             dc.addParam(serverId);
             List<Map<String,Object>> results = dc.loadObjectResults();
 
             for (Map<String, Object> result : results) {
-				String structureInode = (String) result.get("local_inode");
-				Structure st = StructureCache.getStructureByInode(structureInode);
+            	String oldStructureInode = (String) result.get("local_inode");
+            	String newStructureInode = (String) result.get("remote_inode");
+
+				Structure st = StructureCache.getStructureByInode(oldStructureInode);
 
 				List<Contentlet> contents = APILocator.getContentletAPI().findByStructure(st, APILocator.getUserAPI().getSystemUser(), false, 0, 0);
 				for (Contentlet contentlet : contents) {
@@ -1280,52 +1030,115 @@ public class IntegrityUtil {
 				}
 
 				StructureCache.removeStructure(st);
-			}
 
-            //structure
-            updateFrom( serverId, dc, tableName, "structure", "inode" );
-            //inode
-            updateFrom( serverId, dc, tableName, "inode", "inode" );
-            //container_structures
-            updateFrom( serverId, dc, tableName, "container_structures", "structure_id" );
-            //contentlet
-            updateFrom( serverId, dc, tableName, "contentlet", "structure_inode" );
-            //field
-            updateFrom( serverId, dc, tableName, "field", "structure_inode" );
-            //containers
-            //relationship
-            updateFrom( serverId, dc, tableName, "relationship", "parent_structure_inode" );
-            updateFrom( serverId, dc, tableName, "relationship", "child_structure_inode" );
-            //workflow_scheme_x_structure
-            updateFrom( serverId, dc, tableName, "workflow_scheme_x_structure", "structure_id" );
-            //permission
-            updateFrom( serverId, dc, tableName, "permission", "inode_id" );
-            //permission_reference
-            updateFrom( serverId, dc, tableName, "permission_reference", "asset_id" );
+
+				// THIS IS THE NEW CODE
+
+                // 1.1) Insert dummy temp row on INODE table
+        		dc.executeStatement("insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ");
+
+        		// 1.2) Insert dummy temp row on STRUCTURE table
+
+        		dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', 'f', '', '', '', 1, 't', 'f', 'DUMMY_VAR_NAME'"
+        				+ ", 'DUMMY_PATERN', '"+st.getHost()+"', '"+st.getFolder()+"', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
+
+        		// 2) Update references to the new dummies temps
+
+        		// update foreign tables references to TEMP
+        		dc.executeStatement("update container_structures set structure_id = 'TEMP_INODE' where structure_id = '"+oldStructureInode+"'");
+        		dc.executeStatement("update contentlet set structure_inode = 'TEMP_INODE' where structure_inode = '"+oldStructureInode+"'");
+        		dc.executeStatement("update field set structure_inode = 'TEMP_INODE' where structure_inode = '"+oldStructureInode+"'");
+        		dc.executeStatement("update relationship set parent_structure_inode = 'TEMP_INODE' where parent_structure_inode = '"+oldStructureInode+"'");
+        		dc.executeStatement("update relationship set child_structure_inode = 'TEMP_INODE' where child_structure_inode = '"+oldStructureInode+"'");
+        		dc.executeStatement("update workflow_scheme_x_structure set structure_id = 'TEMP_INODE' where structure_id = '"+oldStructureInode+"'");
+        		dc.executeStatement("update permission set inode_id = 'TEMP_INODE' where inode_id = '"+oldStructureInode+"'");
+        		dc.executeStatement("update permission_reference set asset_id = 'TEMP_INODE' where asset_id = '"+oldStructureInode+"'");
+
+        		// 3.1) delete old FOLDER row
+        		// lets save old folder columns values first
+        		dc.setSQL("select * from structure where inode = ?");
+        		dc.addParam(oldStructureInode);
+        		Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
+        		String name = (String) oldFolderRow.get("name");
+        		String description = (String) oldFolderRow.get("description");
+        		Boolean defaultStructure = (Boolean) oldFolderRow.get("default_structure");
+        		String reviewInterval = (String) oldFolderRow.get("review_interval");
+        		String reviewerRole = (String) oldFolderRow.get("reviewer_role");
+        		String detailPage = (String) oldFolderRow.get("page_detail");
+        		Integer structureType = (Integer) oldFolderRow.get("structuretype");
+        		Boolean system = (Boolean) oldFolderRow.get("system");
+        		Boolean fixed = (Boolean) oldFolderRow.get("fixed");
+        		String velocityVarName = (String) oldFolderRow.get("velocity_var_name");
+        		String urlMapPattern = (String) oldFolderRow.get("url_map_pattern");
+        		String host = (String) oldFolderRow.get("host");
+        		String folder = (String) oldFolderRow.get("folder");
+        		String expireDateVar = (String) oldFolderRow.get("expire_date_var");
+        		String publishDateVar = (String) oldFolderRow.get("publish_date_var");
+        		Date modDate = (Date) oldFolderRow.get("mod_date");
+
+        		dc.executeStatement("delete from structure where inode = '" + oldStructureInode + "'");
+
+        		// 3.2) delete old INODE row
+
+        		dc.setSQL("select * from inode where inode = ?");
+        		dc.addParam(oldStructureInode);
+        		Map<String, Object> oldInodeRow = dc.loadObjectResults().get(0);
+        		String owner = (String) oldInodeRow.get("owner");
+        		Date idate = (Date) oldInodeRow.get("idate");
+        		String type = (String) oldInodeRow.get("type");
+
+        		dc.executeStatement("delete from inode where inode = '" + oldStructureInode + "'");
+
+
+
+        		// 4.1) insert real new INODE row
+        		dc.setSQL("insert into inode values (?, ?, ?, ?) ");
+        		dc.addParam(newStructureInode);
+        		dc.addParam(owner);
+        		dc.addParam(idate);
+        		dc.addParam(type);
+        		dc.loadResult();
+
+        		// 4.3) insert real new STRUCTURE row
+        		dc.setSQL("insert into structure values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
+        		dc.addParam(newStructureInode);
+        		dc.addParam(name);
+        		dc.addParam(description);
+        		dc.addParam(defaultStructure);
+        		dc.addParam(reviewInterval);
+        		dc.addParam(reviewerRole);
+        		dc.addParam(detailPage);
+        		dc.addParam(structureType);
+        		dc.addParam(system);
+        		dc.addParam(fixed);
+        		dc.addParam(velocityVarName);
+        		dc.addParam(urlMapPattern);
+        		dc.addParam(host);
+        		dc.addParam(folder);
+        		dc.addParam(expireDateVar);
+        		dc.addParam(publishDateVar);
+        		dc.addParam(modDate);
+        		dc.loadResult();
+
+        		// 5) update foreign tables references to the new real row
+        		dc.executeStatement("update container_structures set structure_id = '"+newStructureInode+"' where structure_id = 'TEMP_INODE'");
+        		dc.executeStatement("update contentlet set structure_inode = '"+newStructureInode+"' where structure_inode = 'TEMP_INODE'");
+        		dc.executeStatement("update field set structure_inode = '"+newStructureInode+"' where structure_inode = 'TEMP_INODE'");
+        		dc.executeStatement("update relationship set parent_structure_inode = '"+newStructureInode+"' where parent_structure_inode = 'TEMP_INODE'");
+        		dc.executeStatement("update relationship set child_structure_inode = '"+newStructureInode+"' where child_structure_inode = 'TEMP_INODE'");
+        		dc.executeStatement("update workflow_scheme_x_structure set structure_id = '"+newStructureInode+"' where structure_id = 'TEMP_INODE'");
+        		dc.executeStatement("update permission set inode_id = '"+newStructureInode+"' where inode_id = 'TEMP_INODE'");
+        		dc.executeStatement("update permission_reference set asset_id = '"+newStructureInode+"' where asset_id = 'TEMP_INODE'");
+
+        		// 6) delete dummy temp
+        		dc.executeStatement("delete from structure where inode = 'TEMP_INODE'");
+        		dc.executeStatement("delete from inode where inode = 'TEMP_INODE'");
+			}
 
             discardConflicts(serverId, IntegrityType.STRUCTURES);
 
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
-        } finally {
-            try {
-                //Add back the constrains
-                dc.executeStatement( "ALTER TABLE structure add constraint fk89d2d735fb51eb foreign key (inode) references inode (inode)" );
-                dc.executeStatement( "ALTER TABLE contentlet add constraint fk_structure_inode foreign key (structure_inode) references structure (inode)" );
-                if ( DbConnectionFactory.isMsSql() ) {
-                    dc.executeStatement( "alter table workflow_scheme_x_structure with check check constraint all" );
-                } else if ( DbConnectionFactory.isOracle() ) {
-                    enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", true );
-                } else if ( DbConnectionFactory.isH2() ) {
-                    dc.executeStatement( "alter table workflow_scheme_x_structure SET REFERENTIAL_INTEGRITY TRUE" );
-                } else if ( !DbConnectionFactory.isMySql() ) {
-                    dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
-                    dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_structure_id_fkey FOREIGN KEY (structure_id) REFERENCES structure (inode)" );
-                }
-
-            } catch ( SQLException e ) {
-                throw new DotDataException( e.getMessage(), e );
-            }
         }
     }
 
@@ -1342,82 +1155,78 @@ public class IntegrityUtil {
 
         try {
 
-        	if(DbConnectionFactory.isMsSql()) {
-    			dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
-        	}
-
-            //First delete the constrains
-            if ( DbConnectionFactory.isMsSql() ) {
-                dc.executeStatement( "alter table workflow_scheme nocheck constraint all" );
-                dc.executeStatement( "alter table workflow_step nocheck constraint all" );
-                dc.executeStatement( "alter table workflow_scheme_x_structure nocheck constraint all" );
-            } else if ( DbConnectionFactory.isOracle() ) {
-                enableDisableOracleConstrains( dc, "workflow_step", false );
-                enableDisableOracleConstrains( dc, "workflow_scheme", false );
-                enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", false );
-            } else if ( DbConnectionFactory.isH2() ) {
-                dc.executeStatement( "alter table workflow_scheme SET REFERENTIAL_INTEGRITY FALSE" );
-                dc.executeStatement( "alter table workflow_step SET REFERENTIAL_INTEGRITY FALSE" );
-                dc.executeStatement( "alter table workflow_scheme_x_structure SET REFERENTIAL_INTEGRITY FALSE" );
-            } else if ( !DbConnectionFactory.isMySql() ) {
-                dc.executeStatement( "ALTER TABLE workflow_step DROP CONSTRAINT workflow_step_scheme_id_fkey" );
-                dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure DROP CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey" );
-            }
-
             //Delete the schemes cache
-            dc.setSQL( "SELECT local_inode FROM " + tableName + " WHERE endpoint_id = ?" );
+            dc.setSQL( "SELECT local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
             dc.addParam( serverId );
             List<Map<String, Object>> results = dc.loadObjectResults();
             for ( Map<String, Object> result : results ) {
 
-                String workflowInode = (String) result.get( "local_inode" );
+            	String oldWorkflowId = (String) result.get( "local_inode" );
+                String newWorkflowId = (String) result.get( "remote_inode" );
 
                 WorkflowCache workflowCache = CacheLocator.getWorkFlowCache();
                 //Verify if the workflow is the default one
                 WorkflowScheme defaultScheme = workflowCache.getDefaultScheme();
-                if ( defaultScheme != null && defaultScheme.getId().equals( workflowInode ) ) {
+                if ( defaultScheme != null && defaultScheme.getId().equals( oldWorkflowId ) ) {
                     CacheLocator.getCacheAdministrator().remove( workflowCache.defaultKey, workflowCache.getPrimaryGroup() );
                 } else {
                     //Clear the cache
-                    WorkflowScheme scheme = workflowCache.getScheme( workflowInode );
+                    WorkflowScheme scheme = workflowCache.getScheme( oldWorkflowId );
                     workflowCache.remove( scheme );
                 }
-            }
 
-            //workflow_scheme
-            updateFrom( serverId, dc, tableName, "workflow_scheme", "id" );
-            //workflow_step
-            updateFrom( serverId, dc, tableName, "workflow_step", "scheme_id" );
-            //workflow_scheme_x_structure
-            updateFrom( serverId, dc, tableName, "workflow_scheme_x_structure", "scheme_id" );
+             // THIS IS THE NEW CODE
+
+        		// 1) Insert dummy temp row on WORKFLOW_SCHEME table
+
+        		dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', 'f', 'f', 'f', '', '1900-01-01 00:00:00.00')");
+
+        		// 2) Update references to the new dummies temps
+
+        		// update foreign tables references to TEMP
+        		dc.executeStatement("update workflow_step set scheme_id = 'TEMP_INODE' where scheme_id = '"+oldWorkflowId+"'");
+        		dc.executeStatement("update workflow_scheme_x_structure set scheme_id = 'TEMP_INODE' where scheme_id = '"+oldWorkflowId+"'");
+
+        		// 3) delete old FOLDER row
+        		// lets save old folder columns values first
+        		dc.setSQL("select * from workflow_scheme where id = ?");
+        		dc.addParam(oldWorkflowId);
+        		Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
+        		String name = (String) oldFolderRow.get("name");
+        		String desc = (String) oldFolderRow.get("description");
+        		Boolean archived = (Boolean) oldFolderRow.get("archived");
+        		Boolean mandatory = (Boolean) oldFolderRow.get("mandatory");
+        		Boolean isDefaultScheme = (Boolean) oldFolderRow.get("default_scheme");
+        		String entryActionId = (String) oldFolderRow.get("entry_action_id");
+        		Date modDate = (Date) oldFolderRow.get("mod_date");
+
+        		dc.executeStatement("delete from workflow_scheme where id = '" + oldWorkflowId + "'");
+
+
+        		// 4.1) insert real new INODE row
+        		dc.setSQL("insert into workflow_scheme values (?, ?, ?, ?, ?, ?, ?, ?) ");
+        		dc.addParam(newWorkflowId);
+        		dc.addParam(name);
+        		dc.addParam(desc);
+        		dc.addParam(archived);
+        		dc.addParam(mandatory);
+        		dc.addParam(isDefaultScheme);
+        		dc.addParam(entryActionId);
+        		dc.addParam(modDate);
+        		dc.loadResult();
+
+        		// 5) update foreign tables references to the new real row
+        		dc.executeStatement("update workflow_step set scheme_id = '"+newWorkflowId+"' where scheme_id = 'TEMP_INODE'");
+        		dc.executeStatement("update workflow_scheme_x_structure set scheme_id = '"+newWorkflowId+"' where scheme_id = 'TEMP_INODE'");
+
+        		// 6) delete dummy temp
+        		dc.executeStatement("delete from workflow_scheme where id = 'TEMP_INODE'");
+            }
 
             discardConflicts(serverId, IntegrityType.SCHEMES);
 
         } catch ( SQLException e ) {
             throw new DotDataException( e.getMessage(), e );
-        } finally {
-            try {
-                //Add back the constrains
-                if ( DbConnectionFactory.isMsSql() ) {
-                    dc.executeStatement( "alter table workflow_scheme with check check constraint all" );
-                    dc.executeStatement( "alter table workflow_step with check check constraint all" );
-                    dc.executeStatement( "alter table workflow_scheme_x_structure with check check constraint all" );
-                } else if ( DbConnectionFactory.isOracle() ) {
-                    enableDisableOracleConstrains( dc, "workflow_step", true );
-                    enableDisableOracleConstrains( dc, "workflow_scheme", true );
-                    enableDisableOracleConstrains( dc, "workflow_scheme_x_structure", true );
-                } else if ( DbConnectionFactory.isH2() ) {
-                    dc.executeStatement( "alter table workflow_scheme SET REFERENTIAL_INTEGRITY TRUE" );
-                    dc.executeStatement( "alter table workflow_step SET REFERENTIAL_INTEGRITY TRUE" );
-                    dc.executeStatement( "alter table workflow_scheme_x_structure SET REFERENTIAL_INTEGRITY TRUE" );
-                } else if ( !DbConnectionFactory.isMySql() ) {
-                    dc.executeStatement( "ALTER TABLE workflow_step ADD CONSTRAINT workflow_step_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
-                    dc.executeStatement( "ALTER TABLE workflow_scheme_x_structure ADD CONSTRAINT workflow_scheme_x_structure_scheme_id_fkey FOREIGN KEY (scheme_id) REFERENCES workflow_scheme (id)" );
-                }
-
-            } catch ( SQLException e ) {
-                throw new DotDataException( e.getMessage(), e );
-            }
         }
     }
 
