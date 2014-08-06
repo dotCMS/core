@@ -33,6 +33,11 @@ Examples of use:
         As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
         As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
 
+    Enterprise license jar
+        Name convention: eelic_hash.jar -> eelic_57b3ae9.jar
+        As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_57b3ae9.jar
+        As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_57b3ae9.jar
+
      starter zip
         Name convention: starter_timestamp.zip -> starter_20140805.zip
         As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
