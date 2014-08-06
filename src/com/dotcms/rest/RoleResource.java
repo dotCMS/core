@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;

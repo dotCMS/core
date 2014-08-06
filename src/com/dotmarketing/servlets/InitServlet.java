@@ -1,35 +1,8 @@
 package com.dotmarketing.servlets;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.net.UnknownHostException;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
 import com.dotcms.repackage.org.apache.lucene.search.BooleanQuery;
-import org.quartz.SchedulerException;
-
-import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.SystemUtils;
-import com.dotcms.repackage.elasticsearch.org.apache.lucene.search.BooleanQuery;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -53,13 +26,24 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.job.ShutdownHookThread;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.util.ReleaseInfo;
+import org.quartz.SchedulerException;
+
+import javax.management.*;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.net.*;
+import java.net.URLEncoder;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
 
 public class InitServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;

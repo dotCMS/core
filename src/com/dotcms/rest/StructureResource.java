@@ -11,12 +11,10 @@ import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 
-import com.dotcms.repackage.jersey.javax.ws.rs.core.Response;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;

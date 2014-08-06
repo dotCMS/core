@@ -25,8 +25,6 @@ package com.liferay.portal.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -42,6 +40,9 @@ import javax.servlet.jsp.PageContext;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import com.dotcms.enterprise.ClusterThreadProxy;
+import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
 import com.dotcms.repackage.org.apache.struts.tiles.TilesUtilImpl;
@@ -49,13 +50,6 @@ import com.dotcms.repackage.org.dom4j.Document;
 import com.dotcms.repackage.org.dom4j.DocumentException;
 import com.dotcms.repackage.org.dom4j.Element;
 import com.dotcms.repackage.org.dom4j.io.SAXReader;
-
-import com.dotcms.cluster.bean.Server;
-import com.dotcms.cluster.business.ClusterFactory;
-import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.cluster.business.ServerAPIImpl;
-import com.dotcms.enterprise.ClusterThreadProxy;
-import com.dotcms.rest.ClusterResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
@@ -64,8 +58,6 @@ import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.StartupTasksExecutor;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyLocalManagerUtil;
 import com.liferay.portal.ejb.PortletManagerUtil;
@@ -126,67 +118,6 @@ public class MainServlet extends ActionServlet {
 			} catch (DotDataException e1) {
 				throw new ServletException(e1);
 			}
-
-			// Clustering
-			try {
-				ClusterFactory.generateClusterId();
-			} catch (DotDataException e) {
-				Logger.error(getClass(), "Unable to generate Cluster ID", e);
-			}
-
-			try {
-
-				ServerAPI serverAPI = APILocator.getServerAPI();
-				String serverId = serverAPI.readServerId();
-				Server server = serverAPI.getServer(serverId);
-
-				if(!UtilMethods.isSet(serverId) || server==null)  {
-
-			        server = new Server();
-			        if(UtilMethods.isSet(serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID"))) {
-			        	server.setServerId(serverId);
-			        }
-			        server.setIpAddress("127.0.0.1");
-
-			        String hostName = "localhost";
-		    		try {
-		    			hostName = InetAddress.getLocalHost().getHostName();
-
-					} catch (UnknownHostException e) {
-						Logger.error(ClusterResource.class, "Error trying to get the host name. ", e);
-					}
-
-		    		server.setName(hostName);
-		    		serverAPI.saveServer(server);
-
-			        try {
-			        	serverAPI.writeServerIdToDisk(server.getServerId());
-			        	serverAPI.writeHeartBeatToDisk(server.getServerId());
-					} catch (IOException e) {
-						Logger.error(ServerAPIImpl.class, "Could not write Server ID to file system" , e);
-					}
-
-			        serverId = server.getServerId();
-				}
-
-		        serverAPI.createServerUptime(serverId);
-
-
-		        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)) {
-		        	try {
-						ClusterFactory.addNodeToCluster(serverId);
-					} catch (Exception e) {
-						Logger.error(MainServlet.class, "Error trying to wire node to the Cluster", e);
-					}
-		        }
-
-		        serverAPI.updateHeartbeat();
-
-			}  catch (DotDataException e) {
-				Logger.error(getClass(), "Could not save Server to DB", e);
-			}
-
-			// END Clustering
 
 			// Starting the reindexation threads
 			ClusterThreadProxy.createThread();
