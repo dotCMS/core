@@ -2,6 +2,7 @@ package com.dotmarketing.util;
 
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.util.ReleaseInfo;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpClient;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpException;
 import com.dotcms.repackage.org.apache.commons.httpclient.NameValuePair;
