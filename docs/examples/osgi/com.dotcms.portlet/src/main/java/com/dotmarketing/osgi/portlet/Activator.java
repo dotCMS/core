@@ -1,8 +1,8 @@
 package com.dotmarketing.osgi.portlet;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.GenericBundleActivator;
-import org.apache.struts.action.ActionMapping;
-import org.osgi.framework.BundleContext;
 
 public class Activator extends GenericBundleActivator {
 

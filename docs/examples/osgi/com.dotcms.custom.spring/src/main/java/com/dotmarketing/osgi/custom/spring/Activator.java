@@ -1,10 +1,10 @@
 package com.dotmarketing.osgi.custom.spring;
 
+import com.dotcms.repackage.org.apache.felix.http.api.ExtHttpService;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.osgi.framework.ServiceReference;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.osgi.GenericBundleActivator;
-import org.apache.felix.http.api.ExtHttpService;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
