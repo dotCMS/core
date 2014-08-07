@@ -1052,8 +1052,8 @@ public class IntegrityUtil {
         		dc.executeStatement("update permission set inode_id = 'TEMP_INODE' where inode_id = '"+oldStructureInode+"'");
         		dc.executeStatement("update permission_reference set asset_id = 'TEMP_INODE' where asset_id = '"+oldStructureInode+"'");
 
-        		// 3.1) delete old FOLDER row
-        		// lets save old folder columns values first
+        		// 3.1) delete old STRUCTURE row
+        		// lets save old structure columns values first
         		dc.setSQL("select * from structure where inode = ?");
         		dc.addParam(oldStructureInode);
         		Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
@@ -1097,7 +1097,7 @@ public class IntegrityUtil {
         		dc.addParam(type);
         		dc.loadResult();
 
-        		// 4.3) insert real new STRUCTURE row
+        		// 4.2) insert real new STRUCTURE row
         		dc.setSQL("insert into structure values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
         		dc.addParam(newStructureInode);
         		dc.addParam(name);
@@ -1185,8 +1185,8 @@ public class IntegrityUtil {
         		dc.executeStatement("update workflow_step set scheme_id = 'TEMP_INODE' where scheme_id = '"+oldWorkflowId+"'");
         		dc.executeStatement("update workflow_scheme_x_structure set scheme_id = 'TEMP_INODE' where scheme_id = '"+oldWorkflowId+"'");
 
-        		// 3) delete old FOLDER row
-        		// lets save old folder columns values first
+        		// 3) delete old WORKFLOW_SCHEME row
+        		// lets save old scheme columns values first
         		dc.setSQL("select * from workflow_scheme where id = ?");
         		dc.addParam(oldWorkflowId);
         		Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
@@ -1201,7 +1201,7 @@ public class IntegrityUtil {
         		dc.executeStatement("delete from workflow_scheme where id = '" + oldWorkflowId + "'");
 
 
-        		// 4.1) insert real new INODE row
+        		// 4) insert real new WORKFLOW_SCHEME row
         		dc.setSQL("insert into workflow_scheme values (?, ?, ?, ?, ?, ?, ?, ?) ");
         		dc.addParam(newWorkflowId);
         		dc.addParam(name);
