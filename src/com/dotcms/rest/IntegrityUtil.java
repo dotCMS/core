@@ -32,7 +32,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -41,7 +40,6 @@ import com.dotmarketing.portlets.workflows.business.WorkflowCache;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 
 public class IntegrityUtil {
@@ -1230,95 +1228,5 @@ public class IntegrityUtil {
         }
     }
 
-
-    private static void updateFrom ( String endpointId, DotConnect dotConnect, String resultsTable, String updateTable, String updateColumn ) throws SQLException {
-    	updateFrom(endpointId, dotConnect, resultsTable, updateTable, updateColumn, null);
-    }
-
-    /**
-     * Generates and executes update from queries using the given tables and columns parameters
-     *
-     * @param dotConnect
-     * @param resultsTable
-     * @param updateTable
-     * @param updateColumn
-     * @throws SQLException
-     */
-    private static void updateFrom ( String endpointId, DotConnect dotConnect, String resultsTable, String updateTable, String updateColumn, Connection conn ) throws SQLException {
-
-        if ( DbConnectionFactory.isMySql() ) {
-            dotConnect.executeStatement( "UPDATE " + updateTable + " JOIN " + resultsTable + " ir on " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id  SET " + updateColumn + " = ir.remote_inode" , conn);
-        } else if ( DbConnectionFactory.isOracle() ) {
-            dotConnect.executeStatement( "UPDATE " + updateTable +
-                    " SET " + updateColumn + " = (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id)" +
-                    " WHERE exists (SELECT ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id)", conn );
-        } else if ( DbConnectionFactory.isH2() ) {
-            dotConnect.executeStatement( "UPDATE " + updateTable + " ut " +
-                    " SET " + updateColumn + " = (select ir.remote_inode FROM " + resultsTable + " ir WHERE ut." + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id)"
-                    + " WHERE exists (SELECT * from " + resultsTable + " ir where ut." + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id)", conn );
-        } else {
-            dotConnect.executeStatement( "UPDATE " + updateTable + " SET " + updateColumn + " = ir.remote_inode FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_inode and '"+endpointId+"' = ir.endpoint_id", conn );
-        }
-    }
-
-    private static void updateIdentifierFrom ( String endpointId, DotConnect dotConnect, String resultsTable, String updateTable, String updateColumn, Connection conn ) throws SQLException {
-
-        if ( DbConnectionFactory.isMySql() ) {
-            dotConnect.executeStatement( "UPDATE " + updateTable + " JOIN " + resultsTable + " ir on " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id  SET " + updateColumn + " = ir.remote_identifier", conn );
-        } else if ( DbConnectionFactory.isOracle() || DbConnectionFactory.isH2() ) {
-            dotConnect.executeStatement( "UPDATE " + updateTable +
-                    " SET " + updateColumn + " = (SELECT ir.remote_identifier FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id)" +
-                    " WHERE exists (SELECT ir.remote_identifier FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id)", conn );
-        } else {
-            dotConnect.executeStatement( "UPDATE " + updateTable + " SET " + updateColumn + " = ir.remote_identifier FROM " + resultsTable + " ir WHERE " + updateColumn + " = ir.local_identifier and '"+endpointId+"' = ir.endpoint_id", conn );
-        }
-    }
-
-    /**
-     * Method that will enable/disable the constrains for a given table on oracle
-     *
-     * @param dotConnect
-     * @param table
-     * @param enable
-     * @throws DotDataException
-     */
-    private static void enableDisableOracleConstrains ( DotConnect dotConnect, String table, boolean enable ) throws DotDataException {
-
-        Connection conn = DbConnectionFactory.getConnection();
-        ResultSet rs = null;
-        PreparedStatement statement = null;
-
-        try {
-
-            //Create the enable/disable constraint query for each constraint in the given table
-            String operation = enable ? "ENABLE" : "DISABLE";
-            statement = conn.prepareStatement( "select 'alter table '||a.owner||'.'||a.table_name|| ' " + operation + " constraint '||a.constraint_name||''" +
-                    " FROM user_constraints a, user_constraints b" +
-                    " WHERE a.constraint_type = 'R'" +
-                    " AND a.r_constraint_name = b.constraint_name" +
-                    " AND a.r_owner  = b.owner" +
-                    " AND b.table_name = '" + table.toUpperCase() + "'" );
-            rs = statement.executeQuery();
-
-            while ( rs.next() ) {
-                //Enable/disable query
-                String constraintQuery = rs.getString( 1 );
-                //Execute the constraint query
-                dotConnect.executeStatement( constraintQuery );
-            }
-
-        } catch ( SQLException e ) {
-            throw new DotDataException( e.getMessage(), e );
-        } finally {
-            try {
-                if ( rs != null ) rs.close();
-            } catch ( Exception e ) {
-            }
-            try {
-                if ( statement != null ) statement.close();
-            } catch ( Exception e ) {
-            }
-        }
-    }
 
 }
