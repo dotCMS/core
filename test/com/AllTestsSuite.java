@@ -74,7 +74,7 @@ import com.dotmarketing.webdav.WebDavTest;
     ContentResourceTest.class,
     RoleAPITest.class,
     FolderAPITest.class,
-    //HostAPITest.class, //Gets stuck
+    HostAPITest.class,
     WorkflowSearcherTest.class,
     NotificationAPITest.class,
     SassCompilerTest.class, //Needs Enterprise License
