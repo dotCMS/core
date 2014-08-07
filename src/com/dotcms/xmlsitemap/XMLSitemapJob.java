@@ -395,7 +395,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 							Folder folderChild = (Folder) itemChild;
 
-							Logger.warn(this, "Folder Iteration in progress Name [" + folderChild.getName() + "], show on Menu Indicator [" + folderChild.isShowOnMenu() + "]");
+							Logger.debug(this, "Folder Iteration in progress Name [" + folderChild.getName() + "], show on Menu Indicator [" + folderChild.isShowOnMenu() + "]");
 
 							// recursive method here
 							buildSubFolderSiteMapMenu(folderChild, 100, 1, 1);
@@ -418,7 +418,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							}
 						} else if (itemChild instanceof HTMLPage) {
 							HTMLPage page = (HTMLPage) itemChild;
-							Logger.warn(this, "Folder Page Configuration " + page.getURI());
+							Logger.debug(this, "Folder Page Configuration " + page.getURI());
 							if (page.isLive() && !page.isDeleted()) {
 								String indexPageConfiguration = "/index."+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 								String pathToPageUrl = XMLUtils.xmlEscape("http://"+ host.getHostname() + page.getURI());
@@ -520,7 +520,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 				+ "/index."
 				+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
 
-		Logger.warn(this, "Performing check for folders [" + (folderIdent.getURI() + "/index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION")) + "], Identifier Check ["
+		Logger.debug(this, "Performing check for folders [" + (folderIdent.getURI() + "/index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION")) + "], Identifier Check ["
 		 + (id != null) + "], Children Count [" + itemsChildrenList2.size() + "], Host Identifier [" + host.getIdentifier() + "], Identifier " +
 		 ((id != null) ? id.getInode() : "") + "]");
 
@@ -535,7 +535,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					+ "</loc><lastmod>" + modifiedDateStringValue
 					+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
-			Logger.warn(this, "Writing the XMLConfiguration for Folder[" + XMLUtils
+			Logger.debug(this, "Writing the XMLConfiguration for Folder[" + XMLUtils
 							.xmlEscape("http://"
 									+ host.getHostname()
 									+ folderIdent.getURI()) + "]"
@@ -569,7 +569,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 								+ modifiedDateStringValue
 								+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
-						Logger.warn(this, "Writing the XMLConfiguration Second Level Check for [" + XMLUtils
+						Logger.debug(this, "Writing the XMLConfiguration Second Level Check for [" + XMLUtils
 										.xmlEscape("http://"
 												+ host.getHostname()
 												+ childChild2Ident.getURI()) + "]");
@@ -601,7 +601,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 						String pathToPageUrl = XMLUtils.xmlEscape("http://" + host.getHostname() + childChild2Ident.getURI());
 
 						if (pathToPageUrl.endsWith(indexPageConfiguration) && isIndexPageAlreadyConfigured) {
-							Logger.warn(this, "Index Page is already configured, skipping the process [" + pathToPageUrl + "]");
+							Logger.debug(this, "Index Page is already configured, skipping the process [" + pathToPageUrl + "]");
 							continue;
 						}
 
@@ -609,7 +609,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 						stringbuf = "<url><loc>" + pathToPageUrl + "</loc><lastmod>" + modifiedDateStringValue + "</lastmod><changefreq>daily</changefreq></url>\n";
 
-						Logger.warn(this, "Writing the XMLConfiguration for an HTML Page with out index.dot extension [" + pathToPageUrl + "]");
+						Logger.debug(this, "Writing the XMLConfiguration for an HTML Page with out index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html") + " extension [" + pathToPageUrl + "]");
 
 						writeFile(stringbuf);
 

@@ -1,5 +1,6 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@ include file="/html/common/init.jsp" %>
-<h3><%= System.getProperty("dotcms_level_name")%></h3>
+<h3><%= LicenseUtil.getLevelName() %></h3>
 <p style="font-weight:bold;font-size:12px;"><%= ReleaseInfo.getVersion() %> (<%= ReleaseInfo.getBuildDateString(LanguageUtil.getLocale(pageContext)) %>)</p>
 
 <%= LanguageUtil.format(pageContext, "please-email-all-questions-to", "<b>" + company.getEmailAddress() + "</b>", false) %><br><br>

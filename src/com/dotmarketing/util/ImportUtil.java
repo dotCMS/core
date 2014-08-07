@@ -567,6 +567,9 @@ public class ImportUtil {
 						valueObj = value.substring(0, 255);
 					//valueObj = UtilMethods.escapeUnicodeCharsForHTML(value);
 				}//http://jira.dotmarketing.net/browse/DOTCMS-3232
+				else if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
+					valueObj = value;
+				}
 				else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
 
 					Identifier identifier = null;

@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
 <%@page import="com.liferay.portlet.PortletURLImpl"%>
@@ -16,8 +17,7 @@
 <%@page import="com.dotmarketing.util.json.JSONObject" %>
 <%@page import="com.dotmarketing.util.json.JSONArray" %>
 <%
-    boolean isCommunity = ("100".equals(System
-            .getProperty("dotcms_level")));
+    boolean isCommunity = LicenseUtil.getLevel()==100;
     String licenseMessage = null;
     String licenseURL = "http://www.dotcms.com/buy-now";
     List<Layout> layoutListForLicenseManager=null;
@@ -38,16 +38,11 @@
 
 
         } else {
-            boolean isPerpetual = new Boolean(System
-                    .getProperty("dotcms_license_perpetual"));
-            boolean isTrial = true;
-            try{
-                isTrial = (System.getProperty("dotcms_license_client_name").toLowerCase().indexOf("trial") >-1);
-            }
-            catch(Exception e){}
+            boolean isPerpetual = LicenseUtil.isPerpetual();
+            boolean isTrial = LicenseUtil.getLicenseType().equals("trial");
+            
             Date td = new Date();
-            Date ed = new Date(Long.parseLong(System
-                    .getProperty("dotcms_valid_until")));
+            Date ed = LicenseUtil.getValidUntil();
 
             Calendar start = Calendar.getInstance();
             Calendar end = Calendar.getInstance();
