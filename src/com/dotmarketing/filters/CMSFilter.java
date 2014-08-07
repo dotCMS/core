@@ -234,8 +234,14 @@ public class CMSFilter implements Filter {
 					pointer = LiveCache.getPathFromCache(uri, host);
 				}
 
-            if (!UtilMethods.isSet(pointer) && (uri.endsWith(dotExtension) || InodeUtils.isSet(APILocator.getFolderAPI().findFolderByPath(uri, host,APILocator.getUserAPI().getSystemUser(),false).getInode()))) {
-                String url = uri;
+            if (!UtilMethods.isSet(pointer)
+            		&& !uri.equals("/")
+            		&& (uri.endsWith(dotExtension) 
+            				|| InodeUtils.isSet(APILocator
+            						.getFolderAPI().findFolderByPath(uri, host,APILocator.getUserAPI().getSystemUser(),false)
+            						.getInode()))) {
+                
+            	String url = uri;
                 if (!uri.endsWith(dotExtension)) {
                     url += "index" + dotExtension;
                 }

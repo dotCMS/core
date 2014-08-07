@@ -1104,10 +1104,10 @@
 		var itemHTML = getPortletItemHTML(portletId, portletTitle);
 		portletsListSource.insertNodes(false, [itemHTML]);
 		registerPortletItemButton(portletId, portletTitle);
-
 	}
 
 	function getPortletItemHTML (portletId, portletTitle) {
+		
 		portletId = norm(portletId);
 		var html = dojo.string.substitute(portletListItemTemplate, { portletTitle: portletTitle, portletId: portletId })
 		return html;
@@ -1125,6 +1125,17 @@
 		dojo.connect(button, 'onClick', this, handler)
 		portletsInLayout.push({ portletTitle: portletTitle, portletId: portletId });
 
+		setOverflow();
+
+	}
+
+	function setOverflow(){
+		var portletsListSourceTemp = new dojo.dnd.Source("portletsList");
+		if (portletsListSourceTemp && portletsListSourceTemp.getAllNodes().length > 7){
+			dojo.style("portletsListWrapper", "overflow", "auto");
+		} else{
+			dojo.style("portletsListWrapper", "overflow", "");
+		}	
 	}
 
 	function editLayout(layoutId) {
@@ -1155,6 +1166,8 @@
 				var id = currentLayout.portletIds[i];
 				registerPortletItemButton(id, title);
 			}
+			
+			setOverflow();
 
 			newLayout = false;
 			dojo.style('deleteLayoutButtonWrapper', {
@@ -1240,6 +1253,8 @@
 		}
 		dijit.registry.remove('removePortletButton' + portletId)
 		dojo.destroy(dojo.byId('listItem-' + portletId));
+
+		setOverflow();
 	}
 
 	function saveLayout() {

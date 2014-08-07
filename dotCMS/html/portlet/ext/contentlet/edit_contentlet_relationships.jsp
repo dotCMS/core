@@ -681,8 +681,10 @@
 					var formEle = document.getElementById('fm').elements;
 					for (var i=0;i<formEle.length;i++){
 						if(formEle[i].className=="editWYSIWYGField"){
-							tinymce.EditorManager.get(formEle[i].id).remove();
-							(new tinymce.Editor(formEle[i].id, tinyMCEProps)).render();
+							if(tinymce.EditorManager.get(formEle[i].id)){
+								tinymce.EditorManager.get(formEle[i].id).remove();
+								(new tinymce.Editor(formEle[i].id, tinyMCEProps)).render();	
+							}
 						}
 						formEle[i].value = formEle[i].value.replace(/^\s+|\s+$/g, '');
 						formEle[i].value = formEle[i].value.replace(/\r\n/g, '');
