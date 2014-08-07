@@ -858,11 +858,11 @@ public class IntegrityUtil {
             		// 1.2) Insert dummy temp row on IDENTIFIER table
 
             		dc.executeStatement("insert into identifier values ('TEMP_IDENTIFIER', '/System folder', 'DUMMY_ASSET_NAME', '"+hostForDummyFolder+"', "
-            				+ "'folder') ");
+            				+ "'folder', NULL, NULL) ");
 
             		// 1.3) Insert dummy temp row on FOLDER table
 
-            		dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', 'f', '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', '1900-01-01 00:00:00.00')");
+            		dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"+DbConnectionFactory.getDBFalse()+"', '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', '1900-01-01 00:00:00.00')");
 
             		// 2) Update references to the new dummies temps
 
@@ -878,7 +878,7 @@ public class IntegrityUtil {
             		Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
             		String name = (String) oldFolderRow.get("name");
             		String title = (String) oldFolderRow.get("title");
-            		Boolean showOnMenu = (Boolean) oldFolderRow.get("show_on_menu");
+            		Boolean showOnMenu = DbConnectionFactory.isDBTrue(oldFolderRow.get("show_on_menu").toString());
             		Integer sortOrder = (Integer) oldFolderRow.get("sort_order");
             		String filesMasks = (String) oldFolderRow.get("files_masks");
             		String defaultFileType = (String) oldFolderRow.get("default_file_type");
@@ -1037,7 +1037,7 @@ public class IntegrityUtil {
 
         		// 1.2) Insert dummy temp row on STRUCTURE table
 
-        		dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', 'f', '', '', '', 1, 't', 'f', 'DUMMY_VAR_NAME'"
+        		dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '', '', '', 1, '"+DbConnectionFactory.getDBTrue()+"', '"+DbConnectionFactory.getDBFalse()+"', 'DUMMY_VAR_NAME'"
         				+ ", 'DUMMY_PATERN', '"+st.getHost()+"', '"+st.getFolder()+"', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
 
         		// 2) Update references to the new dummies temps
@@ -1059,13 +1059,13 @@ public class IntegrityUtil {
         		Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
         		String name = (String) oldFolderRow.get("name");
         		String description = (String) oldFolderRow.get("description");
-        		Boolean defaultStructure = (Boolean) oldFolderRow.get("default_structure");
+        		Boolean defaultStructure = DbConnectionFactory.isDBTrue(oldFolderRow.get("default_structure").toString());
         		String reviewInterval = (String) oldFolderRow.get("review_interval");
         		String reviewerRole = (String) oldFolderRow.get("reviewer_role");
         		String detailPage = (String) oldFolderRow.get("page_detail");
         		Integer structureType = (Integer) oldFolderRow.get("structuretype");
-        		Boolean system = (Boolean) oldFolderRow.get("system");
-        		Boolean fixed = (Boolean) oldFolderRow.get("fixed");
+        		Boolean system = DbConnectionFactory.isDBTrue(oldFolderRow.get("system").toString());
+        		Boolean fixed = DbConnectionFactory.isDBTrue(oldFolderRow.get("fixed").toString());
         		String velocityVarName = (String) oldFolderRow.get("velocity_var_name");
         		String urlMapPattern = (String) oldFolderRow.get("url_map_pattern");
         		String host = (String) oldFolderRow.get("host");
@@ -1177,7 +1177,7 @@ public class IntegrityUtil {
 
         		// 1) Insert dummy temp row on WORKFLOW_SCHEME table
 
-        		dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', 'f', 'f', 'f', '', '1900-01-01 00:00:00.00')");
+        		dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '', '1900-01-01 00:00:00.00')");
 
         		// 2) Update references to the new dummies temps
 
@@ -1192,9 +1192,9 @@ public class IntegrityUtil {
         		Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
         		String name = (String) oldFolderRow.get("name");
         		String desc = (String) oldFolderRow.get("description");
-        		Boolean archived = (Boolean) oldFolderRow.get("archived");
-        		Boolean mandatory = (Boolean) oldFolderRow.get("mandatory");
-        		Boolean isDefaultScheme = (Boolean) oldFolderRow.get("default_scheme");
+        		Boolean archived = DbConnectionFactory.isDBTrue(oldFolderRow.get("archived").toString());
+        		Boolean mandatory = DbConnectionFactory.isDBTrue(oldFolderRow.get("mandatory").toString());
+        		Boolean isDefaultScheme = DbConnectionFactory.isDBTrue(oldFolderRow.get("default_scheme").toString());
         		String entryActionId = (String) oldFolderRow.get("entry_action_id");
         		Date modDate = (Date) oldFolderRow.get("mod_date");
 
