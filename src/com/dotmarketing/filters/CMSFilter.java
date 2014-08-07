@@ -202,9 +202,15 @@ public class CMSFilter implements Filter {
         }
 
         String pointer = null;
+        
+        boolean isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + uri));
+        if (!isVanityURL)
+        	isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(uri));
 
-
-        if(!uri.equals(pointer) && !uri.endsWith("/") && ! RegEX.contains(uri, folderPathRegEx) && uri.indexOf("/dotCMS/") == -1) {
+        if(!uri.equals(pointer) && !uri.endsWith("/") 
+        		&& ! RegEX.contains(uri, folderPathRegEx) 
+        		&& uri.indexOf("/dotCMS/") == -1
+        		&& !isVanityURL ) {
         	Enumeration enm = req.getParameterNames();
         	StringBuffer params = new StringBuffer("");
             for (; enm.hasMoreElements(); ) {
