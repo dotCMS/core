@@ -1,8 +1,8 @@
 package com.dotmarketing.osgi.override;
 
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.portlets.folders.model.Folder;
-import org.osgi.framework.BundleContext;
 
 /**
  * Created by Jonathan Gamba

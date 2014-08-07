@@ -91,9 +91,9 @@ ext {
     snapshotRepository = "http://repo.dotcms.com/artifactory/libs-snapshot-local"
     repositoryUrl = snapshotRepository
 
-    groupId = ""
+    artifactGroupId = ""
     if (project.hasProperty('groupId')) {
-        groupId = "$groupId"
+        artifactGroupId = "$groupId"
     }
     fileToUpload = ""
     if (project.hasProperty('file')) {
@@ -111,13 +111,13 @@ ext {
         useDependencies = "$includeDependencies"
     }
 
-    username = ""
+    repositoryUsername = ""
     if (project.hasProperty('username')) {
-        username = "$username"
+        repositoryUsername = "$username"
     }
-    password = ""
+    repositoryPassword = ""
     if (project.hasProperty('password')) {
-        password = "$password"
+        repositoryPassword = "$password"
     }
 }
 
@@ -179,17 +179,17 @@ uploadArchives() {
                 //Setting the properties for the pom and artifactory
                 pom(fileName).artifactId = artifactId
                 pom(fileName).version = version
-                pom(fileName).groupId = groupId
+                pom(fileName).groupId = artifactGroupId
 
                 //Some feedback
                 println " --> Preparing to upload: " + fileName
-                println "\tgroupId: " + groupId
+                println "\tgroupId: " + artifactGroupId
                 println "\tartifactId: " + artifactId
                 println "\tversion: " + version
                 println "\trepository: " + repositoryUrl
 
                 repository(url: repositoryUrl) {
-                    authentication(userName: username, password: password)
+                    authentication(userName: repositoryUsername, password: repositoryPassword)
                 }
             }
         }

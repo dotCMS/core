@@ -1,7 +1,7 @@
 package com.dotmarketing.osgi.viewtools;
 
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.GenericBundleActivator;
-import org.osgi.framework.BundleContext;
 
 public class Activator extends GenericBundleActivator {
 
