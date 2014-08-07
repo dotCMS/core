@@ -2,6 +2,7 @@ package com.dotmarketing.util;
 
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.util.ReleaseInfo;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpClient;
 import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpException;
 import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.NameValuePair;
@@ -29,9 +30,9 @@ public class UpdateUtil {
         pars.put( "version", ReleaseInfo.getVersion() );
         //pars.put("minor", ReleaseInfo.getBuildNumber() + "");
         pars.put( "check_version", "true" );
-        pars.put( "level", System.getProperty( "dotcms_level" ) );
-        if ( System.getProperty( "dotcms_license_serial" ) != null ) {
-            pars.put( "license", System.getProperty( "dotcms_license_serial" ) );
+        pars.put( "level", Long.toString(LicenseUtil.getLevel()));
+        if ( LicenseUtil.getSerial() != null ) {
+            pars.put( "license", LicenseUtil.getSerial() );
         }
 
         HttpClient client = new HttpClient();

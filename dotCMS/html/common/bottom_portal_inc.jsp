@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@ page import="com.liferay.portal.util.PortalUtil"%>
 <%@ page import="com.liferay.util.ParamUtil"%>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
@@ -9,7 +10,7 @@
 
 
 <%if((DbConnectionFactory.isOracle() ||  DbConnectionFactory.isMsSql()) 
-		&& "100".equals(System.getProperty("dotcms_level")) 
+		&& 100==LicenseUtil.getLevel() 
 		&& session.getAttribute("db-community-edition-warning") ==null){ %>
 		<%session.setAttribute("db-community-edition-warning", "1");  %>
 	<script>

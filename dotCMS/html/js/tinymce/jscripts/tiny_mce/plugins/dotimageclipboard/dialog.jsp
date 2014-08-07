@@ -20,7 +20,7 @@ try {
 } catch (Exception e) {
 	Logger.warn(this.getClass(), "no user found");
 } 
-if(user ==null || "100".equals(LicenseUtil.getLevel())){
+if(user ==null || LicenseUtil.getLevel()==100) {
 	response.getWriter().println("Unauthorized");
 	return;
 }
@@ -79,7 +79,7 @@ if(clipboard ==null){
 
 <div id="imageContainer">
 
-	<%if(user ==null || "100".equals(System.getProperty("dotcms_level"))){%>
+	<%if(user ==null || 100==LicenseUtil.getLevel()) {%>
 		<div style="text-align:center;padding-top:140px;">
 			<h3 style="color:silver"><%=LanguageUtil.get(pageContext, "dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %></h3>
 		</div>
