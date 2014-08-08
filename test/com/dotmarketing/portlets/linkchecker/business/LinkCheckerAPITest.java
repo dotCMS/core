@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.linkchecker.business;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.junit.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;

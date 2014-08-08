@@ -1,8 +1,8 @@
 package com.dotcms.cmis;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.junit.org.junit.Assert.assertNotNull;
-import static com.dotcms.repackage.junit.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileWriter;

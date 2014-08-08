@@ -1,7 +1,7 @@
 package com.dotcms.notification.business;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.assertNull;
-import static com.dotcms.repackage.junit.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.org.junit.Assert.assertNull;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.UUID;

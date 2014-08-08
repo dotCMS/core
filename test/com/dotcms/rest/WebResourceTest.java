@@ -1,6 +1,6 @@
 package com.dotcms.rest;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.assertNotNull;
+import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;

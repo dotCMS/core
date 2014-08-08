@@ -16,7 +16,7 @@ import com.dotcms.repackage.org.junit.Test;
 import java.io.Serializable;
 import java.util.*;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.*;
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba.

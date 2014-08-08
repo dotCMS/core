@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.structure.business;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.assertTrue;
-import static com.dotcms.repackage.junit.org.junit.Assert.fail;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
