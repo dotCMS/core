@@ -1,7 +1,7 @@
 package com.dotmarketing.osgi.servlet;
 
+import com.dotcms.repackage.org.osgi.util.tracker.ServiceTracker;
 import com.dotmarketing.osgi.service.HelloWorld;
-import org.osgi.util.tracker.ServiceTracker;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;

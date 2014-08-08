@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.templates.model;
 
 import java.lang.reflect.InvocationTargetException;
 
-import com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

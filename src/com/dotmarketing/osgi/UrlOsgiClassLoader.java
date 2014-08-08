@@ -1,6 +1,6 @@
 package com.dotmarketing.osgi;
 
-import org.github.jamm.MemoryMeter;
+import com.dotcms.repackage.org.github.jamm.MemoryMeter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;

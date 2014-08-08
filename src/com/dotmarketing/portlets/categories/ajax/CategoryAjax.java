@@ -10,10 +10,10 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 
-import com.dotcms.repackage.javacsv.com.csvreader.CsvReader;
+import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;

@@ -41,7 +41,7 @@ import org.apache.velocity.tools.view.context.ChainedContext;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;

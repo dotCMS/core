@@ -24,10 +24,10 @@ package com.liferay.portal.struts;
 
 import java.util.HashMap;
 
-import com.dotcms.repackage.portlet.javax.portlet.PortletMode;
-import com.dotcms.repackage.portlet.javax.portlet.PortletModeException;
-import com.dotcms.repackage.portlet.javax.portlet.WindowState;
-import com.dotcms.repackage.portlet.javax.portlet.WindowStateException;
+import com.dotcms.repackage.javax.portlet.PortletMode;
+import com.dotcms.repackage.javax.portlet.PortletModeException;
+import com.dotcms.repackage.javax.portlet.WindowState;
+import com.dotcms.repackage.javax.portlet.WindowStateException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -169,7 +169,7 @@ public class StrutsURLEncoder implements URLEncoder {
 	private void _setServletMapping(String servletMapping) {
 		if (servletMapping != null) {
 
-			// See com.dotcms.repackage.struts.org.apache.struts.util.RequestUtils.getActionMappingURL
+			// See com.dotcms.repackage.org.apache.struts.util.RequestUtils.getActionMappingURL
 
 			if (servletMapping.endsWith("/*")) {
 				_servletMapping = servletMapping.substring(

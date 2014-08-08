@@ -49,6 +49,10 @@
     <property name="jboss7.home" value="${jboss7.install.location}"/>
     <property name="jboss7.version" value="${jboss7.install.version}"/>
 
+    <tstamp>
+        <format property="TODAY_FORMATTED" pattern="MMM dd, yyyy"/>
+    </tstamp>
+
     <path id="build-classpath">
         <pathelement path="${build.classes}" />
     </path>
@@ -84,9 +88,9 @@
         <pathelement location="${java.home}/../lib/tools.jar"/>
 
         <fileset dir="../../${target.root}/WEB-INF/lib">
-            <include name="dotcms-ant-tooling.jar" />
-            <include name="dotcms-commons-lang-2.4.jar" />
-            <include name="dotcms-tika-app-1.3.jar" />
+            <include name="dot.ant-tooling-ukv_*.jar" />
+            <include name="dot.commons-lang-2.4_*.jar" />
+            <include name="dot.tika-app-1.3_*.jar" />
         </fileset>
     </path>
     <path id="ant-files-classpath">
@@ -94,9 +98,9 @@
         <pathelement location="${java.home}/../lib/tools.jar"/>
 
         <fileset dir="${lib.app}">
-            <include name="dotcms-ant-tooling.jar" />
-            <include name="dotcms-commons-lang-2.4.jar" />
-            <include name="dotcms-tika-app-1.3.jar" />
+            <include name="dot.ant-tooling-ukv_*.jar" />
+            <include name="dot.commons-lang-2.4_*.jar" />
+            <include name="dot.tika-app-1.3_*.jar" />
         </fileset>
     </path>
 
@@ -110,6 +114,28 @@
         <mkdir dir="${build.dir}" />
         <mkdir dir="${build.classes}" />
         <mkdir dir="${build.lib}" />
+    </target>
+
+    <available file=".git" type="dir" property="git.present"/>
+    <target name="git.revision" description="Store git revision in ${repository.version}" if="git.present">
+
+        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
+            <arg value="describe"/>
+            <arg value="--always"/>
+            <arg value="HEAD"/>
+        </exec>
+        <condition property="repository.version" value="${git.revision}" else="unknown">
+            <and>
+                <isset property="git.revision"/>
+                <length string="${git.revision}" trim="yes" length="0" when="greater"/>
+            </and>
+        </condition>
+
+        <propertyfile file="${src.dir}/com/liferay/portal/util/build.properties">
+            <entry key="dotcms.release.build" value="${repository.version}"/>
+            <entry key="dotcms.release.date" value="${TODAY_FORMATTED}"/>
+        </propertyfile>
+
     </target>
 
     <target name="clean-tinymce-gz" description="Removes all generated .gz pre-compressed files by tinymce_gzip.jsp">
@@ -164,7 +190,7 @@
     </target>
 
 
-    <target name="jar" depends="compile" description="Generates dotcms.jar in the 'lib' directory.">
+    <target name="jar" depends="git.revision, compile" description="Generates dotcms.jar in the 'lib' directory.">
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
@@ -172,7 +198,7 @@
         <copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
         <copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" />
+        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" basedir="${build.classes}" />
     </target>
 
     <target name="jar-with-tests" depends="compile, compile-tests" description="Generates dotcms.jar in the 'lib' directory includind tests classes.">
@@ -183,7 +209,7 @@
         <copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
         <copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}.jar" basedir="${build.classes}" />
+        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" basedir="${build.classes}" />
     </target>
 
     <!-- Configure the directory into which the web application is built -->
@@ -229,7 +255,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -238,7 +264,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -247,7 +273,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -256,7 +282,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -269,7 +295,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <antcall target="deploy-plugins" />
     </target>
 

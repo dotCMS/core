@@ -8,15 +8,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Consumes;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.POST;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 
-import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -33,8 +33,8 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.core.header.FormDataContentDisposition;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.FormDataParam;
+import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
+import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
 
 @Path("/bundlePublisher")
 public class BundlePublisherResource extends WebResource {

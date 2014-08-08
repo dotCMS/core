@@ -53,7 +53,7 @@ goto end
 rem Java VM configuration options
 
 if not "%JAVA_OPTS%" == "" goto noDefaultJavaOpts
-set JAVA_OPTS=-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xmx1G -Djava.endorsed.dirs=%DOTCMS_HOME%/WEB-INF/endorsed_libs  -XX:MaxPermSize=256m -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -javaagent:%DOTCMS_HOME%/WEB-INF/lib/jamm-0.2.5.jar
+set JAVA_OPTS=-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xmx1G -Djava.endorsed.dirs=%DOTCMS_HOME%/WEB-INF/endorsed_libs  -XX:MaxPermSize=256m -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -javaagent:%DOTCMS_HOME%/WEB-INF/lib/dot.jamm-0.2.5_1.jar
 rem Uncomment the next line if you want to enable JMX
 rem set JAVA_OPTS=%JAVA_OPTS% -Dcom.sun.management.jmxremote.port=7788 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.endorsed.dirs=$DOTCMS_HOME/WEB-INF/endorsed_libs
 :noDefaultJavaOpts

@@ -2,10 +2,10 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
 <%@page import="com.liferay.portlet.PortletURLImpl"%>
-<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
-<%@page import="com.dotcms.repackage.portlet.javax.portlet.PortletMode"%>
+<%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.javax.portlet.PortletMode"%>
 <%@page import="com.liferay.portal.util.PortletKeys"%>
-<%@page import="com.dotcms.repackage.portlet.javax.portlet.PortletURL"%>
+<%@page import="com.dotcms.repackage.javax.portlet.PortletURL"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.business.APILocator"%>

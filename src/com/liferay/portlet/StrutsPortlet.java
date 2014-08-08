@@ -28,20 +28,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
-import com.dotcms.repackage.portlet.javax.portlet.GenericPortlet;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
-import com.dotcms.repackage.portlet.javax.portlet.PortletException;
-import com.dotcms.repackage.portlet.javax.portlet.PortletRequest;
-import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
-import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.GenericPortlet;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.PortletException;
+import com.dotcms.repackage.javax.portlet.PortletRequest;
+import com.dotcms.repackage.javax.portlet.RenderRequest;
+import com.dotcms.repackage.javax.portlet.RenderResponse;
 import javax.servlet.ServletException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
-import com.dotcms.repackage.struts.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 
 import com.liferay.portal.struts.PortletRequestProcessor;
 import com.liferay.portal.util.PortalUtil;
@@ -225,7 +225,7 @@ public class StrutsPortlet extends GenericPortlet {
 
 	private static final Log _log = LogFactory.getLog(StrutsPortlet.class);
 
-	private static String _STRUTS_PACKAGE = "com.dotcms.repackage.struts.org.apache.struts.";
+	private static String _STRUTS_PACKAGE = "com.dotcms.repackage.org.apache.struts.";
 
 	private PortletConfigImpl _portletConfig;
 	private String _editAction;

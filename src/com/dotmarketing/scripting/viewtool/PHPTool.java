@@ -2,7 +2,7 @@ package com.dotmarketing.scripting.viewtool;
 
 import java.io.StringWriter;
 
-import com.dotcms.repackage.bsf.org.apache.bsf.BSFException;
+import com.dotcms.repackage.org.apache.bsf.BSFException;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;

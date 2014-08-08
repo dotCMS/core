@@ -1,14 +1,11 @@
 package com.dotmarketing.osgi.custom.dwr.osgi;
 
+import com.dotcms.repackage.org.apache.felix.http.api.ExtHttpService;
+import com.dotcms.repackage.org.directwebremoting.servlet.DwrServlet;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.osgi.framework.ServiceReference;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.osgi.GenericBundleActivator;
-
-import org.apache.felix.http.api.ExtHttpService;
-
-import org.directwebremoting.servlet.DwrServlet;
-
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 
 /**
  * @author Nathan Keiter
@@ -58,7 +55,7 @@ public class Activator extends GenericBundleActivator
         }
     }
 
-    public void stop ( BundleContext context ) throws Exception 
+    public void stop ( BundleContext context ) throws Exception
     {
 		try
         {	        
