@@ -17,7 +17,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import static com.dotcms.repackage.junit.org.junit.Assert.*;
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 public class MenuLinkAPITest extends TestBase {
     static PermissionAPI pAPI = APILocator.getPermissionAPI();

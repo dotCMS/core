@@ -1,7 +1,7 @@
 package com.dotmarketing.webdav;
 
 
-import static com.dotcms.repackage.junit.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

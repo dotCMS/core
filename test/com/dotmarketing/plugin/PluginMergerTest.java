@@ -1,6 +1,6 @@
 package com.dotmarketing.plugin;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

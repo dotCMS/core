@@ -12,10 +12,10 @@ import java.sql.SQLException;
  * Date: 3/6/12
  * Time: 4:36 PM
  * <p/>
- * Annotations that can be use: {@link com.dotcms.repackage.junit.org.junit.BeforeClass @BeforeClass}, {@link com.dotcms.repackage.junit.org.junit.Before @Before},
- * {@link com.dotcms.repackage.junit.org.junit.Test @Test}, {@link com.dotcms.repackage.junit.org.junit.AfterClass @AfterClass},
- * {@link com.dotcms.repackage.junit.org.junit.After @After}, {@link com.dotcms.repackage.junit.org.junit.Ignore @Ignore}
- * <br>For managing the assertions use the static class {@link com.dotcms.repackage.junit.org.junit.Assert Assert}
+ * Annotations that can be use: {@link com.dotcms.repackage.org.junit.BeforeClass @BeforeClass}, {@link com.dotcms.repackage.org.junit.Before @Before},
+ * {@link com.dotcms.repackage.org.junit.Test @Test}, {@link com.dotcms.repackage.org.junit.AfterClass @AfterClass},
+ * {@link com.dotcms.repackage.org.junit.After @After}, {@link com.dotcms.repackage.org.junit.Ignore @Ignore}
+ * <br>For managing the assertions use the static class {@link com.dotcms.repackage.org.junit.Assert Assert}
  */
 public abstract class TestBase {
 

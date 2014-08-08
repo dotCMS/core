@@ -51,7 +51,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.*;
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 /**
  * @author Jonathan Gamba

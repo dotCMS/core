@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.*;
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba.

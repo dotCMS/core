@@ -33,7 +33,7 @@ import com.dotcms.repackage.org.junit.Test;
 import java.io.FileWriter;
 import java.util.*;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.*;
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 public class PermissionAPITest extends TestBase {
 

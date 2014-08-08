@@ -1,6 +1,6 @@
 package com.dotcms.rest;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
 import java.util.List;
 

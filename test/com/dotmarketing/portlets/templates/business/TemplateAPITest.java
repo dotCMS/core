@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.templates.business;
 
-import static com.dotcms.repackage.junit.org.junit.Assert.*;
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
