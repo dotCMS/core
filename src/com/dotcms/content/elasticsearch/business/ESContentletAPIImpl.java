@@ -2059,18 +2059,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Map<Relationship, List<Contentlet>> contentRelationships = null;
         Contentlet workingCon = null;
 
-        //If contentlet is not new
+        //If the contentlet has identifier does not mean is already in DB
+        //It has to check if there is a working contentlet. 
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
-            workingCon = findWorkingContentlet(contentlet);
-
-            if(cats==null) {
-            	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-            }
-
-            contentRelationships = findContentRelationships(workingCon);
-        }
-        else
-        {
+            
+        	workingCon = findWorkingContentlet(contentlet);
+            if (workingCon != null){//If contentlet is not new.
+            	if(cats==null) {
+                	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+                }
+                contentRelationships = findContentRelationships(workingCon);
+                
+            } else { //If contentlet is new.
+            	contentRelationships = findContentRelationships(contentlet);
+            }   
+        } else{
             contentRelationships = findContentRelationships(contentlet);
         }
 
@@ -2096,11 +2099,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //If contentlet is not new
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
             workingCon = findWorkingContentlet(contentlet);
-            cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-            contentRelationships = findContentRelationships(workingCon);
-        }
-        else
-        {
+            if(workingCon != null){
+            	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+                contentRelationships = findContentRelationships(workingCon);
+            } else {
+            	contentRelationships = findContentRelationships(contentlet);
+            }
+        } else {
             contentRelationships = findContentRelationships(contentlet);
         }
 
@@ -2121,13 +2126,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //If contentlet is not new
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
             workingCon = findWorkingContentlet(contentlet);
-            if(cats==null) {
-            	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+            if(workingCon != null){
+            	if(cats==null) {
+                	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+                }
+                if(contentRelationships==null) {
+                	 contentRelationships = findContentRelationships(workingCon);
+                }
+                permissions = perAPI.getPermissions(workingCon);
             }
-            if(contentRelationships==null) {
-            	 contentRelationships = findContentRelationships(workingCon);
-            }
-            permissions = perAPI.getPermissions(workingCon);
         }
 
         if(permissions == null)
@@ -2151,11 +2158,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //If contentlet is not new
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
             workingCon = findWorkingContentlet(contentlet);
-            permissions = perAPI.getPermissions(workingCon);
-            cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+            
+            if(workingCon != null){
+            	permissions = perAPI.getPermissions(workingCon);
+                cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
 
-            if(contentRelationships==null) {
-            	contentRelationships = findContentRelationships(workingCon);
+                if(contentRelationships==null) {
+                	contentRelationships = findContentRelationships(workingCon);
+                }
             }
         }
 
@@ -2216,15 +2226,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         //If contentlet is not new
         if(InodeUtils.isSet(contentlet.getIdentifier())) {
-            workingCon = findWorkingContentlet(contentlet);
-            if(cats==null) {
-            	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-            }
-            permissions = perAPI.getPermissions(workingCon, false, true);
-            contentRelationships = findContentRelationships(workingCon);
-        }
-        else
-        {
+        	workingCon = findWorkingContentlet(contentlet);
+        	if(workingCon != null){
+                if(cats==null) {
+                	cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+                }
+                permissions = perAPI.getPermissions(workingCon, false, true);
+                contentRelationships = findContentRelationships(workingCon);
+        	} else {
+        		contentRelationships = findContentRelationships(contentlet);
+        	}
+        } else {
             contentRelationships = findContentRelationships(contentlet);
         }
 
