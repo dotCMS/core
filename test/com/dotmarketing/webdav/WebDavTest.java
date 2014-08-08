@@ -248,19 +248,19 @@ public class WebDavTest extends TestBase {
 	    try {
 	        APILocator.getPermissionAPI().save(
 	            new Permission(demo.getIdentifier(),role.getId(),
-	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_USE),demo,user,false);
+	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_USE |PermissionAPI.PERMISSION_PUBLISH),demo,user,false);
 	    
 	        APILocator.getPermissionAPI().save(
 	            new Permission(PermissionAPI.permissionTypes.get("FOLDERS"),demo.getIdentifier(),role.getId(),
-	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN|PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
+	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN|PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE|PermissionAPI.PERMISSION_PUBLISH),demo,user,false);
 	    
 	        APILocator.getPermissionAPI().save(
 	            new Permission(PermissionAPI.permissionTypes.get("FILES"),demo.getIdentifier(),role.getId(),
-                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
+                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE|PermissionAPI.PERMISSION_PUBLISH),demo,user,false);
 	    
 	        APILocator.getPermissionAPI().save(
 	            new Permission(PermissionAPI.permissionTypes.get("CONTENTLETS"),demo.getIdentifier(),role.getId(),
-                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
+                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE|PermissionAPI.PERMISSION_PUBLISH),demo,user,false);
 	        
 	        HibernateUtil.commitTransaction();
 	    }
@@ -283,7 +283,7 @@ public class WebDavTest extends TestBase {
         
         List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, user, false);
         Assert.assertEquals(1, files.size());
-        Assert.assertFalse(files.get(0).isLive());
+        Assert.assertTrue(files.get(0).isLive());
         
         
 	}
