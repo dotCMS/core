@@ -30,12 +30,12 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.GetterUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.dotcms.repackage.elasticsearch.org.apache.lucene.analysis.core.WhitespaceAnalyzer;
-import com.dotcms.repackage.elasticsearch.org.apache.lucene.index.IndexWriter;
-import com.dotcms.repackage.elasticsearch.org.apache.lucene.index.IndexWriterConfig;
-import com.dotcms.repackage.elasticsearch.org.apache.lucene.store.Directory;
-import com.dotcms.repackage.elasticsearch.org.apache.lucene.store.FSDirectory;
-import com.dotcms.repackage.elasticsearch.org.apache.lucene.util.Version;
+import com.dotcms.repackage.org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import com.dotcms.repackage.org.apache.lucene.index.IndexWriter;
+import com.dotcms.repackage.org.apache.lucene.index.IndexWriterConfig;
+import com.dotcms.repackage.org.apache.lucene.store.Directory;
+import com.dotcms.repackage.org.apache.lucene.store.FSDirectory;
+import com.dotcms.repackage.org.apache.lucene.util.Version;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;

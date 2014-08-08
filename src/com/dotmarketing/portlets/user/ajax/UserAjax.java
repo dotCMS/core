@@ -9,9 +9,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.tools.generic.SortTool;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -50,7 +50,8 @@ import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Encryptor;
-import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
+
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class UserAjax {
 

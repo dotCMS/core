@@ -27,16 +27,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.dotcms.repackage.portlet.javax.portlet.PortletContext;
-import com.dotcms.repackage.portlet.javax.portlet.PortletException;
-import com.dotcms.repackage.portlet.javax.portlet.PortletRequestDispatcher;
-import com.dotcms.repackage.portlet.javax.portlet.RenderRequest;
-import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
+import com.dotcms.repackage.javax.portlet.PortletContext;
+import com.dotcms.repackage.javax.portlet.PortletException;
+import com.dotcms.repackage.javax.portlet.PortletRequestDispatcher;
+import com.dotcms.repackage.javax.portlet.RenderRequest;
+import com.dotcms.repackage.javax.portlet.RenderResponse;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.Globals;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.struts.StrutsURLEncoder;

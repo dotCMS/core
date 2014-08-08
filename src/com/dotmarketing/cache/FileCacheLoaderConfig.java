@@ -2,10 +2,10 @@ package com.dotmarketing.cache;
 
 import java.util.Properties;
 
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.config.Dynamic;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.loader.FileCacheLoader;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.util.Util;
+import com.dotcms.repackage.org.jboss.cache.config.Dynamic;
+import com.dotcms.repackage.org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
+import com.dotcms.repackage.org.jboss.cache.loader.FileCacheLoader;
+import com.dotcms.repackage.org.jboss.cache.util.Util;
 
 public class FileCacheLoaderConfig extends IndividualCacheLoaderConfig {
 	private static final long serialVersionUID = 4626734068542420865L;

@@ -35,23 +35,23 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.search.SearchPhaseExecutionException;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.search.SearchRequestBuilder;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.action.search.SearchResponse;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.client.Client;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.index.query.QueryBuilders;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.index.query.QueryStringQueryBuilder;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.SearchHits;
-import com.dotcms.repackage.elasticsearch.org.elasticsearch.search.internal.InternalSearchHits;
-import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Ignore;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
+import com.dotcms.repackage.org.elasticsearch.action.search.SearchPhaseExecutionException;
+import com.dotcms.repackage.org.elasticsearch.action.search.SearchRequestBuilder;
+import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.repackage.org.elasticsearch.client.Client;
+import com.dotcms.repackage.org.elasticsearch.index.query.QueryBuilders;
+import com.dotcms.repackage.org.elasticsearch.index.query.QueryStringQueryBuilder;
+import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
+import com.dotcms.repackage.org.elasticsearch.search.internal.InternalSearchHits;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Ignore;
+import com.dotcms.repackage.org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.*;
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 /**
  * @author Jonathan Gamba

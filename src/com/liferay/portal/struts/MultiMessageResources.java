@@ -22,8 +22,8 @@
 
 package com.liferay.portal.struts;
 
-import com.dotcms.repackage.struts.org.apache.struts.util.MessageResourcesFactory;
-import com.dotcms.repackage.stxx.com.oroad.stxx.util.PropertyMessageResources;
+import com.dotcms.repackage.org.apache.struts.util.MessageResourcesFactory;
+import com.dotcms.repackage.com.oroad.stxx.util.PropertyMessageResources;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;

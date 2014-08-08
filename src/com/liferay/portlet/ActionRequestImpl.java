@@ -27,13 +27,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
-import com.dotcms.repackage.portlet.javax.portlet.PortletContext;
-import com.dotcms.repackage.portlet.javax.portlet.PortletMode;
-import com.dotcms.repackage.portlet.javax.portlet.PortletPreferences;
-import com.dotcms.repackage.portlet.javax.portlet.WindowState;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.PortletContext;
+import com.dotcms.repackage.javax.portlet.PortletMode;
+import com.dotcms.repackage.javax.portlet.PortletPreferences;
+import com.dotcms.repackage.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 
 import com.liferay.portal.model.Portlet;

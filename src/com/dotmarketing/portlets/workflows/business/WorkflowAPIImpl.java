@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Permission;
@@ -63,8 +63,8 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Arrays;
-import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
@@ -753,12 +753,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if(actionClasses != null){
 			for(WorkflowActionClass actionClass : actionClasses){
 				WorkFlowActionlet actionlet= actionClass.getActionlet();
-				Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
-				actionlet.executePreAction(processor, params);
-				//if we should stop processing further actionlets
-				if(actionlet.stopProcessing()){
-					break;
+				//Validate the actionlet exists and the OSGI is installed and running. 
+				if(UtilMethods.isSet(actionlet)){
+					Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+					actionlet.executePreAction(processor, params);
+					//if we should stop processing further actionlets
+					if(actionlet.stopProcessing()){
+						break;
+					}
+				}else {
+					throw new DotWorkflowException("Actionlet: " + actionClass.getName() + " is null. Check if the Plugin is installed and running.");
 				}
+				
 			}
 		}
 
