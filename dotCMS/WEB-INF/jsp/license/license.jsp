@@ -95,14 +95,17 @@ function doPaste(){
     dojo.byId("uploadLicenseForm").submit();
 }
 
-<% if(isCommunity) { %>
-    dojo.addOnLoad(function() {
-        dijit.byId('reqcodeRadio').set('checked','true');
-        dijit.byId("license_type").set("value","trial");
-        toggleLevel();
 
+    dojo.addOnLoad(function() {
+        <% if(isCommunity) { %>
+               dijit.byId('reqcodeRadio').set('checked','true');
+               dijit.byId("license_type").set("value","trial");
+               toggleLevel();
+        <% } else { %>
+               dijit.byId('pasteRadio').set('checked','true');
+        <% } %>
     });    
-<% } %>
+
 
 
 </script>
@@ -120,7 +123,7 @@ function doPaste(){
     <div style="min-height:400px;" id="borderContainer" class="shadowBox headerBox">                            
         <div style="padding:7px;">
             <div>
-                <h3><%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_LICENSE_MANAGER") %></h3>
+                <h3><%= LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_LICENSE_MANAGER") %></h3>
             </div>
                 <br clear="all">
         </div>
@@ -179,20 +182,17 @@ function doPaste(){
             <%} %>
             <div style="margin:auto;width:600px;padding:20px;padding-top:0px;">
                 <dl style="padding:20px;">
-                    <%if(isCommunity){ %>
-                        <dt><%= LanguageUtil.get(pageContext, "I-want-to") %>:</dt>
-                        <dd>
+                    <dt><%= LanguageUtil.get(pageContext, "I-want-to") %>:</dt>
+                    <dd>
 
-                            <input onChange="doShowHideRequest()" type="radio" checked="false" name="iwantTo" id="reqcodeRadio"  dojoType="dijit.form.RadioButton" value="request_code">
-                            <label for="reqcodeRadio"><%= LanguageUtil.get(pageContext, "request-code-for-support-portal") %></label><br/>
+                        <input onChange="doShowHideRequest()" type="radio" checked="false" name="iwantTo" id="reqcodeRadio"  dojoType="dijit.form.RadioButton" value="request_code">
+                        <label for="reqcodeRadio"><%= LanguageUtil.get(pageContext, "request-code-for-support-portal") %></label><br/>
 
-                            <input onChange="doShowHideRequest()"  type="radio" name="iwantTo" id="pasteRadio"  dojoType="dijit.form.RadioButton" value="paste_license">
-                            <label for="pasteRadio"><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></label><br/>                            
+                        <input onChange="doShowHideRequest()"  type="radio" name="iwantTo" id="pasteRadio"  dojoType="dijit.form.RadioButton" value="paste_license">
+                        <label for="pasteRadio"><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></label><br/>                            
 
-                        </dd>
-                    <%} else { %>
-                            <input type="hidden" name="iwantTo" value="paste_license"/> 
-                    <%}%>
+                    </dd>
+                    
                     <dt>
                     
                     <dd id="pasteMe" style="<%if(isCommunity){ %>display:none<%} %>">
