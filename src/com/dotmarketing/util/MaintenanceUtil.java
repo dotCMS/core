@@ -8,9 +8,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.hibernate2.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 
-import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -137,7 +137,7 @@ public class MaintenanceUtil {
 				if(o instanceof Inode){
 					Inode i = (Inode)o;
 					String type = i.getType();
-					String tableName = ((com.dotcms.repackage.hibernate2.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+					String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
 					cleanInodeTableData(tableName, type);
 				}
 			}
@@ -158,7 +158,7 @@ public class MaintenanceUtil {
 				if(o instanceof Inode){
 					Inode i = (Inode)o;
 					String type = i.getType();
-					String tableName = ((com.dotcms.repackage.hibernate2.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+					String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
 					removeOphanedInodes(tableName, type);
 				}
 			}

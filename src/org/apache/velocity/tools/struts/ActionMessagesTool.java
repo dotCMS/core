@@ -21,9 +21,9 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.dotcms.repackage.struts.org.apache.struts.util.MessageResources;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessage;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMessages;
+import com.dotcms.repackage.org.apache.struts.util.MessageResources;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import org.apache.velocity.tools.struts.StrutsUtils;
 
 /**

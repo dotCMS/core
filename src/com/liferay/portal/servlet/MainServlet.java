@@ -42,14 +42,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.dotcms.enterprise.ClusterThreadProxy;
-import com.dotcms.repackage.httpbridge.com.httpbridge.webproxy.http.TaskController;
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionServlet;
-import com.dotcms.repackage.struts.org.apache.struts.tiles.TilesUtilImpl;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentException;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.Element;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.SAXReader;
+import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
+import com.dotcms.repackage.org.apache.struts.tiles.TilesUtilImpl;
+import com.dotcms.repackage.org.dom4j.Document;
+import com.dotcms.repackage.org.dom4j.DocumentException;
+import com.dotcms.repackage.org.dom4j.Element;
+import com.dotcms.repackage.org.dom4j.io.SAXReader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
@@ -118,7 +118,7 @@ public class MainServlet extends ActionServlet {
 			} catch (DotDataException e1) {
 				throw new ServletException(e1);
 			}
-			
+
 			// Starting the reindexation threads
 			ClusterThreadProxy.createThread();
 			if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {

@@ -7,13 +7,13 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;

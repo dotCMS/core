@@ -30,22 +30,22 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Cache;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.CacheFactory;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.DefaultCacheFactory;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Fqn;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Node;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.NodeSPI;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.Region;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.jmx.CacheJmxWrapper;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.jmx.CacheJmxWrapperMBean;
-import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.Address;
-import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.ChannelClosedException;
-import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.ChannelNotConnectedException;
-import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.JChannel;
-import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.Message;
-import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.ReceiverAdapter;
-import com.dotcms.repackage.jgroups_2_12_2_final.org.jgroups.View;
+import com.dotcms.repackage.org.jboss.cache.Cache;
+import com.dotcms.repackage.org.jboss.cache.CacheFactory;
+import com.dotcms.repackage.org.jboss.cache.DefaultCacheFactory;
+import com.dotcms.repackage.org.jboss.cache.Fqn;
+import com.dotcms.repackage.org.jboss.cache.Node;
+import com.dotcms.repackage.org.jboss.cache.NodeSPI;
+import com.dotcms.repackage.org.jboss.cache.Region;
+import com.dotcms.repackage.org.jboss.cache.jmx.CacheJmxWrapper;
+import com.dotcms.repackage.org.jboss.cache.jmx.CacheJmxWrapperMBean;
+import com.dotcms.repackage.org.jgroups.Address;
+import com.dotcms.repackage.org.jgroups.ChannelClosedException;
+import com.dotcms.repackage.org.jgroups.ChannelNotConnectedException;
+import com.dotcms.repackage.org.jgroups.JChannel;
+import com.dotcms.repackage.org.jgroups.Message;
+import com.dotcms.repackage.org.jgroups.ReceiverAdapter;
+import com.dotcms.repackage.org.jgroups.View;
 
 import com.dotmarketing.business.mbeans.CacheInfo;
 import com.dotmarketing.business.mbeans.CacheInfoMBean;
@@ -422,7 +422,7 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 					m.put("evictionAlgorithm", "");
 				}
 				try{
-					m.put("evictionQueueSize", ((com.dotcms.repackage.jbosscache_core.org.jboss.cache.RegionImpl)cache.getRegion(n.getFqn(),false)).getEvictionEventQueue().size());
+					m.put("evictionQueueSize", ((com.dotcms.repackage.org.jboss.cache.RegionImpl)cache.getRegion(n.getFqn(),false)).getEvictionEventQueue().size());
 				}catch (NullPointerException e) {
 					m.put("evictionQueueSize", -1);
 				}
@@ -442,11 +442,11 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 	
 	public String getCacheStats(){
 		String result = "";
-		Set<Object> os = ((com.dotcms.repackage.jbosscache_core.org.jboss.cache.NodeSPI)cache.getRoot().getChild(cache.getRoot().getFqn())).getChildrenNames();
+		Set<Object> os = ((com.dotcms.repackage.org.jboss.cache.NodeSPI)cache.getRoot().getChild(cache.getRoot().getFqn())).getChildrenNames();
 		List<String> ret=new ArrayList<String>();
 		for (Object o : os) {
 			try{
-				NodeSPI nodeSPI=(com.dotcms.repackage.jbosscache_core.org.jboss.cache.NodeSPI)cache.getRoot().getChild(o);
+				NodeSPI nodeSPI=(com.dotcms.repackage.org.jboss.cache.NodeSPI)cache.getRoot().getChild(o);
 				int s =nodeSPI.getChildren().size();
 				ret.add( o.toString() + " " + s  );
 			}catch (Exception e) {

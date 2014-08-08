@@ -33,8 +33,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.dotcms.enterprise.AuthPipeProxy;
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.RandomStringUtils;
-import com.dotcms.repackage.mail_ejb.com.liferay.mail.ejb.MailManagerUtil;
+import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;

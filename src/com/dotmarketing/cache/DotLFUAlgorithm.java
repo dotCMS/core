@@ -1,9 +1,9 @@
 package com.dotmarketing.cache;
 
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.NodeNotValidException;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.config.EvictionAlgorithmConfig;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.eviction.LFUAlgorithm;
-import com.dotcms.repackage.jbosscache_core.org.jboss.cache.eviction.NodeEntry;
+import com.dotcms.repackage.org.jboss.cache.NodeNotValidException;
+import com.dotcms.repackage.org.jboss.cache.config.EvictionAlgorithmConfig;
+import com.dotcms.repackage.org.jboss.cache.eviction.LFUAlgorithm;
+import com.dotcms.repackage.org.jboss.cache.eviction.NodeEntry;
 
 import com.dotmarketing.util.Logger;
 

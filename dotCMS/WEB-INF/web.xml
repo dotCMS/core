@@ -73,7 +73,7 @@
 	</filter>
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
-		<filter-class>com.dotcms.repackage.secure_filter.com.liferay.filters.secure.SecureFilter</filter-class>
+		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
 		<init-param>
 			<param-name>portal_property_prefix</param-name>
 			<param-value>main.servlet.</param-value>
@@ -81,7 +81,7 @@
 	</filter>
 	<filter>
 		<filter-name>Secure AxisServlet Filter</filter-name>
-		<filter-class>com.dotcms.repackage.secure_filter.com.liferay.filters.secure.SecureFilter</filter-class>
+		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
 		<init-param>
 			<param-name>portal_property_prefix</param-name>
 			<param-value>axis.servlet.</param-value>
@@ -229,7 +229,7 @@
 	<!--
 	<filter>
   		<filter-name>Compression Filter</filter-name>
-  		<filter-class>com.dotcms.repackage.compression_filter.com.liferay.filters.compression.CompressionFilter</filter-class>
+  		<filter-class>com.dotcms.repackage.com.liferay.filters.compression.CompressionFilter</filter-class>
  	</filter>
 	<filter-mapping>
 		<filter-name>Compression Filter</filter-name>
@@ -275,10 +275,10 @@
 		<listener-class>com.dotmarketing.listeners.OsgiFelixListener</listener-class>
 	</listener>
     <listener>
-        <listener-class>com.dotcms.repackage.org_apache_felix_http_proxy_2_2_0.org.apache.felix.http.proxy.ProxyListener</listener-class>
+        <listener-class>com.dotcms.repackage.org.apache.felix.http.proxy.ProxyListener</listener-class>
     </listener>
     <listener>
-		<listener-class>com.dotcms.repackage.chemistry_opencmis_server_bindings_0_8_0.org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
+		<listener-class>com.dotcms.repackage.org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
 	</listener>
     <listener>
     	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
@@ -417,7 +417,7 @@
 	</servlet>
 	<servlet>
 	  <servlet-name>dwr-invoker</servlet-name>
-	  <servlet-class>com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.servlet.DwrServlet</servlet-class>
+	  <servlet-class>com.dotcms.repackage.org.directwebremoting.servlet.DwrServlet</servlet-class>
       <init-param>
 	      <param-name>debug</param-name>
     	  <param-value>false</param-value>
@@ -429,7 +429,7 @@
 	</servlet>
 	<servlet>
 		<servlet-name>Captcha</servlet-name>
-		<servlet-class>com.dotcms.repackage.simplecaptcha_1_2_1.nl.captcha.servlet.SimpleCaptchaServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.nl.captcha.servlet.SimpleCaptchaServlet</servlet-class>
 				<!--border around captcha. Legal values are yes or no. Defaults to yes Other values will be ignored-->
 		<init-param>
 			<param-name>cap.border</param-name>
@@ -549,7 +549,7 @@
 	</servlet>
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
-		<servlet-class>com.dotcms.repackage.milton_1_8_1_4.com.bradmcevoy.http.MiltonServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.com.bradmcevoy.http.MiltonServlet</servlet-class>
 		<init-param>
 				<param-name>resource.factory.class</param-name>
 				<param-value>com.dotmarketing.webdav.ResourceFactorytImpl</param-value>
@@ -557,10 +557,10 @@
 	</servlet>
 	<servlet>
 		<servlet-name>CMIS</servlet-name>
-		<servlet-class>com.dotcms.repackage.chemistry_opencmis_server_bindings_0_8_0.org.apache.chemistry.opencmis.server.impl.atompub.CmisAtomPubServlet</servlet-class>
+		<servlet-class>com.dotcms.repackage.org.apache.chemistry.opencmis.server.impl.atompub.CmisAtomPubServlet</servlet-class>
 		<init-param>
 			<param-name>callContextHandler</param-name>
-			<param-value>com.dotcms.repackage.chemistry_opencmis_server_bindings_0_8_0.org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
+			<param-value>com.dotcms.repackage.org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
 		</init-param>
 		<load-on-startup>2</load-on-startup>
 	</servlet>
@@ -616,14 +616,14 @@
 		  com.dotcms.rest.servlet.ReloadableServletContainer
 		</servlet-class>
 		<init-param>
-		  <param-name>com.dotcms.repackage.jersey_1_12.javax.ws.rs.Application</param-name>
+		  <param-name>com.dotcms.repackage.javax.ws.rs.Application</param-name>
 		  <param-value>com.dotcms.rest.config.DotRestApplication</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
     <servlet>
         <servlet-name>proxy</servlet-name>
-        <!--<servlet-class>com.dotcms.repackage.org_apache_felix_http_proxy_2_2_0.org.apache.felix.http.proxy.ProxyServlet</servlet-class>-->
+        <!--<servlet-class>com.dotcms.repackage.org.apache.felix.http.proxy.ProxyServlet</servlet-class>-->
         <servlet-class>com.dotmarketing.osgi.OSGIProxyServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>

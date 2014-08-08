@@ -15,8 +15,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContext;
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -66,7 +67,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.backport_util_concurrent_3_1.edu.emory.mathcs.backport.java.util.Collections;
+
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class RoleAjax {
 
@@ -472,7 +474,7 @@ public class RoleAjax {
 		for(Portlet p: portlets) {
 			if(portletAPI.canAddPortletToLayout(p)) {
 				Map<String, Object> portletMap = new HashMap<String, Object>();
-				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.portlet.javax.portlet.title." + p.getPortletId());
+				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + p.getPortletId());
 				portletMap.put("title", portletTitle);
 				portletMap.put("id", p.getPortletId());
 				listOfPortletsInfo.add(portletMap);
@@ -783,7 +785,7 @@ public class RoleAjax {
 		List<String> portletTitles = new ArrayList<String>();
 		if(portletIds != null) {
 			for(String id: portletIds) {
-				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.portlet.javax.portlet.title." + id);
+				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + id);
 				portletTitles.add(portletTitle);
 			}
 		}

@@ -1,7 +1,7 @@
 package com.dotmarketing.osgi;
 
-import com.dotcms.repackage.org_apache_felix_http_proxy_2_2_0.org.apache.felix.http.proxy.DispatcherTracker;
-import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 
 import com.dotmarketing.util.Config;
 

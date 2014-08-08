@@ -28,10 +28,10 @@ import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.Locale;
 
-import com.dotcms.repackage.portlet.javax.portlet.PortletModeException;
-import com.dotcms.repackage.portlet.javax.portlet.PortletURL;
-import com.dotcms.repackage.portlet.javax.portlet.RenderResponse;
-import com.dotcms.repackage.portlet.javax.portlet.WindowStateException;
+import com.dotcms.repackage.javax.portlet.PortletModeException;
+import com.dotcms.repackage.javax.portlet.PortletURL;
+import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.javax.portlet.WindowStateException;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.business.Layout;

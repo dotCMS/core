@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.cmsmaintenance.struts;
 
 import java.util.List;
 
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 
 import com.dotmarketing.portlets.structure.model.Structure;
 /**

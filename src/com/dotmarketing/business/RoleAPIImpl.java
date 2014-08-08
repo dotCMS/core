@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * @author Jason Tesser
  * RoleAPI is an API intended to be a helper class for class to get Role entities.  Classes within the dotCMS
- * should use this API for role management.
+ * should use this API for role management. 
  */
 public class RoleAPIImpl implements RoleAPI {
 
@@ -24,29 +24,29 @@ public class RoleAPIImpl implements RoleAPI {
 	private Role CMS_ANON = null;
 	private Role CMS_OWNER = null;
 	private Role LOGGEDIN_SITE_USER = null;
-
+	
 	public RoleAPIImpl()  {
-
+		
 	}
 
 	public List<Role> findAllAssignableRoles(boolean showSystemRoles) throws DotDataException {
 		return rf.findAllAssignableRoles(showSystemRoles);
 	}
-
+	
 	public Role loadRoleById(String roleId) throws DotDataException {
 		return rf.getRoleById(roleId);
 	}
-
+	
 	public List<Role> loadRolesForUser(String userId) throws DotDataException {
 		return loadRolesForUser(userId, true);
 	}
-
+	
 
 	public List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles)
 			throws DotDataException {
 		return rf.loadRolesForUser(userId,includeImplicitRoles);
 	}
-
+	
     /* (non-Javadoc)
 	 * @see com.dotmarketing.business.RoleAPI#getRolesByName(java.lang.String, int, int)
 	 */
@@ -58,7 +58,7 @@ public class RoleAPIImpl implements RoleAPI {
 		if(!inherited){
 			return findUsersForRole(role);
 		}
-
+		
 		List<Role> roles =  findRoleHierarchy(role);
         List<User> users = new ArrayList<User>();
         for(Role x : roles){
@@ -69,10 +69,10 @@ public class RoleAPIImpl implements RoleAPI {
         }
         return users;
 	}
-
+	
 	public List<Role> findRoleHierarchy(Role role) throws DotDataException, NoSuchUserException, DotSecurityException{
 
-
+		
         List<Role> roles = new ArrayList<Role>();
         roles.add(role);
         int i=0;
@@ -81,23 +81,23 @@ public class RoleAPIImpl implements RoleAPI {
         	roles.add(0,role);
         	i++;
         }
-
+        
         return roles;
 	}
-
-
-
+	
+	
+	
     /* (non-Javadoc)
 	 * @see com.dotmarketing.business.RoleAPI#getRolesByName(java.lang.String, int, int)
 	 */
     public List<Role> findRolesByFilterLeftWildcard(String filter, int start,int limit) throws DotDataException {
-
+    	
 		if(filter !=null)
 			filter = filter.toLowerCase() + "%";
 
     	return rf.getRolesByNameFiltered(filter, start, limit);
     }
-
+    
     public Role findRoleByName(String rolename, Role parent) throws DotDataException {
     	return rf.findRoleByName(rolename, parent);
     }
@@ -145,7 +145,7 @@ public class RoleAPIImpl implements RoleAPI {
                 removeLayoutFromRole( l, role );
             }
             rf.delete( role );
-
+            
             if ( local ) {
                 HibernateUtil.commitTransaction();
             }
@@ -169,7 +169,7 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 		return true;
 	}
-
+	
 	public void addRoleToUser(Role role, User user) throws DotDataException, DotStateException {
 		Role r = loadRoleById(role.getId());
 		if(!r.isEditUsers()){
@@ -177,7 +177,7 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 		rf.addRoleToUser(role, user);
 	}
-
+	
 	public void addRoleToUser(String roleId, User user)	throws DotDataException, DotStateException {
 		Role r = loadRoleById(roleId);
 		addRoleToUser(r, user);
@@ -195,14 +195,14 @@ public class RoleAPIImpl implements RoleAPI {
 				throw new DotStateException("Cannot save locked or system role");
 			}
 		}
-
+		
 		//Checking the role key does not already exist
 		if(role.getRoleKey() != null && !role.getRoleKey().equals("")) {
 			Role dupRole = this.loadRoleByKey(role.getRoleKey());
 			if(dupRole != null && !dupRole.getId().equals(role.getId()))
 				throw new DuplicateRoleKeyException("A role with id = " + dupRole.getId() + " and key = " + role.getRoleKey() + " already exists");
 		}
-
+		
 		//Checking if role with the same path/fqn already exists
 		Role roleParent = null;
 		if(role.getParent() != null) {
@@ -211,60 +211,60 @@ public class RoleAPIImpl implements RoleAPI {
 		Role dupRole = rf.findRoleByName(role.getName(), roleParent);
 		if(dupRole != null && !dupRole.getId().equals(role.getId()))
 			throw new DuplicateRoleException("A role with id = " + dupRole.getId() + " and name = " + dupRole.getName());
-
-
+			
+		
 		return rf.save(role);
 	}
 
 	public List<Role> findRootRoles() throws DotDataException {
 		return rf.findRootRoles();
 	}
-
+	
 	public boolean doesUserHaveRole(User user, Role role) throws DotDataException {
 		return rf.doesUserHaveRole(user, role);
 	}
-
+	
 	public boolean doesUserHaveRole(User user, String roleId) throws DotDataException {
 		Role role = rf.getRoleById(roleId);
 		return doesUserHaveRole(user, role);
 	}
-
+	
 	public Role loadCMSAnonymousRole() throws DotDataException {
 		if(CMS_ANON == null){
 			CMS_ANON =  rf.loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE"));
 		}
 		return CMS_ANON;
 	}
-
+	
 	public Role loadCMSOwnerRole() throws DotDataException {
 		if(CMS_OWNER == null){
 			CMS_OWNER =  rf.loadRoleByKey(Config.getStringProperty("CMS_OWNER_ROLE"));
 		}
 		return CMS_OWNER;
 	}
-
+	
 	public Role loadLoggedinSiteRole() throws DotDataException {
 		if(LOGGEDIN_SITE_USER == null){
 			LOGGEDIN_SITE_USER =  rf.loadRoleByKey(Config.getStringProperty("CMS_LOGGED_IN_SITE_USER_ROLE"));
 		}
 		return LOGGEDIN_SITE_USER;
 	}
-
+	
 	public Role loadCMSAdminRole() throws DotDataException {
 		if(CMS_ADMIN == null){
 			CMS_ADMIN = rf.loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
 		}
-		return CMS_ADMIN;
+		return CMS_ADMIN;		
 	}
 
     public Role loadDefaultRole () throws DotDataException {
         return rf.loadRoleByKey( DEFAULT_USER_ROLE_KEY );
     }
-
+	
 	public List<String> findUserIdsForRole(Role role) throws DotDataException {
 		return rf.findUserIdsForRole(role);
 	}
-
+	
 	public List<User> findUsersForRole(Role role) throws DotDataException, NoSuchUserException, DotSecurityException {
 		List<String> uids = findUserIdsForRole(role);
 		List<User> users = new ArrayList<User>();
@@ -272,16 +272,16 @@ public class RoleAPIImpl implements RoleAPI {
 			users.add(APILocator.getUserAPI().loadUserById(uid, APILocator.getUserAPI().getSystemUser(), true));
 		return users;
 	}
-
+	
 	public List<User> findUsersForRole(String roleId) throws DotDataException, NoSuchUserException, DotSecurityException {
 		Role role = rf.getRoleById(roleId);
 		return findUsersForRole(role);
 	}
-
+	
 	public List<String> loadLayoutIdsForRole(Role role) throws DotDataException {
 		return rf.loadLayoutIdsForRole(role);
 	}
-
+	
 	public void addLayoutToRole(Layout layout, Role role) throws DotDataException, DotStateException {
 		Role r = loadRoleById(role.getId());
 		if(!r.isEditLayouts()){
@@ -289,15 +289,15 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 		rf.addLayoutToRole(layout, role);
 	}
-
+	
 	public void removeLayoutFromRole(Layout layout, Role role) throws DotDataException, DotStateException {
 		Role r = loadRoleById(role.getId());
 		if(!r.isEditLayouts()){
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
-		rf.removeLayoutFromRole(layout, role);
+		rf.removeLayoutFromRole(layout, role);	
 	}
-
+	
 	public Role findRoleByFQN(String FQN) throws DotDataException {
 		return rf.findRoleByFQN(FQN);
 	}
@@ -305,7 +305,7 @@ public class RoleAPIImpl implements RoleAPI {
 		Role r = loadRoleById(role.getId());
 		rf.removeRoleFromUser(role, user);
 	}
-
+	
 
 	public void removeAllRolesFromUser(User user) throws DotDataException,
 			DotStateException {
@@ -313,8 +313,8 @@ public class RoleAPIImpl implements RoleAPI {
 		for(Role role : roles) {
 			removeRoleFromUser(role, user);
 		}
-	}
-
+	}	
+	
 	public void lock(Role role) throws DotDataException {
 		Role r = loadRoleById(role.getId());
 		//if(r.isSystem())
@@ -322,7 +322,7 @@ public class RoleAPIImpl implements RoleAPI {
 		r.setLocked(true);
 		rf.save(role);
 	}
-
+	
 	public void unLock(Role role) throws DotDataException {
 		Role r = loadRoleById(role.getId());
 		//if(r.isSystem())
@@ -330,7 +330,7 @@ public class RoleAPIImpl implements RoleAPI {
 		r.setLocked(false);
 		rf.save(r);
 	}
-
+	
 	public Role loadRoleByKey(String key) throws DotDataException {
 		return rf.loadRoleByKey(key);
 	}
@@ -350,5 +350,5 @@ public class RoleAPIImpl implements RoleAPI {
 	}
 
 
-
+	
 }

@@ -17,26 +17,26 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.util.TrustFactory;
-import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.Client;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.ClientResponse;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.config.ClientConfig;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.client.urlconnection.HTTPSProperties;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.FormDataMultiPart;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.FormDataParam;
-import com.dotcms.repackage.jersey_1_12.com.sun.jersey.multipart.file.FileDataBodyPart;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Consumes;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.GET;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.POST;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Path;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.PathParam;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.Produces;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.WebApplicationException;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Context;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.Response;
-import com.dotcms.repackage.jersey_1_12.javax.ws.rs.core.StreamingOutput;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
+import com.dotcms.repackage.com.sun.jersey.api.client.config.ClientConfig;
+import com.dotcms.repackage.com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.dotcms.repackage.com.sun.jersey.client.urlconnection.HTTPSProperties;
+import com.dotcms.repackage.com.sun.jersey.multipart.FormDataMultiPart;
+import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
+import com.dotcms.repackage.com.sun.jersey.multipart.file.FileDataBodyPart;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.StreamingOutput;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -302,7 +302,7 @@ public class IntegrityResource extends WebResource {
 
             //Sending bundle to endpoint
             String url = endpoint.toURL()+"/api/integrity/generateintegritydata/";
-            com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.WebResource resource = client.resource(url);
+            com.dotcms.repackage.com.sun.jersey.api.client.WebResource resource = client.resource(url);
 
             ClientResponse response =
                     resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
@@ -318,7 +318,7 @@ public class IntegrityResource extends WebResource {
                         form.field("REQUEST_ID",integrityDataRequestID);
 
                         String url = endpoint.toURL()+"/api/integrity/getintegritydata/";
-                        com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.WebResource resource = client.resource(url);
+                        com.dotcms.repackage.com.sun.jersey.api.client.WebResource resource = client.resource(url);
 
                         boolean processing = true;
 
@@ -530,7 +530,7 @@ public class IntegrityResource extends WebResource {
                     //Prepare the connection
                     Client client = getRESTClient();
                     String url = endpoint.toURL() + "/api/integrity/cancelIntegrityProcessOnEndpoint/";
-                    com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.WebResource resource = client.resource( url );
+                    com.dotcms.repackage.com.sun.jersey.api.client.WebResource resource = client.resource( url );
 
                     //Execute the call
                     ClientResponse response = resource.type( MediaType.MULTIPART_FORM_DATA ).post( ClientResponse.class, form );
@@ -999,7 +999,7 @@ public class IntegrityResource extends WebResource {
                 form.bodyPart(new FileDataBodyPart("DATA_TO_FIX", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 
                 String url = endpoint.toURL()+"/api/integrity/fixconflictsfromremote/";
-                com.dotcms.repackage.jersey_1_12.com.sun.jersey.api.client.WebResource resource = client.resource(url);
+                com.dotcms.repackage.com.sun.jersey.api.client.WebResource resource = client.resource(url);
 
                 ClientResponse response = resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
 

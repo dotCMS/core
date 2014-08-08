@@ -11,7 +11,7 @@
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.liferay.util.cal.CalendarUtil"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.dotcms.repackage.portlet.javax.portlet.WindowState"%>
+<%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.beans.Host"%>
@@ -40,7 +40,7 @@ boolean success = false;
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
 				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_SITESEARCH")%></a>
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SITESEARCH")%></a>
 				</li>
 
 			</ul>
@@ -774,7 +774,7 @@ function refreshJobSchedule(){
 	else{
 		x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?jobName=" +myJobName +"&r=" + y  );
 	}
-	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_SCHEDULER") %>";
+	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SCHEDULER") %>";
 	myJobName=null;
 }
 
@@ -957,7 +957,7 @@ function  resizeBrowser(){
 	<div class="subNavCrumbTrail">
 		<ul id="subNavCrumbUl">
 			<li>
-				<a href="#" onclick="refreshJobsListingPane();"><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_SITESEARCH")%></a>
+				<a href="#" onclick="refreshJobsListingPane();"><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SITESEARCH")%></a>
 			</li>
 			<li class="lastCrumb"><span id="crumbTitleSpan"></span></li>
 		</ul>
@@ -979,7 +979,7 @@ function  resizeBrowser(){
 			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp"></div>
 		</div>
 		
-		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.portlet.javax.portlet.title.EXT_SCHEDULER") %>">
+		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SCHEDULER") %>">
 			<div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
 		</div>
 		

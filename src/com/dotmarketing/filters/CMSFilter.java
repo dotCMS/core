@@ -1,8 +1,8 @@
 package com.dotmarketing.filters;
 
-import com.dotcms.repackage.commons_lang_2_4.org.apache.commons.lang.StringEscapeUtils;
-import com.dotcms.repackage.esapi_2_0_1.org.owasp.esapi.errors.EncodingException;
-import com.dotcms.repackage.struts.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.repackage.org.owasp.esapi.errors.EncodingException;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
