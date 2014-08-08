@@ -27,11 +27,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.Document;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.DocumentException;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.OutputFormat;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.SAXReader;
-import com.dotcms.repackage.tika_app_1_3.org.dom4j.io.XMLWriter;
+import com.dotcms.repackage.org.dom4j.Document;
+import com.dotcms.repackage.org.dom4j.DocumentException;
+import com.dotcms.repackage.org.dom4j.io.OutputFormat;
+import com.dotcms.repackage.org.dom4j.io.SAXReader;
+import com.dotcms.repackage.org.dom4j.io.XMLWriter;
 
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringUtil;

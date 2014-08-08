@@ -18,7 +18,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.dwr_3rc2modified.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
@@ -1003,7 +1003,8 @@ public class ContentletAjax {
 
 	                List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
 	                for(WorkflowActionClass actionlet : actionlets){
-	                	if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
+	                	if(actionlet.getActionlet() != null 
+	                			&& actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
 	                		hasPushPublishActionlet = true;
 	                	}
 	                }

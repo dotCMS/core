@@ -1,8 +1,8 @@
 package com.dotmarketing.osgi;
 
-import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.Bundle;
-import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleActivator;
-import com.dotcms.repackage.felix_4_2_1.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.osgi.framework.Bundle;
+import com.dotcms.repackage.org.osgi.framework.BundleActivator;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 
 import javax.servlet.ServletContext;
 

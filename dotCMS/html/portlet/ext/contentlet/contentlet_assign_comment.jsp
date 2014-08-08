@@ -21,7 +21,8 @@ List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionCla
 boolean hasPushPublishActionlet = false;
 GregorianCalendar cal = new GregorianCalendar();
 for(WorkflowActionClass actionlet : actionlets){
-	if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
+	if(actionlet.getActionlet() != null 
+			&& actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
 		hasPushPublishActionlet = true;
 	}
 }

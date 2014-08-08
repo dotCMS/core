@@ -19,8 +19,8 @@
 <%@page import="com.dotmarketing.portlets.templates.model.Template"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
-<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.BeanUtils"%>
-<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils"%>
+<%@page import="com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="java.util.Calendar"%>
 <%@page import="java.util.Date"%>
@@ -29,7 +29,7 @@
 <%@page import="java.util.Locale"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.dotcms.repackage.commons_beanutils.org.apache.commons.beanutils.PropertyUtils"%>
+<%@page import="com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@ page import="com.dotmarketing.util.Config" %>
@@ -349,7 +349,7 @@
 					<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
 					<% boolean hasPushPublishActionlet = false; %>
 					<% for(WorkflowActionClass actionlet : actionlets){ %>
-						<% if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
+						<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
 							<% hasPushPublishActionlet = true; %>
 						<% } %>
 					<% } %>

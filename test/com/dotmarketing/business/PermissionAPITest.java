@@ -25,15 +25,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.commons_io_2_0_1.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.junit_4_8_1.org.junit.AfterClass;
-import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.junit.AfterClass;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 
 import java.io.FileWriter;
 import java.util.*;
 
-import static com.dotcms.repackage.junit_4_8_1.org.junit.Assert.*;
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 public class PermissionAPITest extends TestBase {
 

@@ -1,6 +1,6 @@
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 

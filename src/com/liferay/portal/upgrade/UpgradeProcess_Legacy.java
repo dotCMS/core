@@ -30,7 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.counter_ejb.com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.CompanyLocalManagerUtil;

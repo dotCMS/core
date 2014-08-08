@@ -18,9 +18,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import com.dotcms.repackage.portlet.javax.portlet.ActionRequest;
-import com.dotcms.repackage.portlet.javax.portlet.ActionResponse;
-import com.dotcms.repackage.portlet.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,8 +30,8 @@ import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.util.JRLoader;
 
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.struts.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.Role;
@@ -313,7 +313,7 @@ public class EditReportAction extends DotPortletAction {
 					referrer = com.dotmarketing.util.PortletURLUtil
 							.getRenderURL(((ActionRequestImpl) req)
 									.getHttpServletRequest(),
-									com.dotcms.repackage.portlet.javax.portlet.WindowState.MAXIMIZED
+									com.dotcms.repackage.javax.portlet.WindowState.MAXIMIZED
 											.toString(), params);
 					_sendToReferral(req, res, referrer);
 					return;
@@ -389,7 +389,7 @@ public class EditReportAction extends DotPortletAction {
 				rp.setDescription(jrPar.getDescription());
 				rp.setClassType(jrPar.getValueClassName());
 				try {
-					Object o = new com.dotcms.repackage.bsh_2_0b4.bsh.Interpreter().eval(jrPar
+					Object o = new com.dotcms.repackage.bsh.Interpreter().eval(jrPar
 							.getDefaultValueExpression().getText());
 					if (o instanceof Date) {
 						o = ((Date) o).getTime();

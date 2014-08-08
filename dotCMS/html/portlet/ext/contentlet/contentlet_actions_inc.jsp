@@ -126,7 +126,7 @@ catch(Exception e){
 	<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
 	<% boolean hasPushPublishActionlet = false; %>
 	<% for(WorkflowActionClass actionlet : actionlets){ %>
-		<% if(actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
+		<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
 			<% hasPushPublishActionlet = true; %>
 		<% } %>
 	<% } %>

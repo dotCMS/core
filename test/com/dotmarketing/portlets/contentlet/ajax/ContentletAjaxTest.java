@@ -5,8 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.junit_4_8_1.junit.framework.Assert;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
+import com.dotcms.repackage.junit.framework.Assert;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;

@@ -1,9 +1,9 @@
 package com.dotmarketing.osgi.hooks;
 
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import org.osgi.framework.BundleContext;
 
 /**
  * Created by Jonathan Gamba

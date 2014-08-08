@@ -1,7 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.repackage.junit_4_8_1.org.junit.BeforeClass;
-import com.dotcms.repackage.junit_4_8_1.org.junit.Test;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;

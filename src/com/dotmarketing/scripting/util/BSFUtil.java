@@ -22,9 +22,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Vector;
 
-import com.dotcms.repackage.bsf.org.apache.bsf.BSFEngine;
-import com.dotcms.repackage.bsf.org.apache.bsf.BSFException;
-import com.dotcms.repackage.bsf.org.apache.bsf.BSFManager;
+import com.dotcms.repackage.org.apache.bsf.BSFEngine;
+import com.dotcms.repackage.org.apache.bsf.BSFException;
+import com.dotcms.repackage.org.apache.bsf.BSFManager;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

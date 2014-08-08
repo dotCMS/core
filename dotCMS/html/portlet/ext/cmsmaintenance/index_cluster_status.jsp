@@ -1,12 +1,12 @@
 
 <%@page import="com.dotmarketing.util.Config"%>
-<%@page import="com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest"%>
+<%@page import="com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest"%>
 <%@page import="java.util.List"%>
-<%@page import="com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequestBuilder"%>
+<%@page import="com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequestBuilder"%>
 <%@page import="java.util.Map"%>
-<%@page import="com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.node.stats.NodeStats"%>
-<%@page import="com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.node.stats.NodesStatsResponse"%>
-<%@page import="com.dotcms.repackage.elasticsearch.org.elasticsearch.action.admin.cluster.node.stats.NodesStatsRequest"%>
+<%@page import="com.dotcms.repackage.org.elasticsearch.action.admin.cluster.node.stats.NodeStats"%>
+<%@page import="com.dotcms.repackage.org.elasticsearch.action.admin.cluster.node.stats.NodesStatsResponse"%>
+<%@page import="com.dotcms.repackage.org.elasticsearch.action.admin.cluster.node.stats.NodesStatsRequest"%>
 <%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
 
 <%@ include file="/html/common/uservalidation.jsp"%>
