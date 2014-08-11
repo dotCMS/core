@@ -43,8 +43,10 @@ Thumbs.db
 dotCMS/WEB-INF/classes/
 build/
 dotCMS/WEB-INF/generated_web.xml
-dotCMS/WEB-INF/lib/dotcms_?.*.jar
+dotCMS/WEB-INF/lib/*.jar
+dotCMS/WEB-INF/felix/bundle/dot.*.jar
 dotCMS/WEB-INF/lib/plugin-*.jar
+starter.zip
 .ant-targets-build.xml
 .gradle/
 gradle/
