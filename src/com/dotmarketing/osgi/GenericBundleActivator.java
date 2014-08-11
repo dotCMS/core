@@ -578,7 +578,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterPostHooks();
         unregisterQuartzJobs();
         unregisterActionMappings();
-        unregisterPortles();
+        unregisterPortlets();
         unregisterRewriteRule();
         cleanResources( context );
         unregisterServlets( context );
@@ -719,11 +719,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
-     * Unregister all the registered Quartz Jobs
+     * Unregister all the registered Portlets
      *
      * @throws SchedulerException
      */
-    protected void unregisterPortles () throws Exception {
+    protected void unregisterPortlets () throws Exception {
 
         if ( portlets != null ) {
 
