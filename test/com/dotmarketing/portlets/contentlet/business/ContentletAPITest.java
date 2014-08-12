@@ -2136,7 +2136,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 		contentletAPI.setContentletProperty( spanishContent, title, "spanishTitle2709" );
 		contentletAPI.setContentletProperty( spanishContent, file, fileA.getInode() );
 
-		//NPE
 		spanishContent = contentletAPI.checkin( spanishContent, null, APILocator.getPermissionAPI().getPermissions( testStructure ), user, false );
 		Object retrivedFile = spanishContent.get("testFile2709");
 		assertTrue(retrivedFile!=null);

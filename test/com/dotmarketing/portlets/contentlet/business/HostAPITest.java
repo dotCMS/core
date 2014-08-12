@@ -4,7 +4,9 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.org.junit.*;
+
 import org.quartz.SimpleTrigger;
 
 import com.dotcms.enterprise.HostAssetsJobProxy;
@@ -16,6 +18,11 @@ import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.liferay.portal.model.User;
 
 public class HostAPITest {
+	
+	@Before
+    public void prepare() throws Exception {
+        LicenseTestUtil.getLicense();
+    }
     
     @Test
     public void testDeleteHost() throws Exception {
