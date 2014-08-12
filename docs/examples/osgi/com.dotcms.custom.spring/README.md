@@ -76,9 +76,9 @@ Will manually register making use of the class *DispatcherServlet* our spring co
 
 ________________________________________________________________________________________
 
-h2. Testing
+## Testing
 
-The Spring controller is registered under the url pattern "/spring" can be test it running and assuming your dotCMS url is localhost:8080:
+The Spring controller is registered under the url pattern **"/spring"** can be test it running and assuming your dotCMS url is *localhost:8080*:
 
 * [http://localhost:8080/app/spring/examplecontroller/](http://localhost:8080/app/spring/examplecontroller/)
 * [http://localhost:8080/app/spring/examplecontroller/Testing](http://localhost:8080/app/spring/examplecontroller/Testing)
