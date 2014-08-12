@@ -65,11 +65,11 @@ Custom implementation of an Spring View.
 
 ### example-servlet.xml
 
-Inside the *ROOT of the plugin/spring* folder is an Standard Spring configuration file where basically we enabled the support for anntotation-driven controllers and the Spring component-scan functionality.
+Inside the *com.dotcms.custom.spring/src/main/resources/spring* folder is an Standard Spring configuration file where basically we enabled the support for anntotation-driven controllers and the Spring component-scan functionality.
 
 ### Activator
 
-This bundle activator extends from *com.dotmarketing.osgi.GenericBundleActivator* and implements *BundleActivator.start()*.
+This bundle activator extends from *com.dotmarketing.osgi.GenericBundleActivator* and implements `BundleActivator.start()`.
 Will manually register making use of the class *DispatcherServlet* our spring configuration file *spring/example-servlet.xml*.
 
 * PLEASE note the `publishBundleServices( context )` call, this call is MANDATORY (!) as it will allow us to share resources between the bundle, the host container (dotCMS) and the Spring context.
