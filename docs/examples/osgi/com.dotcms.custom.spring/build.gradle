@@ -23,6 +23,7 @@ repositories {
 }
 
 dependencies {
+
 	compile fileTree(dir: configurations.resourcesLibsFolder, include: '*.jar')
 	compile (group: 'com.dotcms', name: 'dotcms', version: '3.0'){
 		transitive = true
@@ -44,6 +45,7 @@ dependencies {
     pluginLibs group: 'org.springframework', name: 'spring-expression', version:'3.1.1.RELEASE'
     pluginLibs group: 'org.springframework', name: 'spring-web', version:'3.1.1.RELEASE'
     pluginLibs group: 'org.springframework', name: 'spring-webmvc', version:'3.1.1.RELEASE'
+
 }
 
 jar {
