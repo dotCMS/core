@@ -17,6 +17,15 @@ if (request.getMethod().equalsIgnoreCase("POST") ) {
     error=LicenseUtil.processForm(request);
 }
 
+boolean badId=false;
+try {
+    LicenseUtil.getLevel();
+    LicenseUtil.getDisplayServerId();
+}
+catch(Exception ex) {
+    badId=true;
+}
+
 
 boolean isCommunity = LicenseUtil.getLevel()==100;
 
@@ -40,6 +49,20 @@ SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
 SimpleDateFormat dfOut = new SimpleDateFormat("MMM dd, yyyy");
 
 %>
+
+<% if(badId) { %>
+<div class="portlet-wrapper">
+   <div style="min-height:400px;" id="borderContainer" class="shadowBox headerBox">                            
+        <div style="margin-left:auto;margin-right:auto;width:600px;background:#eee;" class="callOutBox">
+            <p><%= LanguageUtil.get(pageContext, "license-bad-id-explanation") %></p>
+            <form method="POST">
+               <input type="hidden" name="iwantTo" value="reset-license"/>
+               <input type="submit" name="submit" value="<%= LanguageUtil.get(pageContext, "license-bad-id-button") %>"/>
+            </form>
+        </div>
+    </div>
+</div>
+<% } else { %>
 
 <script type="text/javascript">
 
@@ -307,4 +330,5 @@ function doPaste(){
     </div>
 </div>  
 
+<% } /* badId */ %>
 
