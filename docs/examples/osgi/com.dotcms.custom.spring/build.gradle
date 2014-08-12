@@ -24,28 +24,27 @@ repositories {
 
 dependencies {
 
-	compile fileTree(dir: configurations.resourcesLibsFolder, include: '*.jar')
-	compile (group: 'com.dotcms', name: 'dotcms', version: '3.0'){
-		transitive = true
-	}
-	providedCompile "javax.servlet:servlet-api:2.5"
+    compile fileTree(dir: configurations.resourcesLibsFolder, include: '*.jar')
+    compile(group: 'com.dotcms', name: 'dotcms', version: '3.0') {
+        transitive = true
+    }
+    providedCompile "javax.servlet:servlet-api:2.5"
 
-    pluginLibs group: 'log4j', name: 'log4j', version:'1.2.16'
-    pluginLibs group: 'commons-logging', name: 'commons-logging', version:'1.1.1'
-    pluginLibs group: 'sax', name: 'sax', version:'2.0.1'
-    pluginLibs group: 'xalan', name: 'xalan', version:'2.7.2'
-    pluginLibs group: 'xerces', name: 'xercesImpl', version:'2.11.0'
-    pluginLibs group: 'cglib', name: 'cglib', version:'2.2'
-    pluginLibs group: 'org.springframework', name: 'spring-aop', version:'3.1.1.RELEASE'
-    pluginLibs group: 'org.springframework', name: 'spring-asm', version:'3.1.1.RELEASE'
-    pluginLibs group: 'org.springframework', name: 'spring-beans', version:'3.1.1.RELEASE'
-    pluginLibs group: 'org.springframework', name: 'spring-context', version:'3.1.1.RELEASE'
-    pluginLibs group: 'org.springframework', name: 'spring-context-support', version:'3.1.1.RELEASE'
-    pluginLibs group: 'org.springframework', name: 'spring-core', version:'3.1.1.RELEASE'
-    pluginLibs group: 'org.springframework', name: 'spring-expression', version:'3.1.1.RELEASE'
-    pluginLibs group: 'org.springframework', name: 'spring-web', version:'3.1.1.RELEASE'
-    pluginLibs group: 'org.springframework', name: 'spring-webmvc', version:'3.1.1.RELEASE'
-
+    pluginLibs group: 'log4j', name: 'log4j', version: '1.2.16'
+    pluginLibs group: 'commons-logging', name: 'commons-logging', version: '1.1.1'
+    pluginLibs group: 'sax', name: 'sax', version: '2.0.1'
+    pluginLibs group: 'xalan', name: 'xalan', version: '2.7.2'
+    pluginLibs group: 'xerces', name: 'xercesImpl', version: '2.11.0'
+    pluginLibs group: 'cglib', name: 'cglib', version: '2.2'
+    pluginLibs group: 'org.springframework', name: 'spring-aop', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-asm', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-beans', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-context', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-context-support', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-core', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-expression', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-web', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-webmvc', version: '3.1.1.RELEASE'
 }
 
 jar {
