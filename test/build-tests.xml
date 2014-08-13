@@ -51,7 +51,7 @@
     </target>
 
     <!-- Hit the tests servlet to run all the unit tests of the application -->
-    <target name="test-all-junits">
+    <target name="test-all-junits" depends="curl-trial-jsp">
         <condition property="get.ok">
             <http url="${server.test.url}" errorsbeginat="400"/>
         </condition>
@@ -260,4 +260,11 @@
         <sleep seconds="10"/>
 
     </target>
+	
+	<!-- trial.jso already in place because is in dotcms config plugin, now we only have to "curl" it -->
+	<target name="curl-trial-jsp">
+	    <exec executable="curl">
+	        <arg line="http://localhost:${server.port}/trial.jsp"/>
+	    </exec>
+	</target>
 </project>
