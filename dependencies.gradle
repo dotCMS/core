@@ -105,7 +105,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jgroups', version:'2.12.2.Final_1'
     compile group: 'com.dotcms.lib', name: 'dot.jid3lib', version:'0.5.4_1'
     compile group: 'com.dotcms.lib', name: 'dot.JLinkPointTxn', version:'ukv_1'
-    compile group: 'com.dotcms.lib', name: 'dot.js-14', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.json-jspellchecker-dep', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.json', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.jsoup', version:'1.6.1_1'
