@@ -20,6 +20,9 @@ public class Activator extends GenericBundleActivator {
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
 
+        //Initializing services...
+        initializeServices ( context );
+
         // Job params
         Map<String, Object> params = new HashMap<String, Object>();
         params.put( "param1", "value1" );

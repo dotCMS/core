@@ -9,6 +9,9 @@ public class Activator extends GenericBundleActivator {
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
 
+        //Initializing services...
+        initializeServices ( context );
+
         //************************************************************
         //*****REGISTER THE ACTION REQUIRED BY THE STRUTS PORTLET*****
         //************************************************************

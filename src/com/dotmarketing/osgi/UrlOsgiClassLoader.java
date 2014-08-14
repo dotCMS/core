@@ -1,6 +1,7 @@
 package com.dotmarketing.osgi;
 
 import com.dotcms.repackage.org.github.jamm.MemoryMeter;
+import com.dotmarketing.util.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -33,12 +34,12 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
     public UrlOsgiClassLoader ( URL url, ClassLoader mainClassLoader, Long bundleId ) throws Exception {
 
-        super( new URL[]{url}, null );
+        super( new URL[] { url }, null );
 
-        transformers = new ArrayList<OSGIClassTransformer>();
-        originalByteCodes = new HashMap<String, byte[]>();
+        transformers = new ArrayList<>();
+        originalByteCodes = new HashMap<>();
 
-        urls = new ArrayList<URL>();
+        urls = new ArrayList<>();
         urls.add( url );
         this.bundleId = bundleId;
 
@@ -129,11 +130,14 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
                     try {
 
-                        byte[] byteCode;
+                        byte[] byteCode = null;
+
                         if ( restoreOriginal ) {
                             //Get the original implementation for this class in order to restore it to its original state
                             byteCode = originalByteCodes.get( className );
-                        } else {
+                        }
+
+                        if ( !restoreOriginal || byteCode == null ) {
 
                             //Save the original implementation of this class before to redefine it
                             if ( !originalByteCodes.containsKey( className ) ) {
@@ -142,6 +146,9 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                                 ByteArrayOutputStream originalOut = null;
                                 try {
                                     originalIn = currentClass.getClassLoader().getResourceAsStream( entry.getName() );
+                                    if ( originalIn == null ) {
+                                        originalIn = this.getResourceAsStream( entry.getName() );
+                                    }
                                     originalOut = new ByteArrayOutputStream();
 
                                     byte[] buffer = new byte[1024];
@@ -150,6 +157,8 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                                         originalOut.write( buffer, 0, length );
                                     }
                                     originalByteCodes.put( className, originalOut.toByteArray() );
+                                } catch ( Exception e ) {
+                                    Logger.error( this, "Error reading resource [ " + entry.getName() + "]", e );
                                 } finally {
                                     if ( originalIn != null ) {
                                         originalIn.close();
@@ -342,7 +351,7 @@ public class UrlOsgiClassLoader extends URLClassLoader {
 
     @Override
     public URL[] getURLs () {
-        return new URL[]{};
+        return new URL[] { };
     }
 
 }
