@@ -31,8 +31,8 @@ public class TimeMachineJob implements Job, StatefulJob {
 
             APILocator.getTimeMachineAPI().startTimeMachine(hosts, langs,incremental);
             String date = DateUtil.getCurrentDate();
-            ActivityLogger.logInfo(getClass(), "Job Started", "User:" + APILocator.getUserAPI().getSystemUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
-            AdminLogger.log(getClass(), "Job Started", "User:" + APILocator.getUserAPI().getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: timemachine"  );
+            ActivityLogger.logInfo(getClass(), "Job Finished", "User:" + APILocator.getUserAPI().getSystemUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+            AdminLogger.log(getClass(), "Job Finished", "User:" + APILocator.getUserAPI().getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: timemachine"  );
         }
         catch(Exception ex) {
             throw new JobExecutionException(ex);

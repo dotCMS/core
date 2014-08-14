@@ -1601,6 +1601,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	            }
 	        }
 
+	        //GIT-6085
+	        if(!query.contains("\\~"))
+	        	query = query.replace("~", "\\~");
+	        
 	        result.setQuery(query.trim());
 
 	        CacheLocator.getContentletCache().addTranslatedQuery(originalQuery + " --- " + sortBy, result);
