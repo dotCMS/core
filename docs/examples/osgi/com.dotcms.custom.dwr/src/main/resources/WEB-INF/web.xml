@@ -9,13 +9,7 @@
 	<servlet>
 		<description>custom DWR controller servlet</description>
 		<servlet-name>custom_dwr-invoker</servlet-name>
-		<servlet-class>org.directwebremoting.servlet.DwrServlet</servlet-class>
-		<init-param>
-			<param-name>classes</param-name>
-			<param-value>
-				org.mainco.subco.organization.service.StateServiceImpl
-			</param-value>
-		</init-param>
+		<servlet-class>com.dotcms.repackage.org.directwebremoting.servlet.DwrServlet</servlet-class>
 		<init-param>
 			<param-name>debug</param-name>
 			<param-value>true</param-value>
