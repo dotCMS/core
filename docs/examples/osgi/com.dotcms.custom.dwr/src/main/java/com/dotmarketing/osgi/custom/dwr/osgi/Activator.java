@@ -9,15 +9,14 @@ import com.dotmarketing.osgi.GenericBundleActivator;
 
 /**
  * @author Nathan Keiter
- * Date: 12/05/13
- *
+ *         Date: 12/05/13
  */
-public class Activator extends GenericBundleActivator
-{
-	private DwrServlet dwrServlet;
-	private ExtHttpService extHttpService;
-	
-	@SuppressWarnings( { "unchecked", "rawtypes" } )
+public class Activator extends GenericBundleActivator {
+
+    private DwrServlet dwrServlet;
+    private ExtHttpService extHttpService;
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void start ( BundleContext context ) throws Exception {
 
         //Initializing services...
@@ -50,5 +49,5 @@ public class Activator extends GenericBundleActivator
         //Unregister all the bundle services
         unregisterServices( context );
     }
-    
+
 }
