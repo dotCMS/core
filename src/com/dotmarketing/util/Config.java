@@ -98,19 +98,19 @@ public class Config {
             return defValue;
         }
         String[] propsArr = props.getStringArray(name);
-	    String property = new String ();
+	    StringBuilder property = new StringBuilder ();
 	    int i = 0;
 	    if ((propsArr !=null) &&(propsArr.length>0)) {
-	    for (String propItem : propsArr) {
-	    	if (i > 0)
-	    			property += ",";
-	            property += propItem;
+	        for (String propItem : propsArr) {
+	            if (i > 0)
+	    			property.append(",");
+	            property.append(propItem);
 	            i++;
 	        }
 	    } else {
-	    	property=defValue;
+	    	property.append(defValue);
 	    }
-	    return property;
+	    return property.toString();
 	}
 
 	/**
