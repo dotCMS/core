@@ -3762,7 +3762,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     for(Contentlet con : cons){
                     	 try {
                     		 	List<Contentlet> relatedCon = getRelatedContent(con, rel, APILocator.getUserAPI().getSystemUser(), true);
-                    		 	if(rel.getCardinality()==0 && relatedCon.size()>0) {
+                    		 	if(rel.getCardinality()==0 && relatedCon.size()>0 
+                    		 			&& relatedCon.get(0).getIdentifier() != contentlet.getIdentifier()) {
                     		 		hasError = true;
                     		 		cve.addBadCardinalityRelationship(rel, cons);
                     		 	}

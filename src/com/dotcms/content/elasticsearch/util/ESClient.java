@@ -162,32 +162,34 @@ public class ESClient {
 
 			aliveServers.add(currentServer);
 
-			String initialHosts = "";
+			StringBuilder initialHosts = new StringBuilder();
 
 			int i=0;
 			for (Server server : aliveServers) {
 				if(i>0) {
-					initialHosts += ", ";
+					initialHosts.append(",");
 				}
 
 				if(UtilMethods.isSet(server.getHost()) && !server.getHost().equals("localhost")) {
-					initialHosts += server.getHost() + "[" + server.getEsTransportTcpPort() + "]";
+					initialHosts.append(server.getHost()).append(":").append(server.getEsTransportTcpPort());
 				} else {
-					initialHosts += server.getIpAddress() + "[" + server.getEsTransportTcpPort() + "]";
+					initialHosts.append(server.getIpAddress()).append(":").append(server.getEsTransportTcpPort());
 				}
 
 				i++;
 			}
 
-			if(initialHosts.equals("")) {
+			if(initialHosts.length()==0) {
 				if(bindAddr.equals("localhost")) {
-					initialHosts += currentServer.getIpAddress() + "[" + transportTCPPort + "]";
+					initialHosts.append(currentServer.getIpAddress()).append(":").append(transportTCPPort);
 				} else {
-					initialHosts += bindAddr + "[" + transportTCPPort + "]";
+					initialHosts.append(bindAddr).append(":").append(transportTCPPort);
 				}
 			}
 
-			System.setProperty("es.discovery.zen.ping.unicast.hosts",initialHosts);
+			String initData=initialHosts.toString();
+			System.setProperty("es.discovery.zen.ping.unicast.hosts",initData);
+			Logger.info(this, "discovery.zen.ping.unicast.hosts: "+initData);
 
 			loadConfig();
 			initNode();
@@ -195,7 +197,7 @@ public class ESClient {
 			try {
 				serverAPI.updateServer(currentServer);
 			} catch (DotDataException e) {
-				Logger.error(ClusterFactory.class, "Error trying to update server. Server Id: " + currentServer.getServerId());
+				Logger.error(this, "Error trying to update server. Server Id: " + currentServer.getServerId());
 			}
 
 	}
