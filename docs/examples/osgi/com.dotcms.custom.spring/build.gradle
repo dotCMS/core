@@ -84,7 +84,7 @@ jar {
     }
 }
 
-//Move the dependencies to the WEB-INF/lib folder
+//Move the dependencies to the src/main/resources/libs folder
 tasks.copyToLib.execute()
 
 task wrapper(type: Wrapper) {
