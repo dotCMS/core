@@ -3517,21 +3517,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
                 else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
-                	if(!UtilMethods.isSet(o) && structure.getExpireDateVar() != null){
-	                		if(field.getVelocityVarName().equals(structure.getExpireDateVar())){
+                	if(!UtilMethods.isSet(o)){
+                		 if(structure.getExpireDateVar() != null){
+                			if(field.getVelocityVarName().equals(structure.getExpireDateVar())){
 	                			if(conMap.get("NeverExpire").equals("NeverExpire")){
-	            				 continue;
+                				  continue;
 	                			}else{
 	                			  cve.addRequiredField(field);
 	                              hasError = true;
 	                              continue;
 	                		    }
 	                		}else{
-	                			 cve.addRequiredField(field);
-	                             hasError = true;
-	                             continue;
-	                		}
-                		}
+                			  cve.addRequiredField(field);
+                              hasError = true;
+                              continue;
+	                	    }
+                		 }else{
+            			   cve.addRequiredField(field);
+                           hasError = true;
+                           continue;
+	                	}
+                	}
                 }
                 else if( field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) ) {
                     if( cats == null || cats.size() == 0 ) {
