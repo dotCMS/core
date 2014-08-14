@@ -105,7 +105,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jgroups', version:'2.12.2.Final_1'
     compile group: 'com.dotcms.lib', name: 'dot.jid3lib', version:'0.5.4_1'
     compile group: 'com.dotcms.lib', name: 'dot.JLinkPointTxn', version:'ukv_1'
-    compile group: 'com.dotcms.lib', name: 'dot.js-14', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.json-jspellchecker-dep', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.json', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.jsoup', version:'1.6.1_1'
@@ -115,7 +114,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jxl', version:'2.6_1'
     compile group: 'com.dotcms.lib', name: 'dot.jython', version:'2.2.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.ldap', version:'ukv_1'
-    compile group: 'com.dotcms.lib', name: 'dot.lesscss', version:'1.5.1-SNAPSHOT_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lesscss', version:'1.5.1-SNAPSHOT_2'
     compile group: 'com.dotcms.lib', name: 'dot.log4j-appenders', version:'1.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version:'4.4.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-codecs', version:'4.4.0_1'
@@ -217,7 +216,7 @@ dependencies {
         exclude(module: 'commons-logging')
         exclude(module: 'spring-context-support')
     }
-    compile group: 'org.nanoko.libs', name: 'compass-gems', version:'0.12.2'
+    compile group: 'com.dotcms.lib', name: 'compass-gems', version:'0.12.2_1'
     compile group: 'org.jruby', name: 'jruby-complete', version:'1.7.3'
     compile group: 'com.h2database', name: 'h2', version:'1.3.176'
 

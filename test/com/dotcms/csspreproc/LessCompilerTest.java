@@ -5,6 +5,7 @@ import java.net.URL;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.Assert;
@@ -28,6 +29,8 @@ public class LessCompilerTest {
     public void prepare() throws Exception {
         HttpServletRequest req=ServletTestRunner.localRequest.get();
         baseURL = "http://"+req.getServerName()+":"+req.getServerPort();
+        
+        LicenseTestUtil.getLicense();
     }
     
     @Test
