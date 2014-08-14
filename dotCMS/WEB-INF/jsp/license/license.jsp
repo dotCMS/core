@@ -56,7 +56,7 @@ SimpleDateFormat dfOut = new SimpleDateFormat("MMM dd, yyyy");
 
 <% if(badId) { %>
 <div class="portlet-wrapper">
-   <div style="min-height:400px;" id="borderContainer" class="shadowBox headerBox">                            
+   <div style="min-height:400px;" id="borderContainer" >                            
         <div style="margin-left:auto;margin-right:auto;width:600px;background:#eee;" class="callOutBox">
             <p><%= LanguageUtil.get(pageContext, "license-bad-id-explanation") %></p>
             <form method="POST">
