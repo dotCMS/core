@@ -5,9 +5,11 @@ import java.net.URL;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.Assert;
+import com.dotcms.repackage.org.junit.Before;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -20,6 +22,11 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 
 public class CSSPreProcessServletTest {
+	
+	@Before
+    public void prepare() throws Exception {
+        LicenseTestUtil.getLicense();
+    }
     
     @Test
     public void checkExternalResource() throws Exception {
