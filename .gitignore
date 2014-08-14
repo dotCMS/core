@@ -49,4 +49,3 @@ dotCMS/WEB-INF/lib/plugin-*.jar
 starter.zip
 .ant-targets-build.xml
 .gradle/
-gradle/
