@@ -15,38 +15,38 @@ import com.dotcms.enterprise.LicenseUtil;
  */
 public class LicenseTestUtil {
 	
-	public static String getLicense() throws Exception{
-		String license = "";
+	public static void getLicense() throws Exception{
 		
-		HttpServletRequest req=Mockito.mock(HttpServletRequest.class);
-		Mockito.when(req.getParameter("iwantTo")).thenReturn("request_code");
-		Mockito.when(req.getParameter("license_type")).thenReturn("trial");
-		Mockito.when(req.getParameter("license_level")).thenReturn("400");
+		if(LicenseUtil.getLevel()<200) {
+			String license;
+			HttpServletRequest req=Mockito.mock(HttpServletRequest.class);
+			Mockito.when(req.getParameter("iwantTo")).thenReturn("request_code");
+			Mockito.when(req.getParameter("license_type")).thenReturn("trial");
+			Mockito.when(req.getParameter("license_level")).thenReturn("400");
 
-		final StringBuilder reqcode=new StringBuilder();
+			final StringBuilder reqcode=new StringBuilder();
 
-		Mockito.doAnswer(new Answer() {
-		    public Object answer(com.dotcms.repackage.org.mockito.invocation.InvocationOnMock invocation) throws Throwable {
-		        reqcode.append(invocation.getArguments()[1].toString());
-		        return null;
-		    }
-		}).when(req).setAttribute(Mockito.eq("requestCode"),Mockito.any(String.class));
+			Mockito.doAnswer(new Answer() {
+			    public Object answer(com.dotcms.repackage.org.mockito.invocation.InvocationOnMock invocation) throws Throwable {
+			        reqcode.append(invocation.getArguments()[1].toString());
+			        return null;
+			    }
+			}).when(req).setAttribute(Mockito.eq("requestCode"),Mockito.any(String.class));
 
-		LicenseUtil.processForm(req);
-		
-		HttpClient client=new HttpClient();
-		PostMethod post=new PostMethod("http://support.dotcms.com/app/licenseRequest3");
-		post.setRequestBody(new NameValuePair[] { new NameValuePair("code", reqcode.toString()) });
-		client.executeMethod(post);
-		
-		if(post.getStatusCode()==200){
-			license = post.getResponseBodyAsString();
-			HttpServletRequest req2=Mockito.mock(HttpServletRequest.class);
-			Mockito.when(req2.getParameter("iwantTo")).thenReturn("paste_license");
-			Mockito.when(req2.getParameter("license_text")).thenReturn(license);
-			LicenseUtil.processForm(req2);
-		}
-		
-		return license;
+			LicenseUtil.processForm(req);
+			
+			HttpClient client=new HttpClient();
+			PostMethod post=new PostMethod("http://support.dotcms.com/app/licenseRequest3");
+			post.setRequestBody(new NameValuePair[] { new NameValuePair("code", reqcode.toString()) });
+			client.executeMethod(post);
+			
+			if(post.getStatusCode()==200){
+				license = post.getResponseBodyAsString();
+				HttpServletRequest req2=Mockito.mock(HttpServletRequest.class);
+				Mockito.when(req2.getParameter("iwantTo")).thenReturn("paste_license");
+				Mockito.when(req2.getParameter("license_text")).thenReturn(license);
+				LicenseUtil.processForm(req2);
+			}
+		} 
 	}
 }
