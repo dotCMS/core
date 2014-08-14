@@ -284,7 +284,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         } else {
 
             //Getting the reference of a known class in order to get the base/main class loader
-            Class baseClass = getContextClassLoader().loadClass( "org.quartz.Job" );
+            Class baseClass = getContextClassLoader().loadClass( "com.dotcms.rest.CMSConfigResource" );
             //Creates our custom class loader in order to use it to inject the class code inside dotcms context
             urlOsgiClassLoader = new UrlOsgiClassLoader( sourceURL, baseClass.getClassLoader(), bundleId );
 
@@ -611,7 +611,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         unregisterActionlets();
         unregisterViewToolServices();
-        unpublishBundleServices();
         unregisterPreHooks();
         unregisterPostHooks();
         unregisterQuartzJobs();
@@ -620,6 +619,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterRewriteRule();
         cleanResources( context );
         unregisterServlets( context );
+        unpublishBundleServices();
     }
 
     /**

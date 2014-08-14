@@ -14,6 +14,9 @@ public class Activator extends GenericBundleActivator {
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
 
+        //Initializing services...
+        initializeServices ( context );
+
         //Adding hooks
         addPreHook( Class.forName( SamplePreContentHook.class.getName() ).newInstance() );
         addPostHook( Class.forName( SamplePostContentHook.class.getName() ).newInstance() );
