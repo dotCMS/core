@@ -12,11 +12,9 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.junit.framework.Assert;
-
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.Test;
-
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -24,6 +22,8 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -33,6 +33,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.ettrema.httpclient.File;
 import com.ettrema.httpclient.Folder;
 import com.ettrema.httpclient.Host;
+import com.ettrema.httpclient.InternalServerError;
 import com.ettrema.httpclient.Resource;
 import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import com.liferay.portal.model.User;
@@ -248,19 +249,19 @@ public class WebDavTest extends TestBase {
 	    try {
 	        APILocator.getPermissionAPI().save(
 	            new Permission(demo.getIdentifier(),role.getId(),
-	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_USE |PermissionAPI.PERMISSION_PUBLISH),demo,user,false);
+	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_USE),demo,user,false);
 	    
 	        APILocator.getPermissionAPI().save(
 	            new Permission(PermissionAPI.permissionTypes.get("FOLDERS"),demo.getIdentifier(),role.getId(),
-	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN|PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE|PermissionAPI.PERMISSION_PUBLISH),demo,user,false);
+	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN|PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
 	    
 	        APILocator.getPermissionAPI().save(
 	            new Permission(PermissionAPI.permissionTypes.get("FILES"),demo.getIdentifier(),role.getId(),
-                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE|PermissionAPI.PERMISSION_PUBLISH),demo,user,false);
+                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
 	    
 	        APILocator.getPermissionAPI().save(
 	            new Permission(PermissionAPI.permissionTypes.get("CONTENTLETS"),demo.getIdentifier(),role.getId(),
-                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE|PermissionAPI.PERMISSION_PUBLISH),demo,user,false);
+                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
 	        
 	        HibernateUtil.commitTransaction();
 	    }
@@ -277,15 +278,13 @@ public class WebDavTest extends TestBase {
         java.io.File tmp=java.io.File.createTempFile("filetest", ".txt");
         FileUtils.writeStringToFile(tmp, "this is a test text 888");
         
-        File uploaded = hh.uploadFile(tmp);
-        
-        Thread.sleep(2000);
-        
-        List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, user, false);
-        Assert.assertEquals(1, files.size());
-        Assert.assertTrue(files.get(0).isLive());
-        
-        
+        try{
+        	File uploaded = hh.uploadFile(tmp);
+        } catch (Exception e){
+        	//This is expected: User does not have permission to publish contentlets
+        	Assert.assertTrue(e instanceof InternalServerError);
+        }
+
 	}
 	
 	/**
