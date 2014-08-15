@@ -135,9 +135,7 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                         if ( restoreOriginal ) {
                             //Get the original implementation for this class in order to restore it to its original state
                             byteCode = originalByteCodes.get( className );
-                        }
-
-                        if ( !restoreOriginal || byteCode == null ) {
+                        } else {
 
                             //Save the original implementation of this class before to redefine it
                             if ( !originalByteCodes.containsKey( className ) ) {
@@ -192,28 +190,31 @@ public class UrlOsgiClassLoader extends URLClassLoader {
                             }
                         }
 
-                        //Remove any old transformer created to redefined this class
-                        Iterator<OSGIClassTransformer> transformerIterator = transformers.iterator();
-                        while ( transformerIterator.hasNext() ) {
-                            OSGIClassTransformer osgiClassTransformer = transformerIterator.next();
+                        if ( byteCode != null ) {
 
-                            String classToTransform = className.replace( '.', '/' );
-                            if ( osgiClassTransformer.getClassName().equals( classToTransform ) ) {
-                                instrumentation.removeTransformer( osgiClassTransformer );
-                                transformerIterator.remove();
+                            //Remove any old transformer created to redefined this class
+                            Iterator<OSGIClassTransformer> transformerIterator = transformers.iterator();
+                            while ( transformerIterator.hasNext() ) {
+                                OSGIClassTransformer osgiClassTransformer = transformerIterator.next();
+
+                                String classToTransform = className.replace( '.', '/' );
+                                if ( osgiClassTransformer.getClassName().equals( classToTransform ) ) {
+                                    instrumentation.removeTransformer( osgiClassTransformer );
+                                    transformerIterator.remove();
+                                }
                             }
+
+                            //Creates our transformer, a class that will allows to redefine a class content
+                            OSGIClassTransformer transformer = new OSGIClassTransformer( className, currentClass.getClassLoader() );
+
+                            //Adding the transformer
+                            transformers.add( transformer );
+                            instrumentation.addTransformer( transformer, true );
+
+                            //And finally redefine the class
+                            ClassDefinition classDefinition = new ClassDefinition( currentClass, byteCode );
+                            instrumentation.redefineClasses( classDefinition );
                         }
-
-                        //Creates our transformer, a class that will allows to redefine a class content
-                        OSGIClassTransformer transformer = new OSGIClassTransformer( className, currentClass.getClassLoader() );
-
-                        //Adding the transformer
-                        transformers.add( transformer );
-                        instrumentation.addTransformer( transformer, true );
-
-                        //And finally redefine the class
-                        ClassDefinition classDefinition = new ClassDefinition( currentClass, byteCode );
-                        instrumentation.redefineClasses( classDefinition );
                     } catch ( ClassNotFoundException e ) {
                         //If the class has not been loaded we don't need to redefine it
                     }
