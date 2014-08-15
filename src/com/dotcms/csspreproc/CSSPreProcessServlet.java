@@ -130,7 +130,16 @@ public class CSSPreProcessServlet extends HttpServlet {
                             // newcache entry for the imported asset
                             ImportedAsset asset = new ImportedAsset();
                             asset.uri = importUri;
-                            Identifier ii = APILocator.getIdentifierAPI().find(host, importUri);
+                            Identifier ii;
+                            if(importUri.startsWith("//")) {
+                                importUri=importUri.substring(2);
+                                String hn=importUri.substring(0, importUri.indexOf('/'));
+                                String uu=importUri.substring(importUri.indexOf('/'));
+                                ii = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().findByName(hn, user, live),uu);
+                            }
+                            else {
+                                ii = APILocator.getIdentifierAPI().find(host, importUri);
+                            }
                             ContentletVersionInfo impInfo = APILocator.getVersionableAPI().getContentletVersionInfo(ii.getId(), defLang);
                             asset.modDate = impInfo.getVersionTs();
                             newcache.imported.add(asset);
