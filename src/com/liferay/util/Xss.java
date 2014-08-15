@@ -108,7 +108,7 @@ public class Xss {
                 queryString = ESAPI.encoder().canonicalize( queryString, false );
 
         		//Validate the query string
-                if(!(queryString.contains("\'") || queryString.contains("\"")))
+                if(!(queryString.contains("\'") || queryString.contains("\"") || queryString.contains("’")))
                 	return !ESAPI.validator().isValidInput( "URLContext", queryString, "HTTPQueryString", queryString.length(), true );
                 else
                 	return false;
@@ -149,7 +149,7 @@ public class Xss {
 
             //Validate the URI
             boolean isValid = true;
-            if(!(uri.contains("\'") || uri.contains("\"")))
+            if(!(uri.contains("\'") || uri.contains("\"") || uri.contains("’")))
               isValid = ESAPI.validator().isValidInput( "URLContext", finalURI, "HTTPURI", uri.length(), false );
             //Validate the query string if present
             if ( isValid && queryString != null ) {
