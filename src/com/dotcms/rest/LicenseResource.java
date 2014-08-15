@@ -1,7 +1,6 @@
 package com.dotcms.rest;
 
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 
@@ -59,7 +58,8 @@ public class LicenseResource extends WebResource {
     @Path("/upload/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response putZipFile(@Context HttpServletRequest request, @PathParam("params") String params,
-            @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail) {
+            @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail, 
+            @FormDataParam("return") String ret) {
         InitDataObject initData = init(params, true, request, true, "EXT_LICENSE_MANAGER");
         try {
            
@@ -68,7 +68,7 @@ public class LicenseResource extends WebResource {
                 
                 AdminLogger.log(this.getClass(), "putZipFile", "uploaded zip to license repo", initData.getUser());
                 
-                return buildReturn(initData);
+                return buildReturn(request, ret);
             }
             
             return Response.status(Response.Status.BAD_REQUEST)
@@ -82,14 +82,14 @@ public class LicenseResource extends WebResource {
         
     }
     
-    protected Response buildReturn(InitDataObject initData) throws URISyntaxException {
-        if(initData.getParamsMap().containsKey("return")) {
-            // you might want to specify a return url
-            return Response.seeOther(new URI(initData.getParamsMap().get("return").toString())).build();
-        }
-        else {
+    protected Response buildReturn(HttpServletRequest request, String ret) throws URISyntaxException {
+         
+        if(!UtilMethods.isSet(ret)) {
             return Response.ok().build();
         }
+        
+        return Response.status(302).header("Location", ret).build();
+        
     }
     
     @DELETE
@@ -109,7 +109,7 @@ public class LicenseResource extends WebResource {
             
             AdminLogger.log(this.getClass(), "delete", "Deleted license from repo with id "+id, initData.getUser());
             
-            return buildReturn(initData);
+            return Response.ok().build();
         }
         catch(Exception ex) {
             Logger.error(this, "can't delete license "+id, ex);
