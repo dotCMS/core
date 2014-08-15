@@ -627,6 +627,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unpublishBundleServices () throws Exception {
 
+        //Get the current ClassLoader
+        ClassLoader contextClassLoader = getContextClassLoader();
+        if ( contextClassLoader instanceof CombinedLoader ) {
+            //Try to remove this class loader
+            ClassLoader felixClassLoader = getFelixClassLoader();
+            ((CombinedLoader) contextClassLoader).removeLoader( felixClassLoader );
+        }
+
         //Find the UrlOsgiClassLoader for this bundleId
         UrlOsgiClassLoader urlOsgiClassLoader = findCustomURLLoader( ClassLoader.getSystemClassLoader(), this.context.getBundle().getBundleId() );
         if ( urlOsgiClassLoader != null ) {
@@ -653,13 +661,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             urlOsgiClassLoader.unlinkClassLoaders();
         }
 
-        //Get the current ClassLoader
-        ClassLoader contextClassLoader = getContextClassLoader();
-        if ( contextClassLoader instanceof CombinedLoader ) {
-            //Try to remove this class loader
-            ClassLoader felixClassLoader = getFelixClassLoader();
-            ((CombinedLoader) contextClassLoader).removeLoader( felixClassLoader );
-        }
     }
 
     /**
