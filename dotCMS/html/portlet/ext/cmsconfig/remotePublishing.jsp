@@ -652,10 +652,6 @@ function discardConflicts(identifier, type) {
             closeIntegrityResultsDialog(identifier);
             showDotCMSSystemMessage("<%= LanguageUtil.get(pageContext, "push_publish_integrity_conflicts_discarded")%>", true);
 
-            dijit.byId(fixButtonName).setAttribute('disabled', true);
-            dijit.byId(discardButtonName).setAttribute('disabled', true);
-
-
         },
         error: function (error) {
             showDotCMSSystemMessage(error.responseText, true);
