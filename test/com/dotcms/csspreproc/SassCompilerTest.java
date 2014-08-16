@@ -123,4 +123,76 @@ public class SassCompilerTest {
         cc = CacheLocator.getCSSCache().get(demo.getIdentifier(), folder.getPath()+"_layout.scss", true);
         Assert.assertNull(cc);
     }
+    
+
+    @Test
+    public void pathing() throws Exception {
+        final User user=APILocator.getUserAPI().getSystemUser();
+        final String runId=UUIDGenerator.generateUuid();
+        
+        // another host for abs path //host/path/to/file testing
+        Host host=new Host();
+        host.setHostname("test"+runId+".demo.dotcms.com");
+        host.setDefault(false);
+        host=APILocator.getHostAPI().save(host, user, false);
+        APILocator.getHostAPI().publish(host, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
+                
+        Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
+        
+        Folder f1=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
+        Folder f2=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
+        Folder f3=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/d", defaultHost, user, false);
+        Folder f4=APILocator.getFolderAPI().findFolderByPath("/"+runId+"/a/b", defaultHost, user, false);
+        Folder ff=APILocator.getFolderAPI().createFolders("/sass", host, user, false);
+        
+
+        File file1=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file1.scss"); 
+        FileUtils.writeStringToFile(file1, "$file1: 2;");
+        Contentlet fileAsset1=newFile(file1, ff, host);
+        
+        File file2=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file2.scss");
+        FileUtils.writeStringToFile(file2, "$file2: 4;");
+        Contentlet fileAsset2=newFile(file2, f1, defaultHost);
+        
+        File file3=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file3.scss");
+        FileUtils.writeStringToFile(file3, "$file3: 8;");
+        Contentlet fileAsset3=newFile(file3, f4, defaultHost);
+        
+        File file4=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file4.scss");
+        FileUtils.writeStringToFile(file4, "$file4: 16;");
+        Contentlet fileAsset4=newFile(file4, f3, defaultHost);
+        
+        File file5=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file5.scss");
+        FileUtils.writeStringToFile(file5, "@import \"//"+host.getHostname()+"/sass/file1\"; \r\n"+
+                                           "@import \"/"+runId+"/a/file2\"; \r\n"+
+                                           "@import \"../file3\"; \r\n"+
+                                           "@import \"../d/file4\"; \r\n"+
+                                           "someclass { width: ($file1 + $file2 + $file3 + $file4); } \r\n");
+        Contentlet fileAsset5=newFile(file5,f2,defaultHost);
+        
+        
+        URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/file5.css");
+        String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
+        
+        Assert.assertEquals("someclass{width:30}", response.trim());
+        
+    }
+    
+    protected Contentlet newFile(File file, Folder f, Host host) throws Exception {
+        Contentlet fileAsset=new Contentlet();
+        fileAsset.setStructureInode(StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+        fileAsset.setHost(host.getIdentifier());
+        fileAsset.setFolder(f.getInode());
+        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, file);
+        fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, file.getName());
+        fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
+        fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        fileAsset=APILocator.getContentletAPI().checkin(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+        APILocator.getContentletAPI().publish(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode());
+        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode(),true);
+        return fileAsset;
+    }
 }
