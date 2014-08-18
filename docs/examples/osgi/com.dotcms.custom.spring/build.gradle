@@ -6,19 +6,45 @@ apply plugin: 'eclipse'
 sourceCompatibility = '1.7'
 version = '0.1'
 
+configurations {
+    pluginLibs
+    ext.resourcesLibsFolder = 'src/main/resources/libs'
+}
+
+task copyToLib(type: Copy) {
+    into configurations.resourcesLibsFolder
+    from configurations.pluginLibs
+}
 
 repositories {
-	maven {
+    maven {
         url "http://repo.dotcms.com/artifactory/libs-release"
     }
 }
 
 dependencies {
-	compile fileTree(dir: 'src/main/resources/libs', include: '*.jar')
-	compile (group: 'com.dotcms', name: 'dotcms', version: '3.0'){
-		transitive = true
-	}
-	providedCompile "javax.servlet:servlet-api:2.5"
+
+    compile fileTree(dir: configurations.resourcesLibsFolder, include: '*.jar')
+    compile(group: 'com.dotcms', name: 'dotcms', version: '3.0') {
+        transitive = true
+    }
+    providedCompile "javax.servlet:servlet-api:2.5"
+
+    pluginLibs group: 'log4j', name: 'log4j', version: '1.2.16'
+    pluginLibs group: 'commons-logging', name: 'commons-logging', version: '1.1.1'
+    pluginLibs group: 'sax', name: 'sax', version: '2.0.1'
+    pluginLibs group: 'xalan', name: 'xalan', version: '2.7.2'
+    pluginLibs group: 'xerces', name: 'xercesImpl', version: '2.11.0'
+    pluginLibs group: 'cglib', name: 'cglib', version: '2.2'
+    pluginLibs group: 'org.springframework', name: 'spring-aop', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-asm', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-beans', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-context', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-context-support', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-core', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-expression', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-web', version: '3.1.1.RELEASE'
+    pluginLibs group: 'org.springframework', name: 'spring-webmvc', version: '3.1.1.RELEASE'
 }
 
 jar {
@@ -29,14 +55,40 @@ jar {
         instruction 'Bundle-Vendor', 'dotcms'
         instruction 'Bundle-Description', 'Spring OSGi Example providing its own Spring for dotcms '
         instruction 'Bundle-DocURL', 'http://www.dotcms.com'
-        instruction 'Bundle-Activator', 'com.dotmarketing.osgi.custom.spring.Activator'        
-        instruction 'Bundle-ClassPath', '.,libs/com.springsource.org.aopalliance-1.0.0.jar,libs/com.springsource.org.apache.commons.logging-1.1.1.jar,libs/com.springsource.org.apache.log4j-1.2.15.jar,libs/org.springframework.aop-3.1.1.RELEASE.jar,libs/org.springframework.asm-3.1.1.RELEASE.jar,libs/org.springframework.beans-3.1.1.RELEASE.jar,libs/org.springframework.context-3.1.1.RELEASE.jar,libs/org.springframework.context.support-3.1.1.RELEASE.jar,libs/org.springframework.core-3.1.1.RELEASE.jar,libs/org.springframework.expression-3.1.1.RELEASE.jar,libs/org.springframework.web-3.1.1.RELEASE.jar,libs/org.springframework.web.servlet-3.1.1.RELEASE.jar,libs/com.springsource.net.sf.cglib-2.2.0.jar,libs/com.springsource.org.codehaus.jackson-1.4.3.jar,libs/dotcms_log4j.jar'
-        instruction 'DynamicImport-Package', '*'
-        instruction 'Import-Package', '!org.springframework.*,*;version=0'
+        instruction 'Bundle-Activator', 'com.dotmarketing.osgi.custom.spring.Activator'
+        instruction 'Bundle-ClassPath', '.,' +
+                'libs/aopalliance-1.0.jar,' +
+                'libs/asm-3.1.jar,' +
+                'libs/cglib-2.2.jar,' +
+                'libs/commons-logging-1.1.1.jar,' +
+                'libs/log4j-1.2.16.jar,' +
+                'libs/sax-2.0.1.jar,' +
+                'libs/xalan-2.7.2.jar,' +
+                'libs/serializer-2.7.2.jar,' +
+                'libs/xercesImpl-2.11.0.jar,' +
+                'libs/xml-apis-1.4.01.jar,' +
+                'libs/spring-aop-3.1.1.RELEASE.jar,' +
+                'libs/spring-asm-3.1.1.RELEASE.jar,' +
+                'libs/spring-beans-3.1.1.RELEASE.jar,' +
+                'libs/spring-context-3.1.1.RELEASE.jar,' +
+                'libs/spring-context-support-3.1.1.RELEASE.jar,' +
+                'libs/spring-core-3.1.1.RELEASE.jar,' +
+                'libs/spring-expression-3.1.1.RELEASE.jar,' +
+                'libs/spring-web-3.1.1.RELEASE.jar,' +
+                'libs/spring-webmvc-3.1.1.RELEASE.jar'
+        instruction 'Import-Package', '!org.springframework.*',
+                'javax.naming',
+                'com.dotmarketing.osgi',
+                'javax.servlet',
+                'com.dotcms.repackage.org.apache.felix.http.api','*;version=0'
     }
 }
+
+//Move the dependencies to the src/main/resources/libs folder
+tasks.copyToLib.execute()
 
 task wrapper(type: Wrapper) {
     gradleVersion = '1.8'
 }
 
+defaultTasks 'help', 'tasks'

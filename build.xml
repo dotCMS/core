@@ -1032,7 +1032,7 @@
 
         <delete dir="${tomcat7.home}/temp/h2"/>
         <move todir="${tomcat7.home}/temp/h2" failonerror="false">
-            <fileset dir="${tomcat7.home}/webapps/ROOT">
+            <fileset dir="${tomcat7.home}/webapps/ROOT/WEB-INF/H2_DATABASE">
                 <include name="*.db" />
             </fileset>
         </move>
@@ -1062,7 +1062,7 @@
             </fileset>
         </move>
 
-        <move todir="${tomcat7.home}/webapps/ROOT" overwrite="true" failonerror="false">
+        <move todir="${tomcat7.home}/webapps/ROOT/WEB-INF/H2_DATABASE" overwrite="true" failonerror="false">
             <fileset dir="${tomcat7.home}/temp/h2">
                 <include name="*.db" />
             </fileset>

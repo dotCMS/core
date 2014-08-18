@@ -13,29 +13,33 @@ repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
-task copyToLib(type: Copy) {
-    into "."//necessary to prevent Gradle from complaining about an unspecified destination dir
-    from(configurations.compile) {
+task copyToLib {
+
+    sync {
+        from configurations.compile
+        into configurations.felixFolder
 
         include '**/dot.org.apache.felix.bundlerepository*.jar'
         include '**/dot.org.apache.felix.fileinstall*.jar'
         include '**/dot.org.apache.felix.gogo.*.jar'
         include '**/dot.org.apache.felix.http.bundle*.jar'
-
-        into configurations.felixFolder
     }
-    from(configurations.compile) {
+
+    sync {
+        from configurations.compile
+        into configurations.libsFolder
 
         exclude '**/dot.org.apache.felix.bundlerepository*.jar'
         exclude '**/dot.org.apache.felix.fileinstall*.jar'
         exclude '**/dot.org.apache.felix.gogo.*.jar'
         exclude '**/*.zip'
-
-        into configurations.libsFolder
     }
-    from(configurations.compile) {
-        include '**/starter*.zip'
+
+    copy {
+        from configurations.compile
         into configurations.dotcmsFolder
+
+        include '**/starter*.zip'
         rename ( /starter(.+)\.zip/, "starter.zip" )
     }
 }
