@@ -51,70 +51,90 @@ public class TikaUtils {
 		// if the limit is not "unlimited"
 		// I can use the faster parseToString
 		try {
-			is = TikaInputStream.get(binFile);
-			fulltext = t.parse(is, met);
-			metaMap = new HashMap<String, String>();
-			for (int i = 0; i < met.names().length; i++) {
-				String name = met.names()[i];
-				if (UtilMethods.isSet(name) && met.get(name) != null) {
-					// we will want to normalize our metadata for searching
-					String[] x = translateKey(name);
-					for (String y : x)
-						metaMap.put(y, met.get(name));
-				}
-			}
 
-			if(!contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
-				OutputStream out=new FileOutputStream(contentM);
-
-				// compressor config
-				String compressor=Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-				if(compressor.equals("gzip")) {
-					out = new GZIPOutputStream(out);
-				}
-				else if(compressor.equals("bzip2")) {
-					out = new BZip2CompressorOutputStream(out);
-				}
-
-				ReaderInputStream ris = null;
-
-				try {
-					int count;
-					ris = new ReaderInputStream(fulltext, StandardCharsets.UTF_8);
-
-					int metadataLimit = Config.getIntProperty("META_DATA_MAX_SIZE", 5) * 1024 * 1024;
-					int numOfChunks = metadataLimit / 1024;
-
-					char[] buf = new char[1024];
-					byte[] bytes = new byte[1024];
-
-					while ((count = fulltext.read(buf)) > 0 && numOfChunks>0) {
-					  String lowered = new String(buf);
-					  lowered = lowered.toLowerCase();
-					  bytes = lowered.getBytes(StandardCharsets.UTF_8);
-					  out.write(bytes, 0, count);
-					  numOfChunks --;
+			if(forceMemory){
+				// no worry about the limit and less time to process.
+				String content = t.parseToString(new FileInputStream(binFile), met);
+				metaMap = new HashMap<String, String>();
+				for (int i = 0; i < met.names().length; i++) {
+					String name = met.names()[i];
+					if (UtilMethods.isSet(name) && met.get(name) != null) {
+						// we will want to normalize our metadata for searching
+						String[] x = translateKey(name);
+						for (String y : x)
+							metaMap.put(y, met.get(name));
 					}
 				}
-				finally {
-					if ( out != null ) {
-		                try {
-		                    out.close();
-		                } catch ( IOException e ) {
-		                    Logger.warn( this.getClass(), "Error Closing Stream.", e );
-		                }
-		            }
+				metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
+			}
+			else {
 
-					if ( ris != null ) {
-		                try {
-		                    ris.close();
-		                } catch ( IOException e ) {
-		                    Logger.warn( this.getClass(), "Error Closing Stream.", e );
-		                }
-		            }
 
-					IOUtils.closeQuietly(out);
-					IOUtils.closeQuietly(fulltext);
+				is = TikaInputStream.get(binFile);
+				fulltext = t.parse(is, met);
+				metaMap = new HashMap<String, String>();
+				for (int i = 0; i < met.names().length; i++) {
+					String name = met.names()[i];
+					if (UtilMethods.isSet(name) && met.get(name) != null) {
+						// we will want to normalize our metadata for searching
+						String[] x = translateKey(name);
+						for (String y : x)
+							metaMap.put(y, met.get(name));
+					}
+				}
+
+				if(!contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
+					OutputStream out=new FileOutputStream(contentM);
+
+					// compressor config
+					String compressor=Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+					if(compressor.equals("gzip")) {
+						out = new GZIPOutputStream(out);
+					}
+					else if(compressor.equals("bzip2")) {
+						out = new BZip2CompressorOutputStream(out);
+					}
+
+					ReaderInputStream ris = null;
+
+					try {
+						int count;
+						ris = new ReaderInputStream(fulltext, StandardCharsets.UTF_8);
+
+						int metadataLimit = Config.getIntProperty("META_DATA_MAX_SIZE", 5) * 1024 * 1024;
+						int numOfChunks = metadataLimit / 1024;
+
+						char[] buf = new char[1024];
+						byte[] bytes = new byte[1024];
+
+						while ((count = fulltext.read(buf)) > 0 && numOfChunks>0) {
+							String lowered = new String(buf);
+							lowered = lowered.toLowerCase();
+							bytes = lowered.getBytes(StandardCharsets.UTF_8);
+							out.write(bytes, 0, count);
+							numOfChunks --;
+						}
+					}
+					finally {
+						if ( out != null ) {
+							try {
+								out.close();
+							} catch ( IOException e ) {
+								Logger.warn( this.getClass(), "Error Closing Stream.", e );
+							}
+						}
+
+						if ( ris != null ) {
+							try {
+								ris.close();
+							} catch ( IOException e ) {
+								Logger.warn( this.getClass(), "Error Closing Stream.", e );
+							}
+						}
+
+						IOUtils.closeQuietly(out);
+						IOUtils.closeQuietly(fulltext);
+					}
 				}
 			}
 		} catch (Exception e) {
