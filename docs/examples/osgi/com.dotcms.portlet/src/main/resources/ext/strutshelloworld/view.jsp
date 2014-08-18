@@ -1,4 +1,4 @@
-<%@ page import="javax.portlet.WindowState" %>
+<%@ page import="com.dotcms.repackage.javax.portlet.WindowState" %>
 <%@ include file="/html/common/init.jsp" %>
 <portlet:defineObjects/>
 <%@ include file="/html/common/messages_inc.jsp" %>

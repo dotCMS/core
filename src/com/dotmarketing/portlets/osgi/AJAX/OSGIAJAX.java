@@ -40,8 +40,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
             bundle.uninstall();
         } catch ( BundleException e ) {
-            Logger.error( OSGIAJAX.class, e.getMessage(), e );
-            throw new ServletException( e.getMessage() + " Unable to undeploy bundle", e );
+            Logger.error( OSGIAJAX.class, "Unable to undeploy bundle [" + e.getMessage() + "]", e );
         }
 
         //Then move the bundle from the load folder to the undeployed folder

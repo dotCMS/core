@@ -69,6 +69,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private Collection<String> preHooks;
     private Collection<String> postHooks;
 
+    private ClassLoader getFelixClassLoader () {
+        return this.getClass().getClassLoader();
+    }
+
+    private ClassLoader getContextClassLoader () {
+        return Thread.currentThread().getContextClassLoader();
+    }
+
     /**
      * Verify and initialize if necessary the required OSGI services to create plugins
      *
@@ -86,7 +94,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
-     * Allow to this bundle/elements to be visible and accessible from the host classpath
+     * Allow to this bundle elements to be visible and accessible from the host classpath (Current thread class loader)
      *
      * @param context
      * @throws Exception
@@ -95,6 +103,20 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         if ( this.context == null ) {
             this.context = context;
+        }
+
+        //ClassLoaders
+        ClassLoader felixClassLoader = getFelixClassLoader();
+        ClassLoader contextClassLoader = getContextClassLoader();
+
+        //Create a new class loader where we can "combine" our classLoaders
+        CombinedLoader combinedLoader;
+        if ( contextClassLoader instanceof CombinedLoader ) {
+            combinedLoader = (CombinedLoader) contextClassLoader;
+            combinedLoader.addLoader( felixClassLoader );
+        } else {
+            combinedLoader = new CombinedLoader( contextClassLoader );
+            combinedLoader.addLoader( felixClassLoader );
         }
 
         //Force the loading of some classes that may be already loaded on the host classpath but we want to override with the ones on this bundle
@@ -113,9 +135,25 @@ public abstract class GenericBundleActivator implements BundleActivator {
                     Logger.error( this, "Error injecting context for overriding", e );
                     throw e;
                 }
+
+                for ( String classToOverride : forceOverride ) {
+                    try {
+                        /*
+                         Loading the custom implementation will allows to override the one the ClassLoader
+                         already had loaded and use it on this OSGI bundle context
+                         */
+                        combinedLoader.loadClass( classToOverride.trim() );
+                    } catch ( Exception e ) {
+                        Logger.error( this, "Error overriding class: " + classToOverride, e );
+                        throw e;
+                    }
+                }
             }
 
         }
+
+        //Use this new "combined" class loader
+        Thread.currentThread().setContextClassLoader( combinedLoader );
     }
 
     /**
@@ -228,7 +266,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         long bundleId = this.context.getBundle().getBundleId();
 
         //Get the location of this OSGI bundle jar source code using a known class inside this bundle
-        Class clazz = Class.forName( className, false, this.getClass().getClassLoader() );
+        Class clazz = Class.forName( className, false, getFelixClassLoader() );
         URL sourceURL = clazz.getProtectionDomain().getCodeSource().getLocation();
 
         //Verify if we have our UrlOsgiClassLoader on the main class loaders
@@ -246,7 +284,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         } else {
 
             //Getting the reference of a known class in order to get the base/main class loader
-            Class baseClass = Thread.currentThread().getContextClassLoader().loadClass( "org.quartz.Job" );
+            Class baseClass = getContextClassLoader().loadClass( "com.dotcms.rest.CMSConfigResource" );
             //Creates our custom class loader in order to use it to inject the class code inside dotcms context
             urlOsgiClassLoader = new UrlOsgiClassLoader( sourceURL, baseClass.getClassLoader(), bundleId );
 
@@ -573,21 +611,29 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         unregisterActionlets();
         unregisterViewToolServices();
-        unpublishBundleServices();
         unregisterPreHooks();
         unregisterPostHooks();
         unregisterQuartzJobs();
         unregisterActionMappings();
-        unregisterPortles();
+        unregisterPortlets();
         unregisterRewriteRule();
         cleanResources( context );
         unregisterServlets( context );
+        unpublishBundleServices();
     }
 
     /**
      * Unpublish this bundle elements
      */
     protected void unpublishBundleServices () throws Exception {
+
+        //Get the current ClassLoader
+        ClassLoader contextClassLoader = getContextClassLoader();
+        if ( contextClassLoader instanceof CombinedLoader ) {
+            //Try to remove this class loader
+            ClassLoader felixClassLoader = getFelixClassLoader();
+            ((CombinedLoader) contextClassLoader).removeLoader( felixClassLoader );
+        }
 
         //Find the UrlOsgiClassLoader for this bundleId
         UrlOsgiClassLoader urlOsgiClassLoader = findCustomURLLoader( ClassLoader.getSystemClassLoader(), this.context.getBundle().getBundleId() );
@@ -607,15 +653,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
 
             /*
-            Closes this URLClassLoader, so that it can no longer be used to load
-            new classes or resources that are defined by this loader.
-            Classes and resources defined by any of this loader's parents in the
-            delegation hierarchy are still accessible. Also, any classes or resources
-            that are already loaded, are still accessible.
+             Closes this URLClassLoader, so that it can no longer be used to load new classes or resources that are defined by this loader.
+             Classes and resources defined by any of this loader's parents in the delegation hierarchy are still accessible.
+             Also, any classes or resources that are already loaded, are still accessible.
              */
             urlOsgiClassLoader.close();
             urlOsgiClassLoader.unlinkClassLoaders();
         }
+
     }
 
     /**
@@ -719,11 +764,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
-     * Unregister all the registered Quartz Jobs
+     * Unregister all the registered Portlets
      *
      * @throws SchedulerException
      */
-    protected void unregisterPortles () throws Exception {
+    protected void unregisterPortlets () throws Exception {
 
         if ( portlets != null ) {
 
