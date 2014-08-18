@@ -899,7 +899,6 @@
         <war destfile="../../WAR/dotcms.war" webxml="${basedir}/../../${target.root}/WEB-INF/web.xml">
             <fileset dir="${basedir}/../../${target.root}">
                 <exclude name="WEB-INF/web.xml"/>
-                <exclude name="META-INF/**"/>
                 <exclude name="**/*.db"/>
                 <exclude name="assets/**"/>
                 <exclude name="dotsecure/**"/>
