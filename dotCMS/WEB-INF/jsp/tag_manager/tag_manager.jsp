@@ -196,7 +196,7 @@ td {font-size: 100%;}
 		dojo.byId('tagsGrid').appendChild(tagsGrid.domNode);
 
 
-	};
+	}
 
 	dojo.addOnLoad(function () {
 
@@ -505,7 +505,7 @@ td {font-size: 100%;}
 		t.onTick = function(){
 		  focusUtil.focus(dom.byId("filterBox"));
 		  t.stop();
-		}
+		};
 		t.start();
 	});
 </script>
