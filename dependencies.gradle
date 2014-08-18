@@ -1,6 +1,6 @@
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'e10e7cb-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: '2ca4c8e-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '57b3ae9-SNAPSHOT'
     compile group: 'com.dotcms', name: 'starter', version: '20140805-SNAPSHOT', ext: 'zip'
 
