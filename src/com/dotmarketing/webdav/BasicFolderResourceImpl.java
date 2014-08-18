@@ -22,6 +22,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -58,22 +59,30 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         }
         if(!dotDavHelper.isTempResource(newName)){
             
-            
             try {
                 dotDavHelper.createResource(path + newName, isAutoPub, user);
             } catch (Exception e) {
                 Logger.error(FolderResourceImpl.class,e.getMessage(),e);
                 throw new DotRuntimeException(e.getMessage(), e);
             }
-            IFileAsset f = null;
             try {
-                dotDavHelper.setResourceContent(path + newName, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);
+            	IFileAsset f = null;
+            	dotDavHelper.setResourceContent(path + newName, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);
                 f = dotDavHelper.loadFile(path + newName,user);
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
+                FileResourceImpl fr = new FileResourceImpl(f, f.getFileName());
+                return fr;
+                
+            }catch (DotSecurityException dotE){
+            	Logger.error(this, "An error occurred while creating new file: " + (newName != null ? newName : "Unknown") 
+                		+ " in this path: " + (path != null ? path : "Unknown") + " " 
+                		+ dotE.getMessage(), dotE);
+            	throw new DotRuntimeException(dotE.getMessage(), dotE);
+            	
+            }catch (Exception e) {
+                Logger.error(this, "An error occurred while creating new file: " + (newName != null ? newName : "Unknown") 
+                		+ " in this path: " + (path != null ? path : "Unknown") + " " 
+                		+ e.getMessage(), e);
             }
-            FileResourceImpl fr = new FileResourceImpl(f, f.getFileName());
-            return fr;
         }
         
         String p = path;
