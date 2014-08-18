@@ -156,15 +156,28 @@ td {font-size: 100%;}
 
 	};
 
-	function createStore(params) {
-		if(params==null) params = '';
+    function createStore(params) {
+        if (params == null) params = '';
 
-		myStore = new dojox.data.QueryReadStore({
-			url : '/categoriesServlet'+params
-		});
+        myStore = new dojox.data.QueryReadStore({
+            url: '/categoriesServlet' + convertStringToUnicode(params)
+        });
+    }
 
-
-	}
+    function convertStringToUnicode(name) {
+        var unicodeString = '';
+        for (var i = 0; i < name.length; i++) {
+            if (name.charCodeAt(i) > 128) {
+                var str = name.charCodeAt(i).toString(16).toUpperCase();
+                while (str.length < 4)
+                    str = "0" + str;
+                unicodeString += "\\u" + str;
+            } else {
+                unicodeString += name[i];
+            }
+        }
+        return unicodeString;
+    }
 
 	function createGrid() {
 			var layout = [
@@ -214,7 +227,7 @@ td {font-size: 100%;}
 
 			dojo.addClass(dojo.byId("catHolder"), "tundra");
 
-	};
+    }
 
 
 
@@ -296,9 +309,9 @@ td {font-size: 100%;}
 		grid.startup();
 
 		if(!importing) {
-			dojo.hash(encodeURIComponent(params));
+            dojo.hash(params);
 		}
-    };
+    }
 
     function doSearchHash(params)  {
     	grid.destroy(true);
@@ -564,7 +577,7 @@ td {font-size: 100%;}
 							t.onTick = function() {
 								t.stop();
 								dojo.byId("warningDiv").innerHTML = '<br><br>';
-					        }
+                            };
 					        t.start();
 						}
 
@@ -828,8 +841,9 @@ td {font-size: 100%;}
 			<!-- END Children Tab -->
 
 			<!-- START Properties Tab -->
-			<div id="TabTwo" dojoType="dijit.layout.ContentPane"  title="<%=LanguageUtil.get(pageContext, "properties")%>""  >
-				<div id="propertiesNA" style="height: 300px; text-align: center;  position:relative">
+            <div id="TabTwo" dojoType="dijit.layout.ContentPane"
+                 title="<%=LanguageUtil.get(pageContext, "properties")%>">
+            <div id="propertiesNA" style="height: 300px; text-align: center;  position:relative">
 					<span style="position:absolute; top:50%; left: 50%; height:10em; margin-top:-2em; margin-left:-10em"><%= LanguageUtil.get(pageContext, "message.category.toplevel.na") %></span>
 				</div>
 				<div id="propertiesDiv" style="display: none">
