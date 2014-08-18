@@ -4,7 +4,9 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.org.junit.*;
+
 import org.quartz.SimpleTrigger;
 
 import com.dotcms.enterprise.HostAssetsJobProxy;
@@ -16,6 +18,11 @@ import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.liferay.portal.model.User;
 
 public class HostAPITest {
+	
+	@Before
+    public void prepare() throws Exception {
+        LicenseTestUtil.getLicense();
+    }
     
     @Test
     public void testDeleteHost() throws Exception {
@@ -45,10 +52,21 @@ public class HostAPITest {
         
         QuartzUtils.scheduleTask(task);
         
-        // wait for the copy to be done
-        while(QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup())<100) {
+        // wait for the copy to be done. 
+        //#6084: If the license is not Enterprise it should NOT get stuck.
+        //It will wait for 5 minutes only. 
+        int milliseconds = 0;
+        int maxMilliseconds = 300000; //5 Minutes
+        
+        while(QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup())<100 && milliseconds < maxMilliseconds) {
             Thread.sleep(500);
+            milliseconds += 500;
         }
+        
+        if(milliseconds >= maxMilliseconds){
+        	Assert.fail("testDeleteHost is stuck waiting for QuartzUtils.scheduleTask");
+        }
+        
         Thread.sleep(600); // wait a bit for the index
         
         APILocator.getHostAPI().archive(host, user, false);

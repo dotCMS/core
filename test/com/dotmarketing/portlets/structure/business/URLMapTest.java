@@ -327,8 +327,7 @@ public class URLMapTest extends TestBase  {
 
 	@Test
 	public void testURLMaps() throws Exception {
-
-
+		
 		HttpServletRequest request = ServletTestRunner.localRequest.get();
 		String serverName = request.getServerName();
 		Integer serverPort = request.getServerPort();
