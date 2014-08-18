@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotcms.repackage.org.codehaus.jackson.map.DeserializationConfig.Feature;
 import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 
@@ -57,6 +58,7 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 				return;
 			}
 
+            q = StringEscapeUtils.unescapeJava( q );
 			inode = (UtilMethods.isSet(inode) && inode.equals("undefined")) ? null : inode;
 			q = (UtilMethods.isSet(q) && q.equals("undefined")) ? null : q;
 
