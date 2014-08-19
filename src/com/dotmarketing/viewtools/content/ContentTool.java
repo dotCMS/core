@@ -17,7 +17,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -41,12 +40,10 @@ import com.liferay.portal.model.User;
  */
 public class ContentTool implements ViewTool {
 
-	private ContentletAPI conAPI;
 	private UserWebAPI userAPI;
 
 	private HttpServletRequest req;
 	private User user = null;
-	private int MAX_LIMIT = 100;
 	private boolean ADMIN_MODE;
 	private boolean PREVIEW_MODE;
 	private boolean EDIT_MODE;
@@ -56,7 +53,6 @@ public class ContentTool implements ViewTool {
 	private Host currentHost;
 	
 	public void init(Object initData) {
-		conAPI = APILocator.getContentletAPI();
 		userAPI = WebAPILocator.getUserWebAPI();
 		this.context = ((ViewContext) initData).getVelocityContext();
 		this.req = ((ViewContext) initData).getRequest();
@@ -90,8 +86,10 @@ public class ContentTool implements ViewTool {
 	 * @return NULL if not found
 	 */
 	public ContentMap find(String inodeOrIdentifier) {
+		long sessionLang=WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
+		
 	    try {
-    		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE);
+    		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE, sessionLang);
     		if(c== null || !InodeUtils.isSet(c.getInode())){
     			return null;
     		}

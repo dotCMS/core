@@ -56,12 +56,12 @@ public class ContentUtils {
 		 * @param inodeOrIdentifier Can be either an Inode or Indentifier of content.
 		 * @return NULL if not found
 		 */
-		public static Contentlet find(String inodeOrIdentifier, User user, boolean EDIT_OR_PREVIEW_MODE){
-			return find(inodeOrIdentifier,user,null,EDIT_OR_PREVIEW_MODE);
+		public static Contentlet find(String inodeOrIdentifier, User user, boolean EDIT_OR_PREVIEW_MODE, long sessionLang){
+			return find(inodeOrIdentifier,user,null,EDIT_OR_PREVIEW_MODE, sessionLang);
 		}
 
 	    
-	    public static Contentlet find(String inodeOrIdentifier, User user, String tmDate, boolean EDIT_OR_PREVIEW_MODE){
+	    public static Contentlet find(String inodeOrIdentifier, User user, String tmDate, boolean EDIT_OR_PREVIEW_MODE, long sessionLang){
 			String[] recDates = null;
 			try {
 				recDates = RecurrenceUtil.getRecurrenceDates(inodeOrIdentifier);
@@ -111,6 +111,13 @@ public class ContentUtils {
 				}else{
 					if(l.size()>1){
 						Logger.warn(ContentUtils.class, "More then one live or working content found with identifier = " + inodeOrIdentifier);
+						
+						//If the list of contentlest with the same identifier is > 1
+						//try to search if there is one with the same language id.
+						for (Contentlet contentlet : l){
+							if(contentlet.getLanguageId() == sessionLang)
+								return contentlet;
+						}
 					}
 					if(l.get(0).getStructure().getVelocityVarName().equals("calendarEvent")
 							&& (recDates!=null && recDates.length==2)){
@@ -121,6 +128,7 @@ public class ContentUtils {
 							l.get(0).setDateProperty("endDate", new Date(Long.parseLong(endDate)));
 						}
 					}
+					//If anything else match, return the firs result. 
 					return (Contentlet) l.get(0);
 				}
 			} catch (Exception e) {
