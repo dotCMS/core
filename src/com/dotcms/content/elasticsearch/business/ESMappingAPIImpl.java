@@ -7,6 +7,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,13 +22,13 @@ import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.org.codehaus.jackson.JsonGenerationException;
+import com.dotcms.repackage.org.codehaus.jackson.map.JsonMappingException;
+import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotcms.repackage.org.elasticsearch.ElasticSearchException;
 import com.dotcms.repackage.org.elasticsearch.action.ListenableActionFuture;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-import com.dotcms.repackage.org.codehaus.jackson.JsonGenerationException;
-import com.dotcms.repackage.org.codehaus.jackson.map.JsonMappingException;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -47,23 +48,18 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
-import com.dotmarketing.portlets.structure.model.*;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
+import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.*;
-import java.util.Map.Entry;
-
-import static com.dotmarketing.business.PermissionAPI.*;
 
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
@@ -442,11 +438,16 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss'Z'";
 	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance(elasticSearchDateTimeFormatPattern);
 
-
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
-	public static final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000");
 
 	protected void loadFields(Contentlet con, Map<String, String> m) throws DotDataException {
+		
+		// https://github.com/dotCMS/dotCMS/issues/6152
+		DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols();
+		otherSymbols.setDecimalSeparator('.');
+		
+		DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000", otherSymbols);
+		
 	    FieldAPI fAPI=APILocator.getFieldAPI();
 	    List<Field> fields = new ArrayList<Field>(FieldsCache.getFieldsByStructureInode(con.getStructureInode()));
 
