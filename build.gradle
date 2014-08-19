@@ -43,6 +43,7 @@ task copyToLib {
         rename ( /starter(.+)\.zip/, "starter.zip" )
     }
 }
+copyToLib.description = 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
 
 dependencies { 
     antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
