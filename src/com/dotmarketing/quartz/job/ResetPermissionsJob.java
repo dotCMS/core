@@ -23,6 +23,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -87,7 +88,7 @@ public class ResetPermissionsJob implements Job {
 			Permissionable permissionable = (Permissionable) retrievePermissionable(permissionableId);
 			permissionAPI.resetPermissionsUnder(permissionable);
 			HibernateUtil.commitTransaction();
-		} catch (DotDataException e) {
+		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			try {
 				HibernateUtil.rollbackTransaction();
@@ -95,22 +96,15 @@ public class ResetPermissionsJob implements Job {
 				Logger.error(ResetPermissionsJob.class,e1.getMessage(),e1);
 			}
 			throw new DotRuntimeException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(ResetPermissionsJob.class, e.getMessage(), e);
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(ResetPermissionsJob.class,e1.getMessage(),e1);
-			}
-			throw new DotRuntimeException(e.getMessage(), e);
-		} catch (Exception e){
-			Logger.error(ResetPermissionsJob.class, e.getMessage(), e);
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(ResetPermissionsJob.class,e1.getMessage(),e1);
-			}
-			throw new DotRuntimeException(e.getMessage(), e);
+		} finally {
+		    try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, e.getMessage(), e);
+            }
+            finally {
+                DbConnectionFactory.closeConnection();
+            }
 		}
 		
 	}

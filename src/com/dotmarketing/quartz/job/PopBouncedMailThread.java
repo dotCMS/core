@@ -17,7 +17,9 @@ import org.quartz.JobExecutionException;
 
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.campaigns.model.Campaign;
 import com.dotmarketing.portlets.campaigns.model.Recipient;
@@ -56,13 +58,23 @@ public class PopBouncedMailThread implements Job {
 	}
 
 	public void execute(JobExecutionContext context) throws JobExecutionException {
-
-		Logger.debug(this, "Running PopBouncedMailThread - " + new Date());
-
-		pullMail();
-		
-		Logger.debug(this, "PopBouncedMailThread Finished - " + new Date());
-		
+	    try {
+    		Logger.debug(this, "Running PopBouncedMailThread - " + new Date());
+    
+    		pullMail();
+    		
+    		Logger.debug(this, "PopBouncedMailThread Finished - " + new Date());
+	    }
+	    finally {
+	        try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, e.getMessage(), e);
+            }
+            finally {
+                DbConnectionFactory.closeConnection();
+            }
+	    }
 	
 	}
 	

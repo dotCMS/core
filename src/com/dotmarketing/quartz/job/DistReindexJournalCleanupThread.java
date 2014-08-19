@@ -82,6 +82,9 @@ public class DistReindexJournalCleanupThread implements Runnable, Job, StatefulJ
 			} catch (DotHibernateException e) {
 				Logger.error(this, e.getMessage(), e);
 			}
+			finally {
+			    DbConnectionFactory.closeConnection();
+			}
 		}
 		
 	}
