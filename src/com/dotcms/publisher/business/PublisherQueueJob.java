@@ -21,7 +21,10 @@ import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.sun.jersey.api.client.Client;
@@ -145,14 +148,18 @@ public class PublisherQueueJob implements StatefulJob {
 				Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
 			}
 
-		} catch (NumberFormatException e) {
-			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
-		} catch (DotDataException e) {
-			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
-		} catch (DotPublisherException e) {
-			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 		} catch (Exception e) {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
+		}
+		finally {
+		    try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
+            }
+		    finally {
+		        DbConnectionFactory.closeConnection();
+		    }
 		}
 
 	}
