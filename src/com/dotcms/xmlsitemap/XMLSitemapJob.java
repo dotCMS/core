@@ -28,7 +28,10 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -128,6 +131,16 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
+		}
+		finally {
+		    try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, e.getMessage(), e);
+            }
+		    finally {
+		        DbConnectionFactory.closeConnection();
+		    }
 		}
 
 	}

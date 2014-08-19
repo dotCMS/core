@@ -612,6 +612,9 @@ public class DeliverCampaignThread implements Runnable, StatefulJob {
 			} catch (DotHibernateException e) {
 				Logger.error(DeliverCampaignThread.class, e.getMessage(), e);
 			}
+			finally {
+			    DbConnectionFactory.closeConnection();
+			}
 		}
 	}
 

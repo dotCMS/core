@@ -22,8 +22,10 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -136,6 +138,16 @@ public class IdentifierDateJob implements Job {
 			throw new DotRuntimeException(e.getMessage(), e);
 		} catch (LanguageException e) {
 			Logger.error(IdentifierDateJob.class, "Error creating Notification", e);
+		}
+		finally {
+		    try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, e.getMessage(), e);
+            }
+            finally {
+                DbConnectionFactory.closeConnection();
+            }
 		}
 	}
 	

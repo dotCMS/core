@@ -15,6 +15,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -248,11 +249,14 @@ public class UpdateRatingThread implements StatefulJob {
 
 			//DOTCMS-1979
 		} finally {
-			try {
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.error(this, e.getMessage(), e);
-			}
+		    try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, e.getMessage(), e);
+            }
+            finally {
+                DbConnectionFactory.closeConnection();
+            }
 		}
 	}
 
