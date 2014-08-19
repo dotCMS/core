@@ -10,10 +10,14 @@ import org.quartz.StatefulJob;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 
 
 public class TimeMachineJob implements Job, StatefulJob {
@@ -36,6 +40,16 @@ public class TimeMachineJob implements Job, StatefulJob {
         }
         catch(Exception ex) {
             throw new JobExecutionException(ex);
+        }
+        finally {
+            try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, e.getMessage(), e);
+            }
+            finally {
+                DbConnectionFactory.closeConnection();
+            }
         }
     }
 

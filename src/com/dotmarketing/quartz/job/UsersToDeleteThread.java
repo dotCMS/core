@@ -11,6 +11,7 @@ import org.quartz.JobExecutionException;
 import com.dotmarketing.beans.UsersToDelete;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
@@ -94,9 +95,12 @@ public class UsersToDeleteThread extends Thread implements Job {
 		run();
 	
 		try {
-			HibernateUtil.closeSession();
-		} catch (DotHibernateException e) {
-			Logger.error(this, e.getMessage(), e);
-		}
+            HibernateUtil.closeSession();
+        } catch (DotHibernateException e) {
+            Logger.warn(this, e.getMessage(), e);
+        }
+        finally {
+            DbConnectionFactory.closeConnection();
+        }
 	}
 }
