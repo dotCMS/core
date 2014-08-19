@@ -165,8 +165,8 @@
     </target>
 
 
-    <target name="clean-jsp" description="Removes all generated files.">
-        <delete dir="work/Catalina" />
+    <target name="clean-jsp" description="Removes all compiled jsp files from the tomcat instance.">
+        <delete dir="${tomcat7.home}/work/Catalina" />
     </target>
 
     <target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
@@ -183,7 +183,7 @@
         </copy>
     </target>
 
-    <target name="checkWindows">
+    <target name="checkWindows" description="Sets the isWindows property if the OS family is windows">
         <condition property="isWindows">
             <os family="windows" />
         </condition>
@@ -222,12 +222,12 @@
     <property name="webapp.path" value="${build}/webapp${path}" />
 
 
-    <target name="deploy-config" >
+    <target name="deploy-config" description="Verify if there is specified a custom location for the dotcms installation. When the war structure is use the 'target.root' property will be set in order to specify where the war folder is located, if not present the normal dotcms git structure is assumed.">
 
         <if>
             <!--
             Verify if there is specified a custom location for the dotcms installation.
-            When the war structure is used the "target.root" property will be set in order to
+            When the war structure is use the "target.root" property will be set in order to
             specify where the war folder is located, if not present the normal dotcms git structure is assumed.
             -->
             <contains string="${target.root}" substring="target.root"/>
@@ -269,7 +269,7 @@
         <delete dir="${build.classes}" />
     </target>
 
-    <target name="deploy-core" depends="jar,deploy-config" description="will compile, jar and copy to server lib and update the about page of the site">
+    <target name="deploy-core" depends="jar,deploy-config" description="Will compile, generate the dotCMS jar and copy the jar to the server libs folder.">
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
@@ -297,29 +297,6 @@
         </delete>
         <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <antcall target="deploy-plugins" />
-    </target>
-
-    <target name="rep">
-        <loadfile property="generated.web"
-                  srcFile="dotCMS/WEB-INF/generated_web.xml"/>
-
-        <replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
-                       replace="&lt;!-- BEGIN JSPS --&gt; ${generated.web} &lt;!-- END JSPS --&gt;">
-            <fileset dir="dotCMS/WEB-INF/">
-                <include name="web.xml"/>
-            </fileset>
-        </replaceregexp>
-    </target>
-
-    <target name="cleanrep">
-
-
-        <replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
-                       replace="&lt;!-- BEGIN JSPS --&gt; XXX  &lt;!-- END JSPS --&gt;">
-            <fileset dir="dotCMS/WEB-INF/">
-                <include name="web.xml"/>
-            </fileset>
-        </replaceregexp>
     </target>
 
     <target name="jsp" depends="compile">
@@ -356,7 +333,7 @@
         </replaceregexp>
     </target>
 
-    <target name="create-dist" description="creates a zip file for dbs">
+    <target name="create-dist" description="Creates the final distribution files for dotCMS.">
 
         <var name="tomcat7.home" value="${distribution.dotserver.output}/tomcat-${tomcat7.version}"/>
 
@@ -473,7 +450,7 @@
         <delete dir="${distribution.output}" />
     </target>
 
-    <target name="create-update-dist" description="creates an update zip file for dbs">
+    <target name="create-update-dist" description="Creates an update distribution zip file.">
 
         <var name="dist.update" unset="true"/>
         <property name="dist.update" value="true"/>
@@ -494,17 +471,6 @@
                 <![CDATA[<i>Copyright &#169; 2012 dotCMS Inc. All Rights Reserved.</i>]]></bottom>
             <tag name="todo" scope="all" description="To do:" />
         </javadoc>
-
-    </target>
-
-
-    <target name="deleteliferayjsps">
-
-        <delete dir="dotCMS/html/portlet">
-            <exclude name="ext**" />
-            <exclude name="admin/**" />
-            <exclude name="my_account/**" />
-        </delete>
 
     </target>
 
@@ -573,15 +539,11 @@
 
     <target name="build" depends="build-core,build-plugins" description="build the dotCMS core and plugins" />
 
-    <target name="deploy-jsp" depends="build-jsp, deploy-core-jsp, deploy-plugins" description="builds and deploys core and plugins" />
+    <target name="deploy-jsp" depends="build-jsp, deploy-core-jsp, deploy-plugins" description="@Deprecated: Compiles the jsp files and deploys core and plugins." />
 
     <target name="deploy-tests" depends="uncomment-test-servlet, build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
-    <target name="deploy-tests-jsp" depends="uncomment-test-servlet, build-jsp, deploy-core-with-tests-jsp, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
-
-    <target name="deploy-dev" depends="deploy-plugins"/>
-
-    <target name="clean" depends="clean-plugins,undeploy-plugins,clean-core,clean-tinymce-gz" description="cleans plugins, core and undeploys plugins" />
+    <target name="clean" depends="clean-plugins,undeploy-plugins,clean-core,clean-tinymce-gz" description="Cleans plugins and core code and also undeploys plugins" />
 
     <macrodef name="iterate">
         <attribute name="target"/>
@@ -639,7 +601,7 @@
         </if>
     </target>
 
-    <target name="unbuild-plugins" description="cleans plugins">
+    <target name="unbuild-plugins" description="Cleans plugins">
         <if>
             <!--
             Verify if there is specified a custom location for the dotcms installation.
@@ -790,7 +752,7 @@
         <antcall target="deploy-config" />
     </target>
 
-    <target name="clean-plugins-libs" depends="setup-deploy-location">
+    <target name="clean-plugins-libs" depends="setup-deploy-location" description="Deletes the plugins jars from the lib folder.">
         <delete>
             <fileset dir="${plugin.root.dir}/WEB-INF/lib" includes="**/plugin-*.jar"/>
             <fileset dir="${plugin.root.dir}/WEB-INF/lib" includes="**/pluginlib-*.jar"/>
@@ -853,7 +815,7 @@
         <antcall target="war-file"/>
     </target>
 
-    <target name="war-file" description="builds dotCMS as a war">
+    <target name="war-file" description="Builds dotCMS as a war">
 
         <!--Clean-up-->
         <delete dir="${build.war}"/>
@@ -889,7 +851,7 @@
     Task mean to be use from a distribution structure using the buildwar.sh script.
     This task will just use the already deployed folder inside the app server and compressed to a war file.
     -->
-    <target name="custom-dist-war" depends="deploy-plugins" description="builds dotCMS as a war">
+    <target name="custom-dist-war" depends="deploy-plugins" description="Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)">
 
         <!--Clean-up-->
         <delete dir="../../WAR"/>
@@ -914,14 +876,14 @@
         <delete dir="${jboss7.home}/standalone/deployments/${war.name}.war"/>
     </target>
 
-    <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war">
+    <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war" description="Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.">
         <antcall target="move-war-tomcat7"/>
     </target>
     <!--
         Same as the deploy-war-tomcat7 except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
         This is useful in cases when you need to make a deploy-war-tomcat7 but keeping your current data.
     -->
-    <target name="deploy-war-tomcat7-backup" depends="clone-pull-tomcat7, backup-war-tomcat7-data, war">
+    <target name="deploy-war-tomcat7-backup" depends="clone-pull-tomcat7, backup-war-tomcat7-data, war" description="Same as 'deploy-war-tomcat7' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)">
         <antcall target="move-war-tomcat7"/>
         <antcall target="restore-backup-war-tomcat7-data"/>
     </target>
@@ -929,25 +891,25 @@
         Same as the deploy-war-tomcat7-tests except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
         This is useful in cases when you need to make a deploy-war-tomcat7-tests but keeping your current data.
     -->
-    <target name="deploy-war-tomcat7-tests-backup" depends="clone-pull-tomcat7, backup-war-tomcat7-data, war-tests">
+    <target name="deploy-war-tomcat7-tests-backup" depends="clone-pull-tomcat7, backup-war-tomcat7-data, war-tests" description="Same as 'deploy-war-tomcat7-backup' but also includes the junit tests.">
         <antcall target="move-war-tomcat7"/>
         <antcall target="restore-backup-war-tomcat7-data"/>
     </target>
-    <target name="deploy-war-tomcat7-tests" depends="clone-pull-tomcat7, war-tests">
+    <target name="deploy-war-tomcat7-tests" depends="clone-pull-tomcat7, war-tests" description="Same as 'deploy-war-tomcat7' but also includes the junit tests.">
         <antcall target="move-war-tomcat7"/>
     </target>
-    <target name="deploy-war-jboss7" depends="clone-pull-jboss7, war">
+    <target name="deploy-war-jboss7" depends="clone-pull-jboss7, war" description="Will checkout the jboss app server, generate a war structure and copy it to the just checked out jboss. If the app server exist instead of a checkout a git pull will be use.">
         <antcall target="move-war-jboss7"/>
     </target>
-    <target name="deploy-jsp-tomcat7">
+    <target name="deploy-jsp-tomcat7" description="Moves the jsp files from a git checkout to the tomcat (Useful for development).">
         <var name="exploded.war.location" value="${tomcat7.home}/webapps/ROOT"/>
         <antcall target="deploy-jsp-app-server"/>
     </target>
-    <target name="deploy-jsp-jboss7">
+    <target name="deploy-jsp-jboss7" description="Moves the jsp files from a git checkout to the jboss (Useful for development).">
         <var name="exploded.war.location" value="${jboss7.home}/standalone/deployments/${war.name}.war"/>
         <antcall target="deploy-jsp-app-server"/>
     </target>
-    <target name="deploy-jsp-app-server">
+    <target name="deploy-jsp-app-server" description="Moves the jsp files from a git checkout to a specified app server location (Useful for development).">
         <copy todir="${exploded.war.location}/elasticsearch/" overwrite="true">
             <fileset dir="dotCMS/elasticsearch/">
                 <exclude name="**/.git" />
@@ -973,7 +935,7 @@
         </copy>
     </target>
 
-    <target name="move-war-tomcat7" depends="undeploy-war-tomcat7">
+    <target name="move-war-tomcat7" depends="undeploy-war-tomcat7" description="Moves the generated war under the build folder to the tomcat webapps folder.">
         <copy todir="${tomcat7.home}/lib/">
             <fileset dir="libs/buildlibs/">
                 <include name="mail.jar"/>
@@ -995,7 +957,7 @@
         <copy file="extra/tomcat-7/context.xml" tofile="${tomcat7.home}/webapps/ROOT/META-INF/context.xml"/>
     </target>
 
-    <target name="move-war-jboss7" depends="undeploy-war-jboss7">
+    <target name="move-war-jboss7" depends="undeploy-war-jboss7" description="Moves the generated war under the build folder to the jboss deployments folder.">
 
         <touch file="${jboss7.home}/standalone/deployments/${war.name}.war.dodeploy"/>
 
@@ -1038,7 +1000,7 @@
 
     </target>
 
-    <target name="restore-backup-war-tomcat7-data">
+    <target name="restore-backup-war-tomcat7-data" description="Restores the backup generated by the 'backup-war-tomcat7-data' task.">
 
         <delete dir="${tomcat7.home}/webapps/ROOT/assets"/>
         <move todir="${tomcat7.home}/webapps/ROOT/assets" failonerror="false">
