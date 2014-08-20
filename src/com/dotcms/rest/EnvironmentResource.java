@@ -36,7 +36,7 @@ public class EnvironmentResource extends WebResource {
 	 * <br>Each Environment node contains: id, name.
 	 *
 	 * Usage: /loadenvironments/{roleid}
-	 * @throws JSONException 
+	 * @throws JSONException
 	 *
 	 */
 
@@ -45,7 +45,7 @@ public class EnvironmentResource extends WebResource {
 	@Produces("application/json")
 	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
 
-		InitDataObject initData = init(params, true, request, true, "9");
+		InitDataObject initData = init(params, true, request, true);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -54,12 +54,12 @@ public class EnvironmentResource extends WebResource {
 
 		//Using JsonArray instead of manually creating the json object
 		JSONArray jsonEnvironments = new JSONArray();
-		
+
 		//First objects is expected to be blank
 		JSONObject jsonEnvironmentFirst = new JSONObject();
 		jsonEnvironmentFirst.put( "id", "0" );
 		jsonEnvironmentFirst.put( "name", "");
-		
+
 		jsonEnvironments.add(jsonEnvironmentFirst);
 
 		Role role = APILocator.getRoleAPI().loadRoleById(roleId);
@@ -79,12 +79,12 @@ public class EnvironmentResource extends WebResource {
 
 		//For each env, create one json and add it to the array
 		for(Environment e : environments) {
-			
+
 			JSONObject environmentBundle = new JSONObject();
 			environmentBundle.put( "id", e.getId() );
 			//Escape name for cases like: dotcms's
 			environmentBundle.put( "name", StringEscapeUtils.unescapeJava( e.getName() ));
-			
+
 			jsonEnvironments.add(environmentBundle);
 		}
 
