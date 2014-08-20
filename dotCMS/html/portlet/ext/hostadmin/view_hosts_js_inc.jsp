@@ -300,8 +300,8 @@
 						copyVirtualLinks: dijit.byId('copyVirtualLinks').attr('value'),
 						copyHostVariables: dijit.byId('copyHostVariables').attr('value'),
 						copyTagStorage: document.getElementById('copyTagStorage').value
-					}));
-				url += "&copyOptions=" + copyHostOptions + "&referer=" + escape(this.viewHostsReferer);
+					}));				
+				url += "&_copyOptions=" + copyHostOptions + "&referer=" + escape(this.viewHostsReferer);
 				window.location = url;
 			}
         },
