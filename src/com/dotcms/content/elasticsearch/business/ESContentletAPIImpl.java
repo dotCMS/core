@@ -33,6 +33,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.org.elasticsearch.action.search.SearchPhaseExecutionException;
 import com.dotcms.repackage.org.elasticsearch.search.SearchHit;
 import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
 import com.dotcms.repackage.com.google.gson.Gson;
@@ -1033,9 +1034,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
         	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
-            throw new DotDataException("Unable look up related content",e);
+            if(e.getMessage().contains("[query_fetch]")){
+                try{
+                APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
+                	return perAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+                }catch(Exception ex){
+                	throw new DotDataException("Unable look up related content",ex);
+                }
+            }
+            	throw new DotDataException("Unable look up related content",e);
         }
-
     }
 
     public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
@@ -1058,7 +1066,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
         	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
-            throw new DotDataException("Unable look up related content",e);
+        	if(e instanceof SearchPhaseExecutionException){
+        		try{
+	        		APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
+	        		return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        		}catch(Exception ex){
+           		 throw new DotDataException("Unable look up related content",ex);
+        		}
+        	}
+    		 throw new DotDataException("Unable look up related content",e);
         }
 
     }

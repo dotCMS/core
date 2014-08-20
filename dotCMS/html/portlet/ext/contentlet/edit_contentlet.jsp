@@ -42,7 +42,9 @@
 	ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
 
 	String copyOptions = ((String) request.getParameter("copyOptions"))==null?"":(String) request.getParameter("copyOptions");
-
+	if(copyOptions == ""){
+		copyOptions = ((String) request.getParameter("_copyOptions"))==null?"":(String) request.getParameter("_copyOptions");
+	}
 	//Content structure or user selected structure
 	Structure structure = contentletForm.getStructure();
 

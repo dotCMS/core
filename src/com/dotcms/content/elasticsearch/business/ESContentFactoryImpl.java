@@ -1298,8 +1298,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 					throw e;
 				}
 			}
-        } catch (Exception e) {
-            Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
+        } catch (Exception e) {          
             throw new RuntimeException(e);
         }
 	    return resp.getHits();
