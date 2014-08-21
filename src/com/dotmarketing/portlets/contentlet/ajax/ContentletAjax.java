@@ -547,6 +547,8 @@ public class ContentletAjax {
 		            }
 		            String y[] = next.split(" ");
 		            for(int j=0;j<y.length;j++){
+		            	if(y[j].contains("\""))
+			        		y[j] = y[j].replace("\"", "\\\"");
 		                luceneQuery.append("title:" + y[j] + "* ");
 		            }
 		            break;
@@ -731,8 +733,18 @@ public class ContentletAjax {
 							        		luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
 							        	}
 							        }
-							    }
-							    else{
+							    }else if(next.contains("\"")){
+							    	 next = next.replaceAll("\\*", "");
+								        while(next.contains("  ")){
+								        	next = next.replace("  ", " ");
+								        }
+								        String y[] = next.split(" ");
+								        for(int j=0;j<y.length;j++){
+								        	if(y[j].contains("\""))
+								        		y[j] = y[j].replace("\"", "\\\"");
+								        	luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
+								        }
+							    }else{
 							        luceneQuery.append("+" + fieldName +":" + next + " ");
 							   }
 							}
@@ -1053,7 +1065,7 @@ public class ContentletAjax {
 			.replaceAll("\\+working:[a-zA-Z]*","").replaceAll("\\s+", " ").trim();
 		String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
 		counters.put("luceneQueryRaw", luceneQueryToShow);
-		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","${esc.quote}"));
+		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","\\${esc.quote}"));
 		counters.put("sortByUF", orderBy);
 		counters.put("expiredInodes", expiredInodes);
 
