@@ -113,8 +113,6 @@ public interface WorkFlowFactory {
 
 	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme scheme) throws DotDataException;
 
-	public WorkflowScheme createDefaultScheme() throws DotDataException, DotSecurityException;
-
 	// christian escalation
 	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
 
