@@ -339,7 +339,7 @@
 	title="<%= LanguageUtil.get(pageContext, "categories") %>" >
 		<div style="width:100%" id="breadCrumbs<%=counter%>">
 			<ul id="nav<%=counter%>" style="margin-left:0px">
-				<a id="a_null<%=counter%>" style="font-size: 12px" onfocus="this.blur(); "  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %> &#62; </a>
+				<a id="a_null<%=counter%>" style="font-size: 12px" onfocus="return false;"  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %> &#62; </a>
 			</ul>
 		</div>
 		<div style="margin-top: 10px">
