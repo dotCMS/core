@@ -231,7 +231,6 @@ public interface WorkflowAPI {
 	public void copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to) throws DotDataException;
 	public void copyWorkflowAction(WorkflowAction from, WorkflowStep to) throws DotDataException;
 	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme to) throws DotDataException;
-    public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException;
 
     public java.util.List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
 
