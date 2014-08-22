@@ -26,7 +26,6 @@ import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
 import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
 import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
-import com.dotmarketing.startup.runalways.Task00008CreateDefaultWorkflowScheme;
 import com.dotmarketing.startup.runonce.Task00760AddContentletStructureInodeIndex;
 import com.dotmarketing.startup.runonce.Task00765AddUserForeignKeys;
 import com.dotmarketing.startup.runonce.Task00766AddFieldVariableTable;
