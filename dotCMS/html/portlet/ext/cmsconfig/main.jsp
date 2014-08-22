@@ -18,6 +18,10 @@
             <div id="remotePublishingTabContentDiv"></div>
         </div>
 
+        <div id="networkTab" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "Network")%>" >
+            <div id="networkTabContentDiv"></div>
+        </div>
+
     </div>
 
 </div>
@@ -34,6 +38,8 @@
                 loadCompanyTab();
             } else if (selectedTab.id == "remotePublishingTab") {
                 loadRemotePublishingTab();
+            } else if (selectedTab.id == "networkTab") {
+                loadNetworkTab();
             }
         });
 

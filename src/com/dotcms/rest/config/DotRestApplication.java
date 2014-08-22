@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.dotcms.rest.EnvironmentResource;
-import com.dotcms.rest.NetworkPortlet;
 import com.dotcms.rest.RestExamplePortlet;
 
 public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
@@ -32,7 +31,6 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.ClusterResource.class);
 					REST_CLASSES.add(EnvironmentResource.class);
 					REST_CLASSES.add(RestExamplePortlet.class);
-					REST_CLASSES.add(NetworkPortlet.class);
 					REST_CLASSES.add(com.dotcms.rest.NotificationResource.class);
 					REST_CLASSES.add(com.dotcms.rest.IntegrityResource.class);
 					REST_CLASSES.add(com.dotcms.rest.LicenseResource.class);
