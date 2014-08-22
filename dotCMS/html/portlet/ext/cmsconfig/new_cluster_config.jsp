@@ -159,9 +159,9 @@
 				}
 
 				deferred = dojo.xhrGet(xhrArgs);
-				
+
 				var licenseStatus;
-				
+
 				licxhr = {
 					url : "/api/cluster/licenseRepoStatus",
 					handleAs : "json",
@@ -173,7 +173,7 @@
 						targetNode.innerHTML = "An unexpected error occurred: " + error;
 					}
 				};
-				
+
 				dojo.xhrGet(licxhr);
 
 				var canRewire = row==myServerId;
@@ -213,7 +213,7 @@
 		            		    	  canWrite: nodeStatus.assetsCanWrite,
 		            		    	  path: nodeStatus.assetsPath,
 		            		      },
-		            		      
+
 		            		      licenseRepo: {
 		            		    	  total: licenseStatus.total,
 		            		    	  available: licenseStatus.available
@@ -239,7 +239,7 @@
 
 				//dojo.parser.parse("actionPanel");
 				dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +this.ff + "px");
-				dojo.style("actionPanel", "height", "500px");
+				dojo.style("actionPanel", "height", "800px");
 
 			},
 
@@ -302,7 +302,7 @@
 
 				require(["dojo/window"], function(win){
 					   var vs = win.getBox();
-						dojo.style("actionPanelContent", "height", vs.h -bottomOfTheHeader  + "px");
+						dojo.style("actionPanelContent", "height", vs.h - bottomOfTheHeader + 50 + "px");
 					});
 
 				actionPanelTable.placeActionPanel();
@@ -549,12 +549,12 @@
 <body class="dmundra">
 
 
-<div id="doc3" style="height: 200px">
+<div id="doc3" style="min-height: 500px">
 
 
-	<div class="actionPannelPage" id="container" style="height: 200px">
+	<div class="actionPannelPage" id="container" style="min-height: 500px">
 
-		<div id="actionPanel" class="hideMe" style="height: 200px">
+		<div id="actionPanel" class="hideMe" style="height: 500px">
 			<div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
 			<div id="actionPanelContent" style="overflow:auto;">
 
