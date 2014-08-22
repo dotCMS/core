@@ -177,7 +177,10 @@ public class ContainerServices {
                		sb.append("#if($_hasPermissionToViewContent)");
                	}
 
-                String code = container.getCode();
+               	//Assigns empty string in case is null
+               	//Oracle has null instead empty string
+                String code = (container.getCode() != null ? container.getCode() : "");
+                
 
                 sb.append("#set ($structureCode" ).append(
                 		" = $containerAPI.getStructureCode(\"").append( container.getIdentifier() ).append("\", \"$ContentletStructure\"))" );
