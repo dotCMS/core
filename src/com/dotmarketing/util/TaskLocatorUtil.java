@@ -67,7 +67,6 @@ import com.dotmarketing.startup.runonce.Task01000LinkChequerTable;
 import com.dotmarketing.startup.runonce.Task01005TemplateThemeField;
 import com.dotmarketing.startup.runonce.Task01015AddPublishExpireDateToIdentifier;
 import com.dotmarketing.startup.runonce.Task01016AddStructureExpireFields;
-import com.dotmarketing.startup.runonce.Task01019CreateModDateForWorkflowScheme;
 import com.dotmarketing.startup.runonce.Task01020CreateDefaultWorkflow;
 import com.dotmarketing.startup.runonce.Task01030AddSiteSearchAuditTable;
 import com.dotmarketing.startup.runonce.Task01035FixTriggerVarLength;
