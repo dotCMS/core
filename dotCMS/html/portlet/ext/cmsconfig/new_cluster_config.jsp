@@ -1,5 +1,11 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+
+<%	if( LicenseUtil.getLevel()<300){ %>
+<%@ include file="/html/portlet/ext/cmsconfig/network/not_licensed.jsp" %>
+<%return;} %>
+
 <%String dojoPath = Config.getStringProperty("path.to.dojo");%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
