@@ -96,7 +96,7 @@ public class CSSPreProcessServlet extends HttpServlet {
                 }
             }
             
-            CachedCSS cache = CacheLocator.getCSSCache().get(host.getIdentifier(), actualUri, live);
+            CachedCSS cache = CacheLocator.getCSSCache().get(host.getIdentifier(), actualUri, live, user);
             
             byte[] responseData=null;
             Date cacheMaxDate=null;
@@ -105,7 +105,7 @@ public class CSSPreProcessServlet extends HttpServlet {
             if(cache==null || cache.data==null) {
                 // do compile!
                 synchronized(ident.getId().intern()) {
-                    cache = CacheLocator.getCSSCache().get(host.getIdentifier(), actualUri, live);
+                    cache = CacheLocator.getCSSCache().get(host.getIdentifier(), actualUri, live, user);
                     if(cache==null || cache.data==null) {
                         Logger.debug(this, "compiling css data for "+host.getHostname()+":"+uri);
                         
@@ -147,7 +147,7 @@ public class CSSPreProcessServlet extends HttpServlet {
                             
                             // actual cache entry for the imported asset. If needed
                             synchronized(ii.getId().intern()) {
-                                if(CacheLocator.getCSSCache().get(ii.getHostId(), importUri, live)==null) {
+                                if(CacheLocator.getCSSCache().get(ii.getHostId(), importUri, live, user)==null) {
                                     CachedCSS entry = new CachedCSS();
                                     entry.data = null;
                                     entry.hostId = ii.getHostId();
