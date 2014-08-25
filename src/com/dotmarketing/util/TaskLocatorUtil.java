@@ -26,7 +26,6 @@ import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
 import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
 import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
-import com.dotmarketing.startup.runalways.Task00008CreateDefaultWorkflowScheme;
 import com.dotmarketing.startup.runonce.Task00760AddContentletStructureInodeIndex;
 import com.dotmarketing.startup.runonce.Task00765AddUserForeignKeys;
 import com.dotmarketing.startup.runonce.Task00766AddFieldVariableTable;
@@ -67,7 +66,6 @@ import com.dotmarketing.startup.runonce.Task01000LinkChequerTable;
 import com.dotmarketing.startup.runonce.Task01005TemplateThemeField;
 import com.dotmarketing.startup.runonce.Task01015AddPublishExpireDateToIdentifier;
 import com.dotmarketing.startup.runonce.Task01016AddStructureExpireFields;
-import com.dotmarketing.startup.runonce.Task01019CreateModDateForWorkflowScheme;
 import com.dotmarketing.startup.runonce.Task01020CreateDefaultWorkflow;
 import com.dotmarketing.startup.runonce.Task01030AddSiteSearchAuditTable;
 import com.dotmarketing.startup.runonce.Task01035FixTriggerVarLength;
@@ -162,7 +160,6 @@ public class TaskLocatorUtil {
         ret.add(Task01005TemplateThemeField.class);
         ret.add(Task01015AddPublishExpireDateToIdentifier.class);
         ret.add(Task01016AddStructureExpireFields.class);
-        ret.add(Task01019CreateModDateForWorkflowScheme.class); //https://github.com/dotCMS/dotCMS/issues/5989
         ret.add(Task01020CreateDefaultWorkflow.class);
         ret.add(Task01030AddSiteSearchAuditTable.class);
         ret.add(Task01035FixTriggerVarLength.class);
@@ -174,7 +171,7 @@ public class TaskLocatorUtil {
         ret.add(Task01065IndexOnPublishingQueueAuditStatus.class);
         ret.add(Task01070BundleNameDropUnique.class);
         ret.add(Task01085CreateBundleTablesIfNotExists.class);
-        //ret.add(Task01080CreateModDateForMissingObjects.class); //https://github.com/dotCMS/dotCMS/issues/5989
+        ret.add(Task01080CreateModDateForMissingObjects.class);
         ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
         ret.add(Task01095CreateIntegrityCheckerResultTables.class);
         ret.add(Task03005CreateModDateForFieldIfNeeded.class);
@@ -199,7 +196,6 @@ public class TaskLocatorUtil {
 		ret.add(Task00005LoadFixassets.class);
 		ret.add(Task00006CreateSystemLayout.class);
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
-		ret.add(Task00008CreateDefaultWorkflowScheme.class);
 		ret.add(Task00009ClusterInitialize.class);
 		return ret;
 	}

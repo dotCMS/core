@@ -264,7 +264,7 @@ public class ReindexThread extends Thread {
                 conn=DbConnectionFactory.getDataSource().getConnection();
             }*/
             if(DbConnectionFactory.isMySql())
-                lock="lock table dist_reindex_journal write, contentlet_version_info read, identifier read, indicies write";
+                lock="lock table dist_reindex_journal write, contentlet_version_info read, identifier read, indicies write, log_mapper read";
             else if(DbConnectionFactory.isMsSql())
                 lock="SELECT * FROM dist_reindex_journal WITH (TABLOCKX)";
             else if(DbConnectionFactory.isOracle())
