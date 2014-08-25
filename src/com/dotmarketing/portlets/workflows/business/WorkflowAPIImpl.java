@@ -896,9 +896,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme to) throws DotDataException{
 		wfac.copyWorkflowStep(from, to);
 	}
-	public  WorkflowScheme  createDefaultScheme() throws DotDataException, DotSecurityException{
-		return wfac.createDefaultScheme();
-	}
 
 	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {
 		return wfac.searchAllTasks(searcher);

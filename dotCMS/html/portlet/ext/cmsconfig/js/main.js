@@ -174,21 +174,18 @@ var loadRemotePublishingTab = function () {
     content.refresh();
 };
 
-/**
- * Loads the CMS CLuster Config tab
- */
-var loadClusterTab = function () {
+var loadNetworkTab = function () {
 
-    var url = "/html/portlet/ext/cmsconfig/cluster_config.jsp";
-    var content = dijit.byId("clusterTabContent");
+    var url = "/html/portlet/ext/cmsconfig/new_cluster_config.jsp";
+    var content = dijit.byId("networkTabContent");
 
     if (content) {
         content.destroyRecursive(false);
     }
     content = new dojox.layout.ContentPane({
-        id: "clusterTabContent",
+        id: "networkTabContent",
         preventCache: true
-    }).placeAt("clusterTabContentDiv");
+    }).placeAt("networkTabContentDiv");
 
     content.attr("href", url);
     content.refresh();
