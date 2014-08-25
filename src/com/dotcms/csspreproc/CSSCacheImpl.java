@@ -1,7 +1,5 @@
 package com.dotcms.csspreproc;
 
-import java.util.Date;
-
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
@@ -50,6 +48,13 @@ public class CSSCacheImpl extends CSSCache {
 
     @Override
     protected CachedCSS get(String hostId, String uri, boolean live) {
+    	
+    	//Validation that is the real uri and does NOT include host
+    	if(uri.startsWith("//")) {
+    		uri=uri.substring(2);
+            uri=uri.substring(uri.indexOf('/'));
+        }
+    	
         String key = buildKey(hostId, uri, live);
         CachedCSS cssObj=null;
         try {
