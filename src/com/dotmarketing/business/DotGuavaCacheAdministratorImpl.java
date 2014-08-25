@@ -20,14 +20,22 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.com.google.common.cache.Cache;
 import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.com.google.common.cache.RemovalListener;
 import com.dotcms.repackage.com.google.common.cache.RemovalNotification;
-import com.dotcms.repackage.org.jboss.cache.Fqn;
-import com.dotcms.repackage.org.jgroups.*;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.jboss.cache.Fqn;
+import com.dotcms.repackage.org.jgroups.Address;
+import com.dotcms.repackage.org.jgroups.ChannelClosedException;
+import com.dotcms.repackage.org.jgroups.ChannelNotConnectedException;
+import com.dotcms.repackage.org.jgroups.Event;
+import com.dotcms.repackage.org.jgroups.JChannel;
+import com.dotcms.repackage.org.jgroups.Message;
+import com.dotcms.repackage.org.jgroups.PhysicalAddress;
+import com.dotcms.repackage.org.jgroups.ReceiverAdapter;
+import com.dotcms.repackage.org.jgroups.View;
 import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -157,110 +165,127 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			if(cacheProperties==null) {
 				cacheProperties = new HashMap<String, String>();
 			}
-
+			
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-			String cacheProtocol = UtilMethods.isSet(cacheProperties.get("CACHE_PROTOCOL"))?cacheProperties.get("CACHE_PROTOCOL")
-					:Config.getStringProperty("CACHE_PROTOCOL", "tcp");
+			ServerAPI serverAPI = APILocator.getServerAPI();
+			
+			String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
+			if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
+			    Logger.info(this, "Using automatic port placement as CLUSTER_AUTOWIRE is ON");
+			    
+			    cacheProtocol = UtilMethods.isSet(cacheProperties.get("CACHE_PROTOCOL"))?cacheProperties.get("CACHE_PROTOCOL")
+	                    :Config.getStringProperty("CACHE_PROTOCOL", "tcp");
+			    
+			    String storedBindAddr = (UtilMethods.isSet(localServer.getHost()) && !localServer.getHost().equals("localhost"))
+	                    ?localServer.getHost():localServer.getIpAddress();
+	            bindAddr = UtilMethods.isSet(cacheProperties.get("BIND_ADDRESS"))?cacheProperties.get("BIND_ADDRESS")
+	                    :Config.getStringProperty("CACHE_BINDADDRESS", storedBindAddr );
+	            
+	            bindPort = UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
+	                    :localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
+	                    :ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
+	                    
+                localServer.setCachePort(Integer.parseInt(bindPort));
+
+                localServer.setHost(Config.getStringProperty("CACHE_BINDADDRESS", null));                
+
+                List<String> myself = new ArrayList<String>();
+                myself.add(localServer.getServerId());
+
+                List<Server> aliveServers = serverAPI.getAliveServers(myself);
+                aliveServers.add(localServer);
+
+                StringBuilder initialHosts = new StringBuilder();
+
+                int i=0;
+                for (Server server : aliveServers) {
+                    if(i>0) {
+                        initialHosts.append(",");
+                    }
+
+                    if(UtilMethods.isSet(server.getHost()) && !server.getHost().equals("localhost")) {
+                        initialHosts.append(server.getHost()).append("[").append(server.getCachePort()).append("]");
+                    } else {
+                        initialHosts.append(server.getIpAddress()).append("[").append(server.getCachePort()).append("]");
+                    }
+                    i++;
+                }
+
+                if(initialHosts.length()==0) {
+                    if(bindAddr.equals("localhost")) {
+                        initialHosts.append(localServer.getIpAddress()).append("[").append(bindPort).append("]");
+                    } else {
+                        initialHosts.append(bindAddr).append("[").append(bindPort).append("]");
+                    }
+                }
+
+                cacheTCPInitialHosts = UtilMethods.isSet(cacheProperties.get("CACHE_TCP_INITIAL_HOSTS"))?cacheProperties.get("CACHE_TCP_INITIAL_HOSTS")
+                        :Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initialHosts.toString());
+
+                mCastAddr = UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_ADDRESS"))?cacheProperties.get("CACHE_MULTICAST_ADDRESS")
+                        :Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
+                mCastPort = UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_PORT"))?cacheProperties.get("CACHE_MULTICAST_PORT")
+                        :Config.getStringProperty("CACHE_MULTICAST_PORT", "45588");
+                preferIPv4 = UtilMethods.isSet(cacheProperties.get("CACHE_FORCE_IPV4"))?cacheProperties.get("CACHE_FORCE_IPV4")
+                        :Config.getStringProperty("CACHE_FORCE_IPV4", "true");
+			}
+			else {
+			    Logger.info(this, "Using manual port placement as CLUSTER_AUTOWIRE is OFF");
+			    
+			    cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
+			    bindAddr = Config.getStringProperty("CACHE_BINDADDRESS", null);
+			    bindPort = Config.getStringProperty("CACHE_BINDPORT", null);
+			    cacheTCPInitialHosts = Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", "localhost[7800]");
+			    mCastAddr = Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
+			    mCastPort = Config.getStringProperty("CACHE_MULTICAST_PORT", "45588");
+			    preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
+			}
 
 			String cacheFile = "cache-jgroups-" + cacheProtocol + ".xml";
 
 			Logger.info(this, "***\t Going to load JGroups with this Classpath file " + cacheFile);
 
-			String storedBindAddr = (UtilMethods.isSet(localServer.getHost()) && !localServer.getHost().equals("localhost"))
-					?localServer.getHost():localServer.getIpAddress();
-
-			String bindAddr = UtilMethods.isSet(cacheProperties.get("BIND_ADDRESS"))?cacheProperties.get("BIND_ADDRESS")
-					:Config.getStringProperty("CACHE_BINDADDRESS", storedBindAddr );
-
-			if (bindAddr != null) {
-				Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
-			} else {
-				Logger.info(this, "***\t bindaddress is not set");
-			}
-
 			if (UtilMethods.isSet(bindAddr)) {
+			    Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
 				System.setProperty("jgroups.bind_addr", bindAddr);
 			}
-
-			String bindPort = UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
-					:localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
-					:ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
-
-			if (bindPort != null) {
-				Logger.info(this, "***\t Using " + bindPort + " as the bindport");
-			} else {
-				Logger.info(this, "***\t bindport is not set");
-			}
+			else {
+                Logger.info(this, "***\t bindaddress is not set");
+            } 
 
 			if (UtilMethods.isSet(bindPort)) {
+			    Logger.info(this, "***\t Using " + bindPort + " as the bindport");
 				System.setProperty("jgroups.bind_port", bindPort);
 			}
-
-			localServer.setCachePort(Integer.parseInt(bindPort));
-
-			localServer.setHost(Config.getStringProperty("CACHE_BINDADDRESS", null));
-
-			ServerAPI serverAPI = APILocator.getServerAPI();
-
-			List<String> myself = new ArrayList<String>();
-			myself.add(localServer.getServerId());
-
-			List<Server> aliveServers = serverAPI.getAliveServers(myself);
-			aliveServers.add(localServer);
-
-			String initialHosts = "";
-
-			int i=0;
-			for (Server server : aliveServers) {
-				if(i>0) {
-					initialHosts += ",";
-				}
-
-				if(UtilMethods.isSet(server.getHost()) && !server.getHost().equals("localhost")) {
-					initialHosts += server.getHost() + "[" + server.getCachePort() + "]";
-				} else {
-					initialHosts += server.getIpAddress() + "[" + server.getCachePort() + "]";
-				}
-				i++;
-			}
-
-			if(initialHosts.equals("")) {
-				if(bindAddr.equals("localhost")) {
-					initialHosts += localServer.getIpAddress() + "[" + bindPort + "]";
-				} else {
-					initialHosts += bindAddr + "[" + bindPort + "]";
-				}
-			}
-
-			String cacheTCPInitialHosts = UtilMethods.isSet(cacheProperties.get("CACHE_TCP_INITIAL_HOSTS"))?cacheProperties.get("CACHE_TCP_INITIAL_HOSTS")
-					:Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initialHosts);
-
+			else {
+                Logger.info(this, "***\t bindport is not set");
+            }
+			
 			if (cacheProtocol.equals("tcp")) {
-				Logger.info(this, "***\t Setting up TCP Prperties");
+				Logger.info(this, "***\t Setting up TCP initial hosts: "+cacheTCPInitialHosts);
 				System.setProperty("jgroups.tcpping.initial_hosts",	cacheTCPInitialHosts);
 			} else if (cacheProtocol.equals("udp")) {
-				Logger.info(this, "***\t Setting up UDP Prperties");
-				System.setProperty("jgroups.udp.mcast_port", UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_PORT"))?cacheProperties.get("CACHE_MULTICAST_PORT")
-						:Config.getStringProperty("CACHE_MULTICAST_PORT", "45588"));
-				System.setProperty("jgroups.udp.mcast_addr", UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_ADDRESS"))?cacheProperties.get("CACHE_MULTICAST_ADDRESS")
-						:Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10"));
+				Logger.info(this, "***\t Setting up UDP address and port: "+mCastAddr+":"+mCastPort);
+				System.setProperty("jgroups.udp.mcast_port", mCastPort);
+				System.setProperty("jgroups.udp.mcast_addr", mCastAddr);
 			} else {
 				Logger.info(this, "Not Setting up any Properties as no protocal was found");
 			}
 
-			System.setProperty("java.net.preferIPv4Stack", UtilMethods.isSet(cacheProperties.get("CACHE_FORCE_IPV4"))?cacheProperties.get("CACHE_FORCE_IPV4")
-					:Config.getStringProperty("CACHE_FORCE_IPV4", "true"));
+			Logger.info(this, "***\t Prefer IPv4: "+(preferIPv4.equals("true") ? "enabled" : "disabled"));
+			System.setProperty("java.net.preferIPv4Stack", preferIPv4);
+			
+			
 			Logger.info(this, "***\t Setting up JChannel");
 
-			if(channel==null) {
-				channel = new JChannel(classLoader.getResource(cacheFile));
-				channel.setReceiver(this);
-			} else {
-				channel.disconnect();
-				channel = new JChannel(classLoader.getResource(cacheFile));
+			if(channel!=null) {
+			    channel.disconnect();
 			}
-
-			channel.connect("dotCMSCluster");
+			
+			channel = new JChannel(classLoader.getResource(cacheFile));
+			channel.setReceiver(this);
+			
+			channel.connect(Config.getStringProperty("CACHE_JGROUPS_GROUP_NAME","dotCMSCluster"));
 			channel.setOpt(JChannel.LOCAL, false);
 			useJgroups = true;
 			channel.send(new Message(null, null, TEST_MESSAGE));
@@ -947,5 +972,16 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
     public JChannel getChannel() {
     	return channel;
+    }
+    
+    public void shutdownJGroups() {
+        synchronized(this) {
+            useJgroups=false;
+            if(channel!=null) {
+                channel.disconnect();
+                channel.close();
+                channel=null;
+            }
+        }
     }
 }
