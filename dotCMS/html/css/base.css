@@ -23,7 +23,7 @@ ol{margin-left:3em;}
 ul{margin-left:2.5em;}
 ol li {list-style: none outside;}
 ul li {list-style: none outside;}
-table {font-size:inherit;}
+table {font-size:inherit;font-family:Verdana,Geneva,Arial,sans-serif;}
 td {}
 dl {margin:0 0 0 0;}
 dt {float:left; clear:left; margin:0px 0px 10px 0px;  font-size:12px; padding-top:8px;width:30%; text-align:right;/* position:relative; */ /*IEWin hack*/}
