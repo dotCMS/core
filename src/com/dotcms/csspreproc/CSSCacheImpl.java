@@ -1,11 +1,12 @@
 package com.dotcms.csspreproc;
 
-import java.util.Date;
-
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 public class CSSCacheImpl extends CSSCache {
 
@@ -36,9 +37,9 @@ public class CSSCacheImpl extends CSSCache {
         return group+":"+hostId+":"+uri+":"+(live?"live":"working");
     }
     
-    protected boolean isValid(CachedCSS cssObj) {
+    protected boolean isValid(CachedCSS cssObj, User user) {
         for(ImportedAsset asset : cssObj.imported) {
-            CachedCSS importedCache = get(cssObj.hostId, asset.uri, cssObj.live);
+            CachedCSS importedCache = get(cssObj.hostId, asset.uri, cssObj.live, user);
             if(importedCache==null || !importedCache.modDate.equals(asset.modDate)) {
                 remove(cssObj.hostId, cssObj.uri, cssObj.live);
                 return false;
@@ -49,12 +50,26 @@ public class CSSCacheImpl extends CSSCache {
     
 
     @Override
-    protected CachedCSS get(String hostId, String uri, boolean live) {
-        String key = buildKey(hostId, uri, live);
-        CachedCSS cssObj=null;
-        try {
+    protected CachedCSS get(String hostId, String uri, boolean live, User user) {
+    	
+    	CachedCSS cssObj=null;
+    	String key = buildKey(hostId, uri, live);
+    	
+    	try {
+	    	//Validation that is the real uri and does NOT include host
+	    	if(uri.startsWith("//")) {
+	    		uri = uri.substring(2);
+	    		
+	    		String hostName = uri.substring(0, uri.indexOf('/'));
+	    		
+	    		Host host = APILocator.getHostAPI().findByName(hostName, user, live);
+	    		if(host != null){
+	    			key = buildKey(host.getIdentifier(), uri, live);
+	    		}
+	        }
+	        
             cssObj = (CachedCSS)cache.get(key, group);
-            if(!isValid(cssObj)) {
+            if(!isValid(cssObj, user)) {
                 remove(hostId,uri,live);
                 cssObj=null;
             }
@@ -62,6 +77,7 @@ public class CSSCacheImpl extends CSSCache {
         catch(Exception ex) {
             Logger.debug(this, "cache entry not found: "+key, ex);
         }
+    	
         return cssObj;
     }
 
