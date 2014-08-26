@@ -246,7 +246,7 @@
 	var currentUser;
 	function editUser(userId) {
 		if(userChanged && currentUser && userId != currentUser.id &&
-			!confirm(abandonUserChangesConfirm))
+			!confirm(abondonUserChangesConfirm))
 			return;
 		dojo.byId('userProfileTabs').style.display = 'none';
 		dojo.byId('loadingUserProfile').style.display = '';
