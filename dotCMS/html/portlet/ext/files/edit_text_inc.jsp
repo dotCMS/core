@@ -70,7 +70,8 @@
 					var parser = "jsp";
 					break;
 				case 'xml':
-					var parser = "XMLPxml
+					var parser = "XMLPxml";
+					break;
 				case 'sql':
 					var parser = "sql";
 					break;
