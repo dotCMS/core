@@ -8,9 +8,6 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="java.text.SimpleDateFormat"%>
 
-<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-
-<div id="licensemanagertab" dojoType="dijit.layout.ContentPane" title="<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_LICENSE_MANAGER")) %>" >
 
 <%
 String error=null;
@@ -101,7 +98,6 @@ function doShowHideRequest(){
     dojo.style("pasteMe", "display", "none");
     dojo.style("licensedata", "display", "none");
     
-    
     if(dijit.byId("pasteRadio").checked){
         dojo.style("pasteMe", "display", "");
     }
@@ -128,8 +124,6 @@ function doPaste(){
                dijit.byId('reqcodeRadio').set('checked','true');
                dijit.byId("license_type").set("value","trial");
                toggleLevel();
-        <% } else { %>
-               dijit.byId('pasteRadio').set('checked','true');
         <% } %>
     });    
 
@@ -138,13 +132,18 @@ function doPaste(){
 </script>
 
 <style type="text/css">
-#contracts-table tbody tr:hover {
-    background-color:#D8F6CE;
-    cursor: pointer;
-}
+tr.current_server_row td {
+    background-color:#D8F6CE
+} 
 </style>
+<div class="portlet-wrapper">
 
-    <div style="min-height:400px;" id="borderContainer" > 
+    <div style="min-height:400px;" id="borderContainer" class="shadowBox headerBox">
+        <div style="padding:7px;">
+            <div>
+                <h3><%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_LICENSE_MANAGER") %></h3>
+            </div>
+        </div> 
             
             <div style="margin-left:auto;margin-right:auto;width:600px;background:#eee;" class="callOutBox">
                 Server ID: <%= LicenseUtil.getDisplayServerId() %>
@@ -198,8 +197,8 @@ function doPaste(){
                     <%= LanguageUtil.get(pageContext, "license-trial-promo") %>
                 </div>
             <%} %>
-            <div style="margin:auto;width:600px;padding:20px;padding-top:0px;">
-                <dl style="padding:20px;">
+            <div style="margin:auto;width:600px;padding:20px;padding-top:0px;padding-bottom:0px;">
+                <dl style="padding:20px;padding-bottom:5px;">
                     <dt><%= LanguageUtil.get(pageContext, "I-want-to") %>:</dt>
                     <dd>
 
@@ -207,13 +206,14 @@ function doPaste(){
                         <label for="reqcodeRadio"><%= LanguageUtil.get(pageContext, "request-code-for-support-portal") %></label><br/>
 
                         <input onChange="doShowHideRequest()"  type="radio" name="iwantTo" id="pasteRadio"  dojoType="dijit.form.RadioButton" value="paste_license">
-                        <label for="pasteRadio"><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></label><br/>                            
+                        <label for="pasteRadio"><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></label><br/>
+                                                 
 
                     </dd>
                     
                     <dt>
                     
-                    <dd id="pasteMe" style="<%if(isCommunity){ %>display:none<%} %>">
+                    <dd id="pasteMe" style="display:none;">
                         <b><%= LanguageUtil.get(pageContext, "paste-your-license") %></b>:<br><textarea rows="10" cols="60"  name="license_text" ></textarea>
                         <div style="padding:10px;">
                             <button type="button" onclick="doPaste()" id="uploadButton" dojoType="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload"><%= LanguageUtil.get(pageContext, "save-license") %></button>      
@@ -247,53 +247,120 @@ function doPaste(){
                 </dl>
             </div>
         </form>
-    </div>
+<br/>    
+<div id="licensepackdiv" style="margin-left:auto;margin-right:auto;width:700px;">
 
+          <script type="text/javascript">
+            function doPackUpload() { 
+                dojo.byId('uploadPackForm').submit();
+                return true;
+            }
+          </script>
+          <div style="width:700px;margin:0px;">
+           <form method="POST" action="/api/license/upload/" encType="multipart/form-data" id="uploadPackForm">
+              <label for="file"><%= LanguageUtil.get(pageContext, "Upload-license-pack") %></label>
+              <input type="file" name="file" accept="application/zip"/>
+              <input type="hidden" name="return" value="<%= com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"EXT_LICENSE_MANAGER") %>"/>
+              <button dojoType="dijit.form.Button" name="btnSubmit" onClick="doPackUpload()"><%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %></button>
+           </form>
+          </div>
 
-<% } /* badId */ %>
-</div>
-
-<% if(!isCommunity) { %>
-<div id="licensepacktab" dojoType="dijit.layout.ContentPane" title="<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "License-Repository-Manager")) %>" >
-  
-<div style="margin:auto;width:500px;padding-top:30px;">
-<br/>
 <% if(LicenseUtil.getLicenseRepoTotal()>0) { %>
     <script type="text/javascript" >
-        dojo.ready(function() {
-            loadRepo();
-            
-            if(window.location.href.indexOf("tab=repo")>0) {
-            	dijit.byId("mainTabContainer").selectChild(dijit.byId("licensepacktab"));
-            }
-        });
+        dojo.ready(load);
+        
+        function levelName(level) {
+        	switch(level) {
+        	case 100: return "Community";break;
+        	case 200: return "Professional"; break;
+        	case 300: return "Enterprise"; break;
+        	case 400: return "Prime"; break;
+        	default: return "-";
+        	}
+        }
+        function typeName(type) {
+        	switch(type) {
+        	case "dev": return "Development"; break;
+        	case "prod": return "Production"; break;
+        	case "trial": return "Trial"; break;
+        	default: return "-";
+        	}
+        }
         
         var currentServerId='<%= APILocator.getServerAPI().readServerId() %>';
         
-        function loadRepo() {
+        
+        function load() {
             dojo.empty("repotableBody");
             dojo.xhrGet({
                 url: "/api/license/all/",
                 handleAs: "json",
                 load: function(data) {
                     dojo.forEach(data, function(lic) {
-                        var row=dojo.create("tr",null,dojo.byId("repotableBody"));
+                        var row;
+                        
+                        if(lic.serverid===currentServerId) {
+                        	row=dojo.create("tr",{"class":"current_server_row"},dojo.byId("repotableBody"),"first");
+                        }
+                        else {
+                        	row=dojo.create("tr",null,dojo.byId("repotableBody"));
+                        }
+                        
+                        var serial=lic.id;
+                        var optd=dojo.create("td",null,row);
+                        
+                        if(lic.serverid===currentServerId) {
+                            dojo.create("span",{"class":"unlockIcon", title:"<%= LanguageUtil.get(pageContext, "license-tip-free") %>"},
+                                dojo.create("a",{href:"javascript:free()"},optd));
+                        }
+                        else if(lic.available) {
+                        	
+                            dojo.create("span",{"class":"downloadIcon",title:"<%= LanguageUtil.get(pageContext, "license-tip-pick") %>"},
+                                dojo.create("a",{href:"javascript:pick('"+serial+"')"},optd));
+                    	
+                            dojo.create("span",{"class":"deleteIcon", title:"<%= LanguageUtil.get(pageContext, "license-tip-del") %>"},
+                                    dojo.create("a",{href:"javascript:del('"+serial+"')"},optd));
+                        }
+                        
                         dojo.create("td",{ innerHTML: lic.id}, row);
-                        dojo.create("td",{ innerHTML: lic.serverid==="" ? "Available" : 
-                             (lic.serverid===currentServerId ? '<strong>'+lic.serverid+'</strong>' : lic.serverid)}, row);
-                        dojo.create("td",{ innerHTML: lic.serverid!=="" ? lic.lastping : ""}, row);
-                        
-                        new dijit.form.Button({
-                            label: "delete",
-                            onClick: function() {
-                                dojo.xhrDelete({
-                                    url: "/api/license/delete/id/"+lic.id+"/",
-                                    load: loadRepo
-                                });
-                            }
-                        }).placeAt(dojo.create("td",null,row));
-                        
+                        dojo.create("td",{ innerHTML: (!lic.serverid || lic.serverid==="") ? "Available" : 
+                        	lic.serverid+(lic.available ? " (Available)":"")}, row);
+                        dojo.create("td",{ innerHTML: !lic.available || lic.serverid ? lic.lastping : ""}, row);
+                        dojo.create("td",{ innerHTML: lic.perpetual ? "Perpetual" : lic.validUntil}, row);
+                        dojo.create("td",{ innerHTML: levelName(lic.level)}, row);
+                        dojo.create("td",{ innerHTML: typeName(lic.licenseType)}, row);
                     });
+                }
+            });
+        }
+        
+        function del(serial) {
+        	if(!confirm('<%= LanguageUtil.get(pageContext, "license-repo-confirm-delete") %>')) return;
+        	
+        	dojo.xhrDelete({
+                url: "/api/license/delete/id/"+serial+"/",
+                load: load
+            });
+        }
+        
+        function pick(serial) {
+        	if(!confirm('<%= LanguageUtil.get(pageContext, "license-repo-confirm-pick") %>')) return;
+        	
+            dojo.xhrPost({
+                url: "/api/license/pick/serial/"+serial+"/",
+                load: function() {
+                	document.location.reload(true);
+                }
+            });
+        }
+        
+        function free() {
+        	if(!confirm('<%= LanguageUtil.get(pageContext, "license-repo-confirm-free") %>')) return;
+        	
+            dojo.xhrPost({
+                url: "/api/license/free/",
+                load: function() {
+                    document.location.reload(true);
                 }
             });
         }
@@ -303,38 +370,28 @@ function doPaste(){
        
        <thead>
          <tr>
+         <th>&nbsp;</th>
          <th><%= LanguageUtil.get(pageContext, "license-repo-serial") %></th>
          <th><%= LanguageUtil.get(pageContext, "license-repo-serverid") %></th>
          <th><%= LanguageUtil.get(pageContext, "license-repo-last-ping") %></th>
-         <th>&nbsp;</th>
+         <th><%= LanguageUtil.get(pageContext, "license-repo-validuntil") %></th>
+         <th><%= LanguageUtil.get(pageContext, "license-repo-level") %></th>
+         <th><%= LanguageUtil.get(pageContext, "license-repo-type") %></th>
          </tr>
        </thead>
        <tbody id="repotableBody">
     
        </tbody>
     </table>
-    <button dojoType="dijit.form.Button" onClick="loadRepo()">Refresh</button>
+    <button dojoType="dijit.form.Button" onClick="load()" iconClass="resetIcon">
+       <%= LanguageUtil.get(pageContext, "license-repo-refresh-button") %>
+    </button>
+    
 <% } %>
     
-          <script type="text/javascript">
-            function doPackUpload() { 
-                dojo.byId('uploadPackForm').submit();
-                return true;
-            }
-          </script>
-          <div id="uploadPackDiv">
-           <form method="POST" action="/api/license/upload/" encType="multipart/form-data" id="uploadPackForm">
-              <label for="file"><%= LanguageUtil.get(pageContext, "Upload-license-pack") %></label>
-              <input type="file" name="file" accept="application/zip"/>
-              <input type="hidden" name="return" value="<%= com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"EXT_LICENSE_MANAGER")+"&tab=repo" %>"/>
-              <button dojoType="dijit.form.Button" name="btnSubmit" onClick="doPackUpload()">
-                 <%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %>
-              </button>
-           </form>
-           </div>
-    
-    </div>  
-
-</div>
-<% } %>
-</div>
+          
+    </div>
+    </div>
+    </div>
+</div>  
+<% } /* badId */ %>
