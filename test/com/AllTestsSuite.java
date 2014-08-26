@@ -77,8 +77,8 @@ import com.dotmarketing.webdav.WebDavTest;
     HostAPITest.class, //Needs Enterprise License
     WorkflowSearcherTest.class,
     NotificationAPITest.class,
-    SassCompilerTest.class, //Needs Enterprise License
-    LessCompilerTest.class, //Needs Enterprise License
+    SassCompilerTest.class,
+    LessCompilerTest.class,
     IdentifierAPITest.class,
     ImportUtilTest.class,
     SiteSearchAjaxActionTest.class,
