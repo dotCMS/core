@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.csspreproc.CSSCompiler;
 import com.dotcms.enterprise.csspreproc.LessCompiler;
 import com.dotcms.enterprise.csspreproc.SassCompiler;
@@ -39,10 +38,6 @@ public class CSSPreProcessServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if(LicenseUtil.getLevel()<200) {
-            Logger.warn(this, "An Enterprise License is required to enable css compilation. URI: "+req.getRequestURI());
-            return;
-        }
         
         try {
             Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req);
