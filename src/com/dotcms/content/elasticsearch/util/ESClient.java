@@ -115,43 +115,36 @@ public class ESClient {
 	}
 
 	public void setClusterNode(Map<String, String> properties) throws Exception {
+	    String httpPort=null, transportTCPPort, bindAddr, initData;
+	    ServerAPI serverAPI = APILocator.getServerAPI();
+	    Server currentServer=null;
+	    
+        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
 
 			String serverId = ConfigUtils.getServerId();
 
-			ServerAPI serverAPI = APILocator.getServerAPI();
-			Server currentServer = serverAPI.getServer(serverId);
+			
+			currentServer = serverAPI.getServer(serverId);
 
 			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
 					?currentServer.getHost():currentServer.getIpAddress();
 
-			String bindAddr = properties!=null && UtilMethods.isSet(properties.get("BIND_ADDRESS")) ? properties.get("BIND_ADDRESS")
+			bindAddr = properties!=null && UtilMethods.isSet(properties.get("BIND_ADDRESS")) ? properties.get("BIND_ADDRESS")
 					:Config.getStringProperty("es.network.host", storedBindAddr);
-
-			System.setProperty("es.network.host", bindAddr );
 
 			currentServer.setHost(Config.getStringProperty("es.network.host", null));
 
-			String transportTCPPort = properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT")) ? properties.get("ES_TRANSPORT_TCP_PORT")
+			transportTCPPort = properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT")) ? properties.get("ES_TRANSPORT_TCP_PORT")
 					:UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
 
-			System.setProperty("es.transport.tcp.port",  transportTCPPort);
-
-			if(Config.getStringProperty("es.http.enabled", "false").equalsIgnoreCase("true")) {
-				String httpPort = properties!=null &&   UtilMethods.isSet(properties.get("ES_HTTP_PORT")) ? properties.get("ES_HTTP_PORT")
+			
+			if(Config.getBooleanProperty("es.http.enabled", false)) {
+				httpPort = properties!=null &&   UtilMethods.isSet(properties.get("ES_HTTP_PORT")) ? properties.get("ES_HTTP_PORT")
 						:UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
 						:ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT);
 
-				System.setProperty("es.http.port",  httpPort);
-				System.setProperty("es.http.enabled", "true");
-
 				currentServer.setEsHttpPort(Integer.parseInt(httpPort));
-			}
-
-			System.setProperty("es.discovery.zen.ping.multicast.enabled",
-					Config.getStringProperty("es.discovery.zen.ping.multicast.enabled", "false") );
-
-			System.setProperty("es.discovery.zen.ping.timeout",
-					Config.getStringProperty("es.discovery.zen.ping.timeout", "5s") );
+			}			
 
 			List<String> myself = new ArrayList<String>();
 			myself.add(currentServer.getServerId());
@@ -187,20 +180,53 @@ public class ESClient {
 				}
 			}
 
-			String initData=initialHosts.toString();
-			System.setProperty("es.discovery.zen.ping.unicast.hosts",initData);
-			Logger.info(this, "discovery.zen.ping.unicast.hosts: "+initData);
-
-			loadConfig();
-			initNode();
-
+			initData=initialHosts.toString();
+			
 			try {
-				serverAPI.updateServer(currentServer);
-			} catch (DotDataException e) {
-				Logger.error(this, "Error trying to update server. Server Id: " + currentServer.getServerId());
-			}
+                serverAPI.updateServer(currentServer);
+            } catch (DotDataException e) {
+                Logger.error(this, "Error trying to update server. Server Id: " + currentServer.getServerId());
+            }
+        }
+        else {
+            httpPort = Config.getStringProperty("es.http.port", "9200");
+            transportTCPPort = Config.getStringProperty("es.transport.tcp.port", null);
+            bindAddr = Config.getStringProperty("es.network.host", null);
+            initData = Config.getStringProperty("es.discovery.zen.ping.unicast.hosts", null);
+        }
+        
+        if(transportTCPPort!=null)
+            System.setProperty("es.transport.tcp.port",  transportTCPPort);
+        
+        if(bindAddr!=null)
+            System.setProperty("es.network.host", bindAddr );
+        
+        if(Config.getBooleanProperty("es.http.enabled", false)) {
+            System.setProperty("es.http.port",  httpPort);
+            System.setProperty("es.http.enabled", "true");
+        }
+        
+        System.setProperty("es.discovery.zen.ping.multicast.enabled",
+                Config.getStringProperty("es.discovery.zen.ping.multicast.enabled", "false") );
+
+        System.setProperty("es.discovery.zen.ping.timeout",
+                Config.getStringProperty("es.discovery.zen.ping.timeout", "5s") );
+        
+        if(initData!=null) {
+    		System.setProperty("es.discovery.zen.ping.unicast.hosts",initData);
+    		Logger.info(this, "discovery.zen.ping.unicast.hosts: "+initData);
+        }
+
+		loadConfig();
+		initNode();
 
 	}
 
-
+	public void removeClusterNode() {
+	    if(UtilMethods.isSet(System.getProperty("es.discovery.zen.ping.unicast.hosts"))) {
+    	    System.setProperty("es.discovery.zen.ping.unicast.hosts","");
+    	    loadConfig();
+    	    initNode();
+	    }
+	}
 }
