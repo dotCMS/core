@@ -1158,7 +1158,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         List<Contentlet> perCons = perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles, user);
         List<Contentlet> contentletsVersion = new ArrayList<Contentlet>();
-        contentletsVersion.addAll(contentlets);
 
         if(perCons.size() != contentlets.size()){
             throw new DotSecurityException("User: "+ (user != null ? user.getUserId() : "Unknown") 
