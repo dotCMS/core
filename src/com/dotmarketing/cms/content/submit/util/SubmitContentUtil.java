@@ -209,7 +209,7 @@ public class SubmitContentUtil {
 			cont.setBinary(FileAssetAPI.BINARY_FIELD, uploadedFile);
 			if(StructureCache.getStructureByInode(cont.getStructureInode()).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET)
 				cont.setStringProperty("fileName", title);
-			cont = APILocator.getContentletAPI().checkin(cont, user,false);
+			cont = APILocator.getContentletAPI().checkin(cont, user, true);
 			if(APILocator.getPermissionAPI().doesUserHavePermission(cont, PermissionAPI.PERMISSION_PUBLISH, user))
 				APILocator.getVersionableAPI().setLive(cont);
 			return APILocator.getFileAssetAPI().fromContentlet(cont);
