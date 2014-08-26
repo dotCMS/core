@@ -80,27 +80,17 @@ dojo.ready(function(){
 	dijit.byId('fdate').constraints.min = tomorrow;
 });
 
-
-
-// pass a function pointer
-dojo.addOnUnload(function(){
-	
-	
-	stopBrowing();
+function myConfirmation() {
+    stopBrowing();
 	if(browsingTimeMachine){
-		
-		return "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-LEAVE-THIS-PAGE")%>";
+		return "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>";
 	}
-});
+}
 
-
+window.onbeforeunload = myConfirmation;
 
 var emptyData = { "identifier" : "id", "label" : "name", "items": [{ name: '',id: '' }] };
 var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
-
-
-
-
 
 function timeChange() {
     var time=dijit.byId('timesel').get('value');
@@ -178,6 +168,7 @@ function stopBrowing() {
                 "innerHTML": '<div ><span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %>',
                 "style": "padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"
             }, dojo.byId('iframeWrapper'));
+            
             browsingTimeMachine=false;
         }
     });
