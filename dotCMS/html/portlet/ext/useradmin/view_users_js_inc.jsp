@@ -1436,6 +1436,7 @@
 		var cmd = document.getElementById('cmd').value;
 		document.getElementById('tagName').value = '';
 		document.getElementById('cmd').value = '';
+		clearSuggestTagsForSearch();
 		if(currentUser != null)
 			TagAjax.addTag(tagName, currentUser.userId, currentUser.inode, showResult);
 	}
