@@ -27,6 +27,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -386,7 +387,7 @@ public class HTMLPageFactory {
         //gets the new information for the template from the request object
         HTMLPage newHTMLPage = new HTMLPage();
         //Copy the current page
-        newHTMLPage.copy( currentHTMLPage );
+        newHTMLPage.copy( (IHTMLPage) currentHTMLPage );
 
         //gets page url before extension
         String pageURL = com.dotmarketing.util.UtilMethods.getFileName( currentHTMLPage.getPageUrl() );
@@ -475,7 +476,7 @@ public class HTMLPageFactory {
     	CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 
     	HTMLPage tempPage = new HTMLPage();
-    	tempPage.copy(page);
+    	tempPage.copy((IHTMLPage)page);
     	// sets filename for this new file
     	
     	String newNamePage = newName + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION");

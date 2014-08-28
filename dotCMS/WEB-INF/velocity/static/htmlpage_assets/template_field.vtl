@@ -1,0 +1,18 @@
+<script type="application/javascript">
+</script>
+<span dojoType="dotcms.dojo.data.TemplateReadStore" jsId="templateStore" dojoId="templateStoreDojo" hostId="<%=host.getIdentifier() %>" ></span>
+<select id="template"
+        name="template"
+        dojoType="dijit.form.FilteringSelect"
+        style="width:350px;"
+        onChange="showTemplate()"
+        store="templateStore"
+        searchDelay="300"
+        pageSize="15"
+        autoComplete="false"
+        ignoreCase="true"
+        labelAttr="fullTitle"
+        searchAttr="fullTitle"
+    <%= htmlTemplate != null && InodeUtils.isSet(htmlTemplate.getIdentifier())?"value=\"" + htmlTemplate.getIdentifier() + "\"":""  %>
+    invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
+</select>

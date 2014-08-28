@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -149,7 +150,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		}
 
 		newHTMLPage = new HTMLPage();
-		newHTMLPage.copy(source);
+		newHTMLPage.copy((IHTMLPage)source);
 
 		// gets page url before extension
 		String pageURL = UtilMethods.getFileName(source.getPageUrl());
