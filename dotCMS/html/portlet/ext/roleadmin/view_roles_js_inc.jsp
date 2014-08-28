@@ -557,6 +557,8 @@
 		dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
 		dojo.byId('editRoleButtonWrapper').style.display = 'none';
 		lastSelectedNode = null;
+		currentRoleId=null;
+		currentRole=null;
 		buildRolesTree();
 		showDotCMSSystemMessage(roleRemovedMsg);
 	}
