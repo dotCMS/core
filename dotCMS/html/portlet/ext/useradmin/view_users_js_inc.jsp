@@ -1462,11 +1462,11 @@
 				var tagName = tags[i]["tagName"];
 				tagName = RTrim(tagName);
 				tagName = LTrim(tagName);
-				var tagReplaced = tagName.replace("'", "\\\'");
+				var tagId = tags[i]["tagId"];
 
 				cell = row.insertCell (row.cells.length);
 				cell.setAttribute("width", "30px");
-				cell.innerHTML = "<a class=\"beta\" href=\"javascript: removeTagInode ('"+tagReplaced+"')\"><span class=\"deleteIcon\"></span>";
+				cell.innerHTML = "<a class=\"beta\" href=\"javascript: removeTagInode ('"+tagId+"')\"><span class=\"deleteIcon\"></span>";
 
 				cell = row.insertCell (row.cells.length);
 				cell.innerHTML = tagName;

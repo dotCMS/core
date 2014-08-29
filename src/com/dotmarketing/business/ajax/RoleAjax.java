@@ -209,14 +209,24 @@ public class RoleAjax {
 		UserAPI uAPI = APILocator.getUserAPI();
 
 		Role role = roleAPI.loadRoleById(roleId);
-
 		User user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+
+		User modUser = getUser();
+		String date = DateUtil.getCurrentDate();
+		ActivityLogger.logInfo(getClass(), "Adding Role: " +role.getName() + " to User: " + user.getUserId() , "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Adding Role: " +role.getName() + " to User: " + user.getUserId() , "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
 		String error = "";
 		try{
 			roleAPI.addRoleToUser(role, user);
 		}catch(DotStateException dse){
 			error = LanguageUtil.format(request.getLocale(), "can_not_grant_users_check_rights", new String[]{role.getName()},false);
+			ActivityLogger.logInfo(getClass(), "Error Adding Role: " +role.getName() + " to User: " + user.getUserId() , "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role: " +role.getName() + " to User: " + user.getUserId() , "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		}
+
+		ActivityLogger.logInfo(getClass(), "Role " + role.getName() + " Added to User: "  + user.getUserId(), "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
+		AdminLogger.log(getClass(), "Role " + role.getName() + " Added to User: "  + user.getUserId(), "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 
 		Map<String, Object> result = new HashMap<String, Object>();
 		result.put("error", error);
