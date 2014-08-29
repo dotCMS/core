@@ -578,6 +578,13 @@ public class UserAjax {
 			uAPI.save(u, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 			uProxyAPI.saveUserProxy(up, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 
+			User modUser = getUser();
+			String date = DateUtil.getCurrentDate();
+
+			ActivityLogger.logInfo(getClass(), "Updating User Additional Info. 'Is User Enabled' was set to: " + active , "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Updating User Additional Info. 'Is User Enabled' was set to: " + active , "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
+
 		} catch (DotRuntimeException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
