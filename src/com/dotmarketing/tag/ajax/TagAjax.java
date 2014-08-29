@@ -269,9 +269,13 @@ public class TagAjax {
 	 * @param inode inode of the object tagged
 	 * @return a list of all tags assigned to a user
 	 */
-	public Map<String, List<Tag>> deleteTag(String tagName, String userId) {
+	public Map<String, List<Tag>> deleteTag(String tagNameOrId, String userId) {
 		Tag tag = new Tag();
-		tag = TagFactory.getTag(tagName, userId);
+		try {
+			tag = APILocator.getTagAPI().getTagByTagId(tagNameOrId);
+		} catch (DotHibernateException e1) {}
+		if(!UtilMethods.isSet(tag) || !UtilMethods.isSet(tag.getTagId()))
+			tag = TagFactory.getTag(tagNameOrId, userId);
 		String newUserId = "";
 		StringTokenizer userIdToken = new StringTokenizer(tag.getUserId(), ",");
     	if (userIdToken.hasMoreTokens()) {
@@ -289,7 +293,7 @@ public class TagAjax {
             	Logger.error(this, e.getMessage());
             }
     	}else{
-    		TagFactory.deleteTag(TagFactory.getTag(tagName, userId));
+    		TagFactory.deleteTag(TagFactory.getTag(tagNameOrId, userId));
     	}
 		List<Tag> tags = TagFactory.getTagByUser(userId);
 		Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
