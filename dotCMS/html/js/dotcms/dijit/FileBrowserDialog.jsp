@@ -22,7 +22,7 @@
 					</div>	
 					<div style="float: left;">
 						<%= LanguageUtil.get(pageContext, "Filter")%>:
-						<input dojoType="dijit.form.TextBox" dojoAttachEvent="onKeyDown: _filter" trim="true" dojoAttachPoint="filterTextBox">
+						<input dojoType="dijit.form.TextBox" dojoAttachEvent="onKeyup: _filter" trim="true" dojoAttachPoint="filterTextBox">
 						<button dojoType="dijit.form.Button" dojoAttachEvent="onClick: _clearFilter" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Clear")%></button>
 					
 						<span style="display: none;" dojoAttachPoint="uploadFileButton">
