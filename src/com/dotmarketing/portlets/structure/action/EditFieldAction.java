@@ -228,7 +228,7 @@ public class EditFieldAction extends DotPortletAction {
 			if (fieldForm.isListed()) {
 				fieldForm.setIndexed(true);
 			}
-			
+
 			if (fieldForm.isSearchable()) {
 				fieldForm.setIndexed(true);
 			}
@@ -401,7 +401,7 @@ public class EditFieldAction extends DotPortletAction {
 					List<Field> stFields = FieldsCache.getFieldsByStructureInode(field.getStructureInode());
 					for (Field stField : stFields) {
 						if(stField.getFieldType().equalsIgnoreCase(Field.FieldType.CATEGORY.toString())
-								&& UtilMethods.isSet(stField.getValues()) 
+								&& UtilMethods.isSet(stField.getValues())
 								&& stField.getValues().equals(field.getValues())
 								&& !stField.getInode().equals(field.getInode())) {
 							SessionMessages.add(httpReq, "message", "message.category.existing.field");
@@ -436,12 +436,17 @@ public class EditFieldAction extends DotPortletAction {
 				field.setValues(fieldForm.getValues());
 			}
 
-
+			boolean isUpdating = UtilMethods.isSet(field.getInode());
 			// saves this field
 			FieldFactory.saveField(field);
 
-			ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
-				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+			if(isUpdating) {
+				ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " modified field " + field.getFieldName() + " to " + structure.getName()
+					    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+			} else {
+				ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
+					    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+			}
 
 			FieldsCache.removeFields(structure);
 			StructureCache.removeStructure(structure);
@@ -512,7 +517,7 @@ public class EditFieldAction extends DotPortletAction {
 	private void _deleteField(ActionForm form, ActionRequest req, ActionResponse res) {
 		Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
 		Structure structure = StructureFactory.getStructureByInode(field.getStructureInode());
-		
+
 		try {
             _checkUserPermissions(structure, _getUser(req), PERMISSION_PUBLISH);
         } catch (Exception ae) {
