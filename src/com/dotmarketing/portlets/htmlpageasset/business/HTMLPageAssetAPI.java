@@ -48,6 +48,10 @@ public interface HTMLPageAssetAPI {
     static final String DEFAULT_HTMLPAGE_ASSET_STRUCTURE_NAME="HTMLPage Asset";
     static final String DEFAULT_HTMLPAGE_ASSET_STRUCTURE_DESCRIPTION="Default Structure for Pages";
     static final String DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME="htmlpageasset";
+    static final String DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE="c541abb1-69b3-4bc5-8430-5e09e5239cc8";
+    
+    static final String ADVANCED_PROPERTIES_TAB="advancedtab";
+    static final String ADVANCED_PROPERTIES_TAB_NAME="Advanced Properties";
     
     void createHTMLPageAssetBaseFields(Structure structure) throws DotDataException, DotStateException;
 }

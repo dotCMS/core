@@ -387,7 +387,7 @@ public class HTMLPageFactory {
         //gets the new information for the template from the request object
         HTMLPage newHTMLPage = new HTMLPage();
         //Copy the current page
-        newHTMLPage.copy( (IHTMLPage) currentHTMLPage );
+        newHTMLPage.copy( currentHTMLPage );
 
         //gets page url before extension
         String pageURL = com.dotmarketing.util.UtilMethods.getFileName( currentHTMLPage.getPageUrl() );
@@ -476,7 +476,7 @@ public class HTMLPageFactory {
     	CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 
     	HTMLPage tempPage = new HTMLPage();
-    	tempPage.copy((IHTMLPage)page);
+    	tempPage.copy(page);
     	// sets filename for this new file
     	
     	String newNamePage = newName + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION");

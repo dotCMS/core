@@ -150,7 +150,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		}
 
 		newHTMLPage = new HTMLPage();
-		newHTMLPage.copy((IHTMLPage)source);
+		newHTMLPage.copy(source);
 
 		// gets page url before extension
 		String pageURL = UtilMethods.getFileName(source.getPageUrl());
