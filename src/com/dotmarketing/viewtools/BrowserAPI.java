@@ -463,7 +463,7 @@ public class BrowserAPI {
 			mimeType = mimeType == null ? "" : mimeType;
 
 			if (UtilMethods.isSet(filter)
-					&& !(name.toLowerCase().contains(filter.toLowerCase()) || description
+					&& !(description
 							.toLowerCase().contains(filter.toLowerCase())))
 				continue;
 			if (mimeTypes != null && mimeTypes.size() > 0) {
