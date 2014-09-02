@@ -1,5 +1,3 @@
-<%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_js_inc.jsp" %>
-
 <div id="loadingPermissionsAccordion"><img src="/html/js/lightbox/images/loading.gif"></div>
       
 <div id="rolePermissionsWrapper">
