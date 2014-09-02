@@ -22,29 +22,31 @@
 <style type="text/css">
 @import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getVersion() %>";
 @import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getVersion() %>";
-.realfile {
-position: relative;
-text-align: left;
-z-index: 2;
-margin-left: 270px;
-width: 70px;
-border: 1px solid red;
-margin-top: -24px;
--moz-opacity: 0;
-filter: alpha(opacity: 0);
-opacity: 0;
-cursor: pointer;
-}
-
 div.fakefile {
 position: absolute;
-top: 0px;
-margin: 0;
+text-align: left;
 z-index: 1;
-line-height: 90%;
-margin-top: -1px;
-right: 0px;
+margin-left: 20px;
+width: 9px;
+margin-top: -22px;
+-moz-opacity: 0;
+right: 80px;
 }
+
+.fakefile input.upload {
+position: absolute;
+top: 0;
+right: 5px;
+left: 1px;
+padding: 0;
+font-size: 15px;
+cursor: pointer;
+width: 90px;
+filter: alpha(opacity: 0);
+opacity: 0;
+-moz-opacity: 0;
+z-index:4;
+}	
 
 .permissionWrapper{background:none;padding:0;margin:0 auto;width:90%;}
 
@@ -784,8 +786,8 @@ td {font-size: 100%;}
 	        <%= LanguageUtil.get(pageContext, "add-edit") %>
 	    </label>
     	</div>
-		<input type="file" id="uploadFile" onchange="importCategories()" class="realfile"  />
-		<div class=fakefile>
+		<div class="fakefile">
+		    <input type="file" id="uploadFile" onchange="importCategories()" class="upload"  />
 			<button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" ><%= LanguageUtil.get(pageContext, "import") %></button>
 		</div>
 </div>
