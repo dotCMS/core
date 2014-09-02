@@ -1,5 +1,6 @@
 <%@ include file="/html/portlet/ext/useradmin/init.jsp" %>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
+<%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_js_inc.jsp" %>
 
 <%@page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
