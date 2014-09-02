@@ -51,7 +51,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field.setVelocityVarName(FRIENDLY_NAME_FIELD);
         FieldFactory.saveField(field);
         
-        field = new Field(CACHE_TTL_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.INTEGER, structure, true, true, true, 9, "", "0", "", true, false, true);
+        field = new Field(CACHE_TTL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, true, true, 9, 
+                "$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')", "", "^[0-9]+$", true, false, true);
         field.setVelocityVarName(CACHE_TTL_FIELD);
         FieldFactory.saveField(field);
         
