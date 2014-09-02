@@ -24,9 +24,6 @@
 
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%><script type="text/javascript">
 
-	dojo.require('dijit.layout.AccordionContainer');
-	dojo.require('dotcms.dijit.form.HostFolderFilteringSelect');
-
 	//I18n Messages
 	var hostsWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Hosts")) %>';
 	var foldersWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folders")) %>';

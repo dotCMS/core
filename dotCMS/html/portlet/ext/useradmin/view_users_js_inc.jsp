@@ -19,6 +19,10 @@
 	dojo.require("dojo.data.ItemFileReadStore");
 	dojo.require("dijit.dijit");
 	dojo.require("dojox.data.JsonRestStore");
+	
+	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+	dojo.require("dotcms.dojo.data.UsersReadStore");
+	dojo.require('dijit.layout.AccordionContainer');
 
     dojo.require("dotcms.dojo.push.PushHandler");
     var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
