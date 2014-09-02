@@ -71,7 +71,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		VersionInfo vinfo = getVersionInfo(identifier.getId());
 
 		Class clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
-		if(UtilMethods.isSet(vinfo.getLiveInode())) {
+		if(UtilMethods.isSet(vinfo)) {
     		HibernateUtil dh = new HibernateUtil(clazz);
     		dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
     		dh.setParam(vinfo.getLiveInode());
