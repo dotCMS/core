@@ -292,7 +292,7 @@ td {font-size: 100%;}
 			dojo.byId('addTagErrorMessagesList').innerHTML = '';
 
 			document.getElementById('tagStorage').value = currentHostId;
-			document.getElementById('tagStorage_dropDown').value = tagStoreHostName;
+			dijit.byId('tagStorage_dropDown').set('displayedValue', tagStoreHostName);
 
 		}
 
