@@ -2,6 +2,7 @@
 
 <%@ include file="/html/portlet/ext/roleadmin/init.jsp" %>
 <%@ include file="/html/portlet/ext/roleadmin/view_roles_js_inc.jsp" %>
+<%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_js_inc.jsp" %>
 
 <style type="text/css">
 	<%@ include file="/html/portlet/ext/roleadmin/view_roles.css" %>
