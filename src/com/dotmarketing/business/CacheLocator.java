@@ -57,7 +57,6 @@ import com.dotmarketing.velocity.DotResourceCache;
 import com.dotmarketing.viewtools.navigation.NavToolCache;
 import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
 import com.dotmarketing.webdav.ResourceCache;
-import com.dotmarketing.webdav.ResourceCacheImpl;
 
 
 /**
@@ -254,10 +253,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (NewNotificationCache)getInstance(CacheIndex.NewNotification);
 	}
 
-	public static ResourceCache getResourceCache() {
-		return (ResourceCache)getInstance(CacheIndex.Resource);
-	}
-
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -341,8 +336,7 @@ enum CacheIndex
 	PublishingEndPoint("PublishingEndPoint Cache"),
 	PushedAssets("PushedAssets Cache"),
 	CSSCache("Processed CSS Cache"),
-	NewNotification("NewNotification Cache"),
-	Resource("Resource Cache");
+	NewNotification("NewNotification Cache");
 
 	Cachable create() {
 		switch(this) {
@@ -379,7 +373,6 @@ enum CacheIndex
       	case PushedAssets: return new PushedAssetsCacheImpl();
       	case CSSCache: return new CSSCacheImpl();
       	case NewNotification: return new NewNotificationCacheImpl();
-      	case Resource: return new ResourceCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
