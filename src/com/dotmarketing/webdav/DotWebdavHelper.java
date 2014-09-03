@@ -107,7 +107,7 @@ public class DotWebdavHelper {
 	private IdentifierAPI idapi = APILocator.getIdentifierAPI();
 	private FolderCache fc = CacheLocator.getFolderCache();
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
-	private ResourceCache resourceCache;
+	private static FileResourceCache fileResourceCache = new FileResourceCache();
 
 	/**
 	 * MD5 message digest provider.
@@ -116,6 +116,10 @@ public class DotWebdavHelper {
 
 
 	private Hashtable<String, com.dotcms.repackage.com.bradmcevoy.http.LockInfo> resourceLocks = new Hashtable<String, com.dotcms.repackage.com.bradmcevoy.http.LockInfo>();
+
+	static {
+		new Timer().schedule(new FileResourceCacheCleaner(), 1000  * 60 * Config.getIntProperty("WEBDAV_CLEAR_RESOURCE_CACHE_FRECUENCY", 10), 1000  * 60 * Config.getIntProperty("WEBDAV_CLEAR_RESOURCE_CACHE_FRECUENCY", 10));
+	}
 
 	public DotWebdavHelper() {
 		Perl5Compiler c = new Perl5Compiler();
@@ -144,8 +148,6 @@ public class DotWebdavHelper {
 			throw new DotRuntimeException("No MD5", e);
 		}
 
-		resourceCache = new ResourceCache();
-		new Timer().schedule(new ResourceCacheCleaner(), 1000  * 60 * Config.getIntProperty("WEBDAV_CLEAR_RESOURCE_CACHE_FRECUENCY", 10));
 	}
 
 	public boolean isAutoPub(String path){
@@ -901,7 +903,7 @@ public class DotWebdavHelper {
 					    APILocator.getContentletAPI().publish(fileAsset, user, false);
 
 					    Date currentDate = new Date();
-					    resourceCache.add(resourceUri + "|" + user.getUserId(), currentDate.getTime());
+					    fileResourceCache.add(resourceUri + "|" + user.getUserId(), currentDate.getTime());
 
 					}
 				}
@@ -1284,10 +1286,10 @@ public class DotWebdavHelper {
 		if (isResource(uri,user)) {
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 
-			Long timeOfPublishing = resourceCache.get(uri + "|" + user.getUserId());
+			Long timeOfPublishing = fileResourceCache.get(uri + "|" + user.getUserId());
 			Date currentDate = new Date();
 			long diff = -1;
-			long minTimeAllowed = Config.getIntProperty("WEBDAV_MIN_TIME_AFTER_PUBLISH_TO_ALLOW_DELETING_OF_FILES", 5);
+			long minTimeAllowed = Config.getIntProperty("WEBDAV_MIN_TIME_AFTER_PUBLISH_TO_ALLOW_DELETING_OF_FILES", 10);
 			boolean canDelete= true;
 
 			if(UtilMethods.isSet(timeOfPublishing)) {
@@ -1305,7 +1307,7 @@ public class DotWebdavHelper {
 			    }
 			    WorkingCache.removeAssetFromCache(fileAssetCont);
 			    LiveCache.removeAssetFromCache(fileAssetCont);
-//			    CacheLocator.getResourceCache().remove(uri + "|" + user.getUserId());
+			    fileResourceCache.remove(uri + "|" + user.getUserId());
 			}
 			else {
 			    webAsset = fileAPI.getFileByURI(path, host, false, user, false);
@@ -1692,10 +1694,8 @@ public class DotWebdavHelper {
 		}
 	}
 
-	class ResourceCacheCleaner extends TimerTask {
-
-	    public void run() {
-	        resourceCache.clearCache();
-	    }
+	public static FileResourceCache getFileResourceCache() {
+		return fileResourceCache;
 	}
+
 }

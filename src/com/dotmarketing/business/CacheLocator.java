@@ -56,7 +56,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.dotmarketing.viewtools.navigation.NavToolCache;
 import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
-import com.dotmarketing.webdav.ResourceCache;
 
 
 /**
@@ -252,6 +251,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static NewNotificationCache getNewNotificationCache() {
 		return (NewNotificationCache)getInstance(CacheIndex.NewNotification);
 	}
+
 
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
