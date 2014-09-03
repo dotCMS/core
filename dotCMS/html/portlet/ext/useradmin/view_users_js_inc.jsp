@@ -19,6 +19,10 @@
 	dojo.require("dojo.data.ItemFileReadStore");
 	dojo.require("dijit.dijit");
 	dojo.require("dojox.data.JsonRestStore");
+	
+	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+	dojo.require("dotcms.dojo.data.UsersReadStore");
+	dojo.require('dijit.layout.AccordionContainer');
 
     dojo.require("dotcms.dojo.push.PushHandler");
     var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
@@ -1462,11 +1466,11 @@
 				var tagName = tags[i]["tagName"];
 				tagName = RTrim(tagName);
 				tagName = LTrim(tagName);
-				var tagReplaced = tagName.replace("'", "\\\'");
+				var tagId = tags[i]["tagId"];
 
 				cell = row.insertCell (row.cells.length);
 				cell.setAttribute("width", "30px");
-				cell.innerHTML = "<a class=\"beta\" href=\"javascript: removeTagInode ('"+tagReplaced+"')\"><span class=\"deleteIcon\"></span>";
+				cell.innerHTML = "<a class=\"beta\" href=\"javascript: removeTagInode ('"+tagId+"')\"><span class=\"deleteIcon\"></span>";
 
 				cell = row.insertCell (row.cells.length);
 				cell.innerHTML = tagName;

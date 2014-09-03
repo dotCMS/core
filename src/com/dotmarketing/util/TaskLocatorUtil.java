@@ -80,6 +80,7 @@ import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
 import com.dotmarketing.startup.runonce.Task01055CreatePushPublishEnvironmentTable;
 import com.dotmarketing.startup.runonce.Task01080CreateModDateForMissingObjects;
+import com.dotmarketing.startup.runonce.Task01096CreateContainerStructuresTable;
 import com.dotmarketing.startup.runonce.Task03005CreateModDateForFieldIfNeeded;
 import com.dotmarketing.startup.runonce.Task03010AddContentletIdentifierIndex;
 import com.dotmarketing.startup.runonce.Task03015CreateClusterConfigModel;
@@ -174,6 +175,7 @@ public class TaskLocatorUtil {
         ret.add(Task01080CreateModDateForMissingObjects.class);
         ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
         ret.add(Task01095CreateIntegrityCheckerResultTables.class);
+        ret.add(Task01096CreateContainerStructuresTable.class);
         ret.add(Task03005CreateModDateForFieldIfNeeded.class);
         ret.add(Task03010AddContentletIdentifierIndex.class);
         ret.add(Task03015CreateClusterConfigModel.class);

@@ -199,7 +199,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	_filter: function () {
 		this._currentFilter = this.filterTextBox.attr('value');
 		clearTimeout(this._filterHandle);
-		this._filterHandle = setTimeout(dojo.hitch(this, this._filterDelayed), 500);
+		this._filterHandle = setTimeout(dojo.hitch(this, this._filterDelayed), 100);
 	},
 
 	_filterDelayed: function () {
