@@ -174,6 +174,7 @@ public class TaskLocatorUtil {
         ret.add(Task01080CreateModDateForMissingObjects.class);
         ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
         ret.add(Task01095CreateIntegrityCheckerResultTables.class);
+        ret.add(Task01096CreateContainerStructuresTable.class);
         ret.add(Task03005CreateModDateForFieldIfNeeded.class);
         ret.add(Task03010AddContentletIdentifierIndex.class);
         ret.add(Task03015CreateClusterConfigModel.class);
