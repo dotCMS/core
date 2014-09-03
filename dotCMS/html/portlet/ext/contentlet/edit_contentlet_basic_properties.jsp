@@ -211,8 +211,11 @@
 			<!-- END SELECT STRUCTURE -->
 		
 	
-			<!--  Start Language -->
-				<%if (languages.size() > 1 && !structure.getVelocityVarName().equals("Host")) { %>
+				<!--  Start Language -->
+				<%if (languages.size() > 1 
+					&& !structure.getVelocityVarName().equals("Host")
+					&& !structure.getVelocityVarName().equals("FileAsset")
+					&& !structure.getVelocityVarName().equals("forms")) { %>
 					<script>
 						function changeLanguage(url){
 

@@ -55,7 +55,9 @@
 
 
 
-                                                        <li class="level2 dotCMS_<%=portletIDs.get(i)%>"><a href="<%=linkHREF %>"><span></span><%=linkName %></a></li>
+														<%if(!"EXT_6".equals(portletIDs.get(i))){%>
+                                                        	<li class="level2 dotCMS_<%=portletIDs.get(i)%>"><a href="<%=linkHREF %>"><span></span><%=linkName %></a></li>
+                                                		<%} %>
                                                 <%} %>
                                         </ul>
                                 <%}%>
