@@ -18,19 +18,6 @@ public class Task03000CreateContainertStructures implements StartupTask{
 
 		DotConnect dc = new DotConnect();
 
-		String createTable = "Create table container_structures" +
-		 					 "(id varchar(36) NOT NULL  primary key," +
-		 					 "container_id varchar(36) NOT NULL," +
-		 					 "structure_id varchar(36) NOT NULL, "
-		 					 + "code text)";
-
-		if(DbConnectionFactory.isOracle()) {
-			createTable=createTable.replaceAll("varchar\\(", "varchar2\\(");
-		    createTable=createTable.replaceAll("text", "nclob");
-		} else if(DbConnectionFactory.isMySql()) {
-			createTable=createTable.replaceAll("text", "longtext");
-		}
-
 		String createIndex = "create index idx_container_id on container_structures(container_id)";
 
 		String addTemplateFK = "alter table container_structures add constraint FK_cs_container_id foreign key (container_id) references identifier(id)";
@@ -47,7 +34,6 @@ public class Task03000CreateContainertStructures implements StartupTask{
 			if (DbConnectionFactory.isMsSql())
 				  dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 
-			dc.executeStatement(createTable);
 			dc.executeStatement(addTemplateFK);
 			dc.executeStatement(createIndex);
 
