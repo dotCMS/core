@@ -501,68 +501,73 @@ public class TagFactory {
 	 * @return a complete list of all the tags, with the owner information and the respective permission
 	 * information
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked") 
 	public static List<Tag> getAllTagsForUsers(List<String> userIds) {
+		
+		List<Tag> tags = new ArrayList<Tag>();
+		
 		try {
-			DotConnect dc = new DotConnect();
-			StringBuilder sb = new StringBuilder();
-			List<Tag> tags = new ArrayList<Tag>();
-
 			if(userIds!=null && !userIds.isEmpty()){
-				int count = 0;
-
-				for(String id:userIds){
-					if(count==0) {
-						sb.append("select tag.tagname, tag.user_id from tag, user_ ");
-						sb.append("where tag.user_id = user_.userid ");
-						sb.append(" and user_.userid in (");
+				DotConnect dc = new DotConnect();
+				dc.setSQL("select tagname, user_id from tag where user_id is not null");
+				
+				//Gets all the tags from DB that are not null.
+				List<Map<String, Object>> results = (ArrayList<Map<String, Object>>)dc.loadResults();
+				
+				//Checks each of the tag to see if match any of the users in the list.
+				for (int i = 0; i < results.size(); i++) {
+					Map<String, Object> hash = (Map<String, Object>) results.get(i);
+					
+					if(!hash.isEmpty()){
+						String tagUserID = (String) hash.get("user_id");
+						String tagName = (String) hash.get("tagname");
+						
+						//Creates the tag only if the tagUserID is in the userIds list. 
+						if(belongsToUser(userIds, tagUserID, tagName)){
+							Tag tag = new Tag();
+							tag.setTagName(tagName);
+							tag.setUserId(tagUserID);
+							tags.add(tag);
+						}
 					}
-					if(count>0 && count%500==0){
-						fetchUsers(dc, sb, tags);
-						break;
-					}
-					if(count>0){
-						sb.append(", '"+id+"'");
-					}else{
-						sb.append("'"+id+"'");
-					}
-					count++;
 				}
-				sb.append(") ");
-
-				if(count==userIds.size()) {
-					fetchUsers(dc, sb, tags);
-				}
-			}
-
-			return tags;
-		}
-		catch (Exception e) {
+			}			
+		} catch (Exception e) {
 			 Logger.warn(TagFactory.class, "getAllTagsForUsers failed:" + e, e);
 		}
-		return new ArrayList();
+		
+		return tags;
 	}
-
-	private static void fetchUsers(DotConnect dc, StringBuilder sb, List<Tag> tags) throws DotDataException {
-		sb.append("order by tag.user_id");
-		dc.setSQL(sb.toString());
-		List<Map<String, Object>> results = (ArrayList<Map<String, Object>>)dc.loadResults();
-
-		for (int i = 0; i < results.size(); i++) {
-			Map<String, Object> hash = (Map<String, Object>) results.get(i);
-			if(!hash.isEmpty()){
-				String user_Id = (String) hash.get("user_id");
-				String tagName = (String) hash.get("tagname");
-				Tag tag = new Tag();
-				tag.setTagName(tagName);
-				tag.setUserId(user_Id);
-				tags.add(tag);
+	
+	/**
+	 * Checks is the tagUserID belongs to one of the users in List userIds
+	 * @param userIds List with all the users
+	 * @param tagUserID
+	 * @param tagName
+	 * @return
+	 */
+	private static boolean belongsToUser(List<String> userIds, String tagUserID, String tagName){
+		if(UtilMethods.isSet(tagUserID) && UtilMethods.isSet(tagName)){
+			//The tagUserID from DB can contains several user IDs separated by commas.
+			String[] tagUserIds = tagUserID.split(",");
+			
+			//Have to check under each tagUserIds
+			for(String tagUserIDAux : tagUserIds){
+				
+				//Have to check ALSO under each userIds
+				for(String userID : userIds){
+					
+					if(userID.equals(tagUserIDAux)){
+						return true;
+					}
+				}
 			}
 		}
+		return false;
 	}
 
 	/**
-	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
+	 * Gets a Tag by name, validates the existence of the tag, if it doesn't exists then is created
 	 * @param name name of the tag to get
 	 * @param userId owner of the tag
 	 * @param hostId
