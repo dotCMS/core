@@ -67,12 +67,11 @@ public class ConfigUtils {
 		return path;
 	}
 
-
 	public static String getTimeMachinePath(){
 
 		String path = Config.getStringProperty("TIMEMACHINE_PATH", null);
 
-		if(path ==null){
+		if(path == null || (path != null && path.equals("null")) ){
 			path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "timemachine";
 			File pathDir=new File(path);
 			if(!pathDir.exists())
@@ -81,9 +80,6 @@ public class ConfigUtils {
 
 		return path;
 	}
-
-
-
 
 	public static String getServerId(){
 		String serverId;
