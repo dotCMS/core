@@ -1276,10 +1276,14 @@ public class DotWebdavHelper {
 
 			Long timeOfPublishing = CacheLocator.getResourceCache().get(uri + "|" + user.getUserId());
 			Date currentDate = new Date();
-
-			long diff = (currentDate.getTime()-timeOfPublishing)/1000;
+			long diff = -1;
 			long minTimeAllowed = Config.getIntProperty("WEBDAV_MIN_TIME_AFTER_PUBLISH_TO_ALLOW_DELETING_OF_FILES", 5);
-			boolean canDelete = diff >= minTimeAllowed;
+			boolean canDelete= true;
+
+			if(UtilMethods.isSet(timeOfPublishing)) {
+				diff = (currentDate.getTime()-timeOfPublishing)/1000;
+				canDelete = diff >= minTimeAllowed;
+			}
 
 			if(identifier!=null && identifier.getAssetType().equals("contentlet") && canDelete){
 			    Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
