@@ -80,6 +80,7 @@ import com.dotmarketing.startup.runonce.Task01045FixUpgradeTriggerVarLength;
 import com.dotmarketing.startup.runonce.Task01050AddPushPublishLogger;
 import com.dotmarketing.startup.runonce.Task01055CreatePushPublishEnvironmentTable;
 import com.dotmarketing.startup.runonce.Task01080CreateModDateForMissingObjects;
+import com.dotmarketing.startup.runonce.Task01096CreateContainerStructuresTable;
 import com.dotmarketing.startup.runonce.Task03005CreateModDateForFieldIfNeeded;
 import com.dotmarketing.startup.runonce.Task03010AddContentletIdentifierIndex;
 import com.dotmarketing.startup.runonce.Task03015CreateClusterConfigModel;
