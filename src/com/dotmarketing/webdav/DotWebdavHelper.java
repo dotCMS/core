@@ -312,7 +312,7 @@ public class DotWebdavHelper {
     		if(id!=null && InodeUtils.isSet(id.getId())) {
     		    if(id.getAssetType().equals("contentlet")){
     		        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-    	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier())){
+    	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
     	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
     	            }
     		    }
@@ -878,8 +878,8 @@ public class DotWebdavHelper {
 					fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAsset.setHost(host.getIdentifier());
 					fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
-					
-					//Validate if the user have the right permission before 
+
+					//Validate if the user have the right permission before
 					if(isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user) ){
 						APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
@@ -889,8 +889,11 @@ public class DotWebdavHelper {
 						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 						throw new DotSecurityException("User does not have permission to edit contentlets");
 			        }
-					if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user))
+					if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
 					    APILocator.getContentletAPI().publish(fileAsset, user, false);
+					    Date currentDate = new Date();
+					    CacheLocator.getResourceCache().add(resourceUri + "|" + user.getUserId(), currentDate.getTime());
+					}
 				}
 			}else{
 
@@ -1270,7 +1273,15 @@ public class DotWebdavHelper {
 		Folder folder = folderAPI.findFolderByPath(folderName, host,user,false);
 		if (isResource(uri,user)) {
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
-			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
+
+			Long timeOfPublishing = CacheLocator.getResourceCache().get(uri + "|" + user.getUserId());
+			Date currentDate = new Date();
+
+			long diff = (currentDate.getTime()-timeOfPublishing)/1000;
+			long minTimeAllowed = Config.getIntProperty("WEBDAV_MIN_TIME_AFTER_PUBLISH_TO_ALLOW_DELETING_OF_FILES", 5);
+			boolean canDelete = diff >= minTimeAllowed;
+
+			if(identifier!=null && identifier.getAssetType().equals("contentlet") && canDelete){
 			    Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
 			    try{
 			        APILocator.getContentletAPI().archive(fileAssetCont, user, false);
@@ -1280,6 +1291,7 @@ public class DotWebdavHelper {
 			    }
 			    WorkingCache.removeAssetFromCache(fileAssetCont);
 			    LiveCache.removeAssetFromCache(fileAssetCont);
+			    CacheLocator.getResourceCache().remove(uri + "|" + user.getUserId());
 			}
 			else {
 			    webAsset = fileAPI.getFileByURI(path, host, false, user, false);

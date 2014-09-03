@@ -56,6 +56,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.dotmarketing.viewtools.navigation.NavToolCache;
 import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
+import com.dotmarketing.webdav.ResourceCache;
+import com.dotmarketing.webdav.ResourceCacheImpl;
 
 
 /**
@@ -243,13 +245,17 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static PushedAssetsCache getPushedAssetsCache() {
 		return (PushedAssetsCache)getInstance(CacheIndex.PushedAssets);
 	}
-	
+
 	public static CSSCache getCSSCache() {
 	    return (CSSCache)getInstance(CacheIndex.CSSCache);
 	}
 
 	public static NewNotificationCache getNewNotificationCache() {
 		return (NewNotificationCache)getInstance(CacheIndex.NewNotification);
+	}
+
+	public static ResourceCache getResourceCache() {
+		return (ResourceCache)getInstance(CacheIndex.Resource);
 	}
 
 	/**
@@ -335,7 +341,8 @@ enum CacheIndex
 	PublishingEndPoint("PublishingEndPoint Cache"),
 	PushedAssets("PushedAssets Cache"),
 	CSSCache("Processed CSS Cache"),
-	NewNotification("NewNotification Cache");
+	NewNotification("NewNotification Cache"),
+	Resource("Resource Cache");
 
 	Cachable create() {
 		switch(this) {
@@ -372,6 +379,7 @@ enum CacheIndex
       	case PushedAssets: return new PushedAssetsCacheImpl();
       	case CSSCache: return new CSSCacheImpl();
       	case NewNotification: return new NewNotificationCacheImpl();
+      	case Resource: return new ResourceCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
