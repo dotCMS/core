@@ -548,7 +548,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		" where " +
 		" identifier.host_inode = ? " +
 		" and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-		" and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+		" and permission_type = '" + File.class.getCanonicalName() + "' " +
 		" and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
@@ -1912,7 +1912,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			contAPI.refresh((Contentlet)permissionable);
 		}
 		//DOTCMS-4959
-		if(permissionable instanceof Host) { 
+		if(permissionable instanceof Host) {
 		    if(((Host)permissionable).isSystemHost()){
 		        ContentletAPI contAPI = APILocator.getContentletAPI();
 	            contAPI.refresh(((Host)permissionable).getStructure());
@@ -2470,7 +2470,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				if(permissionable instanceof Template && UtilMethods.isSet(((Template) permissionable).isDrawed()) && ((Template) permissionable).isDrawed()) {
 					 type = Template.TEMPLATE_LAYOUTS_CANONICAL_NAME;
 				}
-				
+
 				if(permissionable instanceof NavResult) {
 				    type = ((NavResult)permissionable).getEnclosingPermissionClassName();
 				}
@@ -2497,17 +2497,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					catch(Exception e){
 						throw new DotDataException(e.getMessage());
 					}
-					
+
 					DotConnect dc1 = new DotConnect();
 					dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
 					dc1.addParam(permissionable.getPermissionId());
 					List<Map<String, Object>> l = dc1.loadObjectResults();
-					
+
 					DotConnect dc2 = new DotConnect();
                     dc2.setSQL("SELECT id FROM identifier WHERE id = ?");
                     dc2.addParam(permissionable.getPermissionId());
                     List<Map<String, Object>> l2 = dc2.loadObjectResults();
-                    
+
 					if((l != null && l.size()>0) || (l2!=null && l2.size()>0)){
 						dc1.setSQL(deletePermissionableReferenceSQL);
 						dc1.addParam(permissionable.getPermissionId());
@@ -2519,7 +2519,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	//					dc1.addParam(permissionable.getPermissionId());
 						dc1.loadResult();
 					}
-					
+
 					if(localTransaction){
 	                    HibernateUtil.commitTransaction();
 	                }
@@ -2536,7 +2536,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					}
 					throw new DotDataException(exception.getMessage(), exception);
 				}
-				
+
 				bitPermissionsList = inheritedPermissions;
 			}
 		}
@@ -3326,7 +3326,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 		for (Map<String, String> idMap : idsToUpdate) {
 			String id = idMap.get("id");
-			
+
 			//Search contentlets by identifier (all languages) and set permissions
 			String luceneQuery = "+identifier:"+id+" +working:true";
 			try {
@@ -3450,10 +3450,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     		}
     		offset=offset+max;
 		} while(list.size()>0);
-		
+
 		hu=new HibernateUtil(Structure.class);
         offset=0;
-        
+
         List<Structure> listSt=null;
         do {
             hu.setQuery("from "+Structure.class.getCanonicalName());
