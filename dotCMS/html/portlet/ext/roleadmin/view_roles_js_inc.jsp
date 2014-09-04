@@ -74,6 +74,7 @@
 	var roleLayoutConfigSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-layout-config-saved")) %>';
 	var removeMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "remove")) %>';
 	var roleRemovedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-removed")) %>';
+	var roleNotRemovedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.role.delete.failed.has.dependencies")) %>';
 	var roleLockedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-locked")) %>';
 	var roleUnlockedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-unlocked")) %>';
 	var nameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name")) %>';
@@ -547,20 +548,24 @@
 			roleId = norm(currentRoleId);
 
 		if(confirm(confirmRemoveRoleMsg))
-			RoleAjax.deleteRole(roleId, deleteRoleCallback);
+			RoleAjax.deleteRole(roleId, deleteRoleCallback);			
 	}
 
 	//Callback from the server to confirm a user deletion
-	function deleteRoleCallback () {
+	function deleteRoleCallback (isDeleted) {
 		dojo.style(dojo.byId('roleTabs'), { display: 'none' });
-
 		dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
 		dojo.byId('editRoleButtonWrapper').style.display = 'none';
 		lastSelectedNode = null;
 		currentRoleId=null;
 		currentRole=null;
-		buildRolesTree();
-		showDotCMSSystemMessage(roleRemovedMsg);
+		buildRolesTree();	
+		if(isDeleted){
+			showDotCMSSystemMessage(roleRemovedMsg);
+		}else{
+			showDotCMSSystemMessage(roleNotRemovedMsg);
+		}
+		
 	}
 
 	function lockRole(roleId) {
