@@ -19,11 +19,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
@@ -32,6 +29,10 @@ import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
 import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
 import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
 import com.dotcms.repackage.com.bradmcevoy.http.Resource;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
+import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
+import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -71,7 +72,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -103,6 +103,7 @@ public class DotWebdavHelper {
 	private IdentifierAPI idapi = APILocator.getIdentifierAPI();
 	private FolderCache fc = CacheLocator.getFolderCache();
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
+	private static FileResourceCache fileResourceCache = new FileResourceCache();
 
 	/**
 	 * MD5 message digest provider.
@@ -111,6 +112,10 @@ public class DotWebdavHelper {
 
 
 	private Hashtable<String, com.dotcms.repackage.com.bradmcevoy.http.LockInfo> resourceLocks = new Hashtable<String, com.dotcms.repackage.com.bradmcevoy.http.LockInfo>();
+
+	static {
+		new Timer().schedule(new FileResourceCacheCleaner(), 1000  * 60 * Config.getIntProperty("WEBDAV_CLEAR_RESOURCE_CACHE_FRECUENCY", 10), 1000  * 60 * Config.getIntProperty("WEBDAV_CLEAR_RESOURCE_CACHE_FRECUENCY", 10));
+	}
 
 	public DotWebdavHelper() {
 		Perl5Compiler c = new Perl5Compiler();
@@ -138,6 +143,7 @@ public class DotWebdavHelper {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException("No MD5", e);
 		}
+
 	}
 
 	public boolean isAutoPub(String path){
@@ -312,7 +318,7 @@ public class DotWebdavHelper {
     		if(id!=null && InodeUtils.isSet(id.getId())) {
     		    if(id.getAssetType().equals("contentlet")){
     		        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-    	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier())){
+    	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
     	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
     	            }
     		    }
@@ -878,8 +884,8 @@ public class DotWebdavHelper {
 					fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAsset.setHost(host.getIdentifier());
 					fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
-					
-					//Validate if the user have the right permission before 
+
+					//Validate if the user have the right permission before
 					if(isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user) ){
 						APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
@@ -889,8 +895,13 @@ public class DotWebdavHelper {
 						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 						throw new DotSecurityException("User does not have permission to edit contentlets");
 			        }
-					if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user))
+					if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
 					    APILocator.getContentletAPI().publish(fileAsset, user, false);
+
+					    Date currentDate = new Date();
+					    fileResourceCache.add(resourceUri + "|" + user.getUserId(), currentDate.getTime());
+
+					}
 				}
 			}else{
 
@@ -1270,7 +1281,19 @@ public class DotWebdavHelper {
 		Folder folder = folderAPI.findFolderByPath(folderName, host,user,false);
 		if (isResource(uri,user)) {
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
-			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
+
+			Long timeOfPublishing = fileResourceCache.get(uri + "|" + user.getUserId());
+			Date currentDate = new Date();
+			long diff = -1;
+			long minTimeAllowed = Config.getIntProperty("WEBDAV_MIN_TIME_AFTER_PUBLISH_TO_ALLOW_DELETING_OF_FILES", 10);
+			boolean canDelete= true;
+
+			if(UtilMethods.isSet(timeOfPublishing)) {
+				diff = (currentDate.getTime()-timeOfPublishing)/1000;
+				canDelete = diff >= minTimeAllowed;
+			}
+
+			if(identifier!=null && identifier.getAssetType().equals("contentlet") && canDelete){
 			    Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
 			    try{
 			        APILocator.getContentletAPI().archive(fileAssetCont, user, false);
@@ -1280,6 +1303,7 @@ public class DotWebdavHelper {
 			    }
 			    WorkingCache.removeAssetFromCache(fileAssetCont);
 			    LiveCache.removeAssetFromCache(fileAssetCont);
+			    fileResourceCache.remove(uri + "|" + user.getUserId());
 			}
 			else {
 			    webAsset = fileAPI.getFileByURI(path, host, false, user, false);
@@ -1665,4 +1689,9 @@ public class DotWebdavHelper {
 			throw new DotRuntimeException(e.getMessage(),e);
 		}
 	}
+
+	public static FileResourceCache getFileResourceCache() {
+		return fileResourceCache;
+	}
+
 }
