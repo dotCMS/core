@@ -247,7 +247,7 @@
 				}
 
 				// used to remove the highlight (bold) from the last selected treeNode
-				if(lastSelectedNode) {
+				if(lastSelectedNode && lastSelectedNode.labelNode) {
 					lastSelectedNode.labelNode.style.fontWeight="normal";
 					lastSelectedNode = null;
 				}
@@ -569,7 +569,6 @@
 	}
 
 	function lockRole(roleId) {
-		var lockedRoleId = roleId;
 		if(confirm(confirmLockRoleMsg))
 			RoleAjax.lockRole(roleId, dojo.hitch(this, lockRoleCallback, roleId));
 	}
@@ -588,6 +587,7 @@
 		if (norm(currentRoleId) == norm(lockedRoleId)) {
 			dojo.byId('editRoleButtonWrapper').style.display = 'none';
 		}
+		buildRolesTree();
 		showDotCMSSystemMessage(roleLockedMsg);
 
 	}
@@ -601,6 +601,7 @@
 		if (norm(currentRoleId) == norm(unlockedRoleId) && !eval(norm(currentRole.system))) {
 			dojo.byId('editRoleButtonWrapper').style.display = '';
 		}
+		buildRolesTree();
 		showDotCMSSystemMessage(roleUnlockedMsg);
 	}
 
