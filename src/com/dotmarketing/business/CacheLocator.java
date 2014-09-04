@@ -243,7 +243,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static PushedAssetsCache getPushedAssetsCache() {
 		return (PushedAssetsCache)getInstance(CacheIndex.PushedAssets);
 	}
-	
+
 	public static CSSCache getCSSCache() {
 	    return (CSSCache)getInstance(CacheIndex.CSSCache);
 	}
@@ -251,6 +251,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static NewNotificationCache getNewNotificationCache() {
 		return (NewNotificationCache)getInstance(CacheIndex.NewNotification);
 	}
+
 
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
