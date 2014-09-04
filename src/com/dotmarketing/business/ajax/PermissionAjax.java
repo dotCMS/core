@@ -72,7 +72,7 @@ public class PermissionAjax {
 	 * @throws DotRuntimeException
 	 * @throws DotSecurityException
 	 */
-	public List<Map<String, Object>> getAssetPermissions(String assetId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+	public List<Map<String, Object>> getAssetPermissions(String assetId, Long languageId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -87,7 +87,7 @@ public class PermissionAjax {
 		List<Map<String, Object>> toReturn = new ArrayList<Map<String,Object>>();
 		Map<String, Map<String, Object>> roles = new TreeMap<String, Map<String, Object>>();
 
-		Permissionable perm = retrievePermissionable(assetId, user, respectFrontendRoles);
+		Permissionable perm = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
 
 		List<Permission> assetPermissions = permAPI.getPermissions(perm, true);
 		for(Permission p : assetPermissions) {
@@ -186,7 +186,7 @@ public class PermissionAjax {
 		rolePermissions.add(permissionMap);
 	}
 
-	public void saveAssetPermissions (String assetId, List<Map<String, String>> permissions, boolean reset) throws Exception {
+	public void saveAssetPermissions(String assetId, Long language, List<Map<String, String>> permissions, boolean reset) throws Exception {
 
 		HibernateUtil.startTransaction();
 
@@ -200,7 +200,7 @@ public class PermissionAjax {
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
 
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-			Permissionable asset = retrievePermissionable(assetId, user, respectFrontendRoles);
+			Permissionable asset = retrievePermissionable(assetId, language, user, respectFrontendRoles);
 
 			List<Permission> newSetOfPermissions = new ArrayList<Permission>();
 			for(Map<String, String> permission: permissions) {
@@ -291,7 +291,7 @@ public class PermissionAjax {
 		}
 	}
 
-	public void resetAssetPermissions (String assetId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+	public void resetAssetPermissions (String assetId, Long languageId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		HibernateUtil.startTransaction();
 		try {
 
@@ -304,7 +304,7 @@ public class PermissionAjax {
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
 
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-			Permissionable asset = retrievePermissionable(assetId, user, respectFrontendRoles);
+			Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
 			permissionAPI.removePermissions(asset);
 
 		} catch (DotDataException e) {
@@ -315,26 +315,31 @@ public class PermissionAjax {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Permissionable retrievePermissionable (String assetId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	private Permissionable retrievePermissionable (String assetId, Long language, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		
 		HostAPI hostAPI = APILocator.getHostAPI();
-
 		Permissionable perm = null;
 
 		//Determining the type
-
 		try{
-		//Host?
+			//Host?
 			perm = hostAPI.find(assetId, user, respectFrontendRoles);
 		}
 		catch(Exception e){
 
 		}
+		
 		if(perm == null) {
 			//Content?
 			ContentletAPI contAPI = APILocator.getContentletAPI();
+			
 			try {
-				perm = contAPI.findContentletByIdentifier(assetId, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
+				if(language == null || language <= 0){
+					language=APILocator.getLanguageAPI().getDefaultLanguage().getId();
+				}
+				perm = contAPI.findContentletByIdentifier(assetId, false, language, user, respectFrontendRoles);
 			} catch (DotContentletStateException e) {
+
 			}
 		}
 
@@ -346,29 +351,32 @@ public class PermissionAjax {
 			dc.setSQL("Select asset_type from identifier where id =?");
 			dc.addParam(assetId);
 			ArrayList assetResult = dc.loadResults();
+			
 			if(assetResult.size()>0){
 				assetType = (String) ((Map)assetResult.get(0)).get("asset_type");
 			}
+			
 			if(UtilMethods.isSet(assetType)){
 				dc.setSQL("select i.inode, type from inode i,"+assetType+" a where i.inode = a.inode and a.identifier = ?");
 				dc.addParam(assetId);
 				results = dc.loadResults();
 			}
+			
 			if(results.size() > 0) {
 				String type =  (String) ((Map)results.get(0)).get("type");
 				String inode = (String) ((Map)results.get(0)).get("inode");
 				perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
 			}
-
 		}
 
 		if(perm == null || !UtilMethods.isSet(perm.getPermissionId())) {
 			perm = InodeFactory.getInode(assetId, Inode.class);
 		}
+		
 		return perm;
 	}
 
-	  public void permissionIndividually(String assetId) throws Exception {
+	  public void permissionIndividually(String assetId, Long languageId) throws Exception {
 			HibernateUtil.startTransaction();
 	    	try {
 	    		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
@@ -380,7 +388,7 @@ public class PermissionAjax {
 	    		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
 
 	    		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-	    		Permissionable asset = retrievePermissionable(assetId, user, respectFrontendRoles);
+	    		Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
 	    		Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(asset);
 
 	    		if(parentPermissionable!=null){
