@@ -566,7 +566,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .wmvIcon, .asxIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1640px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .oggIcon, .asfIcon, .aviIcon, .movIcon, .mpgIcon, .mp4Icon, .rmIcon, .vobIcon, .ogvIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1660px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .mp3Icon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1660px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-.cssIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1680px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.cssIcon, .lessIcon, .scssIcon, .assIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1680px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .vtlIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1680px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .phpIcon, .jsIcon, .jspIcon, .aspIcon, .xmlIcon, .gyIcon, .pyIcon, .rbIcon, .jsonIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1700px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .htmIcon, .htmlIcon, .rssIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1700px;width:18px;height:18px;display:inline-block;vertical-align:top;}
