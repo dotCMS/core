@@ -143,7 +143,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 "+live:"+live+" +deleted:"+deleted+
                     (parent instanceof Folder ? 
                             " +conFolder:"+((Folder)parent).getInode()
-                         :  ((parent instanceof Host) ? " +conHost:"+((Host)parent).getIdentifier() : ""))
+                         :  ((parent instanceof Host) ? 
+                                 " +conFolder:SYSTEM_FOLDER +conHost:"+((Host)parent).getIdentifier() : ""))
                     +" +structureType:"+Structure.STRUCTURE_TYPE_HTMLPAGE, 
                 -1, 0, "modDate asc", user, respectFrontEndRoles)) {
             pages.add(fromContentlet(cont));

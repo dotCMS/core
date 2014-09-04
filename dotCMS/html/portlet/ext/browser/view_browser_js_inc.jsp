@@ -1480,7 +1480,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	//HTML Page actions
 	function addHTMLPage(parentId, referer) {
 		//top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /></portlet:actionURL>&cmd=edit&parent=' + parentId + '&inode=&referer=' + referer;
-		
+		refererVar=referer;
 		BrowserAjax.getFolderMap(parentId,function(map) {
 			showPageAssetPopUp(map);
 		});
