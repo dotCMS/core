@@ -600,8 +600,10 @@
 			temp += ']';
 			temp += '};';
 			eval(temp);
+
+			updateSuggestTagsForSearch();
 		}
-		updateSuggestTagsForSearch();
+		
 	}
 
 	function updateSuggestTagsForSearch() {
