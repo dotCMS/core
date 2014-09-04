@@ -1,12 +1,8 @@
 package com.dotmarketing.business.ajax;
 
 import java.lang.reflect.InvocationTargetException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,9 +11,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -67,8 +63,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class RoleAjax {
 
@@ -315,28 +309,29 @@ public class RoleAjax {
 
 
 
-	public void deleteRole (String roleId) throws DotDataException, DotStateException, DotSecurityException, SystemException, PortalException {
+	public boolean deleteRole (String roleId) throws DotDataException, DotStateException, DotSecurityException, SystemException, PortalException {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-
 		Role role = roleAPI.loadRoleById(roleId);
-
 		User user = getUser();
-		String date = DateUtil.getCurrentDate();
+		String date = DateUtil.getCurrentDate();		
 
 		ActivityLogger.logInfo(getClass(), "Deleting Role", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 		AdminLogger.log(getClass(), "Deleting Role", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-
-		try {
-			roleAPI.delete(role);
-		} catch(DotDataException | DotStateException e) {
-			ActivityLogger.logInfo(getClass(), "Error Deleting Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-			AdminLogger.log(getClass(), "Error Deleting Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-			throw e;
-		}
-
-		ActivityLogger.logInfo(getClass(), "Role Deleted", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-		AdminLogger.log(getClass(), "Role Deleted", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-
+		if(role.getRoleChildren() == null || role.getRoleChildren().size() == 0){
+			try {			
+				roleAPI.delete(role);
+				ActivityLogger.logInfo(getClass(), "Role Deleted", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
+				AdminLogger.log(getClass(), "Role Deleted", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );	
+				return true;
+			} catch(DotDataException | DotStateException e) {
+				ActivityLogger.logInfo(getClass(), "Error Deleting Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
+				AdminLogger.log(getClass(), "Error Deleting Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
+				throw e;
+			}
+		}else{
+			return false;
+		}	
+		
 	}
 
 	private User getUser() throws PortalException, SystemException {
