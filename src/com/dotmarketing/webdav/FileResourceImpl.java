@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
@@ -31,6 +33,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -43,15 +46,16 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	String path;
 	private boolean isAutoPub = false;
 	private PermissionAPI perAPI;
-	
+
 	public FileResourceImpl(IFileAsset file, String path) {
 		perAPI = APILocator.getPermissionAPI();
 		dotDavHelper = new DotWebdavHelper();
 		this.isAutoPub = dotDavHelper.isAutoPub(path);
 		this.path = path;
 		this.file = file;
+
 	}
-	
+
 	public void copyTo(CollectionResource collRes, String name) throws DotRuntimeException {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
@@ -87,7 +91,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 
 	public boolean authorise(Request req, Method method, Auth auth) {
 		try {
-			
+
 			if(auth == null)
 				return false;
 			else {
@@ -197,7 +201,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 				return;
 			}
 		}
-		else if(collRes instanceof BasicFolderResourceImpl) { 
+		else if(collRes instanceof BasicFolderResourceImpl) {
 			try {
 			    String p = ((BasicFolderResourceImpl)collRes).getPath();
 				if(!p.endsWith("/"))
@@ -261,7 +265,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	public LockToken getCurrentLock() {
 		return dotDavHelper.getCurrentLock(getUniqueId());
 	}
-	
+
 	public Long getMaxAgeSeconds(Auth arg0) {
 		return (long)60;
 	}
